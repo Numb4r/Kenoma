@@ -1,6 +1,7 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
+import '../../capture/eco_type.dart';
 import '../../capture/tuning_balance.dart';
 import '../../capture/tuning_setup.dart';
 import '../../data/session_log_store.dart';
@@ -24,6 +25,7 @@ class TuningScreen extends StatefulWidget {
     required this.store,
     this.hidden = false,
     this.showTarget = false,
+    this.vibration,
     super.key,
   });
 
@@ -34,16 +36,21 @@ class TuningScreen extends StatefulWidget {
   final bool hidden;
   final bool showTarget;
 
+  /// Quem vibra. Por padrão, o motor do aparelho.
+  final VibrationPlayer? vibration;
+
   @override
   State<TuningScreen> createState() => _TuningScreenState();
 }
 
 class _TuningScreenState extends State<TuningScreen> {
-  final _vibration = DeviceVibration();
+  late final VibrationPlayer _vibration = widget.vibration ?? DeviceVibration();
   late final TuningGame _game;
   late final RunLogger _logger;
   TuningRun? _run;
-  bool _marked = false;
+
+  /// Palpite da sintonia em andamento, no modo oculto.
+  EcoType? _guess;
 
   @override
   void initState() {
@@ -61,26 +68,26 @@ class _TuningScreenState extends State<TuningScreen> {
   }
 
   void _finished(TuningRun run) {
-    setState(() {
-      _run = run;
-      _marked = false;
-    });
+    setState(() => _run = run);
     _logger.finished(run);
   }
 
-  void _guess(bool correct) {
-    _logger.guess(correct);
-    setState(() => _marked = true);
+  void _giveGuess(EcoType type) {
+    _logger.guessed(type);
+    setState(() => _guess = type);
+    _game.begin();
   }
 
   void _again() {
-    setState(() => _run = null);
+    setState(() {
+      _run = null;
+      _guess = null;
+    });
     _game.restart();
   }
 
   @override
   void dispose() {
-    _logger.flush();
     _vibration.cancel();
     super.dispose();
   }
@@ -94,6 +101,12 @@ class _TuningScreenState extends State<TuningScreen> {
         child: Stack(
           children: [
             GameWidget(game: _game),
+            if (widget.hidden)
+              ValueListenableBuilder<bool>(
+                valueListenable: _game.awaitingGuess,
+                builder: (context, waiting, _) =>
+                    waiting ? HiddenPrepare(onFeelAgain: _game.feelAgain, onGuess: _giveGuess) : const SizedBox.shrink(),
+              ),
             Positioned(
               left: 0,
               top: 0,
@@ -108,9 +121,7 @@ class _TuningScreenState extends State<TuningScreen> {
             if (run != null)
               TuningResultPanel(
                 run: run,
-                hidden: widget.hidden,
-                marked: _marked,
-                onGuess: _guess,
+                guess: widget.hidden ? _guess : null,
                 onAgain: _again,
                 onMenu: () => Navigator.of(context).pop(),
               ),
@@ -125,18 +136,16 @@ class _TuningScreenState extends State<TuningScreen> {
 class TuningResultPanel extends StatelessWidget {
   const TuningResultPanel({
     required this.run,
-    required this.hidden,
-    required this.marked,
-    required this.onGuess,
     required this.onAgain,
     required this.onMenu,
+    this.guess,
     super.key,
   });
 
   final TuningRun run;
-  final bool hidden;
-  final bool marked;
-  final ValueChanged<bool> onGuess;
+
+  /// Palpite do jogador no modo de tipo oculto. `null` fora desse modo.
+  final EcoType? guess;
   final VoidCallback onAgain;
   final VoidCallback onMenu;
 
@@ -161,27 +170,58 @@ class TuningResultPanel extends StatelessWidget {
               Text('+${o.ectoplasm} Ectoplasma', style: line)
             else
               Text(o.fled ? 'A criatura fugiu' : 'Ela ainda está aqui', style: line),
-            if (hidden) ...[
+            if (guess != null) ...[
               const SizedBox(height: 16),
               Text('Era ${typeLabel(run.setup.type)}', style: const TextStyle(fontSize: 24, color: kVeil)),
               const SizedBox(height: 4),
               Text(run.species.name, style: const TextStyle(fontSize: 8, color: kDim)),
+              const SizedBox(height: 12),
+              Text(
+                guess == run.setup.type ? 'Você acertou' : 'Você disse ${typeLabel(guess!)}',
+                style: TextStyle(fontSize: 16, color: guess == run.setup.type ? kSignal : kEssence),
+              ),
             ],
             const SizedBox(height: 20),
-            if (hidden && !marked) ...[
-              const Text('Você acertou o tipo?', style: line),
-              const SizedBox(height: 12),
-              Row(children: [
-                Expanded(child: PixelButton(label: 'Sim', color: kSignal, onTap: () => onGuess(true))),
-                const SizedBox(width: 12),
-                Expanded(child: PixelButton(label: 'Não', color: kEssence, onTap: () => onGuess(false))),
-              ]),
-            ] else ...[
-              PixelButton(label: 'Repetir', color: color, onTap: onAgain),
-              const SizedBox(height: 12),
-              PixelButton(label: 'Menu', color: kDim, onTap: onMenu),
-            ],
+            PixelButton(label: 'Repetir', color: color, onTap: onAgain),
+            const SizedBox(height: 12),
+            PixelButton(label: 'Menu', color: kDim, onTap: onMenu),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tela escura do modo de tipo oculto, antes de a sintonia começar: só a vibração e o palpite.
+/// Nada aqui depende do tipo sorteado.
+class HiddenPrepare extends StatelessWidget {
+  const HiddenPrepare({required this.onFeelAgain, required this.onGuess, super.key});
+
+  final VoidCallback onFeelAgain;
+  final ValueChanged<EcoType> onGuess;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: ColoredBox(
+        color: kOutline,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Sinta o sinal', style: TextStyle(fontSize: 24, color: kVeil)),
+              const SizedBox(height: 12),
+              const Text('Qual é o tipo?', style: TextStyle(fontSize: 16, color: kDim)),
+              const SizedBox(height: 32),
+              PixelButton(label: 'Sentir de novo', color: kDim, onTap: onFeelAgain),
+              const SizedBox(height: 40),
+              for (final type in EcoType.values) ...[
+                SizedBox(width: double.infinity, child: PixelButton(label: typeLabel(type), onTap: () => onGuess(type))),
+                const SizedBox(height: 12),
+              ],
+            ],
+          ),
         ),
       ),
     );

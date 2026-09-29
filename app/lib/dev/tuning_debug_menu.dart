@@ -149,7 +149,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Tipo oculto', style: TextStyle(fontSize: 16)),
-          subtitle: const Text('Sorteia o tipo. Sem sprite nem cor: só a vibração.', style: TextStyle(fontSize: 8, color: kDim)),
+          subtitle: const Text('Sorteia o tipo. Você sente a vibração e dá o palpite antes de sintonizar.', style: TextStyle(fontSize: 8, color: kDim)),
           value: _hidden,
           activeThumbColor: kVeil,
           onChanged: (v) => setState(() => _hidden = v),

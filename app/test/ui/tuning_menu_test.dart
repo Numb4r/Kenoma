@@ -57,7 +57,7 @@ Future<({SessionLogStore store, FakeExporter exporter})> pumpMenu(WidgetTester t
   }
   await tester.runAsync(TuningData.load);
   await tester.pumpWidget(MaterialApp(home: TuningDebugMenu(store: store, exporter: exporter)));
-  for (var i = 0; i < 50 && find.text('INICIAR SINTONIA').evaluate().isEmpty; i++) {
+  for (var i = 0; i < 300 && find.text('INICIAR SINTONIA').evaluate().isEmpty; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pump();
   }

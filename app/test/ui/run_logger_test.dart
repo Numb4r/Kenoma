@@ -45,8 +45,7 @@ void main() {
   List<List<String>> rows() => [for (final l in store.file.readAsLinesSync().skip(1)) l.split(',')];
 
   test('fora do modo oculto grava assim que a sintonia termina, com o acerto em branco', () async {
-    final l = logger(hidden: false);
-    await l.finished(makeRun());
+    await logger(hidden: false).finished(makeRun());
     final r = rows().single;
     expect(r[0], '2026-09-29T15:00:00.000Z');
     expect(r[1], 'water');
@@ -55,61 +54,46 @@ void main() {
     expect(r[5], '0');
     expect(r[9], 'success');
     expect((r[12], r[13]), ('0', ''));
-    expect(l.hasPending, isFalse);
   });
 
-  test('no modo oculto espera a marcação: nada é gravado até o jogador responder', () async {
+  test('modo oculto: palpite certo grava guess_correct 1, errado grava 0', () async {
     final l = logger(hidden: true);
-    await l.finished(makeRun());
-    expect(store.file.existsSync(), isFalse);
-    expect(l.hasPending, isTrue);
-  });
-
-  test('acertei grava guess_correct 1; errei grava 0; ambos marcados como tipo oculto', () async {
-    final l = logger(hidden: true);
+    l.guessed(EcoType.fire);
     await l.finished(makeRun(type: EcoType.fire));
-    await l.guess(true);
+    l.guessed(EcoType.water);
     await l.finished(makeRun(type: EcoType.plant));
-    await l.guess(false);
     final r = rows();
     expect(r, hasLength(2));
     expect((r[0][1], r[0][12], r[0][13]), ('fire', '1', '1'));
     expect((r[1][1], r[1][12], r[1][13]), ('plant', '1', '0'));
-    expect(l.hasPending, isFalse);
   });
 
-  test('sair sem marcar grava com o acerto em branco, uma vez só', () async {
+  test('o palpite vale só para a sintonia seguinte: sem novo palpite o acerto fica em branco', () async {
     final l = logger(hidden: true);
-    await l.finished(makeRun());
-    await l.flush();
-    await l.flush();
-    await l.guess(true);
-    final r = rows();
-    expect(r, hasLength(1));
-    expect((r.single[12], r.single[13]), ('1', ''));
-  });
-
-  test('uma sintonia oculta nova não perde a anterior que ficou sem marcação', () async {
-    final l = logger(hidden: true);
+    l.guessed(EcoType.fire);
     await l.finished(makeRun(type: EcoType.fire));
-    await l.finished(makeRun(type: EcoType.water));
-    await l.guess(true);
+    await l.finished(makeRun(type: EcoType.fire));
     final r = rows();
-    expect(r, hasLength(2));
-    expect((r[0][1], r[0][13]), ('fire', ''));
-    expect((r[1][1], r[1][13]), ('water', '1'));
+    expect(r[0][13], '1');
+    expect(r[1][13], '', reason: 'o palpite anterior não vaza para a sintonia seguinte');
   });
 
-  test('marcar sem sintonia esperando não grava nada', () async {
+  test('fora do modo oculto um palpite perdido no ar não entra no registro', () async {
+    final l = logger(hidden: false);
+    l.guessed(EcoType.fire);
+    await l.finished(makeRun(type: EcoType.fire));
+    expect(rows().single[13], '');
+  });
+
+  test('sintonia que não terminou não é gravada', () async {
     final l = logger(hidden: true);
-    await l.guess(true);
+    l.guessed(EcoType.fire);
     expect(store.file.existsSync(), isFalse);
   });
 
   test('grava o que a sessão mediu: falha, tempo alinhado e perdas', () async {
-    final l = logger(hidden: false);
     final run = makeRun(success: false);
-    await l.finished(run);
+    await logger(hidden: false).finished(run);
     final r = rows().single;
     expect(r[9], 'fail');
     expect(double.parse(r[8]), closeTo(run.session.t, 0.005));

@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import '../../capture/hidden_type.dart';
 import '../../capture/session.dart';
@@ -54,6 +55,10 @@ class TuningGame extends FlameGame with DragCallbacks {
   /// Debug: marca o alvo e a tolerância no dial. Fica desligado no modo de tipo oculto.
   final bool showTarget;
 
+  /// No modo oculto, verdadeiro entre o sorteio do tipo e o palpite do jogador. A sintonia só
+  /// começa (o tempo só corre) depois do palpite.
+  final awaitingGuess = ValueNotifier<bool>(false);
+
   late TuningSetup setup;
   late EcoSpecies species;
   late TuningSession session;
@@ -81,19 +86,26 @@ class TuningGame extends FlameGame with DragCallbacks {
   /// Nova sintonia. No modo oculto, sorteia outro tipo.
   void restart() {
     _rng = Pcg32(fnv1a64([DateTime.now().microsecondsSinceEpoch, _runs++]), saltKenoma);
-    species = hidden ? pool.firstWhere((s) => s.type == pickHiddenType(_rng)) : pool.first;
+    species = hidden ? pickHidden(pool, (s) => s.type, _rng) : pool.first;
     setup = buildSetup(species);
     session = setup.start(balance, _rng);
     _dial = 0.5;
     _reported = false;
-    vibration.play(identityPattern(setup.type));
+    awaitingGuess.value = hidden;
+    feelAgain();
   }
+
+  /// Toca de novo a vibração de identidade do tipo.
+  void feelAgain() => vibration.play(identityPattern(setup.type));
+
+  /// O jogador deu o palpite: a sintonia começa.
+  void begin() => awaitingGuess.value = false;
 
   @override
   void update(double dt) {
     super.update(dt);
     _clock += dt;
-    if (!isLoaded || !session.running) return;
+    if (!isLoaded || awaitingGuess.value || !session.running) return;
     for (final cue in session.step(math.min(dt, 0.05), dial: _dial)) {
       vibration.play(cue.pattern);
     }
