@@ -13,9 +13,9 @@ import 'package:kenoma/ui/tuning/tuning_game.dart';
 
 import '../support/reference_player.dart';
 
-TuningRun makeRun({EcoType type = EcoType.water, int seed = 3, bool success = true}) {
+TuningRun makeRun({EcoType type = EcoType.water, int seed = 3, bool success = true, int player = 5, int eco = 6}) {
   final b = loadTuningBalance();
-  final setup = TuningSetup(type: type, ecoLevel: 6, playerLevel: 5, seal: sealById('item.seal.reinforced'));
+  final setup = TuningSetup(type: type, ecoLevel: eco, playerLevel: player, seal: sealById('item.seal.reinforced'));
   final session = setup.start(b, Pcg32(fnv1a64([seed]), saltKenoma));
   while (session.running) {
     session.step(1 / 60, dial: success ? session.targetFrequency : (session.targetFrequency > 0.5 ? 0 : 1));
@@ -55,6 +55,20 @@ void main() {
     expect(r[9], 'success');
     expect((r[12], r[13]), ('0', ''));
     expect(r[14], 'c0ffee00', reason: 'a versão do balanceamento vai em toda linha');
+    expect((r[15], r[16]), ('1', '0'), reason: 'Eco 6 contra Conjurador 5: gap 1, sem sobrenível');
+  });
+
+  test('grava o gap e o sobrenível da sintonia: Eco 20 contra Conjurador 8 é gap 12 e g 7', () async {
+    await logger(hidden: false).finished(makeRun(player: 8, eco: 20));
+    final r = rows().single;
+    expect((r[2], r[3]), ('20', '8'));
+    expect((r[15], r[16]), ('12', '7'));
+  });
+
+  test('Eco abaixo do Conjurador grava gap negativo e g 0', () async {
+    await logger(hidden: false).finished(makeRun(player: 12, eco: 4));
+    final r = rows().single;
+    expect((r[15], r[16]), ('-8', '0'));
   });
 
   test('modo oculto: palpite certo grava guess_correct 1, errado grava 0', () async {

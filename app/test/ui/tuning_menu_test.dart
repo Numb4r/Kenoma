@@ -33,6 +33,8 @@ SessionRecord sampleRecord() => SessionRecord(
       alignedTimeS: 5,
       alignmentLosses: 0,
       balanceVersion: 'a1b2c3d4',
+      gap: 0,
+      overlevel: 0,
     );
 
 /// Abre o menu com um registro num diretório temporário. [seeded] é quantas sessões já existem.
@@ -218,7 +220,8 @@ void main() {
       expect(find.text('Sessões gravadas: 2'), findsOneWidget);
       final lines = env.store.file.readAsLinesSync();
       expect(lines.first, SessionRecord.header);
-      expect(lines.skip(1).toList(), [for (final r in old) '$r,pre-ajuste']);
+      // Primeiro formato: ganha pre-ajuste, o gap dos próprios níveis (0 e 2) e overlevel 0.
+      expect(lines.skip(1).toList(), ['${old[0]},pre-ajuste,0,0', '${old[1]},pre-ajuste,2,0']);
       expect(env.store.backup.existsSync(), isTrue);
       await tester.tap(find.text('EXPORTAR REGISTRO'));
       await tester.pump();

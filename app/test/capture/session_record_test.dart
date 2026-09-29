@@ -78,20 +78,22 @@ void main() {
           alignedTimeS: 8.5,
           alignmentLosses: 4,
           balanceVersion: 'a1b2c3d4',
+          gap: 2,
+          overlevel: 0,
           hiddenType: hidden,
           guessCorrect: guess,
         );
 
     test('cabeçalho: os campos pedidos, na ordem', () {
       expect(SessionRecord.header,
-          'timestamp_utc,type,eco_level,player_level,seal,tonic,tolerance,resistance,duration_s,result,aligned_s,alignment_losses,hidden_type,guess_correct,balance_version');
-      expect(SessionRecord.columns, hasLength(15));
-      expect(SessionRecord.columns.last, 'balance_version', reason: 'a coluna nova entra no fim: as posições antigas não mudam');
+          'timestamp_utc,type,eco_level,player_level,seal,tonic,tolerance,resistance,duration_s,result,aligned_s,alignment_losses,hidden_type,guess_correct,balance_version,gap,overlevel');
+      expect(SessionRecord.columns, hasLength(17));
+      expect(SessionRecord.columns.skip(14).toList(), ['balance_version', 'gap', 'overlevel'], reason: 'as colunas novas entram no fim: as posições antigas não mudam');
     });
 
     test('linha completa, com horário em UTC', () {
       expect(record().toCsvLine(),
-          '2026-09-29T14:30:05.250Z,water,17,15,item.seal.simple,0,0.112,0.760,12.35,success,8.50,4,0,,a1b2c3d4');
+          '2026-09-29T14:30:05.250Z,water,17,15,item.seal.simple,0,0.112,0.760,12.35,success,8.50,4,0,,a1b2c3d4,2,0');
     });
 
     test('a linha tem tantos campos quanto o cabeçalho', () {
@@ -125,6 +127,8 @@ void main() {
         alignedTimeS: 5,
         alignmentLosses: 0,
         balanceVersion: 'a1b2c3d4',
+        gap: 0,
+        overlevel: 0,
       );
       final f = local.toCsvLine().split(',');
       expect(f[0], '2026-09-29T14:30:05.000Z');
@@ -134,22 +138,48 @@ void main() {
 
     test('a versão do balanceamento é a última coluna, depois do acerto', () {
       final f = record(guess: true, hidden: true).toCsvLine().split(',');
-      expect(f.length, 15);
+      expect(f.length, 17);
       expect(f[13], '1');
       expect(f[14], 'a1b2c3d4');
-      expect(record().toCsvLine().split(',').last, 'a1b2c3d4', reason: 'mesmo com o acerto em branco');
+      expect(record().toCsvLine().split(',')[14], 'a1b2c3d4', reason: 'mesmo com o acerto em branco');
+      expect(f.sublist(15), ['2', '0'], reason: 'gap e overlevel vêm depois da versão');
     });
 
-    test('o cabeçalho anterior é o atual sem a última coluna, e as linhas antigas levam pre-ajuste', () {
-      expect(SessionRecord.legacyHeader, SessionRecord.header.substring(0, SessionRecord.header.length - ',balance_version'.length));
+    test('os cabeçalhos anteriores são o atual sem as colunas do fim; as linhas antigas levam pre-ajuste e overlevel 0', () {
+      expect(SessionRecord.header.startsWith(SessionRecord.previousHeader), isTrue);
+      expect(SessionRecord.previousHeader, SessionRecord.header.substring(0, SessionRecord.header.length - ',gap,overlevel'.length));
+      expect(SessionRecord.legacyHeader, SessionRecord.previousHeader.substring(0, SessionRecord.previousHeader.length - ',balance_version'.length));
       expect(SessionRecord.legacyHeader.split(','), hasLength(14));
       expect(SessionRecord.legacyBalanceVersion, 'pre-ajuste');
+      expect(SessionRecord.legacyOverlevel, 0);
     });
 
     test('campo com vírgula ou aspas vai entre aspas', () {
       final f = record(seal: 'selo "raro", forte').toCsvLine();
       expect(f, contains('"selo ""raro"", forte"'));
     });
+  });
+
+  test('SessionRecord.of grava o gap e o sobrenível aplicado: Eco 22 contra Conjurador 10 é gap 12 e g 7', () {
+    final b = loadTuningBalance();
+    final setup = TuningSetup(type: EcoType.fire, ecoLevel: 22, playerLevel: 10, seal: sealById('item.seal.simple'));
+    final session = makeSession(type: EcoType.fire, playerLevel: 10, ecoLevel: 22, seed: 4);
+    final r = SessionRecord.of(setup: setup, session: session, balance: b, at: DateTime.utc(2026), balanceVersion: 'x');
+    expect(r.gap, 12);
+    expect(r.overlevel, 7);
+    final f = r.toCsvLine().split(',');
+    expect(f.sublist(f.length - 2), ['12', '7']);
+    expect(f[2], '22');
+    expect(f[3], '10');
+  });
+
+  test('Eco abaixo do Conjurador: gap negativo e sobrenível 0', () {
+    final b = loadTuningBalance();
+    final setup = TuningSetup(type: EcoType.fire, ecoLevel: 3, playerLevel: 12, seal: sealById('item.seal.simple'));
+    final session = makeSession(type: EcoType.fire, playerLevel: 12, ecoLevel: 3, seed: 4);
+    final r = SessionRecord.of(setup: setup, session: session, balance: b, at: DateTime.utc(2026), balanceVersion: 'x');
+    expect((r.gap, r.overlevel), (-9, 0));
+    expect(r.toCsvLine().split(',').sublist(15), ['-9', '0']);
   });
 
   test('SessionRecord.of copia o que a sessão e a preparação mediram', () {
@@ -177,6 +207,8 @@ void main() {
     expect(r.alignedTimeS, session.alignedTimeS);
     expect(r.alignmentLosses, session.alignmentLosses);
     expect(r.balanceVersion, '0f0f0f0f');
+    expect(r.gap, 2, reason: 'Eco 17 menos Conjurador 15');
+    expect(r.overlevel, 0, reason: '2 níveis ainda estão dentro de overlevel_free');
     expect(r.hiddenType, isTrue);
     expect(r.guessCorrect, isTrue);
     expect(r.timeUtc.isUtc, isTrue);

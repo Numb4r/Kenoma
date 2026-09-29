@@ -202,7 +202,8 @@ void main() {
     await env.play(21);
     final rows = await env.rows(expected: 1);
     expect((rows.single[12], rows.single[13]), ('0', ''));
-    expect(rows.single, hasLength(15));
+    expect(rows.single, hasLength(17));
+    expect((rows.single[15], rows.single[16]), ('0', '0'), reason: 'níveis 1 e 1: sem gap');
     expect(rows.single[14], env.balanceVersion, reason: 'a linha diz com que balanceamento foi jogada');
     expect(rows.single[14], matches(RegExp(r'^[0-9a-f]{8}$')));
   });
@@ -237,5 +238,13 @@ void main() {
       await env.play(4); // uma sintonia não termina antes de 5 s: nada de vibração de resultado
       expect(env.vibration.played, isEmpty);
     });
+  });
+
+  testWidgets('a linha do registro traz o gap e o sobrenível: Eco 20 contra Conjurador 10', (tester) async {
+    final env = await open(tester, hidden: false, playerLevel: 10, ecoLevel: 20);
+    await env.play(22);
+    final rows = await env.rows(expected: 1);
+    expect((rows.single[2], rows.single[3]), ('20', '10'));
+    expect((rows.single[15], rows.single[16]), ('10', '5'), reason: 'gap 10, g = 10 − 5');
   });
 }

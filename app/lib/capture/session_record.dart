@@ -21,6 +21,8 @@ class SessionRecord {
     required this.alignedTimeS,
     required this.alignmentLosses,
     required this.balanceVersion,
+    required this.gap,
+    required this.overlevel,
     this.hiddenType = false,
     this.guessCorrect,
   });
@@ -49,6 +51,8 @@ class SessionRecord {
         alignedTimeS: session.alignedTimeS,
         alignmentLosses: session.alignmentLosses,
         balanceVersion: balanceVersion,
+        gap: setup.gap,
+        overlevel: session.overlevel,
         hiddenType: hiddenType,
         guessCorrect: guessCorrect,
       );
@@ -69,15 +73,28 @@ class SessionRecord {
     'hidden_type',
     'guess_correct',
     'balance_version',
+    'gap',
+    'overlevel',
   ];
 
   static String get header => columns.join(',');
 
-  /// Cabeçalho do formato anterior, sem `balance_version`. Arquivos nesse formato são migrados.
-  static String get legacyHeader => columns.take(columns.length - 1).join(',');
+  /// Colunas do primeiro formato (sem `balance_version`) e do segundo (sem `gap` e `overlevel`).
+  static const int columnsV1 = 14;
+  static const int columnsV2 = 15;
+
+  /// Cabeçalho do primeiro formato (14 colunas). Arquivos nele são migrados.
+  static String get legacyHeader => columns.take(columnsV1).join(',');
+
+  /// Cabeçalho do segundo formato (15 colunas, com `balance_version`). Arquivos nele são migrados.
+  static String get previousHeader => columns.take(columnsV2).join(',');
 
   /// Versão gravada nas linhas que já existiam quando a coluna foi criada.
   static const String legacyBalanceVersion = 'pre-ajuste';
+
+  /// `overlevel` das linhas que já existiam quando a coluna foi criada: o sobrenível ainda não
+  /// existia, então nenhuma delas o aplicou.
+  static const int legacyOverlevel = 0;
 
   final DateTime timeUtc;
   final EcoType type;
@@ -96,6 +113,12 @@ class SessionRecord {
 
   /// Versão do balanceamento com que a sintonia foi jogada (ver `balanceVersionOf`).
   final String balanceVersion;
+
+  /// Diferença de nível: Eco menos Conjurador. Negativa se o Eco está abaixo.
+  final int gap;
+
+  /// Sobrenível `g` aplicado na sintonia: níveis acima de `overlevel_free`.
+  final int overlevel;
   final bool hiddenType;
 
   /// No modo de tipo oculto, se o jogador acertou o tipo. `null` se não marcou ou fora do modo.
@@ -117,6 +140,8 @@ class SessionRecord {
         hiddenType ? '1' : '0',
         guessCorrect == null ? '' : (guessCorrect! ? '1' : '0'),
         balanceVersion,
+        '$gap',
+        '$overlevel',
       ].map(_escape).join(',');
 }
 
