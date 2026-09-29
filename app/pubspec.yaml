@@ -7,8 +7,10 @@ environment:
   sdk: ^3.13.4
 
 dependencies:
+  flame: ^1.38.2
   flutter:
     sdk: flutter
+  vibration: ^3.2.1
 
 dev_dependencies:
   flutter_test:
@@ -19,3 +21,9 @@ flutter:
   uses-material-design: true
   assets:
     - assets/data/
+    - assets/fonts/OFL-Silkscreen.txt
+
+  fonts:
+    - family: Silkscreen
+      fonts:
+        - asset: assets/fonts/Silkscreen-Regular.ttf
