@@ -74,3 +74,9 @@ const VibePattern waterSwellPattern = VibePattern([
 
 /// Pulso da Planta, com a duração dada. Os pulsos encurtam conforme a tolerância encolhe.
 VibePattern plantPulsePattern(int durationMs) => VibePattern([VibeSegment(0, durationMs, 200)]);
+
+/// Sintonia selada: dois toques que sobem.
+const VibePattern successPattern = VibePattern([VibeSegment(0, 60, 120), VibeSegment(70, 120, 255)]);
+
+/// Sinal perdido: um zumbido longo e grave.
+const VibePattern failPattern = VibePattern([VibeSegment(0, 500, 90)]);

@@ -1,0 +1,135 @@
+import 'dart:math' as math;
+import 'dart:ui';
+
+import 'package:flame/events.dart';
+import 'package:flame/game.dart';
+
+import '../../capture/session.dart';
+import '../../capture/tuning_balance.dart';
+import '../../capture/tuning_setup.dart';
+import '../../capture/vibe.dart';
+import '../../core/fnv.dart';
+import '../../core/pcg32.dart';
+import '../../data/tuning_data.dart';
+import '../colors.dart';
+import '../sprites/sprite_image.dart';
+import 'tuning_layout.dart';
+import 'tuning_painter.dart';
+import 'vibration_driver.dart';
+
+/// Tela de sintonia em Flame. Só avança a sessão, desenha e repassa o giro do dial:
+/// as regras estão em `capture/`.
+class TuningGame extends FlameGame with DragCallbacks {
+  TuningGame({
+    required this.setup,
+    required this.species,
+    required this.balance,
+    required this.vibration,
+    required this.onFinished,
+    this.showTarget = false,
+  });
+
+  final TuningSetup setup;
+  final EcoSpecies species;
+  final TuningBalance balance;
+  final VibrationPlayer vibration;
+  final void Function(TuningOutcome outcome) onFinished;
+
+  /// Debug: marca o alvo e a tolerância no dial.
+  final bool showTarget;
+
+  late TuningSession session;
+  late Pcg32 _rng;
+  EcoSprite? _sprite;
+  double _clock = 0;
+  double _dial = 0.5;
+  double? _lastAngle;
+  int _runs = 0;
+  bool _reported = false;
+
+  @override
+  Color backgroundColor() => kOutline;
+
+  @override
+  Future<void> onLoad() async {
+    _sprite = await EcoSprite.load(species.id);
+    restart();
+  }
+
+  /// Nova sintonia com o mesmo Eco, selo e níveis.
+  void restart() {
+    _rng = Pcg32(fnv1a64([DateTime.now().microsecondsSinceEpoch, _runs++]), saltKenoma);
+    session = setup.start(balance, _rng);
+    _dial = 0.5;
+    _reported = false;
+    vibration.play(identityPattern(setup.type));
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    _clock += dt;
+    if (!session.running) return;
+    for (final cue in session.step(math.min(dt, 0.05), dial: _dial)) {
+      vibration.play(cue.pattern);
+    }
+    if (!session.running && !_reported) {
+      _reported = true;
+      final outcome = resolveTuning(session, _rng);
+      vibration.play(outcome.success ? successPattern : failPattern);
+      onFinished(outcome);
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+    if (!isLoaded) return;
+    final s = session;
+    paintTuning(
+      canvas,
+      Size(size.x, size.y),
+      TuningView(
+        dial: _dial,
+        target: s.targetFrequency,
+        tolerance: s.tolerance,
+        progress: s.progress,
+        timeRemaining: s.timeRemaining,
+        timeLimit: s.timeLimitS,
+        aligned: s.running && s.aligned,
+        tremble: s.signal.trembleAt(s.t),
+        clock: _clock,
+        type: setup.type,
+        sealLabel: setup.seal.name,
+        tonic: setup.tonic != null,
+        showTarget: showTarget,
+      ),
+      _sprite,
+    );
+  }
+
+  TuningLayout get _layout => TuningLayout(Size(size.x, size.y));
+
+  @override
+  void onDragStart(DragStartEvent event) {
+    super.onDragStart(event);
+    final p = Offset(event.canvasPosition.x, event.canvasPosition.y);
+    _lastAngle = _layout.isDialTouch(p) ? _layout.angleOf(p) : null;
+  }
+
+  @override
+  void onDragUpdate(DragUpdateEvent event) {
+    super.onDragUpdate(event);
+    final last = _lastAngle;
+    if (last == null) return;
+    final angle = _layout.angleOf(Offset(event.canvasEndPosition.x, event.canvasEndPosition.y));
+    _dial = dialAfterTurn(_dial, angleDelta(last, angle));
+    _lastAngle = angle;
+  }
+
+  @override
+  void onDragEnd(DragEndEvent event) {
+    super.onDragEnd(event);
+    _lastAngle = null;
+  }
+}

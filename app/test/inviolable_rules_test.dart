@@ -16,8 +16,9 @@ void main() {
   });
 
   test('nenhum deslocamento aritmético (>> com número); só >>>', () {
-    // `>>` de genéricos (List<List<int>>) não é seguido por número, então não conta.
-    final shift = RegExp(r'(?<!>)>>(?!>|=)\s*[\d(]');
+    // Deslocamento aparece como ` >> ` (com espaços) ou `>> 8`. O `>>` que fecha genéricos
+    // (`List<List<int>> x`, `cast<Map<String, dynamic>>()`) não tem espaço antes nem número depois.
+    final shift = RegExp(r'(?<=\s)>>(?=\s)|(?<!>)>>(?!>|=)\s*\d');
     for (final f in sources) {
       expect(shift.hasMatch(f.readAsStringSync()), isFalse, reason: f.path);
     }

@@ -1,10 +1,9 @@
 import 'dart:math' as math;
 
 import 'package:kenoma/capture/eco_type.dart';
-import 'package:kenoma/capture/resistance.dart';
 import 'package:kenoma/capture/seal.dart';
 import 'package:kenoma/capture/session.dart';
-import 'package:kenoma/capture/signal.dart';
+import 'package:kenoma/capture/tuning_setup.dart';
 import 'package:kenoma/capture/tuning_balance.dart';
 import 'package:kenoma/core/fnv.dart';
 import 'package:kenoma/core/pcg32.dart';
@@ -52,7 +51,7 @@ class ReferencePlayer {
   }
 }
 
-/// Sessão de sintonia com a semente [seed].
+/// Sessão de sintonia com a semente [seed], pelo mesmo caminho que o app usa.
 TuningSession makeSession({
   required EcoType type,
   required int playerLevel,
@@ -64,14 +63,13 @@ TuningSession makeSession({
   TuningBalance? balance,
 }) {
   final b = balance ?? loadTuningBalance();
-  final intensity = resistanceIntensity(playerLevel: playerLevel, ecoLevel: ecoLevel, balance: b);
-  final signal = TargetSignal.generate(
+  final setup = TuningSetup(
     type: type,
-    intensity: intensity,
-    rng: Pcg32(fnv1a64([seed]), saltKenoma),
-    balance: b,
+    ecoLevel: ecoLevel,
+    playerLevel: playerLevel,
+    seal: sealById(sealId),
+    tonic: tonic ? loadTuningItems().tonics.first : null,
+    circleStrong: circleStrong,
   );
-  final tolerance = tuningTolerance(seal: sealById(sealId), target: type, balance: b, circleStrong: circleStrong);
-  final extra = tonic ? loadTuningItems().tonics.first.extraTimeS : 0;
-  return TuningSession(signal: signal, baseTolerance: tolerance, balance: b, timeLimitS: b.timeLimitS + extra);
+  return setup.start(b, Pcg32(fnv1a64([seed]), saltKenoma));
 }

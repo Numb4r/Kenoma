@@ -85,4 +85,15 @@ void main() {
       expect(plantPulsePattern(90).segments.single.durationMs, 90);
     });
   });
+
+  group('resultado', () {
+    test('sucesso: dois toques que sobem; falha: um zumbido longo e grave', () {
+      expect(successPattern.segments, hasLength(2));
+      expect(successPattern.segments[1].amplitude, greaterThan(successPattern.segments[0].amplitude));
+      expect(failPattern.segments, hasLength(1));
+      expect(failPattern.totalMs, greaterThanOrEqualTo(400));
+      expect(failPattern.segments.single.amplitude, lessThan(150));
+      expect(successPattern.pattern, isNot(failPattern.pattern));
+    });
+  });
 }
