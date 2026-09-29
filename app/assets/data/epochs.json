@@ -6,7 +6,7 @@
       "starts_utc": "2026-09-22T00:00:00Z",
       "valid_until_utc": "2026-12-21T00:00:00Z",
       "region_packs": {
-        "campinas": { "file": "campinas_e0.bin", "sha256": "PREENCHER_NO_M1" }
+        "campinas": { "file": "campinas_e0.bin", "sha256": "ac71599127c817a9a436da9195f86f4b2c834158ba10ae0993213904e0f6ac48" }
       },
       "spawn": {
         "items": [

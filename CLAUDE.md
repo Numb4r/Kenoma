@@ -107,9 +107,9 @@ cd app && flutter run
 # biomas: rodar depois de editar shared/biomes.json
 ./scripts/sync_shared.sh
 
-# pipeline (gera campinas_e0.bin, campinas_preview.png e imprime o SHA-256)
-cd pipeline && pip install -r requirements.txt
-cd pipeline && python build_region.py --region campinas
+# pipeline (Python 3.11 via uv; ~3 min e ~4,5 GB de RAM; baixa o extrato da Geofabrik para pipeline/cache/)
+cd pipeline && uv venv --python 3.11 .venv && uv pip install --python .venv/bin/python -r requirements.txt
+cd pipeline && .venv/bin/python build_region.py --region campinas
 ```
 
-O SHA-256 impresso pelo pipeline vai para `region_packs.campinas.sha256` em `app/assets/data/epochs.json` (hoje está `PREENCHER_NO_M1`). O arquivo do pacote se chama `campinas_e0.bin`, como está em `epochs.json`. O M4 em `docs/marcos.md` diz `campinas.bin`, mas o nome certo é `campinas_e0.bin`.
+O pipeline grava `app/assets/regions/campinas_e0.bin` (versionado) e `pipeline/out/campinas_preview.png` (não versionado). O SHA-256 impresso vai para `region_packs.campinas.sha256` em `app/assets/data/epochs.json`. O extrato do OSM muda todo dia, então regerar dá outro SHA: o `.bin` commitado é a fonte da época 0 e não deve ser regerado por cima. O arquivo do pacote se chama `campinas_e0.bin`, como está em `epochs.json`. O M4 em `docs/marcos.md` diz `campinas.bin`, mas o nome certo é `campinas_e0.bin`.
