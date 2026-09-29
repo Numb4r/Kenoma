@@ -1,0 +1,10 @@
+{
+  "recipes": [
+    { "id": "recipe.seal.simple", "out": ["item.seal.simple", 1], "in": [["item.chalk", 1], ["item.ectoplasm", 1]] },
+    { "id": "recipe.seal.reinforced", "out": ["item.seal.reinforced", 1], "in": [["item.seal.simple", 1], ["any:essence", 2]] },
+    { "id": "recipe.seal.fire", "out": ["item.seal.fire", 1], "in": [["item.seal.simple", 1], ["item.dust.fire", 3]] },
+    { "id": "recipe.seal.plant", "out": ["item.seal.plant", 1], "in": [["item.seal.simple", 1], ["item.dust.plant", 3]] },
+    { "id": "recipe.seal.water", "out": ["item.seal.water", 1], "in": [["item.seal.simple", 1], ["item.dust.water", 3]] },
+    { "id": "recipe.tonic.focus", "out": ["item.tonic.focus", 1], "in": [["item.herbs", 1], ["item.pure_water", 1]] }
+  ]
+}

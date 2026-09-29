@@ -1,0 +1,16 @@
+{
+  "species": [
+    { "id": "soot.eco", "name": "Sootling", "family": "soot", "type": "fire", "tier": "eco", "god": "Ialprg",
+      "ability": { "kind": "aura_bonus_m", "bands": [5, 8, 12] } },
+    { "id": "frond.eco", "name": "Frondling", "family": "frond", "type": "plant", "tier": "eco", "god": "Peab",
+      "ability": { "kind": "spark_pickup_bonus_m", "bands": [10, 15, 20] } },
+    { "id": "rill.eco", "name": "Rillet", "family": "rill", "type": "water", "tier": "eco", "god": "Zumvi",
+      "ability": { "kind": "tracker_range_m", "bands": [150, 170, 200] } }
+  ],
+  "types": {
+    "fire": { "beats": "plant" },
+    "plant": { "beats": "water" },
+    "water": { "beats": "fire" }
+  },
+  "ability_bands_by_level": [ { "from": 1, "to": 9 }, { "from": 10, "to": 19 }, { "from": 20, "to": 20 } ]
+}

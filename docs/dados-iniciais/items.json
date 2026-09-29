@@ -1,0 +1,21 @@
+{
+  "items": [
+    { "id": "item.scrap", "name": "Sucata", "kind": "material" },
+    { "id": "item.chalk", "name": "Giz", "kind": "material" },
+    { "id": "item.herbs", "name": "Ervas", "kind": "material" },
+    { "id": "item.pure_water", "name": "Água pura", "kind": "material" },
+    { "id": "item.ectoplasm", "name": "Ectoplasma", "kind": "material" },
+    { "id": "item.dust.fire", "name": "Pó de Essência de Fogo", "kind": "essence_dust", "type": "fire" },
+    { "id": "item.dust.plant", "name": "Pó de Essência de Planta", "kind": "essence_dust", "type": "plant" },
+    { "id": "item.dust.water", "name": "Pó de Essência de Água", "kind": "essence_dust", "type": "water" },
+    { "id": "item.essence.fire", "name": "Essência de Fogo", "kind": "essence", "type": "fire" },
+    { "id": "item.essence.plant", "name": "Essência de Planta", "kind": "essence", "type": "plant" },
+    { "id": "item.essence.water", "name": "Essência de Água", "kind": "essence", "type": "water" },
+    { "id": "item.seal.simple", "name": "Selo simples", "kind": "seal", "tolerance": 0.08 },
+    { "id": "item.seal.reinforced", "name": "Selo reforçado", "kind": "seal", "tolerance": 0.11 },
+    { "id": "item.seal.fire", "name": "Selo de Fogo", "kind": "seal", "tolerance": 0.08, "bonus_vs_type": "plant", "bonus_multiplier": 1.4 },
+    { "id": "item.seal.plant", "name": "Selo de Planta", "kind": "seal", "tolerance": 0.08, "bonus_vs_type": "water", "bonus_multiplier": 1.4 },
+    { "id": "item.seal.water", "name": "Selo de Água", "kind": "seal", "tolerance": 0.08, "bonus_vs_type": "fire", "bonus_multiplier": 1.4 },
+    { "id": "item.tonic.focus", "name": "Tônico de foco", "kind": "tonic", "extra_time_s": 5 }
+  ]
+}
