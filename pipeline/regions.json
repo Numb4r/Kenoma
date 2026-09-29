@@ -1,0 +1,8 @@
+{
+  "campinas": {
+    "name": "Campinas",
+    "bbox": [-47.25, -23.10, -46.85, -22.72],
+    "source": "https://download.geofabrik.de/south-america/brazil/sudeste-latest.osm.pbf",
+    "zoom": 21
+  }
+}

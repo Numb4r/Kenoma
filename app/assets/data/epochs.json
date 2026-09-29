@@ -1,0 +1,49 @@
+{
+  "format": 1,
+  "epochs": [
+    {
+      "id": 0,
+      "starts_utc": "2026-09-22T00:00:00Z",
+      "valid_until_utc": "2026-12-21T00:00:00Z",
+      "region_packs": {
+        "campinas": { "file": "campinas_e0.bin", "sha256": "PREENCHER_NO_M1" }
+      },
+      "spawn": {
+        "items": [
+          { "index": 0, "kind": "eco", "chance": { "urban": 0.10, "green": 0.10, "water": 0.10, "residential": 0.08 },
+            "table": {
+              "urban": [["soot.eco", 1]],
+              "green": [["frond.eco", 1]],
+              "water": [["rill.eco", 1]],
+              "residential": [["soot.eco", 1], ["frond.eco", 1], ["rill.eco", 1]]
+            },
+            "qty": [1, 1], "level_delta": [-2, 2] },
+          { "index": 1, "kind": "spark", "chance": { "urban": 0.25, "green": 0.25, "water": 0.25, "residential": 0.25 },
+            "table": {
+              "urban": [["item.dust.fire", 1]],
+              "green": [["item.dust.plant", 1]],
+              "water": [["item.dust.water", 1]],
+              "residential": [["item.dust.fire", 1], ["item.dust.plant", 1], ["item.dust.water", 1]]
+            },
+            "qty": [1, 1] },
+          { "index": 2, "kind": "spark", "chance": { "urban": 0.125, "green": 0.125, "water": 0.125, "residential": 0.125 },
+            "table": {
+              "urban": [["item.dust.fire", 1]],
+              "green": [["item.dust.plant", 1]],
+              "water": [["item.dust.water", 1]],
+              "residential": [["item.dust.fire", 1], ["item.dust.plant", 1], ["item.dust.water", 1]]
+            },
+            "qty": [1, 1] },
+          { "index": 3, "kind": "material", "chance": { "urban": 0.12, "green": 0.12, "water": 0.12, "residential": 0.12 },
+            "table": {
+              "urban": [["item.scrap", 1], ["item.chalk", 1]],
+              "green": [["item.herbs", 1]],
+              "water": [["item.pure_water", 1]],
+              "residential": [["item.scrap", 1], ["item.chalk", 1], ["item.herbs", 1]]
+            },
+            "qty": [1, 3] }
+        ]
+      }
+    }
+  ]
+}

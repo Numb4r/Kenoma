@@ -1,0 +1,5 @@
+osmium
+shapely
+pyproj
+rasterio
+numpy
