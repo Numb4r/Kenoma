@@ -20,6 +20,7 @@ class SessionRecord {
     required this.success,
     required this.alignedTimeS,
     required this.alignmentLosses,
+    required this.balanceVersion,
     this.hiddenType = false,
     this.guessCorrect,
   });
@@ -30,6 +31,7 @@ class SessionRecord {
     required TuningSession session,
     required TuningBalance balance,
     required DateTime at,
+    required String balanceVersion,
     bool hiddenType = false,
     bool? guessCorrect,
   }) =>
@@ -46,6 +48,7 @@ class SessionRecord {
         success: session.phase == TuningPhase.success,
         alignedTimeS: session.alignedTimeS,
         alignmentLosses: session.alignmentLosses,
+        balanceVersion: balanceVersion,
         hiddenType: hiddenType,
         guessCorrect: guessCorrect,
       );
@@ -65,9 +68,16 @@ class SessionRecord {
     'alignment_losses',
     'hidden_type',
     'guess_correct',
+    'balance_version',
   ];
 
   static String get header => columns.join(',');
+
+  /// Cabeçalho do formato anterior, sem `balance_version`. Arquivos nesse formato são migrados.
+  static String get legacyHeader => columns.take(columns.length - 1).join(',');
+
+  /// Versão gravada nas linhas que já existiam quando a coluna foi criada.
+  static const String legacyBalanceVersion = 'pre-ajuste';
 
   final DateTime timeUtc;
   final EcoType type;
@@ -83,6 +93,9 @@ class SessionRecord {
   final bool success;
   final double alignedTimeS;
   final int alignmentLosses;
+
+  /// Versão do balanceamento com que a sintonia foi jogada (ver `balanceVersionOf`).
+  final String balanceVersion;
   final bool hiddenType;
 
   /// No modo de tipo oculto, se o jogador acertou o tipo. `null` se não marcou ou fora do modo.
@@ -103,6 +116,7 @@ class SessionRecord {
         '$alignmentLosses',
         hiddenType ? '1' : '0',
         guessCorrect == null ? '' : (guessCorrect! ? '1' : '0'),
+        balanceVersion,
       ].map(_escape).join(',');
 }
 

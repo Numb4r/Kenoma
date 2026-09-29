@@ -54,6 +54,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
       _sprites[s.id] = await EcoSprite.load(s.id);
     }
     final store = widget.store ?? await SessionLogStore.inDocuments();
+    await store.migrate(); // quem exporta logo depois já leva o formato atual
     final sessions = await store.count();
     if (!mounted) return;
     setState(() {
@@ -79,6 +80,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
         pool: _hidden ? d.species : [_species!],
         buildSetup: (s) => _setupFor(d, s),
         balance: d.balance,
+        balanceVersion: d.balanceVersion,
         store: _store!,
         hidden: _hidden,
         showTarget: _showTarget,

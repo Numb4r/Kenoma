@@ -32,10 +32,11 @@ SessionRecord sampleRecord() => SessionRecord(
       success: true,
       alignedTimeS: 5,
       alignmentLosses: 0,
+      balanceVersion: 'a1b2c3d4',
     );
 
 /// Abre o menu com um registro num diretório temporário. [seeded] é quantas sessões já existem.
-Future<({SessionLogStore store, FakeExporter exporter})> pumpMenu(WidgetTester tester, {int seeded = 0}) async {
+Future<({SessionLogStore store, FakeExporter exporter})> pumpMenu(WidgetTester tester, {int seeded = 0, List<String> legacyRows = const []}) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 2.625;
   addTearDown(tester.view.reset);
@@ -47,6 +48,9 @@ Future<({SessionLogStore store, FakeExporter exporter})> pumpMenu(WidgetTester t
   final store = SessionLogStore(File('${dir.path}/sessions.csv'));
   for (var i = 0; i < seeded; i++) {
     await tester.runAsync(() => store.append(sampleRecord()));
+  }
+  if (legacyRows.isNotEmpty) {
+    store.file.writeAsStringSync('${SessionRecord.legacyHeader}\n${legacyRows.join('\n')}\n');
   }
   final exporter = FakeExporter();
 
@@ -202,6 +206,23 @@ void main() {
       await tester.tap(find.text('EXPORTAR REGISTRO'));
       await tester.pump();
       expect(env.exporter.files.single.path, env.store.file.path);
+    });
+
+    testWidgets('ao abrir, migra o registro antigo: o contador segue igual e quem exporta já leva a coluna nova', (tester) async {
+      const old = [
+        '2026-09-29T15:01:00.000000Z,fire,1,1,item.seal.simple,0,0.080,0.000,5.50,success,5.00,0,0,',
+        '2026-09-29T15:02:00.000000Z,water,17,15,item.seal.reinforced,1,0.110,0.810,20.00,fail,3.65,3,1,1',
+      ];
+      final env = await pumpMenu(tester, legacyRows: old);
+      await tester.scrollUntilVisible(find.text('EXPORTAR REGISTRO'), 200, scrollable: find.byType(Scrollable).first);
+      expect(find.text('Sessões gravadas: 2'), findsOneWidget);
+      final lines = env.store.file.readAsLinesSync();
+      expect(lines.first, SessionRecord.header);
+      expect(lines.skip(1).toList(), [for (final r in old) '$r,pre-ajuste']);
+      expect(env.store.backup.existsSync(), isTrue);
+      await tester.tap(find.text('EXPORTAR REGISTRO'));
+      await tester.pump();
+      expect(env.exporter.files.single.readAsLinesSync().first, contains('balance_version'));
     });
 
     testWidgets('sem sessões avisa e não abre a folha de compartilhamento', (tester) async {

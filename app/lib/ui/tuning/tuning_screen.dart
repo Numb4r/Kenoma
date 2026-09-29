@@ -22,6 +22,7 @@ class TuningScreen extends StatefulWidget {
     required this.pool,
     required this.buildSetup,
     required this.balance,
+    required this.balanceVersion,
     required this.store,
     this.hidden = false,
     this.showTarget = false,
@@ -32,6 +33,7 @@ class TuningScreen extends StatefulWidget {
   final List<EcoSpecies> pool;
   final TuningSetup Function(EcoSpecies species) buildSetup;
   final TuningBalance balance;
+  final String balanceVersion;
   final SessionLogStore store;
   final bool hidden;
   final bool showTarget;
@@ -55,7 +57,12 @@ class _TuningScreenState extends State<TuningScreen> {
   @override
   void initState() {
     super.initState();
-    _logger = RunLogger(store: widget.store, balance: widget.balance, hidden: widget.hidden);
+    _logger = RunLogger(
+      store: widget.store,
+      balance: widget.balance,
+      balanceVersion: widget.balanceVersion,
+      hidden: widget.hidden,
+    );
     _game = TuningGame(
       pool: widget.pool,
       buildSetup: widget.buildSetup,

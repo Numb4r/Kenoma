@@ -40,7 +40,7 @@ void main() {
   });
   tearDown(() => dir.deleteSync(recursive: true));
 
-  RunLogger logger({required bool hidden}) => RunLogger(store: store, balance: b, hidden: hidden, clock: () => now);
+  RunLogger logger({required bool hidden}) => RunLogger(store: store, balance: b, balanceVersion: 'c0ffee00', hidden: hidden, clock: () => now);
 
   List<List<String>> rows() => [for (final l in store.file.readAsLinesSync().skip(1)) l.split(',')];
 
@@ -54,6 +54,7 @@ void main() {
     expect(r[5], '0');
     expect(r[9], 'success');
     expect((r[12], r[13]), ('0', ''));
+    expect(r[14], 'c0ffee00', reason: 'a versão do balanceamento vai em toda linha');
   });
 
   test('modo oculto: palpite certo grava guess_correct 1, errado grava 0', () async {
@@ -105,7 +106,7 @@ void main() {
   test('uma falha de escrita não derruba o jogo', () async {
     final broken = SessionLogStore(File('${dir.path}/sessions.csv/x/y.csv'));
     File('${dir.path}/sessions.csv').writeAsStringSync('arquivo no lugar da pasta');
-    final l = RunLogger(store: broken, balance: b, hidden: false, clock: () => now);
+    final l = RunLogger(store: broken, balance: b, balanceVersion: 'c0ffee00', hidden: false, clock: () => now);
     await l.finished(makeRun());
   });
 }

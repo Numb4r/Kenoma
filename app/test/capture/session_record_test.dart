@@ -77,19 +77,21 @@ void main() {
           success: success,
           alignedTimeS: 8.5,
           alignmentLosses: 4,
+          balanceVersion: 'a1b2c3d4',
           hiddenType: hidden,
           guessCorrect: guess,
         );
 
     test('cabeçalho: os campos pedidos, na ordem', () {
       expect(SessionRecord.header,
-          'timestamp_utc,type,eco_level,player_level,seal,tonic,tolerance,resistance,duration_s,result,aligned_s,alignment_losses,hidden_type,guess_correct');
-      expect(SessionRecord.columns, hasLength(14));
+          'timestamp_utc,type,eco_level,player_level,seal,tonic,tolerance,resistance,duration_s,result,aligned_s,alignment_losses,hidden_type,guess_correct,balance_version');
+      expect(SessionRecord.columns, hasLength(15));
+      expect(SessionRecord.columns.last, 'balance_version', reason: 'a coluna nova entra no fim: as posições antigas não mudam');
     });
 
     test('linha completa, com horário em UTC', () {
       expect(record().toCsvLine(),
-          '2026-09-29T14:30:05.250Z,water,17,15,item.seal.simple,0,0.112,0.760,12.35,success,8.50,4,0,');
+          '2026-09-29T14:30:05.250Z,water,17,15,item.seal.simple,0,0.112,0.760,12.35,success,8.50,4,0,,a1b2c3d4');
     });
 
     test('a linha tem tantos campos quanto o cabeçalho', () {
@@ -104,8 +106,8 @@ void main() {
       expect(fields[9], 'fail');
       expect(fields[12], '1');
       expect(fields[13], '0');
-      expect(record(guess: true, hidden: true).toCsvLine().split(',').last, '1');
-      expect(record(hidden: true).toCsvLine().split(',').last, '', reason: 'sem marcação fica vazio');
+      expect(record(guess: true, hidden: true).toCsvLine().split(',')[13], '1');
+      expect(record(hidden: true).toCsvLine().split(',')[13], '', reason: 'sem marcação fica vazio');
     });
 
     test('horário local vira UTC e números usam ponto decimal', () {
@@ -122,11 +124,26 @@ void main() {
         success: true,
         alignedTimeS: 5,
         alignmentLosses: 0,
+        balanceVersion: 'a1b2c3d4',
       );
       final f = local.toCsvLine().split(',');
       expect(f[0], '2026-09-29T14:30:05.000Z');
       expect(f[6], '0.080');
       expect(f[7], '0.000');
+    });
+
+    test('a versão do balanceamento é a última coluna, depois do acerto', () {
+      final f = record(guess: true, hidden: true).toCsvLine().split(',');
+      expect(f.length, 15);
+      expect(f[13], '1');
+      expect(f[14], 'a1b2c3d4');
+      expect(record().toCsvLine().split(',').last, 'a1b2c3d4', reason: 'mesmo com o acerto em branco');
+    });
+
+    test('o cabeçalho anterior é o atual sem a última coluna, e as linhas antigas levam pre-ajuste', () {
+      expect(SessionRecord.legacyHeader, SessionRecord.header.substring(0, SessionRecord.header.length - ',balance_version'.length));
+      expect(SessionRecord.legacyHeader.split(','), hasLength(14));
+      expect(SessionRecord.legacyBalanceVersion, 'pre-ajuste');
     });
 
     test('campo com vírgula ou aspas vai entre aspas', () {
@@ -147,7 +164,8 @@ void main() {
     final session = makeSession(type: EcoType.plant, playerLevel: 15, ecoLevel: 17, seed: 4);
     const ReferencePlayer().play(session);
     final at = DateTime(2026, 9, 29, 11, 30);
-    final r = SessionRecord.of(setup: setup, session: session, balance: b, at: at, hiddenType: true, guessCorrect: true);
+    final r = SessionRecord.of(
+        setup: setup, session: session, balance: b, at: at, balanceVersion: '0f0f0f0f', hiddenType: true, guessCorrect: true);
     expect(r.type, EcoType.plant);
     expect((r.ecoLevel, r.playerLevel), (17, 15));
     expect(r.sealId, 'item.seal.reinforced');
@@ -158,6 +176,7 @@ void main() {
     expect(r.success, session.phase == TuningPhase.success);
     expect(r.alignedTimeS, session.alignedTimeS);
     expect(r.alignmentLosses, session.alignmentLosses);
+    expect(r.balanceVersion, '0f0f0f0f');
     expect(r.hiddenType, isTrue);
     expect(r.guessCorrect, isTrue);
     expect(r.timeUtc.isUtc, isTrue);

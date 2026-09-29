@@ -11,11 +11,19 @@ import 'tuning_game.dart';
 /// No modo oculto, o jogador dá o palpite do tipo antes de a sintonia começar ([guessed]). Ao
 /// terminar, o registro leva se o palpite bateu com o tipo real. Sintonia que não terminou não é gravada.
 class RunLogger {
-  RunLogger({required this.store, required this.balance, required this.hidden, DateTime Function()? clock})
-      : _clock = clock ?? DateTime.now;
+  RunLogger({
+    required this.store,
+    required this.balance,
+    required this.balanceVersion,
+    required this.hidden,
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now;
 
   final SessionLogStore store;
   final TuningBalance balance;
+
+  /// Vai em cada linha do registro.
+  final String balanceVersion;
   final bool hidden;
   final DateTime Function() _clock;
   EcoType? _guess;
@@ -32,6 +40,7 @@ class RunLogger {
         session: run.session,
         balance: balance,
         at: _clock(),
+        balanceVersion: balanceVersion,
         hiddenType: hidden,
         guessCorrect: hidden && guess != null ? guess == run.setup.type : null,
       ));

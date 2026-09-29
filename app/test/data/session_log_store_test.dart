@@ -18,6 +18,7 @@ SessionRecord rec(int n) => SessionRecord(
       success: true,
       alignedTimeS: 5,
       alignmentLosses: 0,
+      balanceVersion: 'a1b2c3d4',
     );
 
 void main() {
@@ -85,6 +86,157 @@ void main() {
     expect(await store.count(), 1);
     expect(store.file.readAsLinesSync().last, rec(2).toCsvLine());
   });
+
+  group('migração do formato antigo (sem balance_version)', () {
+    // Linhas como o app as gravava antes da coluna existir: 14 campos.
+    const oldRows = [
+      '2026-09-29T15:01:00.000000Z,fire,1,1,item.seal.simple,0,0.080,0.000,5.50,success,5.00,0,0,',
+      '2026-09-29T15:02:00.000000Z,water,17,15,item.seal.reinforced,1,0.110,0.810,20.00,fail,3.65,3,1,1',
+      '2026-09-29T15:03:00.000000Z,plant,9,9,item.seal.fire,0,0.080,0.300,12.34,success,5.10,2,1,0',
+    ];
+    late File file;
+    late SessionLogStore store;
+    File tmp() => File('${file.path}.tmp');
+
+    void writeLegacy(List<String> rows, {bool trailingNewline = true}) =>
+        file.writeAsStringSync('${SessionRecord.legacyHeader}\n${rows.join('\n')}${trailingNewline ? '\n' : ''}');
+
+    setUp(() {
+      file = File('${dir.path}/sessions.csv');
+      store = SessionLogStore(file);
+    });
+
+    test('cada linha antiga ganha pre-ajuste no fim e o cabeçalho ganha balance_version', () async {
+      writeLegacy(oldRows);
+      await store.migrate();
+      final lines = file.readAsLinesSync();
+      expect(lines.first, SessionRecord.header);
+      expect(lines.skip(1).toList(), [for (final r in oldRows) '$r,pre-ajuste']);
+      expect(await store.count(), 3);
+    });
+
+    test('nenhuma linha se perde: as 24 do celular, em ordem e sem mudar um caractere', () async {
+      final many = [for (var i = 0; i < 24; i++) '2026-09-29T15:${i.toString().padLeft(2, '0')}:00.000000Z,fire,${i + 1},1,item.seal.simple,0,0.080,0.000,5.50,success,5.00,0,0,'];
+      writeLegacy(many);
+      await store.migrate();
+      final lines = file.readAsLinesSync();
+      expect(lines, hasLength(25));
+      for (var i = 0; i < 24; i++) {
+        expect(lines[i + 1], '${many[i]},pre-ajuste');
+      }
+      expect(await store.count(), 24);
+    });
+
+    test('guarda uma cópia idêntica do arquivo antigo antes de migrar', () async {
+      writeLegacy(oldRows);
+      final original = file.readAsBytesSync();
+      await store.migrate();
+      expect(store.backup.existsSync(), isTrue);
+      expect(store.backup.readAsBytesSync(), original);
+      expect(file.readAsBytesSync(), isNot(original));
+    });
+
+    test('não sobra arquivo temporário', () async {
+      writeLegacy(oldRows);
+      await store.migrate();
+      expect(tmp().existsSync(), isFalse);
+    });
+
+    test('rodar de novo não muda nada, nem a cópia', () async {
+      writeLegacy(oldRows);
+      await store.migrate();
+      final after = file.readAsBytesSync();
+      final backup = store.backup.readAsBytesSync();
+      await store.migrate();
+      await SessionLogStore(file).migrate();
+      expect(file.readAsBytesSync(), after);
+      expect(store.backup.readAsBytesSync(), backup);
+      expect(file.readAsStringSync().split('pre-ajuste').length - 1, 3, reason: 'pre-ajuste não se acumula');
+    });
+
+    test('uma cópia que já existia não é sobrescrita', () async {
+      writeLegacy(oldRows);
+      store.backup.writeAsStringSync('cópia anterior');
+      await store.migrate();
+      expect(store.backup.readAsStringSync(), 'cópia anterior');
+      expect(file.readAsLinesSync().first, SessionRecord.header);
+    });
+
+    test('arquivo sem quebra de linha no fim também migra', () async {
+      writeLegacy(oldRows, trailingNewline: false);
+      await store.migrate();
+      expect(file.readAsLinesSync().skip(1).toList(), [for (final r in oldRows) '$r,pre-ajuste']);
+    });
+
+    test('gravar num arquivo antigo migra primeiro: linhas antigas com pre-ajuste, a nova com a versão dela', () async {
+      writeLegacy(oldRows);
+      await store.append(rec(7));
+      final lines = file.readAsLinesSync();
+      expect(lines, hasLength(5));
+      expect(lines.first, SessionRecord.header);
+      expect(lines.sublist(1, 4), [for (final r in oldRows) '$r,pre-ajuste']);
+      expect(lines.last, rec(7).toCsvLine());
+      expect(lines.last.split(',').last, 'a1b2c3d4');
+      expect(lines.where((l) => l == SessionRecord.header), hasLength(1));
+    });
+
+    test('migrar e gravar ao mesmo tempo não perde linha', () async {
+      writeLegacy(oldRows);
+      await Future.wait([store.migrate(), store.append(rec(1)), store.append(rec(2)), store.migrate()]);
+      final lines = file.readAsLinesSync();
+      expect(lines, hasLength(6));
+      expect(lines.sublist(1, 4), [for (final r in oldRows) '$r,pre-ajuste']);
+      expect(lines.sublist(4), [rec(1).toCsvLine(), rec(2).toCsvLine()]);
+    });
+
+    test('sem arquivo ou com arquivo vazio não faz nada', () async {
+      await store.migrate();
+      expect(file.existsSync(), isFalse);
+      expect(store.backup.existsSync(), isFalse);
+      file.writeAsStringSync('');
+      await store.migrate();
+      expect(file.readAsStringSync(), '');
+      expect(store.backup.existsSync(), isFalse);
+    });
+
+    test('um arquivo já no formato atual fica como está, sem cópia', () async {
+      await store.append(rec(1));
+      final before = file.readAsBytesSync();
+      await store.migrate();
+      expect(file.readAsBytesSync(), before);
+      expect(store.backup.existsSync(), isFalse);
+    });
+
+    test('um cabeçalho que não é o anterior não é tocado', () async {
+      file.writeAsStringSync('outra,coisa\n1,2\n');
+      final before = file.readAsBytesSync();
+      await store.migrate();
+      expect(file.readAsBytesSync(), before);
+      expect(store.backup.existsSync(), isFalse);
+    });
+
+    test('se a escrita do arquivo novo falha, o arquivo original fica intacto', () async {
+      writeLegacy(oldRows);
+      final original = file.readAsBytesSync();
+      Directory(tmp().path).createSync(); // o temporário não pode ser criado: há uma pasta no lugar
+      await expectLater(store.migrate(), throwsA(isA<FileSystemException>()));
+      expect(file.readAsBytesSync(), original);
+      expect(await store.count(), 3);
+      expect(store.backup.readAsBytesSync(), original);
+    });
+
+    test('depois de uma falha, as gravações seguintes ainda funcionam', () async {
+      writeLegacy(oldRows);
+      Directory(tmp().path).createSync();
+      await expectLater(store.append(rec(1)), throwsA(isA<FileSystemException>()));
+      Directory(tmp().path).deleteSync();
+      await store.append(rec(2));
+      final lines = file.readAsLinesSync();
+      expect(lines.first, SessionRecord.header);
+      expect(lines.sublist(1, 4), [for (final r in oldRows) '$r,pre-ajuste']);
+      expect(lines.last, rec(2).toCsvLine());
+    });
+  });
 }
 
 class _Broken extends SessionRecord {
@@ -102,6 +254,7 @@ class _Broken extends SessionRecord {
           success: false,
           alignedTimeS: 0,
           alignmentLosses: 0,
+          balanceVersion: 'a1b2c3d4',
         );
 
   @override

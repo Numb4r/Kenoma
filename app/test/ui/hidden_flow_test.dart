@@ -16,11 +16,12 @@ import 'package:kenoma/ui/type_label.dart';
 import '../support/fake_vibration.dart';
 
 class Env {
-  Env(this.tester, this.store, this.vibration);
+  Env(this.tester, this.store, this.vibration, this.balanceVersion);
 
   final WidgetTester tester;
   final SessionLogStore store;
   final FakeVibration vibration;
+  final String balanceVersion;
 
   TuningGame get game => tester.widget<GameWidget<TuningGame>>(find.byType(GameWidget<TuningGame>)).game!;
 
@@ -66,6 +67,7 @@ Future<Env> open(WidgetTester tester, {required bool hidden, EcoType? only, int 
       pool: hidden ? data.species : [only == null ? data.species.first : data.species.firstWhere((s) => s.type == only)],
       buildSetup: (s) => TuningSetup(type: s.type, ecoLevel: ecoLevel, playerLevel: playerLevel, seal: data.seals.first),
       balance: data.balance,
+      balanceVersion: data.balanceVersion,
       store: store,
       hidden: hidden,
       vibration: vibration,
@@ -88,7 +90,7 @@ Future<Env> open(WidgetTester tester, {required bool hidden, EcoType? only, int 
     await tester.pump();
   }
   await tester.pump();
-  return Env(tester, store, vibration);
+  return Env(tester, store, vibration, data.balanceVersion);
 }
 
 void main() {
@@ -200,6 +202,9 @@ void main() {
     await env.play(21);
     final rows = await env.rows(expected: 1);
     expect((rows.single[12], rows.single[13]), ('0', ''));
+    expect(rows.single, hasLength(15));
+    expect(rows.single[14], env.balanceVersion, reason: 'a linha diz com que balanceamento foi jogada');
+    expect(rows.single[14], matches(RegExp(r'^[0-9a-f]{8}$')));
   });
 
   group('a vibração da sintonia é só alerta', () {

@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/capture/eco_type.dart';
 import 'package:kenoma/capture/tuning_setup.dart';
 import 'package:kenoma/core/fnv.dart';
 import 'package:kenoma/core/pcg32.dart';
+import 'package:kenoma/data/balance_version.dart';
 import 'package:kenoma/data/tuning_data.dart';
 
 import '../support/fixtures.dart';
@@ -11,6 +14,7 @@ TuningData load() => TuningData.fromJson(
       balance: loadJson('assets/data/balance.json'),
       creatures: loadJson('assets/data/creatures.json'),
       items: loadJson('assets/data/items.json'),
+      balanceVersion: balanceVersionOf(File('assets/data/balance.json').readAsBytesSync()),
     );
 
 void main() {

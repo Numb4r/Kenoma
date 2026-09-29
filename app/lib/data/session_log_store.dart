@@ -18,14 +18,45 @@ class SessionLogStore {
 
   final File file;
 
-  /// Fila das gravações: uma termina antes de a próxima começar. Sem isso, duas gravações
-  /// sobrepostas decidem ao mesmo tempo se o arquivo é novo e uma perde a linha da outra.
+  /// Cópia do arquivo no formato anterior, feita antes de migrá-lo. Nunca é sobrescrita.
+  File get backup => File('${file.path}.bak');
+
+  /// Fila das operações no arquivo: uma termina antes de a próxima começar. Sem isso, duas
+  /// gravações sobrepostas decidem ao mesmo tempo se o arquivo é novo e uma perde a linha da outra.
   Future<void> _queue = Future<void>.value();
 
-  Future<void> append(SessionRecord record) {
-    final done = _queue.then((_) => _write(record));
-    _queue = done.catchError((Object _) {}); // a falha de uma gravação não trava as seguintes
+  Future<T> _enqueue<T>(Future<T> Function() job) {
+    final done = _queue.then((_) => job());
+    _queue = done.then<void>((_) {}, onError: (Object _) {}); // a falha de uma não trava as seguintes
     return done;
+  }
+
+  /// Acrescenta uma linha. Antes, sobe o arquivo para o formato atual se ele ainda estiver no anterior.
+  Future<void> append(SessionRecord record) => _enqueue(() async {
+        await _migrate();
+        await _write(record);
+      });
+
+  /// Sobe para o formato atual um registro no formato anterior (sem `balance_version`): cada linha
+  /// que já existia ganha a versão `pre-ajuste`. Não faz nada se o arquivo não existe, está vazio, já
+  /// está no formato atual ou tem um cabeçalho que não é o anterior (nesse caso não mexe nele).
+  Future<void> migrate() => _enqueue(_migrate);
+
+  Future<void> _migrate() async {
+    if (!file.existsSync() || file.lengthSync() == 0) return;
+    final lines = await file.readAsLines();
+    if (lines.isEmpty || lines.first != SessionRecord.legacyHeader) return;
+
+    // O arquivo é o registro de jogo do usuário: guarda uma cópia antes e troca o arquivo de uma vez.
+    if (!backup.existsSync()) await file.copy(backup.path);
+    final migrated = [
+      SessionRecord.header,
+      for (final line in lines.skip(1))
+        if (line.isNotEmpty) '$line,${SessionRecord.legacyBalanceVersion}',
+    ];
+    final temp = File('${file.path}.tmp');
+    await temp.writeAsString('${migrated.join('\n')}\n', flush: true);
+    await temp.rename(file.path);
   }
 
   Future<void> _write(SessionRecord record) async {
