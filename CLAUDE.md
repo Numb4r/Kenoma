@@ -2,8 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**Estado atual:** o repositório ainda só tem `docs/`. Nada de `app/`, `pipeline/`, `shared/` ou `scripts/` existe até o M0 ser feito.
-
 **Kenoma: Veilbreakers** é um RPG mobile de exploração via GPS em pixel art 2D. A cidade real vira um mundo de fantasia urbana invadido pelos fragmentos de deuses mortos que vazam por Fendas no Véu. O jogador é um Conjurador que coleta materiais conforme o ambiente real, fabrica selos e captura criaturas sintonizando o sinal delas num dial, como um rádio. Não existe batalha.
 
 Nome do repositório: `kenoma`.
@@ -99,8 +97,8 @@ Janelas de spawn têm 20 minutos, com deslocamento próprio por célula. Detalhe
 # app
 cd app && flutter pub get
 cd app && flutter test
-cd app && flutter test test/core/hash_test.dart            # um arquivo
-cd app && flutter test --plain-name "FNV-1a" test/core/     # um teste pelo nome
+cd app && flutter test test/core/fnv_test.dart             # um arquivo
+cd app && flutter test --plain-name "FNV-1a" test/core/     # testes pelo nome
 cd app && flutter analyze
 cd app && flutter run
 
