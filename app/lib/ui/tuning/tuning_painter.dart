@@ -27,6 +27,7 @@ class TuningView {
     required this.sealLabel,
     required this.tonic,
     required this.showTarget,
+    this.hidden = false,
   });
 
   final double dial;
@@ -48,6 +49,9 @@ class TuningView {
 
   /// Ferramenta de debug: marca o alvo e a tolerância no dial.
   final bool showTarget;
+
+  /// Modo de tipo oculto: a onda do sinal fica cinza e não tremula, para não entregar o tipo.
+  final bool hidden;
 }
 
 const String _font = 'Silkscreen';
@@ -154,7 +158,8 @@ void _waves(Canvas canvas, TuningLayout l, TuningView v) {
 
   // O sinal da criatura é serrilhado, com picos. O do jogador é liso.
   double tri(double t) => 2 / math.pi * math.asin(math.sin(t));
-  canvas.drawPath(wave(v.target, tri, jitter: 0.35 * v.tremble), _stroke(kSignal, 3));
+  final signalColor = v.hidden ? kDim : kSignal;
+  canvas.drawPath(wave(v.target, tri, jitter: v.hidden ? 0 : 0.35 * v.tremble), _stroke(signalColor, 3));
   canvas.drawPath(wave(v.dial, math.sin), _stroke(kVeil, 3));
 }
 

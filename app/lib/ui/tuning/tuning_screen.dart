@@ -1,28 +1,37 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
-import '../../capture/session.dart';
 import '../../capture/tuning_balance.dart';
 import '../../capture/tuning_setup.dart';
+import '../../data/session_log_store.dart';
 import '../../data/tuning_data.dart';
 import '../colors.dart';
+import '../type_label.dart';
+import 'run_logger.dart';
 import 'tuning_game.dart';
 import 'tuning_layout.dart';
 import 'vibration_driver.dart';
 
-/// Sintonia de um Eco: a tela do jogo com o resultado por cima.
+/// Sintonia de um Eco: a tela do jogo com o resultado por cima. Cada sintonia terminada grava
+/// uma linha no registro.
+///
+/// Com [hidden], [pool] tem uma espécie de cada tipo e o tipo é sorteado a cada sintonia.
 class TuningScreen extends StatefulWidget {
   const TuningScreen({
-    required this.setup,
-    required this.species,
+    required this.pool,
+    required this.buildSetup,
     required this.balance,
+    required this.store,
+    this.hidden = false,
     this.showTarget = false,
     super.key,
   });
 
-  final TuningSetup setup;
-  final EcoSpecies species;
+  final List<EcoSpecies> pool;
+  final TuningSetup Function(EcoSpecies species) buildSetup;
   final TuningBalance balance;
+  final SessionLogStore store;
+  final bool hidden;
   final bool showTarget;
 
   @override
@@ -30,37 +39,55 @@ class TuningScreen extends StatefulWidget {
 }
 
 class _TuningScreenState extends State<TuningScreen> {
-  final _outcome = ValueNotifier<TuningOutcome?>(null);
   final _vibration = DeviceVibration();
   late final TuningGame _game;
+  late final RunLogger _logger;
+  TuningRun? _run;
+  bool _marked = false;
 
   @override
   void initState() {
     super.initState();
+    _logger = RunLogger(store: widget.store, balance: widget.balance, hidden: widget.hidden);
     _game = TuningGame(
-      setup: widget.setup,
-      species: widget.species,
+      pool: widget.pool,
+      buildSetup: widget.buildSetup,
       balance: widget.balance,
       vibration: _vibration,
+      hidden: widget.hidden,
       showTarget: widget.showTarget,
-      onFinished: (o) => _outcome.value = o,
+      onFinished: _finished,
     );
   }
 
-  @override
-  void dispose() {
-    _vibration.cancel();
-    _outcome.dispose();
-    super.dispose();
+  void _finished(TuningRun run) {
+    setState(() {
+      _run = run;
+      _marked = false;
+    });
+    _logger.finished(run);
+  }
+
+  void _guess(bool correct) {
+    _logger.guess(correct);
+    setState(() => _marked = true);
   }
 
   void _again() {
-    _outcome.value = null;
+    setState(() => _run = null);
     _game.restart();
   }
 
   @override
+  void dispose() {
+    _logger.flush();
+    _vibration.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final run = _run;
     return Scaffold(
       backgroundColor: kOutline,
       body: SafeArea(
@@ -78,10 +105,15 @@ class _TuningScreenState extends State<TuningScreen> {
                 child: const Center(child: Text('<', style: TextStyle(fontSize: 24, color: kText))),
               ),
             ),
-            ValueListenableBuilder<TuningOutcome?>(
-              valueListenable: _outcome,
-              builder: (context, o, _) => o == null ? const SizedBox.shrink() : _ResultPanel(outcome: o, onAgain: _again),
-            ),
+            if (run != null)
+              TuningResultPanel(
+                run: run,
+                hidden: widget.hidden,
+                marked: _marked,
+                onGuess: _guess,
+                onAgain: _again,
+                onMenu: () => Navigator.of(context).pop(),
+              ),
           ],
         ),
       ),
@@ -89,16 +121,30 @@ class _TuningScreenState extends State<TuningScreen> {
   }
 }
 
-class _ResultPanel extends StatelessWidget {
-  const _ResultPanel({required this.outcome, required this.onAgain});
+/// Resultado por cima da tela. No modo oculto revela o tipo e pergunta se o jogador acertou.
+class TuningResultPanel extends StatelessWidget {
+  const TuningResultPanel({
+    required this.run,
+    required this.hidden,
+    required this.marked,
+    required this.onGuess,
+    required this.onAgain,
+    required this.onMenu,
+    super.key,
+  });
 
-  final TuningOutcome outcome;
+  final TuningRun run;
+  final bool hidden;
+  final bool marked;
+  final ValueChanged<bool> onGuess;
   final VoidCallback onAgain;
+  final VoidCallback onMenu;
 
   @override
   Widget build(BuildContext context) {
-    final ok = outcome.success;
-    final color = ok ? kSignal : kEssence;
+    final o = run.outcome;
+    final color = o.success ? kSignal : kEssence;
+    const line = TextStyle(fontSize: 16, color: kText);
     return Center(
       child: Container(
         width: 300,
@@ -107,19 +153,34 @@ class _ResultPanel extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(ok ? 'SELADO!' : 'SINAL PERDIDO', style: TextStyle(fontSize: 24, color: color)),
+            Text(o.success ? 'SELADO!' : 'SINAL PERDIDO', style: TextStyle(fontSize: 24, color: color)),
             const SizedBox(height: 16),
-            Text('${outcome.durationS.toStringAsFixed(1)}s', style: const TextStyle(fontSize: 16, color: kText)),
+            Text('${o.durationS.toStringAsFixed(1)}s', style: line),
             const SizedBox(height: 8),
-            if (ok)
-              Text('+${outcome.ectoplasm} Ectoplasma', style: const TextStyle(fontSize: 16, color: kText))
+            if (o.success)
+              Text('+${o.ectoplasm} Ectoplasma', style: line)
             else
-              Text(outcome.fled ? 'A criatura fugiu' : 'Ela ainda está aqui',
-                  style: const TextStyle(fontSize: 16, color: kText)),
+              Text(o.fled ? 'A criatura fugiu' : 'Ela ainda está aqui', style: line),
+            if (hidden) ...[
+              const SizedBox(height: 16),
+              Text('Era ${typeLabel(run.setup.type)}', style: const TextStyle(fontSize: 24, color: kVeil)),
+              const SizedBox(height: 4),
+              Text(run.species.name, style: const TextStyle(fontSize: 8, color: kDim)),
+            ],
             const SizedBox(height: 20),
-            PixelButton(label: 'Repetir', color: color, onTap: onAgain),
-            const SizedBox(height: 12),
-            PixelButton(label: 'Menu', color: kDim, onTap: () => Navigator.of(context).pop()),
+            if (hidden && !marked) ...[
+              const Text('Você acertou o tipo?', style: line),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(child: PixelButton(label: 'Sim', color: kSignal, onTap: () => onGuess(true))),
+                const SizedBox(width: 12),
+                Expanded(child: PixelButton(label: 'Não', color: kEssence, onTap: () => onGuess(false))),
+              ]),
+            ] else ...[
+              PixelButton(label: 'Repetir', color: color, onTap: onAgain),
+              const SizedBox(height: 12),
+              PixelButton(label: 'Menu', color: kDim, onTap: onMenu),
+            ],
           ],
         ),
       ),

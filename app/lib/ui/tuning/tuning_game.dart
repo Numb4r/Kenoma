@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 
+import '../../capture/hidden_type.dart';
 import '../../capture/session.dart';
 import '../../capture/tuning_balance.dart';
 import '../../capture/tuning_setup.dart';
@@ -17,30 +18,48 @@ import 'tuning_layout.dart';
 import 'tuning_painter.dart';
 import 'vibration_driver.dart';
 
-/// Tela de sintonia em Flame. Só avança a sessão, desenha e repassa o giro do dial:
-/// as regras estão em `capture/`.
-class TuningGame extends FlameGame with DragCallbacks {
-  TuningGame({
-    required this.setup,
-    required this.species,
-    required this.balance,
-    required this.vibration,
-    required this.onFinished,
-    this.showTarget = false,
-  });
+/// Uma sintonia terminada: o que foi preparado, como correu e o resultado.
+class TuningRun {
+  const TuningRun({required this.setup, required this.species, required this.session, required this.outcome});
 
   final TuningSetup setup;
   final EcoSpecies species;
+  final TuningSession session;
+  final TuningOutcome outcome;
+}
+
+/// Tela de sintonia em Flame. Só avança a sessão, desenha e repassa o giro do dial:
+/// as regras estão em `capture/`.
+///
+/// Com [hidden], cada sintonia sorteia o tipo entre as espécies de [pool] e mostra uma silhueta
+/// neutra, sem dizer qual é.
+class TuningGame extends FlameGame with DragCallbacks {
+  TuningGame({
+    required this.pool,
+    required this.buildSetup,
+    required this.balance,
+    required this.vibration,
+    required this.onFinished,
+    this.hidden = false,
+    bool showTarget = false,
+  }) : showTarget = showTarget && !hidden;
+
+  final List<EcoSpecies> pool;
+  final TuningSetup Function(EcoSpecies species) buildSetup;
   final TuningBalance balance;
   final VibrationPlayer vibration;
-  final void Function(TuningOutcome outcome) onFinished;
+  final void Function(TuningRun run) onFinished;
+  final bool hidden;
 
-  /// Debug: marca o alvo e a tolerância no dial.
+  /// Debug: marca o alvo e a tolerância no dial. Fica desligado no modo de tipo oculto.
   final bool showTarget;
 
+  late TuningSetup setup;
+  late EcoSpecies species;
   late TuningSession session;
   late Pcg32 _rng;
-  EcoSprite? _sprite;
+  final _sprites = <String, EcoSprite>{};
+  EcoSprite? _neutral;
   double _clock = 0;
   double _dial = 0.5;
   double? _lastAngle;
@@ -52,13 +71,18 @@ class TuningGame extends FlameGame with DragCallbacks {
 
   @override
   Future<void> onLoad() async {
-    _sprite = await EcoSprite.load(species.id);
+    for (final s in pool) {
+      _sprites[s.id] = await EcoSprite.load(s.id);
+    }
+    if (hidden) _neutral = await EcoSprite.loadNeutral();
     restart();
   }
 
-  /// Nova sintonia com o mesmo Eco, selo e níveis.
+  /// Nova sintonia. No modo oculto, sorteia outro tipo.
   void restart() {
     _rng = Pcg32(fnv1a64([DateTime.now().microsecondsSinceEpoch, _runs++]), saltKenoma);
+    species = hidden ? pool.firstWhere((s) => s.type == pickHiddenType(_rng)) : pool.first;
+    setup = buildSetup(species);
     session = setup.start(balance, _rng);
     _dial = 0.5;
     _reported = false;
@@ -69,7 +93,7 @@ class TuningGame extends FlameGame with DragCallbacks {
   void update(double dt) {
     super.update(dt);
     _clock += dt;
-    if (!session.running) return;
+    if (!isLoaded || !session.running) return;
     for (final cue in session.step(math.min(dt, 0.05), dial: _dial)) {
       vibration.play(cue.pattern);
     }
@@ -77,7 +101,7 @@ class TuningGame extends FlameGame with DragCallbacks {
       _reported = true;
       final outcome = resolveTuning(session, _rng);
       vibration.play(outcome.success ? successPattern : failPattern);
-      onFinished(outcome);
+      onFinished(TuningRun(setup: setup, species: species, session: session, outcome: outcome));
     }
   }
 
@@ -103,8 +127,9 @@ class TuningGame extends FlameGame with DragCallbacks {
         sealLabel: setup.seal.name,
         tonic: setup.tonic != null,
         showTarget: showTarget,
+        hidden: hidden,
       ),
-      _sprite,
+      hidden ? _neutral : _sprites[species.id],
     );
   }
 

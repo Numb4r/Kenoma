@@ -7,7 +7,7 @@ import 'package:kenoma/ui/colors.dart';
 import 'package:kenoma/ui/sprites/sprite_image.dart';
 import 'package:kenoma/ui/tuning/tuning_painter.dart';
 
-TuningView view({double progress = 0.5, bool aligned = false, double tremble = 0, bool showTarget = false, EcoType type = EcoType.fire}) =>
+TuningView view({double progress = 0.5, bool aligned = false, double tremble = 0, bool showTarget = false, EcoType type = EcoType.fire, bool hidden = false}) =>
     TuningView(
       dial: 0.3,
       target: 0.7,
@@ -22,6 +22,7 @@ TuningView view({double progress = 0.5, bool aligned = false, double tremble = 0
       sealLabel: 'Selo simples',
       tonic: true,
       showTarget: showTarget,
+      hidden: hidden,
     );
 
 const size = ui.Size(412, 880);
@@ -90,6 +91,28 @@ void main() {
     await tester.runAsync(() async {
       final px = await render(view(), null);
       expect(count(px, kVeil), greaterThan(0));
+    });
+  });
+
+  testWidgets('tipo oculto: a onda do sinal fica cinza e não tremula, e a silhueta é neutra', (tester) async {
+    await tester.runAsync(() async {
+      final neutral = await EcoSprite.loadNeutral();
+      final shown = await render(view(tremble: 1), neutral);
+      final hidden = await render(view(hidden: true, tremble: 1), neutral);
+      expect(count(shown, kSignal), greaterThan(150));
+      expect(count(hidden, kSignal), lessThan(20), reason: 'sem ciano na onda: a cor do sinal é cinza');
+      expect(count(hidden, kDim), greaterThan(100), reason: 'onda cinza');
+      final calm = await render(view(hidden: true, tremble: 0), neutral);
+      expect(hidden, calm, reason: 'o tremor do Fogo não aparece no modo oculto');
+    });
+  });
+
+  testWidgets('a silhueta neutra desenha diferente de qualquer Eco', (tester) async {
+    await tester.runAsync(() async {
+      final neutral = await render(view(hidden: true), await EcoSprite.loadNeutral());
+      for (final id in ['soot.eco', 'frond.eco', 'rill.eco']) {
+        expect(neutral, isNot(await render(view(hidden: true), await EcoSprite.load(id))), reason: id);
+      }
     });
   });
 }

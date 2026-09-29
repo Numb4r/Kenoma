@@ -7,14 +7,21 @@ import '../capture/eco_type.dart';
 import '../capture/seal.dart';
 import '../capture/tuning_setup.dart';
 import '../capture/vibe.dart';
+import '../data/session_log_store.dart';
 import '../data/tuning_data.dart';
 import '../ui/colors.dart';
 import '../ui/sprites/sprite_image.dart';
+import '../ui/tuning/log_exporter.dart';
 import '../ui/tuning/tuning_screen.dart';
 import '../ui/tuning/vibration_driver.dart';
+import '../ui/type_label.dart';
 
 class TuningDebugMenu extends StatefulWidget {
-  const TuningDebugMenu({super.key});
+  const TuningDebugMenu({this.store, this.exporter, super.key});
+
+  /// Registro das sessões. Por padrão, `sessions.csv` nos documentos do app.
+  final SessionLogStore? store;
+  final LogExporter? exporter;
 
   @override
   State<TuningDebugMenu> createState() => _TuningDebugMenuState();
@@ -22,6 +29,9 @@ class TuningDebugMenu extends StatefulWidget {
 
 class _TuningDebugMenuState extends State<TuningDebugMenu> {
   final _vibration = DeviceVibration();
+  late final LogExporter _exporter = widget.exporter ?? ShareLogExporter();
+  SessionLogStore? _store;
+  int _sessions = 0;
   TuningData? _data;
   final _sprites = <String, EcoSprite>{};
   EcoSpecies? _species;
@@ -30,6 +40,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   int _playerLevel = 1;
   bool _tonic = false;
   bool _showTarget = false;
+  bool _hidden = false;
 
   @override
   void initState() {
@@ -42,21 +53,48 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
     for (final s in data.species) {
       _sprites[s.id] = await EcoSprite.load(s.id);
     }
+    final store = widget.store ?? await SessionLogStore.inDocuments();
+    final sessions = await store.count();
     if (!mounted) return;
     setState(() {
+      _store = store;
+      _sessions = sessions;
       _data = data;
       _species = data.species.first;
       _seal = data.seals.first;
     });
   }
 
-  TuningSetup _setup(TuningData d) => TuningSetup(
-        type: _species!.type,
+  TuningSetup _setupFor(TuningData d, EcoSpecies species) => TuningSetup(
+        type: species.type,
         ecoLevel: _ecoLevel,
         playerLevel: _playerLevel,
         seal: _seal!,
         tonic: _tonic ? d.tonics.first : null,
       );
+
+  Future<void> _start(TuningData d) async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => TuningScreen(
+        pool: _hidden ? d.species : [_species!],
+        buildSetup: (s) => _setupFor(d, s),
+        balance: d.balance,
+        store: _store!,
+        hidden: _hidden,
+        showTarget: _showTarget,
+      ),
+    ));
+    final n = await _store!.count();
+    if (mounted) setState(() => _sessions = n);
+  }
+
+  Future<void> _export() async {
+    if (_sessions == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nenhuma sessão gravada ainda')));
+      return;
+    }
+    await _exporter.export(_store!.file);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +108,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   }
 
   Widget _body(BuildContext context, TuningData d) {
-    final setup = _setup(d);
+    final setup = _setupFor(d, _species!);
     final intensity = setup.intensity(d.balance);
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -104,9 +142,17 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           title: const Text('Mostrar alvo no dial', style: TextStyle(fontSize: 16)),
-          value: _showTarget,
+          value: _showTarget && !_hidden,
           activeThumbColor: kSignal,
-          onChanged: (v) => setState(() => _showTarget = v),
+          onChanged: _hidden ? null : (v) => setState(() => _showTarget = v),
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Tipo oculto', style: TextStyle(fontSize: 16)),
+          subtitle: const Text('Sorteia o tipo. Sem sprite nem cor: só a vibração.', style: TextStyle(fontSize: 8, color: kDim)),
+          value: _hidden,
+          activeThumbColor: kVeil,
+          onChanged: (v) => setState(() => _hidden = v),
         ),
         const SizedBox(height: 8),
         Text(
@@ -119,10 +165,12 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
         PixelButton(
           label: 'Iniciar sintonia',
           color: kSignal,
-          onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-            builder: (_) => TuningScreen(setup: setup, species: _species!, balance: d.balance, showTarget: _showTarget),
-          )),
+          onTap: () => _start(d),
         ),
+        const SizedBox(height: 16),
+        Text('Sessões gravadas: $_sessions', style: const TextStyle(fontSize: 16, color: kDim)),
+        const SizedBox(height: 8),
+        PixelButton(label: 'Exportar registro', color: kVeil, onTap: _export),
         const SizedBox(height: 24),
         const Text('Sentir a vibração', style: TextStyle(fontSize: 16, color: kDim)),
         const SizedBox(height: 8),
@@ -130,7 +178,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
         const SizedBox(height: 8),
         Wrap(spacing: 8, runSpacing: 8, children: [
           for (final t in EcoType.values)
-            PixelButton(label: _typeLabel(t), color: kVeil, onTap: () => _vibration.play(identityPattern(t))),
+            PixelButton(label: typeLabel(t), color: kVeil, onTap: () => _vibration.play(identityPattern(t))),
         ]),
         const SizedBox(height: 16),
         const Text('Resistência (durante)', style: TextStyle(fontSize: 8, color: kDim)),
@@ -144,17 +192,13 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
     );
   }
 
-  String _typeLabel(EcoType t) => switch (t) {
-        EcoType.fire => 'Fogo',
-        EcoType.water => 'Água',
-        EcoType.plant => 'Planta',
-      };
-
   Widget _speciesTile(EcoSpecies s) {
-    final selected = s.id == _species?.id;
+    final selected = !_hidden && s.id == _species?.id;
     return GestureDetector(
-      onTap: () => setState(() => _species = s),
-      child: Container(
+      onTap: _hidden ? null : () => setState(() => _species = s),
+      child: Opacity(
+        opacity: _hidden ? 0.35 : 1,
+        child: Container(
         width: 104,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -165,8 +209,9 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
           RawImage(image: _sprites[s.id]?.normal, width: 72, height: 72, filterQuality: FilterQuality.none, fit: BoxFit.contain),
           const SizedBox(height: 4),
           Text(s.name, style: const TextStyle(fontSize: 8, color: kText)),
-          Text(_typeLabel(s.type), style: const TextStyle(fontSize: 8, color: kDim)),
+          Text(typeLabel(s.type), style: const TextStyle(fontSize: 8, color: kDim)),
         ]),
+      ),
       ),
     );
   }

@@ -15,7 +15,7 @@ void main() {
   });
 
   group('matrizes', () {
-    for (final entry in ecoSprites.entries) {
+    for (final entry in {...ecoSprites, 'neutral': neutralSprite}.entries) {
       final rows = entry.value;
 
       test('${entry.key}: 48 x 48 e só caracteres da paleta', () {
@@ -79,13 +79,19 @@ void main() {
   test('paleta: contorno #1a1424, sem preto puro, até 24 cores no total', () {
     expect(spritePalette['O'], outline);
     expect(spritePalette.values.contains(0xFF000000), isFalse);
-    final used = {for (final rows in ecoSprites.values) ...rows.join().split('')}..remove('.');
+    final used = {for (final rows in [...ecoSprites.values, neutralSprite]) ...rows.join().split('')}..remove('.');
     expect(used.length, lessThanOrEqualTo(24));
     expect(used.every(spritePalette.containsKey), isTrue);
   });
 
   test('cores mágicas do GDD: costura violeta #9b7bff', () {
     expect(spritePalette['v'], 0xFF9B7BFF);
+  });
+
+  test('a silhueta neutra não usa nenhuma cor de tipo (soot, folha, água, brasa)', () {
+    const typeChars = 'abcqopdefrshijkyz';
+    expect(neutralSprite.join().split('').where(typeChars.contains), isEmpty);
+    expect(ecoSprites.keys, isNot(contains('neutral')), reason: 'não é uma espécie');
   });
 
   group('conversão', () {
@@ -121,7 +127,7 @@ void main() {
     });
 
     test('vira PNG de 48 x 48', () async {
-      for (final rows in ecoSprites.values) {
+      for (final rows in [...ecoSprites.values, neutralSprite]) {
         final png = await spriteToPng(rows);
         expect(png.sublist(0, 8), [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], reason: 'assinatura PNG');
         final header = ByteData.sublistView(Uint8List.fromList(png), 16, 24);

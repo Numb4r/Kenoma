@@ -60,8 +60,12 @@ class EcoSprite {
   final ui.Image normal;
   final ui.Image bright;
 
-  static Future<EcoSprite> load(String speciesId) async {
-    final rows = ecoSprites[speciesId] ?? (throw StateError('Sem sprite para $speciesId'));
-    return EcoSprite(await spriteToImage(rows), await spriteToImage(rows, brightSeams: true));
-  }
+  static Future<EcoSprite> load(String speciesId) =>
+      _from(ecoSprites[speciesId] ?? (throw StateError('Sem sprite para $speciesId')));
+
+  /// Silhueta neutra, para o modo de tipo oculto.
+  static Future<EcoSprite> loadNeutral() => _from(neutralSprite);
+
+  static Future<EcoSprite> _from(List<String> rows) async =>
+      EcoSprite(await spriteToImage(rows), await spriteToImage(rows, brightSeams: true));
 }

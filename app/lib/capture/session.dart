@@ -31,6 +31,13 @@ class TuningSession {
   double progress = 0;
   TuningPhase phase = TuningPhase.running;
 
+  /// Segundos em que o dial esteve alinhado.
+  double alignedTimeS = 0;
+
+  /// Quantas vezes o alinhamento se perdeu (passou de alinhado para desalinhado).
+  int alignmentLosses = 0;
+  bool _wasAligned = false;
+
   bool get running => phase == TuningPhase.running;
   double get targetFrequency => signal.frequencyAt(t);
   double get tolerance => baseTolerance * signal.toleranceFactorAt(t);
@@ -45,7 +52,11 @@ class TuningSession {
     this.dial = dial.clamp(0.0, 1.0);
     final before = t;
     t += dt;
-    final rate = aligned ? balance.progressUpPerS : -balance.progressDownPerS;
+    final nowAligned = aligned;
+    if (nowAligned) alignedTimeS += dt;
+    if (_wasAligned && !nowAligned) alignmentLosses++;
+    _wasAligned = nowAligned;
+    final rate = nowAligned ? balance.progressUpPerS : -balance.progressDownPerS;
     progress = (progress + rate * dt).clamp(0.0, 1.0);
     if (progress >= 1) {
       phase = TuningPhase.success;

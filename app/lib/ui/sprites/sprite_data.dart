@@ -28,6 +28,9 @@ const Map<String, int> spritePalette = {
   'v': 0xFF9B7BFF, // costura violeta (o Véu)
   'u': 0xFF6A4FD0, // brilho externo
   'x': 0xFFF0EEF8, // olho
+  'n': 0xFF3A3450, // silhueta neutra
+  'm': 0xFF56507A, // silhueta neutra clara
+  'w': 0xFF2B2540, // silhueta neutra escura
 };
 
 /// Sootling (soot.eco).
@@ -181,6 +184,58 @@ const List<String> rilletSprite = [
   '................uOOhhhhhhhhhhhOOu...............',
   '.................u.OOOOOOOOOOO.u................',
   '..................u.u.u.u.u.u.u.................',
+  '................................................',
+  '................................................',
+  '................................................',
+];
+
+/// Silhueta neutra do modo de tipo oculto: não mostra nada do tipo.
+const List<String> neutralSprite = [
+  '................................................',
+  '................................................',
+  '................................................',
+  '................................................',
+  '................................................',
+  '................................................',
+  '................................................',
+  '................................................',
+  '................................................',
+  '.......................u.u......................',
+  '....................u.u.O.u.u...................',
+  '.................u.uOOOOmOOOOu.u................',
+  '................u.OOmmmmmmmmmOO.u...............',
+  '...............u.OmmmmmmmmnmmmmO.u..............',
+  '..............u.OmmmmmnnnnnnnnnmO.u.............',
+  '...............OmmmmnnnnnnnnnnnwwO..............',
+  '..............uOmmmnnnnnnnnnnnnnwOu.............',
+  '.............uOmmmnnnnnnnnnnnnnnnvOu............',
+  '............u.OmmmnnnnxxxxxnnnnnnvO.u...........',
+  '...........u.OmmmnnnnxxnnnxxnnnnnvwO.u..........',
+  '..........u.OmmmmnnnxxnnnnnxxnnnvnnwO.u.........',
+  '...........OmmvmnnnnnnnnnnnxxnnnvnnwwO..........',
+  '..........uOmmmvnnnnnnnnnnxxnnnnvnnwwOu.........',
+  '.........uOmmmnnvnnnnnnnnxxnnnnnnvnwwwOu........',
+  '..........OmmmnnvnnnnnnnxxnnnnnnnnvnwwO.........',
+  '.........uOmmnnnnvnnnnnnxxnnnnnnnnvwwwOu........',
+  '........u.OmmnnnvnnnnnnnnnnnnnnnnnnvwwO.u.......',
+  '.........OmmmnnnvnnnnnnnxxnnnnnnnnnwwwwO........',
+  '........u.OmmnnnvnnnnnnnxxnnnnnnnnnwwwO.u.......',
+  '.........uOmnnnvnnnnnnnnnnnnnnnnnnwwwwOu........',
+  '..........OmmnnnvnnnnnnnnnnnnnnnnnwwwwO.........',
+  '.........uOmmnnnvnnnnnnnnnnnnnnnnwwwwwOu........',
+  '..........uOmnnnnvnnnnnnnnnnnnnnwwwwwOu.........',
+  '...........OmnnnnnvnnnnnnnnnnnnwwwwwwO..........',
+  '..........u.OmnnnnnnnnnnnnnnnwwwwwwwO.u.........',
+  '...........u.OwwnnnnnnnnnnnvwnnnnnwO.u..........',
+  '............u.OnwwwwwnwwwwvnnnnnnnO.u...........',
+  '.........u.uOOOOOwwwwwwwwwvnnnnnOOOOOu.u........',
+  '........u.OOmmmmmOOwwwwwwvwnnnOOnnnnmOO.u.......',
+  '.........OmmmmmmmmmOOOOOwOOOOOnnnnmmmmmO........',
+  '........uOmmmmwwwwwOu.u.O.u.uOwwmmwwwwwOu.......',
+  '.........OmmwwwwwwwO...u.u...OmmwwwwwwwO........',
+  '........u.OOwwwwwOO.u.......u.OOwwwwwOO.u.......',
+  '.........u.uOOOOOu.u.........u.uOOOOOu.u........',
+  '............u.u.u...............u.u.u...........',
   '................................................',
   '................................................',
   '................................................',
