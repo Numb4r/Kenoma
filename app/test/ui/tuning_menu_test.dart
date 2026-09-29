@@ -128,9 +128,9 @@ void main() {
     expect(screen.showTarget, isTrue);
   });
 
-  testWidgets('o menu oferece a vibração de cada tipo para sentir de olhos fechados', (tester) async {
+  testWidgets('o menu deixa sentir a identidade de cada tipo e os alertas da resistência', (tester) async {
     await pumpMenu(tester);
-    for (final label in ['FOGO', 'ÁGUA', 'PLANTA', 'FOGO: AVISO', 'ÁGUA: ONDA', 'PLANTA: PULSO']) {
+    for (final label in ['FOGO', 'ÁGUA', 'PLANTA', 'FOGO: AVISO', 'ÁGUA: VIRADA', 'PLANTA: BROTO']) {
       await tester.scrollUntilVisible(find.text(label), 200, scrollable: find.byType(Scrollable).first);
       expect(find.text(label), findsOneWidget, reason: label);
     }

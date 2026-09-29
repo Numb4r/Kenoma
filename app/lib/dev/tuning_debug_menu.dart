@@ -174,19 +174,19 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
         const SizedBox(height: 24),
         const Text('Sentir a vibração', style: TextStyle(fontSize: 16, color: kDim)),
         const SizedBox(height: 8),
-        const Text('Identidade (início da sintonia)', style: TextStyle(fontSize: 8, color: kDim)),
+        const Text('Identidade (ferramenta do modo tipo oculto)', style: TextStyle(fontSize: 8, color: kDim)),
         const SizedBox(height: 8),
         Wrap(spacing: 8, runSpacing: 8, children: [
           for (final t in EcoType.values)
             PixelButton(label: typeLabel(t), color: kVeil, onTap: () => _vibration.play(identityPattern(t))),
         ]),
         const SizedBox(height: 16),
-        const Text('Resistência (durante)', style: TextStyle(fontSize: 8, color: kDim)),
+        const Text('Alertas (durante a sintonia)', style: TextStyle(fontSize: 8, color: kDim)),
         const SizedBox(height: 8),
         Wrap(spacing: 8, runSpacing: 8, children: [
           PixelButton(label: 'Fogo: aviso', color: kEssence, onTap: () => _vibration.play(fireWarningPattern)),
-          PixelButton(label: 'Água: onda', color: kSignal, onTap: () => _vibration.play(waterSwellPattern)),
-          PixelButton(label: 'Planta: pulso', color: kVeil, onTap: () => _vibration.play(plantPulsePattern(90))),
+          PixelButton(label: 'Água: virada', color: kSignal, onTap: () => _vibration.play(waterSwellPattern)),
+          PixelButton(label: 'Planta: broto', color: kVeil, onTap: () => _vibration.play(plantPulsePattern(90))),
         ]),
       ],
     );

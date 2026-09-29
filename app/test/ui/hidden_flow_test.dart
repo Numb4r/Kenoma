@@ -47,7 +47,7 @@ class Env {
   }
 }
 
-Future<Env> open(WidgetTester tester, {required bool hidden}) async {
+Future<Env> open(WidgetTester tester, {required bool hidden, EcoType? only, int playerLevel = 1, int ecoLevel = 1}) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 2.625;
   addTearDown(tester.view.reset);
@@ -63,8 +63,8 @@ Future<Env> open(WidgetTester tester, {required bool hidden}) async {
   final data = (await tester.runAsync(TuningData.load))!;
   await tester.pumpWidget(MaterialApp(
     home: TuningScreen(
-      pool: hidden ? data.species : [data.species.first],
-      buildSetup: (s) => TuningSetup(type: s.type, ecoLevel: 1, playerLevel: 1, seal: data.seals.first),
+      pool: hidden ? data.species : [only == null ? data.species.first : data.species.firstWhere((s) => s.type == only)],
+      buildSetup: (s) => TuningSetup(type: s.type, ecoLevel: ecoLevel, playerLevel: playerLevel, seal: data.seals.first),
       balance: data.balance,
       store: store,
       hidden: hidden,
@@ -72,8 +72,18 @@ Future<Env> open(WidgetTester tester, {required bool hidden}) async {
     ),
   ));
   // O jogo carrega os sprites de forma assíncrona de verdade. Com a suíte inteira rodando em
-  // paralelo isso pode demorar: espera até 30 s, e sai assim que a vibração de identidade toca.
-  for (var i = 0; i < 300 && vibration.played.isEmpty; i++) {
+  // paralelo isso pode demorar: espera até 30 s, e sai assim que a primeira sintonia está pronta.
+  bool ready() {
+    try {
+      final game = tester.widget<GameWidget<TuningGame>>(find.byType(GameWidget<TuningGame>)).game!;
+      game.session; // ainda não iniciada: lança
+      return game.isLoaded;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  for (var i = 0; i < 300 && !ready(); i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pump();
   }
@@ -180,15 +190,47 @@ void main() {
     expect(await env.rows(expected: 2), hasLength(2));
   });
 
-  testWidgets('fora do modo oculto não há tela de palpite: a sintonia começa na hora e grava sem palpite', (tester) async {
+  testWidgets('fora do modo oculto não há tela de palpite nem vibração de identidade: começa na hora e grava sem palpite', (tester) async {
     final env = await open(tester, hidden: false);
     expect(find.text('Sinta o sinal'), findsNothing);
     expect(env.game.awaitingGuess.value, isFalse);
-    expect(env.vibration.played, hasLength(1), reason: 'identidade no início, como sempre');
+    expect(env.vibration.played, isEmpty, reason: 'a vibração é só alerta: nada toca no início e a identidade não vaza');
     await env.play(1);
     expect(env.game.session.t, closeTo(1.0, 0.11));
     await env.play(21);
     final rows = await env.rows(expected: 1);
     expect((rows.single[12], rows.single[13]), ('0', ''));
+  });
+
+  group('a vibração da sintonia é só alerta', () {
+    // Conjurador 15 contra Eco 17: resistência 0,81.
+    for (final (type, alert) in [
+      (EcoType.fire, fireWarningPattern),
+      (EcoType.water, waterSwellPattern),
+      (EcoType.plant, null),
+    ]) {
+      testWidgets('${type.name}: só toca os alertas da resistência, nunca a identidade do tipo', (tester) async {
+        final env = await open(tester, hidden: false, only: type, playerLevel: 15, ecoLevel: 17);
+        await env.play(9);
+        final played = env.vibration.played;
+        expect(played, isNotEmpty, reason: 'com resistência forte há alertas');
+        final identity = identityPattern(type).pattern;
+        for (final p in played) {
+          expect(p.pattern, isNot(identity), reason: 'a identidade não pode tocar');
+          if (alert != null) {
+            expect(p.pattern, alert.pattern, reason: 'só o alerta do ${type.name}');
+          } else {
+            expect(p.segments, hasLength(1), reason: 'o broto da Planta é um pulso só');
+            expect(p.segments.single.durationMs, inInclusiveRange(30, 140));
+          }
+        }
+      });
+    }
+
+    testWidgets('sem resistência não toca nada durante a sintonia inteira', (tester) async {
+      final env = await open(tester, hidden: false, only: EcoType.water);
+      await env.play(6);
+      expect(env.vibration.played, isEmpty);
+    });
   });
 }

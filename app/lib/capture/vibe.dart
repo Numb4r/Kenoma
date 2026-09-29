@@ -1,6 +1,8 @@
 /// Padrões de vibração como dados. Quem toca é a camada de UI, com o pacote `vibration`.
 ///
-/// Cada tipo tem uma identidade que dá para reconhecer de olhos fechados:
+/// Na sintonia a vibração é só alerta e ritmo: aviso de pico do Fogo, virada da maré da Água e
+/// broto da Planta. Ela não identifica o tipo. Os padrões de identidade abaixo ficam como ferramenta
+/// de debug (modo de tipo oculto):
 /// - Fogo: toques secos e muito curtos, em rajada.
 /// - Água: uma onda longa e contínua, que sobe e desce.
 /// - Planta: pulsos cada vez mais curtos.

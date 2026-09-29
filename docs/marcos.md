@@ -53,13 +53,13 @@ Tela de sintonia isolada, sem mapa. Um menu de debug escolhe a espécie, o níve
 - A lógica fica em `capture/`, com testes unitários, e a renderização fica separada.
 - Inclui dial, duas ondas, tolerância, progresso e tempo.
 - Inclui os padrões de resistência de Fogo, Planta e Água.
-- Inclui a vibração de identidade e de resistência de cada tipo, com o pacote `vibration`.
+- Inclui a vibração que marca os momentos da resistência de cada tipo (aviso de pico do Fogo, virada da maré da Água, broto da Planta), com o pacote `vibration`.
 - Inclui o resultado de sucesso ou falha.
 
 **Pronto quando:**
 - uma sintonia sem resistência leva de 5 a 8 segundos;
 - com resistência forte leva de 10 a 15 segundos, dentro do teto de 20;
-- dá para reconhecer o tipo de olhos fechados, só pela vibração;
+- a vibração marca os momentos da resistência, sem precisar identificar o tipo sozinha;
 - os testes cobrem tolerância, progresso e cada padrão.
 
 Jogar o protótipo por alguns dias antes de seguir. Se não divertir, parar e rever o design.

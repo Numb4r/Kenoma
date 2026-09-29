@@ -92,10 +92,12 @@ class TuningGame extends FlameGame with DragCallbacks {
     _dial = 0.5;
     _reported = false;
     awaitingGuess.value = hidden;
-    feelAgain();
+    // A vibração da sintonia é só alerta e ritmo, não identifica o tipo. A identidade fica para o
+    // modo de tipo oculto, que é ferramenta de debug.
+    if (hidden) feelAgain();
   }
 
-  /// Toca de novo a vibração de identidade do tipo.
+  /// Toca a vibração de identidade do tipo (ferramenta de debug do modo de tipo oculto).
   void feelAgain() => vibration.play(identityPattern(setup.type));
 
   /// O jogador deu o palpite: a sintonia começa.

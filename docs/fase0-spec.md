@@ -278,8 +278,8 @@ A tolerância é o valor do selo multiplicado pelos bônus:
 | Tipo | Padrão | Como ler |
 | --- | --- | --- |
 | Fogo | picos bruscos que empurram o sinal | a onda tremula e o celular vibra curto antes de cada pico |
-| Água | deriva lenta e contínua, como maré | acompanhar suave; vibração longa e ondulada |
-| Planta | a tolerância encolhe aos poucos durante a sintonia | precisão importa; pulsos cada vez mais curtos |
+| Água | duas ondas lentas somadas, com períodos P e P × 1,618, e uma maré (~11 s) que varia a amplitude total entre 60% e 100% | acompanhar suave; o celular vibra 0,4 s antes de cada virada de sentido do sinal |
+| Planta | a tolerância encolhe até metade (piso de 0,5) e o sinal cresce: deriva num sentido sorteado, até 0,03 por segundo, e dá um passo extra, até 0,06, a cada pulso (o broto) | precisão importa; pulsos cada vez mais curtos marcam cada broto |
 
 A intensidade vai de 0 a 1:
 
@@ -289,7 +289,9 @@ A intensidade vai de 0 a 1:
 - Soma-se 0,045 por nível que o Eco tiver acima do Conjurador. Conjurador 15 contra Eco 17 dá 0,72 + 2 × 0,045 = 0,81.
 - O resultado é limitado entre 0 e 1.
 
-Mesmo sem resistência, cada tipo tem uma vibração de identidade no início da sintonia. Usar o pacote `vibration`, porque o `HapticFeedback` não faz padrão.
+A vibração não identifica o tipo: é só alerta e ritmo, e marca os momentos da resistência (aviso de pico do Fogo, virada da maré da Água, broto da Planta). Usar o pacote `vibration`, porque o `HapticFeedback` não faz padrão. Sem controle de amplitude no aparelho, a intensidade vira o liga e desliga do padrão.
+
+Nos parâmetros que dependem da intensidade `r`, o valor é `lerp(valor em 0, valor em 1, r)`. Os números de cada tipo estão em `balance.json`, na chave `tuning.signal`.
 
 ### Resultado
 
