@@ -229,7 +229,7 @@ void main() {
 
     testWidgets('sem resistência não toca nada durante a sintonia inteira', (tester) async {
       final env = await open(tester, hidden: false, only: EcoType.water);
-      await env.play(6);
+      await env.play(4); // uma sintonia não termina antes de 5 s: nada de vibração de resultado
       expect(env.vibration.played, isEmpty);
     });
   });

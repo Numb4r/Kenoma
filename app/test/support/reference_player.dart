@@ -51,6 +51,11 @@ class ReferencePlayer {
   }
 }
 
+/// Jogador perfeito: sem tremor e quase sem hesitação, limitado só pelo que um humano não vence:
+/// 0,2 s para reagir ao que vê e um dial de 3 unidades por segundo. É reativo: não prevê a deriva
+/// nem os picos. A resistência forte tem de segurar até ele por 10 a 15 s.
+const perfectPlayer = ReferencePlayer(startDelayS: 0.3, reactionS: 0.2, maxSpeed: 3, tremorAmp: 0);
+
 /// Sessão de sintonia com a semente [seed], pelo mesmo caminho que o app usa.
 TuningSession makeSession({
   required EcoType type,

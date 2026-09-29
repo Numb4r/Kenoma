@@ -264,6 +264,8 @@ Alvos de duração:
 - sem resistência: 5 a 8 s;
 - com resistência forte: 10 a 15 s.
 
+A resistência forte é Conjurador 15 contra Eco 17 (0,81). O alvo de 10 a 15 s vale para um jogador perfeito simulado: sem tremor, 0,2 s para reagir ao que vê e um dial rápido, mas sem prever a deriva nem os picos. Um humano leva mais. Os testes em `app/test/capture/duration_test.dart` conferem os dois alvos, e o balanceamento final vem de jogar.
+
 A sintonia não depende de como o jogador se move.
 
 ### Tolerância
