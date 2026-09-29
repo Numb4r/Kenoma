@@ -3,6 +3,7 @@ library;
 
 import '../core/pcg32.dart';
 import 'eco_type.dart';
+import 'overlevel.dart';
 import 'resistance.dart';
 import 'seal.dart';
 import 'session.dart';
@@ -28,6 +29,12 @@ class TuningSetup {
   /// Criaturas do Círculo fortes contra o tipo do alvo (até 3).
   final int circleStrong;
 
+  /// Diferença de nível: Eco menos Conjurador.
+  int get gap => levelGap(playerLevel: playerLevel, ecoLevel: ecoLevel);
+
+  /// Sobrenível `g`: níveis acima de `overlevel_free`.
+  int overlevel(TuningBalance b) => overlevelOf(playerLevel: playerLevel, ecoLevel: ecoLevel, balance: b);
+
   double intensity(TuningBalance b) =>
       resistanceIntensity(playerLevel: playerLevel, ecoLevel: ecoLevel, balance: b);
 
@@ -43,5 +50,6 @@ class TuningSetup {
         baseTolerance: tolerance(b),
         balance: b,
         timeLimitS: timeLimitS(b),
+        overlevel: overlevel(b),
       );
 }

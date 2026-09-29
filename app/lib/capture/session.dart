@@ -3,6 +3,7 @@
 library;
 
 import '../core/pcg32.dart';
+import 'overlevel.dart';
 import 'signal.dart';
 import 'tuning_balance.dart';
 
@@ -14,8 +15,11 @@ class TuningSession {
     required this.baseTolerance,
     required this.balance,
     required this.timeLimitS,
+    this.overlevel = 0,
     double initialDial = 0.5,
-  }) : dial = initialDial;
+  })  : dial = initialDial,
+        _overlevelTolerance = overlevelToleranceFactor(overlevel, balance),
+        _overlevelDown = overlevelProgressDownFactor(overlevel, balance);
 
   final TargetSignal signal;
 
@@ -25,6 +29,11 @@ class TuningSession {
 
   /// 20 s, ou 25 s com tônico.
   final double timeLimitS;
+
+  /// Sobrenível `g` desta sintonia (ver `overlevel.dart`). 0 se o Eco não passa de `overlevel_free`.
+  final int overlevel;
+  final double _overlevelTolerance;
+  final double _overlevelDown;
 
   double dial;
   double t = 0;
@@ -40,7 +49,9 @@ class TuningSession {
 
   bool get running => phase == TuningPhase.running;
   double get targetFrequency => signal.frequencyAt(t);
-  double get tolerance => baseTolerance * signal.toleranceFactorAt(t);
+  /// Tolerância agora: a do selo, vezes o fator da Planta (que tem piso), vezes o do sobrenível
+  /// (que tem o piso dele, aplicado depois).
+  double get tolerance => baseTolerance * signal.toleranceFactorAt(t) * _overlevelTolerance;
 
   /// Alinhado quando `|f_p − f_t| ≤ tolerância`.
   bool get aligned => (dial - targetFrequency).abs() <= tolerance;
@@ -56,7 +67,7 @@ class TuningSession {
     if (nowAligned) alignedTimeS += dt;
     if (_wasAligned && !nowAligned) alignmentLosses++;
     _wasAligned = nowAligned;
-    final rate = nowAligned ? balance.progressUpPerS : -balance.progressDownPerS;
+    final rate = nowAligned ? balance.progressUpPerS : -balance.progressDownPerS * _overlevelDown;
     progress = (progress + rate * dt).clamp(0.0, 1.0);
     if (progress >= 1) {
       phase = TuningPhase.success;
@@ -80,7 +91,8 @@ class TuningOutcome {
   final bool fled;
 }
 
-/// Resultado de uma sessão terminada: no sucesso, 1 ou 2 de Ectoplasma; na falha, 50% de chance de fuga.
+/// Resultado de uma sessão terminada: no sucesso, 1 ou 2 de Ectoplasma; na falha, 50% de chance de fuga,
+/// mais a do sobrenível.
 TuningOutcome resolveTuning(TuningSession session, Pcg32 rng) {
   assert(!session.running, 'a sintonia ainda está em andamento');
   final b = session.balance;
@@ -88,5 +100,5 @@ TuningOutcome resolveTuning(TuningSession session, Pcg32 rng) {
     final (lo, hi) = b.ectoplasmReward;
     return TuningOutcome(success: true, durationS: session.t, ectoplasm: lo + rng.nextInt(hi - lo + 1));
   }
-  return TuningOutcome(success: false, durationS: session.t, fled: rng.nextFloat() < b.fleeChanceOnFail);
+  return TuningOutcome(success: false, durationS: session.t, fled: rng.nextFloat() < fleeChanceOnFail(session.overlevel, b));
 }

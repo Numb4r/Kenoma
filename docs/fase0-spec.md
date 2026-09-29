@@ -295,6 +295,18 @@ A vibração não identifica o tipo: é só alerta e ritmo, e marca os momentos 
 
 Nos parâmetros que dependem da intensidade `r`, o valor é `lerp(valor em 0, valor em 1, r)`. Os números de cada tipo estão em `balance.json`, na chave `tuning.signal`.
 
+### Sobrenível
+
+A diferença de nível é `gap` = nível do Eco − nível do Conjurador. A intenção de design: criaturas muito acima do nível do Conjurador são quase impossíveis, e só um jogador que domina o jogo consegue. O `gap` tem dois eixos:
+
+- Até `overlevel_free` (5) níveis, só soma à intensidade da resistência, como acima.
+- Acima disso, `g = gap − 5` aplica o sobrenível, sem depender do teto de 1,0 da intensidade:
+  - a tolerância é multiplicada por `overlevel_tol_factor^g` (inicial 0,88), e esse multiplicador tem piso `overlevel_tol_floor` (inicial 0,2). Vale por cima do piso da Planta, então a tolerância da Planta pode ficar abaixo de metade do selo;
+  - a velocidade com que o progresso cai é multiplicada por `1 + overlevel_down_per_level × g` (inicial 0,1);
+  - a chance de a criatura fugir depois de uma falha sobe `overlevel_flee_per_level × g` (inicial 0,03), com teto em `overlevel_flee_max` (0,95).
+
+Todos os valores estão em `balance.json`, na chave `tuning`, com prefixo `overlevel_`. Eco abaixo do Conjurador não tem sobrenível.
+
 ### Resultado
 
 **Sucesso:**
@@ -305,7 +317,7 @@ Nos parâmetros que dependem da intensidade `r`, o valor é `lerp(valor em 0, va
 
 **Falha:**
 - o selo já foi consumido;
-- a criatura foge com 50% de chance, e a fuga entra no registro;
+- a criatura foge com 50% de chance, mais a do sobrenível (ver acima), e a fuga entra no registro;
 - se não fugir, dá para tentar de novo.
 
 ### Tela

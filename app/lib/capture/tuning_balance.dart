@@ -148,6 +148,11 @@ class TuningBalance {
         timeLimitS = _d(t['time_limit_s']),
         fleeChanceOnFail = _d(t['flee_chance_on_fail']),
         overlevelFree = t['overlevel_free'] as int,
+        overlevelTolFactor = _d(t['overlevel_tol_factor']),
+        overlevelTolFloor = _d(t['overlevel_tol_floor']),
+        overlevelDownPerLevel = _d(t['overlevel_down_per_level']),
+        overlevelFleePerLevel = _d(t['overlevel_flee_per_level']),
+        overlevelFleeMax = _d(t['overlevel_flee_max']),
         ectoplasmReward = ((t['ectoplasm_reward'] as List<dynamic>)[0] as int, t['ectoplasm_reward'][1] as int),
         circleStrongMultiplier = _d(t['circle_strong_multiplier']),
         circleStrongMax = t['circle_strong_max'] as int,
@@ -167,6 +172,18 @@ class TuningBalance {
   /// Níveis de diferença (Eco acima do Conjurador) que só somam à intensidade da resistência.
   /// Passando disso, vale o sobrenível.
   final int overlevelFree;
+
+  /// Sobrenível `g` = diferença de nível − [overlevelFree]. A tolerância é multiplicada por
+  /// `overlevelTolFactor^g`, sem passar de baixo de [overlevelTolFloor].
+  final double overlevelTolFactor;
+  final double overlevelTolFloor;
+
+  /// O progresso cai `(1 + overlevelDownPerLevel × g)` vezes mais rápido.
+  final double overlevelDownPerLevel;
+
+  /// A chance de fuga na falha sobe [overlevelFleePerLevel] por `g`, até [overlevelFleeMax].
+  final double overlevelFleePerLevel;
+  final double overlevelFleeMax;
   final (int, int) ectoplasmReward;
   final double circleStrongMultiplier;
   final int circleStrongMax;
