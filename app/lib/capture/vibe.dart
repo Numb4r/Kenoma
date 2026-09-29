@@ -30,6 +30,35 @@ class VibePattern {
 
   /// Uma amplitude por posição de [pattern]: 0 nas esperas.
   List<int> get intensities => [for (final s in segments) ...[0, s.amplitude]];
+
+  /// Versão para aparelhos sem controle de amplitude: a intensidade vira a fração de tempo ligado
+  /// dentro de cada [periodMs] (PWM). O motor demora a girar, então ligar 30% do período dá um
+  /// toque fraco e 100% dá o toque cheio. Segmentos a partir de [fullFrom] ficam como estão.
+  /// Fatias com menos de [minOnMs] ligado não moveriam o motor e viram silêncio.
+  VibePattern toOnOff({int periodMs = 40, int fullFrom = 200, int minOnMs = 8}) {
+    final out = <VibeSegment>[];
+    var carry = 0; // silêncio acumulado que vai para a pausa do próximo toque
+    for (final s in segments) {
+      if (s.amplitude >= fullFrom) {
+        out.add(VibeSegment(s.pauseMs + carry, s.durationMs, 255));
+        carry = 0;
+        continue;
+      }
+      carry += s.pauseMs;
+      final onMs = (periodMs * s.amplitude / 255).round();
+      final slices = s.durationMs ~/ periodMs;
+      for (var i = 0; i < slices; i++) {
+        if (onMs < minOnMs) {
+          carry += periodMs;
+        } else {
+          out.add(VibeSegment(carry, onMs, 255));
+          carry = periodMs - onMs;
+        }
+      }
+      carry += s.durationMs - slices * periodMs;
+    }
+    return VibePattern(out);
+  }
 }
 
 /// Vibração de identidade, no início de toda sintonia, com ou sem resistência.

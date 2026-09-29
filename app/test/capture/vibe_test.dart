@@ -96,4 +96,64 @@ void main() {
       expect(successPattern.pattern, isNot(failPattern.pattern));
     });
   });
+
+  group('aparelho sem controle de amplitude (toOnOff)', () {
+    int total(VibePattern p) => p.totalMs;
+
+    test('toques em amplitude cheia ficam como estão: Fogo e Planta mantêm ritmo e duração', () {
+      expect(fire.toOnOff().pattern, fire.pattern);
+      expect(plant.toOnOff().pattern, plant.pattern);
+      expect(fireWarningPattern.toOnOff().pattern, fireWarningPattern.pattern);
+    });
+
+    test('só liga e desliga: toda amplitude que sobra é 255', () {
+      for (final p in [fire, water, plant, waterSwellPattern, successPattern, failPattern]) {
+        expect(p.toOnOff().segments.every((s) => s.amplitude == 255), isTrue);
+      }
+    });
+
+    test('a Água ondulada vira pulsos que crescem e depois encolhem, sem sumir o ritmo', () {
+      final s = waterSwellPattern.toOnOff().segments;
+      final on = [for (final x in s) x.durationMs];
+      expect(s.length, greaterThanOrEqualTo(3));
+      final peak = on.indexOf(on.reduce((a, b) => a > b ? a : b));
+      expect(peak, greaterThan(0), reason: 'começa fraco');
+      expect(peak, lessThan(on.length - 1), reason: 'termina fraco');
+      for (var i = 1; i <= peak; i++) {
+        expect(on[i], greaterThanOrEqualTo(on[i - 1]));
+      }
+      for (var i = on.length - 1; i > peak; i--) {
+        expect(on[i - 1], greaterThanOrEqualTo(on[i]));
+      }
+    });
+
+    test('a onda inteira da Água segue longa, e a identidade da Água difere da do Fogo e da Planta', () {
+      final w = water.toOnOff();
+      expect(w.totalMs, greaterThanOrEqualTo(500));
+      expect(w.pattern, isNot(fire.toOnOff().pattern));
+      expect(w.pattern, isNot(plant.toOnOff().pattern));
+    });
+
+    test('nunca fica mais longa; só perde a cauda fraca demais para o motor girar', () {
+      for (final p in [water, waterSwellPattern, failPattern, successPattern]) {
+        final after = total(p.toOnOff());
+        expect(after, lessThanOrEqualTo(total(p)), reason: '${p.pattern}');
+        expect(total(p) - after, lessThanOrEqualTo(140), reason: '${p.pattern}');
+      }
+    });
+
+    test('nenhum toque é curto demais para o motor girar', () {
+      for (final p in [water, waterSwellPattern, failPattern]) {
+        for (final s in p.toOnOff().segments) {
+          expect(s.durationMs, greaterThanOrEqualTo(8));
+        }
+      }
+    });
+
+    test('um zumbido grave (amplitude 90) vira toque intermitente, não contínuo', () {
+      final f = failPattern.toOnOff();
+      expect(f.segments.length, greaterThan(3));
+      expect(f.segments.skip(1).every((s) => s.pauseMs > 0), isTrue);
+    });
+  });
 }

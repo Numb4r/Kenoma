@@ -10,7 +10,7 @@ abstract class VibrationPlayer {
 }
 
 /// Vibra o aparelho com o pacote `vibration` (o `HapticFeedback` não faz padrão).
-/// Sem motor ou sem controle de amplitude, degrada para liga e desliga com a mesma duração.
+/// Sem controle de amplitude (o moto g54 não tem), simula a intensidade com [VibePattern.toOnOff].
 class DeviceVibration implements VibrationPlayer {
   bool? _hasVibrator;
   bool? _hasAmplitude;
@@ -21,10 +21,12 @@ class DeviceVibration implements VibrationPlayer {
       _hasVibrator ??= await Vibration.hasVibrator();
       if (!_hasVibrator!) return;
       _hasAmplitude ??= await Vibration.hasAmplitudeControl();
-      await Vibration.vibrate(
-        pattern: pattern.pattern,
-        intensities: _hasAmplitude! ? pattern.intensities : const [],
-      );
+      if (_hasAmplitude!) {
+        await Vibration.vibrate(pattern: pattern.pattern, intensities: pattern.intensities);
+      } else {
+        // Sem controle de amplitude a intensidade vira liga e desliga rápido.
+        await Vibration.vibrate(pattern: pattern.toOnOff().pattern);
+      }
     } catch (e) {
       debugPrint('Vibração falhou: $e');
     }
