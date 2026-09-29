@@ -89,6 +89,8 @@ Janelas de spawn têm 20 minutos, com deslocamento próprio por célula. Detalhe
 - Toda função de `core/` e `capture/` tem teste unitário com vetores fixos.
 - Commits pequenos, um por passo de marco.
 - Sprites ausentes usam placeholders gerados (forma simples na cor do tipo com a inicial do nome). Arte nunca bloqueia código.
+- **Nunca dar push sem autorização explícita** do usuário, mesmo que ele tenha autorizado outros pushes antes. Commitar só quando pedido.
+- **Nunca capturar a tela do celular** (`adb screencap` e similares) sem checar antes se ele está desbloqueado e com o app em primeiro plano: `adb shell dumpsys window | grep isKeyguardShowing` tem que dar `false` e `adb shell dumpsys window | grep mCurrentFocus` tem que citar `com.numb4r.kenoma`. A tela de bloqueio e os outros apps mostram conteúdo pessoal.
 - Cores fixas: violeta `#9b7bff` é o Véu, ciano `#5fd3c6` é o sinal, laranja `#ff7a45` é Essência. Contorno `#1a1424`, nunca preto puro.
 
 ## Comandos

@@ -285,7 +285,7 @@ A intensidade vai de 0 a 1:
 
 - Níveis 1 a 3 do Conjurador: 0.
 - Níveis 4 a 9: 0,3.
-- Nível 10 em diante: sobe 0,07 por nível.
+- Nível 10 em diante: 0,3 + 0,07 × (nível − 9). Vale 0,37 no nível 10, 0,44 no 11 e 0,72 no 15.
 - Soma-se 0,02 por nível que o Eco tiver acima do Conjurador.
 - O resultado é limitado entre 0 e 1.
 
