@@ -62,11 +62,30 @@ class WaterBalance {
   WaterBalance(Map<String, dynamic> j)
       : amplitude = _range(j['amplitude']),
         periodS = _range(j['period_s']),
-        cueEveryS = _d(j['cue_every_s']);
+        secondPeriodRatio = _d(j['second_period_ratio']),
+        secondWeight = _d(j['second_weight']),
+        tidePeriodS = _d((j['tide'] as Map<String, dynamic>)['period_s']),
+        tideMin = _d((j['tide'] as Map<String, dynamic>)['min']),
+        cueLeadS = _d(j['cue_lead_s']);
 
+  /// Amplitude total da deriva, em fração do eixo de frequência.
   final Range2 amplitude;
+
+  /// Período `P` da primeira senoide.
   final Range2 periodS;
-  final double cueEveryS;
+
+  /// A segunda senoide tem período `P × secondPeriodRatio` (razão áurea: as duas nunca se repetem juntas).
+  final double secondPeriodRatio;
+
+  /// Fração da amplitude que vai para a segunda senoide. A primeira leva o resto.
+  final double secondWeight;
+
+  /// A amplitude total oscila devagar entre [tideMin] e 1 com este período (a maré).
+  final double tidePeriodS;
+  final double tideMin;
+
+  /// A vibração avisa este tempo antes de cada inversão de sentido do sinal.
+  final double cueLeadS;
 }
 
 class PlantBalance {

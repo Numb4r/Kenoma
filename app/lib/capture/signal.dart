@@ -40,6 +40,8 @@ class TargetSignal {
     required this.start,
     required this.wanderPhase,
     required this.waterPhase,
+    required this.waterPhase2,
+    required this.tidePhase,
     required this._kicks,
     required this.cues,
   });
@@ -54,6 +56,8 @@ class TargetSignal {
     double horizonS = 60,
   }) {
     final s = balance.signal;
+    // Ordem dos sorteios: a frequência inicial, a fase da deriva, a fase da primeira senoide da
+    // Água e os picos do Fogo vêm primeiro e não mudam. Os sorteios novos entram no fim.
     final start = lerpRange(s.startRange, rng.nextFloat());
     final wanderPhase = 2 * math.pi * rng.nextFloat();
     final waterPhase = 2 * math.pi * rng.nextFloat();
@@ -74,9 +78,7 @@ class TargetSignal {
             cues.add(TuningCue(math.max(0, at - s.fire.warningLeadS), CueKind.fireWarning, fireWarningPattern));
           }
         case EcoType.water:
-          for (var at = s.water.cueEveryS; at <= horizonS; at += s.water.cueEveryS) {
-            cues.add(TuningCue(at, CueKind.waterSwell, waterSwellPattern));
-          }
+          break; // os avisos dependem do sinal pronto: entram logo abaixo
         case EcoType.plant:
           for (var at = s.plant.cueEveryS; at <= horizonS; at += s.plant.cueEveryS) {
             final u = (at / s.plant.shrinkOverS).clamp(0.0, 1.0);
@@ -84,16 +86,24 @@ class TargetSignal {
           }
       }
     }
-    return TargetSignal._(
+    // Sorteios novos, no fim da sequência.
+    final waterPhase2 = 2 * math.pi * rng.nextFloat();
+    final tidePhase = 2 * math.pi * rng.nextFloat();
+
+    final signal = TargetSignal._(
       type: type,
       intensity: intensity,
       balance: balance,
       start: start,
       wanderPhase: wanderPhase,
       waterPhase: waterPhase,
+      waterPhase2: waterPhase2,
+      tidePhase: tidePhase,
       kicks: kicks,
       cues: cues,
     );
+    if (type == EcoType.water && intensity > 0) cues.addAll(signal._waterCues(horizonS));
+    return signal;
   }
 
   final EcoType type;
@@ -102,6 +112,8 @@ class TargetSignal {
   final double start;
   final double wanderPhase;
   final double waterPhase;
+  final double waterPhase2;
+  final double tidePhase;
   final List<_Kick> _kicks;
 
   /// Vibrações de resistência, em ordem de instante.
@@ -114,15 +126,49 @@ class TargetSignal {
   double frequencyAt(double t) {
     final s = balance.signal;
     var f = start + s.wanderAmplitude * math.sin(2 * math.pi * t / s.wanderPeriodS + wanderPhase);
-    if (type == EcoType.water && intensity > 0) {
-      final amp = lerpRange(s.water.amplitude, intensity);
-      final period = lerpRange(s.water.periodS, intensity);
-      f += amp * math.sin(2 * math.pi * t / period + waterPhase);
-    }
+    f += waterOffsetAt(t);
     for (final k in _kicks) {
       if (t >= k.at) f += k.delta * math.exp(-(t - k.at) / s.fire.decayS);
     }
     return _fold(f);
+  }
+
+  /// Deriva da Água antes de dobrar nas bordas: duas senoides, com períodos `P` e `P × 1,618`, e a
+  /// amplitude total modulada pela maré lenta. 0 fora da Água ou sem resistência.
+  double waterOffsetAt(double t) {
+    if (type != EcoType.water || intensity <= 0) return 0;
+    final w = balance.signal.water;
+    final amp = lerpRange(w.amplitude, intensity);
+    final p1 = lerpRange(w.periodS, intensity);
+    final p2 = p1 * w.secondPeriodRatio;
+    final tide = (1 + w.tideMin) / 2 + (1 - w.tideMin) / 2 * math.sin(2 * math.pi * t / w.tidePeriodS + tidePhase);
+    return tide *
+        amp *
+        ((1 - w.secondWeight) * math.sin(2 * math.pi * t / p1 + waterPhase) +
+            w.secondWeight * math.sin(2 * math.pi * t / p2 + waterPhase2));
+  }
+
+  /// Um aviso [WaterBalance.cueLeadS] antes de cada inversão de sentido do sinal (topo, fundo ou
+  /// batida na borda do eixo), achadas amostrando o sinal a cada 10 ms.
+  List<TuningCue> _waterCues(double horizonS) {
+    const step = 0.01;
+    final lead = balance.signal.water.cueLeadS;
+    final out = <TuningCue>[];
+    var prev = frequencyAt(0);
+    var prevDir = 0;
+    for (var i = 1; i * step <= horizonS + lead; i++) {
+      final f = frequencyAt(i * step);
+      final dir = f > prev ? 1 : (f < prev ? -1 : 0);
+      if (dir != 0) {
+        if (prevDir != 0 && dir != prevDir) {
+          final at = (i - 1) * step - lead; // o ponto de inversão ficou um passo para trás
+          if (at > 0 && at <= horizonS) out.add(TuningCue(at, CueKind.waterSwell, waterSwellPattern));
+        }
+        prevDir = dir;
+      }
+      prev = f;
+    }
+    return out;
   }
 
   /// Multiplicador da tolerância no instante [t]. Só a Planta o reduz.
