@@ -64,4 +64,46 @@ void main() {
     expect(await again.count(), 2);
     expect(file.readAsLinesSync().where((l) => l == SessionRecord.header), hasLength(1));
   });
+
+  test('gravações sobrepostas não perdem linhas: sai um cabeçalho e todas as linhas, na ordem', () async {
+    final file = File('${dir.path}/sessions.csv');
+    final store = SessionLogStore(file);
+    await Future.wait([for (var i = 1; i <= 8; i++) store.append(rec(i))]);
+    final lines = file.readAsLinesSync();
+    expect(lines, hasLength(9));
+    expect(lines.first, SessionRecord.header);
+    expect(lines.skip(1).toList(), [for (var i = 1; i <= 8; i++) rec(i).toCsvLine()]);
+    expect(await store.count(), 8);
+  });
+
+  test('uma gravação que falha não trava as seguintes', () async {
+    final store = SessionLogStore(File('${dir.path}/sessions.csv'));
+    final first = store.append(_Broken());
+    final second = store.append(rec(2));
+    await expectLater(first, throwsStateError);
+    await second;
+    expect(await store.count(), 1);
+    expect(store.file.readAsLinesSync().last, rec(2).toCsvLine());
+  });
+}
+
+class _Broken extends SessionRecord {
+  _Broken()
+      : super(
+          timeUtc: DateTime.utc(2026),
+          type: EcoType.fire,
+          ecoLevel: 1,
+          playerLevel: 1,
+          sealId: 's',
+          tonic: false,
+          tolerance: 0,
+          resistance: 0,
+          durationS: 0,
+          success: false,
+          alignedTimeS: 0,
+          alignmentLosses: 0,
+        );
+
+  @override
+  String toCsvLine() => throw StateError('linha inválida');
 }

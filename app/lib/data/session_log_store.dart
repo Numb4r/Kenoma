@@ -18,11 +18,22 @@ class SessionLogStore {
 
   final File file;
 
-  Future<void> append(SessionRecord record) async {
-    final fresh = !file.existsSync() || file.lengthSync() == 0;
+  /// Fila das gravações: uma termina antes de a próxima começar. Sem isso, duas gravações
+  /// sobrepostas decidem ao mesmo tempo se o arquivo é novo e uma perde a linha da outra.
+  Future<void> _queue = Future<void>.value();
+
+  Future<void> append(SessionRecord record) {
+    final done = _queue.then((_) => _write(record));
+    _queue = done.catchError((Object _) {}); // a falha de uma gravação não trava as seguintes
+    return done;
+  }
+
+  Future<void> _write(SessionRecord record) async {
+    final line = record.toCsvLine();
     await file.parent.create(recursive: true);
+    final fresh = !file.existsSync() || file.lengthSync() == 0;
     await file.writeAsString(
-      '${fresh ? '${SessionRecord.header}\n' : ''}${record.toCsvLine()}\n',
+      '${fresh ? '${SessionRecord.header}\n' : ''}$line\n',
       mode: FileMode.append,
       flush: true,
     );
