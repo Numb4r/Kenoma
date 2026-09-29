@@ -25,6 +25,10 @@ class ReferencePlayer {
     this.maxSpeed = 1.5,
     this.tremorAmp = 0.03,
     this.tremorHz = 1.3,
+    this.retargetThreshold = 0,
+    this.overshootChance = 0,
+    this.overshootFraction = 0.4,
+    this.tremorRandomPhase = false,
   });
 
   /// Tempo que o jogador leva para descobrir para que lado girar o dial no começo.
@@ -36,16 +40,61 @@ class ReferencePlayer {
   final double tremorAmp;
   final double tremorHz;
 
+  /// Uma correção só é refeita quando o sinal que o jogador vê andou tanto desde a última decisão,
+  /// ou quando o dial chegou e ainda há erro. 0 (com `overshootChance` 0) acompanha o sinal o tempo
+  /// todo, que é o comportamento de sempre.
+  final double retargetThreshold;
+
+  /// Chance de uma correção passar do ponto, e quanto passa, em fração do tamanho da correção. O dial
+  /// termina o movimento no ponto que passou e só então corrige de volta (sujeito a passar de novo).
+  final double overshootChance;
+  final double overshootFraction;
+
+  /// O tremor tem duas componentes (1,3 Hz e 2,9 Hz, 60% e 40% da amplitude) com fases sorteadas por
+  /// sintonia, então nunca passa de ±[tremorAmp]. Falso: uma senoide de fase 0, como sempre.
+  final bool tremorRandomPhase;
   static const double dt = 1 / 60;
 
-  /// Joga a sessão até o fim e devolve o instante em que terminou.
-  double play(TuningSession s) {
+  /// Joga a sessão até o fim e devolve o instante em que terminou. [seed] sorteia quais correções
+  /// passam do ponto, então cada sintonia simulada tem a sua.
+  double play(TuningSession s, {int seed = 0, void Function(double t, double dial)? onStep}) {
+    final rng = Pcg32(fnv1a64([seed, 0x70]), saltKenoma);
     var dial = s.dial;
+    var aim = dial;
+    var intended = dial; // o que viu na última decisão de mirar
+    final phase1 = 2 * math.pi * rng.nextFloat();
+    final phase2 = 2 * math.pi * rng.nextFloat();
+    double tremor(double t) => tremorRandomPhase
+        ? tremorAmp * (0.6 * math.sin(2 * math.pi * 1.3 * t + phase1) + 0.4 * math.sin(2 * math.pi * 2.9 * t + phase2))
+        : tremorAmp * math.sin(2 * math.pi * tremorHz * s.t);
     while (s.running) {
       final seen = s.signal.frequencyAt(math.max(0, s.t - reactionS));
-      final err = seen - dial;
-      if (s.t >= startDelayS) dial += err.sign * math.min(err.abs() * 8, maxSpeed) * dt;
-      s.step(dt, dial: dial + tremorAmp * math.sin(2 * math.pi * tremorHz * s.t));
+      if (s.t >= startDelayS) {
+        if (retargetThreshold == 0 && overshootChance == 0) {
+          aim = seen; // acompanha o sinal o tempo todo
+        } else {
+          // Uma correção é um movimento até `aim`, que só termina quando o dial chega. Nova decisão de
+          // mirar: o sinal andou além do limiar desde a última, ou o dial chegou e ainda há erro.
+          final arrived = (aim - dial).abs() < 0.01;
+          final moved = (seen - intended).abs() > retargetThreshold;
+          final off = (seen - aim).abs() > retargetThreshold;
+          if (moved || (arrived && off)) {
+            final distance = seen - dial;
+            intended = seen;
+            aim = seen;
+            if (overshootChance > 0 && rng.nextFloat() < overshootChance) {
+              aim = (seen + distance.sign * distance.abs() * overshootFraction).clamp(0.0, 1.0);
+            }
+          }
+        }
+      }
+      if (s.t >= startDelayS) {
+        final err = aim - dial;
+        dial += err.sign * math.min(err.abs() * 8, maxSpeed) * dt;
+      }
+      final output = dial + tremor(s.t);
+      onStep?.call(s.t, output);
+      s.step(dt, dial: output);
     }
     return s.t;
   }
@@ -55,6 +104,20 @@ class ReferencePlayer {
 /// 0,2 s para reagir ao que vê e um dial de 3 unidades por segundo. É reativo: não prevê a deriva
 /// nem os picos. A resistência forte tem de segurar até ele por 10 a 15 s.
 const perfectPlayer = ReferencePlayer(startDelayS: 0.3, reactionS: 0.2, maxSpeed: 3, tremorAmp: 0);
+
+/// Jogador típico: reage em 0,35 s, hesita 0,5 s no começo, a mão treme ±0,02 no dial e refaz a
+/// pontaria só quando o sinal se afasta 0,03 de onde mirou. 10% das correções passam do ponto
+/// (por 40% do tamanho delas). É reativo, como o perfeito.
+const typicalPlayer = ReferencePlayer(
+  startDelayS: 0.5,
+  reactionS: 0.35,
+  maxSpeed: 1.5,
+  tremorAmp: 0.02,
+  retargetThreshold: 0.03,
+  overshootChance: 0.1,
+  overshootFraction: 0.4,
+  tremorRandomPhase: true,
+);
 
 /// Sessão de sintonia com a semente [seed], pelo mesmo caminho que o app usa.
 TuningSession makeSession({
