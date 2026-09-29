@@ -171,6 +171,10 @@ Os vetores são obrigatórios nos testes do M2:
 | PCG32 com esse `h_0` | primeiras saídas 937126716, 1949151193, 2853980563 |
 | época 0, índice 0 | `uid_0 = 0xb15342d5daf75c2d` |
 
+O instante t = 1790000000 (2026-09-21 14:13:20 UTC) é anterior à época 0 e vale só para os vetores de hash e janela. Para testar a seleção de época, use as bordas: 1790035199 não tem época vigente, 1790035200 (2026-09-22 00:00 UTC) é a época 0, e 1797811200 (2026-12-21 00:00 UTC) já marca a época 0 como desatualizada.
+
+Se não há época vigente (relógio antes da primeira), o app usa a primeira época e marca o mundo como desatualizado.
+
 ### Registro de coletas
 
 O aparelho guarda cada uid coletado, capturado ou que fugiu. Um uid registrado não aparece de novo. O registro guarda só as últimas 48 horas. Como o uid inclui a janela, um spawn nunca volta depois que a janela passa.

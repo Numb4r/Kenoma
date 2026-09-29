@@ -123,9 +123,26 @@ class EpochSchedule {
     return best;
   }
 
-  /// O relógio passou do `valid_until_utc` da última época conhecida: mostrar o aviso de mundo
-  /// desatualizado. O app continua gerando pela época vigente.
-  bool isStale(int tUtc) => tUtc > epochs.map((e) => e.validUntilUtc).reduce((a, b) => a > b ? a : b);
+  /// Mundo desatualizado: o relógio está antes da primeira época ou chegou ao `valid_until_utc`
+  /// da última época conhecida. O app mostra o aviso e continua gerando.
+  bool isStale(int tUtc) =>
+      tUtc < epochs.map((e) => e.startsUtc).reduce((a, b) => a < b ? a : b) ||
+      tUtc >= epochs.map((e) => e.validUntilUtc).reduce((a, b) => a > b ? a : b);
+
+  /// Época que o app usa no instante `tUtc`: a vigente ou, antes da primeira, a primeira.
+  EpochSelection select(int tUtc) {
+    final epoch = current(tUtc) ?? epochs.reduce((a, b) => a.startsUtc <= b.startsUtc ? a : b);
+    return EpochSelection(epoch: epoch, stale: isStale(tUtc));
+  }
+}
+
+class EpochSelection {
+  const EpochSelection({required this.epoch, required this.stale});
+
+  final Epoch epoch;
+
+  /// Mostrar o aviso de mundo desatualizado.
+  final bool stale;
 }
 
 int _parseUtcSeconds(String iso) {
