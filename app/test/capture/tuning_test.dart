@@ -63,10 +63,10 @@ void main() {
       expect(r(15), closeTo(0.72, 1e-12));
     });
 
-    test('soma 0,02 por nível do Eco acima do Conjurador; abaixo não conta', () {
-      expect(r(1, 3), closeTo(0.04, 1e-12));
-      expect(r(6, 8), closeTo(0.34, 1e-12));
-      expect(r(15, 17), closeTo(0.76, 1e-12));
+    test('soma 0,045 por nível do Eco acima do Conjurador; abaixo não conta', () {
+      expect(r(1, 3), closeTo(0.09, 1e-12));
+      expect(r(6, 8), closeTo(0.39, 1e-12));
+      expect(r(15, 17), closeTo(0.81, 1e-12));
       expect(r(6, 4), 0.3);
     });
 

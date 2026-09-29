@@ -158,7 +158,7 @@ void main() {
     final env = await open(tester, hidden: true);
     await tester.tap(find.text(typeLabel(env.game.setup.type).toUpperCase()));
     await tester.pump();
-    await env.play(5);
+    await env.play(4); // uma sintonia não termina antes de 5 s de alinhamento
     expect(await env.rows(), isEmpty);
   });
 

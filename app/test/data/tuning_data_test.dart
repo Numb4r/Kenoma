@@ -52,7 +52,7 @@ void main() {
 
     test('intensidade e tolerância vêm dos níveis e do selo', () {
       expect(setup().intensity(data.balance), 0);
-      expect(setup(player: 15, eco: 17).intensity(data.balance), closeTo(0.76, 1e-12));
+      expect(setup(player: 15, eco: 17).intensity(data.balance), closeTo(0.81, 1e-12));
       expect(setup().tolerance(data.balance), 0.08);
     });
 

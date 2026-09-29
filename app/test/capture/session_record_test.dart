@@ -153,7 +153,7 @@ void main() {
     expect(r.sealId, 'item.seal.reinforced');
     expect(r.tonic, isTrue);
     expect(r.tolerance, closeTo(0.11, 1e-12));
-    expect(r.resistance, closeTo(0.76, 1e-12));
+    expect(r.resistance, closeTo(0.81, 1e-12));
     expect(r.durationS, session.t);
     expect(r.success, session.phase == TuningPhase.success);
     expect(r.alignedTimeS, session.alignedTimeS);

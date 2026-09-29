@@ -286,7 +286,7 @@ A intensidade vai de 0 a 1:
 - Níveis 1 a 3 do Conjurador: 0.
 - Níveis 4 a 9: 0,3.
 - Nível 10 em diante: 0,3 + 0,07 × (nível − 9). Vale 0,37 no nível 10, 0,44 no 11 e 0,72 no 15.
-- Soma-se 0,02 por nível que o Eco tiver acima do Conjurador.
+- Soma-se 0,045 por nível que o Eco tiver acima do Conjurador. Conjurador 15 contra Eco 17 dá 0,72 + 2 × 0,045 = 0,81.
 - O resultado é limitado entre 0 e 1.
 
 Mesmo sem resistência, cada tipo tem uma vibração de identidade no início da sintonia. Usar o pacote `vibration`, porque o `HapticFeedback` não faz padrão.
