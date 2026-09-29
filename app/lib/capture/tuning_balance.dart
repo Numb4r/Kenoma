@@ -147,6 +147,7 @@ class TuningBalance {
         progressDownPerS = _d(t['progress_down_per_s']),
         timeLimitS = _d(t['time_limit_s']),
         fleeChanceOnFail = _d(t['flee_chance_on_fail']),
+        overlevelFree = t['overlevel_free'] as int,
         ectoplasmReward = ((t['ectoplasm_reward'] as List<dynamic>)[0] as int, t['ectoplasm_reward'][1] as int),
         circleStrongMultiplier = _d(t['circle_strong_multiplier']),
         circleStrongMax = t['circle_strong_max'] as int,
@@ -162,6 +163,10 @@ class TuningBalance {
   final double progressDownPerS;
   final double timeLimitS;
   final double fleeChanceOnFail;
+
+  /// Níveis de diferença (Eco acima do Conjurador) que só somam à intensidade da resistência.
+  /// Passando disso, vale o sobrenível.
+  final int overlevelFree;
   final (int, int) ectoplasmReward;
   final double circleStrongMultiplier;
   final int circleStrongMax;

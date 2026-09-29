@@ -70,6 +70,29 @@ void main() {
       expect(r(6, 4), 0.3);
     });
 
+    test('o bônus por nível do Eco para em overlevel_free (5) níveis acima', () {
+      expect(b.overlevelFree, 5);
+      // Conjurador 6 (0,3): 5 níveis acima somam 5 × 0,045.
+      expect(r(6, 11), closeTo(0.3 + 5 * 0.045, 1e-12));
+      // 6, 10 e 20 níveis acima valem o mesmo que 5.
+      for (final gap in [6, 10, 14]) {
+        expect(r(6, 6 + gap), closeTo(0.3 + 5 * 0.045, 1e-12), reason: 'gap $gap');
+      }
+      expect(r(15, 15 + 5), closeTo(0.72 + 5 * 0.045, 1e-12));
+      expect(r(15, 15 + 20), closeTo(0.72 + 5 * 0.045, 1e-12));
+    });
+
+    test('a diferença de nível soma de 0 a 5 níveis, um por um', () {
+      for (var gap = 0; gap <= 5; gap++) {
+        expect(r(10, 10 + gap), closeTo(0.37 + gap * 0.045, 1e-12), reason: 'gap $gap');
+      }
+    });
+
+    test('Eco abaixo do Conjurador não soma nada', () {
+      expect(r(10, 3), closeTo(0.37, 1e-12));
+      expect(r(10, 1), closeTo(0.37, 1e-12));
+    });
+
     test('limitada entre 0 e 1', () {
       expect(r(99, 99), 1.0);
       expect(r(1, 1), 0.0);

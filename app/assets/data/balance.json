@@ -6,6 +6,7 @@
     "progress_down_per_s": 0.1,
     "time_limit_s": 20,
     "flee_chance_on_fail": 0.5,
+    "overlevel_free": 5,
     "ectoplasm_reward": [1, 2],
     "circle_strong_multiplier": 1.1,
     "circle_strong_max": 3,

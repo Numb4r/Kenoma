@@ -288,7 +288,7 @@ A intensidade vai de 0 a 1:
 - Níveis 1 a 3 do Conjurador: 0.
 - Níveis 4 a 9: 0,3.
 - Nível 10 em diante: 0,3 + 0,07 × (nível − 9). Vale 0,37 no nível 10, 0,44 no 11 e 0,72 no 15.
-- Soma-se 0,045 por nível que o Eco tiver acima do Conjurador. Conjurador 15 contra Eco 17 dá 0,72 + 2 × 0,045 = 0,81.
+- Soma-se 0,045 por nível que o Eco tiver acima do Conjurador, até `overlevel_free` (5) níveis. Conjurador 15 contra Eco 17 dá 0,72 + 2 × 0,045 = 0,81. Passando de 5 níveis, a intensidade para de crescer e o sobrenível assume (abaixo).
 - O resultado é limitado entre 0 e 1.
 
 A vibração não identifica o tipo: é só alerta e ritmo, e marca os momentos da resistência (aviso de pico do Fogo, virada da maré da Água, broto da Planta). Usar o pacote `vibration`, porque o `HapticFeedback` não faz padrão. Sem controle de amplitude no aparelho, a intensidade vira o liga e desliga do padrão.
