@@ -59,7 +59,8 @@ void main() {
       expect(setup.overlevel(b), 25);
       final s = setup.start(b, Pcg32(fnv1a64([1]), saltKenoma));
       expect(s.overlevel, 25);
-      expect(s.tolerance, closeTo(0.08 * b.overlevelTolFloor, 1e-12));
+      expect(s.tolerance, closeTo(0.08 * overlevelToleranceFactor(25, b), 1e-12));
+      expect(s.tolerance, lessThan(0.08), reason: 'o sobrenível vale mesmo com a intensidade no teto');
     });
 
     test('a intensidade não cresce com o sobrenível: só o gap até overlevel_free conta', () {
@@ -102,7 +103,9 @@ void main() {
       final free = makeSession(type: EcoType.fire, playerLevel: 10, ecoLevel: 10, seed: 3);
       final over = makeSession(type: EcoType.fire, playerLevel: 10, ecoLevel: 20, seed: 3);
       expect(over.targetFrequency, free.targetFrequency);
-      final offset = 0.08 * 0.75; // dentro da tolerância cheia, fora da tolerância com sobrenível
+      // Um desvio entre as duas tolerâncias: dentro da cheia, fora da que tem sobrenível.
+      final offset = (free.tolerance + over.tolerance) / 2;
+      expect(over.tolerance, lessThan(free.tolerance));
       expect(offset, greaterThan(over.tolerance));
       expect(offset, lessThan(free.tolerance));
       free.dial = free.targetFrequency + offset;
@@ -124,7 +127,12 @@ void main() {
     });
 
     test('o piso do sobrenível também vale por cima da Planta', () {
-      final s = makeSession(type: EcoType.plant, playerLevel: 30, ecoLevel: 60, seed: 2);
+      // Um Eco tão acima que o fator^g já passou do piso, seja qual for o fator calibrado.
+      var g = 1;
+      while (overlevelToleranceFactor(g, b) > b.overlevelTolFloor) {
+        g++;
+      }
+      final s = makeSession(type: EcoType.plant, playerLevel: 30, ecoLevel: 30 + b.overlevelFree + g + 5, seed: 2);
       s.t = 30;
       expect(s.tolerance, closeTo(0.08 * b.signal.plant.toleranceFloor * b.overlevelTolFloor, 1e-12));
     });

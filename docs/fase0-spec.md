@@ -301,11 +301,24 @@ A diferença de nível é `gap` = nível do Eco − nível do Conjurador. A inte
 
 - Até `overlevel_free` (5) níveis, só soma à intensidade da resistência, como acima.
 - Acima disso, `g = gap − 5` aplica o sobrenível, sem depender do teto de 1,0 da intensidade:
-  - a tolerância é multiplicada por `overlevel_tol_factor^g` (inicial 0,88), e esse multiplicador tem piso `overlevel_tol_floor` (inicial 0,2). Vale por cima do piso da Planta, então a tolerância da Planta pode ficar abaixo de metade do selo;
-  - a velocidade com que o progresso cai é multiplicada por `1 + overlevel_down_per_level × g` (inicial 0,1);
-  - a chance de a criatura fugir depois de uma falha sobe `overlevel_flee_per_level × g` (inicial 0,03), com teto em `overlevel_flee_max` (0,95).
+  - a tolerância é multiplicada por `overlevel_tol_factor^g` (0,97), e esse multiplicador tem piso `overlevel_tol_floor` (0,2). Vale por cima do piso da Planta, então a tolerância da Planta pode ficar abaixo de metade do selo;
+  - a velocidade com que o progresso cai é multiplicada por `1 + overlevel_down_per_level × g` (0,18);
+  - a chance de a criatura fugir depois de uma falha sobe `overlevel_flee_per_level × g` (0,03), com teto em `overlevel_flee_max` (0,95).
 
 Todos os valores estão em `balance.json`, na chave `tuning`, com prefixo `overlevel_`. Eco abaixo do Conjurador não tem sobrenível.
+
+**Metas de sucesso**, medidas com 500 sintonias por tipo, Conjurador 10, selo simples, média dos três tipos:
+
+| gap | jogador típico | jogador perfeito |
+| --- | --- | --- |
+| 5 | 70 a 85% | |
+| 10 | 30 a 45% | 85% ou mais |
+| 15 | 5 a 15% | 55 a 70% |
+| 20 | menos de 2% | 25 a 40% |
+
+O jogador perfeito reage em 0,2 s, não treme e não prevê. O típico reage em 0,35 s, treme ±0,02 no dial e passa do ponto em 10% das correções. Os dois estão em `app/test/support/reference_player.dart`, e `app/test/capture/overlevel_calibration_test.dart` refaz a medição.
+
+Com os valores acima, o perfeito cumpre as três metas dele (100%, 67%, 25%) e o típico cumpre a do gap 20 (0%). O típico fica em 87% no gap 5 (a meta é até 85%, e o sobrenível ainda não entra aí), em 8% no gap 10 e em 1% no gap 15, abaixo das metas de 30 a 45% e 5 a 15%. Com três constantes compartilhadas não dá para cumprir as duas colunas: o típico cai de um penhasco na tolerância, em torno de 0,07, e o perfeito só sente o progresso que cai mais rápido. Além disso, a Água é bem mais fácil que o Fogo, e a Planta a mais difícil, então a média esconde diferenças grandes por tipo.
 
 ### Resultado
 
