@@ -240,7 +240,7 @@ O mapa é desenhado proceduralmente em pixel art a partir de uma grade de biomas
 
 ### Biomas
 
-Biomas comuns garantem farm em qualquer lugar da cidade. Biomas raros dão spawns especiais mas nunca são obrigatórios.
+Biomas comuns garantem farm em qualquer lugar da cidade. Biomas raros dão spawns especiais mas nunca são obrigatórios. Toda espécie comum pode aparecer em qualquer bioma: o bioma só aumenta o peso das espécies e materiais dele, e células sem dado no OSM usam o sorteio geral. Assim o jogo funciona em qualquer cidade, mesmo com o OSM pobre, e quem não tem acesso a um parque ou lago ainda encontra tudo, só que com menos frequência. Exclusividade por bioma fica para variantes e itens raros, nunca para espécies.
 
 | Bioma | Origem OSM | Materiais | Tipos de criatura |
 | --- | --- | --- | --- |
@@ -352,7 +352,7 @@ Meta de longo prazo é toda família chegar às camadas finais, podendo pular ca
 
 ### Famílias do MVP
 
-Três famílias com Fagulha e Eco, em triângulo de Fogo, Planta e Água. O Residencial, bioma mais comum para quem joga no próprio bairro, sorteia as três em partes iguais com densidade um pouco menor, e a família de Sombra chega na fase 1. Os nomes em inglês são provisórios.
+Três famílias com Fagulha e Eco, em triângulo de Fogo, Planta e Água. Todo bioma sorteia as três famílias, com peso 6 para a família nativa e 1 para as outras (75% contra 12,5% cada). Residencial e Vazio usam pesos iguais com densidade um pouco menor. A família de Sombra chega na fase 1. Os nomes em inglês são provisórios.
 
 | Família | Bioma | Tipo | Fagulha | Eco | Habilidade de mapa |
 | --- | --- | --- | --- | --- | --- |
@@ -1106,7 +1106,7 @@ Só as regiões onde alguém joga precisam de pacote, no início Campinas e São
 
 Em lugares sem pacote, o app consulta a Overpass API só para a área ao redor do jogador, classifica os biomas no aparelho e guarda em cache por blocos de 1 km. Depois do primeiro acesso a área fica disponível offline.
 
-Pacotes são o caminho principal porque garantem mundo idêntico entre jogadores. No fallback, edições no OSM entre consultas podem gerar biomas diferentes para dois jogadores na mesma área, quebrando o determinismo dos spawns. Isso é aceitável para lugares visitados raramente, como viagens.
+O determinismo entre jogadores se mantém fixando a data da consulta: toda consulta usa o parâmetro de data da Overpass com o instante de início da época vigente, então dois aparelhos que consultam a mesma área em dias diferentes recebem os mesmos dados do OSM. A classificação no aparelho precisa usar exatamente as mesmas regras do pipeline, e o pacote gerado em Python serve de oráculo nos testes. Se isso se mostrar confiável, o fallback pode virar o caminho principal e os pacotes embutidos deixam de ser necessários. Fica para depois da Fase 0, que usa só o pacote de Campinas.
 
 ### Dados e conteúdo
 

@@ -27,12 +27,12 @@ Definidos em `shared/biomes.json`, com as regras de tags OSM e os buffers em met
 | Id | Bioma | Tags OSM principais | Prioridade |
 | --- | --- | --- | --- |
 | 0 | Vazio | sem dado | 0 |
-| 1 | Urbano | `highway` principal (motorway a tertiary, com buffer), `landuse=commercial/retail/industrial` | 2 |
-| 2 | Verde | `leisure=park/garden/nature_reserve`, `landuse=grass/forest/meadow/recreation_ground`, `natural=wood/scrub/grassland` | 3 |
+| 1 | Urbano | `highway` principal (motorway a tertiary, buffer de 14 m), `landuse=commercial/retail/industrial/education/institutional/railway/construction/garages`, `amenity=university/college/school/hospital/marketplace/parking/bus_station`, `building` comercial, de escritório, industrial e institucional, `aeroway=aerodrome` | 2 |
+| 2 | Verde | `leisure=park/garden/nature_reserve`, `landuse=grass/forest/meadow/recreation_ground/farmland/orchard/plant_nursery`, `natural=wood/scrub/grassland` | 3 |
 | 3 | Água | `natural=water`, `waterway=river/stream/canal` (com buffer), `landuse=reservoir/basin` | 4 |
 | 4 | Residencial | `landuse=residential` | 1 |
 
-Ruas residenciais e `building=*` **não** viram Urbano. Sem isso, os bairros residenciais sumiriam da grade.
+Ruas residenciais e prédios genéricos (`building=yes`, `house`, `residential`, `apartments`) **não** viram Urbano. Sem isso, os bairros residenciais sumiriam da grade.
 
 Vazio é desenhado e tratado como Residencial para spawns, o que garante um piso mínimo. Muitos bairros no OSM brasileiro não têm `landuse` e caem aqui.
 
@@ -198,7 +198,7 @@ Três famílias, com duas camadas cada na Fase 0, Fagulha e Eco. Os nomes são p
 | Frond | Peab | Verde | Planta | Seed Mote | Frondling, fronde fractal que anda sobre raízes |
 | Rill | Zumvi | Água | Água | Drip Mote | Rillet, gota que reflete outro céu |
 
-Residencial sorteia as três famílias em partes iguais. Vantagens em triângulo: Fogo vence Planta, Planta vence Água e Água vence Fogo.
+Todo bioma sorteia as três famílias, com peso 6 para a nativa e 1 para as outras. Residencial e Vazio usam pesos iguais. Nenhuma espécie é exclusiva de um bioma, para que o jogo funcione em qualquer cidade e para quem não tem acesso a parque ou lago. Vantagens em triângulo: Fogo vence Planta, Planta vence Água e Água vence Fogo.
 
 **`creatures.json`** tem os dados da espécie:
 - id;

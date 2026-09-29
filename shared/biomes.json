@@ -1,24 +1,183 @@
 {
   "version": 1,
   "biomes": [
-    { "id": 0, "key": "void", "name": "Vazio", "priority": 0, "spawn_as": "residential", "osm": [] },
-    { "id": 1, "key": "urban", "name": "Urbano", "priority": 2, "osm": [
-      { "tag": "highway", "values": ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link", "secondary", "secondary_link", "tertiary", "tertiary_link"], "geometry": "line", "buffer_m": 8 },
-      { "tag": "landuse", "values": ["commercial", "retail", "industrial"], "geometry": "area" }
-    ] },
-    { "id": 2, "key": "green", "name": "Verde", "priority": 3, "osm": [
-      { "tag": "leisure", "values": ["park", "garden", "nature_reserve"], "geometry": "area" },
-      { "tag": "landuse", "values": ["grass", "forest", "meadow", "recreation_ground"], "geometry": "area" },
-      { "tag": "natural", "values": ["wood", "scrub", "grassland"], "geometry": "area" }
-    ] },
-    { "id": 3, "key": "water", "name": "Água", "priority": 4, "osm": [
-      { "tag": "natural", "values": ["water"], "geometry": "area" },
-      { "tag": "landuse", "values": ["reservoir", "basin"], "geometry": "area" },
-      { "tag": "waterway", "values": ["river", "canal"], "geometry": "line", "buffer_m": 10 },
-      { "tag": "waterway", "values": ["stream"], "geometry": "line", "buffer_m": 4 }
-    ] },
-    { "id": 4, "key": "residential", "name": "Residencial", "priority": 1, "osm": [
-      { "tag": "landuse", "values": ["residential"], "geometry": "area" }
-    ] }
+    {
+      "id": 0,
+      "key": "void",
+      "name": "Vazio",
+      "priority": 0,
+      "spawn_as": "residential",
+      "osm": []
+    },
+    {
+      "id": 1,
+      "key": "urban",
+      "name": "Urbano",
+      "priority": 2,
+      "osm": [
+        {
+          "tag": "highway",
+          "values": [
+            "motorway",
+            "motorway_link",
+            "trunk",
+            "trunk_link",
+            "primary",
+            "primary_link",
+            "secondary",
+            "secondary_link",
+            "tertiary",
+            "tertiary_link"
+          ],
+          "geometry": "line",
+          "buffer_m": 14
+        },
+        {
+          "tag": "landuse",
+          "values": [
+            "commercial",
+            "retail",
+            "industrial",
+            "education",
+            "institutional",
+            "railway",
+            "construction",
+            "garages"
+          ],
+          "geometry": "area"
+        },
+        {
+          "tag": "amenity",
+          "values": [
+            "university",
+            "college",
+            "school",
+            "hospital",
+            "marketplace",
+            "parking",
+            "bus_station"
+          ],
+          "geometry": "area"
+        },
+        {
+          "tag": "building",
+          "values": [
+            "commercial",
+            "retail",
+            "office",
+            "industrial",
+            "warehouse",
+            "supermarket",
+            "hospital",
+            "university",
+            "school",
+            "train_station",
+            "hotel"
+          ],
+          "geometry": "area"
+        },
+        {
+          "tag": "aeroway",
+          "values": [
+            "aerodrome"
+          ],
+          "geometry": "area"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "key": "green",
+      "name": "Verde",
+      "priority": 3,
+      "osm": [
+        {
+          "tag": "leisure",
+          "values": [
+            "park",
+            "garden",
+            "nature_reserve"
+          ],
+          "geometry": "area"
+        },
+        {
+          "tag": "landuse",
+          "values": [
+            "grass",
+            "forest",
+            "meadow",
+            "recreation_ground",
+            "farmland",
+            "orchard",
+            "plant_nursery"
+          ],
+          "geometry": "area"
+        },
+        {
+          "tag": "natural",
+          "values": [
+            "wood",
+            "scrub",
+            "grassland"
+          ],
+          "geometry": "area"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "key": "water",
+      "name": "Água",
+      "priority": 4,
+      "osm": [
+        {
+          "tag": "natural",
+          "values": [
+            "water"
+          ],
+          "geometry": "area"
+        },
+        {
+          "tag": "landuse",
+          "values": [
+            "reservoir",
+            "basin"
+          ],
+          "geometry": "area"
+        },
+        {
+          "tag": "waterway",
+          "values": [
+            "river",
+            "canal"
+          ],
+          "geometry": "line",
+          "buffer_m": 10
+        },
+        {
+          "tag": "waterway",
+          "values": [
+            "stream"
+          ],
+          "geometry": "line",
+          "buffer_m": 4
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "key": "residential",
+      "name": "Residencial",
+      "priority": 1,
+      "osm": [
+        {
+          "tag": "landuse",
+          "values": [
+            "residential"
+          ],
+          "geometry": "area"
+        }
+      ]
+    }
   ]
 }

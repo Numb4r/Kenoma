@@ -6,42 +6,313 @@
       "starts_utc": "2026-09-22T00:00:00Z",
       "valid_until_utc": "2026-12-21T00:00:00Z",
       "region_packs": {
-        "campinas": { "file": "campinas_e0.bin", "sha256": "ac71599127c817a9a436da9195f86f4b2c834158ba10ae0993213904e0f6ac48" }
+        "campinas": {
+          "file": "campinas_e0.bin",
+          "sha256": "559f3551cf04ef399eaca600a4397e4a074d1c58b8b744f83e46503fabfa4f30"
+        }
       },
       "spawn": {
         "items": [
-          { "index": 0, "kind": "eco", "chance": { "urban": 0.10, "green": 0.10, "water": 0.10, "residential": 0.08 },
-            "table": {
-              "urban": [["soot.eco", 1]],
-              "green": [["frond.eco", 1]],
-              "water": [["rill.eco", 1]],
-              "residential": [["soot.eco", 1], ["frond.eco", 1], ["rill.eco", 1]]
+          {
+            "index": 0,
+            "kind": "eco",
+            "chance": {
+              "urban": 0.1,
+              "green": 0.1,
+              "water": 0.1,
+              "residential": 0.08
             },
-            "qty": [1, 1], "level_delta": [-2, 2] },
-          { "index": 1, "kind": "spark", "chance": { "urban": 0.25, "green": 0.25, "water": 0.25, "residential": 0.25 },
             "table": {
-              "urban": [["item.dust.fire", 1]],
-              "green": [["item.dust.plant", 1]],
-              "water": [["item.dust.water", 1]],
-              "residential": [["item.dust.fire", 1], ["item.dust.plant", 1], ["item.dust.water", 1]]
+              "urban": [
+                [
+                  "soot.eco",
+                  6
+                ],
+                [
+                  "frond.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "frond.eco",
+                  6
+                ],
+                [
+                  "soot.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "rill.eco",
+                  6
+                ],
+                [
+                  "soot.eco",
+                  1
+                ],
+                [
+                  "frond.eco",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "soot.eco",
+                  1
+                ],
+                [
+                  "frond.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ]
+              ]
             },
-            "qty": [1, 1] },
-          { "index": 2, "kind": "spark", "chance": { "urban": 0.125, "green": 0.125, "water": 0.125, "residential": 0.125 },
+            "qty": [
+              1,
+              1
+            ],
+            "level_delta": [
+              -2,
+              2
+            ]
+          },
+          {
+            "index": 1,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.25,
+              "green": 0.25,
+              "water": 0.25,
+              "residential": 0.25
+            },
             "table": {
-              "urban": [["item.dust.fire", 1]],
-              "green": [["item.dust.plant", 1]],
-              "water": [["item.dust.water", 1]],
-              "residential": [["item.dust.fire", 1], ["item.dust.plant", 1], ["item.dust.water", 1]]
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ]
             },
-            "qty": [1, 1] },
-          { "index": 3, "kind": "material", "chance": { "urban": 0.12, "green": 0.12, "water": 0.12, "residential": 0.12 },
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.125,
+              "green": 0.125,
+              "water": 0.125,
+              "residential": 0.125
+            },
             "table": {
-              "urban": [["item.scrap", 1], ["item.chalk", 1]],
-              "green": [["item.herbs", 1]],
-              "water": [["item.pure_water", 1]],
-              "residential": [["item.scrap", 1], ["item.chalk", 1], ["item.herbs", 1]]
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ]
             },
-            "qty": [1, 3] }
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "material",
+            "chance": {
+              "urban": 0.12,
+              "green": 0.12,
+              "water": 0.12,
+              "residential": 0.12
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.scrap",
+                  3
+                ],
+                [
+                  "item.chalk",
+                  3
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.herbs",
+                  4
+                ],
+                [
+                  "item.chalk",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.pure_water",
+                  4
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.chalk",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.scrap",
+                  2
+                ],
+                [
+                  "item.chalk",
+                  2
+                ],
+                [
+                  "item.herbs",
+                  2
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              3
+            ]
+          }
         ]
       }
     }
