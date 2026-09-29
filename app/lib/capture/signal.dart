@@ -42,6 +42,7 @@ class TargetSignal {
     required this.waterPhase,
     required this.waterPhase2,
     required this.tidePhase,
+    required this.plantDirection,
     required this._kicks,
     required this.cues,
   });
@@ -89,6 +90,7 @@ class TargetSignal {
     // Sorteios novos, no fim da sequência.
     final waterPhase2 = 2 * math.pi * rng.nextFloat();
     final tidePhase = 2 * math.pi * rng.nextFloat();
+    final plantDirection = rng.nextFloat() < 0.5 ? -1.0 : 1.0;
 
     final signal = TargetSignal._(
       type: type,
@@ -99,6 +101,7 @@ class TargetSignal {
       waterPhase: waterPhase,
       waterPhase2: waterPhase2,
       tidePhase: tidePhase,
+      plantDirection: plantDirection,
       kicks: kicks,
       cues: cues,
     );
@@ -114,6 +117,9 @@ class TargetSignal {
   final double waterPhase;
   final double waterPhase2;
   final double tidePhase;
+
+  /// Sentido do crescimento da Planta: -1 ou 1.
+  final double plantDirection;
   final List<_Kick> _kicks;
 
   /// Vibrações de resistência, em ordem de instante.
@@ -126,7 +132,7 @@ class TargetSignal {
   double frequencyAt(double t) {
     final s = balance.signal;
     var f = start + s.wanderAmplitude * math.sin(2 * math.pi * t / s.wanderPeriodS + wanderPhase);
-    f += waterOffsetAt(t);
+    f += waterOffsetAt(t) + plantOffsetAt(t);
     for (final k in _kicks) {
       if (t >= k.at) f += k.delta * math.exp(-(t - k.at) / s.fire.decayS);
     }
@@ -146,6 +152,18 @@ class TargetSignal {
         amp *
         ((1 - w.secondWeight) * math.sin(2 * math.pi * t / p1 + waterPhase) +
             w.secondWeight * math.sin(2 * math.pi * t / p2 + waterPhase2));
+  }
+
+  /// Crescimento da Planta antes de dobrar nas bordas: uma deriva contínua no sentido sorteado e,
+  /// a cada pulso de vibração, um passo extra no mesmo sentido (o broto). 0 fora da Planta ou sem
+  /// resistência.
+  double plantOffsetAt(double t) {
+    if (type != EcoType.plant || intensity <= 0) return 0;
+    final p = balance.signal.plant;
+    final rate = lerpRange(p.growthPerS, intensity);
+    final step = lerpRange(p.budStep, intensity);
+    final buds = cues.where((c) => c.at <= t).length;
+    return plantDirection * (rate * t + step * buds);
   }
 
   /// Um aviso [WaterBalance.cueLeadS] antes de cada inversão de sentido do sinal (topo, fundo ou
@@ -176,7 +194,7 @@ class TargetSignal {
     if (type != EcoType.plant) return 1;
     final plant = balance.signal.plant;
     final u = (t / plant.shrinkOverS).clamp(0.0, 1.0);
-    return 1 - plant.toleranceShrink * intensity * u;
+    return math.max(plant.toleranceFloor, 1 - plant.toleranceShrink * intensity * u);
   }
 
   /// 1 enquanto a onda deve tremular, perto de um pico do Fogo. 0 nos outros casos.

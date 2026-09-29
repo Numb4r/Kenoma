@@ -22,9 +22,9 @@ List<double> durations(EcoType type, int player, int eco, {int n = 100, String s
 
 double median(List<double> sorted) => sorted[sorted.length ~/ 2];
 
-/// A Água mudou (duas senoides, maré, avisos nas inversões): a calibração dela é refeita com o
-/// jogador perfeito, no último commit desta rodada.
-String? _recalibrate(EcoType type) => type == EcoType.water ? 'recalibrar a Água com o jogador perfeito' : null;
+/// A Água e a Planta mudaram: a calibração delas é refeita com o jogador perfeito, no último
+/// commit desta rodada.
+String? _recalibrate(EcoType type) => type == EcoType.fire ? null : 'recalibrar ${type.name} com o jogador perfeito';
 
 void main() {
   final b = loadTuningBalance();

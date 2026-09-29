@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/capture/eco_type.dart';
+import 'package:kenoma/capture/session.dart';
 import 'package:kenoma/capture/signal.dart';
 import 'package:kenoma/capture/tuning_balance.dart';
 import 'package:kenoma/core/fnv.dart';
@@ -279,38 +280,182 @@ void main() {
     });
   });
 
-  group('Planta: a tolerância encolhe', () {
-    test('o sinal fica firme, igual ao de quem não tem resistência', () {
-      expect(series(signal(EcoType.plant, 0.72)), series(signal(EcoType.plant, 0)));
+  group('Planta: a tolerância encolhe até um piso, e o sinal cresce', () {
+    final p = b.signal.plant;
+
+    group('tolerância', () {
+      test('encolhe aos poucos até o mínimo e para', () {
+        final s = signal(EcoType.plant, 0.72);
+        final floor = math.max(p.toleranceFloor, 1 - p.toleranceShrink * 0.72);
+        expect(s.toleranceFactorAt(0), 1);
+        var prev = 1.0;
+        for (var t = 0.1; t <= p.shrinkOverS; t += 0.1) {
+          expect(s.toleranceFactorAt(t), lessThanOrEqualTo(prev));
+          prev = s.toleranceFactorAt(t);
+        }
+        expect(s.toleranceFactorAt(p.shrinkOverS), closeTo(floor, 1e-12));
+        expect(s.toleranceFactorAt(p.shrinkOverS * 5), closeTo(floor, 1e-12));
+      });
+
+      test('o piso é 0,5: em nenhuma intensidade nem instante a tolerância cai abaixo de metade', () {
+        expect(p.toleranceFloor, 0.5);
+        for (final r in [0.0, 0.3, 0.72, 0.81, 0.95, 1.0]) {
+          final s = signal(EcoType.plant, r);
+          for (var t = 0.0; t <= 100; t += 0.25) {
+            expect(s.toleranceFactorAt(t), greaterThanOrEqualTo(0.5), reason: 'r=$r t=$t');
+          }
+        }
+      });
+
+      test('com intensidade 1 a tolerância chega ao piso e fica ali (antes chegava a zero)', () {
+        final s = signal(EcoType.plant, 1.0);
+        expect(p.toleranceShrink * 1.0, greaterThanOrEqualTo(1.0), reason: 'sem piso, o fator iria a zero');
+        expect(s.toleranceFactorAt(p.shrinkOverS), 0.5);
+        expect(s.toleranceFactorAt(60), 0.5);
+      });
+
+      test('mais intensidade, mais encolhimento, até o piso', () {
+        final f = [for (final r in [0.2, 0.4, 0.5]) signal(EcoType.plant, r).toleranceFactorAt(20)];
+        expect(f[0], greaterThan(f[1]));
+        expect(f[1], greaterThan(f[2]));
+        expect(f[2], 0.5, reason: 'com o encolhimento em 1,0 o piso de 0,5 começa na intensidade 0,5');
+        // Acima disso o piso segura: 0,72 e 1,0 param no mesmo ponto.
+        expect(signal(EcoType.plant, 0.72).toleranceFactorAt(20), signal(EcoType.plant, 1.0).toleranceFactorAt(20));
+      });
+
+      test('só a Planta encolhe a tolerância', () {
+        expect(signal(EcoType.fire, 1).toleranceFactorAt(10), 1);
+        expect(signal(EcoType.water, 1).toleranceFactorAt(10), 1);
+      });
+
+      test('com resistência 1 ainda dá para sintonizar: um jogador que acompanha o sinal sela', () {
+        // Sem o piso a tolerância ia a zero em 3 s e nenhum dial estaria alinhado.
+        var sealed = 0;
+        for (var seed = 0; seed < 30; seed++) {
+          final s = makeSession(type: EcoType.plant, playerLevel: 99, ecoLevel: 20, seed: seed);
+          const ReferencePlayer(startDelayS: 0.3, reactionS: 0.15, maxSpeed: 4, tremorAmp: 0).play(s);
+          if (s.phase == TuningPhase.success) sealed++;
+        }
+        expect(sealed, greaterThan(15), reason: 'selou só $sealed de 30');
+      });
+
+      test('a tolerância efetiva nunca é zero', () {
+        final s = makeSession(type: EcoType.plant, playerLevel: 99, ecoLevel: 20, seed: 1);
+        expect(s.signal.intensity, 1.0);
+        for (var t = 0.0; t < 40; t += 0.5) {
+          expect(s.baseTolerance * s.signal.toleranceFactorAt(t), greaterThan(0.03));
+        }
+      });
     });
 
-    test('encolhe aos poucos até o mínimo e para', () {
-      final s = signal(EcoType.plant, 0.72);
-      final over = b.signal.plant.shrinkOverS;
-      final floor = 1 - b.signal.plant.toleranceShrink * 0.72;
-      expect(s.toleranceFactorAt(0), 1);
-      var prev = 1.0;
-      for (var t = 0.1; t <= over; t += 0.1) {
-        expect(s.toleranceFactorAt(t), lessThanOrEqualTo(prev));
-        prev = s.toleranceFactorAt(t);
-      }
-      expect(s.toleranceFactorAt(over), closeTo(floor, 1e-12));
-      expect(s.toleranceFactorAt(over * 5), closeTo(floor, 1e-12));
-    });
+    group('crescimento', () {
+      double rate(double r) => lerpRange(p.growthPerS, r);
+      double step(double r) => lerpRange(p.budStep, r);
 
-    test('mais intensidade, mais encolhimento', () {
-      expect(signal(EcoType.plant, 1).toleranceFactorAt(20), lessThan(signal(EcoType.plant, 0.3).toleranceFactorAt(20)));
-    });
+      test('parâmetros: deriva de 0 a 0,03 por segundo e broto de 0 a 0,06', () {
+        expect(p.growthPerS, (0.0, 0.03));
+        expect(p.budStep, (0.0, 0.06));
+      });
 
-    test('pulsos cada vez mais curtos, até o mínimo', () {
-      final s = signal(EcoType.plant, 0.72);
-      final durations = [for (final c in s.cues) c.pattern.segments.single.durationMs];
-      expect(s.cues.every((c) => c.kind == CueKind.plantPulse), isTrue);
-      expect(durations.first, greaterThan(durations[2]));
-      for (var i = 1; i < durations.length; i++) {
-        expect(durations[i], lessThanOrEqualTo(durations[i - 1]));
-      }
-      expect(durations.last, b.signal.plant.pulseMs.$2.round());
+      test('sem resistência o sinal é só a deriva de base; com resistência ele cresce', () {
+        expect(series(signal(EcoType.plant, 0)), series(signal(EcoType.fire, 0)));
+        expect(signal(EcoType.plant, 0).plantOffsetAt(9), 0);
+        expect(series(signal(EcoType.plant, 0.72)), isNot(series(signal(EcoType.plant, 0))));
+      });
+
+      test('só a Planta cresce', () {
+        expect(signal(EcoType.fire, 0.72).plantOffsetAt(9), 0);
+        expect(signal(EcoType.water, 0.72).plantOffsetAt(9), 0);
+      });
+
+      test('o sentido vem do sorteio novo, logo depois das fases da Água', () {
+        for (var seed = 0; seed < 25; seed++) {
+          final r = Pcg32(fnv1a64([seed]), saltKenoma);
+          for (var i = 0; i < 5; i++) {
+            r.nextFloat(); // início, fase da deriva, fase da Água, segunda fase, fase da maré
+          }
+          final dir = r.nextFloat() < 0.5 ? -1.0 : 1.0;
+          final s = signal(EcoType.plant, 0.72, seed: seed);
+          expect(s.plantDirection, dir, reason: 'semente $seed');
+          expect(s.plantOffsetAt(10).sign, dir);
+        }
+      });
+
+      test('os dois sentidos acontecem', () {
+        expect({for (var seed = 0; seed < 40; seed++) signal(EcoType.plant, 0.72, seed: seed).plantDirection}, {-1.0, 1.0});
+      });
+
+      test('entre dois pulsos a deriva é contínua, na taxa lerp(0, 0,03, intensidade) por segundo', () {
+        for (final r in [0.3, 0.72, 1.0]) {
+          final s = signal(EcoType.plant, r);
+          // Os pulsos caem em múltiplos de cue_every_s (1,2 s): de 0,1 a 1,1 não há nenhum.
+          final drift = s.plantOffsetAt(1.1) - s.plantOffsetAt(0.1);
+          expect(drift, closeTo(s.plantDirection * rate(r) * 1.0, 1e-12), reason: 'r=$r');
+        }
+      });
+
+      test('a cada pulso o sinal dá um passo extra lerp(0, 0,06, intensidade) no mesmo sentido', () {
+        for (final r in [0.3, 0.72, 1.0]) {
+          final s = signal(EcoType.plant, r);
+          expect(s.cues, isNotEmpty);
+          for (final c in s.cues.take(12)) {
+            const e = 1e-6;
+            final jump = s.plantOffsetAt(c.at + e) - s.plantOffsetAt(c.at - e);
+            expect(jump, closeTo(s.plantDirection * (step(r) + rate(r) * 2 * e), 1e-9), reason: 'r=$r, pulso em ${c.at}');
+            expect(jump.sign, s.plantDirection);
+          }
+        }
+      });
+
+      test('o broto e a deriva têm o mesmo sentido: o deslocamento só cresce em módulo', () {
+        final s = signal(EcoType.plant, 0.9);
+        var prev = 0.0;
+        for (var t = 0.0; t < 40; t += 0.05) {
+          final off = s.plantOffsetAt(t).abs();
+          expect(off, greaterThanOrEqualTo(prev));
+          prev = off;
+        }
+      });
+
+      test('o deslocamento cresce com a intensidade', () {
+        expect(signal(EcoType.plant, 1.0).plantOffsetAt(20).abs(), greaterThan(signal(EcoType.plant, 0.5).plantOffsetAt(20).abs()));
+        expect(signal(EcoType.plant, 1.0).plantOffsetAt(20).abs(), closeTo(rate(1.0) * 20 + step(1.0) * (20 / p.cueEveryS).floor(), 0.07));
+      });
+
+      test('o sinal reflete nas bordas: continua em [0, 1] e chega a bater nelas', () {
+        var touched = 0;
+        for (var seed = 0; seed < 30; seed++) {
+          final xs = series(signal(EcoType.plant, 1.0, seed: seed), to: 60);
+          for (final f in xs) {
+            expect(f, inInclusiveRange(0.0, 1.0));
+          }
+          if (xs.any((f) => f > 0.97) || xs.any((f) => f < 0.03)) touched++;
+        }
+        expect(touched, greaterThan(20), reason: 'com deriva e brotos, em 60 s o sinal alcança uma borda quase sempre');
+      });
+
+      test('o único salto do sinal são os brotos, nos pulsos', () {
+        final s = signal(EcoType.plant, 0.8);
+        final threshold = step(0.8) * 0.6;
+        for (var t = 0.0; t < 30; t += 1 / 60) {
+          final jump = (s.frequencyAt(t + 1 / 60) - s.frequencyAt(t)).abs();
+          if (jump > threshold) {
+            expect(s.cues.any((c) => c.at > t && c.at <= t + 1 / 60), isTrue, reason: 'salto de $jump em t=$t sem pulso');
+          }
+        }
+      });
+
+      test('a vibração continua a ser um pulso que encurta', () {
+        final s = signal(EcoType.plant, 0.72);
+        final durations = [for (final c in s.cues) c.pattern.segments.single.durationMs];
+        expect(s.cues.every((c) => c.kind == CueKind.plantPulse), isTrue);
+        expect(durations.first, greaterThan(durations[2]));
+        for (var i = 1; i < durations.length; i++) {
+          expect(durations[i], lessThanOrEqualTo(durations[i - 1]));
+        }
+        expect(durations.last, p.pulseMs.$2.round());
+        expect(s.cues[1].at - s.cues[0].at, closeTo(p.cueEveryS, 1e-9));
+      });
     });
   });
 

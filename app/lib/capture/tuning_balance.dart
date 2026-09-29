@@ -92,6 +92,9 @@ class PlantBalance {
   PlantBalance(Map<String, dynamic> j)
       : toleranceShrink = _d(j['tolerance_shrink']),
         shrinkOverS = _d(j['shrink_over_s']),
+        toleranceFloor = _d(j['tolerance_floor']),
+        growthPerS = _range(j['growth_per_s']),
+        budStep = _range(j['bud_step']),
         cueEveryS = _d(j['cue_every_s']),
         pulseMs = _range(j['pulse_ms']);
 
@@ -100,6 +103,16 @@ class PlantBalance {
 
   /// Tempo que a tolerância leva para encolher até o mínimo.
   final double shrinkOverS;
+
+  /// Menor fração da tolerância que sobra. Sem piso, com resistência 1 a tolerância chegava a zero
+  /// e a captura ficava impossível.
+  final double toleranceFloor;
+
+  /// Deriva do sinal, em fração do eixo por segundo, no sentido sorteado.
+  final Range2 growthPerS;
+
+  /// Passo extra do sinal a cada pulso, no mesmo sentido da deriva (o broto).
+  final Range2 budStep;
   final double cueEveryS;
 
   /// Duração do pulso de vibração no início e no fim do tempo.
