@@ -3,11 +3,15 @@ import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/capture/eco_type.dart';
+import 'package:kenoma/capture/fx/dial_fx.dart';
+import 'package:kenoma/capture/fx/fire_fx.dart';
+import 'package:kenoma/capture/signal.dart';
 import 'package:kenoma/ui/colors.dart';
 import 'package:kenoma/ui/sprites/sprite_image.dart';
+import 'package:kenoma/ui/tuning/fx_painter.dart';
 import 'package:kenoma/ui/tuning/tuning_painter.dart';
 
-TuningView view({double progress = 0.5, bool aligned = false, double tremble = 0, bool showTarget = false, EcoType type = EcoType.fire, bool hidden = false}) =>
+TuningView view({double progress = 0.5, bool aligned = false, bool showTarget = false, EcoType type = EcoType.fire, bool hidden = false, TuningFx? fx}) =>
     TuningView(
       dial: 0.3,
       target: 0.7,
@@ -16,13 +20,22 @@ TuningView view({double progress = 0.5, bool aligned = false, double tremble = 0
       timeRemaining: 12,
       timeLimit: 20,
       aligned: aligned,
-      tremble: tremble,
       clock: 2.0,
       type: type,
       sealLabel: 'Selo simples',
       tonic: true,
       showTarget: showTarget,
       hidden: hidden,
+      fx: fx,
+    );
+
+/// Fogo com a onda partida em [burnU]. [life] é a vida da isca (0 = cinza).
+TuningFx splitFx({double burnU = 0.5, double life = 1, RetiredDecoy? retired}) => TuningFx(
+      dial: DialFx(),
+      dialColor: kSignal,
+      fire: FireFxState(
+        split: FireSplit(index: 0, burnU: burnU, since: 0.5, decoyFrequency: 0.3, decoyLife: life, retired: retired),
+      ),
     );
 
 const size = ui.Size(412, 880);
@@ -65,15 +78,38 @@ void main() {
     });
   });
 
-  testWidgets('alinhado acende o aro ciano; a onda do Fogo tremula', (tester) async {
+  testWidgets('alinhado acende o aro ciano', (tester) async {
     await tester.runAsync(() async {
       final sprite = await EcoSprite.load('soot.eco');
       final off = count(await render(view(), sprite), kSignal);
       final on = count(await render(view(aligned: true), sprite), kSignal);
       expect(on, greaterThan(off), reason: 'aro do anel e borda do painel');
-      final calm = await render(view(), sprite);
-      final shaky = await render(view(tremble: 1), sprite);
-      expect(shaky, isNot(calm));
+    });
+  });
+
+  testWidgets('Fogo partido: a fronteira da queima é uma linha vertical e a isca morta fica cinza', (tester) async {
+    await tester.runAsync(() async {
+      final sprite = await EcoSprite.load('soot.eco');
+      final plain = await render(view(), sprite);
+      final alive = await render(view(fx: splitFx()), sprite);
+      final dead = await render(view(fx: splitFx(life: 0)), sprite);
+      expect(count(alive, kEssence), greaterThan(count(plain, kEssence) + 100), reason: 'a linha da queima corta o painel');
+      expect(count(dead, kDim), greaterThan(count(alive, kDim)), reason: 'isca morta: cinza');
+      expect(count(dead, kSignal), lessThan(count(alive, kSignal)), reason: 'isca viva: ciano');
+      expect(alive, isNot(plain));
+    });
+  });
+
+  testWidgets('a isca aposentada por um pico novo aparece cinza e some depois do fade', (tester) async {
+    await tester.runAsync(() async {
+      final sprite = await EcoSprite.load('soot.eco');
+      const fresh = RetiredDecoy(0.7, 0.2, 0);
+      const gone = RetiredDecoy(0.7, 0.2, 2.0);
+      final with0 = await render(view(fx: splitFx(life: 0, retired: fresh)), sprite);
+      final without = await render(view(fx: splitFx(life: 0)), sprite);
+      final faded = await render(view(fx: splitFx(life: 0, retired: gone)), sprite);
+      expect(count(with0, kDim), greaterThan(count(without, kDim)));
+      expect(faded, without);
     });
   });
 
@@ -94,16 +130,16 @@ void main() {
     });
   });
 
-  testWidgets('tipo oculto: a onda do sinal fica cinza e não tremula, e a silhueta é neutra', (tester) async {
+  testWidgets('tipo oculto: a onda do sinal fica cinza, sem onda partida, e a silhueta é neutra', (tester) async {
     await tester.runAsync(() async {
       final neutral = await EcoSprite.loadNeutral();
-      final shown = await render(view(tremble: 1), neutral);
-      final hidden = await render(view(hidden: true, tremble: 1), neutral);
+      final shown = await render(view(), neutral);
+      final hidden = await render(view(hidden: true, fx: splitFx()), neutral);
       expect(count(shown, kSignal), greaterThan(150));
       expect(count(hidden, kSignal), lessThan(20), reason: 'sem ciano na onda: a cor do sinal é cinza');
       expect(count(hidden, kDim), greaterThan(100), reason: 'onda cinza');
-      final calm = await render(view(hidden: true, tremble: 0), neutral);
-      expect(hidden, calm, reason: 'o tremor do Fogo não aparece no modo oculto');
+      final calm = await render(view(hidden: true, fx: TuningFx(dial: DialFx(), dialColor: kSignal)), neutral);
+      expect(hidden, calm, reason: 'a onda partida do Fogo não aparece no modo oculto');
     });
   });
 

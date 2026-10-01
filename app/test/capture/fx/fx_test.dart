@@ -48,7 +48,8 @@ void main() {
     final s = signal(EcoType.fire, 0.8);
     final fx = FireFx(s);
     final kick = s.kickTimes.first;
-    final lead = loadTuningBalance().signal.fire.warningLeadS;
+    final burn = s.burnUs.first;
+    final lead = s.fireWarningLeadS;
 
     test('sem resistência não há efeito', () {
       final calm = FireFx(signal(EcoType.fire, 0));
@@ -57,45 +58,44 @@ void main() {
       }
     });
 
-    test('antes do primeiro aviso não há efeito, e depois de cada pico ele acaba', () {
+    test('antes do primeiro aviso não há efeito nem onda partida', () {
       expect(fx.at(kick - lead - 0.05).isEmpty, isTrue);
-      final slow = signal(EcoType.fire, 0.3); // picos espaçados: um efeito não pega o seguinte
-      final slowFx = FireFx(slow);
-      final k = slow.kickTimes;
-      final after = k[0] + fireBurnS + fireRegrowS + 0.01;
-      expect(k[1] - lead, greaterThan(after));
-      expect(slowFx.at(after).isEmpty, isTrue);
+      expect(fx.at(kick - lead - 0.05).split, isNull);
     });
 
-    test('a brasa acende no instante do aviso, no ponto onde o pico vai acontecer, e sobe até o pico', () {
+    test('a brasa acende no instante do aviso, no ponto de queima que o sinal dá, e sobe até o pico', () {
       final warn = s.cues.firstWhere((c) => c.kind == CueKind.fireWarning).at;
       expect(warn, closeTo(kick - lead, 1e-9));
       final start = fx.at(warn + 1e-6).embers.single;
       final late = fx.at(kick - 1e-6).embers.single;
-      expect(start.u, kickSpotU(0));
-      expect(late.u, start.u);
+      expect(start.u, burn);
+      expect(late.u, burn);
       expect(start.glow, lessThan(0.05));
       expect(late.glow, greaterThan(0.95));
     });
 
-    test('no pico a chama queima o mesmo trecho e a brasa some', () {
+    test('no pico a chama queima o ponto da brasa, a brasa some e a fronteira é a queima', () {
       final st = fx.at(kick + fireBurnS / 2);
       expect(st.embers, isEmpty);
-      expect(st.flames.single.u, kickSpotU(0));
-      expect(st.hidden.single.u, kickSpotU(0));
-      expect(st.hidden.single.covers(kickSpotU(0)), isTrue);
+      expect(st.flames.single.u, burn);
+      expect(st.split!.burnU, burn);
     });
 
-    test('depois da chama a onda reaparece das cinzas: o trecho escondido encolhe até sumir', () {
-      double hiddenAt(double age) => fx.at(kick + fireBurnS + age).hidden.single.halfWidth;
-      final a = hiddenAt(0.05);
-      final b = hiddenAt(fireRegrowS / 2);
-      final c = hiddenAt(fireRegrowS - 0.05);
-      expect(a, greaterThan(b));
-      expect(b, greaterThan(c));
-      final st = fx.at(kick + fireBurnS + fireRegrowS / 2);
-      expect(st.ashes.single.particles, hasLength(fireAshCount));
+    test('as cinzas sobem depois da chama e acabam; a fronteira fica até o próximo pico', () {
+      final st = fx.at(kick + fireBurnS + fireAshS / 2);
       expect(st.flames, isEmpty);
+      expect(st.ashes.single.particles, hasLength(fireAshCount));
+      final slow = signal(EcoType.fire, 0.3); // picos espaçados: um efeito não pega o seguinte
+      final slowFx = FireFx(slow);
+      final k = slow.kickTimes;
+      final after = k[0] + fireBurnS + fireAshS + 0.01;
+      expect(k[1] - lead, greaterThan(after));
+      final end = slowFx.at(after);
+      expect(end.ashes, isEmpty);
+      expect(end.flames, isEmpty);
+      expect(end.embers, isEmpty);
+      expect(end.split!.burnU, slow.burnUs[0], reason: 'a fronteira continua marcando onde a real começa');
+      expect(slowFx.at(k[1] + 0.01).split!.burnU, slow.burnUs[1], reason: 'um pico novo muda a fronteira');
     });
 
     test('a intensidade controla o tamanho da chama', () {

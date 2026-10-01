@@ -153,7 +153,6 @@ class TuningGame extends FlameGame with DragCallbacks {
         timeRemaining: s.timeRemaining,
         timeLimit: s.timeLimitS,
         aligned: s.running && s.aligned,
-        tremble: s.signal.trembleAt(s.t),
         clock: _clock,
         type: setup.type,
         sealLabel: setup.seal.name,

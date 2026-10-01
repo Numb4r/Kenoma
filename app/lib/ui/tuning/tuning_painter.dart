@@ -7,7 +7,7 @@ import 'dart:ui';
 import 'package:flutter/painting.dart' show TextAlign, TextPainter, TextSpan, TextStyle, TextDirection;
 
 import '../../capture/eco_type.dart';
-import '../../capture/fx/fire_fx.dart';
+import '../../capture/fx/fx_params.dart';
 import '../../capture/fx/wave_geometry.dart';
 import '../colors.dart';
 import '../sprites/sprite_image.dart';
@@ -24,7 +24,6 @@ class TuningView {
     required this.timeRemaining,
     required this.timeLimit,
     required this.aligned,
-    required this.tremble,
     required this.clock,
     required this.type,
     required this.sealLabel,
@@ -42,9 +41,6 @@ class TuningView {
   final double timeLimit;
   final bool aligned;
 
-  /// 1 quando a onda do Fogo deve tremular.
-  final double tremble;
-
   /// Segundos desde a abertura da tela. Só anima.
   final double clock;
   final EcoType type;
@@ -54,7 +50,7 @@ class TuningView {
   /// Ferramenta de debug: marca o alvo e a tolerância no dial.
   final bool showTarget;
 
-  /// Modo de tipo oculto: a onda do sinal fica cinza e não tremula, para não entregar o tipo.
+  /// Modo de tipo oculto: a onda do sinal fica cinza e sem efeitos do tipo, para não entregá-lo.
   final bool hidden;
 
   /// Efeitos da onda temática e do dial. `null` num teste que só confere o resto.
@@ -132,12 +128,6 @@ void _creature(Canvas canvas, TuningLayout l, TuningView v, EcoSprite? sprite) {
   canvas.drawImageRect(sprite.bright, src, dst, paint..color = Color.fromRGBO(255, 255, 255, pulse));
 }
 
-double _hash01(int a, int b) {
-  var h = (a * 73856093) ^ (b * 19349663);
-  h = (h ^ (h >>> 13)) * 1274126177;
-  return ((h ^ (h >>> 16)) & 0xffff) / 0xffff;
-}
-
 void _waves(Canvas canvas, TuningLayout l, TuningView v) {
   final r = l.wavePanel;
   canvas.drawRect(r, _fill(kPanel));
@@ -146,20 +136,15 @@ void _waves(Canvas canvas, TuningLayout l, TuningView v) {
 
   const n = 120;
   final scroll = waveScroll(v.clock);
-  final hiddenSpans = v.fx?.fire.hidden ?? const <HiddenSpan>[];
 
-  // Um ponto fica de fora se o Fogo queimou o trecho dele: o desenho recomeça depois do vazio.
-  Path wave(double f, double Function(double theta) shape, {double jitter = 0, List<HiddenSpan> gaps = const []}) {
+  // Só os pontos de [from] a [to] (frações da largura) entram no desenho.
+  Path wave(double f, double Function(double theta) shape, {double from = 0, double to = 1}) {
     final p = Path();
     var pen = false;
     for (var i = 0; i <= n; i++) {
       final u = i / n;
-      if (gaps.any((g) => g.covers(u))) {
-        pen = false;
-        continue;
-      }
-      var pt = waveAt(r, f, u, scroll, shape);
-      if (jitter > 0) pt += Offset(0, jitter * (_hash01(i, (v.clock * 30).floor()) - 0.5) * 2 * r.height * 0.34 * waveEnvelope(u));
+      if (u < from || u > to) continue;
+      final pt = waveAt(r, f, u, scroll, shape);
       if (pen) {
         p.lineTo(pt.dx, pt.dy);
       } else {
@@ -172,10 +157,27 @@ void _waves(Canvas canvas, TuningLayout l, TuningView v) {
 
   // O sinal da criatura é serrilhado, com picos. O do jogador é liso.
   final signalColor = v.hidden ? kDim : kSignal;
-  canvas.drawPath(
-      wave(v.target, triShape, jitter: v.hidden ? 0 : 0.35 * v.tremble, gaps: hiddenSpans), _stroke(signalColor, 3));
-  canvas.drawPath(wave(v.dial, math.sin), _stroke(kVeil, 3));
   final fx = v.fx;
+  final split = v.hidden ? null : fx?.fire.split; // a onda partida entregaria o tipo
+  if (split == null) {
+    canvas.drawPath(wave(v.target, triShape), _stroke(signalColor, 3));
+  } else {
+    // O Fogo partiu a onda: a real fica à direita da queima, a isca à esquerda. A fronteira é uma
+    // linha vertical, e a isca vira cinza quando a vida acaba.
+    final gap = fireGapHalfWidth;
+    final old = split.retired;
+    if (old != null && old.since < fireRetireFadeS) {
+      canvas.drawPath(wave(old.frequency, triShape, to: old.burnU - gap),
+          _stroke(kDim.withValues(alpha: 1 - old.since / fireRetireFadeS), 3));
+    }
+    canvas.drawPath(wave(split.decoyFrequency, triShape, to: split.burnU - gap),
+        _stroke(split.decoyAlive ? kSignal : kDim, 3));
+    canvas.drawPath(wave(v.target, triShape, from: split.burnU + gap), _stroke(kSignal, 3));
+    final x = r.left + r.width * split.burnU;
+    canvas.drawLine(Offset(x, r.top), Offset(x, r.bottom), _stroke(kEssence.withValues(alpha: 0.35), 6));
+    canvas.drawLine(Offset(x, r.top), Offset(x, r.bottom), _stroke(kEssence, 2));
+  }
+  canvas.drawPath(wave(v.dial, math.sin), _stroke(kVeil, 3));
   if (fx != null) paintWaveFx(canvas, r, v.target, scroll, fx);
 }
 
