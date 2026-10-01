@@ -159,7 +159,7 @@ O jogo precisa sustentar cinco anos ou mais. A progressão vertical, o nível do
 | Sessão, minutos | andar, coletar, sintonizar, marcar |
 | Dia | diárias do fórum na rua; à noite em casa destilar, fabricar, organizar Bolsa e Armazém, ajustar a build, montar lures e expedições |
 | Semana | semanal do mentor, rumor, tributo do pacto, vínculos, ciclo de uma Fenda |
-| Mês | ciclo lunar completo e suas receitas, Lua de Sangue, Lendas Urbanas amadurecendo |
+| Mês | ciclo lunar completo e suas receitas, Lua Carmim, Lendas Urbanas amadurecendo |
 | 3 meses | estação do ano com amuletos e cosméticos exclusivos, primeiras temporadas de panteão, nível 40 para quem joga todo dia |
 | 6 meses | especialização avançada, primeiras grandes obras, Soberanos em dificuldade alta, pactos de favor alto |
 | 1 ano | ciclo completo de estações e do calendário de eventos, primeiro Avatar, maestrias intermediárias |
@@ -284,7 +284,7 @@ Clima vem do Open-Meteo quando há internet. Sem rede, o jogo usa clima determin
 
 ### Eventos
 
-- Lua de Sangue, com céu vermelho e criaturas noturnas raras durante o dia inteiro. Principal fonte de variantes Carmesim.
+- Lua Carmim, com céu vermelho e criaturas noturnas raras durante o dia inteiro. Principal fonte de variantes Carmesim.
 - Sol da Meia-Noite, que inverte dia e noite no mapa para quem não pode jogar à noite.
 - Calendário brasileiro com eventos temáticos (Finados, Festa Junina, Carnaval, Sexta-feira 13).
 - Temporadas de panteão, quando Fendas de um panteão externo ficam mais frequentes por algumas semanas.
@@ -407,7 +407,7 @@ O ambiente real altera a força das criaturas na sintonia, no ritual e na conten
 
 - Variante de bioma, com paleta e traço passivo definidos pelo bioma onde foi capturada. Custo de arte quase zero via troca de paleta.
 - Brilhante, raridade pura em qualquer lugar.
-- Carmesim, só na Lua de Sangue ou com Exposição ao Véu alta.
+- Carmesim, só na Lua Carmim ou com Exposição ao Véu alta.
 - Corrompida, criatura do Círculo exposta a Exposição muito alta ou a um colapso de Fenda. Mais forte no mapa e em rituais, mas instável, às vezes sabota uma sintonia ou tenta fugir. Um ritual de purificação devolve ao normal e rende Conhecimento.
 
 ### Quimeras
@@ -516,24 +516,65 @@ Toda sintonia concluída deixa ectoplasma, o resíduo do Véu dissolvido e ingre
 
 Marcação resolve quem passa rápido. Um toque numa criatura em movimento prende o sinal dela no celular por alguns minutos, e a sintonia pode ser feita depois, de qualquer lugar.
 
-A criatura resiste, e cada tipo resiste de um jeito que o jogador aprende a ler. Som e vibração acompanham cada padrão, então dá para sentir o tipo mesmo sem olhar.
+A criatura resiste, e cada tipo resiste de um jeito que o jogador aprende a ler. O tipo se lê pela criatura na tela, e o som e a vibração marcam os momentos do padrão, como o aviso antes de um pico do Fogo.
 
 | Tipo | Resistência no dial | Como ler |
 | --- | --- | --- |
-| Fogo | picos bruscos que empurram o sinal | a onda tremula antes de cada pico |
-| Água | deriva lenta e contínua, como maré | acompanhar suave, sem corrigir demais |
-| Planta | a janela de alinhamento encolhe aos poucos, como raízes fechando | precisão importa mais que velocidade |
+| Fogo | a onda queima num ponto e se parte em duas; a da esquerda fica na frequência antiga como isca e a da direita, a verdadeira, desliza suave para outra frequência | uma brasa avisa onde vai queimar; seguir sempre a onda da direita e ignorar a isca |
+| Água | duas ondas somadas que nunca se repetem, com uma maré que muda a amplitude | ler a tendência e o aviso de virada, sem corrigir demais |
+| Planta | o sinal cresce num sentido e dá brotos, e a janela de alinhamento encolhe aos poucos, como raízes fechando | precisão importa mais que velocidade |
 | Terra | o dial fica pesado em certas faixas de frequência | antecipar o movimento antes de entrar na faixa |
 | Elétrico | o sinal salta entre duas ou três frequências em ritmo fixo | decorar o ritmo e chegar antes |
 | Metal | em intervalos o sinal fica blindado e alinhar não dissolve o Véu | manter alinhado mesmo assim para não perder progresso |
 | Luz | clarões deixam a onda invisível por instantes | memorizar a posição e segurar o dial |
-| Sombra | some do sinal e reaparece em outra frequência | seguir a vibração, que continua |
-| Espectral | uma onda fantasma imita a real com atraso | a real é a que vibra |
+| Sombra | some do sinal e reaparece em outra frequência | seguir o som, que continua |
+| Espectral | uma onda fantasma imita a real com atraso | a real tem a cor do Eco, a fantasma é cinza |
 | Digital | ondas falsas idênticas à real | as falsas piscam em pixels quebrados |
 | Feérico | inverte o sentido do dial e troca de padrão no meio | perceber a troca pelo som |
 | Dracônico | começa calmo e fica mais agressivo a cada terço, somando padrões de outros tipos | sintonia longa, só aparece no meio do jogo em diante |
 
 Criaturas de dois tipos misturam os dois padrões. No início do jogo não há resistência, depois ela surge fraca e um padrão por vez, e fica mais intensa conforme a curva de dificuldade.
+
+A vibração é alerta e ritmo, nunca o único jeito de identificar algo. Ela avisa que há um Eco perto com o celular no bolso, marca os momentos da resistência durante a sintonia, faz a mordida da pescaria e a proximidade do detector de escavação. No teste da Fase 0, reconhecer o tipo só pela vibração se mostrou difícil demais, então o tipo sempre aparece na tela e no som.
+
+A onda é temática. A mecânica de cada tipo continua a da tabela de resistência, e o visual conta o que está acontecendo, com o aviso embutido na própria imagem. Tudo escala com a intensidade da resistência.
+
+| Tipo | Como a onda se comporta | O que sobe com a intensidade |
+| --- | --- | --- |
+| Fogo | uma brasa acende num ponto da onda (o aviso) e a chama queima ali, separando duas ondas na tela; a esquerda continua na frequência antiga até virar cinza, a direita é a certa e desliza para a nova frequência | deslize mais rápido, salto maior, isca que dura mais e se move, brasa com menos antecedência |
+| Água | a crista quebra em espuma de alta frequência e depois assenta, por cima da maré de base | ressaca mais longa e mais alta |
+| Planta | a onda solta folhas, cada broto é um nó que salta e raízes crescem pelas bordas da janela conforme ela fecha | crescimento mais rápido, janela mais fechada |
+| Terra | faixas pesadas aparecem como estratos de rocha no fundo do eixo | mais faixas, e mais largas |
+| Elétrico | a onda vira arco elétrico nos saltos entre dois ou três pontos | mais pontos, ritmo mais rápido |
+| Metal | placas de blindagem cobrem trechos e alinhar sobre elas só solta faísca | placas mais longas |
+| Luz | um clarão apaga a onda e deixa uma imagem residual de onde ela estava | a imagem residual some mais rápido |
+| Sombra | a onda afunda em tinta preta enquanto o som continua | mais tempo no escuro |
+| Espectral | uma cópia cinza imita a onda com atraso | atraso menor, cópia mais parecida |
+| Digital | cópias com glitch de pixels | mais cópias, glitch mais sutil |
+| Feérico | a onda espelha e solta pó de fada quando o dial inverte | trocas mais frequentes |
+| Dracônico | a onda ganha escamas e a cada terço assume o visual de outro tipo | mais padrões somados |
+
+O dial é violeta, a cor do Véu. Enquanto o sinal está alinhado ele assume a cor do tipo do Eco e solta partículas, como se o Véu se dissolvesse na criatura. A mudança nunca depende só de cor: o dial também brilha e engrossa, para quem tem daltonismo.
+
+### Lua, astros e sintonia
+
+A lua e os astros mudam a dificuldade da sintonia, sempre calculados offline pela data, então todo o grupo vê o mesmo céu. Toda dificuldade extra vem com recompensa extra (Essência, experiência e chance de variante), para que as noites difíceis sejam as noites dos bons jogadores e não noites para evitar. Esse eixo é separado das receitas de lua do crafting.
+
+Os 12 tipos se dividem em quatro grupos, e cada fase principal da lua aperta um deles. As fases de transição são neutras.
+
+| Fase | Grupo mais difícil e mais recompensado |
+| --- | --- |
+| Crescente | Vivos (Fogo, Água, Planta) |
+| Quarto crescente | Matéria (Terra, Metal, Elétrico) |
+| Cheia | Espírito (Luz, Sombra, Espectral) |
+| Quarto minguante | Estranhos (Dracônico, Feérico, Digital) |
+| Nova | todos, com chance maior de variante Brilhante |
+
+Na Lua Carmim as ondas se misturam entre os tipos. Um Eco de Fogo aparece na tela, mas a resistência vem com o padrão de Água ou de Terra, sorteado pelo hash do encontro e igual para amigos. Nos primeiros instantes a onda pisca na cor do tipo emprestado, e quem presta atenção lê a troca. Em intensidade alta o padrão pode trocar de novo no meio da sintonia. Uma lua cheia por estação é Carmim, marcada no calendário das Épocas. Ela é a principal fonte de variantes Carmesim e de luz carmim engarrafada.
+
+A estação do signo solar puxa o elemento dela. Na estação de Fogo (Áries, Leão, Sagitário) aparecem mais Ecos de Fogo e eles resistem um pouco mais, e o mesmo vale para Água, Terra e Ar, que corresponde ao Elétrico. Nos períodos reais de Mercúrio retrógrado o dial às vezes gira ao contrário por um instante, como um erro nas leis da realidade.
+
+A onda temática e a cor do dial podem entrar na fase 0 ou 1. Lua por grupo e astrologia entram na fase 1, com a astronomia offline, e a Lua Carmim com os eventos de calendário.
 
 ### Ritual
 
@@ -566,9 +607,11 @@ O início é tranquilo e quase contemplativo. A dificuldade cresce em três eixo
 | Avançado | materiais raros de Fendas e eventos | rituais com condições combinadas | sinais com dois harmônicos, interferência da Exposição, sigilos falsos |
 | Endgame | recursos de Soberano | conhecimento dos Aethyrs | grande ritual com sintonia, sigilos e poder do Círculo |
 
+Criaturas muito acima do nível do Conjurador devem ser quase impossíveis, e não só difíceis. O teto é de habilidade e não de números: uma pessoa que já dominou o jogo consegue, numa conta nova, capturar algo bem acima do próprio nível, e quem está aprendendo não consegue. Para isso a diferença de nível age em dois eixos. Até cerca de 5 níveis ela só aumenta a intensidade do padrão do tipo. Acima disso entra o sobrenível, que estreita a tolerância e acelera a perda de progresso a cada nível a mais, sem teto de intensidade. Como o selo é gasto ao começar e a criatura pode fugir, cada tentativa custa, e insistir sem habilidade não compensa.
+
 ### Minigames futuros
 
-O dial é o único minigame de sintonia no MVP. Depois entram outros, variando por espécie, como sequência, encontre a esfera e escavação.
+O dial é o único minigame de sintonia no MVP. Depois entram outros, variando por espécie, como sequência e encontre a esfera. Pescaria e escavação são atividades próprias, com equipamento e progressão, descritas em Ofícios, sítios e equipamento.
 
 ### Escopo
 
@@ -638,7 +681,7 @@ O Conjurador vai do nível 1 ao 40. Cada nível dá um ponto de talento, que des
 | 20 | terceira linha, universal, e Incursões (dungeons e núcleos de Fenda) |
 | 25 | espaço de magia elite, pactos |
 | 30 | especialização avançada por grimório, Rito de Reconsagração |
-| 40 | teto de nível, início das maestrias |
+| 40 | teto de nível, início das maestrias, o Rasgo |
 
 A Aura cresce um pouco nos níveis 1, 10, 20, 30 e 40, e depois só por maestria, gadgets e Essência Divina. Bônus de Círculo, escola e talentos somam por cima enquanto estão ativos.
 
@@ -751,7 +794,7 @@ Amuletos, anéis e gadgets, com efeito e visual no sprite. Roupas não têm efei
 
 Roupas e acessórios visuais para o personagem, sem nenhum modificador. Servem como registro do que o jogador viveu e como motivo para voltar em datas específicas.
 
-- Eventos do calendário e Lua de Sangue dão peças exclusivas daquele evento.
+- Eventos do calendário e Lua Carmim dão peças exclusivas daquele evento.
 - Cada estação do ano tem uma coleção fabricável só nela, como os amuletos sazonais.
 - Peças fabricadas na bancada usam materiais comuns e condições engarrafadas, com cores ligadas ao material usado.
 - Metas longas do Diário do Conjurador e marcos de reputação no fórum rendem peças raras.
@@ -798,7 +841,7 @@ Materiais sobem em quatro degraus, e é isso que forma a árvore sem receitas gi
 
 ### Coletores
 
-Condições do mundo são capturadas com recipientes fabricados antes, o que torna o mundo real ingrediente. Uma garrafa feita de vidro coleta água de chuva durante chuva real, um frasco escuro guarda luz de lua à noite, um pote de vela guarda fumaça de Fenda perto de uma. Condições engarrafadas viajam no inventário e podem ser usadas depois em casa. Algumas são perecíveis, como a luz da Lua de Sangue, que se apaga em poucos dias.
+Condições do mundo são capturadas com recipientes fabricados antes, o que torna o mundo real ingrediente. Uma garrafa feita de vidro coleta água de chuva durante chuva real, um frasco escuro guarda luz de lua à noite, um pote de vela guarda fumaça de Fenda perto de uma. Condições engarrafadas viajam no inventário e podem ser usadas depois em casa. Algumas são perecíveis, como a luz da Lua Carmim, que se apaga em poucos dias.
 
 ### Condições, não lugares
 
@@ -831,7 +874,7 @@ Fases da lua e estações do ano são calculadas offline pela data e latitude, c
 
 Algumas receitas só ficam disponíveis em certas situações, o que dá motivo para jogar em momentos diferentes.
 
-- Lua de Sangue e eventos do calendário.
+- Lua Carmim e eventos do calendário.
 - Temporadas e convergências de dimensão.
 - Proximidade de uma Fenda, com receitas que mudam conforme o estado dela.
 - Composição do Círculo, como receitas que exigem uma Constelação ativa.
@@ -924,6 +967,125 @@ Criaturas são enviadas a células que o jogador já revelou na névoa de guerra
 ### Fenda Profunda
 
 Incursão de origem Casa, sem fim, com andares gerados pela seed do dia e Exposição acumulando sem descanso entre andares. Conteúdo infinito e totalmente offline.
+
+## Ofícios, sítios e equipamento
+
+Proposta em avaliação, fora da Fase 0. Pescaria e escavação são as duas atividades de campo que se somam à sintonia, cada uma com equipamento próprio que sobe por faixas de material, no estilo do Terraria. Nelas a vibração é só alerta, como a mordida e a proximidade, nunca identificação de padrão.
+
+### Pescaria
+
+Pesca-se em qualquer lugar. Numa célula de Água a linha desce na água e traz criaturas aquáticas, Água Pura e materiais de margem. Em qualquer outra célula a linha desce no Véu, e o que vem é material de Véu, Ecos Espectrais e restos de outros Aethyrs.
+
+O lance é um gesto. A espera pode ser feita andando, com o celular no bolso, e a mordida chega como vibração. A puxada é um jogo de tensão em que segurar puxa e sobe a tensão, soltar alivia, e a linha arrebenta no máximo. Peixes grandes alternam corrida e cansaço, então o ritmo não repete o dial da sintonia.
+
+| Peça | Efeito |
+| --- | --- |
+| Vara | força de pesca, que decide o peso máximo e a profundidade no Véu |
+| Isca | muda o que morde e a raridade, consumida a cada mordida |
+| Isca de chamado | feita com materiais raros, chama um miniboss com sintonia em fases |
+| Linha e boia | acessórios que se combinam, como linha que não arrebenta e boia que avisa antes |
+
+O que morde sai de `hash(seed, época, célula, janela, lance)`, então amigos no mesmo lugar e hora pescam na mesma lagoa, cada um com os próprios peixes. Uma figura do fórum Limen pede um peixe por dia e paga com iscas, varas e cosméticos.
+
+### Escavação
+
+Pontos de escavação saem da seed por célula e janela, como os spawns, e não aparecem no mapa. O detector acha pela proximidade, com a vibração acelerando conforme o jogador anda na direção certa, e funciona com o celular no bolso. Achado o ponto, abre uma grade de escavação em camadas, no espírito do subsolo de Pokémon Diamond e Pearl. Cada golpe gasta a firmeza da parede. A picareta abre rápido e pode rachar o achado, o pincel é lento e seguro, e a força da ferramenta decide as camadas alcançadas.
+
+O que sai é minério, gema, fóssil ou material do bioma. Urbano favorece metal, Verde favorece fósseis e âmbar, Água favorece gemas roladas.
+
+No jogo base os fósseis são ediacaranos, como Dickinsonia, Charnia e Tribrachidium, lidos na lore como as primeiras emanações dos Trinta impressas na pedra de Kenoma. Um fóssil completo, montado na mesa de fósseis, revive um Eco antigo como variante rara. Um panteão de expansão centrado em dinossauros amplia a mecânica com ossos maiores, sítios paleontológicos e esqueletos montados.
+
+### Linha de minérios
+
+Os níveis são o caminho. Até o 40, cada faixa aparece quando o jogador chega perto do nível dela e exige a ferramenta da faixa anterior, como a força de picareta do Terraria. Os metais de Kenoma são os do mundo real, e as faixas 2 a 5 têm um par. A seed do grupo escolhe qual dos dois existe naquele mundo, e o outro só vem pelo Mercador Errante.
+
+| Faixa | Níveis | Minério | Onde aparece | Exige |
+| --- | --- | --- | --- | --- |
+| 1 | 1 a 5 | sucata e osso | coleta comum | nada |
+| 2 | 6 a 10 | cobre ou estanho | escavação rasa em qualquer bioma | pá de sucata |
+| 3 | 11 a 17 | ferro ou chumbo | escavação em Urbano e minas | ferramenta de cobre ou estanho |
+| 4 | 18 a 24 | prata ou tungstênio | escavação funda e pesca no Véu | ferro ou chumbo |
+| 5 | 25 a 31 | ouro ou platina | minas maduras e minibosses de isca | prata ou tungstênio |
+| 6 | 32 a 36 | aerólito | cai no lugar de uma Fenda selada | ouro ou platina |
+| 7 | 37 a 40 | ferro de ZAX | fundo das Incursões de Fenda, forjado só com Essência de Fogo | aerólito |
+
+### O Rasgo
+
+O nível 40 funciona como o hardmode do Terraria. Depois da revelação do mentor o Véu rasga para aquele jogador. As Fendas sobem de camada, manchas de Aethyr se espalham devagar pelas células já visitadas e o jogo deixa de guiar por nível. A progressão passa a ser horizontal, por maestrias, e o jogador escolhe o que perseguir, como num sandbox.
+
+O Rasgo é individual. As manchas crescem de forma determinística a partir da data em que o jogador chegou ao 40, então amigos que chegaram juntos veem o mesmo mapa.
+
+Os metais depois do Rasgo não são deste mundo. São sedimentos dos Aethyrs, com nomes enoquianos. Pedras de Fenda aparecem pelo mapa, e conter cada uma semeia no mundo do jogador uma leva de minério da faixa seguinte, como os altares do Terraria.
+
+| Faixa | Minério | Como surge |
+| --- | --- | --- |
+| A1 | laiadita ou ethamzita | primeiras Pedras de Fenda contidas |
+| A2 | vaoanita ou ozongonita | segunda leva de Pedras |
+| A3 | madriaxita ou oxiayalita | terceira leva de Pedras |
+| A4 | aeonita | minério vivo, cresce sozinho nas células de Verde manchadas |
+| A5 | azoth | Essência cristalizada, deixada por Soberanos contidos |
+| Além | véu forjado | fragmentos de Choronzon, trabalhados numa grande obra |
+
+Ethamz e Madriax ainda precisam de conferência no dicionário enoquiano (ver Banco de nomes).
+
+### Gemas
+
+Gemas saem da escavação e da pesca e vão nos engastes de amuletos e gadgets. Cada gema puxa para um tipo, e a combinação de equipamentos soma gemas num só espaço.
+
+| Gema | Liga a |
+| --- | --- |
+| rubi | Fogo |
+| safira | Água |
+| esmeralda | Planta |
+| topázio | Elétrico |
+| ônix | Sombra |
+| diamante | Luz |
+| ametista | Espectral e Exposição |
+| âmbar | Terra e fósseis |
+
+### Equipamento de campo
+
+A vara, a pá e o detector sobem pelas mesmas faixas, então cada metal novo melhora as três atividades. A mobilidade do Terraria vira alcance e percepção, porque num jogo de GPS ninguém anda mais rápido.
+
+| Inspiração | No Kenoma | Efeito |
+| --- | --- | --- |
+| gancho | âncora do Véu | puxa para a Aura um item a até 40 m |
+| carrinho de mina | trilhos | andando ao longo de ruas e linhas de ônibus, a coleta automática pega uma faixa maior |
+| montaria | criatura montável | aceita coleta até 25 km/h, o que recompensa bicicleta sem liberar carro |
+| asas | visão alta | vê Ecos e pontos de escavação de mais longe |
+| espelho mágico | espelho de casa | abre a bancada da casa de qualquer lugar, sem recolher o que ela produziu |
+
+### Sítios
+
+A casa continua única. Com o nível, o jogador ancora sítios anexos em outras células reais que frequenta, cada um com função própria, tudo individual e offline.
+
+| Sítio | Função |
+| --- | --- |
+| mina | produz minério e gemas da faixa dela |
+| ossuário | Ecos Espectrais repousam e liberam Ectoplasma, como um pedaço do Véu domesticado |
+| viveiro e aquário | criaturas de Planta e Água produzem materiais e guardam o que foi pescado |
+| mesa de fósseis | monta esqueletos e expõe coleções, com recompensa por coleção completa |
+
+Criaturas fora do Círculo trabalham nos sítios, como no Palworld. Cada família tem uma ou duas aptidões, como minerar, regar, acender, carregar, assombrar e pescar, o que dá uso a criaturas repetidas além da destilação. A produção acumula com o tempo, calculada ao abrir o app como os lures, e só é recolhida indo ao sítio.
+
+Figuras do fórum Limen passam a visitar a casa quando o jogador cumpre certas condições, como os NPCs do Terraria que se mudam quando há casa para eles. Cada uma traz ofertas e pedidos ligados a um ofício.
+
+### Mecânicas de outros jogos
+
+Só entram as que servem a um jogo de andar na rua sem batalha.
+
+| Jogo | Mecânica | No Kenoma |
+| --- | --- | --- |
+| Terraria | força de ferramenta, par de minério por mundo, hardmode, altares que semeiam minério, NPCs que se mudam | linha de minérios, O Rasgo, Pedras de Fenda, visitas do Limen |
+| Palworld | aptidões de trabalho na base | criaturas trabalhando nos sítios |
+| Pokémon | subsolo de Diamond e Pearl, ovos que chocam andando no GO | grade de escavação, casulos do Véu que abrem com quilômetros andados |
+| Stardew Valley | qualidade em estrelas, pacotes do Centro Comunitário, museu, profissões nos níveis 5 e 10 | estrelas em peixes e minérios, pedidos em pacote do Limen, mesa de fósseis, escolha de profissão nos ofícios |
+| Guild Wars 2 | maestrias, mirantes, coleções que levam a um lendário | maestrias, mirantes em pontos altos reais, relíquias feitas de coleções completas |
+| RuneScape | habilidades que sobem com o uso | ofícios de pesca e escavação, de 1 a 10, que depois do 40 alimentam as maestrias |
+
+### Fases propostas
+
+Escavação, detector, faixas 1 a 3 e mesa de fósseis na fase 2, junto com a casa. Pescaria, sítios anexos, gemas, faixas 4 a 7, ofícios e minibosses de isca na fase 3. O Rasgo e os metais dos Aethyrs no Futuro, junto com as maestrias. Dinossauros como panteão de expansão.
 
 ## Fendas e dungeons
 
@@ -1085,7 +1247,7 @@ A câmera tem ângulo 3/4 fixo e só gira em torno do eixo vertical. O jogador g
 - Os contornos vêm do OSM, então a planta bate com a cidade real. Imagens geradas por IA servem só de referência de estilo.
 - Altura visual máxima de dois tiles, independente da altura real, para manter a leitura e reduzir oclusão.
 - Prédio que tampa o jogador fica semitransparente, com o contorno do personagem visível por cima.
-- Prédios são comuns por padrão. Perto de Fendas ganham costuras violeta, janelas ciano e pedaços flutuando, com o efeito diminuindo pela distância. Eventos têm variações próprias, como janelas vermelhas na Lua de Sangue.
+- Prédios são comuns por padrão. Perto de Fendas ganham costuras violeta, janelas ciano e pedaços flutuando, com o efeito diminuindo pela distância. Eventos têm variações próprias, como janelas vermelhas na Lua Carmim.
 - Na Fase 0 o mapa fica em visão de cima sem prédios em pé. Prédios com altura entram na Fase 1, o que exige o pipeline guardar contornos além da grade de biomas.
 
 ## Arquitetura técnica
@@ -1187,7 +1349,7 @@ Este GDD é a visão de longo prazo, não o escopo de implementação. Cada sist
 | 1 | Expansão | horários e astronomia offline, prédios com altura e rotação da câmera, clima, névoa de guerra, rastros e scanner, comportamento das criaturas, variantes de bioma e Brilhante, qualidade de material, descoberta de receitas, coletores, refino, receitas de lua e estação do ano, Espíritos e fusão, ritual básico, atributos e níveis do Conjurador até 20, notificações locais, Familiar, tutorial com mentor e fórum no chat, escolha de escola com bônus de captura, diárias do fórum | loop de rua completo e variado |
 | 2 | Expansão | casa, estações no mundo, gadgets, combinação de equipamentos, Constelações, lures, decoração, expedições, estabilidade, companheiro, vínculo | jogo se sustenta em dias sem sair |
 | 3 | Expansão | Fendas com ciclo de vida, Incursões de dungeon e de Fenda, Soberanos, tipos Dracônico, Feérico e Digital, Artificiais e Quimeras das escolas, Entidades Maiores, Exposição ao Véu, mecânicas exclusivas das escolas, linhas de especialização, build com magias e transcrição, níveis até 40, troca de escola, magias, grimórios, fase de pressão do ritual, rituais de mundo, grandes obras, receitas de janela, altares efêmeros, Corrompidas, história completa do mentor, semanal do mentor, Mercador Errante | progressão do Conjurador completa |
-| Futuro | Futuro | dimensões e panteões de expansão, Arquétipos, Divindades e Primordiais, marcas Singular, Lenda Urbana, Divino e Herói, rumores com dedução, Fenda Profunda, invasões, maestrias, especializações avançadas, amuletos de ciclo, Ley Lines próprias, pactos, Divindades e Avatares, modo trânsito, trilha adaptativa, eventos de calendário e Lua de Sangue, convergências e panteões externos, social, sugestão de pontos, anti-cheat robusto, minigames extras de sintonia, cosméticos | revisado quando a fase 3 estiver pronta |
+| Futuro | Futuro | dimensões e panteões de expansão, Arquétipos, Divindades e Primordiais, marcas Singular, Lenda Urbana, Divino e Herói, rumores com dedução, Fenda Profunda, invasões, maestrias, especializações avançadas, amuletos de ciclo, Ley Lines próprias, pactos, Divindades e Avatares, modo trânsito, trilha adaptativa, eventos de calendário e Lua Carmim, convergências e panteões externos, social, sugestão de pontos, anti-cheat robusto, minigames extras de sintonia, cosméticos | revisado quando a fase 3 estiver pronta |
 
 A progressão de criaturas está unificada. Fusão e estabilidade são pagas com Essência, o Familiar cresce com o nível do Conjurador, e módulos são dos Artificiais, e os Implantes do Tecnomante são a única forma de instalá-los em outras criaturas.
 
