@@ -1,5 +1,7 @@
 import 'dart:ui' show Color;
 
+import '../capture/eco_type.dart';
+
 /// Cores fixas do jogo (CLAUDE.md). Contorno em ameixa escuro, nunca preto puro.
 const Color kOutline = Color(0xFF1A1424);
 const Color kVeil = Color(0xFF9B7BFF); // violeta: o Véu
@@ -9,3 +11,10 @@ const Color kPanel = Color(0xFF241A33);
 const Color kPanelLine = Color(0xFF3D3357);
 const Color kText = Color(0xFFE8E4F4);
 const Color kDim = Color(0xFF8A8FA3);
+
+/// Cor do tipo do Eco (docs/referencias-de-arte.md): fogo em brasa, água em azul, planta em verde.
+Color typeColor(EcoType t) => switch (t) {
+      EcoType.fire => const Color(0xFFFF5A36),
+      EcoType.water => const Color(0xFF4AA8FF),
+      EcoType.plant => const Color(0xFF6BD36A),
+    };

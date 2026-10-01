@@ -7,8 +7,11 @@ import 'dart:ui';
 import 'package:flutter/painting.dart' show TextAlign, TextPainter, TextSpan, TextStyle, TextDirection;
 
 import '../../capture/eco_type.dart';
+import '../../capture/fx/fire_fx.dart';
+import '../../capture/fx/wave_geometry.dart';
 import '../colors.dart';
 import '../sprites/sprite_image.dart';
+import 'fx_painter.dart';
 import 'tuning_layout.dart';
 
 /// Foto do estado da sintonia, no instante de desenhar.
@@ -28,6 +31,7 @@ class TuningView {
     required this.tonic,
     required this.showTarget,
     this.hidden = false,
+    this.fx,
   });
 
   final double dial;
@@ -52,6 +56,9 @@ class TuningView {
 
   /// Modo de tipo oculto: a onda do sinal fica cinza e não tremula, para não entregar o tipo.
   final bool hidden;
+
+  /// Efeitos da onda temática e do dial. `null` num teste que só confere o resto.
+  final TuningFx? fx;
 }
 
 const String _font = 'Silkscreen';
@@ -138,29 +145,38 @@ void _waves(Canvas canvas, TuningLayout l, TuningView v) {
   canvas.drawLine(Offset(r.left, r.center.dy), Offset(r.right, r.center.dy), _stroke(kPanelLine, 1));
 
   const n = 120;
-  final amp = r.height * 0.34;
-  double cycles(double f) => 1.5 + 5.0 * f;
-  final scroll = v.clock * math.pi;
+  final scroll = waveScroll(v.clock);
+  final hiddenSpans = v.fx?.fire.hidden ?? const <HiddenSpan>[];
 
-  Path wave(double f, double Function(double theta) shape, {double jitter = 0}) {
+  // Um ponto fica de fora se o Fogo queimou o trecho dele: o desenho recomeça depois do vazio.
+  Path wave(double f, double Function(double theta) shape, {double jitter = 0, List<HiddenSpan> gaps = const []}) {
     final p = Path();
+    var pen = false;
     for (var i = 0; i <= n; i++) {
       final u = i / n;
-      final env = math.pow(math.sin(math.pi * u), 0.6).toDouble();
-      final theta = 2 * math.pi * cycles(f) * (u - 0.5) + scroll;
-      var y = shape(theta);
-      if (jitter > 0) y += jitter * (_hash01(i, (v.clock * 30).floor()) - 0.5) * 2;
-      final pt = Offset(r.left + r.width * u, r.center.dy - amp * env * y);
-      i == 0 ? p.moveTo(pt.dx, pt.dy) : p.lineTo(pt.dx, pt.dy);
+      if (gaps.any((g) => g.covers(u))) {
+        pen = false;
+        continue;
+      }
+      var pt = waveAt(r, f, u, scroll, shape);
+      if (jitter > 0) pt += Offset(0, jitter * (_hash01(i, (v.clock * 30).floor()) - 0.5) * 2 * r.height * 0.34 * waveEnvelope(u));
+      if (pen) {
+        p.lineTo(pt.dx, pt.dy);
+      } else {
+        p.moveTo(pt.dx, pt.dy);
+        pen = true;
+      }
     }
     return p;
   }
 
   // O sinal da criatura é serrilhado, com picos. O do jogador é liso.
-  double tri(double t) => 2 / math.pi * math.asin(math.sin(t));
   final signalColor = v.hidden ? kDim : kSignal;
-  canvas.drawPath(wave(v.target, tri, jitter: v.hidden ? 0 : 0.35 * v.tremble), _stroke(signalColor, 3));
+  canvas.drawPath(
+      wave(v.target, triShape, jitter: v.hidden ? 0 : 0.35 * v.tremble, gaps: hiddenSpans), _stroke(signalColor, 3));
   canvas.drawPath(wave(v.dial, math.sin), _stroke(kVeil, 3));
+  final fx = v.fx;
+  if (fx != null) paintWaveFx(canvas, r, v.target, scroll, fx);
 }
 
 void _dial(Canvas canvas, TuningLayout l, TuningView v) {
@@ -187,6 +203,12 @@ void _dial(Canvas canvas, TuningLayout l, TuningView v) {
         _stroke(kSignal.withValues(alpha: 0.8), 6));
   }
 
+  final fx = v.fx;
+  if (fx != null) {
+    paintRoots(canvas, l, fx.plant);
+    paintDialKnob(canvas, l, v.dial, fx);
+    return;
+  }
   // O botão: uma haste violeta do centro até a borda, na frequência do jogador.
   final a = dialAngle(v.dial);
   final dir = Offset(math.cos(a), math.sin(a));

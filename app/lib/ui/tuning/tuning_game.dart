@@ -5,6 +5,12 @@ import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart' show ValueNotifier;
 
+import '../../capture/eco_type.dart';
+import '../../capture/fx/dial_fx.dart';
+import '../../capture/fx/fire_fx.dart';
+import '../../capture/fx/plant_fx.dart';
+import '../../capture/fx/water_fx.dart';
+import '../../capture/fx/wave_geometry.dart';
 import '../../capture/hidden_type.dart';
 import '../../capture/session.dart';
 import '../../capture/tuning_balance.dart';
@@ -15,6 +21,7 @@ import '../../core/pcg32.dart';
 import '../../data/tuning_data.dart';
 import '../colors.dart';
 import '../sprites/sprite_image.dart';
+import 'fx_painter.dart';
 import 'tuning_layout.dart';
 import 'tuning_painter.dart';
 import 'vibration_driver.dart';
@@ -66,6 +73,10 @@ class TuningGame extends FlameGame with DragCallbacks {
   final _sprites = <String, EcoSprite>{};
   EcoSprite? _neutral;
   double _clock = 0;
+  final _dialFx = DialFx();
+  late FireFx _fire;
+  late WaterFx _water;
+  late PlantFx _plant;
   double _dial = 0.5;
   double? _lastAngle;
   int _runs = 0;
@@ -89,6 +100,10 @@ class TuningGame extends FlameGame with DragCallbacks {
     species = hidden ? pickHidden(pool, (s) => s.type, _rng) : pool.first;
     setup = buildSetup(species);
     session = setup.start(balance, _rng);
+    _fire = FireFx(session.signal);
+    _water = WaterFx(session.signal);
+    _plant = PlantFx(session.signal);
+    _dialFx.reset();
     _dial = 0.5;
     _reported = false;
     awaitingGuess.value = hidden;
@@ -107,7 +122,10 @@ class TuningGame extends FlameGame with DragCallbacks {
   void update(double dt) {
     super.update(dt);
     _clock += dt;
-    if (!isLoaded || awaitingGuess.value || !session.running) return;
+    if (!isLoaded) return;
+    // O dial só reage enquanto a sintonia corre; depois ele volta ao violeta.
+    _dialFx.update(dt, aligned: session.running && !awaitingGuess.value && session.aligned, dialAngle: dialAngle(_dial));
+    if (awaitingGuess.value || !session.running) return;
     for (final cue in session.step(math.min(dt, 0.05), dial: _dial)) {
       vibration.play(cue.pattern);
     }
@@ -142,8 +160,24 @@ class TuningGame extends FlameGame with DragCallbacks {
         tonic: setup.tonic != null,
         showTarget: showTarget,
         hidden: hidden,
+        fx: _fx(s),
       ),
       hidden ? _neutral : _sprites[species.id],
+    );
+  }
+
+  /// Efeitos de agora. No modo oculto só o dial reage, em ciano, para não entregar o tipo.
+  TuningFx _fx(TuningSession s) {
+    if (hidden) return TuningFx(dial: _dialFx, dialColor: kSignal);
+    final t = s.t;
+    return TuningFx(
+      fire: setup.type == EcoType.fire ? _fire.at(t) : FireFxState.none,
+      foam: setup.type == EcoType.water ? _water.at(t, waveScroll(_clock)) : const [],
+      plant: setup.type == EcoType.plant
+          ? _plant.at(t, target: s.targetFrequency, tolerance: s.tolerance)
+          : PlantFxState.none,
+      dial: _dialFx,
+      dialColor: typeColor(setup.type),
     );
   }
 
