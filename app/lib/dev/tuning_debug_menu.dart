@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../capture/eco_type.dart';
 import '../capture/seal.dart';
@@ -31,6 +32,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   final _vibration = DeviceVibration();
   late final LogExporter _exporter = widget.exporter ?? ShareLogExporter();
   SessionLogStore? _store;
+  String _appBuild = '';
   int _sessions = 0;
   TuningData? _data;
   final _sprites = <String, EcoSprite>{};
@@ -50,6 +52,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
 
   Future<void> _load() async {
     final data = await TuningData.load();
+    final info = await PackageInfo.fromPlatform();
     for (final s in data.species) {
       _sprites[s.id] = await EcoSprite.load(s.id);
     }
@@ -59,6 +62,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
     if (!mounted) return;
     setState(() {
       _store = store;
+      _appBuild = '${info.version}+${info.buildNumber}';
       _sessions = sessions;
       _data = data;
       _species = data.species.first;
@@ -81,6 +85,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
         buildSetup: (s) => _setupFor(d, s),
         balance: d.balance,
         balanceVersion: d.balanceVersion,
+        appBuild: _appBuild,
         store: _store!,
         hidden: _hidden,
         showTarget: _showTarget,

@@ -24,6 +24,9 @@ class SessionLogStore {
   /// Cópia do arquivo no segundo formato (15 colunas), feita antes de migrá-lo. Nunca é sobrescrita.
   File get backupV2 => File('${file.path}.v2.bak');
 
+  /// Cópia do arquivo no terceiro formato (17 colunas), feita antes de migrá-lo. Nunca é sobrescrita.
+  File get backupV3 => File('${file.path}.v3.bak');
+
   /// Fila das operações no arquivo: uma termina antes de a próxima começar. Sem isso, duas
   /// gravações sobrepostas decidem ao mesmo tempo se o arquivo é novo e uma perde a linha da outra.
   Future<void> _queue = Future<void>.value();
@@ -43,7 +46,10 @@ class SessionLogStore {
   /// Sobe para o formato atual um registro num formato anterior, sem perder linha:
   /// - 14 colunas (sem `balance_version`): cada linha ganha `pre-ajuste`, e depois o que vem abaixo;
   /// - 15 colunas (sem `gap` e `overlevel`): cada linha ganha o `gap` calculado dos próprios níveis
-  ///   (`eco_level − player_level`) e `overlevel` 0, porque o sobrenível ainda não existia.
+  ///   (`eco_level − player_level`) e `overlevel` 0, porque o sobrenível ainda não existia;
+  /// - 17 colunas (sem `app_build`): cada linha ganha `pre-visual`.
+  ///
+  /// Um formato antigo passa por todos os degraus de uma vez, com uma cópia só (a do formato de origem).
   ///
   /// Não faz nada se o arquivo não existe, está vazio, já está no formato atual ou tem um cabeçalho
   /// que não é de um formato conhecido (nesse caso não mexe nele).
@@ -54,13 +60,16 @@ class SessionLogStore {
     final lines = await file.readAsLines();
     if (lines.isEmpty) return;
     final File copy;
-    final bool fromV1;
+    final int from;
     if (lines.first == SessionRecord.legacyHeader) {
       copy = backup;
-      fromV1 = true;
+      from = SessionRecord.columnsV1;
     } else if (lines.first == SessionRecord.previousHeader) {
       copy = backupV2;
-      fromV1 = false;
+      from = SessionRecord.columnsV2;
+    } else if (lines.first == SessionRecord.headerV3) {
+      copy = backupV3;
+      from = SessionRecord.columnsV3;
     } else {
       return;
     }
@@ -70,15 +79,23 @@ class SessionLogStore {
     final migrated = [
       SessionRecord.header,
       for (final line in lines.skip(1))
-        if (line.isNotEmpty) _upgradeRow(fromV1 ? '$line,${SessionRecord.legacyBalanceVersion}' : line),
+        if (line.isNotEmpty) _upgradeRow(line, from),
     ];
     final temp = File('${file.path}.tmp');
     await temp.writeAsString('${migrated.join('\n')}\n', flush: true);
     await temp.rename(file.path);
   }
 
-  /// Linha de 15 campos para 17: `gap` dos níveis da própria linha (vazio se ilegíveis) e `overlevel` 0.
-  String _upgradeRow(String row) {
+  /// Sobe uma linha do formato com [from] colunas até o atual.
+  String _upgradeRow(String row, int from) {
+    var r = row;
+    if (from < SessionRecord.columnsV2) r = '$r,${SessionRecord.legacyBalanceVersion}';
+    if (from < SessionRecord.columnsV3) r = _addGap(r);
+    return '$r,${SessionRecord.legacyAppBuild}';
+  }
+
+  /// Acrescenta `gap` dos níveis da própria linha (vazio se ilegíveis) e `overlevel` 0.
+  String _addGap(String row) {
     final fields = row.split(',');
     final eco = fields.length > 3 ? int.tryParse(fields[2]) : null;
     final player = fields.length > 3 ? int.tryParse(fields[3]) : null;

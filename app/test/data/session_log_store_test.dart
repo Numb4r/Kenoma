@@ -21,6 +21,7 @@ SessionRecord rec(int n) => SessionRecord(
       balanceVersion: 'a1b2c3d4',
       gap: 3,
       overlevel: 0,
+      appBuild: '0.2.0+2',
     );
 
 void main() {
@@ -100,10 +101,10 @@ void main() {
     late SessionLogStore store;
     File tmp() => File('${file.path}.tmp');
 
-    // Linha do primeiro formato depois de migrada: pre-ajuste, gap = eco_level − player_level, overlevel 0.
+    // Linha do primeiro formato depois de migrada: pre-ajuste, gap = eco_level − player_level, overlevel 0, pre-visual.
     String upgraded(String v1Row) {
       final f = v1Row.split(',');
-      return '$v1Row,pre-ajuste,${int.parse(f[2]) - int.parse(f[3])},0';
+      return '$v1Row,pre-ajuste,${int.parse(f[2]) - int.parse(f[3])},0,pre-visual';
     }
 
     void writeLegacy(List<String> rows, {bool trailingNewline = true}) =>
@@ -266,13 +267,15 @@ void main() {
       store = SessionLogStore(file);
     });
 
-    test('os cabeçalhos: 14, 15 e 17 colunas, cada um o anterior mais colunas no fim', () {
+    test('os cabeçalhos: 14, 15, 17 e 18 colunas, cada um o anterior mais colunas no fim', () {
       expect(SessionRecord.legacyHeader.split(','), hasLength(14));
       expect(SessionRecord.previousHeader.split(','), hasLength(15));
-      expect(SessionRecord.header.split(','), hasLength(17));
+      expect(SessionRecord.headerV3.split(','), hasLength(17));
+      expect(SessionRecord.header.split(','), hasLength(18));
       expect(SessionRecord.previousHeader.startsWith(SessionRecord.legacyHeader), isTrue);
-      expect(SessionRecord.header.startsWith(SessionRecord.previousHeader), isTrue);
-      expect(SessionRecord.header.endsWith(',balance_version,gap,overlevel'), isTrue);
+      expect(SessionRecord.headerV3.startsWith(SessionRecord.previousHeader), isTrue);
+      expect(SessionRecord.header.startsWith(SessionRecord.headerV3), isTrue);
+      expect(SessionRecord.header.endsWith(',balance_version,gap,overlevel,app_build'), isTrue);
     });
 
     test('cada linha ganha o gap dos próprios níveis (também negativo) e overlevel 0, sem mudar o resto', () async {
@@ -281,10 +284,10 @@ void main() {
       final lines = file.readAsLinesSync();
       expect(lines.first, SessionRecord.header);
       for (var i = 0; i < v2Rows.length; i++) {
-        expect(lines[i + 1], '${v2Rows[i]},${expectedGaps[i]},0');
+        expect(lines[i + 1], '${v2Rows[i]},${expectedGaps[i]},0,pre-visual');
       }
       expect(await store.count(), 4);
-      expect(lines.skip(1).every((l) => l.split(',').length == 17), isTrue);
+      expect(lines.skip(1).every((l) => l.split(',').length == 18), isTrue);
     });
 
     test('as 24 linhas do celular passam sem perda, em ordem, e a versão de cada uma fica', () async {
@@ -297,7 +300,7 @@ void main() {
       final lines = file.readAsLinesSync();
       expect(lines, hasLength(25));
       for (var i = 0; i < 24; i++) {
-        expect(lines[i + 1], '${many[i]},1,0', reason: 'linha $i (gap = ${i + 1} − $i)');
+        expect(lines[i + 1], '${many[i]},1,0,pre-visual', reason: 'linha $i (gap = ${i + 1} − $i)');
       }
       expect(await store.count(), 24);
     });
@@ -336,7 +339,7 @@ void main() {
       writeV2(['2026-09-29T15:01:00.000000Z,fire,?,1,item.seal.simple,0,0.080,0.000,5.50,success,5.00,0,0,,pre-ajuste']);
       await store.migrate();
       final row = file.readAsLinesSync().last;
-      expect(row.endsWith(',pre-ajuste,,0'), isTrue);
+      expect(row.endsWith(',pre-ajuste,,0,pre-visual'), isTrue);
       expect(await store.count(), 1);
     });
 
@@ -345,9 +348,9 @@ void main() {
       await store.append(rec(5));
       final lines = file.readAsLinesSync();
       expect(lines, hasLength(6));
-      expect(lines.sublist(1, 5), [for (var i = 0; i < 4; i++) '${v2Rows[i]},${expectedGaps[i]},0']);
+      expect(lines.sublist(1, 5), [for (var i = 0; i < 4; i++) '${v2Rows[i]},${expectedGaps[i]},0,pre-visual']);
       expect(lines.last, rec(5).toCsvLine());
-      expect(lines.last.split(',').skip(14).toList(), ['a1b2c3d4', '3', '0']);
+      expect(lines.last.split(',').skip(14).toList(), ['a1b2c3d4', '3', '0', '0.2.0+2']);
     });
 
     test('se a escrita do arquivo novo falha, o original fica intacto', () async {
@@ -367,6 +370,72 @@ void main() {
       expect(file.readAsBytesSync(), before);
       expect(store.backup.existsSync(), isFalse);
       expect(store.backupV2.existsSync(), isFalse);
+    });
+  });
+
+  group('migração do terceiro formato (17 colunas, sem app_build)', () {
+    const v3Rows = [
+      '2026-09-30T15:01:00.000000Z,fire,1,1,item.seal.simple,0,0.080,0.000,5.50,success,5.00,0,0,,pre-ajuste,0,0',
+      '2026-09-30T15:02:00.000000Z,water,30,10,item.seal.reinforced,1,0.110,0.810,20.00,fail,3.65,3,1,1,d5c78166,20,6',
+    ];
+    late File file;
+    late SessionLogStore store;
+
+    void writeV3(List<String> rows) => file.writeAsStringSync('${SessionRecord.headerV3}\n${rows.join('\n')}\n');
+
+    setUp(() {
+      file = File('${dir.path}/sessions.csv');
+      store = SessionLogStore(file);
+    });
+
+    test('cada linha ganha pre-visual no fim, sem mudar o resto', () async {
+      writeV3(v3Rows);
+      await store.migrate();
+      final lines = file.readAsLinesSync();
+      expect(lines.first, SessionRecord.header);
+      expect(lines.skip(1).toList(), [for (final r in v3Rows) '$r,pre-visual']);
+      expect(await store.count(), 2);
+    });
+
+    test('guarda uma cópia idêntica em .v3.bak, sem mexer nas outras', () async {
+      writeV3(v3Rows);
+      store.backup.writeAsStringSync('cópia 1');
+      store.backupV2.writeAsStringSync('cópia 2');
+      final original = file.readAsBytesSync();
+      await store.migrate();
+      expect(store.backupV3.readAsBytesSync(), original);
+      expect(store.backup.readAsStringSync(), 'cópia 1');
+      expect(store.backupV2.readAsStringSync(), 'cópia 2');
+    });
+
+    test('uma cópia .v3.bak que já existia não é sobrescrita, e rodar de novo não muda nada', () async {
+      writeV3(v3Rows);
+      store.backupV3.writeAsStringSync('cópia anterior');
+      await store.migrate();
+      final after = file.readAsBytesSync();
+      await store.migrate();
+      expect(store.backupV3.readAsStringSync(), 'cópia anterior');
+      expect(file.readAsBytesSync(), after);
+      expect(File('${file.path}.tmp').existsSync(), isFalse);
+    });
+
+    test('gravar num arquivo do terceiro formato migra primeiro, e a linha nova traz a versão do app', () async {
+      writeV3(v3Rows);
+      await store.append(rec(9));
+      final lines = file.readAsLinesSync();
+      expect(lines, hasLength(4));
+      expect(lines.sublist(1, 3), [for (final r in v3Rows) '$r,pre-visual']);
+      expect(lines.last, rec(9).toCsvLine());
+      expect(lines.last.split(',').last, '0.2.0+2');
+    });
+
+    test('se a escrita do arquivo novo falha, o original fica intacto', () async {
+      writeV3(v3Rows);
+      final original = file.readAsBytesSync();
+      Directory('${file.path}.tmp').createSync();
+      await expectLater(store.migrate(), throwsA(isA<FileSystemException>()));
+      expect(file.readAsBytesSync(), original);
+      expect(store.backupV3.readAsBytesSync(), original);
     });
   });
 }
@@ -389,6 +458,7 @@ class _Broken extends SessionRecord {
           balanceVersion: 'a1b2c3d4',
           gap: 0,
           overlevel: 0,
+          appBuild: '0.2.0+2',
         );
 
   @override

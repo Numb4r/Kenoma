@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:kenoma/capture/eco_type.dart';
 import 'package:kenoma/capture/session_record.dart';
 import 'package:kenoma/capture/tuning_setup.dart';
@@ -35,6 +36,7 @@ SessionRecord sampleRecord() => SessionRecord(
       balanceVersion: 'a1b2c3d4',
       gap: 0,
       overlevel: 0,
+      appBuild: '0.2.0+2',
     );
 
 /// Abre o menu com um registro num diretório temporário. [seeded] é quantas sessões já existem.
@@ -55,6 +57,8 @@ Future<({SessionLogStore store, FakeExporter exporter})> pumpMenu(WidgetTester t
     store.file.writeAsStringSync('${SessionRecord.legacyHeader}\n${legacyRows.join('\n')}\n');
   }
   final exporter = FakeExporter();
+  PackageInfo.setMockInitialValues(
+      appName: 'kenoma', packageName: 'com.numb4r.kenoma', version: '0.2.0', buildNumber: '2', buildSignature: '');
 
   // O cache de assets guarda o Future do teste anterior, que morreu com a zona dele.
   // Recarregar na zona real deixa o menu carregar em qualquer teste.
@@ -220,8 +224,8 @@ void main() {
       expect(find.text('Sessões gravadas: 2'), findsOneWidget);
       final lines = env.store.file.readAsLinesSync();
       expect(lines.first, SessionRecord.header);
-      // Primeiro formato: ganha pre-ajuste, o gap dos próprios níveis (0 e 2) e overlevel 0.
-      expect(lines.skip(1).toList(), ['${old[0]},pre-ajuste,0,0', '${old[1]},pre-ajuste,2,0']);
+      // Primeiro formato: ganha pre-ajuste, o gap dos próprios níveis (0 e 2), overlevel 0 e pre-visual.
+      expect(lines.skip(1).toList(), ['${old[0]},pre-ajuste,0,0,pre-visual', '${old[1]},pre-ajuste,2,0,pre-visual']);
       expect(env.store.backup.existsSync(), isTrue);
       await tester.tap(find.text('EXPORTAR REGISTRO'));
       await tester.pump();

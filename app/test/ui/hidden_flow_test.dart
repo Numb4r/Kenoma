@@ -68,6 +68,7 @@ Future<Env> open(WidgetTester tester, {required bool hidden, EcoType? only, int 
       buildSetup: (s) => TuningSetup(type: s.type, ecoLevel: ecoLevel, playerLevel: playerLevel, seal: data.seals.first),
       balance: data.balance,
       balanceVersion: data.balanceVersion,
+      appBuild: '0.2.0+2',
       store: store,
       hidden: hidden,
       vibration: vibration,
@@ -202,7 +203,8 @@ void main() {
     await env.play(21);
     final rows = await env.rows(expected: 1);
     expect((rows.single[12], rows.single[13]), ('0', ''));
-    expect(rows.single, hasLength(17));
+    expect(rows.single, hasLength(18));
+    expect(rows.single[17], '0.2.0+2', reason: 'a linha diz com que versão do app foi jogada');
     expect((rows.single[15], rows.single[16]), ('0', '0'), reason: 'níveis 1 e 1: sem gap');
     expect(rows.single[14], env.balanceVersion, reason: 'a linha diz com que balanceamento foi jogada');
     expect(rows.single[14], matches(RegExp(r'^[0-9a-f]{8}$')));

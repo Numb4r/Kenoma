@@ -40,7 +40,7 @@ void main() {
   });
   tearDown(() => dir.deleteSync(recursive: true));
 
-  RunLogger logger({required bool hidden}) => RunLogger(store: store, balance: b, balanceVersion: 'c0ffee00', hidden: hidden, clock: () => now);
+  RunLogger logger({required bool hidden}) => RunLogger(store: store, balance: b, balanceVersion: 'c0ffee00', appBuild: '0.2.0+2', hidden: hidden, clock: () => now);
 
   List<List<String>> rows() => [for (final l in store.file.readAsLinesSync().skip(1)) l.split(',')];
 
@@ -120,7 +120,7 @@ void main() {
   test('uma falha de escrita não derruba o jogo', () async {
     final broken = SessionLogStore(File('${dir.path}/sessions.csv/x/y.csv'));
     File('${dir.path}/sessions.csv').writeAsStringSync('arquivo no lugar da pasta');
-    final l = RunLogger(store: broken, balance: b, balanceVersion: 'c0ffee00', hidden: false, clock: () => now);
+    final l = RunLogger(store: broken, balance: b, balanceVersion: 'c0ffee00', appBuild: '0.2.0+2', hidden: false, clock: () => now);
     await l.finished(makeRun());
   });
 }

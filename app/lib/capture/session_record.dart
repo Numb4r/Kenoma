@@ -23,6 +23,7 @@ class SessionRecord {
     required this.balanceVersion,
     required this.gap,
     required this.overlevel,
+    required this.appBuild,
     this.hiddenType = false,
     this.guessCorrect,
   });
@@ -34,6 +35,7 @@ class SessionRecord {
     required TuningBalance balance,
     required DateTime at,
     required String balanceVersion,
+    required String appBuild,
     bool hiddenType = false,
     bool? guessCorrect,
   }) =>
@@ -53,6 +55,7 @@ class SessionRecord {
         balanceVersion: balanceVersion,
         gap: setup.gap,
         overlevel: session.overlevel,
+        appBuild: appBuild,
         hiddenType: hiddenType,
         guessCorrect: guessCorrect,
       );
@@ -75,13 +78,16 @@ class SessionRecord {
     'balance_version',
     'gap',
     'overlevel',
+    'app_build',
   ];
 
   static String get header => columns.join(',');
 
-  /// Colunas do primeiro formato (sem `balance_version`) e do segundo (sem `gap` e `overlevel`).
+  /// Colunas do primeiro formato (sem `balance_version`), do segundo (sem `gap` e `overlevel`) e do
+  /// terceiro (sem `app_build`).
   static const int columnsV1 = 14;
   static const int columnsV2 = 15;
+  static const int columnsV3 = 17;
 
   /// Cabeçalho do primeiro formato (14 colunas). Arquivos nele são migrados.
   static String get legacyHeader => columns.take(columnsV1).join(',');
@@ -89,12 +95,19 @@ class SessionRecord {
   /// Cabeçalho do segundo formato (15 colunas, com `balance_version`). Arquivos nele são migrados.
   static String get previousHeader => columns.take(columnsV2).join(',');
 
+  /// Cabeçalho do terceiro formato (17 colunas, sem `app_build`). Arquivos nele são migrados.
+  static String get headerV3 => columns.take(columnsV3).join(',');
+
   /// Versão gravada nas linhas que já existiam quando a coluna foi criada.
   static const String legacyBalanceVersion = 'pre-ajuste';
 
   /// `overlevel` das linhas que já existiam quando a coluna foi criada: o sobrenível ainda não
   /// existia, então nenhuma delas o aplicou.
   static const int legacyOverlevel = 0;
+
+  /// `app_build` das linhas gravadas antes de a coluna existir: a tela de sintonia ainda não tinha
+  /// os efeitos visuais.
+  static const String legacyAppBuild = 'pre-visual';
 
   final DateTime timeUtc;
   final EcoType type;
@@ -119,6 +132,9 @@ class SessionRecord {
 
   /// Sobrenível `g` aplicado na sintonia: níveis acima de `overlevel_free`.
   final int overlevel;
+
+  /// `versionName+versionCode` do app que gravou a linha, por exemplo `0.2.0+2`.
+  final String appBuild;
   final bool hiddenType;
 
   /// No modo de tipo oculto, se o jogador acertou o tipo. `null` se não marcou ou fora do modo.
@@ -142,6 +158,7 @@ class SessionRecord {
         balanceVersion,
         '$gap',
         '$overlevel',
+        appBuild,
       ].map(_escape).join(',');
 }
 

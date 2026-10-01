@@ -23,6 +23,7 @@ class TuningScreen extends StatefulWidget {
     required this.buildSetup,
     required this.balance,
     required this.balanceVersion,
+    required this.appBuild,
     required this.store,
     this.hidden = false,
     this.showTarget = false,
@@ -34,6 +35,9 @@ class TuningScreen extends StatefulWidget {
   final TuningSetup Function(EcoSpecies species) buildSetup;
   final TuningBalance balance;
   final String balanceVersion;
+
+  /// `versionName+versionCode` do app, gravado em cada linha do registro.
+  final String appBuild;
   final SessionLogStore store;
   final bool hidden;
   final bool showTarget;
@@ -61,6 +65,7 @@ class _TuningScreenState extends State<TuningScreen> {
       store: widget.store,
       balance: widget.balance,
       balanceVersion: widget.balanceVersion,
+      appBuild: widget.appBuild,
       hidden: widget.hidden,
     );
     _game = TuningGame(

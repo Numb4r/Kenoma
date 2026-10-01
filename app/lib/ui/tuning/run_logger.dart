@@ -15,6 +15,7 @@ class RunLogger {
     required this.store,
     required this.balance,
     required this.balanceVersion,
+    required this.appBuild,
     required this.hidden,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now;
@@ -24,6 +25,9 @@ class RunLogger {
 
   /// Vai em cada linha do registro.
   final String balanceVersion;
+
+  /// `versionName+versionCode` do app. Vai em cada linha do registro.
+  final String appBuild;
   final bool hidden;
   final DateTime Function() _clock;
   EcoType? _guess;
@@ -41,6 +45,7 @@ class RunLogger {
         balance: balance,
         at: _clock(),
         balanceVersion: balanceVersion,
+        appBuild: appBuild,
         hiddenType: hidden,
         guessCorrect: hidden && guess != null ? guess == run.setup.type : null,
       ));
