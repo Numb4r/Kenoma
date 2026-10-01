@@ -55,7 +55,8 @@ void main() {
         expect(s.cues, isEmpty);
         expect(s.kickTimes, isEmpty);
         expect(s.toleranceFactorAt(15), 1);
-        expect(s.trembleAt(3), 0);
+        expect(s.fireSplitAt(3), isNull);
+        expect(s.burnUs, isEmpty);
       }
     });
 
@@ -70,44 +71,198 @@ void main() {
     });
   });
 
-  group('Fogo: picos bruscos', () {
-    test('o sinal salta no instante do pico e volta depois', () {
-      final s = signal(EcoType.fire, 0.72);
-      expect(s.kickTimes, isNotEmpty);
-      final jumps = [
-        for (final at in s.kickTimes.where((t) => t < 25)) (s.frequencyAt(at + 1e-3) - s.frequencyAt(at - 1e-3)).abs(),
-      ];
-      expect(jumps.length, greaterThan(6));
-      // Um pico que cruza a borda do eixo é refletido e pode voltar quase ao mesmo ponto (salto ~0):
-      // por isso vale a maioria dos picos, não todos.
-      final big = jumps.where((j) => j > 0.1).length;
-      expect(big / jumps.length, greaterThan(0.75), reason: 'saltos: ${jumps.map((j) => j.toStringAsFixed(2)).toList()}');
+  group('Fogo: a onda se parte em duas', () {
+    const r = 0.72;
+    final fire = b.signal.fire;
+    double glide(double i) => lerpRange(fire.glideS, i);
+
+    /// A real esperada, sem dobrar nas bordas, a partir do que o sinal expõe.
+    double expectedReal(TargetSignal s, double t) {
+      final base = signal(EcoType.fire, 0, seed: 5).frequencyAt(t); // mesma semente, sem picos: só a base
+      var f = base;
+      final g = s.fireGlideS;
+      for (var i = 0; i < s.kickTimes.length; i++) {
+        final x = ((t - s.kickTimes[i]) / g).clamp(0.0, 1.0);
+        f += s.kickDeltas[i] * x * x * (3 - 2 * x);
+      }
+      return f;
+    }
+
+    test('a real desliza para a nova frequência com smoothstep e o salto é permanente', () {
+      final s = signal(EcoType.fire, r, seed: 5);
+      final g = s.fireGlideS;
+      expect(g, closeTo(glide(r), 1e-12));
+      final at = s.kickTimes.first;
+      final delta = s.kickDeltas.first;
+      final base = signal(EcoType.fire, 0, seed: 5);
+      // Sem dobrar nas bordas: a real é a base mais o salto.
+      expect(base.frequencyAt(at) + delta, inInclusiveRange(0.0, 1.0), reason: 'a semente do teste não cruza a borda no primeiro pico');
+      expect(s.frequencyAt(at - 1e-6), closeTo(base.frequencyAt(at - 1e-6), 1e-9), reason: 'antes do pico é só a base');
+      expect(s.frequencyAt(at + g / 2) - base.frequencyAt(at + g / 2), closeTo(delta / 2, 1e-9), reason: 'smoothstep(0,5) = 0,5');
+      expect(s.frequencyAt(at + g) - base.frequencyAt(at + g), closeTo(delta, 1e-9));
+      final before2 = s.kickTimes[1] - 1e-6;
+      expect(s.frequencyAt(before2) - base.frequencyAt(before2), closeTo(delta, 1e-9), reason: 'não decai: continua lá até o próximo pico');
     });
 
-    test('os picos são intermitentes: sem eles o sinal é suave', () {
-      final s = signal(EcoType.fire, 0.72);
-      final smooth = signal(EcoType.fire, 0);
-      expect(maxJump(series(smooth)), lessThan(0.005));
-      expect(maxJump(series(s)), greaterThan(0.05));
+    test('o deslize é suave e vai num só sentido; sem teleporte', () {
+      final s = signal(EcoType.fire, r, seed: 5);
+      final g = s.fireGlideS;
+      final at = s.kickTimes.first;
+      final delta = s.kickDeltas.first;
+      final base = signal(EcoType.fire, 0, seed: 5);
+      var prev = 0.0;
+      for (var t = at; t <= at + g; t += 1 / 60) {
+        final moved = s.frequencyAt(t) - base.frequencyAt(t);
+        expect((moved - prev) * delta.sign, greaterThanOrEqualTo(-1e-12), reason: 'monotônico');
+        prev = moved;
+      }
+      // Passo máximo por quadro: o pico da inclinação do smoothstep, 1,5 × salto / glide, e a deriva de base.
+      final step = maxJump(series(s, to: 25));
+      expect(step, lessThan(1.5 * s.kickDeltas.map((d) => d.abs()).reduce(math.max) / g / 60 + 0.01));
+    });
+
+    test('glide_s = lerp(1,2 → 0,5) e decoy_s = lerp(1,0 → 2,5) pela intensidade', () {
+      expect(signal(EcoType.fire, 0.4).fireGlideS, closeTo(lerp(1.2, 0.5, 0.4), 1e-12));
+      expect(signal(EcoType.fire, 1).fireGlideS, closeTo(0.5, 1e-12));
+      expect(signal(EcoType.fire, 0.4).fireDecoyS, closeTo(lerp(1.0, 2.5, 0.4), 1e-12));
+      expect(signal(EcoType.fire, 1).fireDecoyS, closeTo(2.5, 1e-12));
+    });
+
+    test('antes do primeiro pico a onda é uma só: não há partição', () {
+      final s = signal(EcoType.fire, r, seed: 5);
+      expect(s.fireSplitAt(s.kickTimes.first - 1e-6), isNull);
+      expect(s.fireSplitAt(0), isNull);
+      expect(s.fireSplitAt(s.kickTimes.first)!.index, 0);
+    });
+
+    test('a queima fica na faixa pedida, uma por pico, e a partição aponta para a do pico atual', () {
+      final s = signal(EcoType.fire, r, seed: 5);
+      expect(s.burnUs, hasLength(s.kickTimes.length));
+      for (final u in s.burnUs) {
+        expect(u, inInclusiveRange(fire.burnU.$1, fire.burnU.$2));
+      }
+      expect(s.burnUs.toSet().length, greaterThan(3), reason: 'cada pico queima num ponto');
+      for (var i = 0; i < s.kickTimes.length; i++) {
+        final split = s.fireSplitAt(s.kickTimes[i] + 0.01)!;
+        expect((split.index, split.burnU), (i, s.burnUs[i]));
+      }
+      final mid = s.fireSplitAt((s.kickTimes[2] + s.kickTimes[3]) / 2)!;
+      expect(mid.burnU, s.burnUs[2], reason: 'a fronteira fica onde o último pico queimou');
+    });
+
+    test('a isca nasce na frequência antiga e segue só a deriva de base até virar cinza (intensidade ≤ 0,6)', () {
+      const low = 0.5;
+      final s = signal(EcoType.fire, low, seed: 5);
+      final base = signal(EcoType.fire, 0, seed: 5);
+      final at = s.kickTimes.first;
+      final decoyEnd = at + s.fireDecoyS;
+      for (final t in [at, at + 0.2, at + s.fireGlideS, decoyEnd - 0.01]) {
+        if (t >= s.kickTimes[1]) continue;
+        expect(s.fireSplitAt(t)!.decoyFrequency, closeTo(base.frequencyAt(t), 1e-9), reason: 't=$t');
+      }
+      // A real foi para outro lugar: isca e real se separam do tamanho do salto.
+      final t = at + s.fireGlideS;
+      expect((s.frequencyAt(t) - s.fireSplitAt(t)!.decoyFrequency).abs(), closeTo(s.kickDeltas.first.abs(), 1e-9));
+    });
+
+    test('acima de 0,6 a isca também desliza, no sentido oposto ao da real', () {
+      final s = signal(EcoType.fire, 0.9, seed: 5);
+      final base = signal(EcoType.fire, 0, seed: 5);
+      final at = s.kickTimes.first;
+      final delta = s.kickDeltas.first;
+      final t = at + s.fireGlideS;
+      final shift = s.fireSplitAt(t)!.decoyFrequency - base.frequencyAt(t);
+      expect(shift, closeTo(-fire.decoyCounter * delta, 1e-9));
+      expect(shift * delta, lessThan(0), reason: 'sentido oposto ao da real');
+      // Meio do deslize: metade do caminho (smoothstep).
+      final half = s.fireSplitAt(at + s.fireGlideS / 2)!.decoyFrequency - base.frequencyAt(at + s.fireGlideS / 2);
+      expect(half, closeTo(-fire.decoyCounter * delta / 2, 1e-9));
+      // No limiar (0,6) ainda não desliza.
+      final edge = signal(EcoType.fire, 0.6, seed: 5);
+      final tt = edge.kickTimes.first + edge.fireGlideS;
+      expect(edge.fireSplitAt(tt)!.decoyFrequency, closeTo(base.frequencyAt(tt), 1e-9));
+    });
+
+    test('a vida da isca vai de 1 a 0 em decoy_s e fica 0 (cinza) depois', () {
+      final s = signal(EcoType.fire, 0.1, seed: 5); // picos espaçados: a isca vive até o fim
+      final at = s.kickTimes.first;
+      final d = s.fireDecoyS;
+      expect(s.kickTimes[1] - at, greaterThan(d + 0.5));
+      expect(s.fireSplitAt(at)!.decoyLife, 1);
+      expect(s.fireSplitAt(at + d / 2)!.decoyLife, closeTo(0.5, 1e-9));
+      expect(s.fireSplitAt(at + d - 1e-6)!.decoyAlive, isTrue);
+      expect(s.fireSplitAt(at + d)!.decoyLife, 0);
+      expect(s.fireSplitAt(at + d)!.decoyAlive, isFalse);
+      expect(s.fireSplitAt(at + d + 0.5)!.decoyAlive, isFalse);
+    });
+
+    test('um pico novo com a isca ainda viva a aposenta na hora; com ela já cinza, não há o que aposentar', () {
+      final busy = signal(EcoType.fire, 0.9, seed: 5); // decoy_s ≈ 2,3 s e picos a cada ~0,9 s
+      final t1 = busy.kickTimes[1];
+      expect(t1 - busy.kickTimes[0], lessThan(busy.fireDecoyS));
+      final split = busy.fireSplitAt(t1 + 0.1)!;
+      expect(split.retired, isNotNull);
+      expect(split.retired!.burnU, busy.burnUs[0], reason: 'a antiga continua marcada pela queima dela');
+      expect(split.retired!.since, closeTo(0.1, 1e-9));
+      expect(split.decoyLife, greaterThan(0.9), reason: 'a isca nova nasce viva');
+      expect(busy.fireSplitAt(busy.kickTimes[0] + 0.1)!.retired, isNull, reason: 'o primeiro pico não tem isca anterior');
+
+      final calm = signal(EcoType.fire, 0.1, seed: 5);
+      expect(calm.kickTimes[1] - calm.kickTimes[0], greaterThan(calm.fireDecoyS), reason: 'a isca antiga já tinha morrido');
+      expect(calm.fireSplitAt(calm.kickTimes[1] + 0.1)!.retired, isNull);
+    });
+
+    test('a real é a frequência do sinal: tolerância e progresso a medem, não a isca', () {
+      final s = makeSession(type: EcoType.fire, playerLevel: 15, ecoLevel: 17, seed: 5);
+      final at = s.signal.kickTimes.first;
+      while (s.running && s.t < at + 0.8) {
+        s.step(1 / 60, dial: s.signal.frequencyAt(s.t + 1 / 60));
+      }
+      final split = s.signal.fireSplitAt(s.t)!;
+      final real = s.signal.frequencyAt(s.t);
+      expect(s.targetFrequency, real);
+      expect((split.decoyFrequency - real).abs(), greaterThan(s.tolerance * 2), reason: 'o teste precisa de uma isca longe da real');
+      s.step(1 / 60, dial: real);
+      expect(s.aligned, isTrue);
+      final progress = s.progress;
+      for (var i = 0; i < 20; i++) {
+        s.step(1 / 60, dial: s.signal.fireSplitAt(s.t)!.decoyFrequency);
+      }
+      expect(s.aligned, isFalse, reason: 'o dial na isca não alinha');
+      expect(s.progress, lessThan(progress), reason: 'e o progresso cai');
     });
 
     test('mais intensidade, picos mais frequentes e maiores', () {
       int count(double r) => signal(EcoType.fire, r).kickTimes.where((t) => t < 60).length;
       expect(count(0.3), lessThan(count(0.72)));
       expect(count(0.72), lessThan(count(1.0)));
+      double size(double r) => signal(EcoType.fire, r).kickDeltas.map((d) => d.abs()).reduce((a, b) => a + b) / signal(EcoType.fire, r).kickDeltas.length;
+      expect(size(0.3), lessThan(size(1.0)));
     });
 
-    test('a onda tremula e o aviso vem antes de cada pico', () {
-      final s = signal(EcoType.fire, 0.72);
-      final lead = b.signal.fire.warningLeadS;
+    test('o único aviso é a brasa: um aviso antes de cada pico, sem tremor', () {
+      final s = signal(EcoType.fire, r);
+      final lead = s.fireWarningLeadS;
       expect(s.cues.length, s.kickTimes.length);
       for (var i = 0; i < s.kickTimes.length; i++) {
-        final at = s.kickTimes[i];
         expect(s.cues[i].kind, CueKind.fireWarning);
-        expect(s.cues[i].at, closeTo(at - lead, 1e-9));
-        expect(s.trembleAt(at - lead + 0.01), 1);
-        expect(s.trembleAt(at), 1);
-        expect(s.trembleAt(at - lead - 0.05), 0);
+        expect(s.cues[i].at, closeTo(s.kickTimes[i] - lead, 1e-9));
+      }
+    });
+
+    test('a brasa vem com menos antecedência quando a intensidade sobe: 0,5 s → 0,2 s', () {
+      expect(signal(EcoType.fire, 0.1).fireWarningLeadS, closeTo(lerp(0.5, 0.2, 0.1), 1e-12));
+      expect(signal(EcoType.fire, 1).fireWarningLeadS, closeTo(0.2, 1e-12));
+      final weak = signal(EcoType.fire, 0.3);
+      expect(weak.cues.first.at, closeTo(weak.kickTimes.first - weak.fireWarningLeadS, 1e-9));
+      expect(weak.fireWarningLeadS, greaterThan(signal(EcoType.fire, 0.9).fireWarningLeadS));
+    });
+
+    test('sem resistência o sinal é suave e a real é a deriva de base', () {
+      expect(maxJump(series(signal(EcoType.fire, 0))), lessThan(0.005));
+      final s = signal(EcoType.fire, r, seed: 5);
+      for (final t in [0.0, 3.0, 8.0, 15.0]) {
+        expect(s.frequencyAt(t), closeTo(expectedReal(s, t).clamp(0.0, 1.0), 0.5), reason: 'dentro do eixo');
       }
     });
 
@@ -505,6 +660,29 @@ void main() {
       }
       final s = signal(EcoType.fire, r, seed: 5);
       expect(s.kickTimes, expected);
+    });
+
+    test('a posição da queima de cada pico sai no fim da sequência, depois da fase da maré e do sentido da Planta', () {
+      const r = 0.72;
+      final gen = rng(5);
+      for (var i = 0; i < 3; i++) {
+        gen.nextFloat();
+      }
+      final mean = lerpRange(b.signal.fire.intervalS, r);
+      var at = 0.0;
+      var kicks = 0;
+      while (true) {
+        at += mean * (0.75 + 0.5 * gen.nextFloat());
+        if (at > 60) break;
+        gen.nextFloat();
+        gen.nextFloat();
+        kicks++;
+      }
+      for (var i = 0; i < 3; i++) {
+        gen.nextFloat(); // fase 2 da Água, fase da maré, sentido da Planta
+      }
+      final expected = [for (var i = 0; i < kicks; i++) lerpRange(b.signal.fire.burnU, gen.nextFloat())];
+      expect(signal(EcoType.fire, r, seed: 5).burnUs, expected);
     });
 
     test('para a Água e a Planta, os sorteios novos vêm logo depois dos três primeiros', () {

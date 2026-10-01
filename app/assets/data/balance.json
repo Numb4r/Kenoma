@@ -28,7 +28,7 @@
       "start_range": [0.15, 0.85],
       "wander_amplitude": 0.05,
       "wander_period_s": 7.0,
-      "fire": { "interval_s": [3.2, 0.65], "kick": [0.12, 0.46], "decay_s": 1.2, "warning_lead_s": 0.3, "tremble_after_s": 0.15 },
+      "fire": { "interval_s": [3.2, 0.65], "kick": [0.12, 0.32], "glide_s": [1.2, 0.5], "decoy_s": [1.0, 2.5], "decoy_counter_from": 0.6, "decoy_counter": 0.3, "burn_u": [0.2, 0.8], "warning_lead_s": [0.5, 0.2] },
       "water": { "amplitude": [0.0, 0.65], "period_s": [9.0, 3.5], "second_period_ratio": 1.618, "second_weight": 0.4, "tide": { "period_s": 11.0, "min": 0.6 }, "cue_lead_s": 0.4 },
       "plant": { "tolerance_shrink": 1.0, "shrink_over_s": 3.0, "tolerance_floor": 0.5, "growth_per_s": [0.0, 0.03], "bud_step": [0.0, 0.06], "cue_every_s": 0.65, "pulse_ms": [140, 30] }
     }

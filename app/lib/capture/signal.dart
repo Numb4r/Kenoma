@@ -2,7 +2,8 @@
 ///
 /// Tudo sai de um `Pcg32` semeado por quem chama, então uma sintonia é reproduzível e testável.
 /// A resistência do tipo mexe no sinal, nunca no dial:
-/// - Fogo: picos bruscos que empurram o sinal e depois deixam voltar.
+/// - Fogo: a onda se parte em duas num ponto de queima. A real, à direita, desliza para a nova
+///   frequência e fica lá. A isca, à esquerda, segue na frequência antiga e depois vira cinza.
 /// - Água: deriva lenta e contínua, como maré.
 /// - Planta: o sinal fica firme, mas a tolerância encolhe durante a sintonia.
 library;
@@ -26,10 +27,61 @@ class TuningCue {
 }
 
 class _Kick {
-  const _Kick(this.at, this.delta);
+  const _Kick(this.at, this.delta, [this.burnU = 0]);
 
   final double at;
   final double delta;
+
+  /// Ponto da onda, de 0 a 1, onde a queima parte a onda em duas.
+  final double burnU;
+}
+
+/// Isca de um pico já passado: onde ela nasceu e a frequência dela agora.
+class RetiredDecoy {
+  const RetiredDecoy(this.burnU, this.frequency, this.since);
+
+  final double burnU;
+  final double frequency;
+
+  /// Segundos desde o pico que a aposentou.
+  final double since;
+}
+
+/// A onda do Fogo partida em duas, vista no instante [t] (só existe depois do primeiro pico). A real é
+/// sempre a que fica à direita de [burnU], e `frequencyAt` já é a dela. A queima é a fronteira vertical.
+class FireSplit {
+  const FireSplit({
+    required this.index,
+    required this.burnU,
+    required this.since,
+    required this.decoyFrequency,
+    required this.decoyLife,
+    this.retired,
+  });
+
+  /// Número do pico, a partir de 0.
+  final int index;
+  final double burnU;
+
+  /// Segundos desde o pico.
+  final double since;
+
+  /// Frequência da isca: a antiga, com a mesma deriva de base.
+  final double decoyFrequency;
+
+  /// Quanto falta da vida da isca, de 1 (acabou de nascer) a 0 (cinza).
+  final double decoyLife;
+
+  /// A isca do pico anterior, que virou cinza na hora porque um pico novo veio. `null` se ela já
+  /// estava cinza ou se este é o primeiro pico.
+  final RetiredDecoy? retired;
+
+  bool get decoyAlive => decoyLife > 0;
+}
+
+double _smoothstep(double x) {
+  final c = x.clamp(0.0, 1.0);
+  return c * c * (3 - 2 * c);
 }
 
 class TargetSignal {
@@ -76,7 +128,7 @@ class TargetSignal {
             if (at > horizonS) break;
             final sign = rng.nextFloat() < 0.5 ? -1.0 : 1.0;
             kicks.add(_Kick(at, sign * size * (0.7 + 0.6 * rng.nextFloat())));
-            cues.add(TuningCue(math.max(0, at - s.fire.warningLeadS), CueKind.fireWarning, fireWarningPattern));
+            cues.add(TuningCue(math.max(0, at - lerpRange(s.fire.warningLeadS, intensity)), CueKind.fireWarning, fireWarningPattern));
           }
         case EcoType.water:
           break; // os avisos dependem do sinal pronto: entram logo abaixo
@@ -91,6 +143,8 @@ class TargetSignal {
     final waterPhase2 = 2 * math.pi * rng.nextFloat();
     final tidePhase = 2 * math.pi * rng.nextFloat();
     final plantDirection = rng.nextFloat() < 0.5 ? -1.0 : 1.0;
+    // A posição da queima de cada pico, em ordem, depois de todos os sorteios que já existiam.
+    final burned = [for (final k in kicks) _Kick(k.at, k.delta, lerpRange(s.fire.burnU, rng.nextFloat()))];
 
     final signal = TargetSignal._(
       type: type,
@@ -102,7 +156,7 @@ class TargetSignal {
       waterPhase2: waterPhase2,
       tidePhase: tidePhase,
       plantDirection: plantDirection,
-      kicks: kicks,
+      kicks: burned,
       cues: cues,
     );
     if (type == EcoType.water && intensity > 0) cues.addAll(signal._waterCues(horizonS));
@@ -128,15 +182,79 @@ class TargetSignal {
   /// Instantes dos picos do Fogo.
   List<double> get kickTimes => [for (final k in _kicks) k.at];
 
-  /// Frequência do sinal, em `[0, 1]`. Bordas do eixo refletem.
+  /// Salto da onda real em cada pico, em ordem: com sinal, em fração do eixo.
+  List<double> get kickDeltas => [for (final k in _kicks) k.delta];
+
+  /// Posição da queima de cada pico, em ordem.
+  List<double> get burnUs => [for (final k in _kicks) k.burnU];
+
+  /// Tempo que a onda real leva para deslizar até a nova frequência.
+  double get fireGlideS => lerpRange(balance.signal.fire.glideS, intensity);
+
+  /// Antecedência da brasa e do aviso: cai com a intensidade.
+  double get fireWarningLeadS => lerpRange(balance.signal.fire.warningLeadS, intensity);
+
+  /// Tempo que a isca vive antes de virar cinza.
+  double get fireDecoyS => lerpRange(balance.signal.fire.decoyS, intensity);
+
+  /// Frequência da onda real, em `[0, 1]`. Bordas do eixo refletem. É contra ela que a tolerância e o
+  /// progresso são medidos.
+  ///
+  /// No Fogo, cada pico soma o salto dele à frequência com easing smoothstep durante [fireGlideS], e
+  /// o salto não decai.
   double frequencyAt(double t) {
-    final s = balance.signal;
-    var f = start + s.wanderAmplitude * math.sin(2 * math.pi * t / s.wanderPeriodS + wanderPhase);
-    f += waterOffsetAt(t) + plantOffsetAt(t);
+    var f = _baseAt(t) + waterOffsetAt(t) + plantOffsetAt(t);
+    final glide = fireGlideS;
     for (final k in _kicks) {
-      if (t >= k.at) f += k.delta * math.exp(-(t - k.at) / s.fire.decayS);
+      if (t < k.at) break;
+      f += k.delta * _smoothstep((t - k.at) / glide);
     }
     return _fold(f);
+  }
+
+  /// Frequência inicial mais a deriva lenta de base, que todas as ondas compartilham.
+  double _baseAt(double t) {
+    final s = balance.signal;
+    return start + s.wanderAmplitude * math.sin(2 * math.pi * t / s.wanderPeriodS + wanderPhase);
+  }
+
+  /// Frequência da isca do pico [i] no instante [t]: a da real sem o salto dele (os anteriores
+  /// valem) e, com a intensidade acima de `decoy_counter_from`, um deslize no sentido oposto ao da real.
+  double decoyFrequencyAt(int i, double t) {
+    final fire = balance.signal.fire;
+    var f = _baseAt(t);
+    final glide = fireGlideS;
+    for (var j = 0; j < i; j++) {
+      f += _kicks[j].delta * _smoothstep((t - _kicks[j].at) / glide);
+    }
+    if (intensity > fire.decoyCounterFrom) {
+      f -= fire.decoyCounter * _kicks[i].delta * _smoothstep((t - _kicks[i].at) / glide);
+    }
+    return _fold(f);
+  }
+
+  /// A onda do Fogo partida em duas no instante [t]. `null` antes do primeiro pico e fora do Fogo.
+  FireSplit? fireSplitAt(double t) {
+    var i = -1;
+    while (i + 1 < _kicks.length && _kicks[i + 1].at <= t) {
+      i++;
+    }
+    if (i < 0) return null;
+    final k = _kicks[i];
+    final since = t - k.at;
+    // Um pico novo mata a isca antiga na hora: a vida acaba no instante dele.
+    RetiredDecoy? retired;
+    if (i > 0 && k.at - _kicks[i - 1].at < fireDecoyS) {
+      retired = RetiredDecoy(_kicks[i - 1].burnU, decoyFrequencyAt(i - 1, t), since);
+    }
+    return FireSplit(
+      index: i,
+      burnU: k.burnU,
+      since: since,
+      decoyFrequency: decoyFrequencyAt(i, t),
+      decoyLife: (1 - since / fireDecoyS).clamp(0.0, 1.0),
+      retired: retired,
+    );
   }
 
   /// Deriva da Água antes de dobrar nas bordas: duas senoides, com períodos `P` e `P × 1,618`, e a
@@ -202,15 +320,6 @@ class TargetSignal {
     final plant = balance.signal.plant;
     final u = (t / plant.shrinkOverS).clamp(0.0, 1.0);
     return math.max(plant.toleranceFloor, 1 - plant.toleranceShrink * intensity * u);
-  }
-
-  /// 1 enquanto a onda deve tremular, perto de um pico do Fogo. 0 nos outros casos.
-  double trembleAt(double t) {
-    final f = balance.signal.fire;
-    for (final k in _kicks) {
-      if (t >= k.at - f.warningLeadS && t <= k.at + f.trembleAfterS) return 1;
-    }
-    return 0;
   }
 
   /// Vibrações com instante em `(from, to]`.

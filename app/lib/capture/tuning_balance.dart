@@ -40,22 +40,36 @@ class FireBalance {
   FireBalance(Map<String, dynamic> j)
       : intervalS = _range(j['interval_s']),
         kick = _range(j['kick']),
-        decayS = _d(j['decay_s']),
-        warningLeadS = _d(j['warning_lead_s']),
-        trembleAfterS = _d(j['tremble_after_s']);
+        glideS = _range(j['glide_s']),
+        decoyS = _range(j['decoy_s']),
+        decoyCounterFrom = _d(j['decoy_counter_from']),
+        decoyCounter = _d(j['decoy_counter']),
+        burnU = _range(j['burn_u']),
+        warningLeadS = _range(j['warning_lead_s']);
 
   /// Intervalo médio entre picos, em segundos.
   final Range2 intervalS;
 
-  /// Tamanho do empurrão, em fração do eixo de frequência.
+  /// Tamanho do salto da onda real, em fração do eixo de frequência.
   final Range2 kick;
 
-  /// Constante de tempo com que o sinal volta depois do pico.
-  final double decayS;
+  /// Tempo que a onda real leva para deslizar até a nova frequência (suavizado). O salto é permanente.
+  final Range2 glideS;
 
-  /// A vibração de aviso e o tremor da onda começam este tempo antes do pico.
-  final double warningLeadS;
-  final double trembleAfterS;
+  /// Tempo que a isca vive na frequência antiga antes de virar cinza.
+  final Range2 decoyS;
+
+  /// Acima desta intensidade a isca também desliza, no sentido oposto ao da real.
+  final double decoyCounterFrom;
+
+  /// Quanto a isca desliza para o lado oposto, em fração do salto da real.
+  final double decoyCounter;
+
+  /// Faixa da posição da queima na onda, em fração da largura. A real fica à direita dela.
+  final Range2 burnU;
+
+  /// A vibração de aviso e a brasa acendem este tempo antes do pico. Com mais intensidade, menos antecedência.
+  final Range2 warningLeadS;
 }
 
 class WaterBalance {
