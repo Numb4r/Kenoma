@@ -279,7 +279,7 @@ A tolerância é o valor do selo multiplicado pelos bônus:
 
 | Tipo | Padrão | Como ler |
 | --- | --- | --- |
-| Fogo | picos bruscos que empurram o sinal | a onda tremula e o celular vibra curto antes de cada pico |
+| Fogo | a onda queima num ponto e se parte em duas. A **real**, à direita da queima, desliza para a nova frequência (base + salto) com smoothstep em `glide_s` e fica lá: o salto não decai. A **isca**, à esquerda, segue na frequência antiga com a mesma deriva de base e vira cinza depois de `decoy_s`. Com intensidade acima de 0,6 a isca também desliza no sentido oposto ao da real. Um pico novo com a isca viva a deixa cinza na hora | uma brasa acende no ponto da queima antes do pico (e o celular vibra curto); seguir sempre a onda da direita, que é a única que conta para tolerância e progresso |
 | Água | duas ondas lentas somadas, com períodos P e P × 1,618, e uma maré (~11 s) que varia a amplitude total entre 60% e 100% | acompanhar suave; o celular vibra 0,4 s antes de cada virada de sentido do sinal |
 | Planta | a tolerância encolhe até metade (piso de 0,5) e o sinal cresce: deriva num sentido sorteado, até 0,03 por segundo, e dá um passo extra, até 0,06, a cada pulso (o broto) | precisão importa; pulsos cada vez mais curtos marcam cada broto |
 
@@ -318,7 +318,9 @@ Todos os valores estão em `balance.json`, na chave `tuning`, com prefixo `overl
 
 O jogador perfeito reage em 0,2 s, não treme e não prevê. O típico reage em 0,35 s, treme ±0,02 no dial e passa do ponto em 10% das correções. Os dois estão em `app/test/support/reference_player.dart`, e `app/test/capture/overlevel_calibration_test.dart` refaz a medição.
 
-Com os valores acima, o perfeito cumpre as três metas dele (100%, 67%, 25%) e o típico cumpre a do gap 20 (0%). O típico fica em 87% no gap 5 (a meta é até 85%, e o sobrenível ainda não entra aí), em 8% no gap 10 e em 1% no gap 15, abaixo das metas de 30 a 45% e 5 a 15%. Com três constantes compartilhadas não dá para cumprir as duas colunas: o típico cai de um penhasco na tolerância, em torno de 0,07, e o perfeito só sente o progresso que cai mais rápido. Além disso, a Água é bem mais fácil que o Fogo, e a Planta a mais difícil, então a média esconde diferenças grandes por tipo.
+Com os valores acima, o perfeito cumpre as metas dos gaps 10 e 15 (100% e 57%) e o típico cumpre a do gap 20 (0%). Ficam fora da meta: o perfeito no gap 20 (20%, meta 25 a 40%), o típico no gap 5 (94%, meta até 85%) e o típico nos gaps 10 e 15 (24% e 1%, metas 30 a 45% e 5 a 15%). Com três constantes compartilhadas não dá para cumprir as duas colunas: o típico cai de um penhasco na tolerância, em torno de 0,07, e o perfeito só sente o progresso que cai mais rápido. Além disso, a Água é bem mais fácil que o Fogo e a Planta, e o Fogo e a Planta quase nunca selam no gap 20, então a média esconde diferenças grandes por tipo.
+
+**Calibração do Fogo.** O deslize (`glide_s`, de 1,2 a 0,5 s), a vida da isca (`decoy_s`, de 1,0 a 2,5 s) e a antecedência da brasa (de 0,5 a 0,2 s) vêm da regra do GDD. O que se calibrou foi o intervalo entre picos (3,2 a 0,65 s) e o tamanho do salto (0,12 a 0,32 do eixo). Com Conjurador 15 contra Eco 17, o jogador perfeito sela com mediana de 11,9 s (p10 9,6 s, p90 14,3 s, nenhuma estoura os 20 s). O jogador típico sela o Fogo em 100% no gap 0, 100% no gap 5 e 49% no gap 10 (Conjurador 10, 500 sintonias). O salto máximo de 0,46 usado antes deixava o perfeito forte em 15,4 s com 8% de estouros, e saltos permanentes maiores derrubam o gap 10 do típico.
 
 ### Resultado
 
