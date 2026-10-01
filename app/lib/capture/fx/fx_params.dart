@@ -20,8 +20,10 @@ const double fireGapHalfWidth = 0.008;
 /// Altura da chama em unidades da amplitude da onda, entre intensidade 0 e 1.
 const (double, double) fireFlameHeight = (0.45, 1.1);
 
-/// Água: a espuma assenta em [waterFoamS] depois do aviso de virada.
-const double waterFoamS = 0.5;
+/// Água: a espuma (a ressaca) assenta depois do aviso de virada. Com a intensidade ela dura mais
+/// (segundos) e sobe mais (fator sobre a altura das partículas). Só visual.
+const (double, double) waterFoamDuration = (0.25, 0.75);
+const (double, double) waterFoamHeight = (0.6, 1.4);
 const int waterFoamCount = 10;
 
 /// Planta: a folha cresce por [plantLeafGrowS] depois de nascer e há no máximo [plantMaxLeaves].

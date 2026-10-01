@@ -21,6 +21,8 @@ TargetSignal signal(EcoType type, double intensity, {int seed = 5}) => TargetSig
       balance: loadTuningBalance(),
     );
 
+List<double> series(TargetSignal s, {double to = 20}) => [for (var t = 0.0; t < to; t += 1 / 60) s.frequencyAt(t)];
+
 void main() {
   group('geometria da onda', () {
     test('as cristas da forma serrilhada têm valor 1 e ficam dentro do intervalo pedido', () {
@@ -127,14 +129,47 @@ void main() {
       }
     });
 
-    test('a espuma aparece no aviso de virada, assenta em 0,5 s e some', () {
+    test('a espuma aparece no aviso de virada, assenta em foamS (0,5 s em intensidade média) e some', () {
       expect(fx.at(swell - 0.01, 0), isEmpty);
       final first = fx.at(swell + 1e-6, waveScroll(swell)).single;
-      final mid = fx.at(swell + waterFoamS / 2, waveScroll(swell)).single;
+      final mid = fx.at(swell + fx.foamS / 2, waveScroll(swell)).single;
       expect(first.amplitude, greaterThan(mid.amplitude));
       final swells = [for (final c in s.cues) if (c.kind == CueKind.waterSwell) c.at];
-      final after = swell + waterFoamS + 1e-6;
-      expect(fx.at(after, 0), hasLength(swells.where((w) => after - w >= 0 && after - w < waterFoamS).length));
+      final after = swell + fx.foamS + 1e-6;
+      expect(fx.at(after, 0), hasLength(swells.where((w) => after - w >= 0 && after - w < fx.foamS).length));
+    });
+
+    test('a ressaca escala com a intensidade: dura mais e sobe mais, só no visual', () {
+      double peakHeight(double intensity) {
+        final sig = signal(EcoType.water, intensity);
+        final f = WaterFx(sig);
+        final at = sig.cues.firstWhere((c) => c.kind == CueKind.waterSwell).at;
+        return f.at(at + 1e-6, 0).single.particles.map((p) => p.y).reduce(math.max) / sig.tideAt(at + 1e-6);
+      }
+
+      final weak = WaterFx(signal(EcoType.water, 0.2));
+      final mid = WaterFx(signal(EcoType.water, 0.5));
+      final strong = WaterFx(signal(EcoType.water, 1.0));
+      expect(weak.foamS, lessThan(mid.foamS));
+      expect(mid.foamS, lessThan(strong.foamS));
+      expect(mid.foamS, closeTo(0.5, 1e-9), reason: 'em intensidade média a espuma assenta em 0,5 s');
+      expect((weak.foamS, strong.foamS), (lerpPair(waterFoamDuration, 0.2), waterFoamDuration.$2));
+      expect(weak.height, lessThan(strong.height));
+      expect(peakHeight(0.2), lessThan(peakHeight(1.0)), reason: 'as partículas sobem mais');
+      // Dura mais: aos 0,4 s a espuma fraca já assentou e a forte ainda está de pé.
+      final wk = signal(EcoType.water, 0.2);
+      final st = signal(EcoType.water, 1.0);
+      double swell(TargetSignal x) => x.cues.firstWhere((c) => c.kind == CueKind.waterSwell).at;
+      expect(WaterFx(wk).at(swell(wk) + 0.4, 0).where((f) => f.amplitude > 0), isEmpty);
+      expect(WaterFx(st).at(swell(st) + 0.4, 0), isNotEmpty);
+    });
+
+    test('é só visual: o sinal e os avisos da Água não dependem da espuma', () {
+      final a = signal(EcoType.water, 0.8, seed: 3);
+      final b = signal(EcoType.water, 0.8, seed: 3);
+      WaterFx(a).at(5, 0);
+      expect(series(a, to: 20), series(b, to: 20));
+      expect([for (final c in a.cues) c.at], [for (final c in b.cues) c.at]);
     });
 
     test('fica na crista da onda', () {
@@ -149,11 +184,11 @@ void main() {
       var checked = 0;
       for (final at in swells) {
         final t = at + 0.1;
-        final active = [for (final w in swells) if (t - w >= 0 && t - w < waterFoamS) w];
+        final active = [for (final w in swells) if (t - w >= 0 && t - w < fx.foamS) w];
         final foams = fx.at(t, 0);
         expect(foams, hasLength(active.length));
         for (var k = 0; k < foams.length; k++) {
-          expect(foams[k].amplitude, closeTo(s.tideAt(t) * (1 - (t - active[k]) / waterFoamS), 1e-12));
+          expect(foams[k].amplitude, closeTo(s.tideAt(t) * (1 - (t - active[k]) / fx.foamS), 1e-12));
           checked++;
         }
       }
