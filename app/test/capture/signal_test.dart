@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/capture/eco_type.dart';
+import 'package:kenoma/capture/resistance.dart';
 import 'package:kenoma/capture/session.dart';
 import 'package:kenoma/capture/signal.dart';
 import 'package:kenoma/capture/tuning_balance.dart';
@@ -250,12 +251,22 @@ void main() {
       }
     });
 
-    test('a brasa vem com menos antecedência quando a intensidade sobe: 0,5 s → 0,2 s', () {
-      expect(signal(EcoType.fire, 0.1).fireWarningLeadS, closeTo(lerp(0.5, 0.2, 0.1), 1e-12));
-      expect(signal(EcoType.fire, 1).fireWarningLeadS, closeTo(0.2, 1e-12));
+    test('a brasa vem com menos antecedência quando a intensidade sobe: 0,5 s → 0,25 s, com piso de 0,25 s', () {
+      expect(signal(EcoType.fire, 0.1).fireWarningLeadS, closeTo(lerp(0.5, 0.25, 0.1), 1e-12));
+      expect(signal(EcoType.fire, 1).fireWarningLeadS, closeTo(0.25, 1e-12));
+      for (var r = 0.0; r <= 1.0; r += 0.05) {
+        expect(signal(EcoType.fire, r).fireWarningLeadS, greaterThanOrEqualTo(0.25 - 1e-12), reason: 'intensidade $r');
+      }
       final weak = signal(EcoType.fire, 0.3);
       expect(weak.cues.first.at, closeTo(weak.kickTimes.first - weak.fireWarningLeadS, 1e-9));
       expect(weak.fireWarningLeadS, greaterThan(signal(EcoType.fire, 0.9).fireWarningLeadS));
+    });
+
+    test('no maior nível alcançável (Conjurador 15, Eco 20: intensidade 0,945) o aviso é de 0,264 s', () {
+      final top = resistanceIntensity(playerLevel: 15, ecoLevel: 20, balance: b);
+      expect(top, closeTo(0.945, 1e-12));
+      expect(signal(EcoType.fire, top).fireWarningLeadS, closeTo(0.5 - 0.25 * 0.945, 1e-12));
+      expect(signal(EcoType.fire, top).fireWarningLeadS, closeTo(0.264, 1e-3));
     });
 
     test('sem resistência o sinal é suave e a real é a deriva de base', () {
