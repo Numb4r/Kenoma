@@ -147,11 +147,18 @@ class TargetSignal {
     final amp = lerpRange(w.amplitude, intensity);
     final p1 = lerpRange(w.periodS, intensity);
     final p2 = p1 * w.secondPeriodRatio;
-    final tide = (1 + w.tideMin) / 2 + (1 - w.tideMin) / 2 * math.sin(2 * math.pi * t / w.tidePeriodS + tidePhase);
-    return tide *
+    return tideAt(t) *
         amp *
         ((1 - w.secondWeight) * math.sin(2 * math.pi * t / p1 + waterPhase) +
             w.secondWeight * math.sin(2 * math.pi * t / p2 + waterPhase2));
+  }
+
+  /// Maré da Água em `[tide.min, 1]`: o fator que modula a amplitude da deriva. 1 fora da Água ou
+  /// sem resistência.
+  double tideAt(double t) {
+    if (type != EcoType.water || intensity <= 0) return 1;
+    final w = balance.signal.water;
+    return (1 + w.tideMin) / 2 + (1 - w.tideMin) / 2 * math.sin(2 * math.pi * t / w.tidePeriodS + tidePhase);
   }
 
   /// Crescimento da Planta antes de dobrar nas bordas: uma deriva contínua no sentido sorteado e,
