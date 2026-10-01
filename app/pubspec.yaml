@@ -1,7 +1,7 @@
 name: kenoma
 description: "Kenoma: Veilbreakers, RPG mobile de exploração via GPS."
 publish_to: 'none'
-version: 0.3.0+3
+version: 0.3.1+4
 
 environment:
   sdk: ^3.13.4
