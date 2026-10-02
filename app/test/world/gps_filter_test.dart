@@ -21,11 +21,12 @@ class Noise {
   }
 }
 
-GeoFix fix(double eastM, double northM, int tMs, {double acc = 5}) => GeoFix(
+GeoFix fix(double eastM, double northM, int tMs, {double acc = 5, double? speed}) => GeoFix(
       lat: lat0 + northM / mLat,
       lon: lon0 + eastM / (mLon * kLon),
       accuracyM: acc,
       timeMs: tMs,
+      speedMps: speed,
     );
 
 (double, double) toMeters(double lat, double lon) => ((lon - lon0) * mLon * kLon, (lat - lat0) * mLat);
@@ -170,6 +171,72 @@ void main() {
         expect(startedAt!, lessThanOrEqualTo(12), reason: 'seed $seed: arrancou em $startedAt s');
         expect(worst, lessThan(10.0), reason: 'seed $seed: pior erro $worst m');
       }
+    });
+  });
+
+  group('velocidade informada pela fonte', () {
+    test('com a velocidade do GPS o marcador arranca em poucos segundos, bem antes dos ~9 m de deslocamento', () {
+      for (final speed in [1.4, 3.0, 6.0]) {
+        final f = GpsFilter();
+        final n = Noise(11);
+        for (var t = 1; t <= 40; t++) {
+          f.add(fix(n.next(3), n.next(3), 1000 * t, acc: 4, speed: 0));
+        }
+        int? startedAt;
+        for (var t = 41; t <= 70; t++) {
+          final east = speed * (t - 40);
+          final p = f.add(fix(east + n.next(3), n.next(3), 1000 * t, acc: 4, speed: speed))!;
+          if (startedAt == null && toMeters(p.lat, p.lon).$1 > 0.5 * east + 1 && east > 2) startedAt = t - 40;
+        }
+        expect(startedAt, isNotNull, reason: '${speed}m/s');
+        expect(startedAt!, lessThanOrEqualTo(4), reason: '${speed}m/s arrancou em $startedAt s');
+      }
+    });
+
+    test('uma única leitura com velocidade alta (um tranco do GPS) não vira movimento', () {
+      final f = GpsFilter();
+      final n = Noise(5);
+      FilteredPosition? p;
+      for (var t = 1; t <= 60; t++) {
+        p = f.add(fix(n.next(4), n.next(4), 1000 * t, acc: 4, speed: t == 30 ? 5.0 : 0.0));
+        expect(p!.moving, isFalse, reason: 'leitura $t');
+      }
+    });
+
+    test('parado, com velocidade 0 e ruído, continua parado e firme (o ganho de resposta não custa tremor)', () {
+      final f = GpsFilter();
+      final n = Noise(8);
+      final out = <double>[];
+      for (var t = 1; t <= 300; t++) {
+        final p = f.add(fix(n.next(5), n.next(5), 1000 * t, speed: 0))!;
+        if (t > 30) {
+          expect(p.moving, isFalse);
+          out.add(toMeters(p.lat, p.lon).$1);
+        }
+      }
+      expect(std(out), lessThan(1.0));
+    });
+
+    test('um 0 informado enquanto anda não faz o marcador parar: quem manda é o deslocamento', () {
+      final f = GpsFilter();
+      FilteredPosition? p;
+      for (var t = 1; t <= 60; t++) {
+        p = f.add(fix(1.4 * t, 0, 1000 * t, speed: 0)); // aparelho que nunca informa velocidade (manda 0)
+      }
+      expect(toMeters(p!.lat, p.lon).$1, closeTo(84, 8), reason: 'sem a velocidade, cai para o modo por deslocamento');
+    });
+
+    test('depois de andar, ao parar de verdade o filtro volta a segurar o marcador', () {
+      final f = GpsFilter();
+      for (var t = 1; t <= 20; t++) {
+        f.add(fix(3.0 * t, 0, 1000 * t, speed: 3.0));
+      }
+      FilteredPosition? p;
+      for (var t = 21; t <= 80; t++) {
+        p = f.add(fix(60, 0, 1000 * t, speed: 0));
+      }
+      expect(p!.moving, isFalse);
+      expect(toMeters(p.lat, p.lon).$1, closeTo(60, 3));
     });
   });
 

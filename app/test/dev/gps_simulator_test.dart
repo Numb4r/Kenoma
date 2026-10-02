@@ -114,6 +114,17 @@ void main() {
       expect(got, hasLength(4), reason: 'o resto de 0,5 s completa a quarta');
     });
 
+    test('cada leitura informa a velocidade do joystick: 0 parado, e a ajustada com o joystick no máximo', () async {
+      sim.advance(const Duration(seconds: 2));
+      sim.setJoystick(1, 0);
+      sim.advance(const Duration(seconds: 2));
+      sim.setJoystick(0.5, 0);
+      sim.speedMps = 6;
+      sim.advance(const Duration(seconds: 2));
+      await pumpEventQueue();
+      expect(got.map((f) => f.speedMps), [0.0, 0.0, 1.4, 1.4, 3.0, 3.0]);
+    });
+
     test('o intervalo entre leituras é configurável', () async {
       final fast = SimulatedPositionSource(lat: 0, lon: 0, fixInterval: const Duration(milliseconds: 250));
       final out = <GeoFix>[];

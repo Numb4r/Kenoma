@@ -19,6 +19,7 @@ GeoFix fixFromPosition(Position p, {int Function()? nowMs}) {
     lat: p.latitude,
     lon: p.longitude,
     accuracyM: p.accuracy,
+    speedMps: p.speed >= 0 ? p.speed : null,
     timeMs: ms > 946684800000 ? ms : (nowMs ?? () => DateTime.now().millisecondsSinceEpoch)(),
   );
 }

@@ -126,7 +126,7 @@ class SimulatedPositionSource implements PositionSource {
     // O tempo das leituras só cresce: um teleporte logo depois de uma leitura não pode repetir o instante.
     final t = math.max(_timeMs, _lastEmitMs + 1);
     _lastEmitMs = t;
-    _out.add(GeoFix(lat: la, lon: lo, accuracyM: accuracyM, timeMs: t));
+    _out.add(GeoFix(lat: la, lon: lo, accuracyM: accuracyM, timeMs: t, speedMps: math.sqrt(_jx * _jx + _jy * _jy) * speedMps));
   }
 
   @override

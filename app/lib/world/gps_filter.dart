@@ -39,6 +39,7 @@ class GpsFilter {
     this.resetDistanceM = 150,
     this.minSigmaM = 1.0,
     this.stillWeight = 0.03,
+    this.motionSpeedMps = 1.0,
   });
 
   /// Pior precisão aceita. Acima disso a leitura é recusada.
@@ -62,6 +63,10 @@ class GpsFilter {
   /// Piso do desvio informado, em metros.
   final double minSigmaM;
 
+  /// Velocidade informada pela fonte a partir da qual o jogador conta como andando, se ela se repete em
+  /// duas leituras seguidas. Sem isso o modo parado levaria ~9 m de deslocamento para notar.
+  final double motionSpeedMps;
+
   /// Peso de cada leitura na média parada, depois das primeiras: define o quanto a média acompanha uma
   /// deriva lenta (menor, mais firme).
   final double stillWeight;
@@ -80,6 +85,7 @@ class GpsFilter {
   double _x = 0, _y = 0, _vx = 0, _vy = 0;
   double _pp = 0, _pv = 0, _vv = 0;
   int _slowRun = 0;
+  int _fastRun = 0;
 
   /// Leituras recusadas por precisão ruim.
   int rejected = 0;
@@ -126,6 +132,7 @@ class GpsFilter {
       ..clear()
       ..add((x, y));
     _slowRun = 0;
+    _fastRun = 0;
   }
 
   void _toMoving(double x, double y) {
@@ -163,13 +170,19 @@ class GpsFilter {
     if (_moving) {
       _kalman(zx, zy, fix.accuracyM, dt);
     } else {
-      _still(zx, zy, fix.accuracyM);
+      _still(zx, zy, fix.accuracyM, fix.speedMps);
     }
     _timeMs = fix.timeMs;
     return _out();
   }
 
-  void _still(double zx, double zy, double acc) {
+  void _still(double zx, double zy, double acc, double? speed) {
+    // A velocidade que o GPS informa, duas leituras seguidas, é o sinal mais rápido de que ele começou a andar.
+    _fastRun = speed != null && speed >= motionSpeedMps ? _fastRun + 1 : 0;
+    if (_fastRun >= 2) {
+      _toMoving(zx, zy);
+      return;
+    }
     _recent.add((zx, zy));
     if (_recent.length > 8) _recent.removeAt(0);
     _acc = math.max(acc, minSigmaM);
