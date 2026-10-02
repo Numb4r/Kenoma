@@ -19,11 +19,6 @@ import 'map_renderer.dart';
 /// Região do M4: a única com pacote.
 const String kRegion = 'campinas';
 
-/// Centro inicial padrão do mapa: a Unicamp (Barão Geraldo).
-const (double, double) kUnicamp = (-22.8174, -47.0697);
-
-/// O centro de Campinas, a célula do vetor de teste da spec.
-const (double, double) kCentroCampinas = (-22.9056, -47.0608);
 
 /// Tela do mapa estático (M4): carrega e confere o pacote da região e mostra a grade de biomas em
 /// torno de ([lat], [lon]), com câmera arrastável e zoom por pinça. É ferramenta do menu de debug.
