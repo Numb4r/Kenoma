@@ -24,3 +24,22 @@ Tile spawnCellAt(double lat, double lon) => latLonToTile(lat, lon, spawnZoom);
 
 /// Tile pai, um zoom abaixo.
 Tile parentTile(Tile t) => (t.$1 >>> 1, t.$2 >>> 1);
+
+/// Posição fracionária em tiles (x para leste, y para o sul) de uma coordenada: o tile é a parte inteira.
+(double, double) latLonToTileFraction(double lat, double lon, int zoom) {
+  final n = (1 << zoom).toDouble();
+  final x = (lon + 180.0) / 360.0 * n;
+  final tan = math.tan(lat * math.pi / 180.0);
+  final asinh = math.log(tan + math.sqrt(tan * tan + 1.0));
+  final y = (1.0 - asinh / math.pi) / 2.0 * n;
+  return (x, y);
+}
+
+/// Inverso de [latLonToTileFraction]: latitude e longitude de uma posição fracionária em tiles.
+(double, double) tileFractionToLatLon(double x, double y, int zoom) {
+  final n = (1 << zoom).toDouble();
+  final lon = x / n * 360.0 - 180.0;
+  final sinh = (math.exp(math.pi * (1 - 2 * y / n)) - math.exp(-math.pi * (1 - 2 * y / n))) / 2;
+  final lat = math.atan(sinh) * 180.0 / math.pi;
+  return (lat, lon);
+}
