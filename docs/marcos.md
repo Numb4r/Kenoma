@@ -89,6 +89,22 @@ Simulador de GPS de debug com:
 - andar com o celular move o marcador;
 - o simulador permite testar tudo sentado.
 
+## M5b · Camada visual
+
+**Posição na fila: ainda não definida.** Entra quando o jogo de caminhar já funcionar, antes ou depois do M6, e não bloqueia nenhum marco.
+
+Camada só de desenho por cima do mapa do M4 e do M5. **A grade de biomas continua sendo a única camada lógica:** spawns, coleta, Aura e o hash do mundo leem só a grade, e nada que for desenhado aqui entra em regra de jogo.
+
+- **Ruas do OSM como linhas finas.** O pipeline exporta as vias (geometria simplificada em coordenadas da grade z21, num arquivo próprio ao lado do `.bin`, com SHA-256 registrado na época) e o app as desenha por cima da grade, em tom frio, com a espessura por classe de via.
+- **Água e parques com autotiling.** As bordas dos biomas Água e Verde ganham tiles de transição (cantos e bordas), escolhidos pelos vizinhos de cada célula. É escolha de tile, não de bioma.
+
+**Pronto quando:**
+- o mapa se lê como um mapa, com ruas legíveis e margens de lago e parque sem serrilhado;
+- a navegação continua fluida no moto g54 (quadros dentro de 16,7 ms, medidos como no M4);
+- os testes de bioma, spawn e `campinas_e0.bin` passam sem mudança, o que prova que a grade não foi tocada.
+
+**Atenção:** o arquivo de ruas depende do extrato do OSM, que muda todo dia. Como o `.bin`, ele é fonte da época e só se regenera numa época nova.
+
 ## M6 · Spawns e coleta
 
 - Spawns determinísticos por célula, janela e época.
