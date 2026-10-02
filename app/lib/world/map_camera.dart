@@ -45,8 +45,9 @@ class MapCamera {
     return MapCamera(centerX: x, centerY: y, pixelsPerCell: pixelsPerCell.clamp(minScale, maxScale));
   }
 
-  /// Menor e maior escala: de ~10 km a ~0,6 km de largura numa tela de 1080 px.
-  static const double minScale = 2;
+  /// Menor e maior escala, em pixels lógicos por célula. Numa tela de 411 pixels lógicos de largura
+  /// (1080 físicos) mostram de ~7 km (mínimo) a ~0,2 km (máximo) de largura.
+  static const double minScale = 1;
   static const double maxScale = 32;
 
   /// A escala da spec: um tile de 16 px por célula.

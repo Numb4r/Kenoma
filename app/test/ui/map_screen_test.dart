@@ -102,10 +102,10 @@ void main() {
     expect(zoom(tester), closeTo(32.0, 0.01), reason: 'abrir os dedos 2x dobra a escala (16 → 32, o máximo)');
     await pinch(60, 180);
     expect(zoom(tester), 32.0, reason: 'nunca passa do máximo');
-    await pinch(190, 12);
-    expect(zoom(tester), closeTo(2.0, 0.01), reason: 'fechar os dedos vai até o mínimo e para');
+    await pinch(190, 5);
+    expect(zoom(tester), closeTo(1.0, 0.01), reason: 'fechar os dedos vai até o mínimo e para');
     await pinch(120, 5);
-    expect(zoom(tester), 2.0);
+    expect(zoom(tester), 1.0);
   });
 
   testWidgets('tocar mostra o que há sob o dedo: coordenada, células z21 e z20 e os biomas', (tester) async {

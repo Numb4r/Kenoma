@@ -30,10 +30,20 @@ const (double, double) kCentroCampinas = (-22.9056, -47.0608);
 ///
 /// Se o pacote não bate com a época vigente, mostra o erro em vez do mapa, e o app segue vivo.
 class MapScreen extends StatefulWidget {
-  const MapScreen({required this.lat, required this.lon, this.nowUtc, this.bundle, super.key});
+  const MapScreen({
+    required this.lat,
+    required this.lon,
+    this.scale = MapCamera.defaultScale,
+    this.nowUtc,
+    this.bundle,
+    super.key,
+  });
 
   final double lat;
   final double lon;
+
+  /// Escala inicial, em pixels lógicos por célula. Por padrão, a da spec (16).
+  final double scale;
 
   /// Relógio em segundos UTC. Por padrão, agora.
   final int? nowUtc;
@@ -67,7 +77,7 @@ class _MapScreenState extends State<MapScreen> {
     final biomes = BiomeSet.fromJson(jsonDecode(await assets.loadString('assets/data/biomes.json')) as Map<String, dynamic>);
     final atlas = await buildBiomeAtlas(biomes);
     final renderer = MapRenderer(map: RegionMap(pack: loaded.pack, biomes: biomes), atlas: atlas);
-    final game = MapGame(renderer: renderer, camera: MapCamera.atLatLon(widget.lat, widget.lon));
+    final game = MapGame(renderer: renderer, camera: MapCamera.atLatLon(widget.lat, widget.lon, pixelsPerCell: widget.scale));
     final ready = _Ready(game, biomes, atlas, loaded.stale);
     _ready = ready;
     return ready;
