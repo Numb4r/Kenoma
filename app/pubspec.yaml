@@ -25,6 +25,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/data/
+    - assets/regions/
     - assets/fonts/OFL-Silkscreen.txt
 
   fonts:
