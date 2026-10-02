@@ -1,24 +1,13 @@
-import 'dart:convert';
-import 'dart:ui' as ui;
-
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../../core/biomes.dart';
-import '../../data/region_loader.dart';
 import '../../world/map_camera.dart';
-import '../../world/region_map.dart';
 import '../colors.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
-import 'biome_textures.dart';
+import 'map_assets.dart';
 import 'map_game.dart';
 import 'map_hud.dart';
-import 'map_renderer.dart';
-
-/// Região do M4: a única com pacote.
-const String kRegion = 'campinas';
-
 
 /// Tela do mapa estático (M4): carrega e confere o pacote da região e mostra a grade de biomas em
 /// torno de ([lat], [lon]), com câmera arrastável e zoom por pinça. É ferramenta do menu de debug.
@@ -51,12 +40,13 @@ class MapScreen extends StatefulWidget {
 }
 
 class _Ready {
-  _Ready(this.game, this.biomes, this.atlas, this.stale);
+  _Ready(this.game, this.assets);
 
   final MapGame game;
-  final BiomeSet biomes;
-  final ui.Image atlas;
-  final bool stale;
+  final MapAssets assets;
+
+  BiomeSet get biomes => assets.biomes;
+  bool get stale => assets.stale;
 }
 
 class _MapScreenState extends State<MapScreen> {
@@ -65,15 +55,11 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<Object> _load() async {
     final now = widget.nowUtc ?? DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-    final assets = widget.bundle ?? rootBundle;
-    final region = await loadRegion(region: kRegion, nowUtc: now, bundle: assets);
-    if (region is RegionLoadError) return region.message;
-    final loaded = region as RegionLoaded;
-    final biomes = BiomeSet.fromJson(jsonDecode(await assets.loadString('assets/data/biomes.json')) as Map<String, dynamic>);
-    final atlas = await buildBiomeAtlas(biomes);
-    final renderer = MapRenderer(map: RegionMap(pack: loaded.pack, biomes: biomes), atlas: atlas);
-    final game = MapGame(renderer: renderer, camera: MapCamera.atLatLon(widget.lat, widget.lon, pixelsPerCell: widget.scale));
-    final ready = _Ready(game, biomes, atlas, loaded.stale);
+    final result = await loadMapAssets(nowUtc: now, bundle: widget.bundle);
+    if (result is String) return result;
+    final assets = result as MapAssets;
+    final game = MapGame(renderer: assets.makeRenderer(), camera: MapCamera.atLatLon(widget.lat, widget.lon, pixelsPerCell: widget.scale));
+    final ready = _Ready(game, assets);
     _ready = ready;
     return ready;
   }
@@ -81,7 +67,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     _ready?.game.renderer.dispose();
-    _ready?.atlas.dispose();
+    _ready?.assets.dispose();
     super.dispose();
   }
 

@@ -26,6 +26,7 @@ class _Bundle extends CachingAssetBundle {
 Map<String, List<int>> realAssets({Uint8List? bin}) => {
       'assets/data/epochs.json': File('assets/data/epochs.json').readAsBytesSync(),
       'assets/data/biomes.json': File('assets/data/biomes.json').readAsBytesSync(),
+      'assets/data/balance.json': File('assets/data/balance.json').readAsBytesSync(),
       'assets/regions/campinas_e0.bin': bin ?? File('assets/regions/campinas_e0.bin').readAsBytesSync(),
     };
 
@@ -204,6 +205,7 @@ void main() {
     await pumpMap(tester, assets: {
       'assets/data/epochs.json': File('assets/data/epochs.json').readAsBytesSync(),
       'assets/data/biomes.json': File('assets/data/biomes.json').readAsBytesSync(),
+      'assets/data/balance.json': File('assets/data/balance.json').readAsBytesSync(),
     });
     expect(find.text('MAPA INDISPONÍVEL'), findsOneWidget);
     expect(find.textContaining('campinas_e0.bin não está no app'), findsOneWidget);
