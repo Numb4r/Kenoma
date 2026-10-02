@@ -55,6 +55,10 @@ class _MapHudState extends State<MapHud> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    _ZoomButton(label: '−', onTap: () => game.zoomBy(0.5)),
+                    const SizedBox(width: 8),
+                    _ZoomButton(label: '+', onTap: () => game.zoomBy(2)),
+                    const SizedBox(width: 12),
                     Text('GRADE Z20', style: style),
                     const SizedBox(width: 8),
                     SizedBox(
@@ -76,4 +80,25 @@ class _MapHudState extends State<MapHud> {
       ),
     );
   }
+}
+
+/// Botão − ou + do zoom: alternativa à pinça no painel de debug.
+class _ZoomButton extends StatelessWidget {
+  const _ZoomButton({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          alignment: Alignment.center,
+          width: 40,
+          height: 32,
+          decoration: BoxDecoration(border: Border.all(color: kSignal, width: 2)),
+          child: Text(label, style: const TextStyle(fontSize: 16, color: kSignal)),
+        ),
+      );
 }

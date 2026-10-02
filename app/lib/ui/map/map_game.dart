@@ -70,6 +70,13 @@ class MapGame extends FlameGame {
     _dirty = true;
   }
 
+  /// Multiplica a escala por [factor] em volta do centro da tela (os botões − e + do painel de debug).
+  void zoomBy(double factor) {
+    if (_w <= 0 || _h <= 0) return;
+    _camera = _camera.zoomedAbout(_camera.pixelsPerCell * factor, _w / 2, _h / 2, _w, _h).clampedTo(renderer.packCells);
+    _dirty = true;
+  }
+
   void setGrid20(bool on) {
     grid20 = on;
     _dirty = true;

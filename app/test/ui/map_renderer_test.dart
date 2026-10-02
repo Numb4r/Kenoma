@@ -152,6 +152,33 @@ void main() {
       });
     });
 
+    testWidgets('sem orçamento para montar o nível novo, mostra o chunk em outro nível em vez de um buraco', (tester) async {
+      await tester.runAsync(() async {
+        final fine = MapCamera.atLatLon(unicamp.$1, unicamp.$2, pixelsPerCell: 16);
+        await paint(renderer, fine); // monta o nível 16
+        final cams = MapCamera.atLatLon(unicamp.$1, unicamp.$2, pixelsPerCell: 12); // ainda nível 16
+        final base = map.biomes.byId(voidBiomeId).palette[1];
+        // A 7 px por célula o nível é 8, que ainda não existe, e maxBuilds 0 não deixa montar.
+        final coarse = MapCamera.atLatLon(unicamp.$1, unicamp.$2, pixelsPerCell: 7);
+        final px = await pixels(await paint(renderer, coarse, maxBuilds: 0));
+        expect(renderer.lastBuilds, 0);
+        var drawn = 0, total = 0;
+        for (var y = 3; y < size.height.toInt() - 3; y += 11) {
+          for (var x = 3; x < size.width.toInt() - 3; x += 7) {
+            if ((x - 270).abs() < 12 && (y - 600).abs() < 12) continue;
+            total++;
+            if (colorAt(px, x, y) != base) drawn++;
+          }
+        }
+        expect(cams.pixelsPerCell, 12);
+        // Só a área que o nível 16 já cobria aparece (a tela de 7 px/célula é maior que a de 16).
+        expect(drawn / total, greaterThan(0.1), reason: 'o fallback desenha o que há, sem esperar a montagem');
+        // Montando de verdade, o nível certo aparece e o quadro é igual ao desenho completo.
+        await paint(renderer, coarse);
+        expect(renderer.lastBuilds, greaterThan(0));
+      });
+    });
+
     testWidgets('a memória respeita o orçamento: os chunks mais antigos saem primeiro', (tester) async {
       await tester.runAsync(() async {
         final small = MapRenderer(map: map, atlas: await buildBiomeAtlas(loadBiomes()), budgetBytes: 3 * 4194304);

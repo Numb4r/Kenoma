@@ -19,7 +19,7 @@ const int tileSize = 16;
 const int textureVariants = 8;
 
 /// Variante de textura da célula z21 `(x, y)`, fixa para a célula.
-int cellVariant(int x, int y) => (fnv1a64([x, y, 0x7e1e]) >>> 32) % textureVariants;
+int cellVariant(int x, int y) => (fnv1a64Of3(x, y, 0x7e1e) >>> 32) % textureVariants;
 
 /// Como o ruído de cada bioma é desenhado: chance do tom escuro e do claro, e o tamanho do bloco de
 /// pixels que muda junto (blocos largos dão listras na água, blocos quadrados dão a cidade).

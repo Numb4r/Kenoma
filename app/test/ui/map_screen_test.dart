@@ -108,6 +108,28 @@ void main() {
     expect(zoom(tester), 1.0);
   });
 
+  testWidgets('os botões − e + do painel dobram e dividem a escala, sempre entre o mínimo e o máximo', (tester) async {
+    await pumpMap(tester);
+    Future<void> tap(String label) async {
+      await tester.tap(find.text(label));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    expect(zoom(tester), 16.0);
+    await tap('+');
+    expect(zoom(tester), 32.0);
+    await tap('+');
+    expect(zoom(tester), 32.0, reason: 'máximo');
+    for (final expected in [16.0, 8.0, 4.0, 2.0, 1.0, 1.0]) {
+      await tap('−');
+      expect(zoom(tester), expected);
+    }
+    final (lat, lon) = center(tester);
+    expect(lat, closeTo(-22.8174, 1e-4), reason: 'o zoom é em volta do centro: o centro não anda');
+    expect(lon, closeTo(-47.0697, 1e-4));
+  });
+
   testWidgets('tocar mostra o que há sob o dedo: coordenada, células z21 e z20 e os biomas', (tester) async {
     await pumpMap(tester);
     final c = tester.getCenter(gameWidget);

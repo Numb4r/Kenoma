@@ -35,6 +35,11 @@ class MapRenderer {
   final LinkedHashMap<_Key, ui.Image> _cache = LinkedHashMap();
   int _bytes = 0;
 
+  /// Buffers do atlas, reaproveitados em cada chunk: o motor copia os dados ao gravar o desenho, então
+  /// montar um chunk não gera lixo para o coletor (o que dava picos de quadro ao montar vários).
+  final Float32List _transforms = Float32List(chunkCells * chunkCells * 4);
+  final Float32List _rects = Float32List(chunkCells * chunkCells * 4);
+
   /// Células z21 que o pacote cobre. O centro da câmera fica dentro delas.
   CellRange get packCells => _packCells;
 
@@ -45,14 +50,15 @@ class MapRenderer {
   int lastBuilds = 0;
 
   /// Desenha o mapa em [canvas], numa tela de [size]. Monta no máximo [maxBuilds] chunks por quadro
-  /// (os que faltam aparecem como Vazio e entram nos quadros seguintes).
+  /// (os que faltam aparecem como Vazio e entram nos quadros seguintes). Poucos por quadro, para a
+  /// montagem não estourar o orçamento de 16 ms.
   void paint(
     ui.Canvas canvas,
     ui.Size size, {
     required MapCamera camera,
     bool grid20 = false,
     MapProbe? probe,
-    int maxBuilds = 8,
+    int maxBuilds = 3,
   }) {
     lastBuilds = 0;
     canvas.drawRect(ui.Offset.zero & size, ui.Paint()..color = _voidColor);
@@ -68,9 +74,15 @@ class MapRenderer {
       final key = (lod, id.$1, id.$2);
       var image = _touch(key);
       if (image == null) {
-        if (lastBuilds >= maxBuilds) continue;
-        image = _build(key, id);
-        lastBuilds++;
+        if (lastBuilds >= maxBuilds) {
+          // Sem orçamento para montar agora: mostra o chunk em outro nível de detalhe, se houver, em vez
+          // de um buraco. Acontece no meio de uma pinça, quando o nível muda.
+          image = _anyDetail(lod, id);
+          if (image == null) continue;
+        } else {
+          image = _build(key, id);
+          lastBuilds++;
+        }
       }
       final (l, t) = camera.cellToScreen(cells.x0.toDouble(), cells.y0.toDouble(), w, h);
       final (r, b) = camera.cellToScreen(cells.x1 + 1.0, cells.y1 + 1.0, w, h);
@@ -94,12 +106,30 @@ class MapRenderer {
     return image;
   }
 
+  /// Ordem em que se tenta outro nível de detalhe: do mais perto do pedido para o mais longe. Fixa, para
+  /// não alocar nem ordenar nada por chunk e por quadro.
+  static const Map<int, List<int>> _fallbackOrder = {
+    16: [8, 4, 2],
+    8: [16, 4, 2],
+    4: [8, 2, 16],
+    2: [4, 8, 16],
+  };
+
+  /// O chunk [id] em outro nível de detalhe já montado, o mais perto de [lod]. `null` se não há.
+  ui.Image? _anyDetail(int lod, ChunkId id) {
+    for (final other in _fallbackOrder[lod]!) {
+      final image = _cache[(other, id.$1, id.$2)];
+      if (image != null) return image;
+    }
+    return null;
+  }
+
   ui.Image _build(_Key key, ChunkId id) {
     final lod = key.$1;
     final cells = cellsOfChunk(id);
     const n = chunkCells;
-    final transforms = Float32List(n * n * 4);
-    final rects = Float32List(n * n * 4);
+    final transforms = _transforms;
+    final rects = _rects;
     final scale = lod / tileSize;
     var k = 0;
     for (var j = 0; j < n; j++) {

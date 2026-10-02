@@ -45,6 +45,21 @@ int fnv1a64(List<int> fields) {
   return h;
 }
 
+/// O mesmo que `fnv1a64([a, b, c])`, sem montar a lista: para laços quentes, como o desenho do mapa.
+int fnv1a64Of3(int a, int b, int c) {
+  var h = fnvOffset;
+  for (var i = 0; i < 8; i++) {
+    h = (h ^ ((a >>> (8 * i)) & 0xff)) * fnvPrime;
+  }
+  for (var i = 0; i < 8; i++) {
+    h = (h ^ ((b >>> (8 * i)) & 0xff)) * fnvPrime;
+  }
+  for (var i = 0; i < 8; i++) {
+    h = (h ^ ((c >>> (8 * i)) & 0xff)) * fnvPrime;
+  }
+  return h;
+}
+
 /// Módulo de um hash: sempre sobre os 32 bits de cima, para nunca operar sobre número negativo.
 int hashMod(int hash, int n) => (hash >>> 32) % n;
 

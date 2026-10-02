@@ -64,4 +64,10 @@ void main() {
     expect(hex64(0x8eea7d7ebe0ef0), '0x008eea7d7ebe0ef0');
     expect(hex64(0), '0x0000000000000000');
   });
+
+  test('fnv1a64Of3 é o fnv1a64 de três campos, inclusive com negativos e valores grandes', () {
+    for (final (a, b, c) in [(0, 0, 0), (1, 2, 3), (-1, -2, -3), (773324, 1184541, 0x7e1e), (0x7fffffffffffffff, -0x8000000000000000, 42)]) {
+      expect(fnv1a64Of3(a, b, c), fnv1a64([a, b, c]), reason: '$a,$b,$c');
+    }
+  });
 }
