@@ -89,6 +89,8 @@ Simulador de GPS de debug com:
 - andar com o celular move o marcador;
 - o simulador permite testar tudo sentado.
 
+**Status: implementado, falta testar andando na rua.** A posição vem de uma `PositionSource` trocável (`geolocator` ou o simulador do menu de debug), filtrada por `GpsFilter` (recusa precisão pior que 50 m e não deixa o marcador tremer parado). O mapa do jogo (`GameMapScreen`) segue o Conjurador com suavização, desenha o marcador e a Aura (raio de `balance.json`), espia ao arrastar e volta sozinho depois de 3 s, com zoom de 8 a 24 px por célula. A câmera livre do M4 ficou só no menu de debug. O simulador (joystick com andando, correndo e bicicleta, teleporte com atalhos, ruído de GPS opcional) e o override do relógio UTC estão no menu de debug. O GPS real não foi testado andando: só dá para confirmar o fluxo de permissão e a fonte.
+
 ## M5b · Camada visual
 
 **Posição na fila: ainda não definida.** Entra quando o jogo de caminhar já funcionar, antes ou depois do M6, e não bloqueia nenhum marco.

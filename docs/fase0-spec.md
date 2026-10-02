@@ -69,7 +69,9 @@ O SHA-256 do arquivo inteiro fica registrado na época que usa o pacote. Regerar
 
 ## 2. Jogador no mapa
 
-- Posição via `geolocator`, a cada poucos metros, só com o app aberto.
+- Posição via `geolocator`, a cada poucos metros (2 m), só com o app aberto: a fonte para quando o app vai para segundo plano e não há serviço em primeiro plano nem permissão de segundo plano. A permissão é pedida com uma explicação curta antes do diálogo do sistema.
+- Leitura com precisão pior que 50 m é recusada. O filtro (`world/gps_filter.dart`) usa a média das leituras quando o jogador está parado, para o marcador não tremer, e um filtro de Kalman de posição e velocidade quando ele anda.
+- Câmera de jogo: segue o Conjurador com suavização, arrastar espia em volta e ela volta sozinha depois de 3 s sem toque, e o zoom por pinça vai de 8 a 24 px por célula (a câmera livre do debug vai de 1 a 32 e só existe no menu de debug).
 - Aura de 40 m, desenhada como círculo violeta tracejado. Interação só dentro da Aura.
 - Spawns visíveis até 120 m. O rastreador também mostra até 120 m.
 - Ferramenta de dev obrigatória, acessível pelo menu de debug (que não some por flag de build, ver CLAUDE.md):
