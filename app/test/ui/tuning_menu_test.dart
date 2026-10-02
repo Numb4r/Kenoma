@@ -9,10 +9,16 @@ import 'package:kenoma/capture/session_record.dart';
 import 'package:kenoma/capture/tuning_setup.dart';
 import 'package:kenoma/data/session_log_store.dart';
 import 'package:kenoma/data/tuning_data.dart';
+import 'package:kenoma/dev/dev_tools.dart';
+import 'package:kenoma/dev/gps_simulator.dart';
+import 'package:kenoma/ui/game/game_map_screen.dart';
+import 'package:kenoma/world/places.dart';
 import 'package:kenoma/ui/map/map_screen.dart';
 import 'package:kenoma/dev/tuning_debug_menu.dart';
 import 'package:kenoma/ui/tuning/log_exporter.dart';
 import 'package:kenoma/ui/tuning/tuning_screen.dart';
+
+import '../support/fake_position_source.dart';
 
 class FakeExporter implements LogExporter {
   final files = <File>[];
@@ -41,7 +47,8 @@ SessionRecord sampleRecord() => SessionRecord(
     );
 
 /// Abre o menu com um registro num diretório temporário. [seeded] é quantas sessões já existem.
-Future<({SessionLogStore store, FakeExporter exporter})> pumpMenu(WidgetTester tester, {int seeded = 0, List<String> legacyRows = const []}) async {
+Future<({SessionLogStore store, FakeExporter exporter})> pumpMenu(WidgetTester tester,
+    {int seeded = 0, List<String> legacyRows = const [], DevTools? tools}) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 2.625;
   addTearDown(tester.view.reset);
@@ -63,11 +70,12 @@ Future<({SessionLogStore store, FakeExporter exporter})> pumpMenu(WidgetTester t
 
   // O cache de assets guarda o Future do teste anterior, que morreu com a zona dele.
   // Recarregar na zona real deixa o menu carregar em qualquer teste.
-  for (final name in ['balance', 'creatures', 'items']) {
+  for (final name in ['balance', 'creatures', 'items', 'epochs', 'biomes']) {
     rootBundle.evict('assets/data/$name.json');
   }
+  rootBundle.evict('assets/regions/campinas_e0.bin');
   await tester.runAsync(TuningData.load);
-  await tester.pumpWidget(MaterialApp(home: TuningDebugMenu(store: store, exporter: exporter)));
+  await tester.pumpWidget(MaterialApp(home: TuningDebugMenu(store: store, exporter: exporter, devTools: tools)));
   for (var i = 0; i < 300 && find.text('INICIAR SINTONIA').evaluate().isEmpty; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pump();
@@ -75,9 +83,15 @@ Future<({SessionLogStore store, FakeExporter exporter})> pumpMenu(WidgetTester t
   return (store: store, exporter: exporter);
 }
 
+/// Rola até o alvo e toca: o menu é longo, e o que fica fora da tela não recebe o toque.
+Future<void> tapVisible(WidgetTester tester, Finder finder) async {
+  await Scrollable.ensureVisible(tester.element(finder), alignment: 0.5);
+  await tester.pump();
+  await tester.tap(finder);
+}
+
 Future<TuningScreen> start(WidgetTester tester) async {
-  await tester.ensureVisible(find.text('INICIAR SINTONIA'));
-  await tester.tap(find.text('INICIAR SINTONIA'));
+  await tapVisible(tester, find.text('INICIAR SINTONIA'));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 500));
   return tester.widget<TuningScreen>(find.byType(TuningScreen));
@@ -104,7 +118,7 @@ void main() {
 
   testWidgets('escolher o Rillet abre a sintonia com o Rillet, do tipo Água', (tester) async {
     await pumpMenu(tester);
-    await tester.tap(find.text('Rillet'));
+    await tapVisible(tester, find.text('Rillet'));
     await tester.pump();
     final screen = await start(tester);
     expect(screen.pool.single.id, 'rill.eco');
@@ -113,7 +127,7 @@ void main() {
 
   testWidgets('escolher o Frondling abre a sintonia do tipo Planta', (tester) async {
     await pumpMenu(tester);
-    await tester.tap(find.text('Frondling'));
+    await tapVisible(tester, find.text('Frondling'));
     await tester.pump();
     final screen = await start(tester);
     expect(screen.pool.single.id, 'frond.eco');
@@ -123,7 +137,7 @@ void main() {
   testWidgets('o tônico soma o tempo do items.json e o rótulo vem do dado', (tester) async {
     await pumpMenu(tester);
     expect(find.text('Tônico (+5 s)'), findsOneWidget);
-    await tester.tap(find.text('Tônico (+5 s)'));
+    await tapVisible(tester, find.text('Tônico (+5 s)'));
     await tester.pump();
     expect(find.textContaining('Tempo 25 s'), findsOneWidget);
     final screen = await start(tester);
@@ -133,7 +147,7 @@ void main() {
 
   testWidgets('o alvo no dial é opcional', (tester) async {
     await pumpMenu(tester);
-    await tester.tap(find.text('Mostrar alvo no dial'));
+    await tapVisible(tester, find.text('Mostrar alvo no dial'));
     await tester.pump();
     final screen = await start(tester);
     expect(screen.showTarget, isTrue);
@@ -151,7 +165,7 @@ void main() {
     testWidgets('com o modo ligado a sintonia leva as três espécies para sortear o tipo', (tester) async {
       await pumpMenu(tester);
       await tester.ensureVisible(find.text('Tipo oculto'));
-      await tester.tap(find.text('Tipo oculto'));
+      await tapVisible(tester, find.text('Tipo oculto'));
       await tester.pump();
       final screen = await start(tester);
       expect(screen.hidden, isTrue);
@@ -162,10 +176,10 @@ void main() {
     testWidgets('com o modo ligado, escolher uma espécie não vale: o tipo é sorteado', (tester) async {
       await pumpMenu(tester);
       await tester.ensureVisible(find.text('Tipo oculto'));
-      await tester.tap(find.text('Tipo oculto'));
+      await tapVisible(tester, find.text('Tipo oculto'));
       await tester.pump();
       await tester.scrollUntilVisible(find.text('Rillet'), -200, scrollable: find.byType(Scrollable).first);
-      await tester.tap(find.text('Rillet'));
+      await tapVisible(tester, find.text('Rillet'));
       await tester.pump();
       final screen = await start(tester);
       expect(screen.pool, hasLength(3), reason: 'o Rillet não fixou a espécie');
@@ -174,9 +188,9 @@ void main() {
     testWidgets('o alvo no dial fica desligado no modo oculto', (tester) async {
       await pumpMenu(tester);
       await tester.ensureVisible(find.text('Mostrar alvo no dial'));
-      await tester.tap(find.text('Mostrar alvo no dial'));
+      await tapVisible(tester, find.text('Mostrar alvo no dial'));
       await tester.pump();
-      await tester.tap(find.text('Tipo oculto'));
+      await tapVisible(tester, find.text('Tipo oculto'));
       await tester.pump();
       final toggle = tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, 'Mostrar alvo no dial'));
       expect(toggle.value, isFalse);
@@ -185,9 +199,9 @@ void main() {
 
     testWidgets('cada espécie do sorteio usa os mesmos níveis e o mesmo selo do menu', (tester) async {
       await pumpMenu(tester);
-      await tester.tap(find.text('Tônico (+5 s)'));
+      await tapVisible(tester, find.text('Tônico (+5 s)'));
       await tester.ensureVisible(find.text('Tipo oculto'));
-      await tester.tap(find.text('Tipo oculto'));
+      await tapVisible(tester, find.text('Tipo oculto'));
       await tester.pump();
       final screen = await start(tester);
       for (final s in screen.pool) {
@@ -210,7 +224,7 @@ void main() {
       final env = await pumpMenu(tester, seeded: 3);
       await tester.scrollUntilVisible(find.text('EXPORTAR REGISTRO'), 200, scrollable: find.byType(Scrollable).first);
       expect(find.text('Sessões gravadas: 3'), findsOneWidget);
-      await tester.tap(find.text('EXPORTAR REGISTRO'));
+      await tapVisible(tester, find.text('EXPORTAR REGISTRO'));
       await tester.pump();
       expect(env.exporter.files.single.path, env.store.file.path);
     });
@@ -228,7 +242,7 @@ void main() {
       // Primeiro formato: ganha pre-ajuste, o gap dos próprios níveis (0 e 2), overlevel 0 e pre-visual.
       expect(lines.skip(1).toList(), ['${old[0]},pre-ajuste,0,0,pre-visual', '${old[1]},pre-ajuste,2,0,pre-visual']);
       expect(env.store.backup.existsSync(), isTrue);
-      await tester.tap(find.text('EXPORTAR REGISTRO'));
+      await tapVisible(tester, find.text('EXPORTAR REGISTRO'));
       await tester.pump();
       expect(env.exporter.files.single.readAsLinesSync().first, contains('balance_version'));
     });
@@ -236,7 +250,7 @@ void main() {
     testWidgets('sem sessões avisa e não abre a folha de compartilhamento', (tester) async {
       final env = await pumpMenu(tester);
       await tester.scrollUntilVisible(find.text('EXPORTAR REGISTRO'), 200, scrollable: find.byType(Scrollable).first);
-      await tester.tap(find.text('EXPORTAR REGISTRO'));
+      await tapVisible(tester, find.text('EXPORTAR REGISTRO'));
       await tester.pump();
       expect(find.text('Nenhuma sessão gravada ainda'), findsOneWidget);
       expect(env.exporter.files, isEmpty);
@@ -245,7 +259,7 @@ void main() {
 
   group('mapa no menu de debug', () {
     String field(WidgetTester tester, String label) =>
-        tester.widget<TextField>(find.widgetWithText(TextField, label)).controller!.text;
+        tester.widget<TextField>(find.widgetWithText(TextField, label).last).controller!.text;
 
     testWidgets('o menu tem a seção do mapa no topo, com o centro padrão na Unicamp, e a sintonia continua nele', (tester) async {
       await pumpMenu(tester);
@@ -260,10 +274,10 @@ void main() {
 
     testWidgets('os atalhos Unicamp e Centro preenchem o centro', (tester) async {
       await pumpMenu(tester);
-      await tester.tap(find.text('CENTRO'));
+      await tapVisible(tester, find.text('CENTRO').last);
       await tester.pump();
       expect((field(tester, 'Latitude'), field(tester, 'Longitude')), ('-22.9056', '-47.0608'));
-      await tester.tap(find.text('UNICAMP'));
+      await tapVisible(tester, find.text('UNICAMP').last);
       await tester.pump();
       expect((field(tester, 'Latitude'), field(tester, 'Longitude')), ('-22.8174', '-47.0697'));
     });
@@ -271,9 +285,9 @@ void main() {
     testWidgets('coordenada inválida ou fora do alcance avisa e não abre o mapa', (tester) async {
       await pumpMenu(tester);
       for (final (lat, lon) in [('abc', '-47.0'), ('-22.8', ''), ('95', '-47.0'), ('-22.8', '200')]) {
-        await tester.enterText(find.widgetWithText(TextField, 'Latitude'), lat);
-        await tester.enterText(find.widgetWithText(TextField, 'Longitude'), lon);
-        await tester.tap(find.text('ABRIR MAPA'));
+        await tester.enterText(find.widgetWithText(TextField, 'Latitude').last, lat);
+        await tester.enterText(find.widgetWithText(TextField, 'Longitude').last, lon);
+        await tapVisible(tester, find.text('ABRIR MAPA'));
         await tester.pump();
         expect(find.text('Coordenada inválida'), findsOneWidget, reason: '$lat, $lon');
         expect(find.byType(MapScreen), findsNothing);
@@ -284,9 +298,9 @@ void main() {
 
     testWidgets('abrir o mapa leva à tela do mapa no centro digitado (vírgula decimal também vale)', (tester) async {
       await pumpMenu(tester);
-      await tester.enterText(find.widgetWithText(TextField, 'Latitude'), '-22,9056');
-      await tester.enterText(find.widgetWithText(TextField, 'Longitude'), '-47.0608');
-      await tester.tap(find.text('ABRIR MAPA'));
+      await tester.enterText(find.widgetWithText(TextField, 'Latitude').last, '-22,9056');
+      await tester.enterText(find.widgetWithText(TextField, 'Longitude').last, '-47.0608');
+      await tapVisible(tester, find.text('ABRIR MAPA'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
       final screen = tester.widget<MapScreen>(find.byType(MapScreen));
@@ -297,9 +311,138 @@ void main() {
       }
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.textContaining('CENTRO -22.90560, -47.06080'), findsOneWidget);
-      await tester.tap(find.text('<'));
+      await tapVisible(tester, find.text('<'));
       await tester.pumpAndSettle();
       expect(find.text('MAPA LIVRE · DEBUG'), findsOneWidget, reason: 'o < volta ao menu');
+    });
+  });
+
+  group('simulador de GPS, relógio e mapa do jogo no menu de debug', () {
+    DevTools newTools() => DevTools(realSource: FakeGps());
+
+    testWidgets('o menu tem o mapa do jogo, o simulador com as três velocidades e o relógio UTC', (tester) async {
+      await pumpMenu(tester, tools: newTools());
+      for (final t in ['JOGO · MAPA', 'ABRIR MAPA DO JOGO', 'Simulador de GPS', 'Ruído de GPS (5 m)', 'TELEPORTAR', 'RELÓGIO UTC', 'APLICAR', 'RELÓGIO REAL']) {
+        expect(find.text(t), findsOneWidget, reason: t);
+      }
+      for (final s in SimSpeed.values) {
+        expect(find.text('${s.label} ${s.mps.toStringAsFixed(1)} m/s'), findsOneWidget, reason: s.label);
+      }
+      expect(find.text('Fonte de posição: GPS real'), findsOneWidget);
+    });
+
+    testWidgets('ligar o simulador troca a fonte de posição; a velocidade e o ruído se ajustam', (tester) async {
+      final tools = newTools();
+      await pumpMenu(tester, tools: tools);
+      await tapVisible(tester, find.text('Simulador de GPS'));
+      await tester.pump();
+      expect(tools.useSimulator, isTrue);
+      expect(find.text('Fonte de posição: simulador'), findsOneWidget);
+      await tapVisible(tester, find.text('Bicicleta 6.0 m/s'));
+      await tester.pump();
+      expect(tools.simulator.speedMps, 6.0);
+      await tapVisible(tester, find.text('Correndo 3.0 m/s'));
+      await tester.pump();
+      expect(tools.simulator.speedMps, 3.0);
+      expect(tools.simulator.noiseM, 0);
+      await tapVisible(tester, find.text('Ruído de GPS (5 m)'));
+      await tester.pump();
+      expect(tools.simulator.noiseM, 5.0);
+      await tapVisible(tester, find.text('Simulador de GPS'));
+      await tester.pump();
+      expect(tools.useSimulator, isFalse);
+    });
+
+    testWidgets('teleporte: atalhos preenchem a coordenada e o botão leva o simulador até lá; coordenada ruim avisa', (tester) async {
+      final tools = newTools();
+      await pumpMenu(tester, tools: tools);
+      await tapVisible(tester, find.text('CENTRO').first); // o do simulador, que vem antes do mapa livre
+      await tester.pump();
+      await tapVisible(tester, find.text('TELEPORTAR'));
+      await tester.pump();
+      expect((tools.simulator.lat, tools.simulator.lon), kCentroCampinas);
+      expect(find.text('Teleportado'), findsOneWidget);
+      ScaffoldMessenger.of(tester.element(find.byType(Scaffold))).clearSnackBars();
+      await tester.pump();
+      await tapVisible(tester, find.text('UNICAMP').first);
+      await tester.pump();
+      await tapVisible(tester, find.text('TELEPORTAR'));
+      await tester.pump();
+      expect((tools.simulator.lat, tools.simulator.lon), kUnicamp);
+      ScaffoldMessenger.of(tester.element(find.byType(Scaffold))).clearSnackBars();
+      await tester.pump();
+      await tester.enterText(find.widgetWithText(TextField, 'Latitude').first, '99');
+      await tapVisible(tester, find.text('TELEPORTAR'));
+      await tester.pump();
+      expect(find.text('Coordenada inválida'), findsOneWidget);
+      expect(tools.simulator.lat, kUnicamp.$1, reason: 'não teleportou');
+    });
+
+    testWidgets('relógio UTC: aplica o instante digitado, mostra o override e volta ao real', (tester) async {
+      final tools = newTools();
+      await pumpMenu(tester, tools: tools);
+      expect(tools.clock.overridden, isFalse);
+      await tester.enterText(find.widgetWithText(TextField, 'aaaa-mm-dd hh:mm (UTC)'), '2026-12-22 00:00');
+      await tapVisible(tester, find.text('APLICAR'));
+      await tester.pump();
+      expect(tools.clock.overridden, isTrue);
+      expect(tools.clock.nowUtc, closeTo(DateTime.utc(2026, 12, 22).millisecondsSinceEpoch ~/ 1000, 3));
+      expect(find.textContaining('(OVERRIDE)'), findsOneWidget);
+      expect(find.textContaining('2026-12-22 00:00'), findsWidgets);
+      await tapVisible(tester, find.text('RELÓGIO REAL'));
+      await tester.pump();
+      expect(tools.clock.overridden, isFalse);
+      expect(find.textContaining('(OVERRIDE)'), findsNothing);
+    });
+
+    testWidgets('data inválida no relógio avisa e não mexe nele', (tester) async {
+      final tools = newTools();
+      await pumpMenu(tester, tools: tools);
+      await tester.enterText(find.widgetWithText(TextField, 'aaaa-mm-dd hh:mm (UTC)'), '2026-02-30 10:00');
+      await tapVisible(tester, find.text('APLICAR'));
+      await tester.pump();
+      expect(find.text('Use aaaa-mm-dd hh:mm em UTC'), findsOneWidget);
+      expect(tools.clock.overridden, isFalse);
+    });
+
+    testWidgets('abrir o mapa do jogo com o simulador leva ao mapa, com o Conjurador na Unicamp', (tester) async {
+      final tools = newTools();
+      await pumpMenu(tester, tools: tools);
+      await tools.setUseSimulator(true);
+      await tester.pump();
+      await tapVisible(tester, find.text('ABRIR MAPA DO JOGO'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(GameMapScreen), findsOneWidget);
+      for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.textContaining('SEGUINDO'), findsOneWidget);
+      expect(find.textContaining('-22.8174'), findsOneWidget);
+      await tapVisible(tester, find.text('<'));
+      await tester.pumpAndSettle();
+      expect(find.text('JOGO · MAPA'), findsOneWidget, reason: 'o < volta ao menu');
+    });
+
+    testWidgets('o relógio sobreposto vale também no mapa livre: depois do fim da época o mundo está desatualizado', (tester) async {
+      final tools = newTools();
+      await pumpMenu(tester, tools: tools);
+      tools.clock.setUtc(DateTime.utc(2027, 3, 1).millisecondsSinceEpoch ~/ 1000);
+      await tester.pump();
+      await tester.ensureVisible(find.text('ABRIR MAPA'));
+      await tapVisible(tester, find.text('ABRIR MAPA'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('MUNDO DESATUALIZADO'), findsOneWidget);
     });
   });
 }
