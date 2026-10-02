@@ -72,7 +72,7 @@ O SHA-256 do arquivo inteiro fica registrado na época que usa o pacote. Regerar
 - Posição via `geolocator`, a cada poucos metros, só com o app aberto.
 - Aura de 40 m, desenhada como círculo violeta tracejado. Interação só dentro da Aura.
 - Spawns visíveis até 120 m. O rastreador também mostra até 120 m.
-- Ferramenta de dev obrigatória, ativada por flag de build de debug:
+- Ferramenta de dev obrigatória, acessível pelo menu de debug (que não some por flag de build, ver CLAUDE.md):
   - simulador de GPS com joystick na tela;
   - teleporte para coordenada;
   - override do relógio UTC.

@@ -91,6 +91,7 @@ Janelas de spawn têm 20 minutos, com deslocamento próprio por célula. Detalhe
 - Sprites ausentes usam placeholders gerados (forma simples na cor do tipo com a inicial do nome). Arte nunca bloqueia código.
 - **Nunca dar push sem autorização explícita** do usuário, mesmo que ele tenha autorizado outros pushes antes. Commitar só quando pedido.
 - **Nunca capturar a tela do celular** (`adb screencap` e similares) sem checar antes se ele está desbloqueado e com o app em primeiro plano: `adb shell dumpsys window | grep isKeyguardShowing` tem que dar `false` e `adb shell dumpsys window | grep mCurrentFocus` tem que citar `com.numb4r.kenoma`. A tela de bloqueio e os outros apps mostram conteúdo pessoal.
+- **O menu de debug fica acessível em todas as builds de teste, inclusive as de release que vão para os amigos, e nunca é removido por flag de build.** A regra de liberar só com certificado de desenvolvedor vale apenas para a versão pública e entra junto com as assinaturas. Ferramentas de dev (simulador de GPS, relógio, sintonia, mapa) moram nele.
 - Cores fixas: violeta `#9b7bff` é o Véu, ciano `#5fd3c6` é o sinal, laranja `#ff7a45` é Essência. Contorno `#1a1424`, nunca preto puro.
 
 ## Comandos

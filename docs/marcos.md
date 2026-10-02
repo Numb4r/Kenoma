@@ -64,6 +64,8 @@ Tela de sintonia isolada, sem mapa. Um menu de debug escolhe a espécie, o níve
 
 Jogar o protótipo por alguns dias antes de seguir. Se não divertir, parar e rever o design.
 
+**Status: concluído.** A calibração da sintonia continua em paralelo, pelo menu de debug e, a partir do M7, pelos dados de jogo real.
+
 ## M4 · Mapa estático
 
 App carrega `campinas.bin` e renderiza a grade em Flame em torno de uma coordenada fixa, com câmera arrastável.
