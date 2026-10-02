@@ -105,9 +105,13 @@ void main() {
       expect(wb, greaterThan(wr), reason: 'azul');
     });
 
+    test('os nomes da interface vêm de biomes.json', () {
+      expect([for (final b in biomes.all) b.name], ['Vazio', 'Urbano', 'Verde', 'Água', 'Residencial']);
+    });
+
     test('cor inválida em biomes.json é erro de dados', () {
       expect(
-        () => BiomeDef.fromJson({'id': 9, 'key': 'x', 'priority': 1, 'palette': ['vermelho']}),
+        () => BiomeDef.fromJson({'id': 9, 'key': 'x', 'name': 'X', 'priority': 1, 'palette': ['vermelho']}),
         throwsFormatException,
       );
     });

@@ -2,11 +2,12 @@
 library;
 
 class BiomeDef {
-  const BiomeDef({required this.id, required this.key, required this.priority, required this.palette, this.spawnAs});
+  const BiomeDef({required this.id, required this.key, required this.name, required this.priority, required this.palette, this.spawnAs});
 
   factory BiomeDef.fromJson(Map<String, dynamic> json) => BiomeDef(
         id: json['id'] as int,
         key: json['key'] as String,
+        name: json['name'] as String,
         priority: json['priority'] as int,
         palette: [for (final c in json['palette'] as List<dynamic>) _parseRgb(c as String)],
         spawnAs: json['spawn_as'] as String?,
@@ -14,6 +15,9 @@ class BiomeDef {
 
   final int id;
   final String key;
+
+  /// Nome na interface (`Vazio`, `Urbano`...).
+  final String name;
   final int priority;
 
   /// Os tons do bioma no mapa, do mais escuro ao mais claro, como `0xRRGGBB`. O do meio é a cor base.
