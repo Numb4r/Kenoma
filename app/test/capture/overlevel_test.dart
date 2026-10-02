@@ -114,19 +114,15 @@ void main() {
       expect(over.aligned, isFalse);
     });
 
-    test('vale depois do piso da Planta: passa de baixo de metade do selo', () {
-      // Planta com resistência 1 e tempo de sobra: o fator da Planta está no piso (0,5).
+    test('vale na Planta também: a tolerância é a do selo vezes o sobrenível, sem encolhimento', () {
       final s = makeSession(type: EcoType.plant, playerLevel: 30, ecoLevel: 45, seed: 2);
       expect(s.overlevel, 10);
       s.t = 30;
-      final plantFloor = b.signal.plant.toleranceFloor;
-      expect(s.signal.toleranceFactorAt(30), plantFloor);
       final g = s.overlevel;
-      expect(s.tolerance, closeTo(0.08 * plantFloor * overlevelToleranceFactor(g, b), 1e-12));
-      expect(s.tolerance, lessThan(0.08 * plantFloor), reason: 'o sobrenível não fica preso ao piso da Planta');
+      expect(s.tolerance, closeTo(0.08 * overlevelToleranceFactor(g, b), 1e-12));
     });
 
-    test('o piso do sobrenível também vale por cima da Planta', () {
+    test('o piso do sobrenível vale na Planta', () {
       // Um Eco tão acima que o fator^g já passou do piso, seja qual for o fator calibrado.
       var g = 1;
       while (overlevelToleranceFactor(g, b) > b.overlevelTolFloor) {
@@ -134,7 +130,7 @@ void main() {
       }
       final s = makeSession(type: EcoType.plant, playerLevel: 30, ecoLevel: 30 + b.overlevelFree + g + 5, seed: 2);
       s.t = 30;
-      expect(s.tolerance, closeTo(0.08 * b.signal.plant.toleranceFloor * b.overlevelTolFloor, 1e-12));
+      expect(s.tolerance, closeTo(0.08 * b.overlevelTolFloor, 1e-12));
     });
 
     test('só a tolerância muda: fogo e água não têm o fator da Planta, então é só o do sobrenível', () {

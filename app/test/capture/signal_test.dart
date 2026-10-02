@@ -2,13 +2,14 @@ import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/capture/eco_type.dart';
+import 'package:kenoma/capture/fx/wave_geometry.dart';
 import 'package:kenoma/capture/resistance.dart';
-import 'package:kenoma/capture/session.dart';
 import 'package:kenoma/capture/signal.dart';
 import 'package:kenoma/capture/tuning_balance.dart';
 import 'package:kenoma/core/fnv.dart';
 import 'package:kenoma/core/pcg32.dart';
 
+import '../support/fixtures.dart';
 import '../support/reference_player.dart';
 
 TargetSignal signal(EcoType type, double intensity, {int seed = 5}) => TargetSignal.generate(
@@ -21,6 +22,21 @@ TargetSignal signal(EcoType type, double intensity, {int seed = 5}) => TargetSig
 List<double> series(TargetSignal s, {double to = 30}) => [for (var t = 0.0; t < to; t += 1 / 60) s.frequencyAt(t)];
 
 double maxJump(List<double> xs) => [for (var i = 1; i < xs.length; i++) (xs[i] - xs[i - 1]).abs()].reduce(math.max);
+
+/// Sinal do Fogo com a velocidade da fronteira trocada: serve para cenários que a velocidade de jogo
+/// não alcança (isca que sai antes do próximo pico, fronteira quase parada).
+TargetSignal fireSignalWith({required double boundarySpeed, required double intensity, int seed = 5}) {
+  final json = loadJson('assets/data/balance.json');
+  (((json['tuning'] as Map)['signal'] as Map)['fire'] as Map)['boundary_u_per_s'] = boundarySpeed;
+  return TargetSignal.generate(
+      type: EcoType.fire, intensity: intensity, rng: Pcg32(fnv1a64([seed]), saltKenoma), balance: TuningBalance(json));
+}
+
+double fold(double f) {
+  final m = f % 2;
+  final x = m < 0 ? m + 2 : m;
+  return x > 1 ? 2 - x : x;
+}
 
 extension _Let<T> on T {
   R let<R>(R Function(T) f) => f(this);
@@ -55,8 +71,8 @@ void main() {
         final s = signal(type, 0);
         expect(s.cues, isEmpty);
         expect(s.kickTimes, isEmpty);
-        expect(s.toleranceFactorAt(15), 1);
         expect(s.fireSplitAt(3), isNull);
+        expect(s.rootsAt(15), isEmpty);
         expect(s.burnUs, isEmpty);
       }
     });
@@ -75,19 +91,8 @@ void main() {
   group('Fogo: a onda se parte em duas', () {
     const r = 0.72;
     final fire = b.signal.fire;
+    final speed = fire.boundaryUPerS;
     double glide(double i) => lerpRange(fire.glideS, i);
-
-    /// A real esperada, sem dobrar nas bordas, a partir do que o sinal expõe.
-    double expectedReal(TargetSignal s, double t) {
-      final base = signal(EcoType.fire, 0, seed: 5).frequencyAt(t); // mesma semente, sem picos: só a base
-      var f = base;
-      final g = s.fireGlideS;
-      for (var i = 0; i < s.kickTimes.length; i++) {
-        final x = ((t - s.kickTimes[i]) / g).clamp(0.0, 1.0);
-        f += s.kickDeltas[i] * x * x * (3 - 2 * x);
-      }
-      return f;
-    }
 
     test('a real desliza para a nova frequência com smoothstep e o salto é permanente', () {
       final s = signal(EcoType.fire, r, seed: 5);
@@ -122,48 +127,82 @@ void main() {
       expect(step, lessThan(1.5 * s.kickDeltas.map((d) => d.abs()).reduce(math.max) / g / 60 + 0.01));
     });
 
-    test('glide_s = lerp(1,2 → 0,5) e decoy_s = lerp(1,0 → 2,5) pela intensidade', () {
+    test('glide_s = lerp(1,2 → 0,5) pela intensidade; a isca não tem mais tempo fixo', () {
       expect(signal(EcoType.fire, 0.4).fireGlideS, closeTo(lerp(1.2, 0.5, 0.4), 1e-12));
       expect(signal(EcoType.fire, 1).fireGlideS, closeTo(0.5, 1e-12));
-      expect(signal(EcoType.fire, 0.4).fireDecoyS, closeTo(lerp(1.0, 2.5, 0.4), 1e-12));
-      expect(signal(EcoType.fire, 1).fireDecoyS, closeTo(2.5, 1e-12));
     });
 
-    test('antes do primeiro pico a onda é uma só: não há partição', () {
+    test('antes do primeiro pico a onda é uma só: não há partição nem trechos', () {
       final s = signal(EcoType.fire, r, seed: 5);
       expect(s.fireSplitAt(s.kickTimes.first - 1e-6), isNull);
       expect(s.fireSplitAt(0), isNull);
+      expect(s.fire.segmentsAt(0, s.frequencyAt(0)), isEmpty);
       expect(s.fireSplitAt(s.kickTimes.first)!.index, 0);
     });
 
-    test('a queima fica na faixa pedida, uma por pico, e a partição aponta para a do pico atual', () {
+    test('a primeira queima cai na faixa pedida e a partição aponta para o pico atual', () {
       final s = signal(EcoType.fire, r, seed: 5);
       expect(s.burnUs, hasLength(s.kickTimes.length));
-      for (final u in s.burnUs) {
-        expect(u, inInclusiveRange(fire.burnU.$1, fire.burnU.$2));
-      }
-      expect(s.burnUs.toSet().length, greaterThan(3), reason: 'cada pico queima num ponto');
+      expect(s.burnUs.first, inInclusiveRange(fire.burnU.$1, fire.burnU.$2));
       for (var i = 0; i < s.kickTimes.length; i++) {
         final split = s.fireSplitAt(s.kickTimes[i] + 0.01)!;
-        expect((split.index, split.burnU), (i, s.burnUs[i]));
+        expect(split.index, i);
+        expect(split.boundaryU, closeTo(s.burnUs[i] - speed * 0.01, 1e-12));
       }
-      final mid = s.fireSplitAt((s.kickTimes[2] + s.kickTimes[3]) / 2)!;
-      expect(mid.burnU, s.burnUs[2], reason: 'a fronteira fica onde o último pico queimou');
     });
 
-    test('a isca nasce na frequência antiga e segue só a deriva de base até virar cinza (intensidade ≤ 0,6)', () {
-      const low = 0.5;
-      final s = signal(EcoType.fire, low, seed: 5);
+    test('a fronteira é um ponto da onda e rola para a esquerda na velocidade da onda', () {
+      final s = signal(EcoType.fire, r, seed: 5);
+      final at = s.kickTimes.first;
+      final u0 = s.burnUs.first;
+      for (final dt in [0.0, 0.5, 1.0]) {
+        if (at + dt >= s.kickTimes[1]) continue;
+        expect(s.fireSplitAt(at + dt)!.boundaryU, closeTo(u0 - speed * dt, 1e-12));
+      }
+      expect(s.fireBoundaryUAt(0, at + 1) - s.fireBoundaryUAt(0, at), closeTo(-speed, 1e-12));
+    });
+
+    test('no instante da queima o trecho da esquerda já é cinza: a real à direita, a isca à esquerda', () {
+      final s = signal(EcoType.fire, r, seed: 5);
+      final at = s.kickTimes.first;
+      final split = s.fireSplitAt(at)!;
+      expect(split.segments.map((x) => x.real), [true, false], reason: 'real à direita, isca à esquerda, nada mais');
+      final real = split.segments[0];
+      final decoy = split.segments[1];
+      expect(real.toU, 1);
+      expect(real.fromU, closeTo(s.burnUs.first, 1e-12));
+      expect(decoy.fromU, 0.0);
+      expect(decoy.toU, closeTo(s.burnUs.first, 1e-12));
+      expect(real.frequency, s.frequencyAt(at));
+      expect(decoy.frequency, closeTo(s.frequencyAt(at), 1e-9), reason: 'na queima as duas ainda estão na mesma frequência');
+      // A isca fica na antiga; a real vai para a nova.
+      final t = at + s.fireGlideS;
+      final later = s.fireSplitAt(t)!;
+      // Com a intensidade acima de 0,6 a isca também desliza o contrário: a distância cresce por esse fator.
+      final apart = 1 + (r > fire.decoyCounterFrom ? fire.decoyCounter : 0);
+      expect((later.segments[0].frequency - later.segments[1].frequency).abs(), closeTo(s.kickDeltas.first.abs() * apart, 1e-9));
+    });
+
+    test('a isca continua na frequência antiga com a deriva de base (intensidade ≤ 0,6)', () {
+      final s = signal(EcoType.fire, 0.5, seed: 5);
       final base = signal(EcoType.fire, 0, seed: 5);
       final at = s.kickTimes.first;
-      final decoyEnd = at + s.fireDecoyS;
-      for (final t in [at, at + 0.2, at + s.fireGlideS, decoyEnd - 0.01]) {
+      for (final t in [at, at + 0.2, at + s.fireGlideS, at + 1.0]) {
         if (t >= s.kickTimes[1]) continue;
         expect(s.fireSplitAt(t)!.decoyFrequency, closeTo(base.frequencyAt(t), 1e-9), reason: 't=$t');
       }
-      // A real foi para outro lugar: isca e real se separam do tamanho do salto.
-      final t = at + s.fireGlideS;
-      expect((s.frequencyAt(t) - s.fireSplitAt(t)!.decoyFrequency).abs(), closeTo(s.kickDeltas.first.abs(), 1e-9));
+    });
+
+    test('a isca do segundo pico guarda a frequência que a real tinha na queima (os saltos anteriores)', () {
+      final s = signal(EcoType.fire, 0.5, seed: 5);
+      final base = signal(EcoType.fire, 0, seed: 5);
+      final at1 = s.kickTimes[1];
+      final real = s.frequencyAt(at1);
+      for (final t in [at1, at1 + 0.3, at1 + 1.0]) {
+        if (t >= s.kickTimes[2]) continue;
+        final drift = base.frequencyAt(t) - base.frequencyAt(at1);
+        expect(s.fireSplitAt(t)!.decoyFrequency, closeTo(real + drift, 1e-9), reason: 'congelada, com a deriva de base por cima');
+      }
     });
 
     test('acima de 0,6 a isca também desliza, no sentido oposto ao da real', () {
@@ -175,42 +214,136 @@ void main() {
       final shift = s.fireSplitAt(t)!.decoyFrequency - base.frequencyAt(t);
       expect(shift, closeTo(-fire.decoyCounter * delta, 1e-9));
       expect(shift * delta, lessThan(0), reason: 'sentido oposto ao da real');
-      // Meio do deslize: metade do caminho (smoothstep).
       final half = s.fireSplitAt(at + s.fireGlideS / 2)!.decoyFrequency - base.frequencyAt(at + s.fireGlideS / 2);
       expect(half, closeTo(-fire.decoyCounter * delta / 2, 1e-9));
-      // No limiar (0,6) ainda não desliza.
       final edge = signal(EcoType.fire, 0.6, seed: 5);
       final tt = edge.kickTimes.first + edge.fireGlideS;
-      expect(edge.fireSplitAt(tt)!.decoyFrequency, closeTo(base.frequencyAt(tt), 1e-9));
+      expect(edge.fireSplitAt(tt)!.decoyFrequency, closeTo(base.frequencyAt(tt), 1e-9), reason: 'no limiar (0,6) ainda não desliza');
     });
 
-    test('a vida da isca vai de 1 a 0 em decoy_s e fica 0 (cinza) depois', () {
-      final s = signal(EcoType.fire, 0.1, seed: 5); // picos espaçados: a isca vive até o fim
+    test('a isca acaba quando sai da tela: a vida cai de 1 a 0 com a fronteira, em burnU / velocidade', () {
+      const fast = 0.4; // sai antes do próximo pico, que vem 3 s depois
+      final s = fireSignalWith(boundarySpeed: fast, intensity: 0.1);
       final at = s.kickTimes.first;
-      final d = s.fireDecoyS;
-      expect(s.kickTimes[1] - at, greaterThan(d + 0.5));
+      final life = s.burnUs.first / fast;
+      expect(s.kickTimes[1] - at, greaterThan(life + 0.2), reason: 'a isca sai antes do próximo pico');
       expect(s.fireSplitAt(at)!.decoyLife, 1);
-      expect(s.fireSplitAt(at + d / 2)!.decoyLife, closeTo(0.5, 1e-9));
-      expect(s.fireSplitAt(at + d - 1e-6)!.decoyAlive, isTrue);
-      expect(s.fireSplitAt(at + d)!.decoyLife, 0);
-      expect(s.fireSplitAt(at + d)!.decoyAlive, isFalse);
-      expect(s.fireSplitAt(at + d + 0.5)!.decoyAlive, isFalse);
+      expect(s.fireSplitAt(at + life / 2)!.decoyLife, closeTo(0.5, 1e-9));
+      expect(s.fireSplitAt(at + life - 1e-6)!.decoyAlive, isTrue);
+      final gone = s.fireSplitAt(at + life + 0.01)!;
+      expect(gone.decoyAlive, isFalse);
+      expect(gone.decoyLife, 0);
+      expect(gone.segments.map((x) => x.real), [true], reason: 'só a real sobra na tela');
+      expect(gone.segments.single.fromU, 0, reason: 'preenche a tela inteira');
     });
 
-    test('um pico novo com a isca ainda viva a aposenta na hora; com ela já cinza, não há o que aposentar', () {
-      final busy = signal(EcoType.fire, 0.9, seed: 5); // decoy_s ≈ 2,3 s e picos a cada ~0,9 s
-      final t1 = busy.kickTimes[1];
-      expect(t1 - busy.kickTimes[0], lessThan(busy.fireDecoyS));
-      final split = busy.fireSplitAt(t1 + 0.1)!;
-      expect(split.retired, isNotNull);
-      expect(split.retired!.burnU, busy.burnUs[0], reason: 'a antiga continua marcada pela queima dela');
-      expect(split.retired!.since, closeTo(0.1, 1e-9));
-      expect(split.decoyLife, greaterThan(0.9), reason: 'a isca nova nasce viva');
-      expect(busy.fireSplitAt(busy.kickTimes[0] + 0.1)!.retired, isNull, reason: 'o primeiro pico não tem isca anterior');
+    test('na velocidade de jogo a isca dura de 1 a 6 s: de 0,2 a 0,95 de tela a 0,15 por segundo', () {
+      for (var seed = 0; seed < 50; seed++) {
+        for (final u in signal(EcoType.fire, 0.6, seed: seed).burnUs) {
+          expect(u / speed, inInclusiveRange(0.2 / 0.15 - 1e-9, 0.95 / 0.15 + 1e-9));
+        }
+      }
+    });
 
-      final calm = signal(EcoType.fire, 0.1, seed: 5);
-      expect(calm.kickTimes[1] - calm.kickTimes[0], greaterThan(calm.fireDecoyS), reason: 'a isca antiga já tinha morrido');
-      expect(calm.fireSplitAt(calm.kickTimes[1] + 0.1)!.retired, isNull);
+    test('quanto mais à direita a queima, mais a isca demora para sair', () {
+      final s = signal(EcoType.fire, 0.1, seed: 5);
+      final lives = [for (final u in s.burnUs) u / speed];
+      expect(lives.reduce(math.max), greaterThan(lives.reduce(math.min)));
+    });
+
+    test('um pico novo mantém as iscas antigas, cinza, rolando para fora; as de dentro da tela ficam contíguas', () {
+      final s = signal(EcoType.fire, 0.9, seed: 5);
+      final t = s.kickTimes[2] + 0.05;
+      final split = s.fireSplitAt(t)!;
+      final decoys = split.segments.where((x) => !x.real).toList();
+      expect(decoys.length, greaterThanOrEqualTo(2), reason: 'a isca do pico 2 e ao menos uma antiga ainda na tela');
+      for (var i = 0; i + 1 < split.segments.length; i++) {
+        expect(split.segments[i + 1].toU, closeTo(split.segments[i].fromU, 1e-12), reason: 'sem buraco entre os trechos');
+      }
+      expect(split.segments.last.fromU, 0);
+      expect(split.segments.first.toU, 1);
+      expect(split.segments.every((x) => x.fromU < x.toU), isTrue);
+    });
+
+    test('o desenho anda com a fronteira: na queima as duas ondas têm a mesma fase, e não há salto de fase', () {
+      final s = signal(EcoType.fire, 0.9, seed: 5);
+      for (var i = 0; i < 4; i++) {
+        final at = s.kickTimes[i];
+        final after = s.fireSplitAt(at)!;
+        final u = s.burnUs[i];
+        final real = after.segments[0];
+        final decoy = after.segments[1];
+        expect(real.thetaAt(u), closeTo(decoy.thetaAt(u), 1e-9), reason: 'pico $i: a fronteira é um ponto das duas');
+        // A onda de antes (a global no primeiro pico; a real do pico anterior nos outros) passa pela mesma fase.
+        final before = i == 0
+            ? waveTheta(s.frequencyAt(at), u, waveScroll(at))
+            : s.fireSplitAt(at - 1e-9)!.segments[0].thetaAt(u);
+        expect(real.thetaAt(u), closeTo(before, 1e-6), reason: 'pico $i: sem salto de fase na queima');
+      }
+    });
+
+    test('nenhuma queima cai em trecho morto, à esquerda de uma fronteira anterior, em 1000 sinais', () {
+      var burns = 0;
+      for (var seed = 0; seed < 1000; seed++) {
+        final intensity = 0.05 + 0.95 * ((seed * 0.6180339887) % 1.0);
+        final s = signal(EcoType.fire, intensity, seed: seed);
+        final times = s.kickTimes;
+        for (var i = 0; i < times.length; i++) {
+          final u = s.burnUs[i];
+          expect(u, inInclusiveRange(fire.burnU.$1, fire.burnEdgeU), reason: 'seed $seed pico $i');
+          for (var j = 0; j < i; j++) {
+            expect(u, greaterThan(s.fireBoundaryUAt(j, times[i])), reason: 'seed $seed: a queima $i caiu à esquerda da fronteira $j');
+          }
+          burns++;
+        }
+      }
+      expect(burns, greaterThan(5000));
+    });
+
+    test('se o trecho vivo visível é curto demais, a queima vai para o ponto mais à direita possível', () {
+      // Fronteira quase parada: a anterior fica perto de onde nasceu e o trecho vivo encolhe de pico em pico.
+      var edges = 0;
+      for (var seed = 0; seed < 300; seed++) {
+        final s = fireSignalWith(boundarySpeed: 0.01, intensity: 0.9, seed: seed);
+        final times = s.kickTimes;
+        for (var i = 1; i < times.length; i++) {
+          final prev = s.fireBoundaryUAt(i - 1, times[i]); // onde a fronteira anterior está agora
+          final u = s.burnUs[i];
+          expect(u, greaterThan(prev), reason: 'seed $seed pico $i');
+          if (fire.burnU.$2 - math.max(fire.burnU.$1, prev) < fire.burnMinLiveU) {
+            expect(u, fire.burnEdgeU, reason: 'trecho vivo curto: vai ao ponto mais à direita');
+            edges++;
+          } else {
+            expect(u, lessThanOrEqualTo(fire.burnU.$2));
+          }
+        }
+      }
+      expect(edges, greaterThan(50), reason: 'o caso curto precisa acontecer para valer o teste');
+    });
+
+    test('conjurador 1 contra Eco 1: intensidade 0 e nenhuma queima, de propósito', () {
+      expect(resistanceIntensity(playerLevel: 1, ecoLevel: 1, balance: b), 0);
+      final s = signal(EcoType.fire, 0);
+      expect(s.kickTimes, isEmpty);
+      expect(s.burnUs, isEmpty);
+      expect(s.cues, isEmpty);
+      for (var t = 0.0; t < 30; t += 0.5) {
+        expect(s.fireSplitAt(t), isNull);
+      }
+    });
+
+    test('com qualquer intensidade acima de 0 há queima, e a primeira vem antes do limite de tempo', () {
+      for (final i in [1e-9, 1e-6, 0.001, 0.01, 0.05, 0.1, 0.3, 0.6, 0.945, 1.0]) {
+        for (var seed = 0; seed < 50; seed++) {
+          final s = signal(EcoType.fire, i, seed: seed);
+          expect(s.kickTimes, isNotEmpty, reason: 'intensidade $i seed $seed');
+          expect(s.burnUs, hasLength(s.kickTimes.length));
+          expect(s.kickTimes.first, lessThan(b.timeLimitS), reason: 'a queima chega dentro da sintonia: i=$i seed=$seed');
+          expect(s.cues.first.kind, CueKind.fireWarning);
+        }
+      }
+      // O nível mais baixo com resistência: Conjurador 4 (0,3) contra um Eco do mesmo nível.
+      expect(resistanceIntensity(playerLevel: 4, ecoLevel: 4, balance: b), greaterThan(0));
     });
 
     test('a real é a frequência do sinal: tolerância e progresso a medem, não a isca', () {
@@ -269,16 +402,15 @@ void main() {
       expect(signal(EcoType.fire, top).fireWarningLeadS, closeTo(0.264, 1e-3));
     });
 
-    test('sem resistência o sinal é suave e a real é a deriva de base', () {
+    test('sem resistência o sinal é suave', () {
       expect(maxJump(series(signal(EcoType.fire, 0))), lessThan(0.005));
-      final s = signal(EcoType.fire, r, seed: 5);
-      for (final t in [0.0, 3.0, 8.0, 15.0]) {
-        expect(s.frequencyAt(t), closeTo(expectedReal(s, t).clamp(0.0, 1.0), 0.5), reason: 'dentro do eixo');
-      }
     });
 
-    test('nada disso mexe na tolerância', () {
-      expect(signal(EcoType.fire, 1).toleranceFactorAt(10), 1);
+    test('a tolerância não muda no Fogo', () {
+      final s = makeSession(type: EcoType.fire, playerLevel: 15, ecoLevel: 17, seed: 1);
+      final t0 = s.tolerance;
+      s.t = 10;
+      expect(s.tolerance, t0);
     });
   });
 
@@ -372,9 +504,6 @@ void main() {
       expect(w.tideMin, inInclusiveRange(0.0, 1.0));
     });
 
-    test('a tolerância não muda', () {
-      expect(signal(EcoType.water, 1).toleranceFactorAt(10), 1);
-    });
 
     group('avisos nas inversões de sentido', () {
       // Inversões achadas de forma independente: onde a derivada do sinal troca de sinal.
@@ -444,70 +573,153 @@ void main() {
     });
   });
 
-  group('Planta: a tolerância encolhe até um piso, e o sinal cresce', () {
+  group('Planta: o sinal cresce e cada broto finca uma raiz no dial', () {
     final p = b.signal.plant;
 
     group('tolerância', () {
-      test('encolhe aos poucos até o mínimo e para', () {
-        final s = signal(EcoType.plant, 0.72);
-        final floor = math.max(p.toleranceFloor, 1 - p.toleranceShrink * 0.72);
-        expect(s.toleranceFactorAt(0), 1);
-        var prev = 1.0;
-        for (var t = 0.1; t <= p.shrinkOverS; t += 0.1) {
-          expect(s.toleranceFactorAt(t), lessThanOrEqualTo(prev));
-          prev = s.toleranceFactorAt(t);
+      test('não encolhe mais: a janela de alinhamento é sempre a do selo (vezes o sobrenível)', () {
+        final s = makeSession(type: EcoType.plant, playerLevel: 15, ecoLevel: 17, seed: 1);
+        final t0 = s.tolerance;
+        expect(t0, closeTo(0.08, 1e-12));
+        for (final t in [0.0, 1.0, 3.0, 10.0, 25.0]) {
+          s.t = t;
+          expect(s.tolerance, t0, reason: 't=$t');
         }
-        expect(s.toleranceFactorAt(p.shrinkOverS), closeTo(floor, 1e-12));
-        expect(s.toleranceFactorAt(p.shrinkOverS * 5), closeTo(floor, 1e-12));
       });
 
-      test('o piso é 0,5: em nenhuma intensidade nem instante a tolerância cai abaixo de metade', () {
-        expect(p.toleranceFloor, 0.5);
-        for (final r in [0.0, 0.3, 0.72, 0.81, 0.95, 1.0]) {
-          final s = signal(EcoType.plant, r);
-          for (var t = 0.0; t <= 100; t += 0.25) {
-            expect(s.toleranceFactorAt(t), greaterThanOrEqualTo(0.5), reason: 'r=$r t=$t');
+      test('os parâmetros do encolhimento deixaram de existir no balance.json', () {
+        final plant = (((loadJson('assets/data/balance.json')['tuning'] as Map)['signal'] as Map)['plant'] as Map);
+        for (final k in ['tolerance_shrink', 'shrink_over_s', 'tolerance_floor']) {
+          expect(plant.containsKey(k), isFalse, reason: k);
+        }
+      });
+    });
+
+    group('raízes', () {
+      const r = 0.72;
+      final width = lerpRange(p.rootWidth, r);
+
+      test('cada broto finca uma raiz, no instante dele', () {
+        final s = signal(EcoType.plant, r);
+        expect(s.plantRoots.roots, hasLength(s.cues.length));
+        for (var i = 0; i < s.cues.length; i++) {
+          expect(s.plantRoots.roots[i].at, s.cues[i].at);
+        }
+      });
+
+      test('a raiz nasce perto da frequência do sinal no broto (a até root_jitter) e tem a largura de lerp(0,04, 0,10)', () {
+        expect(p.rootWidth, (0.04, 0.10));
+        for (var seed = 0; seed < 20; seed++) {
+          final s = signal(EcoType.plant, r, seed: seed);
+          for (final root in s.plantRoots.roots) {
+            expect((root.center - s.frequencyAt(root.at)).abs(), lessThanOrEqualTo(p.rootJitter + 1e-12));
+            expect(root.halfWidth * 2, closeTo(width, 1e-12));
           }
         }
+        expect(signal(EcoType.plant, 0.2).plantRoots.roots.first.halfWidth * 2, lessThan(signal(EcoType.plant, 1.0).plantRoots.roots.first.halfWidth * 2));
+        expect(signal(EcoType.plant, 1.0).plantRoots.roots.first.halfWidth * 2, closeTo(0.10, 1e-12));
       });
 
-      test('com intensidade 1 a tolerância chega ao piso e fica ali (antes chegava a zero)', () {
-        final s = signal(EcoType.plant, 1.0);
-        expect(p.toleranceShrink * 1.0, greaterThanOrEqualTo(1.0), reason: 'sem piso, o fator iria a zero');
-        expect(s.toleranceFactorAt(p.shrinkOverS), 0.5);
-        expect(s.toleranceFactorAt(60), 0.5);
-      });
-
-      test('mais intensidade, mais encolhimento, até o piso', () {
-        final f = [for (final r in [0.2, 0.4, 0.5]) signal(EcoType.plant, r).toleranceFactorAt(20)];
-        expect(f[0], greaterThan(f[1]));
-        expect(f[1], greaterThan(f[2]));
-        expect(f[2], 0.5, reason: 'com o encolhimento em 1,0 o piso de 0,5 começa na intensidade 0,5');
-        // Acima disso o piso segura: 0,72 e 1,0 param no mesmo ponto.
-        expect(signal(EcoType.plant, 0.72).toleranceFactorAt(20), signal(EcoType.plant, 1.0).toleranceFactorAt(20));
-      });
-
-      test('só a Planta encolhe a tolerância', () {
-        expect(signal(EcoType.fire, 1).toleranceFactorAt(10), 1);
-        expect(signal(EcoType.water, 1).toleranceFactorAt(10), 1);
-      });
-
-      test('com resistência 1 ainda dá para sintonizar: um jogador que acompanha o sinal sela', () {
-        // Sem o piso a tolerância ia a zero em 3 s e nenhum dial estaria alinhado.
-        var sealed = 0;
-        for (var seed = 0; seed < 30; seed++) {
-          final s = makeSession(type: EcoType.plant, playerLevel: 99, ecoLevel: 20, seed: seed);
-          perfectPlayer.play(s);
-          if (s.phase == TuningPhase.success) sealed++;
+      test('as raízes ficam paradas: a faixa de uma raiz não muda enquanto ela existe', () {
+        final s = signal(EcoType.plant, r);
+        final root = s.plantRoots.roots[3];
+        final alive = [for (var t = root.at; t < root.at + 1.0; t += 0.05) if (s.rootsAt(t).contains(root)) t];
+        expect(alive.length, greaterThan(10));
+        for (final t in alive) {
+          final same = s.rootsAt(t).singleWhere((x) => identical(x, root));
+          expect((same.lo, same.hi), (root.lo, root.hi));
         }
-        expect(sealed, greaterThan(15), reason: 'selou só $sealed de 30');
       });
 
-      test('a tolerância efetiva nunca é zero', () {
-        final s = makeSession(type: EcoType.plant, playerLevel: 99, ecoLevel: 20, seed: 1);
-        expect(s.signal.intensity, 1.0);
-        for (var t = 0.0; t < 40; t += 0.5) {
-          expect(s.baseTolerance * s.signal.toleranceFactorAt(t), greaterThan(0.03));
+      test('no máximo lerp(2, 5, intensidade) raízes; a mais antiga some quando passa do limite', () {
+        expect(p.maxRoots, (2.0, 5.0));
+        for (final i in [0.1, 0.5, 0.9, 1.0]) {
+          final s = signal(EcoType.plant, i);
+          final max = lerp(2, 5, i).round();
+          expect(s.plantRoots.maxRoots, max);
+          for (var n = 1; n <= s.cues.length; n++) {
+            final t = s.cues[n - 1].at;
+            final active = s.rootsAt(t);
+            expect(active.length, math.min(n, max), reason: 'i=$i n=$n');
+            expect(active.last, s.plantRoots.roots[n - 1], reason: 'a nova entra');
+            if (n > max) expect(active.first, s.plantRoots.roots[n - max], reason: 'a mais antiga saiu');
+          }
+        }
+        expect(signal(EcoType.plant, 0.05).plantRoots.maxRoots, 2);
+        expect(signal(EcoType.plant, 1.0).plantRoots.maxRoots, 5);
+      });
+
+      test('sem resistência não há raízes', () {
+        final s = signal(EcoType.plant, 0);
+        expect(s.plantRoots.roots, isEmpty);
+        expect(s.rootsAt(10), isEmpty);
+        expect(s.dialInRoot(0.5, 10), isFalse);
+        for (final type in [EcoType.fire, EcoType.water]) {
+          expect(signal(type, 0.9).plantRoots.roots, isEmpty);
+        }
+      });
+
+      test('dialInRoot é verdadeiro dentro da faixa de uma raiz viva e falso fora dela', () {
+        for (var seed = 0; seed < 10; seed++) {
+          final s = signal(EcoType.plant, r, seed: seed);
+          for (var t = 0.0; t < 20; t += 0.37) {
+            for (var d = 0.0; d <= 1.0; d += 0.013) {
+              expect(s.dialInRoot(d, t), s.rootsAt(t).any((x) => x.contains(d)), reason: 'seed=$seed t=$t d=$d');
+            }
+          }
+        }
+        final s = signal(EcoType.plant, r);
+        final root = s.plantRoots.roots[2];
+        final mid = (root.lo + root.hi) / 2;
+        expect(s.dialInRoot(mid, root.at + 0.01), isTrue);
+        expect(s.dialInRoot(root.lo - 0.001, root.at + 0.01) && !s.rootsAt(root.at + 0.01).any((x) => x.contains(root.lo - 0.001)), isFalse);
+        expect(s.dialInRoot(mid, root.at - 0.01) && s.rootsAt(root.at - 0.01).isEmpty, isFalse, reason: 'antes de fincar não vale');
+      });
+
+      test('a deriva e os brotos continuam: o sinal atravessa as raízes', () {
+        var crossing = 0;
+        for (var seed = 0; seed < 30; seed++) {
+          final s = signal(EcoType.plant, 0.81, seed: seed);
+          final inside = [for (var t = 0.0; t < 20; t += 0.05) if (s.dialInRoot(s.frequencyAt(t), t)) t];
+          if (inside.isNotEmpty) crossing++;
+          // O sinal não depende das raízes: segue a fórmula da deriva e dos brotos.
+          for (final t in [1.0, 5.0, 12.0]) {
+            final expected = s.start +
+                b.signal.wanderAmplitude * math.sin(2 * math.pi * t / b.signal.wanderPeriodS + s.wanderPhase) +
+                s.plantDirection * (lerpRange(p.growthPerS, 0.81) * t + lerpRange(p.budStep, 0.81) * s.cues.where((c) => c.at <= t).length);
+            expect(s.frequencyAt(t), closeTo(fold(expected), 1e-9));
+          }
+        }
+        expect(crossing, greaterThan(20), reason: 'o sinal passa por dentro de raízes vivas na maioria das sintonias');
+      });
+
+      test('com o dial dentro de uma raiz a sintonia é interrompida: não alinha, e o progresso cai na taxa normal mesmo com o sinal ali', () {
+        final s = makeSession(type: EcoType.plant, playerLevel: 15, ecoLevel: 17, seed: 3);
+        const dt = 1 / 60;
+        var found = false;
+        while (s.running && s.t < 20 && !found) {
+          final next = s.signal.frequencyAt(s.t + dt);
+          s.step(dt, dial: next);
+          found = s.signal.dialInRoot(s.dial, s.t) && (s.dial - s.targetFrequency).abs() <= s.tolerance;
+        }
+        expect(found, isTrue, reason: 'o sinal precisa passar por dentro de uma raiz');
+        expect(s.aligned, isFalse, reason: 'dial sobre o sinal, dentro da tolerância, mas numa raiz');
+        s.progress = 0.5;
+        final before = s.progress;
+        s.step(dt, dial: s.dial);
+        if (s.signal.dialInRoot(s.dial, s.t)) {
+          expect(s.progress, closeTo(before - b.progressDownPerS * dt, 1e-12), reason: 'taxa normal de queda');
+        }
+        expect(s.progress, lessThan(before));
+        // Fora de qualquer raiz e sobre o sinal, alinha e o progresso sobe.
+        final clear = [for (var d = 0.0; d <= 1.0; d += 0.001) d].firstWhere(
+            (d) => !s.signal.dialInRoot(d, s.t + dt) && (d - s.signal.frequencyAt(s.t + dt)).abs() <= s.tolerance * 0.5,
+            orElse: () => -1);
+        if (clear >= 0) {
+          final p0 = s.progress;
+          s.step(dt, dial: clear);
+          expect(s.aligned, isTrue);
+          expect(s.progress, greaterThan(p0));
         }
       });
     });
@@ -516,9 +728,9 @@ void main() {
       double rate(double r) => lerpRange(p.growthPerS, r);
       double step(double r) => lerpRange(p.budStep, r);
 
-      test('parâmetros: deriva de 0 a 0,03 por segundo e broto de 0 a 0,06', () {
-        expect(p.growthPerS, (0.0, 0.03));
-        expect(p.budStep, (0.0, 0.06));
+      test('parâmetros: deriva de 0 a 0,04 por segundo e broto de 0 a 0,08', () {
+        expect(p.growthPerS, (0.0, 0.04));
+        expect(p.budStep, (0.0, 0.08));
       });
 
       test('sem resistência o sinal é só a deriva de base; com resistência ele cresce', () {
@@ -549,7 +761,7 @@ void main() {
         expect({for (var seed = 0; seed < 40; seed++) signal(EcoType.plant, 0.72, seed: seed).plantDirection}, {-1.0, 1.0});
       });
 
-      test('entre dois pulsos a deriva é contínua, na taxa lerp(0, 0,03, intensidade) por segundo', () {
+      test('entre dois pulsos a deriva é contínua, na taxa lerp(0, 0,04, intensidade) por segundo', () {
         for (final r in [0.3, 0.72, 1.0]) {
           final s = signal(EcoType.plant, r);
           // Os pulsos caem em múltiplos de cue_every_s: entre o começo e o primeiro não há nenhum.
@@ -559,7 +771,7 @@ void main() {
         }
       });
 
-      test('a cada pulso o sinal dá um passo extra lerp(0, 0,06, intensidade) no mesmo sentido', () {
+      test('a cada pulso o sinal dá um passo extra lerp(0, 0,08, intensidade) no mesmo sentido', () {
         for (final r in [0.3, 0.72, 1.0]) {
           final s = signal(EcoType.plant, r);
           expect(s.cues, isNotEmpty);
@@ -692,8 +904,34 @@ void main() {
       for (var i = 0; i < 3; i++) {
         gen.nextFloat(); // fase 2 da Água, fase da maré, sentido da Planta
       }
-      final expected = [for (var i = 0; i < kicks; i++) lerpRange(b.signal.fire.burnU, gen.nextFloat())];
-      expect(signal(EcoType.fire, r, seed: 5).burnUs, expected);
+      final draws = [for (var i = 0; i < kicks; i++) gen.nextFloat()];
+      final s = signal(EcoType.fire, r, seed: 5);
+      final fire = b.signal.fire;
+      expect(s.burnUs, hasLength(kicks));
+      expect(s.burnUs.first, lerpRange(fire.burnU, draws.first), reason: 'a primeira queima não tem fronteira antes dela');
+      for (var i = 0; i < kicks; i++) {
+        // Cada sorteio escolhe um ponto do trecho vivo, à direita da fronteira anterior.
+        final lo = math.max(fire.burnU.$1, i == 0 ? 0.0 : s.fireBoundaryUAt(i - 1, s.kickTimes[i]));
+        final expected = fire.burnU.$2 - lo >= fire.burnMinLiveU ? lerp(lo, fire.burnU.$2, draws[i]) : fire.burnEdgeU;
+        expect(s.burnUs[i], closeTo(expected, 1e-12), reason: 'pico $i');
+      }
+    });
+
+    test('o deslocamento de cada raiz da Planta sai no fim da sequência, depois do sentido da Planta', () {
+      const r = 0.72;
+      final gen = rng(5);
+      for (var i = 0; i < 3; i++) {
+        gen.nextFloat();
+      }
+      for (var i = 0; i < 3; i++) {
+        gen.nextFloat(); // fase 2 da Água, fase da maré, sentido da Planta
+      }
+      final s = signal(EcoType.plant, r, seed: 5);
+      final draws = [for (var i = 0; i < s.cues.length; i++) gen.nextFloat()];
+      for (var i = 0; i < draws.length; i++) {
+        final root = s.plantRoots.roots[i];
+        expect(root.center, closeTo(s.frequencyAt(root.at) + (2 * draws[i] - 1) * b.signal.plant.rootJitter, 1e-12), reason: 'raiz $i');
+      }
     });
 
     test('para a Água e a Planta, os sorteios novos vêm logo depois dos três primeiros', () {

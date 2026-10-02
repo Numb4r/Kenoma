@@ -154,6 +154,7 @@ class TuningGame extends FlameGame with DragCallbacks {
         timeLimit: s.timeLimitS,
         aligned: s.running && s.aligned,
         clock: _clock,
+        scroll: waveScroll(s.t),
         type: setup.type,
         sealLabel: setup.seal.name,
         tonic: setup.tonic != null,
@@ -171,10 +172,8 @@ class TuningGame extends FlameGame with DragCallbacks {
     final t = s.t;
     return TuningFx(
       fire: setup.type == EcoType.fire ? _fire.at(t) : FireFxState.none,
-      foam: setup.type == EcoType.water ? _water.at(t, waveScroll(_clock)) : const [],
-      plant: setup.type == EcoType.plant
-          ? _plant.at(t, target: s.targetFrequency, tolerance: s.tolerance)
-          : PlantFxState.none,
+      foam: setup.type == EcoType.water ? _water.at(t, waveScroll(t)) : const [],
+      plant: setup.type == EcoType.plant ? _plant.at(t) : PlantFxState.none,
       dial: _dialFx,
       dialColor: typeColor(setup.type),
     );

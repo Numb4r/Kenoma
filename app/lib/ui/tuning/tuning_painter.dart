@@ -25,6 +25,7 @@ class TuningView {
     required this.timeLimit,
     required this.aligned,
     required this.clock,
+    required this.scroll,
     required this.type,
     required this.sealLabel,
     required this.tonic,
@@ -43,6 +44,10 @@ class TuningView {
 
   /// Segundos desde a abertura da tela. Só anima.
   final double clock;
+
+  /// Rolagem da onda, a partir do tempo da sintonia (`waveScroll`): a fase da onda e a da queima do
+  /// Fogo vêm do mesmo relógio.
+  final double scroll;
   final EcoType type;
   final String sealLabel;
   final bool tonic;
@@ -135,16 +140,14 @@ void _waves(Canvas canvas, TuningLayout l, TuningView v) {
   canvas.drawLine(Offset(r.left, r.center.dy), Offset(r.right, r.center.dy), _stroke(kPanelLine, 1));
 
   const n = 120;
-  final scroll = waveScroll(v.clock);
+  final scroll = v.scroll;
 
-  // Só os pontos de [from] a [to] (frações da largura) entram no desenho.
-  Path wave(double f, double Function(double theta) shape, {double from = 0, double to = 1}) {
+  // Os pontos de [from] a [to] (frações da largura), com os dois extremos exatos. [theta] dá a fase.
+  Path wave(double Function(double u) theta, double Function(double) shape, {double from = 0, double to = 1}) {
     final p = Path();
     var pen = false;
-    for (var i = 0; i <= n; i++) {
-      final u = i / n;
-      if (u < from || u > to) continue;
-      final pt = waveAt(r, f, u, scroll, shape);
+    void add(double u) {
+      final pt = waveAtTheta(r, u, theta(u), shape);
       if (pen) {
         p.lineTo(pt.dx, pt.dy);
       } else {
@@ -152,6 +155,14 @@ void _waves(Canvas canvas, TuningLayout l, TuningView v) {
         pen = true;
       }
     }
+
+    if (to <= from) return p;
+    add(from);
+    for (var i = 1; i < n; i++) {
+      final u = i / n;
+      if (u > from && u < to) add(u);
+    }
+    add(to);
     return p;
   }
 
@@ -160,24 +171,25 @@ void _waves(Canvas canvas, TuningLayout l, TuningView v) {
   final fx = v.fx;
   final split = v.hidden ? null : fx?.fire.split; // a onda partida entregaria o tipo
   if (split == null) {
-    canvas.drawPath(wave(v.target, triShape), _stroke(signalColor, 3));
+    canvas.drawPath(wave((u) => waveTheta(v.target, u, scroll), triShape), _stroke(signalColor, 3));
   } else {
-    // O Fogo partiu a onda: a real fica à direita da queima, a isca à esquerda. A fronteira é uma
-    // linha vertical, e a isca vira cinza quando a vida acaba.
+    // O Fogo partiu a onda: a real fica à direita da queima e as iscas, cinza desde a queima, à
+    // esquerda. A fronteira é uma linha vertical e rola com a onda.
     final gap = fireGapHalfWidth;
-    final old = split.retired;
-    if (old != null && old.since < fireRetireFadeS) {
-      canvas.drawPath(wave(old.frequency, triShape, to: old.burnU - gap),
-          _stroke(kDim.withValues(alpha: 1 - old.since / fireRetireFadeS), 3));
+    final real = split.real;
+    for (final s in split.segments) {
+      final from = s.fromU > 0 ? s.fromU + gap : 0.0;
+      final to = s.real ? 1.0 : s.toU - gap;
+      canvas.drawPath(wave(s.thetaAt, triShape, from: from, to: to), _stroke(s.real ? kSignal : kDim, 3));
+      if (!s.real && s.toU > 0) {
+        final x = r.left + r.width * s.toU;
+        final latest = (s.toU - real.fromU).abs() < 1e-9;
+        if (latest) canvas.drawLine(Offset(x, r.top), Offset(x, r.bottom), _stroke(kEssence.withValues(alpha: 0.35), 6));
+        canvas.drawLine(Offset(x, r.top), Offset(x, r.bottom), _stroke(latest ? kEssence : kDim, latest ? 2 : 1));
+      }
     }
-    canvas.drawPath(wave(split.decoyFrequency, triShape, to: split.burnU - gap),
-        _stroke(split.decoyAlive ? kSignal : kDim, 3));
-    canvas.drawPath(wave(v.target, triShape, from: split.burnU + gap), _stroke(kSignal, 3));
-    final x = r.left + r.width * split.burnU;
-    canvas.drawLine(Offset(x, r.top), Offset(x, r.bottom), _stroke(kEssence.withValues(alpha: 0.35), 6));
-    canvas.drawLine(Offset(x, r.top), Offset(x, r.bottom), _stroke(kEssence, 2));
   }
-  canvas.drawPath(wave(v.dial, math.sin), _stroke(kVeil, 3));
+  canvas.drawPath(wave((u) => waveTheta(v.dial, u, scroll), math.sin), _stroke(kVeil, 3));
   if (fx != null) paintWaveFx(canvas, r, v.target, scroll, fx);
 }
 

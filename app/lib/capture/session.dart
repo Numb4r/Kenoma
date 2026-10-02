@@ -49,12 +49,12 @@ class TuningSession {
 
   bool get running => phase == TuningPhase.running;
   double get targetFrequency => signal.frequencyAt(t);
-  /// Tolerância agora: a do selo, vezes o fator da Planta (que tem piso), vezes o do sobrenível
-  /// (que tem o piso dele, aplicado depois).
-  double get tolerance => baseTolerance * signal.toleranceFactorAt(t) * _overlevelTolerance;
+  /// Tolerância agora: a do selo vezes a do sobrenível (que tem o piso dele).
+  double get tolerance => baseTolerance * _overlevelTolerance;
 
-  /// Alinhado quando `|f_p − f_t| ≤ tolerância`.
-  bool get aligned => (dial - targetFrequency).abs() <= tolerance;
+  /// Alinhado quando `|f_p − f_t| ≤ tolerância` e o dial não está dentro de uma raiz da Planta: com o
+  /// dial numa raiz a sintonia é interrompida, mesmo que o sinal esteja ali.
+  bool get aligned => (dial - targetFrequency).abs() <= tolerance && !signal.dialInRoot(dial, t);
   double get timeRemaining => (timeLimitS - t).clamp(0.0, timeLimitS);
 
   /// Avança [dt] segundos com o dial em [dial]. Devolve as vibrações de resistência do intervalo.

@@ -41,10 +41,12 @@ class FireBalance {
       : intervalS = _range(j['interval_s']),
         kick = _range(j['kick']),
         glideS = _range(j['glide_s']),
-        decoyS = _range(j['decoy_s']),
         decoyCounterFrom = _d(j['decoy_counter_from']),
         decoyCounter = _d(j['decoy_counter']),
         burnU = _range(j['burn_u']),
+        burnEdgeU = _d(j['burn_edge_u']),
+        burnMinLiveU = _d(j['burn_min_live_u']),
+        boundaryUPerS = _d(j['boundary_u_per_s']),
         warningLeadS = _range(j['warning_lead_s']);
 
   /// Intervalo médio entre picos, em segundos.
@@ -53,11 +55,8 @@ class FireBalance {
   /// Tamanho do salto da onda real, em fração do eixo de frequência.
   final Range2 kick;
 
-  /// Tempo que a onda real leva para deslizar até a nova frequência (suavizado). O salto é permanente.
+  /// Tempo que o trecho novo leva para deslizar até a nova frequência (suavizado). O salto é permanente.
   final Range2 glideS;
-
-  /// Tempo que a isca vive na frequência antiga antes de virar cinza.
-  final Range2 decoyS;
 
   /// Acima desta intensidade a isca também desliza, no sentido oposto ao da real.
   final double decoyCounterFrom;
@@ -65,8 +64,19 @@ class FireBalance {
   /// Quanto a isca desliza para o lado oposto, em fração do salto da real.
   final double decoyCounter;
 
-  /// Faixa da posição da queima na onda, em fração da largura. A real fica à direita dela.
+  /// Faixa da posição da queima na tela, em fração da largura, quando há espaço vivo para sortear.
+  /// A queima sempre cai no trecho vivo, à direita da última fronteira.
   final Range2 burnU;
+
+  /// Posição da queima quando o trecho vivo visível é curto demais: o ponto mais à direita possível.
+  final double burnEdgeU;
+
+  /// Largura mínima do trecho vivo (entre a última fronteira e o fim de [burnU]) para sortear a queima.
+  final double burnMinLiveU;
+
+  /// Velocidade com que a fronteira e o trecho cinza rolam para a esquerda, em largura de tela por
+  /// segundo. A isca acaba quando sai da tela.
+  final double boundaryUPerS;
 
   /// A vibração de aviso e a brasa acendem este tempo antes do pico. Com mais intensidade, menos antecedência.
   final Range2 warningLeadS;
@@ -104,23 +114,17 @@ class WaterBalance {
 
 class PlantBalance {
   PlantBalance(Map<String, dynamic> j)
-      : toleranceShrink = _d(j['tolerance_shrink']),
-        shrinkOverS = _d(j['shrink_over_s']),
-        toleranceFloor = _d(j['tolerance_floor']),
+      : pulseOverS = _d(j['pulse_over_s']),
         growthPerS = _range(j['growth_per_s']),
         budStep = _range(j['bud_step']),
         cueEveryS = _d(j['cue_every_s']),
-        pulseMs = _range(j['pulse_ms']);
+        pulseMs = _range(j['pulse_ms']),
+        rootWidth = _range(j['root_width']),
+        maxRoots = _range(j['max_roots']),
+        rootJitter = _d(j['root_jitter']);
 
-  /// Fração da tolerância perdida quando o encolhimento termina, com intensidade 1.
-  final double toleranceShrink;
-
-  /// Tempo que a tolerância leva para encolher até o mínimo.
-  final double shrinkOverS;
-
-  /// Menor fração da tolerância que sobra. Sem piso, com resistência 1 a tolerância chegava a zero
-  /// e a captura ficava impossível.
-  final double toleranceFloor;
+  /// Tempo que o pulso de vibração leva para encurtar do tamanho inicial ao final.
+  final double pulseOverS;
 
   /// Deriva do sinal, em fração do eixo por segundo, no sentido sorteado.
   final Range2 growthPerS;
@@ -131,6 +135,16 @@ class PlantBalance {
 
   /// Duração do pulso de vibração no início e no fim do tempo.
   final Range2 pulseMs;
+
+  /// Largura de cada raiz, em fração do eixo do dial.
+  final Range2 rootWidth;
+
+  /// Quantas raízes existem ao mesmo tempo: a mais antiga some quando passa do limite.
+  final Range2 maxRoots;
+
+  /// A raiz nasce perto da frequência do sinal no broto: o centro dela cai até esta distância (fração
+  /// do eixo) para cada lado.
+  final double rootJitter;
 }
 
 class SignalBalance {

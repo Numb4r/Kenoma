@@ -46,3 +46,28 @@ double hash01(int a, int b) {
 
 /// Mistura linear de [r.$1] a [r.$2].
 double lerpPair((double, double) r, double t) => r.$1 + (r.$2 - r.$1) * t;
+
+/// Um trecho da onda, preso à fronteira da queima: o desenho anda com ela. A fase em [u] é
+/// `2π × ciclos(frequência) × (u − anchorU) + phase`.
+class WaveSegment {
+  const WaveSegment({
+    required this.fromU,
+    required this.toU,
+    required this.frequency,
+    required this.anchorU,
+    required this.phase,
+    required this.real,
+  });
+
+  /// Trecho visível, em fração da largura.
+  final double fromU;
+  final double toU;
+  final double frequency;
+  final double anchorU;
+  final double phase;
+
+  /// Verdadeiro na onda real (a da direita). Falso nas iscas, que ficam cinza.
+  final bool real;
+
+  double thetaAt(double u) => 2 * math.pi * waveCycles(frequency) * (u - anchorU) + phase;
+}

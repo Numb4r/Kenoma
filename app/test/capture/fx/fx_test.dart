@@ -52,6 +52,7 @@ void main() {
     final kick = s.kickTimes.first;
     final burn = s.burnUs.first;
     final lead = s.fireWarningLeadS;
+    final speed = loadTuningBalance().signal.fire.boundaryUPerS;
 
     test('sem resistência não há efeito', () {
       final calm = FireFx(signal(EcoType.fire, 0));
@@ -65,13 +66,14 @@ void main() {
       expect(fx.at(kick - lead - 0.05).split, isNull);
     });
 
-    test('a brasa acende no instante do aviso, no ponto de queima que o sinal dá, e sobe até o pico', () {
+    test('a brasa acende no instante do aviso no ponto da onda que chegará à queima, rola com ela e sobe até o pico', () {
       final warn = s.cues.firstWhere((c) => c.kind == CueKind.fireWarning).at;
       expect(warn, closeTo(kick - lead, 1e-9));
       final start = fx.at(warn + 1e-6).embers.single;
       final late = fx.at(kick - 1e-6).embers.single;
-      expect(start.u, burn);
-      expect(late.u, burn);
+      expect(start.u, closeTo(burn + speed * lead, 1e-4), reason: 'mais à direita: o ponto ainda não rolou até a queima');
+      expect(late.u, closeTo(burn, 1e-4), reason: 'no pico a brasa está na queima');
+      expect(start.u, greaterThan(late.u), reason: 'rola para a esquerda');
       expect(start.glow, lessThan(0.05));
       expect(late.glow, greaterThan(0.95));
     });
@@ -79,11 +81,11 @@ void main() {
     test('no pico a chama queima o ponto da brasa, a brasa some e a fronteira é a queima', () {
       final st = fx.at(kick + fireBurnS / 2);
       expect(st.embers, isEmpty);
-      expect(st.flames.single.u, burn);
-      expect(st.split!.burnU, burn);
+      expect(st.flames.single.u, closeTo(burn - speed * fireBurnS / 2, 1e-9), reason: 'a chama rola com a fronteira');
+      expect(st.split!.boundaryU, closeTo(burn - speed * fireBurnS / 2, 1e-9));
     });
 
-    test('as cinzas sobem depois da chama e acabam; a fronteira fica até o próximo pico', () {
+    test('as cinzas sobem depois da chama e acabam; a fronteira fica até sair da tela', () {
       final st = fx.at(kick + fireBurnS + fireAshS / 2);
       expect(st.flames, isEmpty);
       expect(st.ashes.single.particles, hasLength(fireAshCount));
@@ -91,13 +93,13 @@ void main() {
       final slowFx = FireFx(slow);
       final k = slow.kickTimes;
       final after = k[0] + fireBurnS + fireAshS + 0.01;
-      expect(k[1] - lead, greaterThan(after));
+      expect(k[1] - slow.fireWarningLeadS, greaterThan(after));
       final end = slowFx.at(after);
       expect(end.ashes, isEmpty);
       expect(end.flames, isEmpty);
       expect(end.embers, isEmpty);
-      expect(end.split!.burnU, slow.burnUs[0], reason: 'a fronteira continua marcando onde a real começa');
-      expect(slowFx.at(k[1] + 0.01).split!.burnU, slow.burnUs[1], reason: 'um pico novo muda a fronteira');
+      expect(end.split!.boundaryU, closeTo(slow.burnUs[0] - speed * (after - k[0]), 1e-9));
+      expect(slowFx.at(k[1] + 0.01).split!.index, 1, reason: 'um pico novo muda a fronteira');
     });
 
     test('a intensidade controla o tamanho da chama', () {
@@ -201,52 +203,48 @@ void main() {
     final s = signal(EcoType.plant, 0.8);
     final fx = PlantFx(s);
     final buds = [for (final c in s.cues) if (c.kind == CueKind.plantPulse) c.at];
-    final b = loadTuningBalance();
-
-    PlantFxState at(double t, {double base = 0.1}) =>
-        fx.at(t, target: 0.5, tolerance: base * s.toleranceFactorAt(t));
 
     test('uma folha nasce a cada broto, crescendo até o tamanho cheio', () {
-      expect(at(buds.first - 0.01).leaves, isEmpty);
-      expect(at(buds.first + 0.01).leaves, hasLength(1));
-      expect(at(buds.first + 0.01).leaves.single.size, lessThan(0.2));
-      expect(at(buds.first + plantLeafGrowS + 0.01).leaves.single.size, 1);
+      expect(fx.at(buds.first - 0.01).leaves, isEmpty);
+      expect(fx.at(buds.first + 0.01).leaves, hasLength(1));
+      expect(fx.at(buds.first + 0.01).leaves.single.size, lessThan(0.2));
+      expect(fx.at(buds.first + plantLeafGrowS + 0.01).leaves.single.size, 1);
       for (var i = 0; i < 6; i++) {
-        expect(at(buds[i] + 0.001).leaves, hasLength(i + 1));
+        expect(fx.at(buds[i] + 0.001).leaves, hasLength(i + 1));
       }
-      expect(at(buds[3] + 0.001).leaves.map((l) => l.u).toSet(), hasLength(4), reason: 'cada folha no seu ponto');
+      expect(fx.at(buds[3] + 0.001).leaves.map((l) => l.u).toSet(), hasLength(4), reason: 'cada folha no seu ponto');
     });
 
     test('no máximo plantMaxLeaves folhas', () {
-      expect(at(buds.last + 1).leaves.length, lessThanOrEqualTo(plantMaxLeaves));
+      expect(fx.at(buds.last + 1).leaves.length, lessThanOrEqualTo(plantMaxLeaves));
     });
 
-    test('as raízes crescem na mesma proporção em que a janela fecha', () {
-      expect(at(0).roots, isEmpty);
-      expect(at(0).closed, 0);
-      for (final t in [0.5, 1.0, 2.0, 3.0, 10.0]) {
-        final st = at(t);
-        final expected = ((1 - s.toleranceFactorAt(t)) / (1 - b.signal.plant.toleranceFloor)).clamp(0.0, 1.0);
-        expect(st.closed, closeTo(expected, 1e-12));
-        // A raiz ocupa exatamente o que a janela já perdeu: da borda original à borda de agora.
-        final lo = st.roots.first;
-        final tolNow = 0.1 * s.toleranceFactorAt(t);
-        expect(lo.fromF, closeTo((0.5 - 0.1).clamp(0.0, 1.0), 1e-12));
-        expect(lo.toF, closeTo(0.5 - tolNow, 1e-12));
-        expect(st.roots.last.toF, closeTo(0.5 + tolNow, 1e-12));
+    test('as raízes desenhadas são as do sinal: mesma faixa, e crescem logo depois de fincadas', () {
+      expect(fx.at(buds.first - 0.01).roots, isEmpty);
+      for (var n = 1; n <= 8; n++) {
+        final t = buds[n - 1] + 0.001;
+        final shown = fx.at(t).roots;
+        final live = s.rootsAt(t);
+        expect(shown, hasLength(live.length));
+        for (var i = 0; i < live.length; i++) {
+          expect((shown[i].lo, shown[i].hi), (live[i].lo, live[i].hi));
+        }
+        expect(shown.last.growth, lessThan(0.1), reason: 'a recém-fincada ainda cresce');
       }
-      expect(at(3.0).closed, greaterThan(at(1.0).closed));
-      expect(at(1.0).closed, greaterThan(at(0.3).closed));
+      final t = buds[3] + plantRootGrowS + 0.01;
+      expect(fx.at(t).roots.last.growth, 1);
     });
 
-    test('a janela fechada no piso deixa as raízes completas', () {
-      expect(at(20).closed, 1);
-      expect(at(20).roots.first.branches.length, plantMaxBranches);
+    test('as raízes ficam paradas: a mesma raiz tem a mesma faixa e os mesmos ramos ao longo do tempo', () {
+      final a = fx.at(buds[4] + 0.5).roots.last;
+      final b = fx.at(buds[4] + 1.0).roots.firstWhere((r) => r.lo == a.lo);
+      expect((a.lo, a.hi), (b.lo, b.hi));
+      expect([for (final x in a.branches) (x.along, x.length, x.side)], [for (final x in b.branches) (x.along, x.length, x.side)]);
     });
 
     test('sem resistência não há folhas nem raízes', () {
       final calm = PlantFx(signal(EcoType.plant, 0));
-      final st = calm.at(5, target: 0.5, tolerance: 0.1);
+      final st = calm.at(5);
       expect(st.leaves, isEmpty);
       expect(st.roots, isEmpty);
     });

@@ -4,8 +4,9 @@ import 'dart:ui' as ui;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/capture/eco_type.dart';
 import 'package:kenoma/capture/fx/dial_fx.dart';
+import 'package:kenoma/capture/fire_wave.dart';
 import 'package:kenoma/capture/fx/fire_fx.dart';
-import 'package:kenoma/capture/signal.dart';
+import 'package:kenoma/capture/fx/wave_geometry.dart';
 import 'package:kenoma/ui/colors.dart';
 import 'package:kenoma/ui/sprites/sprite_image.dart';
 import 'package:kenoma/ui/tuning/fx_painter.dart';
@@ -21,6 +22,7 @@ TuningView view({double progress = 0.5, bool aligned = false, bool showTarget = 
       timeLimit: 20,
       aligned: aligned,
       clock: 2.0,
+      scroll: 0.0,
       type: type,
       sealLabel: 'Selo simples',
       tonic: true,
@@ -29,12 +31,24 @@ TuningView view({double progress = 0.5, bool aligned = false, bool showTarget = 
       fx: fx,
     );
 
-/// Fogo com a onda partida em [burnU]. [life] é a vida da isca (0 = cinza).
-TuningFx splitFx({double burnU = 0.5, double life = 1, RetiredDecoy? retired}) => TuningFx(
+/// Fogo com a onda partida em [burnU]: a real à direita, a isca cinza à esquerda e, com
+/// [olderDecoys], mais um trecho cinza antigo, ainda na tela, à esquerda dela.
+TuningFx splitFx({double burnU = 0.5, bool olderDecoys = false}) => TuningFx(
       dial: DialFx(),
       dialColor: kSignal,
       fire: FireFxState(
-        split: FireSplit(index: 0, burnU: burnU, since: 0.5, decoyFrequency: 0.3, decoyLife: life, retired: retired),
+        split: FireSplit(
+          index: 0,
+          since: 0.5,
+          boundaryU: burnU,
+          decoyFrequency: 0.3,
+          decoyLife: 1,
+          segments: [
+            WaveSegment(fromU: burnU, toU: 1, frequency: 0.7, anchorU: burnU, phase: 0, real: true),
+            WaveSegment(fromU: olderDecoys ? 0.2 : 0, toU: burnU, frequency: 0.3, anchorU: burnU, phase: 0, real: false),
+            if (olderDecoys) const WaveSegment(fromU: 0, toU: 0.2, frequency: 0.5, anchorU: 0.2, phase: 1, real: false),
+          ],
+        ),
       ),
     );
 
@@ -87,29 +101,25 @@ void main() {
     });
   });
 
-  testWidgets('Fogo partido: a fronteira da queima é uma linha vertical e a isca morta fica cinza', (tester) async {
+  testWidgets('Fogo partido: a fronteira da queima é uma linha vertical e a isca é cinza desde a queima', (tester) async {
     await tester.runAsync(() async {
       final sprite = await EcoSprite.load('soot.eco');
       final plain = await render(view(), sprite);
-      final alive = await render(view(fx: splitFx()), sprite);
-      final dead = await render(view(fx: splitFx(life: 0)), sprite);
-      expect(count(alive, kEssence), greaterThan(count(plain, kEssence) + 100), reason: 'a linha da queima corta o painel');
-      expect(count(dead, kDim), greaterThan(count(alive, kDim)), reason: 'isca morta: cinza');
-      expect(count(dead, kSignal), lessThan(count(alive, kSignal)), reason: 'isca viva: ciano');
-      expect(alive, isNot(plain));
+      final split = await render(view(fx: splitFx()), sprite);
+      expect(count(split, kEssence), greaterThan(count(plain, kEssence) + 100), reason: 'a linha da queima corta o painel');
+      expect(count(split, kDim), greaterThan(count(plain, kDim)), reason: 'o trecho da esquerda é cinza, não ciano');
+      expect(count(split, kSignal), lessThan(count(plain, kSignal)), reason: 'só o trecho da direita é ciano');
+      expect(split, isNot(plain));
     });
   });
 
-  testWidgets('a isca aposentada por um pico novo aparece cinza e some depois do fade', (tester) async {
+  testWidgets('a isca antiga que ainda está na tela também é cinza e tem a fronteira dela', (tester) async {
     await tester.runAsync(() async {
       final sprite = await EcoSprite.load('soot.eco');
-      const fresh = RetiredDecoy(0.7, 0.2, 0);
-      const gone = RetiredDecoy(0.7, 0.2, 2.0);
-      final with0 = await render(view(fx: splitFx(life: 0, retired: fresh)), sprite);
-      final without = await render(view(fx: splitFx(life: 0)), sprite);
-      final faded = await render(view(fx: splitFx(life: 0, retired: gone)), sprite);
-      expect(count(with0, kDim), greaterThan(count(without, kDim)));
-      expect(faded, without);
+      final one = await render(view(fx: splitFx()), sprite);
+      final two = await render(view(fx: splitFx(olderDecoys: true)), sprite);
+      expect(count(two, kDim), greaterThan(count(one, kDim)));
+      expect(two, isNot(one));
     });
   });
 

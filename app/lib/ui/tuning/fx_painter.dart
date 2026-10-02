@@ -57,21 +57,31 @@ Offset waveAt(Rect r, double f, double u, double scroll, double Function(double)
   return Offset(r.left + r.width * u, r.center.dy - amp * waveEnvelope(u) * shape(waveTheta(f, u, scroll)));
 }
 
+/// A onda no ponto [u] do painel [r], com a fase [theta].
+Offset waveAtTheta(Rect r, double u, double theta, double Function(double) shape) {
+  final amp = r.height * 0.34;
+  return Offset(r.left + r.width * u, r.center.dy - amp * waveEnvelope(u) * shape(theta));
+}
+
 /// Efeitos do Fogo, da Água e da Planta sobre a onda. [f] é a frequência do sinal na tela.
 void paintWaveFx(Canvas canvas, Rect r, double f, double scroll, TuningFx fx) {
   final amp = r.height * 0.34;
+  // Depois da primeira queima a onda real é a do trecho da direita, presa à fronteira.
+  final real = fx.fire.split?.real;
+  double theta(double u) => real?.thetaAt(u) ?? waveTheta(f, u, scroll);
+  Offset onWave(double u) => waveAtTheta(r, u, theta(u), triShape);
   for (final e in fx.fire.embers) {
-    final at = waveAt(r, f, e.u, scroll, triShape);
+    final at = onWave(e.u);
     final radius = 3 + 6 * e.glow;
     canvas.drawCircle(at, radius + 3, _fill(_ember.withValues(alpha: 0.25 * e.glow)));
     canvas.drawCircle(at, radius, _fill(_ember));
     canvas.drawCircle(at, radius * 0.45, _fill(_flameCore));
   }
   for (final fl in fx.fire.flames) {
-    _flame(canvas, waveAt(r, f, fl.u, scroll, triShape), fl.height * amp, fl.halfWidth * r.width);
+    _flame(canvas, onWave(fl.u), fl.height * amp, fl.halfWidth * r.width);
   }
   for (final a in fx.fire.ashes) {
-    final base = waveAt(r, f, a.u, scroll, triShape);
+    final base = onWave(a.u);
     for (final p in a.particles) {
       final s = 2 + 3 * p.size;
       canvas.drawRect(
@@ -136,21 +146,22 @@ void _leafShape(Canvas canvas, Offset at, double size, double side, double panel
   canvas.drawLine(at, tip, _stroke(_leafDark, 2));
 }
 
-/// Raízes da Planta nas bordas da janela de alinhamento, na borda do dial.
+/// Raízes da Planta fincadas no dial, cada uma na faixa fixa dela. O dial dentro de uma raiz não alinha.
 void paintRoots(Canvas canvas, TuningLayout l, PlantFxState plant) {
   final c = l.dialCenter;
   final rad = l.dialRadius;
   for (final root in plant.roots) {
-    final a0 = dialAngle(root.fromF);
-    final a1 = dialAngle(root.toF);
+    final a0 = dialAngle(root.lo);
+    final a1 = dialAngle(root.hi);
     final main = Rect.fromCircle(center: c, radius: rad - 4);
-    canvas.drawArc(main, math.min(a0, a1), (a1 - a0).abs(), false, _stroke(_root, 3));
+    canvas.drawArc(main, a0, a1 - a0, false, _stroke(_root.withValues(alpha: 0.35), 12));
+    canvas.drawArc(main, a0, a1 - a0, false, _stroke(_root, 3));
     for (final b in root.branches) {
       final a = a0 + (a1 - a0) * b.along;
       final dir = Offset(math.cos(a), math.sin(a));
       final tangent = Offset(-dir.dy, dir.dx) * b.side * 0.5;
       final from = c + dir * (rad - 4);
-      canvas.drawLine(from, from - (dir - tangent) * (6 + 14 * b.length), _stroke(_root, 2));
+      canvas.drawLine(from, from - (dir - tangent) * ((6 + 14 * b.length) * root.growth), _stroke(_root, 2));
     }
   }
 }

@@ -1,10 +1,12 @@
-/// Efeito do Fogo na onda: brasa no aviso, chama no pico e cinzas. A fronteira da queima e as duas
-/// ondas (real à direita, isca à esquerda) vêm de `TargetSignal.fireSplitAt`.
+/// Efeito do Fogo na onda: brasa no aviso, chama no pico e cinzas. A fronteira da queima e os
+/// trechos (real à direita, iscas cinza à esquerda) vêm de `TargetSignal.fireSplitAt`. Os efeitos
+/// rolam para a esquerda com a onda, na velocidade da fronteira.
 /// Sabe onde e quando; quem desenha só pinta o que vem daqui.
 library;
 
 import 'dart:math' as math;
 
+import '../fire_wave.dart';
 import '../signal.dart';
 import 'fx_params.dart';
 import 'particle.dart';
@@ -52,14 +54,12 @@ class FireFxState {
 
 class FireFx {
   FireFx(this.signal)
-      : _kicks = signal.kickTimes,
-        _burns = signal.burnUs,
-        _lead = signal.fireWarningLeadS;
+      : _lead = signal.fireWarningLeadS,
+        _speed = signal.balance.signal.fire.boundaryUPerS;
 
   final TargetSignal signal;
-  final List<double> _kicks;
-  final List<double> _burns;
   final double _lead;
+  final double _speed;
 
   /// O que desenhar no instante [t] da sintonia.
   FireFxState at(double t) {
@@ -67,23 +67,26 @@ class FireFx {
     final flames = <FlameFx>[];
     final ashes = <AshFx>[];
     final halfW = lerpPair(fireFlameHalfWidth, signal.intensity);
-    for (var i = 0; i < _kicks.length; i++) {
-      final age = t - _kicks[i];
+    final kicks = signal.fire.kicks;
+    for (var i = 0; i < kicks.length; i++) {
+      final age = t - kicks[i].at;
       if (age > fireBurnS + fireAshS) continue;
       if (age < -_lead) break; // os picos vêm em ordem
-      final u = _burns[i];
       if (age < 0) {
-        embers.add(EmberFx(u, (1 + age / _lead).clamp(0.0, 1.0)));
-      } else {
-        if (age < fireBurnS) {
-          final p = age / fireBurnS;
-          // A chama sobe depressa e baixa devagar. A intensidade manda no tamanho.
-          final h = lerpPair(fireFlameHeight, signal.intensity) * math.pow(math.sin(math.pi * math.pow(p, 0.6)), 0.8);
-          flames.add(FlameFx(u, h.toDouble(), halfW));
-        }
-        final p = (age / (fireBurnS + fireAshS)).clamp(0.0, 1.0);
-        ashes.add(AshFx(u, _ash(i, p, halfW)));
+        // A brasa fica no ponto da onda que chegará à queima, e rola com ela.
+        embers.add(EmberFx(kicks[i].burnU + _speed * (-age), (1 + age / _lead).clamp(0.0, 1.0)));
+        continue;
       }
+      final u = signal.fireBoundaryUAt(i, t);
+      if (u <= 0) continue; // já saiu da tela
+      if (age < fireBurnS) {
+        final p = age / fireBurnS;
+        // A chama sobe depressa e baixa devagar. A intensidade manda no tamanho.
+        final h = lerpPair(fireFlameHeight, signal.intensity) * math.pow(math.sin(math.pi * math.pow(p, 0.6)), 0.8);
+        flames.add(FlameFx(u, h.toDouble(), halfW));
+      }
+      final p = (age / (fireBurnS + fireAshS)).clamp(0.0, 1.0);
+      ashes.add(AshFx(u, _ash(i, p, halfW)));
     }
     return FireFxState(embers: embers, flames: flames, ashes: ashes, split: signal.fireSplitAt(t));
   }
