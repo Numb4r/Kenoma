@@ -29,6 +29,7 @@ class ReferencePlayer {
     this.overshootChance = 0,
     this.overshootFraction = 0.4,
     this.tremorRandomPhase = false,
+    this.avoidsRoots = true,
   });
 
   /// Tempo que o jogador leva para descobrir para que lado girar o dial no começo.
@@ -53,7 +54,41 @@ class ReferencePlayer {
   /// O tremor tem duas componentes (1,3 Hz e 2,9 Hz, 60% e 40% da amplitude) com fases sorteadas por
   /// sintonia, então nunca passa de ±[tremorAmp]. Falso: uma senoide de fase 0, como sempre.
   final bool tremorRandomPhase;
+
+  /// As raízes da Planta estão desenhadas no dial, então o jogador as vê. Com o sinal dentro de uma
+  /// (ou de várias que se sobrepõem), mira o ponto livre mais perto dele e não fica sentado em cima.
+  /// Atravessar uma raiz de passagem custa quase nada, então o dial não desvia delas no caminho.
+  final bool avoidsRoots;
   static const double dt = 1 / 60;
+  static const double _rootMargin = 0.004;
+
+  /// O ponto livre de raízes mais perto de [aim] em [t]: o próprio [aim] se ele já está livre.
+  double _freeAim(TuningSession s, double aim) {
+    final roots = s.signal.rootsAt(s.t);
+    if (roots.isEmpty) return aim;
+    final bands = [for (final r in roots) (r.lo - _rootMargin, r.hi + _rootMargin)]..sort((a, b) => a.$1.compareTo(b.$1));
+    var from = bands.first.$1;
+    var to = bands.first.$2;
+    final merged = <(double, double)>[];
+    for (final b in bands.skip(1)) {
+      if (b.$1 <= to) {
+        to = math.max(to, b.$2);
+      } else {
+        merged.add((from, to));
+        from = b.$1;
+        to = b.$2;
+      }
+    }
+    merged.add((from, to));
+    for (final (lo, hi) in merged) {
+      if (aim > lo && aim < hi) {
+        if (lo <= 0) return hi.clamp(0.0, 1.0);
+        if (hi >= 1) return lo;
+        return aim - lo <= hi - aim ? lo : hi;
+      }
+    }
+    return aim;
+  }
 
   /// Joga a sessão até o fim e devolve o instante em que terminou. [seed] sorteia quais correções
   /// passam do ponto, então cada sintonia simulada tem a sua.
@@ -89,7 +124,8 @@ class ReferencePlayer {
         }
       }
       if (s.t >= startDelayS) {
-        final err = aim - dial;
+        final goal = avoidsRoots ? _freeAim(s, aim) : aim;
+        final err = goal - dial;
         dial += err.sign * math.min(err.abs() * 8, maxSpeed) * dt;
       }
       final output = dial + tremor(s.t);

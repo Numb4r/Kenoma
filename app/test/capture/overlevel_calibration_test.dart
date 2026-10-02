@@ -91,7 +91,7 @@ void main() {
       }
     });
 
-    test('meta típico, gap 5: 70 a 85%', skip: 'NÃO ATINGIDA: mede ~94,5%. Com a onda partida o típico sela o Fogo 100% no gap 5 (antes ~77%): o salto máximo do Fogo teve de cair para 0,32 para o perfeito forte ficar em 10 a 15 s', () {
+    test('meta típico, gap 5: 70 a 85%', skip: 'NÃO ATINGIDA: mede ~90,6%. Com a onda partida o típico sela o Fogo 100% no gap 5 (antes ~77%): o salto máximo do Fogo teve de cair para 0,32 para o perfeito forte ficar em 10 a 15 s', () {
       expect(cell('típico', 5).mean, inInclusiveRange(70, 90), reason: '${cell('típico', 5)}');
     });
 

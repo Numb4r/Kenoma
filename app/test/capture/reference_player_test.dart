@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/capture/eco_type.dart';
+import 'package:kenoma/capture/session.dart';
 
 import '../support/reference_player.dart';
 
@@ -136,5 +137,41 @@ void main() {
     expect(bot.retargetThreshold, 0);
     expect(bot.overshootChance, 0);
     expect(bot.tremorRandomPhase, isFalse);
+  });
+
+  group('raízes da Planta', () {
+    /// Fração dos quadros com o dial dentro de uma raiz, em 50 sintonias fortes.
+    double inRoot(ReferencePlayer bot) {
+      var inside = 0, total = 0;
+      for (var seed = 0; seed < 50; seed++) {
+        final s = makeSession(type: EcoType.plant, playerLevel: 15, ecoLevel: 17, seed: seed);
+        bot.play(s, seed: seed, onStep: (t, dial) {
+          total++;
+          if (s.signal.dialInRoot(dial, t)) inside++;
+        });
+      }
+      return inside / total;
+    }
+
+    test('o jogador de referência vê as raízes e sai de dentro delas', () {
+      const blind = ReferencePlayer(startDelayS: 0.3, reactionS: 0.2, maxSpeed: 3, tremorAmp: 0, avoidsRoots: false);
+      expect(perfectPlayer.avoidsRoots, isTrue);
+      expect(typicalPlayer.avoidsRoots, isTrue);
+      // Mesmo vendo, ele só reage 0,2 s depois de a raiz nascer em cima do sinal (~23% do tempo dentro);
+      // sem ver, fica sentado nelas (~52%).
+      final aware = inRoot(perfectPlayer);
+      final unaware = inRoot(blind);
+      expect(aware, lessThan(unaware * 0.6), reason: 'vendo: $aware, sem ver: $unaware');
+      expect(aware, lessThan(0.3));
+    });
+
+    test('sem raízes (fora da Planta ou sem resistência) o jogador se comporta como sempre', () {
+      for (final type in EcoType.values) {
+        final a = makeSession(type: type, playerLevel: 1, ecoLevel: 1, seed: 4);
+        final b = makeSession(type: type, playerLevel: 1, ecoLevel: 1, seed: 4);
+        expect(perfectPlayer.play(a), const ReferencePlayer(startDelayS: 0.3, reactionS: 0.2, maxSpeed: 3, tremorAmp: 0, avoidsRoots: false).play(b));
+        expect(a.phase, TuningPhase.success);
+      }
+    });
   });
 }
