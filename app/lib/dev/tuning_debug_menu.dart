@@ -1,4 +1,5 @@
-/// Menu de debug do M3: escolhe o Eco, os níveis, o selo e o tônico e abre a sintonia.
+/// Menu de debug: abre o mapa (M4) em qualquer coordenada e a sintonia (M3), escolhendo o Eco, os níveis,
+/// o selo e o tônico. Fica em todas as builds de teste, inclusive as de release (CLAUDE.md).
 library;
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import '../capture/vibe.dart';
 import '../data/session_log_store.dart';
 import '../data/tuning_data.dart';
 import '../ui/colors.dart';
+import '../ui/map/map_screen.dart';
 import '../ui/sprites/sprite_image.dart';
 import '../ui/tuning/log_exporter.dart';
 import '../ui/tuning/tuning_screen.dart';
@@ -43,6 +45,10 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   bool _tonic = false;
   bool _showTarget = false;
   bool _hidden = false;
+
+  /// Centro inicial do mapa. O padrão é a Unicamp.
+  final _lat = TextEditingController(text: kUnicamp.$1.toString());
+  final _lon = TextEditingController(text: kUnicamp.$2.toString());
 
   @override
   void initState() {
@@ -95,6 +101,35 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
     if (mounted) setState(() => _sessions = n);
   }
 
+  void _setCenter((double, double) c) => setState(() {
+        _lat.text = c.$1.toString();
+        _lon.text = c.$2.toString();
+      });
+
+  Future<void> _openMap() async {
+    final lat = double.tryParse(_lat.text.trim().replaceAll(',', '.'));
+    final lon = double.tryParse(_lon.text.trim().replaceAll(',', '.'));
+    if (lat == null || lon == null || lat.abs() > 85 || lon.abs() > 180) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coordenada inválida')));
+      return;
+    }
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MapScreen(lat: lat, lon: lon)));
+  }
+
+  Widget _coordField(String label, TextEditingController c) => Expanded(
+        child: TextField(
+          controller: c,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+          style: const TextStyle(fontSize: 16, color: kText),
+          decoration: InputDecoration(
+            labelText: label,
+            labelStyle: const TextStyle(fontSize: 8, color: kDim),
+            enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: kPanelLine, width: 2), borderRadius: BorderRadius.zero),
+            focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: kSignal, width: 2), borderRadius: BorderRadius.zero),
+          ),
+        ),
+      );
+
   Future<void> _export() async {
     if (_sessions == 0) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nenhuma sessão gravada ainda')));
@@ -117,9 +152,23 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   Widget _body(BuildContext context, TuningData d) {
     final setup = _setupFor(d, _species!);
     final intensity = setup.intensity(d.balance);
-    return ListView(
+    // O menu é curto: uma coluna que rola constrói tudo, e a seção do mapa fica no topo.
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+        const Text('MAPA · DEBUG', style: TextStyle(fontSize: 24, color: kVeil)),
+        const SizedBox(height: 12),
+        Row(children: [_coordField('Latitude', _lat), const SizedBox(width: 8), _coordField('Longitude', _lon)]),
+        const SizedBox(height: 8),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          PixelButton(label: 'Unicamp', color: kDim, onTap: () => _setCenter(kUnicamp)),
+          PixelButton(label: 'Centro', color: kDim, onTap: () => _setCenter(kCentroCampinas)),
+        ]),
+        const SizedBox(height: 8),
+        PixelButton(label: 'Abrir mapa', color: kSignal, onTap: _openMap),
+        const SizedBox(height: 24),
         const Text('SINTONIA · DEBUG', style: TextStyle(fontSize: 24, color: kVeil)),
         const SizedBox(height: 16),
         Row(
@@ -195,7 +244,8 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
           PixelButton(label: 'Água: virada', color: kSignal, onTap: () => _vibration.play(waterSwellPattern)),
           PixelButton(label: 'Planta: broto', color: kVeil, onTap: () => _vibration.play(plantPulsePattern(90))),
         ]),
-      ],
+        ],
+      ),
     );
   }
 
@@ -242,6 +292,8 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
 
   @override
   void dispose() {
+    _lat.dispose();
+    _lon.dispose();
     _vibration.cancel();
     super.dispose();
   }

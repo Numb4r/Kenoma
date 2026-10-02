@@ -53,8 +53,8 @@ Uint8List biomeTexturePixels(BiomeDef biome, int variant) {
       for (var y = by; y < by + style.blockH; y++) {
         for (var x = bx; x < bx + style.blockW; x++) {
           final i = (y * tileSize + x) * 4;
-          pixels[i] = (tone >> 16) & 255;
-          pixels[i + 1] = (tone >> 8) & 255;
+          pixels[i] = (tone >>> 16) & 255;
+          pixels[i + 1] = (tone >>> 8) & 255;
           pixels[i + 2] = tone & 255;
           pixels[i + 3] = 255;
         }

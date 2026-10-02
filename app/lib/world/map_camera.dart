@@ -29,11 +29,8 @@ class CellRange {
   CellRange intersect(CellRange other) =>
       CellRange(math.max(x0, other.x0), math.max(y0, other.y0), math.min(x1, other.x1), math.min(y1, other.y1));
 
-  @override
-  bool operator ==(Object other) => other is CellRange && x0 == other.x0 && y0 == other.y0 && x1 == other.x1 && y1 == other.y1;
-
-  @override
-  int get hashCode => Object.hash(x0, y0, x1, y1);
+  /// Os quatro limites, para comparar faixas.
+  (int, int, int, int) get bounds => (x0, y0, x1, y1);
 
   @override
   String toString() => 'CellRange($x0,$y0..$x1,$y1)';

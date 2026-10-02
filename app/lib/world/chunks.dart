@@ -13,7 +13,7 @@ typedef ChunkId = (int cx, int cy);
 /// chunk é desenhado com menos pixels, e a memória não cresce com a área visível.
 const List<int> lodLevels = [16, 8, 4, 2];
 
-ChunkId chunkOfCell(int x, int y) => (x >> 6, y >> 6);
+ChunkId chunkOfCell(int x, int y) => (x >>> 6, y >>> 6);
 
 /// As células z21 que o chunk cobre.
 CellRange cellsOfChunk(ChunkId id) =>
@@ -22,7 +22,7 @@ CellRange cellsOfChunk(ChunkId id) =>
 /// Chunks que tocam [range], de cima para baixo e da esquerda para a direita. Vazio se [range] é vazio.
 List<ChunkId> chunksIn(CellRange range) {
   if (range.isEmpty) return const [];
-  final c0 = range.x0 >> 6, c1 = range.x1 >> 6, r0 = range.y0 >> 6, r1 = range.y1 >> 6;
+  final c0 = range.x0 >>> 6, c1 = range.x1 >>> 6, r0 = range.y0 >>> 6, r1 = range.y1 >>> 6;
   return [for (var cy = r0; cy <= r1; cy++) for (var cx = c0; cx <= c1; cx++) (cx, cy)];
 }
 

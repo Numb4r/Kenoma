@@ -9,6 +9,7 @@ import 'package:kenoma/capture/session_record.dart';
 import 'package:kenoma/capture/tuning_setup.dart';
 import 'package:kenoma/data/session_log_store.dart';
 import 'package:kenoma/data/tuning_data.dart';
+import 'package:kenoma/ui/map/map_screen.dart';
 import 'package:kenoma/dev/tuning_debug_menu.dart';
 import 'package:kenoma/ui/tuning/log_exporter.dart';
 import 'package:kenoma/ui/tuning/tuning_screen.dart';
@@ -239,6 +240,66 @@ void main() {
       await tester.pump();
       expect(find.text('Nenhuma sessão gravada ainda'), findsOneWidget);
       expect(env.exporter.files, isEmpty);
+    });
+  });
+
+  group('mapa no menu de debug', () {
+    String field(WidgetTester tester, String label) =>
+        tester.widget<TextField>(find.widgetWithText(TextField, label)).controller!.text;
+
+    testWidgets('o menu tem a seção do mapa no topo, com o centro padrão na Unicamp, e a sintonia continua nele', (tester) async {
+      await pumpMenu(tester);
+      expect(find.text('MAPA · DEBUG'), findsOneWidget);
+      expect(field(tester, 'Latitude'), '-22.8174');
+      expect(field(tester, 'Longitude'), '-47.0697');
+      expect(find.text('ABRIR MAPA'), findsOneWidget);
+      expect(find.text('SINTONIA · DEBUG'), findsOneWidget);
+      await tester.ensureVisible(find.text('INICIAR SINTONIA'));
+      expect(find.text('INICIAR SINTONIA'), findsOneWidget, reason: 'a sintonia segue acessível');
+    });
+
+    testWidgets('os atalhos Unicamp e Centro preenchem o centro', (tester) async {
+      await pumpMenu(tester);
+      await tester.tap(find.text('CENTRO'));
+      await tester.pump();
+      expect((field(tester, 'Latitude'), field(tester, 'Longitude')), ('-22.9056', '-47.0608'));
+      await tester.tap(find.text('UNICAMP'));
+      await tester.pump();
+      expect((field(tester, 'Latitude'), field(tester, 'Longitude')), ('-22.8174', '-47.0697'));
+    });
+
+    testWidgets('coordenada inválida ou fora do alcance avisa e não abre o mapa', (tester) async {
+      await pumpMenu(tester);
+      for (final (lat, lon) in [('abc', '-47.0'), ('-22.8', ''), ('95', '-47.0'), ('-22.8', '200')]) {
+        await tester.enterText(find.widgetWithText(TextField, 'Latitude'), lat);
+        await tester.enterText(find.widgetWithText(TextField, 'Longitude'), lon);
+        await tester.tap(find.text('ABRIR MAPA'));
+        await tester.pump();
+        expect(find.text('Coordenada inválida'), findsOneWidget, reason: '$lat, $lon');
+        expect(find.byType(MapScreen), findsNothing);
+        ScaffoldMessenger.of(tester.element(find.byType(Scaffold))).clearSnackBars();
+        await tester.pump();
+      }
+    });
+
+    testWidgets('abrir o mapa leva à tela do mapa no centro digitado (vírgula decimal também vale)', (tester) async {
+      await pumpMenu(tester);
+      await tester.enterText(find.widgetWithText(TextField, 'Latitude'), '-22,9056');
+      await tester.enterText(find.widgetWithText(TextField, 'Longitude'), '-47.0608');
+      await tester.tap(find.text('ABRIR MAPA'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      final screen = tester.widget<MapScreen>(find.byType(MapScreen));
+      expect((screen.lat, screen.lon), (-22.9056, -47.0608));
+      for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.textContaining('CENTRO -22.90560, -47.06080'), findsOneWidget);
+      await tester.tap(find.text('<'));
+      await tester.pumpAndSettle();
+      expect(find.text('MAPA · DEBUG'), findsOneWidget, reason: 'o < volta ao menu');
     });
   });
 }

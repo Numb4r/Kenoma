@@ -37,8 +37,8 @@ class MapProbe {
 MapProbe probeAt(RegionMap map, double cellX, double cellY) {
   final x21 = cellX.floor();
   final y21 = cellY.floor();
-  final x20 = x21 >> 1;
-  final y20 = y21 >> 1;
+  final x20 = x21 >>> 1;
+  final y20 = y21 >>> 1;
   final (lat, lon) = tileFractionToLatLon(cellX, cellY, biomeZoom);
   return MapProbe(
     lat: lat,

@@ -97,7 +97,7 @@ void main() {
 
     test('CellRange: interseção e vazio', () {
       const a = CellRange(0, 0, 9, 9);
-      expect(a.intersect(const CellRange(5, 5, 20, 20)), const CellRange(5, 5, 9, 9));
+      expect(a.intersect(const CellRange(5, 5, 20, 20)).bounds, (5, 5, 9, 9));
       expect(a.intersect(const CellRange(20, 20, 30, 30)).isEmpty, isTrue);
       expect(a.count, 100);
     });
