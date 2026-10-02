@@ -89,9 +89,11 @@ class PlayerTracker {
   }
 
   Future<void> dispose() async {
-    await _sub?.cancel();
+    final sub = _sub;
     _sub = null;
-    await source.stop();
+    final stopped = source.stop(); // para a fonte já, antes de qualquer espera
+    unawaited(sub?.cancel());
+    await stopped;
     await _out.close();
   }
 }

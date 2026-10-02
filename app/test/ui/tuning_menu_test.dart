@@ -249,7 +249,7 @@ void main() {
 
     testWidgets('o menu tem a seção do mapa no topo, com o centro padrão na Unicamp, e a sintonia continua nele', (tester) async {
       await pumpMenu(tester);
-      expect(find.text('MAPA · DEBUG'), findsOneWidget);
+      expect(find.text('MAPA LIVRE · DEBUG'), findsOneWidget);
       expect(field(tester, 'Latitude'), '-22.8174');
       expect(field(tester, 'Longitude'), '-47.0697');
       expect(find.text('ABRIR MAPA'), findsOneWidget);
@@ -299,7 +299,7 @@ void main() {
       expect(find.textContaining('CENTRO -22.90560, -47.06080'), findsOneWidget);
       await tester.tap(find.text('<'));
       await tester.pumpAndSettle();
-      expect(find.text('MAPA · DEBUG'), findsOneWidget, reason: 'o < volta ao menu');
+      expect(find.text('MAPA LIVRE · DEBUG'), findsOneWidget, reason: 'o < volta ao menu');
     });
   });
 }

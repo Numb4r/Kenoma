@@ -49,7 +49,8 @@ class MapRenderer {
   /// Quantos chunks novos foram montados no último `paint`.
   int lastBuilds = 0;
 
-  /// Desenha o mapa em [canvas], numa tela de [size]. Monta no máximo [maxBuilds] chunks por quadro
+  /// Desenha o mapa em [canvas], numa tela de [size]. A mira do centro é do mapa livre do debug: o mapa do
+  /// jogo a desliga com [crosshair]. Monta no máximo [maxBuilds] chunks por quadro
   /// (os que faltam aparecem como Vazio e entram nos quadros seguintes). Poucos por quadro, para a
   /// montagem não estourar o orçamento de 16 ms.
   void paint(
@@ -59,6 +60,7 @@ class MapRenderer {
     bool grid20 = false,
     MapProbe? probe,
     int maxBuilds = 3,
+    bool crosshair = true,
   }) {
     lastBuilds = 0;
     canvas.drawRect(ui.Offset.zero & size, ui.Paint()..color = _voidColor);
@@ -96,7 +98,7 @@ class MapRenderer {
     }
     if (grid20) _grid20(canvas, camera, size, range);
     if (probe != null) _probe(canvas, camera, size, probe);
-    _crosshair(canvas, size);
+    if (crosshair) _crosshair(canvas, size);
   }
 
   /// Marca o chunk como o mais recente. Devolve a imagem, ou `null` se não está no cache.

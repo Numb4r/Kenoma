@@ -50,9 +50,11 @@ class SwitchablePositionSource implements PositionSource {
   Future<void> stop() async {
     if (!_started) return;
     _started = false;
-    await _sub?.cancel();
+    final sub = _sub;
     _sub = null;
-    await _current.stop();
+    final stopped = _current.stop(); // a parte síncrona (cancelar timers) roda já, antes de qualquer espera
+    unawaited(sub?.cancel()); // o cancelamento vale na hora; não há o que esperar
+    await stopped;
   }
 
   /// Passa a usar [next]. Se a fonte estava ligada, desliga a antiga e liga a nova.

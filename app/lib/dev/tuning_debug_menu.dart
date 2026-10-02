@@ -1,5 +1,6 @@
-/// Menu de debug: abre o mapa (M4) em qualquer coordenada e a sintonia (M3), escolhendo o Eco, os níveis,
-/// o selo e o tônico. Fica em todas as builds de teste, inclusive as de release (CLAUDE.md).
+/// Menu de debug: abre o mapa do jogo (M5) com o GPS real ou o simulador, o mapa livre (M4) em qualquer
+/// coordenada e a sintonia (M3), escolhendo o Eco, os níveis, o selo e o tônico. Também tem o override do
+/// relógio UTC. Fica em todas as builds de teste, inclusive as de release (CLAUDE.md).
 library;
 
 import 'package:flutter/material.dart';
@@ -12,8 +13,13 @@ import '../capture/vibe.dart';
 import '../data/session_log_store.dart';
 import '../data/tuning_data.dart';
 import '../ui/colors.dart';
+import '../ui/game/game_map_screen.dart';
 import '../ui/map/map_screen.dart';
 import '../world/places.dart';
+import '../data/geolocator_source.dart';
+import 'clock_input.dart';
+import 'dev_tools.dart';
+import 'gps_simulator.dart';
 import '../ui/sprites/sprite_image.dart';
 import '../ui/tuning/log_exporter.dart';
 import '../ui/tuning/tuning_screen.dart';
@@ -21,7 +27,10 @@ import '../ui/tuning/vibration_driver.dart';
 import '../ui/type_label.dart';
 
 class TuningDebugMenu extends StatefulWidget {
-  const TuningDebugMenu({this.store, this.exporter, super.key});
+  const TuningDebugMenu({this.store, this.exporter, this.devTools, super.key});
+
+  /// A fonte de posição e o relógio. Por padrão, o GPS real e o relógio do aparelho.
+  final DevTools? devTools;
 
   /// Registro das sessões. Por padrão, `sessions.csv` nos documentos do app.
   final SessionLogStore? store;
@@ -46,6 +55,12 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   bool _tonic = false;
   bool _showTarget = false;
   bool _hidden = false;
+
+  /// Ferramentas de dev: GPS real ou simulador, e o relógio UTC.
+  late final DevTools _tools = widget.devTools ?? DevTools(realSource: GeolocatorPositionSource());
+  final _simLat = TextEditingController(text: kUnicamp.$1.toString());
+  final _simLon = TextEditingController(text: kUnicamp.$2.toString());
+  final _clockText = TextEditingController();
 
   /// Centro inicial do mapa. O padrão é a Unicamp.
   final _lat = TextEditingController(text: kUnicamp.$1.toString());
@@ -114,7 +129,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coordenada inválida')));
       return;
     }
-    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MapScreen(lat: lat, lon: lon)));
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MapScreen(lat: lat, lon: lon, nowUtc: _tools.clock.nowUtc)));
   }
 
   Widget _coordField(String label, TextEditingController c) => Expanded(
@@ -128,6 +143,114 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
             enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: kPanelLine, width: 2), borderRadius: BorderRadius.zero),
             focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: kSignal, width: 2), borderRadius: BorderRadius.zero),
           ),
+        ),
+      );
+
+  Future<void> _openGame() =>
+      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => GameMapScreen(tools: _tools)));
+
+  void _teleport() {
+    final lat = double.tryParse(_simLat.text.trim().replaceAll(',', '.'));
+    final lon = double.tryParse(_simLon.text.trim().replaceAll(',', '.'));
+    if (lat == null || lon == null || lat.abs() > 85 || lon.abs() > 180) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coordenada inválida')));
+      return;
+    }
+    _tools.simulator.teleport(lat, lon);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Teleportado')));
+  }
+
+  void _applyClock() {
+    final t = parseUtcInput(_clockText.text);
+    if (t == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Use aaaa-mm-dd hh:mm em UTC')));
+      return;
+    }
+    _tools.clock.setUtc(t);
+  }
+
+  Widget _section(String title) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Text(title, style: const TextStyle(fontSize: 24, color: kVeil)),
+      );
+
+  Widget _simSection() => ListenableBuilder(
+        listenable: Listenable.merge([_tools, _tools.clock]),
+        builder: (context, _) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _section('JOGO · MAPA'),
+            Text('Fonte de posição: ${_tools.useSimulator ? 'simulador' : 'GPS real'}', style: const TextStyle(fontSize: 8, color: kDim)),
+            const SizedBox(height: 8),
+            PixelButton(label: 'Abrir mapa do jogo', color: kSignal, onTap: _openGame),
+            const SizedBox(height: 16),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Simulador de GPS', style: TextStyle(fontSize: 16)),
+              subtitle: const Text('No lugar do GPS real. Joystick, velocidade e teleporte no mapa do jogo.', style: TextStyle(fontSize: 8, color: kDim)),
+              value: _tools.useSimulator,
+              activeThumbColor: kSignal,
+              onChanged: (v) => _tools.setUseSimulator(v),
+            ),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final s in SimSpeed.values)
+                GestureDetector(
+                  onTap: () => setState(() => _tools.simulator.speedMps = s.mps),
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: _tools.simulator.speedMps == s.mps ? kSignal : kPanelLine, width: 3),
+                      color: _tools.simulator.speedMps == s.mps ? kPanel : null,
+                    ),
+                    child: Text('${s.label} ${s.mps.toStringAsFixed(1)} m/s', style: const TextStyle(fontSize: 8, color: kText)),
+                  ),
+                ),
+            ]),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Ruído de GPS (5 m)', style: TextStyle(fontSize: 8)),
+              value: _tools.simulator.noiseM > 0,
+              activeThumbColor: kVeil,
+              onChanged: (v) => setState(() => _tools.simulator.noiseM = v ? 5 : 0),
+            ),
+            const SizedBox(height: 8),
+            Row(children: [_coordField('Latitude', _simLat), const SizedBox(width: 8), _coordField('Longitude', _simLon)]),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              PixelButton(label: 'Unicamp', color: kDim, onTap: () => setState(() {
+                    _simLat.text = kUnicamp.$1.toString();
+                    _simLon.text = kUnicamp.$2.toString();
+                  })),
+              PixelButton(label: 'Centro', color: kDim, onTap: () => setState(() {
+                    _simLat.text = kCentroCampinas.$1.toString();
+                    _simLon.text = kCentroCampinas.$2.toString();
+                  })),
+              PixelButton(label: 'Teleportar', color: kVeil, onTap: _teleport),
+            ]),
+            const SizedBox(height: 24),
+            const Text('RELÓGIO UTC', style: TextStyle(fontSize: 16, color: kDim)),
+            const SizedBox(height: 4),
+            Text('${formatUtc(_tools.clock.now)}${_tools.clock.overridden ? '  (OVERRIDE)' : ''}',
+                style: TextStyle(fontSize: 8, color: _tools.clock.overridden ? kEssence : kText)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _clockText,
+              style: const TextStyle(fontSize: 16, color: kText),
+              decoration: const InputDecoration(
+                labelText: 'aaaa-mm-dd hh:mm (UTC)',
+                labelStyle: TextStyle(fontSize: 8, color: kDim),
+                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: kPanelLine, width: 2), borderRadius: BorderRadius.zero),
+                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: kSignal, width: 2), borderRadius: BorderRadius.zero),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              PixelButton(label: 'Aplicar', color: kEssence, onTap: _applyClock),
+              PixelButton(label: 'Relógio real', color: kDim, onTap: _tools.clock.clear),
+            ]),
+            const SizedBox(height: 32),
+          ],
         ),
       );
 
@@ -159,7 +282,8 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-        const Text('MAPA · DEBUG', style: TextStyle(fontSize: 24, color: kVeil)),
+        _simSection(),
+        const Text('MAPA LIVRE · DEBUG', style: TextStyle(fontSize: 24, color: kVeil)),
         const SizedBox(height: 12),
         Row(children: [_coordField('Latitude', _lat), const SizedBox(width: 8), _coordField('Longitude', _lon)]),
         const SizedBox(height: 8),
@@ -295,6 +419,9 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   void dispose() {
     _lat.dispose();
     _lon.dispose();
+    _simLat.dispose();
+    _simLon.dispose();
+    _clockText.dispose();
     _vibration.cancel();
     super.dispose();
   }

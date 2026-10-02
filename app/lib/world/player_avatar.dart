@@ -34,6 +34,11 @@ class PlayerAvatar {
     }
   }
 
+  /// Esquece a posição: o marcador some até a próxima [setTarget].
+  void clear() {
+    _has = false;
+  }
+
   void update(double dt) {
     if (!_has || dt <= 0) return;
     if ((_tx - _x).abs() > snapCells || (_ty - _y).abs() > snapCells) {
