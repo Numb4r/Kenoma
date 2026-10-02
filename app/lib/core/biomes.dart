@@ -2,12 +2,13 @@
 library;
 
 class BiomeDef {
-  const BiomeDef({required this.id, required this.key, required this.priority, this.spawnAs});
+  const BiomeDef({required this.id, required this.key, required this.priority, required this.palette, this.spawnAs});
 
   factory BiomeDef.fromJson(Map<String, dynamic> json) => BiomeDef(
         id: json['id'] as int,
         key: json['key'] as String,
         priority: json['priority'] as int,
+        palette: [for (final c in json['palette'] as List<dynamic>) _parseRgb(c as String)],
         spawnAs: json['spawn_as'] as String?,
       );
 
@@ -15,8 +16,18 @@ class BiomeDef {
   final String key;
   final int priority;
 
+  /// Os tons do bioma no mapa, do mais escuro ao mais claro, como `0xRRGGBB`. O do meio é a cor base.
+  /// Vêm de `biomes.json`: a cidade segue a regra de arte, fria e dessaturada.
+  final List<int> palette;
+
   /// Bioma cujas tabelas de spawn este usa. Vazio usa as de Residencial.
   final String? spawnAs;
+}
+
+int _parseRgb(String hex) {
+  final m = RegExp(r'^#([0-9a-fA-F]{6})$').firstMatch(hex);
+  if (m == null) throw FormatException('Cor inválida em biomes.json: "$hex"');
+  return int.parse(m.group(1)!, radix: 16);
 }
 
 class BiomeSet {
@@ -27,6 +38,9 @@ class BiomeSet {
       ]);
 
   final Map<int, BiomeDef> _byId;
+
+  /// Todos os biomas, em ordem de id.
+  List<BiomeDef> get all => (_byId.values.toList()..sort((a, b) => a.id.compareTo(b.id)));
 
   BiomeDef byId(int id) => _byId[id] ?? (throw StateError('Bioma desconhecido: $id'));
 

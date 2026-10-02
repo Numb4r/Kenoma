@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/core/biomes.dart';
 
 import '../support/fixtures.dart';
 
@@ -58,4 +61,76 @@ void main() {
       expect(() => biomes.spawnCellBiome([9, 9, 1, 1]), throwsStateError);
     });
   });
+
+  group('paleta do mapa (biomes.json)', () {
+    final biomes = loadBiomes();
+
+    test('cada bioma tem 3 tons, do mais escuro ao mais claro', () {
+      expect(biomes.all.map((b) => b.key), ['void', 'urban', 'green', 'water', 'residential']);
+      for (final b in biomes.all) {
+        expect(b.palette, hasLength(3), reason: b.key);
+        final luma = [for (final c in b.palette) _luma(c)];
+        expect(luma[0], lessThan(luma[1]), reason: b.key);
+        expect(luma[1], lessThan(luma[2]), reason: b.key);
+      }
+    });
+
+    test('regra de arte: nada saturado, tudo frio, e os cinco biomas se distinguem', () {
+      for (final b in biomes.all) {
+        for (final c in b.palette) {
+          expect(_saturation(c), lessThan(0.35), reason: '${b.key} #${c.toRadixString(16)} é saturado demais');
+          final (r, g, bl) = _rgb(c);
+          expect(bl, greaterThanOrEqualTo(r), reason: '${b.key}: azul não pode ficar abaixo do vermelho (paleta fria)');
+          expect(bl + g + r, lessThan(3 * 140), reason: '${b.key}: nada claro a ponto de gritar no mapa');
+        }
+      }
+      final bases = [for (final b in biomes.all) b.palette[1]];
+      for (var i = 0; i < bases.length; i++) {
+        for (var j = i + 1; j < bases.length; j++) {
+          expect(_distance(bases[i], bases[j]), greaterThan(14), reason: '${biomes.all[i].key} x ${biomes.all[j].key}');
+        }
+      }
+    });
+
+    test('a cidade é cinza-índigo, o verde e a água são apagados', () {
+      final urban = biomes.byId(1).palette[1];
+      final (ur, ug, ub) = _rgb(urban);
+      expect(ub, greaterThan(ur), reason: 'índigo: azul acima do vermelho');
+      expect((ur - ug).abs(), lessThan(14));
+      final (gr, gg, gb) = _rgb(biomes.byId(2).palette[1]);
+      expect(gg, greaterThan(gr));
+      expect(gg, greaterThan(gb), reason: 'verde');
+      final (wr, wg, wb) = _rgb(biomes.byId(3).palette[1]);
+      expect(wb, greaterThan(wg));
+      expect(wb, greaterThan(wr), reason: 'azul');
+    });
+
+    test('cor inválida em biomes.json é erro de dados', () {
+      expect(
+        () => BiomeDef.fromJson({'id': 9, 'key': 'x', 'priority': 1, 'palette': ['vermelho']}),
+        throwsFormatException,
+      );
+    });
+  });
+}
+
+(int, int, int) _rgb(int c) => ((c >> 16) & 255, (c >> 8) & 255, c & 255);
+
+double _luma(int c) {
+  final (r, g, b) = _rgb(c);
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+double _saturation(int c) {
+  final (r, g, b) = _rgb(c);
+  final mx = [r, g, b].reduce((a, b) => a > b ? a : b) / 255, mn = [r, g, b].reduce((a, b) => a < b ? a : b) / 255;
+  final l = (mx + mn) / 2;
+  if (mx == mn) return 0;
+  return (mx - mn) / (1 - (2 * l - 1).abs());
+}
+
+double _distance(int a, int b) {
+  final (ar, ag, ab) = _rgb(a);
+  final (br, bg, bb) = _rgb(b);
+  return math.sqrt((ar - br) * (ar - br) + (ag - bg) * (ag - bg) + (ab - bb) * (ab - bb));
 }

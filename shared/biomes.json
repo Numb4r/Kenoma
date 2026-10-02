@@ -6,6 +6,11 @@
       "key": "void",
       "name": "Vazio",
       "priority": 0,
+      "palette": [
+        "#272a37",
+        "#2b2f3d",
+        "#30354a"
+      ],
       "spawn_as": "residential",
       "osm": []
     },
@@ -14,6 +19,11 @@
       "key": "urban",
       "name": "Urbano",
       "priority": 2,
+      "palette": [
+        "#545a6c",
+        "#5a6072",
+        "#646a7c"
+      ],
       "osm": [
         {
           "tag": "highway",
@@ -90,6 +100,11 @@
       "key": "green",
       "name": "Verde",
       "priority": 3,
+      "palette": [
+        "#3a5242",
+        "#3f5a48",
+        "#476650"
+      ],
       "osm": [
         {
           "tag": "leisure",
@@ -129,6 +144,11 @@
       "key": "water",
       "name": "Água",
       "priority": 4,
+      "palette": [
+        "#304a63",
+        "#34506b",
+        "#3b5a78"
+      ],
       "osm": [
         {
           "tag": "natural",
@@ -169,6 +189,11 @@
       "key": "residential",
       "name": "Residencial",
       "priority": 1,
+      "palette": [
+        "#383d4e",
+        "#3d4254",
+        "#444a5e"
+      ],
       "osm": [
         {
           "tag": "landuse",
