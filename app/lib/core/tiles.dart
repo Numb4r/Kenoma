@@ -43,3 +43,11 @@ Tile parentTile(Tile t) => (t.$1 >>> 1, t.$2 >>> 1);
   final lat = math.atan(sinh) * 180.0 / math.pi;
   return (lat, lon);
 }
+
+/// Circunferência da Terra no equador, em metros (Web Mercator).
+const double earthCircumferenceM = 40075016.686;
+
+/// Metros que uma célula (um tile) de [zoom] mede de lado, na latitude [lat]. Na z21 em Campinas são
+/// ~17,6 m, e a célula de spawn z20, ~35 m.
+double metersPerCell(double lat, {int zoom = biomeZoom}) =>
+    earthCircumferenceM * math.cos(lat * math.pi / 180.0) / (1 << zoom);
