@@ -510,7 +510,7 @@ Cada espécie aceita um ou mais métodos, e o bestiário mostra quais conforme a
 
 ### Sintonia
 
-O celular funciona como um rádio do Véu. Ao tocar numa criatura aparece o sinal dela como uma onda, e o jogador arrasta um dial até alinhar a frequência. O selo é consumido ao iniciar, e selos melhores ampliam a tolerância do dial. Enquanto o sinal fica alinhado o Véu se dissolve e, ao terminar, a criatura é selada. Se o tempo acabar, o selo se perde e a criatura pode fugir. Dura de 5 a 20 segundos e não depende de como o jogador se move, então funciona no ônibus, de bicicleta parada ou sentado.
+O celular funciona como um rádio do Véu. Ao tocar numa criatura aparece o sinal dela como uma onda, e o jogador arrasta um dial até alinhar a frequência. O selo é consumido ao iniciar, e selos melhores ampliam a tolerância do dial. Enquanto o sinal fica alinhado o Véu se dissolve e, ao terminar, a criatura é selada. Se o tempo acabar, o selo se perde e a criatura pode fugir. Dura de 5 a 20 segundos, ou até 25 com tônico, e não depende de como o jogador se move, então funciona no ônibus, de bicicleta parada ou sentado.
 
 Toda sintonia concluída deixa ectoplasma, o resíduo do Véu dissolvido e ingrediente básico dos selos, então capturar alimenta o próximo selo.
 
@@ -528,7 +528,7 @@ A criatura resiste, e cada tipo resiste de um jeito que o jogador aprende a ler.
 | Metal | em intervalos o sinal fica blindado e alinhar não dissolve o Véu | manter alinhado mesmo assim para não perder progresso |
 | Luz | clarões deixam a onda invisível por instantes | memorizar a posição e segurar o dial |
 | Sombra | some do sinal e reaparece em outra frequência | seguir o som, que continua |
-| Espectral | uma onda fantasma imita a real com atraso | a real tem a cor do Eco, a fantasma é cinza |
+| Espectral | uma onda fantasma imita a real com atraso | a real é ciano, a fantasma é cinza |
 | Digital | ondas falsas idênticas à real | as falsas piscam em pixels quebrados |
 | Feérico | inverte o sentido do dial e troca de padrão no meio | perceber a troca pelo som |
 | Dracônico | começa calmo e fica mais agressivo a cada terço, somando padrões de outros tipos | sintonia longa, só aparece no meio do jogo em diante |
@@ -554,7 +554,7 @@ A onda é temática. A mecânica de cada tipo continua a da tabela de resistênc
 | Feérico | a onda espelha e solta pó de fada quando o dial inverte | trocas mais frequentes |
 | Dracônico | a onda ganha escamas e a cada terço assume o visual de outro tipo | mais padrões somados |
 
-O dial é violeta, a cor do Véu. Enquanto o sinal está alinhado ele assume a cor do tipo do Eco e solta partículas, como se o Véu se dissolvesse na criatura. A mudança nunca depende só de cor: o dial também brilha e engrossa, para quem tem daltonismo.
+A onda do sinal continua sempre ciano. O dial é violeta, a cor do Véu. Enquanto o sinal está alinhado ele assume a cor do tipo do Eco e solta partículas, como se o Véu se dissolvesse na criatura. A mudança nunca depende só de cor: o dial também brilha e engrossa, para quem tem daltonismo.
 
 ### Lua, astros e sintonia
 
@@ -693,7 +693,7 @@ A experiência vem do conteúdo e escala com o nível dele, não com o do jogado
 
 Um dia típico de 30 a 40 minutos rende cerca de 700 de experiência no começo e 1.400 perto do 40. Nesse ritmo o jogador chega ao nível 5 no segundo dia, ao 12 na segunda semana, ao 20 em três semanas e meia, ao 30 em cerca de 50 dias e ao 40 em cerca de 90, o que bate com os 3 meses do quadro de ritmos.
 
-A primeira parte da experiência de cada dia, por volta de metade de um dia típico, vale em dobro, e esse bônus acumula por até três dias sem jogar. Assim quem joga menos não fica muito atrás dos amigos e ninguém é punido por pular dias.
+A primeira parte da experiência de cada dia, por volta de metade de um dia típico, vale em dobro, e esse bônus acumula até o equivalente a três dias. Assim quem joga menos não fica muito atrás dos amigos e ninguém é punido por pular dias.
 
 Depois do 40, a experiência alimenta maestrias, progressão horizontal que não aumenta poder bruto. A experiência de cada atividade vai para a maestria correspondente. Cada maestria tem 30 níveis e o nível k custa 1.000 × k, cerca de 465 mil por maestria. Jogando todo dia, as primeiras maestrias chegam ao meio em alguns meses e todas chegam ao máximo por volta do quinto ano.
 

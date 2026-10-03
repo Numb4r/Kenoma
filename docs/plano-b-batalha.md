@@ -7,7 +7,7 @@ Sistema de batalha guardado como alternativa à captura por sintonia, ritual e v
 | Fagulhas | coleta automática ao entrar na Aura | instantânea |
 | Ecos | selamento rápido no próprio mapa | cerca de 10 s |
 | Espíritos | duelo de sigilos | 30 a 60 s |
-| Entidades Maiores e acima | cerco no mundo real e duelo final | minutos a dias |
+| Entidades Maiores e Arquétipos | cerco no mundo real e duelo final | minutos a dias |
 
 ## Selamento rápido
 
@@ -21,9 +21,9 @@ Cada criatura selvagem tem vida e barra de Véu. Fraquezas elementais e sigilos 
 
 ## Cerco
 
-Entidades Maiores e acima ocupam um território de algumas células. O mapa marca de três a quatro pontos de âncora em volta, gerados pela seed. O jogador anda até cada ponto e ativa a âncora, e cada uma enche parte da barra de Véu. Pontos podem ter condições, como bioma certo, noite ou chuva real. Ligar as âncoras desenha o sigilo em escala real na cidade.
+Entidades Maiores e Arquétipos ocupam um território de algumas células. O mapa marca de três a quatro pontos de âncora em volta, gerados pela seed. O jogador anda até cada ponto e ativa a âncora, e cada uma enche parte da barra de Véu. Pontos podem ter condições, como bioma certo, noite ou chuva real. Ligar as âncoras desenha o sigilo em escala real na cidade.
 
-O cerco persiste entre sessões e pode levar dias. Quando ele fecha, o Véu quebra e começa um duelo final com a criatura já atordoada.
+O cerco persiste entre sessões e pode levar dias. Quando ele fecha, o Véu quebra e começa um duelo final com a criatura já atordoada. Soberanos usam o cerco só para contenção, e Divindades nunca são capturadas.
 
 ## Captura
 
