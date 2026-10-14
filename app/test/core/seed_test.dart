@@ -23,4 +23,11 @@ void main() {
   test('códigos diferentes dão seeds diferentes', () {
     expect(seedGlobal('KENOMA-TESTF'), isNot(vectorSeed));
   });
+
+  test('código novo: XXXXX-XXXXX em base32 de Crockford, e vira uma seed estável', () {
+    var i = 0;
+    final code = generateGroupCode((n) => (i++ * 7) % n);
+    expect(code, matches(RegExp(r'^[0-9A-HJKMNP-TV-Z]{5}-[0-9A-HJKMNP-TV-Z]{5}$')));
+    expect(seedGlobal(code), seedGlobal(code.toLowerCase().replaceAll('-', ' ')));
+  });
 }
