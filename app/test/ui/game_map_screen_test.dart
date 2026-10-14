@@ -71,6 +71,17 @@ class Env {
     await settle(frames);
   }
 
+  /// Anda [seconds] segundos em tempo real: uma leitura do simulador por segundo e 20 quadros de 50 ms.
+  Future<void> live(int seconds, {void Function()? each}) async {
+    for (var i = 0; i < seconds; i++) {
+      sim.advance(const Duration(seconds: 1));
+      for (var f = 0; f < 20; f++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        each?.call();
+      }
+    }
+  }
+
   Future<void> settle([int frames = 6]) async {
     for (var i = 0; i < frames; i++) {
       await tester.pump(const Duration(milliseconds: 50));
@@ -136,6 +147,7 @@ void main() {
       await env.simulate(const Duration(seconds: 30), frames: 10);
       await g.up();
       expect(env.sim.joystickX, 0, reason: 'soltar o joystick volta a zero');
+      await env.settle(200); // o marcador anda atrás das leituras, com cerca de 1 s de atraso
       final moved = env.game.avatar.x - startX;
       expect(moved, closeTo(30 * 1.4 / 17.6, 1.0), reason: '30 s a 1,4 m/s ≈ 2,4 células para o leste');
       expect(moved, greaterThan(1.5));
@@ -151,6 +163,7 @@ void main() {
       await tester.pump();
       await env.simulate(const Duration(seconds: 20), frames: 10);
       await g.up();
+      await env.settle(200);
       expect(env.game.avatar.y, lessThan(startY));
     });
 
@@ -159,6 +172,7 @@ void main() {
       walk.sim.setJoystick(1, 0);
       final x0 = walk.game.avatar.x;
       await walk.simulate(const Duration(seconds: 40), frames: 10);
+      await walk.settle(400);
       final walked = walk.game.avatar.x - x0;
       await tester.pumpWidget(const SizedBox.shrink());
       final bike = await pumpGame(tester);
@@ -166,18 +180,68 @@ void main() {
       bike.sim.setJoystick(1, 0);
       final x1 = bike.game.avatar.x;
       await bike.simulate(const Duration(seconds: 40), frames: 10);
+      await bike.settle(400);
       final cycled = bike.game.avatar.x - x1;
       expect(cycled / walked, closeTo(6 / 1.4, 1.2));
     });
 
-    testWidgets('teleporte: o marcador e a câmera pulam para o novo lugar, sem deslizar pelo mapa', (tester) async {
+    testWidgets('teleporte: duas leituras no novo lugar e o marcador e a câmera pulam para lá, sem deslizar pelo mapa', (tester) async {
       final env = await pumpGame(tester);
       env.sim.teleport(kCentroCampinas.$1, kCentroCampinas.$2);
-      await env.settle(4);
+      await env.simulate(const Duration(seconds: 3), frames: 40); // uma leitura por segundo; a segunda confirma a mudança
       final (x, y) = cellOf(kCentroCampinas.$1, kCentroCampinas.$2);
       expect(env.game.avatar.x, closeTo(x, 0.5));
       expect(env.game.avatar.y, closeTo(y, 0.5));
       expect(env.game.follow.followX, closeTo(x, 0.5), reason: 'saltou: o centro está a ~10 km');
+    });
+
+    testWidgets('animação: parado fica no quadro de parado; andando alterna os dois quadros de passo', (tester) async {
+      final env = await pumpGame(tester);
+      expect(env.game.avatar.moving, isFalse);
+      expect(env.game.playerFrameIndex, 0);
+      env.sim.setJoystick(1, 0);
+      await env.live(6); // chega a andar
+      expect(env.game.avatar.moving, isTrue);
+      final seen = <int>{};
+      await env.live(4, each: () => seen.add(env.game.playerFrameIndex));
+      expect(seen, {1, 2}, reason: 'os dois quadros do passo, e nunca o de parado enquanto anda');
+      env.sim.setJoystick(0, 0);
+      await env.live(6); // as leituras param de andar e o marcador chega e para
+      expect(env.game.avatar.moving, isFalse);
+      expect(env.game.playerFrameIndex, 0);
+    });
+
+    testWidgets('o sprite olha para o lado em que anda, e mantém o lado ao parar; com o mapa girado vale o lado na tela', (tester) async {
+      final env = await pumpGame(tester);
+      env.sim.setJoystick(1, 0); // leste
+      await env.live(6);
+      expect(env.game.facingLeft, isFalse);
+      env.sim.setJoystick(-1, 0); // oeste
+      await env.live(8);
+      expect(env.game.facingLeft, isTrue);
+      env.sim.setJoystick(0, 0);
+      await env.live(6);
+      expect(env.game.facingLeft, isTrue, reason: 'parado, continua olhando para onde andava');
+      // Com o mapa girado 180°, andar para o leste é andar para a esquerda na tela.
+      env.game.rotation.gestureStart();
+      env.game.rotation.gestureRotate(0.2);
+      env.game.rotation.gestureRotate(0.2 + 3.141592653589793);
+      env.game.rotation.gestureEnd();
+      env.sim.setJoystick(1, 0);
+      await env.live(8);
+      expect(env.game.facingLeft, isTrue);
+      env.game.rotation.goNorth();
+      await env.live(8);
+      expect(env.game.facingLeft, isFalse);
+    });
+
+    testWidgets('a câmera segue o marcador suavizado, não a leitura crua do GPS', (tester) async {
+      final env = await pumpGame(tester);
+      env.sim.setJoystick(1, 0);
+      await env.live(10);
+      final (latest, _) = env.game.avatar.latest!;
+      expect(env.game.avatar.x, lessThan(latest), reason: 'o marcador está atrás da última leitura');
+      expect(env.game.follow.followX, lessThanOrEqualTo(env.game.avatar.x + 0.05), reason: 'a câmera não passa do marcador');
     });
 
     testWidgets('os botões do overlay: velocidade e teleportes', (tester) async {
@@ -256,7 +320,7 @@ void main() {
       expect(env.game.follow.peeking, isFalse);
     });
 
-    testWidgets('a pinça vai de 60 m a 150 m de largura de tela, com 90 m no padrão', (tester) async {
+    testWidgets('a pinça vai de 70 m a 120 m de largura de tela, com 90 m no padrão', (tester) async {
       final env = await pumpGame(tester);
       Future<void> pinch(double from, double to) async {
         final c = tester.getCenter(gameWidget);
@@ -275,9 +339,9 @@ void main() {
 
       expect(env.game.widthM, closeTo(90, 0.01));
       await pinch(60, 120);
-      expect(env.game.widthM, 60, reason: 'abrir 2x passaria de 60 m: trava no mínimo');
+      expect(env.game.widthM, 70, reason: 'abrir 2x passaria de 70 m: trava no mínimo');
       await pinch(100, 20);
-      expect(env.game.widthM, 150, reason: 'fechar 5x passaria de 150 m: trava no máximo');
+      expect(env.game.widthM, 120, reason: 'fechar 5x passaria de 120 m: trava no máximo');
     });
   });
 

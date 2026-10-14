@@ -161,10 +161,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final GameData data;
     final GameSession session;
     final sprites = <String, ui.Image>{};
-    final ui.Image playerSprite;
+    final List<ui.Image> playerFrames;
     try {
       data = await GameData.load(widget.bundle);
-      playerSprite = await loadPlayerSprite();
+      playerFrames = await loadPlayerFrames();
       for (final s in data.tuning.species) {
         sprites[s.id] = (await EcoSprite.load(s.id)).normal;
       }
@@ -191,14 +191,15 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       visual: assets.visual!,
       style: ArtStyle(assets.biomes),
       balance: assets.balance,
-      playerSprite: playerSprite,
+      playerFrames: playerFrames,
       overlayBiomes: () => tools.showBiomeGrid,
       overlayGrid20: () => tools.showGrid20,
       auraM: assets.balance.auraM,
       defaultWidthM: assets.balance.defaultWidthM,
-      minWidthM: assets.balance.zoomMinWidthM,
-      maxWidthM: assets.balance.zoomMaxWidthM,
-      playerHeightFraction: assets.balance.playerHeightFraction,
+      minWidthM: assets.balance.cameraMinWidthM,
+      maxWidthM: assets.balance.cameraMaxWidthM,
+      spriteHeightM: assets.balance.spriteHeightM,
+      sparkSizeM: assets.balance.sparkSizeM,
       trackerM: assets.balance.trackerM,
       trackerMax: assets.balance.trackerMax,
       declinationDeg: assets.balance.compassDeclinationDeg,

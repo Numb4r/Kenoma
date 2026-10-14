@@ -35,14 +35,15 @@ class GameMapGame extends FlameGame {
     required this.visual,
     required this.style,
     required this.balance,
-    this.playerSprite,
+    this.playerFrames = const [],
     this.overlayBiomes = _off,
     this.overlayGrid20 = _off,
     required this.auraM,
     required this.defaultWidthM,
     required this.minWidthM,
     required this.maxWidthM,
-    required this.playerHeightFraction,
+    required this.spriteHeightM,
+    required this.sparkSizeM,
     required this.trackerM,
     required this.trackerMax,
     this.declinationDeg = 0,
@@ -54,7 +55,8 @@ class GameMapGame extends FlameGame {
     (double, double) fallbackCenter = kUnicamp,
   }) {
     final (x, y) = latLonToTileFraction(fallbackCenter.$1, fallbackCenter.$2, biomeZoom);
-    follow = FollowCamera(x: x, y: y);
+    // O marcador já vem suavizado: a câmera só o acompanha de perto.
+    follow = FollowCamera(x: x, y: y, followTauS: 0.06);
   }
 
   /// A grade de biomas: só aparece como sobreposição do menu de debug.
@@ -64,7 +66,8 @@ class GameMapGame extends FlameGame {
   final VisualMap visual;
   final ArtStyle style;
   final MapBalance balance;
-  final ui.Image? playerSprite;
+  /// Os quadros do Conjurador: parado e os dois do passo.
+  final List<ui.Image> playerFrames;
 
   /// Sobreposições de debug, lidas a cada quadro: a grade de biomas e a grade das células de spawn (z20).
   final bool Function() overlayBiomes;
@@ -89,8 +92,9 @@ class GameMapGame extends FlameGame {
   final double minWidthM;
   final double maxWidthM;
 
-  /// O Conjurador e os Ecos ocupam esta fração da altura da tela.
-  final double playerHeightFraction;
+  /// Altura do Conjurador e dos Ecos, e tamanho das Fagulhas e dos materiais, em metros do mundo.
+  final double spriteHeightM;
+  final double sparkSizeM;
 
   /// Alcance do rastreador, em metros, e quantos Ecos ele mostra.
   final double trackerM;
@@ -144,13 +148,15 @@ class GameMapGame extends FlameGame {
     if (p == null) return;
     final (x, y) = latLonToTileFraction(p.lat, p.lon, biomeZoom);
     final first = !avatar.hasPosition;
-    avatar.setTarget(x, y);
+    avatar.setTarget(x, y, metersPerCell: metersPerCell(p.lat), timeMs: p.timeMs);
     _lat = p.lat;
     _lon = p.lon;
     if (!_hasFix) _refreshIn = 0; // a primeira posição já mostra o mundo
     _hasFix = true;
-    follow.setTarget(x, y);
-    if (first) follow.snapToTarget(); // a primeira posição não desliza de lugar nenhum
+    if (first) {
+      follow.setTarget(avatar.x, avatar.y); // a câmera segue o marcador suavizado, nunca o GPS cru
+      follow.snapToTarget(); // a primeira posição não desliza de lugar nenhum
+    }
   }
 
   /// Esquece a posição (trocou de fonte): o marcador some até a próxima leitura boa.
@@ -206,6 +212,7 @@ class GameMapGame extends FlameGame {
   void update(double dt) {
     super.update(dt);
     avatar.update(dt);
+    _animate(dt);
     _time += dt;
     _refreshIn -= dt;
     if (_hasFix && worldView != null && _refreshIn <= 0) {
@@ -240,6 +247,7 @@ class GameMapGame extends FlameGame {
     // De baixo para cima: Aura no chão, spawns, Conjurador por cima de tudo.
     paintAura(canvas, center, auraRadiusPx(auraM: auraM, lat: _lat, pixelsPerCell: cam.pixelsPerCell));
     final w = worldView;
+    final spriteSize = spriteSizePx, sparkSize = sparkSizePx;
     if (w != null) {
       paintSpawns(
         canvas,
@@ -250,14 +258,15 @@ class GameMapGame extends FlameGame {
         typeOf: typeOf,
         inAura: w.inAura,
         time: _time,
-        avoid: markerRect(center, dpr, heightDp).inflate(6),
-        heightDp: heightDp,
+        avoid: markerRect(center, spriteSize).inflate(6),
+        spriteSize: spriteSize,
+        sparkSize: sparkSize,
         dpr: dpr,
       );
     }
-    paintPlayerMarker(canvas, center, sprite: playerSprite, heightDp: heightDp, dpr: dpr);
+    paintPlayerMarker(canvas, center, sprite: _playerFrame, size: spriteSize, mirrored: _facingLeft, dpr: dpr);
     if (w != null) {
-      final off = heightDp / 2;
+      final off = spriteSize / 2;
       final tracked = w.tracked(
         trackerM: trackerM,
         max: trackerMax,
@@ -295,8 +304,40 @@ class GameMapGame extends FlameGame {
   /// Barra de navegação do sistema embaixo, em pixels lógicos: o rastreador fica acima dela.
   double bottomInset = 0;
 
-  /// Altura do Conjurador e dos Ecos na tela, em pixels lógicos.
-  double get heightDp => size.y * playerHeightFraction;
+  /// Altura do Conjurador e dos Ecos na tela, em pixels: 12 m do mundo convertidos pelo zoom de agora.
+  double get spriteSizePx => spriteHeightM / metersPerCell(_lat) * follow.pixelsPerCell;
+
+  /// Tamanho das Fagulhas e dos materiais na tela, em pixels.
+  double get sparkSizePx => sparkSizeM / metersPerCell(_lat) * follow.pixelsPerCell;
+
+  // Animação do Conjurador: parado, ou dois quadros de passo que se alternam enquanto ele anda. O sprite
+  // olha para o lado em que anda, vendo o movimento na tela (com o mapa girado).
+  static const double _stepS = 0.18;
+  double _stepClock = 0;
+  bool _facingLeft = false;
+
+  /// Qual quadro do Conjurador desenhar: 0 parado, 1 ou 2 andando.
+  int get playerFrameIndex => !avatar.moving ? 0 : 1 + (_stepClock / _stepS).floor() % 2;
+
+  /// Se o sprite está espelhado (olhando para a esquerda da tela).
+  bool get facingLeft => _facingLeft;
+
+  ui.Image? get _playerFrame {
+    if (playerFrames.isEmpty) return null;
+    final i = playerFrameIndex;
+    return playerFrames[i < playerFrames.length ? i : 0];
+  }
+
+  void _animate(double dt) {
+    if (!avatar.moving) {
+      _stepClock = 0;
+      return;
+    }
+    _stepClock += dt;
+    final r = follow.rotation;
+    final screenVx = avatar.velocityX * math.cos(r) - avatar.velocityY * math.sin(r);
+    if (screenVx.abs() > 1e-4) _facingLeft = screenVx < 0;
+  }
 
   /// O spawn sob o toque em [screen], se houver: o mais perto dentro do raio de toque.
   WorldSpawn? spawnAt(Offset screen) {
@@ -308,7 +349,7 @@ class GameMapGame extends FlameGame {
     for (final s in w.spawns) {
       final (sx, sy) = cam.cellToScreen(s.x, s.y, size.x, size.y);
       final d = (Offset(sx, sy) - screen).distance;
-      if (d <= hitRadius(s, dpr, heightDp) && d < bestD) {
+      if (d <= hitRadius(s, spriteSizePx, sparkSizePx) && d < bestD) {
         best = s;
         bestD = d;
       }

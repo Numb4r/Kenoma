@@ -33,23 +33,16 @@ void paintAura(Canvas canvas, Offset center, double radiusPx) {
   }
 }
 
-/// Tamanho do sprite do Conjurador na tela, em pixels lógicos: [heightDp] de altura, com cada pixel de
-/// arte do sprite de 48 x 48 ocupando um número inteiro de pixels físicos.
-double playerSize(double dpr, double heightDp) => 48 * math.max(1, (heightDp * dpr / 48).round()) / dpr;
-
-/// O retângulo que o Conjurador ocupa em [center].
-Rect markerRect(Offset center, double dpr, double heightDp) {
-  final s = playerSize(dpr, heightDp);
-  return Rect.fromCenter(center: center, width: s, height: s);
-}
+/// O retângulo que o Conjurador ocupa em [center], com o sprite de [size] pixels de lado.
+Rect markerRect(Offset center, double size) => Rect.fromCenter(center: center, width: size, height: size);
 
 double _snap(double v, double dpr) => (v * dpr).roundToDouble() / dpr;
 
-/// Desenha o Conjurador em [center], com [heightDp] de altura em qualquer zoom. Sem [sprite] (ainda
-/// carregando) não desenha nada.
-void paintPlayerMarker(Canvas canvas, Offset center, {required Image? sprite, required double heightDp, double dpr = 1}) {
+/// Desenha o Conjurador em [center]. O sprite tem [size] pixels de lado na tela, que é a altura dele em
+/// metros do mundo convertida pelo zoom. Com [mirrored] ele aparece espelhado na horizontal (andando para a
+/// esquerda). Sem [sprite] (ainda carregando) não desenha nada.
+void paintPlayerMarker(Canvas canvas, Offset center, {required Image? sprite, required double size, bool mirrored = false, double dpr = 1}) {
   if (sprite == null) return;
-  final size = playerSize(dpr, heightDp);
   final dst = Rect.fromLTWH(_snap(center.dx - size / 2, dpr), _snap(center.dy - size / 2, dpr), size, size);
   // Sombra no chão, sob os pés.
   canvas.drawOval(
@@ -58,6 +51,12 @@ void paintPlayerMarker(Canvas canvas, Offset center, {required Image? sprite, re
       ..color = kOutline.withValues(alpha: 0.5)
       ..isAntiAlias = false,
   );
+  canvas.save();
+  if (mirrored) {
+    canvas.translate(dst.center.dx, 0);
+    canvas.scale(-1, 1);
+    canvas.translate(-dst.center.dx, 0);
+  }
   canvas.drawImageRect(
     sprite,
     Rect.fromLTWH(0, 0, sprite.width.toDouble(), sprite.height.toDouble()),
@@ -66,4 +65,5 @@ void paintPlayerMarker(Canvas canvas, Offset center, {required Image? sprite, re
       ..filterQuality = FilterQuality.none
       ..isAntiAlias = false,
   );
+  canvas.restore();
 }
