@@ -21,11 +21,14 @@ class GameSession {
     required int Function(int n) nextInt,
   }) async {
     final json = await store.read();
-    final state = json != null
-        ? GameState.fromJson(json)
-        : GameState.fresh(groupCode: generateGroupCode(nextInt), startInventory: startInventory);
+    // O menu de debug pode ter gravado só o nível antes de existir um jogo: aí o jogo nasce com ele.
+    final hasGame = json?['group_code'] != null;
+    final state = hasGame
+        ? GameState.fromJson(json!)
+        : GameState.fresh(groupCode: generateGroupCode(nextInt), startInventory: startInventory)
+      ..playerLevel = (json?['player_level'] as int?) ?? 1;
     final session = GameSession._(state, store, nowUtc);
-    if (json == null) await session.save();
+    if (!hasGame) await session.save();
     return session;
   }
 

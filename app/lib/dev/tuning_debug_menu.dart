@@ -63,6 +63,11 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   final _simLon = TextEditingController(text: kUnicamp.$2.toString());
   final _clockText = TextEditingController();
 
+  /// Nível do Conjurador no jogo (1 a 15), guardado em `save.json`. Os Ecos do mapa e a resistência
+  /// usam este nível. É outro valor que o do seletor da sintonia de teste, mais abaixo.
+  int _gameLevel = 1;
+  SaveStore? _saveStore;
+
   /// Centro inicial do mapa. O padrão é a Unicamp.
   final _lat = TextEditingController(text: kUnicamp.$1.toString());
   final _lon = TextEditingController(text: kUnicamp.$2.toString());
@@ -73,7 +78,31 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
     _load();
   }
 
+  /// Lê o nível do jogo do save. Sem pasta de documentos (testes), fica no 1 e vive só na memória.
+  Future<void> _loadGameLevel() async {
+    try {
+      _saveStore = await FileSaveStore.inDocuments();
+      final level = (await _saveStore!.read())?['player_level'] as int?;
+      if (mounted && level != null) setState(() => _gameLevel = level.clamp(1, 15));
+    } catch (_) {
+      _saveStore = null;
+    }
+  }
+
+  /// Grava o nível no `save.json`, sem tocar no resto do save.
+  Future<void> _setGameLevel(int level) async {
+    setState(() => _gameLevel = level);
+    final store = _saveStore;
+    if (store == null) return;
+    try {
+      await store.write({...?await store.read(), 'player_level': level});
+    } catch (_) {
+      // sem disco, o nível vale só até fechar o menu
+    }
+  }
+
   Future<void> _load() async {
+    _loadGameLevel();
     final data = await TuningData.load();
     final info = await PackageInfo.fromPlatform();
     for (final s in data.species) {
@@ -185,6 +214,18 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
             const SizedBox(height: 8),
             PixelButton(label: 'Abrir mapa do jogo', color: kSignal, onTap: _openGame),
             const SizedBox(height: 16),
+            Text('Nível do Conjurador no jogo: $_gameLevel', style: const TextStyle(fontSize: 16)),
+            const Text('Os Ecos do mapa e a resistência usam este nível. Vale na próxima vez que abrir o mapa.', style: TextStyle(fontSize: 8, color: kDim)),
+            Slider(
+              value: _gameLevel.toDouble(),
+              min: 1,
+              max: 15,
+              divisions: 14,
+              label: '$_gameLevel',
+              activeColor: kSignal,
+              onChanged: (v) => _setGameLevel(v.round()),
+            ),
+            const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Simulador de GPS', style: TextStyle(fontSize: 16)),
