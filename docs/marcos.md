@@ -93,19 +93,18 @@ Simulador de GPS de debug com:
 
 ## M5b · Camada visual
 
-**Posição na fila: ainda não definida.** Entra quando o jogo de caminhar já funcionar, antes ou depois do M6, e não bloqueia nenhum marco.
+**Posição na fila: entre o M5 e o M6.**
 
-Camada só de desenho por cima do mapa do M4 e do M5. **A grade de biomas continua sendo a única camada lógica:** spawns, coleta, Aura e o hash do mundo leem só a grade, e nada que for desenhado aqui entra em regra de jogo.
+Camada só de desenho para o mapa de jogo. **A grade de biomas continua sendo a única camada lógica:** spawns, coleta, Aura e o hash do mundo leem só a grade, e nada que for desenhado aqui entra em regra de jogo.
 
-- **Ruas do OSM como linhas finas.** O pipeline exporta as vias (geometria simplificada em coordenadas da grade z21, num arquivo próprio ao lado do `.bin`, com SHA-256 registrado na época) e o app as desenha por cima da grade, em tom frio, com a espessura por classe de via.
-- **Água e parques com autotiling.** As bordas dos biomas Água e Verde ganham tiles de transição (cantos e bordas), escolhidos pelos vizinhos de cada célula. É escolha de tile, não de bioma.
+- **Pacote visual** `campinas_e0_vis.bin` (`pipeline/build_visual.py`): ruas por classe (principal, secundária, local, pedestre), água e áreas verdes como polígonos simplificados a 2 m, por tile z15, com coordenadas quantizadas, deltas e varint, em gzip. O SHA-256 fica na época 0, em `visual_packs`, em campo separado do pacote lógico. Formato na spec.
+- **Mapa em pixels de arte.** O mundo é desenhado em chunks de baixa resolução, com o pixel de arte de tamanho fixo em metros, e ampliado por vizinho mais próximo. No zoom padrão (90 m) a ampliação é inteira em pixels físicos. O ruído do chão também é em pixels de arte.
+- **Camadas:** chão neutro; verde e água com borda de 1 pixel de arte; calçada de 1 pixel de arte em tom mais claro; ruas com a largura da classe em metros; Aura; Fagulhas e materiais; Ecos e Conjurador. Cores de `biomes.json`.
+- **A grade de biomas** e a grade z20 viraram sobreposição opcional no menu de debug.
+- **Conjurador** com sprite placeholder de 48 × 48, feito por matriz de caracteres como os Ecos: figura de capuz escuro, celular com brilho ciano, contorno #1a1424.
+- **Lógica em `world/`** (`visual_map.dart`): geometrias por tile com cache, e só os chunks visíveis são desenhados.
 
-**Pronto quando:**
-- o mapa se lê como um mapa, com ruas legíveis e margens de lago e parque sem serrilhado;
-- a navegação continua fluida no moto g54 (quadros dentro de 16,7 ms, medidos como no M4);
-- os testes de bioma, spawn e `campinas_e0.bin` passam sem mudança, o que prova que a grade não foi tocada.
-
-**Atenção:** o arquivo de ruas depende do extrato do OSM, que muda todo dia. Como o `.bin`, ele é fonte da época e só se regenera numa época nova.
+**Status: feito.** Capturas na Unicamp, no centro e no Taquaral em `docs/m5b/`, com o tamanho do arquivo e as contagens. O pacote de ruas continua sendo fonte da época: como o `.bin` lógico, só se regenera numa época nova. **Falta medir o fps** (ver `docs/m5b/README.md`).
 
 ## M6 · Spawns e coleta
 
