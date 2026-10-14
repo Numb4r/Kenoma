@@ -47,11 +47,26 @@ void paintAura(Canvas canvas, Offset center, double radiusPx) {
   }
 }
 
-/// Desenha o marcador do Conjurador em [center]. O pixel do sprite cresce com a escala do mapa.
-void paintPlayerMarker(Canvas canvas, Offset center, double pixelsPerCell) {
-  final px = math.max(2, (pixelsPerCell / 5).floor()).toDouble();
+/// Altura do Conjurador na tela, em dp. Fixa: não muda com o zoom.
+const double kPlayerHeightDp = 40;
+
+/// Lado de um pixel de arte do marcador, em pixels lógicos: um número inteiro de pixels físicos, o mais
+/// perto de [kPlayerHeightDp] no total.
+double markerUnit(double dpr) => math.max(1, (kPlayerHeightDp * dpr / _marker.length).round()) / dpr;
+
+/// O retângulo que o marcador ocupa em [center].
+Rect markerRect(Offset center, double dpr) {
+  final u = markerUnit(dpr);
+  return Rect.fromCenter(center: center, width: _marker.first.length * u, height: _marker.length * u);
+}
+
+double _snap(double v, double dpr) => (v * dpr).roundToDouble() / dpr;
+
+/// Desenha o marcador do Conjurador em [center], com ~40 dp de altura em qualquer zoom.
+void paintPlayerMarker(Canvas canvas, Offset center, {double dpr = 1}) {
+  final px = markerUnit(dpr);
   final w = _marker.first.length * px, h = _marker.length * px;
-  final origin = Offset((center.dx - w / 2).roundToDouble(), (center.dy - h / 2).roundToDouble());
+  final origin = Offset(_snap(center.dx - w / 2, dpr), _snap(center.dy - h / 2, dpr));
   final fill = Paint()..isAntiAlias = false;
   for (var r = 0; r < _marker.length; r++) {
     for (var c = 0; c < _marker[r].length; c++) {

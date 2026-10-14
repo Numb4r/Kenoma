@@ -6,6 +6,7 @@ import '../../capture/eco_type.dart';
 import '../../core/tiles.dart';
 import '../../world/aura.dart';
 import '../../world/follow_camera.dart';
+import '../../world/map_scale.dart';
 import '../../world/places.dart';
 import '../../world/player_avatar.dart';
 import '../../world/player_tracker.dart';
@@ -21,6 +22,10 @@ class GameMapGame extends FlameGame {
   GameMapGame({
     required this.renderer,
     required this.auraM,
+    required this.defaultWidthM,
+    required this.minWidthM,
+    required this.maxWidthM,
+    this.dpr = 1,
     this.worldView,
     this.sprites = const {},
     this.typeOf = _noType,
@@ -46,6 +51,17 @@ class GameMapGame extends FlameGame {
   /// Raio da Aura, em metros, do `balance.json`.
   final double auraM;
 
+  /// Largura da tela em metros no zoom padrão, e a faixa da pinça (do `balance.json`).
+  final double defaultWidthM;
+  final double minWidthM;
+  final double maxWidthM;
+
+  /// Pixels físicos por pixel lógico: o marcador e os Ecos têm tamanho fixo na tela, em pixels inteiros.
+  final double dpr;
+
+  /// Quantos metros cabem na largura da tela agora. A pinça muda isto.
+  late double widthM = defaultWidthM;
+
   /// A câmera de jogo.
   late final FollowCamera follow;
 
@@ -57,7 +73,7 @@ class GameMapGame extends FlameGame {
   bool _hasFix = false;
   double _refreshIn = 0;
   double _time = 0;
-  double _scaleAtStart = FollowCamera.defaultScale;
+  double _widthAtStart = 0;
 
   @override
   Color backgroundColor() => const Color(0xFF1A1424);
@@ -84,7 +100,7 @@ class GameMapGame extends FlameGame {
   }
 
   void touchStart() {
-    _scaleAtStart = follow.pixelsPerCell;
+    _widthAtStart = widthM;
     follow.touchStart();
   }
 
@@ -92,7 +108,7 @@ class GameMapGame extends FlameGame {
 
   /// Arrasto de [dx], [dy] pixels (espiar) e pinça com [scale] acumulado desde o início do gesto.
   void gesture({required double dx, required double dy, required double scale}) {
-    if (scale != 1.0) follow.setScale(_scaleAtStart * scale);
+    if (scale != 1.0) widthM = (_widthAtStart / scale).clamp(minWidthM, maxWidthM).toDouble();
     if (dx != 0 || dy != 0) follow.dragBy(dx, dy);
   }
 
@@ -107,6 +123,12 @@ class GameMapGame extends FlameGame {
       worldView!.refresh(lat: _lat, lon: _lon, tUtc: nowUtc());
     }
     if (avatar.hasPosition) follow.setTarget(avatar.x, avatar.y);
+    if (size.x > 0) {
+      // A escala vem dos metros visíveis: segue a largura da tela e a latitude.
+      double ppc(double w) => pixelsPerCellFor(widthM: w, viewWidthPx: size.x, lat: _lat);
+      follow.limitScale(ppc(maxWidthM), ppc(minWidthM));
+      follow.setScale(ppc(widthM), resetIdle: false);
+    }
     follow.update(dt);
   }
 
@@ -118,14 +140,26 @@ class GameMapGame extends FlameGame {
     final cam = follow.camera;
     renderer.paint(canvas, view, camera: cam, crosshair: false);
     if (!avatar.hasPosition) return;
-    final w = worldView;
-    if (w != null) {
-      paintSpawns(canvas, view, cam, w.spawns, sprites: sprites, typeOf: typeOf, inAura: w.inAura, time: _time);
-    }
     final (sx, sy) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
     final center = Offset(sx, sy);
+    // De baixo para cima: Aura no chão, spawns, Conjurador por cima de tudo.
     paintAura(canvas, center, auraRadiusPx(auraM: auraM, lat: _lat, pixelsPerCell: cam.pixelsPerCell));
-    paintPlayerMarker(canvas, center, cam.pixelsPerCell);
+    final w = worldView;
+    if (w != null) {
+      paintSpawns(
+        canvas,
+        view,
+        cam,
+        w.spawns,
+        sprites: sprites,
+        typeOf: typeOf,
+        inAura: w.inAura,
+        time: _time,
+        avoid: markerRect(center, dpr).inflate(6),
+        dpr: dpr,
+      );
+    }
+    paintPlayerMarker(canvas, center, dpr: dpr);
   }
 
   /// O spawn sob o toque em [screen], se houver: o mais perto dentro do raio de toque.
@@ -138,7 +172,7 @@ class GameMapGame extends FlameGame {
     for (final s in w.spawns) {
       final (sx, sy) = cam.cellToScreen(s.x, s.y, size.x, size.y);
       final d = (Offset(sx, sy) - screen).distance;
-      if (d <= hitRadius(s, cam.pixelsPerCell) && d < bestD) {
+      if (d <= hitRadius(s, dpr) && d < bestD) {
         best = s;
         bestD = d;
       }

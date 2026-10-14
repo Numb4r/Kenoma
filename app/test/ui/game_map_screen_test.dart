@@ -10,7 +10,6 @@ import 'package:kenoma/dev/gps_simulator.dart';
 import 'package:kenoma/ui/game/game_map_game.dart';
 import 'package:kenoma/ui/game/game_map_screen.dart';
 import 'package:kenoma/ui/game/joystick.dart';
-import 'package:kenoma/world/follow_camera.dart';
 import 'package:kenoma/world/location_access.dart';
 import 'package:kenoma/world/places.dart';
 
@@ -210,10 +209,10 @@ void main() {
     testWidgets('arrastar espia em volta, e depois de 3 s sem toque a câmera volta sozinha', (tester) async {
       final env = await pumpGame(tester);
       final base = env.game.follow.camera.centerX;
-      await tester.drag(gameWidget, const Offset(160, 0)); // 16 px por célula: 10 células
+      await tester.drag(gameWidget, const Offset(160, 0)); // ~40 px por célula no zoom padrão: ~4 células
       await env.settle(2);
       expect(env.game.follow.peeking, isTrue);
-      expect(env.game.follow.camera.centerX, lessThan(base - 5), reason: 'o mapa foi com o dedo: a câmera foi para oeste');
+      expect(env.game.follow.camera.centerX, lessThan(base - 3), reason: 'o mapa foi com o dedo: a câmera foi para oeste');
       for (var i = 0; i < 50; i++) {
         await tester.pump(const Duration(milliseconds: 50)); // 2,5 s
       }
@@ -240,7 +239,7 @@ void main() {
       expect(env.game.follow.peeking, isFalse);
     });
 
-    testWidgets('a pinça dá zoom só na faixa de jogo: de 8 a 24 px por célula, menor que a do debug', (tester) async {
+    testWidgets('a pinça vai de 100 m a 300 m de largura de tela; o padrão põe a Aura em 45% dela', (tester) async {
       final env = await pumpGame(tester);
       Future<void> pinch(double from, double to) async {
         final c = tester.getCenter(gameWidget);
@@ -257,13 +256,11 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
 
-      expect(env.game.follow.pixelsPerCell, 16);
+      expect(env.game.widthM, closeTo(177.78, 0.01));
       await pinch(60, 120);
-      expect(env.game.follow.pixelsPerCell, closeTo(24, 0.01), reason: 'abrir 2x passaria de 32: trava no máximo de jogo (24)');
+      expect(env.game.widthM, 100, reason: 'abrir 2x passaria de 100 m: trava no mínimo');
       await pinch(100, 20);
-      expect(env.game.follow.pixelsPerCell, closeTo(8, 0.01), reason: 'trava no mínimo de jogo (8)');
-      expect(FollowCamera.minScale, greaterThan(1));
-      expect(FollowCamera.maxScale, lessThan(32));
+      expect(env.game.widthM, 300, reason: 'fechar 5x passaria de 300 m: trava no máximo');
     });
   });
 

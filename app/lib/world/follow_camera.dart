@@ -43,6 +43,11 @@ class FollowCamera {
   /// Distância (em células) acima da qual a câmera pula em vez de deslizar (teleporte).
   final double snapCells;
 
+  /// Limites de escala em vigor. Começam na faixa fixa; o mapa de jogo os troca pelos de [minWidthM] a
+  /// [maxWidthM] convertidos em pixels por célula.
+  double scaleMin = minScale;
+  double scaleMax = maxScale;
+
   double _x, _y;
   double _tx, _ty;
   double _peekX = 0, _peekY = 0;
@@ -107,9 +112,16 @@ class FollowCamera {
   }
 
   /// Muda a escala (pinça), limitada à faixa de jogo.
-  void setScale(double pixelsPerCell) {
-    _idleS = 0;
-    _scale = pixelsPerCell.clamp(minScale, maxScale).toDouble();
+  void setScale(double pixelsPerCell, {bool resetIdle = true}) {
+    if (resetIdle) _idleS = 0;
+    _scale = pixelsPerCell.clamp(scaleMin, scaleMax).toDouble();
+  }
+
+  /// Troca a faixa de escala e reaplica a atual dentro dela.
+  void limitScale(double min, double max) {
+    scaleMin = min;
+    scaleMax = max;
+    _scale = _scale.clamp(min, max).toDouble();
   }
 
   /// Avança [dt] segundos: segue o alvo com suavização e, passados [returnAfterS] sem toque, traz o

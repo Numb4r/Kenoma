@@ -30,11 +30,18 @@ ui.Color spawnColor(WorldSpawn s, EcoTypeOf typeOf) {
   };
 }
 
-/// Tamanho do sprite do Eco na tela, em pixels lógicos.
-double ecoSize(double pixelsPerCell) => 48 * (pixelsPerCell / 16).clamp(0.75, 1.5);
+/// Altura do Eco na tela, em dp: um pouco menor que o Conjurador (40 dp). Fixa em qualquer zoom.
+const double kEcoHeightDp = 35;
+
+/// Tamanho do sprite do Eco na tela, em pixels lógicos: cada pixel de arte ocupa um número inteiro de
+/// pixels físicos.
+double ecoSize(double dpr) => 48 * math.max(1, (kEcoHeightDp * dpr / 48).round()) / dpr;
+
+/// Lado do pixel das Fagulhas e dos materiais: pequenos, ~3 dp, em pixels físicos inteiros.
+double smallUnit(double dpr) => math.max(1, (3 * dpr).round()) / dpr;
 
 /// Raio de toque de um spawn, em pixels.
-double hitRadius(WorldSpawn s, double pixelsPerCell) => s.isEco ? ecoSize(pixelsPerCell) * 0.6 : 28;
+double hitRadius(WorldSpawn s, double dpr) => s.isEco ? ecoSize(dpr) * 0.6 : 28;
 
 void paintSpawns(
   ui.Canvas canvas,
@@ -45,6 +52,8 @@ void paintSpawns(
   required EcoTypeOf typeOf,
   required bool Function(WorldSpawn) inAura,
   required double time,
+  required ui.Rect avoid,
+  double dpr = 1,
 }) {
   final ordered = [...spawns]..sort((a, b) => a.y.compareTo(b.y));
   for (final s in ordered) {
@@ -53,19 +62,19 @@ void paintSpawns(
     final center = ui.Offset(sx.roundToDouble(), sy.roundToDouble());
     final near = inAura(s);
     if (s.isEco) {
-      _eco(canvas, center, s, sprites[s.entryId], cam.pixelsPerCell, typeOf, near, time);
+      _eco(canvas, center, s, sprites[s.entryId], dpr, typeOf, near, time, avoid);
     } else if (s.isSpark) {
-      _spark(canvas, center, spawnColor(s, typeOf), cam.pixelsPerCell, near, time + s.uid % 7);
+      _spark(canvas, center, spawnColor(s, typeOf), dpr, near, time + s.uid % 7);
     } else {
-      _material(canvas, center, spawnColor(s, typeOf), cam.pixelsPerCell, near);
+      _material(canvas, center, spawnColor(s, typeOf), dpr, near);
     }
   }
 }
 
 final _flat = ui.Paint()..isAntiAlias = false;
 
-void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double ppc, EcoTypeOf typeOf, bool near, double time) {
-  final size = ecoSize(ppc);
+void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double dpr, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid) {
+  final size = ecoSize(dpr);
   final color = spawnColor(s, typeOf);
   // Sombra no chão.
   canvas.drawOval(
@@ -85,20 +94,28 @@ void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double 
     canvas.drawRect(dst.deflate(size * 0.2), _flat..color = color);
   }
   if (!near) return;
-  canvas.drawCircle(
-    c.translate(0, size * 0.42),
-    size * 0.42,
-    ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 2..color = color..isAntiAlias = false,
-  );
+  // Perto do Conjurador o anel e o rótulo ficam de fora: nada cobre o marcador.
+  final ring = ui.Rect.fromCenter(center: c.translate(0, size * 0.42), width: size * 0.84, height: size * 0.84);
+  if (!ring.overlaps(avoid)) {
+    canvas.drawCircle(
+      ring.center,
+      ring.width / 2,
+      ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 2..color = color..isAntiAlias = false,
+    );
+  }
   final label = TextPainter(
     text: TextSpan(text: 'NV ${s.level}', style: const TextStyle(fontFamily: 'Silkscreen', fontSize: 8, color: kText)),
     textDirection: TextDirection.ltr,
   )..layout();
-  label.paint(canvas, ui.Offset(c.dx - label.width / 2, c.dy - size * 0.62 - 10));
+  final x = c.dx - label.width / 2;
+  final above = ui.Rect.fromLTWH(x, c.dy - size * 0.62 - 10, label.width, label.height);
+  final below = ui.Rect.fromLTWH(x, c.dy + size * 0.62 + 2, label.width, label.height);
+  final spot = !above.overlaps(avoid) ? above : (!below.overlaps(avoid) ? below : null);
+  if (spot != null) label.paint(canvas, spot.topLeft);
 }
 
-void _spark(ui.Canvas canvas, ui.Offset c, ui.Color color, double ppc, bool near, double time) {
-  final px = math.max(2.0, (ppc / 8).floorToDouble());
+void _spark(ui.Canvas canvas, ui.Offset c, ui.Color color, double dpr, bool near, double time) {
+  final px = smallUnit(dpr);
   final pulse = 0.65 + 0.35 * math.sin(time * 4);
   final arm = (near ? 2 : 1) + (pulse > 0.85 ? 1 : 0);
   void block(double dx, double dy, ui.Color col) =>
@@ -111,8 +128,8 @@ void _spark(ui.Canvas canvas, ui.Offset c, ui.Color color, double ppc, bool near
   block(0, 0, const ui.Color(0xFFFFFFFF));
 }
 
-void _material(ui.Canvas canvas, ui.Offset c, ui.Color color, double ppc, bool near) {
-  final px = math.max(2.0, (ppc / 6).floorToDouble());
+void _material(ui.Canvas canvas, ui.Offset c, ui.Color color, double dpr, bool near) {
+  final px = smallUnit(dpr);
   final r = ui.Rect.fromCenter(center: c, width: px * 4, height: px * 4);
   canvas.drawRect(r.inflate(px / 2), _flat..color = kOutline);
   canvas.drawRect(r, _flat..color = near ? color : color.withValues(alpha: 0.6));

@@ -137,6 +137,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   }
 
   Future<Object> _load() async {
+    final dpr = View.of(context).devicePixelRatio;
     final result = await loadMapAssets(nowUtc: tools.clock.nowUtc, bundle: widget.bundle);
     if (result is String) return result;
     final assets = result as MapAssets;
@@ -169,6 +170,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final game = GameMapGame(
       renderer: assets.makeRenderer(),
       auraM: assets.balance.auraM,
+      defaultWidthM: assets.balance.defaultWidthM,
+      minWidthM: assets.balance.zoomMinWidthM,
+      maxWidthM: assets.balance.zoomMaxWidthM,
+      dpr: dpr,
       worldView: world,
       sprites: sprites,
       typeOf: (id) => data.species(id)?.type,
