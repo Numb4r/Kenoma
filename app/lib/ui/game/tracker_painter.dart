@@ -22,6 +22,7 @@ void paintTracker(
   required EcoTypeOf typeOf,
   double margin = 8,
   double bottomInset = 0,
+  double rotation = 0,
 }) {
   for (var i = 0; i < entries.length; i++) {
     final e = entries[i];
@@ -42,8 +43,9 @@ void paintTracker(
       );
     }
     // Seta na borda da caixa, para onde o Eco está.
-    final tip = box.center + ui.Offset(math.cos(e.angle), math.sin(e.angle)) * (_cell / 2 - 2);
-    final back = e.angle + math.pi;
+    final angle = e.angle + rotation; // a direção no mundo, vista com o mapa girado
+    final tip = box.center + ui.Offset(math.cos(angle), math.sin(angle)) * (_cell / 2 - 2);
+    final back = angle + math.pi;
     final a = tip + ui.Offset(math.cos(back + 0.5), math.sin(back + 0.5)) * 9;
     final b = tip + ui.Offset(math.cos(back - 0.5), math.sin(back - 0.5)) * 9;
     canvas.drawPath(

@@ -16,7 +16,9 @@ import '../../world/world_view.dart';
 import '../collection/collection_screen.dart';
 import '../sprites/sprite_image.dart';
 import '../tuning/vibration_driver.dart';
+import '../../data/heading_source.dart';
 import 'art_style.dart';
+import 'compass_button.dart';
 import 'encounter_flow.dart';
 import '../../world/location_access.dart';
 import '../../world/player_tracker.dart';
@@ -33,7 +35,7 @@ import 'sim_overlay.dart';
 /// A posição vem de `tools.source`: o GPS real (pedindo a permissão com uma explicação curta) ou o
 /// simulador do menu de debug, que entra no lugar sem o resto do código saber.
 class GameMapScreen extends StatefulWidget {
-  const GameMapScreen({required this.tools, this.gateway = const GeolocatorGateway(), this.bundle, this.store, this.openStore, this.vibration, super.key});
+  const GameMapScreen({required this.tools, this.gateway = const GeolocatorGateway(), this.bundle, this.store, this.openStore, this.vibration, this.headingSource, super.key});
 
   final DevTools tools;
 
@@ -48,6 +50,9 @@ class GameMapScreen extends StatefulWidget {
 
   /// Como abrir o save do disco, se não vier um [store]. Se falhar, o jogo vive só na memória.
   final Future<SaveStore> Function()? openStore;
+
+  /// De onde vem o rumo do celular para o "seguir direção". Por padrão, a bússola do aparelho.
+  final HeadingSource? headingSource;
 
   /// Quem vibra na sintonia. Por padrão, o motor do aparelho.
   final VibrationPlayer? vibration;
@@ -73,6 +78,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   _Ready? _ready;
   LocationAccess? _access;
   int _pointers = 0;
+  StreamSubscription<double>? _headingSub;
   String? _toastText;
   Timer? _toastTimer;
   bool _busy = false;
@@ -90,10 +96,20 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     }
   }
 
+  /// Liga ou desliga a leitura da bússola do celular, só enquanto o "seguir direção" está ligado.
+  void _setFollowHeading(bool on) {
+    _headingSub?.cancel();
+    _headingSub = null;
+    final game = _ready?.game;
+    if (!on || game == null) return;
+    _headingSub = (widget.headingSource ?? const CompassHeadingSource()).headings.listen(game.setHeading);
+  }
+
   /// Aviso curto no alto da tela ("+1 Pó de Essência de Fogo").
   void _toast(String message) {
     if (!mounted) return;
     _toastTimer?.cancel();
+    _headingSub?.cancel();
     setState(() => _toastText = message);
     _toastTimer = Timer(const Duration(seconds: 2), () {
       if (mounted) setState(() => _toastText = null);
@@ -185,6 +201,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       playerHeightFraction: assets.balance.playerHeightFraction,
       trackerM: assets.balance.trackerM,
       trackerMax: assets.balance.trackerMax,
+      declinationDeg: assets.balance.compassDeclinationDeg,
       dpr: dpr,
       worldView: world,
       sprites: sprites,
@@ -196,6 +213,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       game.onPlayerState(s);
       _rebuild();
     });
+    game.onFollowHeading = _setFollowHeading;
     _ready = _Ready(assets, game, tracker, sub, data, session, world);
     // O acesso é pedido depois do primeiro quadro: o diálogo precisa de uma tela montada.
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureAccess());
@@ -252,9 +270,12 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final ready = _ready;
     if (ready == null) return;
     if (state == AppLifecycleState.paused) {
+      _headingSub?.cancel(); // a bússola também só com o app aberto
+      _headingSub = null;
       ready.tracker.stop(); // só com o app aberto
     } else if (state == AppLifecycleState.resumed) {
       _ensureAccess(); // o jogador pode ter mexido nos ajustes
+      if (ready.game.rotation.followHeading) _setFollowHeading(true);
     }
   }
 
@@ -330,7 +351,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
           },
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onScaleUpdate: (d) => game.gesture(dx: d.focalPointDelta.dx, dy: d.focalPointDelta.dy, scale: d.scale),
+            onScaleStart: (_) => game.gestureStart(),
+            onScaleUpdate: (d) => game.gesture(dx: d.focalPointDelta.dx, dy: d.focalPointDelta.dy, scale: d.scale, turn: d.rotation),
             child: GameWidget(game: game),
           ),
         ),
@@ -373,6 +395,19 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.85), border: Border.all(color: kVeil, width: 2)),
                     child: const Text('COLEÇÃO', style: TextStyle(fontSize: 8, color: kVeil)),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 56,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: ValueListenableBuilder(
+                    valueListenable: game.compass,
+                    builder: (context, c, _) => c.visible
+                        ? CompassButton(angle: c.angle, follow: c.follow, onNorth: game.goNorth, onToggleFollow: game.toggleFollowHeading)
+                        : const SizedBox.shrink(),
                   ),
                 ),
               ),

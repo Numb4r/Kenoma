@@ -1,14 +1,17 @@
 import 'dart:ui';
 import 'dart:ui' as ui;
 
-import 'package:flame/game.dart';
-
 import 'dart:math' as math;
+
+import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import '../../capture/eco_type.dart';
 import '../../core/tiles.dart';
 import '../../world/aura.dart';
 import '../../world/follow_camera.dart';
+import '../../world/map_camera.dart';
+import '../../world/map_rotation.dart';
 import '../../world/map_scale.dart';
 import '../../world/places.dart';
 import '../../world/player_avatar.dart';
@@ -42,6 +45,7 @@ class GameMapGame extends FlameGame {
     required this.playerHeightFraction,
     required this.trackerM,
     required this.trackerMax,
+    this.declinationDeg = 0,
     this.dpr = 1,
     this.worldView,
     this.sprites = const {},
@@ -65,7 +69,7 @@ class GameMapGame extends FlameGame {
   /// Sobreposições de debug, lidas a cada quadro: a grade de biomas e a grade das células de spawn (z20).
   final bool Function() overlayBiomes;
   final bool Function() overlayGrid20;
-  ArtRenderer? _art;
+  late final ArtRenderer _art = ArtRenderer(visual: visual, style: style, balance: balance);
 
   /// Os spawns e o que o jogador alcança. `null` nos testes que só querem o mapa.
   final WorldView? worldView;
@@ -92,6 +96,10 @@ class GameMapGame extends FlameGame {
   final double trackerM;
   final int trackerMax;
 
+  /// Declinação magnética do lugar, em graus (leste positivo): a bússola do celular lê o norte magnético e o
+  /// mapa tem o norte verdadeiro.
+  final double declinationDeg;
+
   /// Pixels físicos por pixel lógico: o marcador e os Ecos têm tamanho fixo na tela, em pixels inteiros.
   final double dpr;
 
@@ -100,6 +108,22 @@ class GameMapGame extends FlameGame {
 
   /// A câmera de jogo.
   late final FollowCamera follow;
+
+  /// A rotação do mapa: o gesto de dois dedos, a volta ao norte e o "seguir direção".
+  final rotation = MapRotation();
+
+  /// O que a bússola da tela precisa saber: o ângulo, se aparece e se o "seguir direção" está ligado.
+  final compass = ValueNotifier<({double angle, bool visible, bool follow})>((angle: 0, visible: false, follow: false));
+
+  /// Pediram para ligar ou desligar a leitura da bússola do celular (o "seguir direção").
+  void Function(bool on)? onFollowHeading;
+
+  /// Quanto vale, no gesto, ficar com o pixel de arte maior para segurar o fps (1 = nítido). Só cai para 2
+  /// com o dedo na tela e se rasterizar estiver acima de [coarseOverMs].
+  int get coarse => follow.touching && _art.rasterMs > coarseOverMs ? 2 : 1;
+
+  /// Acima disto (ms por quadro, média móvel) o gesto rasteriza com o pixel de arte maior.
+  static const double coarseOverMs = 9;
 
   /// O marcador suavizado.
   final avatar = PlayerAvatar();
@@ -140,12 +164,42 @@ class GameMapGame extends FlameGame {
     follow.touchStart();
   }
 
-  void touchEnd() => follow.touchEnd();
+  void touchEnd() {
+    rotation.gestureEnd();
+    follow.touchEnd();
+  }
 
-  /// Arrasto de [dx], [dy] pixels (espiar) e pinça com [scale] acumulado desde o início do gesto.
-  void gesture({required double dx, required double dy, required double scale}) {
+  /// Os dedos começaram (ou mudaram de número): a pinça e o giro contam daqui.
+  void gestureStart() {
+    _widthAtStart = widthM;
+    rotation.gestureStart();
+  }
+
+  /// Arrasto de [dx], [dy] pixels (espiar), pinça com [scale] e giro de [turn] radianos, acumulados desde o
+  /// início do gesto.
+  void gesture({required double dx, required double dy, required double scale, double turn = 0}) {
     if (scale != 1.0) widthM = (_widthAtStart / scale).clamp(minWidthM, maxWidthM).toDouble();
+    if (turn != 0) {
+      rotation.gestureRotate(turn);
+      if (!rotation.followHeading) onFollowHeading?.call(false);
+    }
     if (dx != 0 || dy != 0) follow.dragBy(dx, dy);
+  }
+
+  /// A bússola do celular leu [magneticDeg] (graus a partir do norte magnético, no sentido horário).
+  void setHeading(double magneticDeg) => rotation.setHeading((magneticDeg + declinationDeg) % 360);
+
+  /// Toque na bússola: volta ao norte.
+  void goNorth() {
+    final was = rotation.followHeading;
+    rotation.goNorth();
+    if (was) onFollowHeading?.call(false);
+  }
+
+  /// Toque duplo na bússola: liga ou desliga o "seguir direção".
+  void toggleFollowHeading() {
+    rotation.toggleFollowHeading();
+    onFollowHeading?.call(rotation.followHeading);
   }
 
   @override
@@ -165,7 +219,11 @@ class GameMapGame extends FlameGame {
       follow.limitScale(ppc(maxWidthM), ppc(minWidthM));
       follow.setScale(ppc(widthM), resetIdle: false);
     }
+    rotation.update(dt);
+    follow.setRotation(rotation.angle);
     follow.update(dt);
+    final state = (angle: rotation.angle, visible: rotation.showCompass, follow: rotation.followHeading);
+    if (state != compass.value) compass.value = state;
   }
 
   @override
@@ -174,13 +232,8 @@ class GameMapGame extends FlameGame {
     if (size.x <= 0 || size.y <= 0) return;
     final view = Size(size.x, size.y);
     final cam = follow.camera;
-    _artRenderer(view).paint(canvas, view, cam, dpr: dpr);
-    if (overlayBiomes() || overlayGrid20()) {
-      // Sobreposição de debug: a grade lógica por cima do desenho, translúcida.
-      canvas.saveLayer(Offset.zero & view, Paint()..color = const Color(0x99FFFFFF));
-      renderer.paint(canvas, view, camera: cam, crosshair: false, grid20: overlayGrid20());
-      canvas.restore();
-    }
+    _art.paint(canvas, view, cam, dpr: dpr, metersPerCell: metersPerCell(_lat), coarse: coarse);
+    if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
     if (!avatar.hasPosition) return;
     final (sx, sy) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
     final center = Offset(sx, sy);
@@ -213,34 +266,29 @@ class GameMapGame extends FlameGame {
           return x < -off || y < -off || x > view.width + off || y > view.height + off;
         },
       );
-      paintTracker(canvas, view, tracked, sprites: sprites, typeOf: typeOf, bottomInset: bottomInset);
+      paintTracker(canvas, view, tracked, sprites: sprites, typeOf: typeOf, bottomInset: bottomInset, rotation: cam.rotation);
     }
   }
 
-  /// O renderizador em pixels de arte. O pixel de arte tem um tamanho fixo em metros, escolhido para que no
-  /// zoom padrão a ampliação seja inteira em pixels físicos; refeito se a tela mudar de tamanho.
-  ArtRenderer _artRenderer(Size view) {
-    final key = (view.width, view.height);
-    if (_art != null && _artKey == key) return _art!;
-    _art?.dispose();
-    final k = math.max(1, (balance.artPixelDp * dpr).round()); // pixels físicos por pixel de arte
-    final artM = defaultWidthM * k / (view.width * dpr);
-    final mpc = metersPerCell(_lat);
-    _artKey = key;
-    return _art = ArtRenderer(
-      visual: visual,
-      style: style,
-      balance: balance,
-      artCells: artM / mpc,
-      metersPerArtPx: artM,
-    );
+  /// Sobreposição de debug: a grade de biomas (a camada lógica) e a das células de spawn, translúcidas por
+  /// cima do desenho. O renderizador da grade desenha sem rotação, então o canvas gira por ele em torno do
+  /// Conjurador, e a câmera sem rotação cobre um quadrado que tem a diagonal da tela.
+  void _paintLogicalOverlay(Canvas canvas, Size view, MapCamera cam) {
+    final diagonal = math.sqrt(view.width * view.width + view.height * view.height);
+    final virtual = Size(diagonal, diagonal);
+    final flat = MapCamera(centerX: cam.centerX, centerY: cam.centerY, pixelsPerCell: cam.pixelsPerCell);
+    canvas.saveLayer(Offset.zero & view, Paint()..color = const Color(0x99FFFFFF));
+    canvas.translate(view.width / 2, view.height / 2);
+    canvas.rotate(cam.rotation);
+    canvas.translate(-diagonal / 2, -diagonal / 2);
+    renderer.paint(canvas, virtual, camera: flat, crosshair: false, grid20: overlayGrid20());
+    canvas.restore();
   }
-
-  (double, double)? _artKey;
 
   @override
   void onRemove() {
-    _art?.dispose();
+    _art.dispose();
+    compass.dispose();
     super.onRemove();
   }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flame/game.dart';
@@ -5,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/tiles.dart';
+import 'package:kenoma/data/heading_source.dart';
+import 'package:kenoma/ui/game/compass_button.dart';
+import 'package:kenoma/world/spawn_field.dart';
 import 'package:kenoma/dev/dev_tools.dart';
 import 'package:kenoma/dev/gps_simulator.dart';
 import 'package:kenoma/ui/game/game_map_game.dart';
@@ -39,6 +43,17 @@ final gameWidget = find.byWidgetPredicate((w) => w is GameWidget);
 /// O jogo do mapa, de dentro da árvore.
 GameMapGame gameOf(WidgetTester tester) => tester.widget<GameWidget>(gameWidget).game! as GameMapGame;
 
+class FakeHeading implements HeadingSource {
+  final _c = StreamController<double>.broadcast();
+
+  bool get listening => _c.hasListener;
+
+  void emit(double deg) => _c.add(deg);
+
+  @override
+  Stream<double> get headings => _c.stream;
+}
+
 class Env {
   Env(this.tester, this.tools, this.gps, this.gateway);
 
@@ -68,6 +83,7 @@ Future<Env> pumpGame(
   bool simulator = true,
   FakeGateway? gateway,
   int? clockUtc,
+  HeadingSource? heading,
 }) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 2.625;
@@ -77,7 +93,7 @@ Future<Env> pumpGame(
   final tools = DevTools(realSource: gps);
   if (clockUtc != null) tools.clock.setUtc(clockUtc);
   if (simulator) await tools.setUseSimulator(true);
-  await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: gw, bundle: _Bundle(realAssets()))));
+  await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: gw, bundle: _Bundle(realAssets()), headingSource: heading)));
   for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pump();
@@ -262,6 +278,109 @@ void main() {
       expect(env.game.widthM, 60, reason: 'abrir 2x passaria de 60 m: trava no mínimo');
       await pinch(100, 20);
       expect(env.game.widthM, 150, reason: 'fechar 5x passaria de 150 m: trava no máximo');
+    });
+  });
+
+  group('rotação do mapa', () {
+    // Um Eco de mentira a [east] e [south] células do Conjurador.
+    WorldSpawn ecoAt(Env env, double east, double south) => WorldSpawn(
+          uid: 7,
+          kind: 'eco',
+          entryId: 'soot.eco',
+          quantity: 1,
+          x: env.game.avatar.x + east,
+          y: env.game.avatar.y + south,
+          cellX: 0,
+          cellY: 0,
+          window: 0,
+          level: 1,
+        );
+
+    testWidgets('tocar num Eco continua achando o Eco com o mapa girado', (tester) async {
+      final env = await pumpGame(tester);
+      final game = env.game;
+      game.worldView!.spawns = [ecoAt(env, 1.5, -2.0)];
+      for (final turn in [0.0, 0.8, 1.9, -2.6]) {
+        game.follow.setRotation(turn);
+        final (sx, sy) = game.follow.camera.cellToScreen(env.game.avatar.x + 1.5, env.game.avatar.y - 2.0, game.size.x, game.size.y);
+        expect(game.spawnAt(Offset(sx, sy))?.uid, 7, reason: 'giro $turn: tocando onde o Eco aparece');
+        expect(game.spawnAt(Offset(sx + 200, sy)), isNull, reason: 'longe do Eco não acha nada');
+      }
+    });
+
+    testWidgets('com o mapa girado o Eco aparece onde a rotação o põe, e não onde estaria sem girar', (tester) async {
+      final env = await pumpGame(tester);
+      final game = env.game;
+      game.worldView!.spawns = [ecoAt(env, 0, -2.0)]; // 2 células ao norte
+      game.follow.setRotation(0);
+      final (ux, uy) = game.follow.camera.cellToScreen(game.avatar.x, game.avatar.y - 2, game.size.x, game.size.y);
+      game.follow.setRotation(1.5707963267948966); // 90° horário: o norte vai para a direita
+      final (rx, ry) = game.follow.camera.cellToScreen(game.avatar.x, game.avatar.y - 2, game.size.x, game.size.y);
+      expect(rx, greaterThan(ux + 10));
+      expect(game.spawnAt(Offset(ux, uy)), isNull, reason: 'onde ele estaria sem girar já não é o Eco');
+      expect(game.spawnAt(Offset(rx, ry))?.uid, 7);
+    });
+
+    testWidgets('com o norte para cima não há bússola; girar com dois dedos faz a bússola aparecer, e tocar nela volta ao norte', (tester) async {
+      final env = await pumpGame(tester);
+      expect(find.byType(CompassButton), findsNothing);
+      env.game.gestureStart();
+      env.game.gesture(dx: 0, dy: 0, scale: 1, turn: 0.2);
+      env.game.gesture(dx: 0, dy: 0, scale: 1, turn: 1.2);
+      env.game.touchEnd();
+      await env.settle(2);
+      expect(env.game.rotation.angle, closeTo(1.0, 1e-6));
+      expect(find.byType(CompassButton), findsOneWidget);
+      await tester.tap(find.byType(CompassButton));
+      await tester.pump(const Duration(milliseconds: 400)); // o duplo toque espera para ter certeza
+      for (var i = 0; i < 40; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(env.game.rotation.angle, 0);
+      expect(find.byType(CompassButton), findsNothing, reason: 'norte para cima: a bússola some');
+    });
+
+    testWidgets('duplo toque na bússola liga o seguir direção: o mapa gira com a bússola do celular, com o norte verdadeiro', (tester) async {
+      final heading = FakeHeading();
+      final env = await pumpGame(tester, heading: heading);
+      env.game.gestureStart();
+      env.game.gesture(dx: 0, dy: 0, scale: 1, turn: 0.2);
+      env.game.gesture(dx: 0, dy: 0, scale: 1, turn: 1.0);
+      env.game.touchEnd();
+      await env.settle(2);
+      expect(env.game.rotation.followHeading, isFalse);
+      expect(heading.listening, isFalse, reason: 'a bússola do celular só liga no seguir direção');
+
+      final compass = find.byType(CompassButton);
+      await tester.tap(compass);
+      await tester.pump(const Duration(milliseconds: 40));
+      await tester.tap(compass);
+      await tester.pump(const Duration(milliseconds: 40));
+      expect(env.game.rotation.followHeading, isTrue);
+      expect(heading.listening, isTrue);
+
+      heading.emit(90); // magnético; a declinação de Campinas (-21°) leva ao norte verdadeiro 69°
+      for (var i = 0; i < 120; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      final trueHeading = 90 + env.game.declinationDeg;
+      expect(env.game.declinationDeg, lessThan(0));
+      expect(env.game.rotation.angle, closeTo(-trueHeading * 3.141592653589793 / 180, 0.01));
+
+      await tester.tap(compass);
+      await tester.pump(const Duration(milliseconds: 40));
+      await tester.tap(compass);
+      await tester.pump(const Duration(milliseconds: 40));
+      expect(env.game.rotation.followHeading, isFalse);
+      expect(heading.listening, isFalse, reason: 'desligou: para de ler a bússola');
+    });
+
+    testWidgets('um giro pequeno durante a pinça não gira o mapa', (tester) async {
+      final env = await pumpGame(tester);
+      env.game.gestureStart();
+      env.game.gesture(dx: 0, dy: 0, scale: 1.2, turn: 0.05);
+      env.game.touchEnd();
+      expect(env.game.rotation.angle, 0);
     });
   });
 
