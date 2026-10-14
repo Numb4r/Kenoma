@@ -24,7 +24,9 @@ class TuningScreen extends StatefulWidget {
     required this.balance,
     required this.balanceVersion,
     required this.appBuild,
-    required this.store,
+    this.store,
+    this.encounter = false,
+    this.resultNote,
     this.hidden = false,
     this.showTarget = false,
     this.vibration,
@@ -38,7 +40,15 @@ class TuningScreen extends StatefulWidget {
 
   /// `versionName+versionCode` do app, gravado em cada linha do registro.
   final String appBuild;
-  final SessionLogStore store;
+  /// Onde gravar as sessões. `null` num encontro do jogo: o registro é só das sintonias de teste.
+  final SessionLogStore? store;
+
+  /// Encontro do mapa: o resultado devolve a [TuningRun] a quem abriu a tela, sem "Repetir". Quem
+  /// decide tentar de novo é o mapa, com outro selo.
+  final bool encounter;
+
+  /// Linha extra no resultado (o que o encontro rendeu).
+  final String Function(TuningRun run)? resultNote;
   final bool hidden;
   final bool showTarget;
 
@@ -52,7 +62,7 @@ class TuningScreen extends StatefulWidget {
 class _TuningScreenState extends State<TuningScreen> {
   late final VibrationPlayer _vibration = widget.vibration ?? DeviceVibration();
   late final TuningGame _game;
-  late final RunLogger _logger;
+  RunLogger? _logger;
   TuningRun? _run;
 
   /// Palpite da sintonia em andamento, no modo oculto.
@@ -61,13 +71,16 @@ class _TuningScreenState extends State<TuningScreen> {
   @override
   void initState() {
     super.initState();
-    _logger = RunLogger(
-      store: widget.store,
-      balance: widget.balance,
-      balanceVersion: widget.balanceVersion,
-      appBuild: widget.appBuild,
-      hidden: widget.hidden,
-    );
+    final store = widget.store;
+    if (store != null) {
+      _logger = RunLogger(
+        store: store,
+        balance: widget.balance,
+        balanceVersion: widget.balanceVersion,
+        appBuild: widget.appBuild,
+        hidden: widget.hidden,
+      );
+    }
     _game = TuningGame(
       pool: widget.pool,
       buildSetup: widget.buildSetup,
@@ -81,11 +94,11 @@ class _TuningScreenState extends State<TuningScreen> {
 
   void _finished(TuningRun run) {
     setState(() => _run = run);
-    _logger.finished(run);
+    _logger?.finished(run);
   }
 
   void _giveGuess(EcoType type) {
-    _logger.guessed(type);
+    _logger?.guessed(type);
     setState(() => _guess = type);
     _game.begin();
   }
@@ -134,8 +147,10 @@ class _TuningScreenState extends State<TuningScreen> {
               TuningResultPanel(
                 run: run,
                 guess: widget.hidden ? _guess : null,
-                onAgain: _again,
-                onMenu: () => Navigator.of(context).pop(),
+                onAgain: widget.encounter ? null : _again,
+                onMenu: () => Navigator.of(context).pop(widget.encounter ? run : null),
+                menuLabel: widget.encounter ? 'Continuar' : 'Menu',
+                note: widget.resultNote?.call(run),
               ),
           ],
         ),
@@ -150,6 +165,8 @@ class TuningResultPanel extends StatelessWidget {
     required this.run,
     required this.onAgain,
     required this.onMenu,
+    this.menuLabel = 'Menu',
+    this.note,
     this.guess,
     super.key,
   });
@@ -158,8 +175,13 @@ class TuningResultPanel extends StatelessWidget {
 
   /// Palpite do jogador no modo de tipo oculto. `null` fora desse modo.
   final EcoType? guess;
-  final VoidCallback onAgain;
+  /// `null` esconde o botão Repetir.
+  final VoidCallback? onAgain;
   final VoidCallback onMenu;
+  final String menuLabel;
+
+  /// Linha extra abaixo do resultado.
+  final String? note;
 
   @override
   Widget build(BuildContext context) {
@@ -182,6 +204,10 @@ class TuningResultPanel extends StatelessWidget {
               Text('+${o.ectoplasm} Ectoplasma', style: line)
             else
               Text(o.fled ? 'A criatura fugiu' : 'Ela ainda está aqui', style: line),
+            if (note != null) ...[
+              const SizedBox(height: 8),
+              Text(note!, style: const TextStyle(fontSize: 8, color: kSignal, height: 1.6), textAlign: TextAlign.center),
+            ],
             if (guess != null) ...[
               const SizedBox(height: 16),
               Text('Era ${typeLabel(run.setup.type)}', style: const TextStyle(fontSize: 24, color: kVeil)),
@@ -194,9 +220,11 @@ class TuningResultPanel extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 20),
-            PixelButton(label: 'Repetir', color: color, onTap: onAgain),
-            const SizedBox(height: 12),
-            PixelButton(label: 'Menu', color: kDim, onTap: onMenu),
+            if (onAgain != null) ...[
+              PixelButton(label: 'Repetir', color: color, onTap: onAgain!),
+              const SizedBox(height: 12),
+            ],
+            PixelButton(label: menuLabel, color: onAgain == null ? color : kDim, onTap: onMenu),
           ],
         ),
       ),
