@@ -121,6 +121,8 @@ Camada só de desenho por cima do mapa do M4 e do M5. **A grade de biomas contin
 - o que foi coletado não reaparece;
 - o entorno se renova aos poucos, e não tudo de uma vez.
 
+**Status: implementado (fatia M6 + M7), falta jogar na rua.** `SpawnField` (`world/`) gera Ecos, Fagulhas e pontos de material por célula z20, janela e época, até 120 m, com o nível do Eco guardado pelo uid. `WorldView` coleta as Fagulhas ao entrar na Aura, coleta material por toque dentro da Aura e abre o encontro ao tocar num Eco dentro dela. O registro de coletados (uid, 48 h) vive no `GameState`, salvo num JSON local (`save.json`, escrita atômica); o formato completo do save continua sendo o M10. Ficou de fora: Pó de Essência virando XP, a habilidade de coleta do Frondling (M8) e o rastreador.
+
 ## M7 · Encontro completo
 
 - Tocar num Eco dentro da Aura abre a folha de preparo (escolha de selo e tônico) e depois a sintonia do M3 com aquele Eco.
@@ -129,6 +131,8 @@ Camada só de desenho por cima do mapa do M4 e do M5. **A grade de biomas contin
 - Marcação por toque longo, com duração e limite.
 
 **Pronto quando** o ciclo andar, encontrar, sintonizar, capturar e voltar ao mapa funciona sem intervenção de debug, inclusive sintonizando um Eco marcado depois de sair da célula.
+
+**Status: encontro implementado, marcação não.** Tocar num Eco na Aura abre a folha de selo e depois a sintonia do M3 (sem gravar `sessions.csv`). Sucesso põe a criatura na coleção e dá Ectoplasma; falha gasta o selo e a criatura foge com a chance da spec, e a fuga entra no registro. Há uma tela de coleção e bolsa, com um botão para fabricar o selo simples (Giz + Ectoplasma), para o jogo não parar quando os 5 selos acabam. A marcação por toque longo, o nível e o XP do Conjurador (fica no nível 1) e o Círculo ficam para depois.
 
 ## M8 · Círculo e bestiário
 
