@@ -60,12 +60,43 @@ Vazio é desenhado e tratado como Residencial para spawns, o que garante um piso
 
 O SHA-256 do arquivo inteiro fica registrado na época que usa o pacote. Regerar o pacote com um OSM mais novo muda o mundo, então o pacote novo só entra numa época nova.
 
+### Pacote visual `_vis.bin`
+
+Só desenho: ruas, água e áreas verdes para o mapa de jogo. **A grade de biomas continua sendo a única camada lógica**; nada do que está neste arquivo decide spawn, bioma nem coleta. O arquivo se chama `<região>_e<época>_vis.bin` e sai de `pipeline/build_visual.py`, do mesmo extrato e da mesma bbox da época.
+
+**Cabeçalho**, little-endian, 13 bytes:
+
+| Campo | Tipo | Valor |
+| --- | --- | --- |
+| magic | 4 bytes | `VIS1` |
+| version | uint16 | 1 |
+| tile_zoom | uint8 | 15 |
+| extent | uint16 | 4096, unidades por tile (~0,25 m em Campinas) |
+| tiles | uint32 | quantos tiles vêm depois |
+
+**Dados:** depois do cabeçalho, um stream gzip (`mtime = 0`, para o arquivo sair igual byte a byte). Para cada tile z15, em ordem de `(x, y)`: `x uint32`, `y uint32`, `len uint32` e `len` bytes de carga.
+
+**Carga do tile**, com `varint` (7 bits por byte, o bit alto continua) e `zigzag` para os deltas com sinal:
+
+1. `n_linhas` (varint), e para cada linha: `classe` (1 byte: 0 principal, 1 secundária, 2 local, 3 pedestre), `n_pontos` (varint) e os pontos.
+2. `n_áreas` (varint), e para cada área: `tipo` (1 byte: 1 água, 2 verde), `n_anéis` (varint) e, para cada anel, `n_pontos` e os pontos. O primeiro anel é o contorno e os outros são buracos (regra par-ímpar).
+
+**Pontos:** cada ponto é um par de deltas `zigzag(dx)`, `zigzag(dy)` em relação ao ponto anterior, e o primeiro é relativo à origem `(0, 0)`. As coordenadas são inteiras, relativas ao canto superior esquerdo do tile, e podem sair de `[0, extent)`: as linhas passam até 0,01 tile (~10 m) da borda, para a costura entre tiles não aparecer, e as áreas vão inteiras, sem corte, para o contorno não ganhar uma linha falsa no meio.
+
+**O que entra:**
+- **Ruas** (`highway=*`) por classe: principal (`motorway`, `trunk`, `primary` e `_link`), secundária (`secondary`, `tertiary` e `_link`), local (`residential`, `unclassified`, `living_street`, `service`, `road`) e pedestre (`footway`, `pedestrian`, `path`, `steps`, `cycleway`, `track`, `bridleway`). Ficam de fora túneis, ruas de área (`area=yes`), `service=driveway|parking_aisle|drive-through` e vias internas. Simplificadas a 1 m.
+- **Água e verde** pelas mesmas regras de `shared/biomes.json` dos biomas Água e Verde (os rios e canais viram polígonos com a largura do buffer do bioma). Polígonos simplificados a 2 m.
+
+**SHA-256:** fica na época, em `visual_packs.<região>`, **em campo separado** de `region_packs`. Como o arquivo não muda o mundo, ele pode ser trocado sem uma época nova. Se o SHA não bate, o app mostra o erro e não abre o mapa de jogo.
+
 ### Renderização
 
-- Flame, um tile de 16 px por célula z21, escala inteira por vizinho mais próximo.
-- Visão de cima, sem prédios em pé e sem rotação.
-- Tiles placeholder na paleta fria e dessaturada do GDD, com leve ruído determinístico por célula.
-- Câmera centrada no jogador. Só as células num raio visível são desenhadas.
+- Flame. Visão de cima, sem prédios em pé e sem rotação. Câmera centrada no jogador.
+- **Mapa de jogo em pixels de arte.** O mundo é desenhado em chunks de 128 × 128 pixels de arte e ampliado por vizinho mais próximo. O pixel de arte tem um tamanho fixo em metros, escolhido para que no zoom padrão (90 m de largura) cada um ocupe um número inteiro de pixels físicos, perto de 3 dp (`map.art_pixel_dp` no `balance.json`). A textura de ruído do chão é feita nesses pixels, então não cresce com o zoom por outro caminho.
+- **Camadas, de baixo para cima:** chão neutro da cidade com ruído; áreas verdes e água, com borda de 1 pixel de arte; calçada de 1 pixel de arte em tom mais claro; rua com a largura da classe, em metros (`map.road_width_m`); Aura; Fagulhas e materiais; Ecos e Conjurador. As cores saem das paletas de `biomes.json`.
+- Só os chunks visíveis são montados, com cache, e as geometrias vêm do pacote visual por tile z15, também com cache.
+- **A grade de biomas** (a camada lógica) e a grade das células de spawn só aparecem como sobreposição opcional no menu de debug.
+- O mapa livre do debug (M4) segue com a grade de biomas em 16 px por célula, tiles placeholder na paleta fria e dessaturada do GDD.
 
 ## 2. Jogador no mapa
 

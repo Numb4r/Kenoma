@@ -11,6 +11,12 @@
           "sha256": "559f3551cf04ef399eaca600a4397e4a074d1c58b8b744f83e46503fabfa4f30"
         }
       },
+      "visual_packs": {
+        "campinas": {
+          "file": "campinas_e0_vis.bin",
+          "sha256": "d0ba04db14106e0cffb24b8076adf147116f6e1833f0fdc027c8955ed1fa6f27"
+        }
+      },
       "spawn": {
         "items": [
           {
