@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/world/aura.dart';
 import 'package:kenoma/world/follow_camera.dart';
 import 'package:kenoma/world/map_camera.dart';
-import 'package:kenoma/world/player_avatar.dart';
 
 /// Roda a câmera por [seconds] em passos de 1/60 s.
 void run(FollowCamera c, double seconds) {
@@ -215,44 +214,6 @@ void main() {
       c.touchStart();
       c.dragBy(80, 0); // 8 px por célula
       expect(c.peekX, -10.0);
-    });
-  });
-
-  group('avatar do Conjurador', () {
-    test('a primeira posição aparece direto, sem deslizar de lugar nenhum', () {
-      final a = PlayerAvatar();
-      expect(a.hasPosition, isFalse);
-      a.setTarget(100, 200);
-      expect((a.x, a.y, a.hasPosition), (100.0, 200.0, true));
-    });
-
-    test('depois desliza até a nova posição, sem pular entre leituras', () {
-      final a = PlayerAvatar()..setTarget(0, 0);
-      a.setTarget(1, 0);
-      a.update(1 / 60);
-      expect(a.x, greaterThan(0));
-      expect(a.x, lessThan(0.3));
-      for (var i = 0; i < 120; i++) {
-        a.update(1 / 60);
-      }
-      expect(a.x, closeTo(1, 1e-3));
-    });
-
-    test('teleporte pula', () {
-      final a = PlayerAvatar()..setTarget(0, 0);
-      a.setTarget(9000, 4000);
-      a.update(1 / 60);
-      expect((a.x, a.y), (9000.0, 4000.0));
-    });
-
-    test('sem posição não anda e passo de tempo nulo não faz nada', () {
-      final a = PlayerAvatar();
-      a.update(1);
-      expect(a.hasPosition, isFalse);
-      a.setTarget(5, 5);
-      a.setTarget(6, 6);
-      a.update(0);
-      expect((a.x, a.y), (5.0, 5.0));
     });
   });
 

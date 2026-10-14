@@ -10,13 +10,14 @@ class MapBalance {
         trackerM = (m['tracker_m'] as num).toDouble(),
         trackerMax = m['tracker_max'] as int,
         defaultWidthM = (m['view_width_default_m'] as num).toDouble(),
-        playerHeightFraction = (m['player_height_fraction'] as num).toDouble(),
+        spriteHeightM = (m['sprite_height_m'] as num).toDouble(),
+        sparkSizeM = (m['spark_size_m'] as num).toDouble(),
         artPixelDp = (m['art_pixel_dp'] as num).toDouble(),
         compassDeclinationDeg = (m['compass_declination_deg'] as num).toDouble(),
         sidewalkArtPx = (m['sidewalk_art_px'] as num).toDouble(),
         roadWidthM = {for (final e in (m['road_width_m'] as Map<String, dynamic>).entries) e.key: (e.value as num).toDouble()},
-        zoomMinWidthM = (m['zoom_min_width_m'] as num).toDouble(),
-        zoomMaxWidthM = (m['zoom_max_width_m'] as num).toDouble();
+        cameraMinWidthM = (m['camera_min_width_m'] as num).toDouble(),
+        cameraMaxWidthM = (m['camera_max_width_m'] as num).toDouble();
 
   /// Raio da Aura: só dentro dela o jogador interage.
   final double auraM;
@@ -33,12 +34,16 @@ class MapBalance {
   /// Largura da tela, em metros, no zoom padrão.
   final double defaultWidthM;
 
-  /// O Conjurador e os Ecos ocupam esta fração da altura da tela.
-  final double playerHeightFraction;
+  /// Altura do Conjurador e dos Ecos, em metros do mundo: mais ou menos a largura de uma rua. A proporção
+  /// com as ruas é a mesma em qualquer zoom.
+  final double spriteHeightM;
 
-  /// Menor e maior largura de tela, em metros, que a pinça alcança.
-  final double zoomMinWidthM;
-  final double zoomMaxWidthM;
+  /// Tamanho das Fagulhas e dos pontos de material, em metros do mundo.
+  final double sparkSizeM;
+
+  /// Menor e maior largura de tela, em metros, que a pinça alcança (a câmera).
+  final double cameraMinWidthM;
+  final double cameraMaxWidthM;
 
   /// Tamanho de um pixel de arte no zoom padrão, em dp. O mapa é desenhado nesses pixels e ampliado.
   final double artPixelDp;

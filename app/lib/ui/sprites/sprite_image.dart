@@ -70,5 +70,9 @@ class EcoSprite {
       EcoSprite(await spriteToImage(rows), await spriteToImage(rows, brightSeams: true));
 }
 
-/// O sprite do Conjurador, 48 x 48, com a paleta própria dele.
-Future<ui.Image> loadPlayerSprite() => spriteToImage(playerSprite, palette: playerPalette);
+/// Os quadros do Conjurador: parado e os dois do passo, nesta ordem.
+Future<List<ui.Image>> loadPlayerFrames() async => [
+      await spriteToImage(playerSprite, palette: playerPalette),
+      await spriteToImage(playerStepASprite, palette: playerPalette),
+      await spriteToImage(playerStepBSprite, palette: playerPalette),
+    ];
