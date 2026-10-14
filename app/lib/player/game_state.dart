@@ -95,6 +95,18 @@ class GameState extends ChangeNotifier {
     return true;
   }
 
+  /// Fabrica uma receita se há todos os ingredientes. `false` se falta algum.
+  bool craft(Map<String, int> inputs, String outId, int outQty) {
+    if (inputs.entries.any((e) => count(e.key) < e.value)) return false;
+    for (final e in inputs.entries) {
+      final left = count(e.key) - e.value;
+      left == 0 ? inventory.remove(e.key) : inventory[e.key] = left;
+    }
+    inventory[outId] = count(outId) + outQty;
+    notifyListeners();
+    return true;
+  }
+
   static String uidKey(int uid) => uid.toString();
 
   /// Se o spawn já foi coletado, capturado ou fugiu: não aparece de novo.
