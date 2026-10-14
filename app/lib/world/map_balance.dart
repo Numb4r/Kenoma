@@ -8,7 +8,9 @@ class MapBalance {
       : auraM = (m['aura_m'] as num).toDouble(),
         viewM = (m['view_m'] as num).toDouble(),
         trackerM = (m['tracker_m'] as num).toDouble(),
-        auraWidthFraction = (m['aura_width_fraction'] as num).toDouble(),
+        trackerMax = m['tracker_max'] as int,
+        defaultWidthM = (m['view_width_default_m'] as num).toDouble(),
+        playerHeightFraction = (m['player_height_fraction'] as num).toDouble(),
         zoomMinWidthM = (m['zoom_min_width_m'] as num).toDouble(),
         zoomMaxWidthM = (m['zoom_max_width_m'] as num).toDouble();
 
@@ -21,13 +23,16 @@ class MapBalance {
   /// Até onde o rastreador mostra.
   final double trackerM;
 
-  /// No zoom padrão, o diâmetro da Aura ocupa esta fração da largura da tela.
-  final double auraWidthFraction;
+  /// Quantos Ecos fora da tela o rastreador mostra, no máximo.
+  final int trackerMax;
+
+  /// Largura da tela, em metros, no zoom padrão.
+  final double defaultWidthM;
+
+  /// O Conjurador e os Ecos ocupam esta fração da altura da tela.
+  final double playerHeightFraction;
 
   /// Menor e maior largura de tela, em metros, que a pinça alcança.
   final double zoomMinWidthM;
   final double zoomMaxWidthM;
-
-  /// Largura de tela, em metros, do zoom padrão: o diâmetro da Aura vale [auraWidthFraction] dela.
-  double get defaultWidthM => 2 * auraM / auraWidthFraction;
 }

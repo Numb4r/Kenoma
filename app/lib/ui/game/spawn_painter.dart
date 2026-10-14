@@ -30,18 +30,15 @@ ui.Color spawnColor(WorldSpawn s, EcoTypeOf typeOf) {
   };
 }
 
-/// Altura do Eco na tela, em dp: um pouco menor que o Conjurador (40 dp). Fixa em qualquer zoom.
-const double kEcoHeightDp = 35;
-
-/// Tamanho do sprite do Eco na tela, em pixels lógicos: cada pixel de arte ocupa um número inteiro de
-/// pixels físicos.
-double ecoSize(double dpr) => 48 * math.max(1, (kEcoHeightDp * dpr / 48).round()) / dpr;
+/// Tamanho do sprite do Eco na tela, em pixels lógicos: tão alto quanto o Conjurador ([heightDp]), com
+/// cada pixel de arte ocupando um número inteiro de pixels físicos.
+double ecoSize(double dpr, double heightDp) => 48 * math.max(1, (heightDp * dpr / 48).round()) / dpr;
 
 /// Lado do pixel das Fagulhas e dos materiais: pequenos, ~3 dp, em pixels físicos inteiros.
 double smallUnit(double dpr) => math.max(1, (3 * dpr).round()) / dpr;
 
 /// Raio de toque de um spawn, em pixels.
-double hitRadius(WorldSpawn s, double dpr) => s.isEco ? ecoSize(dpr) * 0.6 : 28;
+double hitRadius(WorldSpawn s, double dpr, double heightDp) => s.isEco ? ecoSize(dpr, heightDp) * 0.6 : 28;
 
 void paintSpawns(
   ui.Canvas canvas,
@@ -53,6 +50,7 @@ void paintSpawns(
   required bool Function(WorldSpawn) inAura,
   required double time,
   required ui.Rect avoid,
+  required double heightDp,
   double dpr = 1,
 }) {
   final ordered = [...spawns]..sort((a, b) => a.y.compareTo(b.y));
@@ -62,7 +60,7 @@ void paintSpawns(
     final center = ui.Offset(sx.roundToDouble(), sy.roundToDouble());
     final near = inAura(s);
     if (s.isEco) {
-      _eco(canvas, center, s, sprites[s.entryId], dpr, typeOf, near, time, avoid);
+      _eco(canvas, center, s, sprites[s.entryId], dpr, heightDp, typeOf, near, time, avoid);
     } else if (s.isSpark) {
       _spark(canvas, center, spawnColor(s, typeOf), dpr, near, time + s.uid % 7);
     } else {
@@ -73,8 +71,8 @@ void paintSpawns(
 
 final _flat = ui.Paint()..isAntiAlias = false;
 
-void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double dpr, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid) {
-  final size = ecoSize(dpr);
+void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double dpr, double heightDp, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid) {
+  final size = ecoSize(dpr, heightDp);
   final color = spawnColor(s, typeOf);
   // Sombra no chão.
   canvas.drawOval(

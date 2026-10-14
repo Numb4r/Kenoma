@@ -100,7 +100,7 @@ void main() {
       expect(env.game.avatar.x, closeTo(x, 0.5), reason: 'a posição filtrada é a primeira leitura');
       expect(env.game.avatar.y, closeTo(y, 0.5));
       expect(env.game.follow.followX, closeTo(env.game.avatar.x, 1e-6), reason: 'a primeira posição não desliza');
-      expect(env.game.auraM, 40.0);
+      expect(env.game.auraM, 25.0);
       expect(find.textContaining('SEGUINDO'), findsOneWidget);
       expect(find.textContaining('-22.8174'), findsOneWidget);
       expect(find.text('SIMULADOR'), findsOneWidget);
@@ -209,10 +209,10 @@ void main() {
     testWidgets('arrastar espia em volta, e depois de 3 s sem toque a câmera volta sozinha', (tester) async {
       final env = await pumpGame(tester);
       final base = env.game.follow.camera.centerX;
-      await tester.drag(gameWidget, const Offset(160, 0)); // ~40 px por célula no zoom padrão: ~4 células
+      await tester.drag(gameWidget, const Offset(160, 0)); // ~80 px por célula no zoom padrão: ~2 células
       await env.settle(2);
       expect(env.game.follow.peeking, isTrue);
-      expect(env.game.follow.camera.centerX, lessThan(base - 3), reason: 'o mapa foi com o dedo: a câmera foi para oeste');
+      expect(env.game.follow.camera.centerX, lessThan(base - 1.5), reason: 'o mapa foi com o dedo: a câmera foi para oeste');
       for (var i = 0; i < 50; i++) {
         await tester.pump(const Duration(milliseconds: 50)); // 2,5 s
       }
@@ -239,7 +239,7 @@ void main() {
       expect(env.game.follow.peeking, isFalse);
     });
 
-    testWidgets('a pinça vai de 100 m a 300 m de largura de tela; o padrão põe a Aura em 45% dela', (tester) async {
+    testWidgets('a pinça vai de 60 m a 150 m de largura de tela, com 90 m no padrão', (tester) async {
       final env = await pumpGame(tester);
       Future<void> pinch(double from, double to) async {
         final c = tester.getCenter(gameWidget);
@@ -256,11 +256,11 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
 
-      expect(env.game.widthM, closeTo(177.78, 0.01));
+      expect(env.game.widthM, closeTo(90, 0.01));
       await pinch(60, 120);
-      expect(env.game.widthM, 100, reason: 'abrir 2x passaria de 100 m: trava no mínimo');
+      expect(env.game.widthM, 60, reason: 'abrir 2x passaria de 60 m: trava no mínimo');
       await pinch(100, 20);
-      expect(env.game.widthM, 300, reason: 'fechar 5x passaria de 300 m: trava no máximo');
+      expect(env.game.widthM, 150, reason: 'fechar 5x passaria de 150 m: trava no máximo');
     });
   });
 

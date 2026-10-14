@@ -4,6 +4,7 @@
 library;
 
 import '../core/tiles.dart';
+import 'tracker.dart';
 import '../player/game_state.dart';
 import 'spawn_field.dart';
 
@@ -41,6 +42,11 @@ class WorldView {
 
   /// Metros do jogador até o spawn.
   double distanceM(WorldSpawn s) => s.distanceM(_px, _py, _mpc);
+
+  /// Os Ecos fora da tela que o rastreador mostra: até [max], a até [trackerM] metros.
+  List<TrackedEco> tracked({required bool Function(WorldSpawn) offScreen, required double trackerM, required int max}) => !_hasPlayer
+      ? const []
+      : trackEcos(spawns: spawns, playerX: _px, playerY: _py, metersPerCell21: _mpc, trackerM: trackerM, offScreen: offScreen, max: max);
 
   bool inAura(WorldSpawn s) => _hasPlayer && distanceM(s) <= auraM;
 

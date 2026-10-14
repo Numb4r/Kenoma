@@ -1,5 +1,5 @@
 {
-  "map": { "aura_m": 40, "view_m": 120, "tracker_m": 120, "aura_width_fraction": 0.45, "zoom_min_width_m": 100, "zoom_max_width_m": 300 },
+  "map": { "aura_m": 25, "view_m": 120, "tracker_m": 120, "tracker_max": 3, "view_width_default_m": 90, "zoom_min_width_m": 60, "zoom_max_width_m": 150, "player_height_fraction": 0.10 },
   "mark": { "duration_s": 300, "max_active": 3 },
   "tuning": {
     "progress_up_per_s": 0.2,

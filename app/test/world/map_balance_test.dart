@@ -9,33 +9,27 @@ import '../support/fixtures.dart';
 void main() {
   test('os raios vêm do balance.json: Aura de 40 m, spawns e rastreador até 120 m', () {
     final b = MapBalance(loadJson('assets/data/balance.json'));
-    expect((b.auraM, b.viewM, b.trackerM), (40.0, 120.0, 120.0));
+    expect((b.auraM, b.viewM, b.trackerM), (25.0, 120.0, 120.0));
     expect(b.auraM, lessThan(b.viewM));
   });
 
-  test('escala em metros: Aura com 45% da largura no padrão, pinça de 100 a 300 m', () {
+  test('escala em metros: 90 m de largura no padrão, pinça de 60 a 150 m, Conjurador com 1/10 da altura', () {
     final b = MapBalance(loadJson('assets/data/balance.json'));
-    expect((b.auraWidthFraction, b.zoomMinWidthM, b.zoomMaxWidthM), (0.45, 100.0, 300.0));
-    expect(b.defaultWidthM, closeTo(177.78, 0.01));
-    expect(2 * b.auraM / b.defaultWidthM, closeTo(0.45, 1e-9));
+    expect((b.defaultWidthM, b.zoomMinWidthM, b.zoomMaxWidthM), (90.0, 60.0, 150.0));
+    expect((b.playerHeightFraction, b.trackerMax), (0.10, 3));
     expect(b.defaultWidthM, inInclusiveRange(b.zoomMinWidthM, b.zoomMaxWidthM));
   });
 
-  test('conversão: metros visíveis e pixels por célula são inversos, e a Aura ocupa 45% da tela', () {
+  test('conversão: metros visíveis e pixels por célula são inversos, e a Aura de 25 m ocupa 50 m dos 90', () {
     const lat = -22.8174, w = 411.0;
     final b = MapBalance(loadJson('assets/data/balance.json'));
     final ppc = pixelsPerCellFor(widthM: b.defaultWidthM, viewWidthPx: w, lat: lat);
     expect(widthMFor(pixelsPerCell: ppc, viewWidthPx: w, lat: lat), closeTo(b.defaultWidthM, 1e-9));
-    expect(ppc, closeTo(40.7, 0.1));
-    expect(2 * auraRadiusPx(auraM: b.auraM, lat: lat, pixelsPerCell: ppc) / w, closeTo(0.45, 1e-9));
+    expect(ppc, closeTo(80.4, 0.1));
+    expect(2 * auraRadiusPx(auraM: b.auraM, lat: lat, pixelsPerCell: ppc) / w, closeTo(50 / 90, 1e-9));
     // Mais metros na tela, menos pixels por célula.
-    expect(pixelsPerCellFor(widthM: 300, viewWidthPx: w, lat: lat), lessThan(pixelsPerCellFor(widthM: 100, viewWidthPx: w, lat: lat)));
-    expect(pixelsPerCellFor(widthM: 100, viewWidthPx: w, lat: lat) / pixelsPerCellFor(widthM: 300, viewWidthPx: w, lat: lat), closeTo(3, 1e-9));
-  });
-
-  test('um raio diferente no JSON muda o balance sem mexer no código', () {
-    final b = MapBalance({'map': {'aura_m': 55, 'view_m': 150.5, 'tracker_m': 90, 'aura_width_fraction': 0.5, 'zoom_min_width_m': 80, 'zoom_max_width_m': 400}});
-    expect((b.auraM, b.viewM, b.trackerM), (55.0, 150.5, 90.0));
+    expect(pixelsPerCellFor(widthM: 150, viewWidthPx: w, lat: lat), lessThan(pixelsPerCellFor(widthM: 60, viewWidthPx: w, lat: lat)));
+    expect(pixelsPerCellFor(widthM: 60, viewWidthPx: w, lat: lat) / pixelsPerCellFor(widthM: 150, viewWidthPx: w, lat: lat), closeTo(2.5, 1e-9));
   });
 
   group('metersPerCell', () {

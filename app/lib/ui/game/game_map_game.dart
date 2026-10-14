@@ -14,6 +14,7 @@ import '../../world/spawn_field.dart';
 import '../../world/world_view.dart';
 import '../map/map_renderer.dart';
 import 'spawn_painter.dart';
+import 'tracker_painter.dart';
 import 'player_painter.dart';
 
 /// O mapa do jogo em Flame: segue o Conjurador, desenha o marcador e a Aura e repassa os toques para a
@@ -25,6 +26,9 @@ class GameMapGame extends FlameGame {
     required this.defaultWidthM,
     required this.minWidthM,
     required this.maxWidthM,
+    required this.playerHeightFraction,
+    required this.trackerM,
+    required this.trackerMax,
     this.dpr = 1,
     this.worldView,
     this.sprites = const {},
@@ -55,6 +59,13 @@ class GameMapGame extends FlameGame {
   final double defaultWidthM;
   final double minWidthM;
   final double maxWidthM;
+
+  /// O Conjurador e os Ecos ocupam esta fração da altura da tela.
+  final double playerHeightFraction;
+
+  /// Alcance do rastreador, em metros, e quantos Ecos ele mostra.
+  final double trackerM;
+  final int trackerMax;
 
   /// Pixels físicos por pixel lógico: o marcador e os Ecos têm tamanho fixo na tela, em pixels inteiros.
   final double dpr;
@@ -155,12 +166,28 @@ class GameMapGame extends FlameGame {
         typeOf: typeOf,
         inAura: w.inAura,
         time: _time,
-        avoid: markerRect(center, dpr).inflate(6),
+        avoid: markerRect(center, dpr, heightDp).inflate(6),
+        heightDp: heightDp,
         dpr: dpr,
       );
     }
-    paintPlayerMarker(canvas, center, dpr: dpr);
+    paintPlayerMarker(canvas, center, heightDp: heightDp, dpr: dpr);
+    if (w != null) {
+      final off = heightDp / 2;
+      final tracked = w.tracked(
+        trackerM: trackerM,
+        max: trackerMax,
+        offScreen: (s) {
+          final (x, y) = cam.cellToScreen(s.x, s.y, view.width, view.height);
+          return x < -off || y < -off || x > view.width + off || y > view.height + off;
+        },
+      );
+      paintTracker(canvas, view, tracked, sprites: sprites, typeOf: typeOf);
+    }
   }
+
+  /// Altura do Conjurador e dos Ecos na tela, em pixels lógicos.
+  double get heightDp => size.y * playerHeightFraction;
 
   /// O spawn sob o toque em [screen], se houver: o mais perto dentro do raio de toque.
   WorldSpawn? spawnAt(Offset screen) {
@@ -172,7 +199,7 @@ class GameMapGame extends FlameGame {
     for (final s in w.spawns) {
       final (sx, sy) = cam.cellToScreen(s.x, s.y, size.x, size.y);
       final d = (Offset(sx, sy) - screen).distance;
-      if (d <= hitRadius(s, dpr) && d < bestD) {
+      if (d <= hitRadius(s, dpr, heightDp) && d < bestD) {
         best = s;
         bestD = d;
       }
