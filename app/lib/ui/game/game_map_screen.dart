@@ -293,6 +293,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   Widget _view(_Ready r) {
     final game = r.game;
+    game.bottomInset = MediaQuery.paddingOf(context).bottom;
     final blocked = _access != null && _access != LocationAccess.granted && !tools.useSimulator;
     return Stack(
       children: [

@@ -43,17 +43,19 @@ class _SimOverlayState extends State<SimOverlay> {
           bottom: 132,
           child: Joystick(onChanged: sim.setJoystick),
         ),
+        // No alto à esquerda, longe da Aura: o canto inferior direito é do rastreador de Ecos.
         Positioned(
-          right: 12,
-          bottom: 132,
+          left: 12,
+          top: 64,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (final s in SimSpeed.values.reversed)
                 _chip('${s.label} ${s.mps.toStringAsFixed(1)} m/s', sim.speedMps == s.mps, () => setState(() => sim.speedMps = s.mps)),
               _chip('Teleporte: Unicamp', false, () => sim.teleport(kUnicamp.$1, kUnicamp.$2), color: kVeil),
               _chip('Teleporte: Centro', false, () => sim.teleport(kCentroCampinas.$1, kCentroCampinas.$2), color: kVeil),
+              _chip('Teleporte: Taquaral', false, () => sim.teleport(kTaquaral.$1, kTaquaral.$2), color: kVeil),
             ],
           ),
         ),

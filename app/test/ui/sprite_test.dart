@@ -76,6 +76,17 @@ void main() {
     }
   });
 
+  test('Conjurador: 48 x 48, paleta própria com o contorno #1a1424, sem preto puro e com o ciano do sinal', () {
+    expect(playerSprite.length, 48);
+    expect(playerSprite.every((r) => r.length == 48), isTrue);
+    final used = playerSprite.expand((r) => r.split('')).where((c) => c != '.').toSet();
+    expect(used.every(playerPalette.containsKey), isTrue);
+    expect(playerPalette['O'], outline);
+    expect(playerPalette.values.contains(0xFF000000), isFalse);
+    expect(playerPalette['C'], 0xFF5FD3C6, reason: 'o brilho do celular é o ciano do sinal');
+    expect(spritePixels(playerSprite, palette: playerPalette).length, 48 * 48 * 4);
+  });
+
   test('paleta: contorno #1a1424, sem preto puro, até 24 cores no total', () {
     expect(spritePalette['O'], outline);
     expect(spritePalette.values.contains(0xFF000000), isFalse);

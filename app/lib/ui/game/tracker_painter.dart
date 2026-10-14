@@ -21,11 +21,12 @@ void paintTracker(
   required Map<String, ui.Image> sprites,
   required EcoTypeOf typeOf,
   double margin = 8,
+  double bottomInset = 0,
 }) {
   for (var i = 0; i < entries.length; i++) {
     final e = entries[i];
     final color = spawnColor(e.spawn, typeOf);
-    final box = ui.Rect.fromLTWH(view.width - margin - _cell, view.height - margin - (i + 1) * (_cell + 14) + 14, _cell, _cell);
+    final box = ui.Rect.fromLTWH(view.width - margin - _cell, view.height - bottomInset - margin - (i + 1) * (_cell + 14), _cell, _cell);
     canvas.drawRect(box, ui.Paint()..color = kOutline.withValues(alpha: 0.85)..isAntiAlias = false);
     canvas.drawRect(box, ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 2..color = kPanelLine..isAntiAlias = false);
     final sprite = sprites[e.spawn.entryId];

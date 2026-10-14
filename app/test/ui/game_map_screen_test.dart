@@ -244,12 +244,12 @@ void main() {
       final env = await pumpGame(tester);
       Future<void> pinch(double from, double to) async {
         final c = tester.getCenter(gameWidget);
-        final a = await tester.startGesture(c.translate(-from, 0), pointer: 1);
-        final b = await tester.startGesture(c.translate(from, 0), pointer: 2);
+        final a = await tester.startGesture(c.translate(0, -from), pointer: 1);
+        final b = await tester.startGesture(c.translate(0, from), pointer: 2);
         for (var i = 1; i <= 10; i++) {
           final d = from + (to - from) * i / 10;
-          await a.moveTo(c.translate(-d, 0));
-          await b.moveTo(c.translate(d, 0));
+          await a.moveTo(c.translate(0, -d));
+          await b.moveTo(c.translate(0, d));
           await tester.pump(const Duration(milliseconds: 16));
         }
         await a.up();

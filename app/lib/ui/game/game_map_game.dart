@@ -213,7 +213,7 @@ class GameMapGame extends FlameGame {
           return x < -off || y < -off || x > view.width + off || y > view.height + off;
         },
       );
-      paintTracker(canvas, view, tracked, sprites: sprites, typeOf: typeOf);
+      paintTracker(canvas, view, tracked, sprites: sprites, typeOf: typeOf, bottomInset: bottomInset);
     }
   }
 
@@ -243,6 +243,9 @@ class GameMapGame extends FlameGame {
     _art?.dispose();
     super.onRemove();
   }
+
+  /// Barra de navegação do sistema embaixo, em pixels lógicos: o rastreador fica acima dela.
+  double bottomInset = 0;
 
   /// Altura do Conjurador e dos Ecos na tela, em pixels lógicos.
   double get heightDp => size.y * playerHeightFraction;
