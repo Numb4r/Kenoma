@@ -1,9 +1,22 @@
 import 'dart:async';
 
+import 'dart:ui' as ui;
+
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/fnv.dart';
+import '../../core/pcg32.dart';
+import '../../data/game_data.dart';
 import '../../dev/dev_tools.dart';
+import '../../player/game_session.dart';
+import '../../save/save_store.dart';
+import '../../world/spawn_field.dart';
+import '../../world/world_view.dart';
+import '../collection/collection_screen.dart';
+import '../sprites/sprite_image.dart';
+import '../tuning/vibration_driver.dart';
+import 'encounter_flow.dart';
 import '../../world/location_access.dart';
 import '../../world/player_tracker.dart';
 import '../../data/geolocator_source.dart';
@@ -19,7 +32,7 @@ import 'sim_overlay.dart';
 /// A posição vem de `tools.source`: o GPS real (pedindo a permissão com uma explicação curta) ou o
 /// simulador do menu de debug, que entra no lugar sem o resto do código saber.
 class GameMapScreen extends StatefulWidget {
-  const GameMapScreen({required this.tools, this.gateway = const GeolocatorGateway(), this.bundle, super.key});
+  const GameMapScreen({required this.tools, this.gateway = const GeolocatorGateway(), this.bundle, this.store, this.openStore, this.vibration, super.key});
 
   final DevTools tools;
 
@@ -29,13 +42,25 @@ class GameMapScreen extends StatefulWidget {
   /// De onde vêm os assets. Por padrão, os do app.
   final AssetBundle? bundle;
 
+  /// Onde o save mora. Sem ele (testes), o jogo vive só na memória.
+  final SaveStore? store;
+
+  /// Como abrir o save do disco, se não vier um [store]. Se falhar, o jogo vive só na memória.
+  final Future<SaveStore> Function()? openStore;
+
+  /// Quem vibra na sintonia. Por padrão, o motor do aparelho.
+  final VibrationPlayer? vibration;
+
   @override
   State<GameMapScreen> createState() => _GameMapScreenState();
 }
 
 class _Ready {
-  _Ready(this.assets, this.game, this.tracker, this.sub);
+  _Ready(this.assets, this.game, this.tracker, this.sub, this.data, this.session, this.world);
 
+  final GameData data;
+  final GameSession session;
+  final WorldView world;
   final MapAssets assets;
   final GameMapGame game;
   final PlayerTracker tracker;
@@ -47,8 +72,57 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   _Ready? _ready;
   LocationAccess? _access;
   int _pointers = 0;
+  String? _toastText;
+  Timer? _toastTimer;
+  bool _busy = false;
+  Offset? _tapStart;
+  Duration _tapAt = Duration.zero;
 
   DevTools get tools => widget.tools;
+
+  Future<SaveStore> _store() async {
+    if (widget.store != null) return widget.store!;
+    try {
+      return await widget.openStore?.call() ?? MemorySaveStore();
+    } catch (_) {
+      return MemorySaveStore(); // sem pasta de documentos
+    }
+  }
+
+  /// Aviso curto no alto da tela ("+1 Pó de Essência de Fogo").
+  void _toast(String message) {
+    if (!mounted) return;
+    _toastTimer?.cancel();
+    setState(() => _toastText = message);
+    _toastTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _toastText = null);
+    });
+  }
+
+  /// Toque no mapa: o spawn sob o dedo. Material dentro da Aura é coletado; Eco dentro da Aura abre o
+  /// encontro; o resto avisa o que falta.
+  Future<void> _onTap(Offset at) async {
+    final r = _ready;
+    if (r == null || _busy) return;
+    final spawn = r.game.spawnAt(at);
+    if (spawn == null) return;
+    switch (r.world.touch(spawn, tools.clock.nowUtc)) {
+      case TouchResult.collected:
+        break; // o aviso já saiu do WorldView
+      case TouchResult.auto:
+        _toast(r.world.inAura(spawn) ? 'A Aura pega sozinha' : 'Entre na Aura para pegar a Fagulha');
+      case TouchResult.tooFar:
+        _toast('Longe demais. Chegue com a Aura até lá (${r.world.distanceM(spawn).round()} m)');
+      case TouchResult.encounter:
+        _busy = true;
+        try {
+          await runEncounter(context, eco: spawn, world: r.world, state: r.session.state, data: r.data, nowUtc: () => tools.clock.nowUtc, vibration: widget.vibration);
+        } finally {
+          _busy = false;
+        }
+        if (mounted) setState(() {});
+    }
+  }
 
   @override
   void initState() {
@@ -66,13 +140,46 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final result = await loadMapAssets(nowUtc: tools.clock.nowUtc, bundle: widget.bundle);
     if (result is String) return result;
     final assets = result as MapAssets;
-    final game = GameMapGame(renderer: assets.makeRenderer(), auraM: assets.balance.auraM);
+    final GameData data;
+    final GameSession session;
+    final sprites = <String, ui.Image>{};
+    try {
+      data = await GameData.load(widget.bundle);
+      for (final s in data.tuning.species) {
+        sprites[s.id] = (await EcoSprite.load(s.id)).normal;
+      }
+      session = await GameSession.open(
+        store: await _store(),
+        startInventory: data.startInventory,
+        nowUtc: () => tools.clock.nowUtc,
+        nextInt: Pcg32(fnv1a64([DateTime.now().microsecondsSinceEpoch]), saltKenoma).nextInt, // só sorteia o código do grupo
+      );
+    } catch (e) {
+      assets.dispose();
+      return 'Não consegui ler os dados do jogo: $e';
+    }
+    final world = WorldView(
+      field: SpawnField(seed: session.state.seed, schedule: data.schedule, map: assets.map),
+      state: session.state,
+      auraM: assets.balance.auraM,
+      viewM: assets.balance.viewM,
+      itemName: data.itemName,
+      onMessage: _toast,
+    );
+    final game = GameMapGame(
+      renderer: assets.makeRenderer(),
+      auraM: assets.balance.auraM,
+      worldView: world,
+      sprites: sprites,
+      typeOf: (id) => data.species(id)?.type,
+      nowUtc: () => tools.clock.nowUtc,
+    );
     final tracker = PlayerTracker(source: tools.source);
     final sub = tracker.states.listen((s) {
       game.onPlayerState(s);
       _rebuild();
     });
-    _ready = _Ready(assets, game, tracker, sub);
+    _ready = _Ready(assets, game, tracker, sub, data, session, world);
     // O acesso é pedido depois do primeiro quadro: o diálogo precisa de uma tela montada.
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureAccess());
     return _ready!;
@@ -144,7 +251,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       r.sub.cancel();
       r.tracker.dispose();
       r.assets.dispose();
+      r.session.dispose();
     }
+    _toastTimer?.cancel();
     super.dispose();
   }
 
@@ -172,16 +281,30 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       children: [
         Listener(
           behavior: HitTestBehavior.opaque,
-          onPointerDown: (_) {
-            if (_pointers++ == 0) game.touchStart();
+          onPointerDown: (e) {
+            if (_pointers++ == 0) {
+              game.touchStart();
+              _tapStart = e.localPosition;
+              _tapAt = e.timeStamp;
+            } else {
+              _tapStart = null; // dois dedos: pinça, não toque
+            }
           },
-          onPointerUp: (_) {
+          onPointerMove: (e) {
+            final start = _tapStart;
+            if (start != null && (e.localPosition - start).distance > 18) _tapStart = null;
+          },
+          onPointerUp: (e) {
+            final start = _tapStart;
+            if (start != null && e.timeStamp - _tapAt < const Duration(milliseconds: 500)) _onTap(e.localPosition);
+            _tapStart = null;
             if (--_pointers <= 0) {
               _pointers = 0;
               game.touchEnd();
             }
           },
           onPointerCancel: (_) {
+            _tapStart = null;
             if (--_pointers <= 0) {
               _pointers = 0;
               game.touchEnd();
@@ -222,6 +345,32 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                   ),
                 ),
               ),
+              Positioned(
+                right: 8,
+                top: 56,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => CollectionScreen(state: r.session.state, data: r.data))),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.85), border: Border.all(color: kVeil, width: 2)),
+                    child: const Text('COLEÇÃO', style: TextStyle(fontSize: 8, color: kVeil)),
+                  ),
+                ),
+              ),
+              if (_toastText != null)
+                Positioned(
+                  left: 56,
+                  right: 120,
+                  top: 12,
+                  child: IgnorePointer(
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.9), border: Border.all(color: kEssence, width: 2)),
+                      child: Text(_toastText!.toUpperCase(), style: const TextStyle(fontSize: 8, color: kText, height: 1.6)),
+                    ),
+                  ),
+                ),
               if (blocked) _AccessPanel(access: _access!, gateway: widget.gateway, onRetry: _ensureAccess, onSimulator: () => _switchSource(true)),
             ],
           ),

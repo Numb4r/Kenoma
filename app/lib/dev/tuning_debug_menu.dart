@@ -11,6 +11,7 @@ import '../capture/seal.dart';
 import '../capture/tuning_setup.dart';
 import '../capture/vibe.dart';
 import '../data/session_log_store.dart';
+import '../save/save_store.dart';
 import '../data/tuning_data.dart';
 import '../ui/colors.dart';
 import '../ui/game/game_map_screen.dart';
@@ -146,8 +147,8 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
         ),
       );
 
-  Future<void> _openGame() =>
-      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => GameMapScreen(tools: _tools)));
+  Future<void> _openGame() => Navigator.of(context)
+      .push(MaterialPageRoute<void>(builder: (_) => GameMapScreen(tools: _tools, openStore: FileSaveStore.inDocuments)));
 
   void _teleport() {
     final lat = double.tryParse(_simLat.text.trim().replaceAll(',', '.'));

@@ -15,7 +15,7 @@ int seedGlobal(String code) => fnv1a64Bytes(utf8.encode(normalizeSeedCode(code))
 const String _crockford = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
 /// Código novo do grupo, `XXXXX-XXXXX`, na primeira abertura. [nextInt] devolve um inteiro em
-/// `[0, n)`; quem chama passa um `Random.secure` (não é lógica de mundo, então `dart:math` serve).
+/// `[0, n)`; quem chama passa um `Pcg32`, porque o código é sorteado uma vez e depois só é lido.
 String generateGroupCode(int Function(int n) nextInt) {
   final chars = [for (var i = 0; i < 10; i++) _crockford[nextInt(_crockford.length)]];
   return '${chars.sublist(0, 5).join()}-${chars.sublist(5).join()}';

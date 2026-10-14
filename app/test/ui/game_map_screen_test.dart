@@ -30,7 +30,7 @@ class _Bundle extends CachingAssetBundle {
 }
 
 Map<String, List<int>> realAssets() => {
-      for (final f in ['epochs', 'biomes', 'balance']) 'assets/data/$f.json': File('assets/data/$f.json').readAsBytesSync(),
+      for (final f in ['epochs', 'biomes', 'balance', 'creatures', 'items', 'recipes']) 'assets/data/$f.json': File('assets/data/$f.json').readAsBytesSync(),
       'assets/regions/campinas_e0.bin': File('assets/regions/campinas_e0.bin').readAsBytesSync(),
     };
 
