@@ -11,6 +11,7 @@ import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../core/epochs.dart';
 import 'region_pack.dart';
+import 'visual_pack.dart';
 
 enum RegionLoadErrorKind {
   /// O `epochs.json` não pôde ser lido.
@@ -111,4 +112,31 @@ Future<RegionLoad> loadRegion({required String region, required int nowUtc, Asse
     return RegionLoadError(RegionLoadErrorKind.missingFile, 'O mapa ${ref.file} não está no app: $e');
   }
   return verifyRegionPack(bytes: bytes, epoch: selection.epoch, region: region, stale: selection.stale);
+}
+
+/// Lê o pacote visual da [region] que [epoch] lista e confere o SHA-256. Devolve o [VisualPack] ou a
+/// mensagem de erro em português. Nunca lança. O pacote visual é só desenho: o SHA dele fica em campo
+/// separado do pacote lógico.
+Future<Object> loadVisualPack({required String region, required Epoch epoch, AssetBundle? bundle}) async {
+  final assets = bundle ?? rootBundle;
+  final ref = epoch.visualPacks[region];
+  if (ref == null) return 'A época ${epoch.id} não tem pacote visual para a região "$region".';
+  final Uint8List bytes;
+  try {
+    final data = await assets.load('assets/regions/${ref.file}');
+    bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+  } catch (e) {
+    return 'O mapa visual ${ref.file} não está no app: $e';
+  }
+  final actual = sha256Hex(bytes);
+  if (actual != ref.sha256.toLowerCase()) {
+    return 'O mapa visual ${ref.file} não é o da época ${epoch.id}.\n'
+        'SHA-256 esperado: ${_short(ref.sha256)}\n'
+        'SHA-256 lido: ${_short(actual)}';
+  }
+  try {
+    return VisualPack.parse(bytes);
+  } catch (e) {
+    return 'O mapa visual ${ref.file} está corrompido: $e.';
+  }
 }

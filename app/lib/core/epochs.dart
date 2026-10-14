@@ -73,6 +73,7 @@ class Epoch {
     required this.validUntilUtc,
     required this.regionPacks,
     required this.items,
+    this.visualPacks = const {},
   });
 
   factory Epoch.fromJson(Map<String, dynamic> json) => Epoch(
@@ -81,6 +82,13 @@ class Epoch {
         validUntilUtc: _parseUtcSeconds(json['valid_until_utc'] as String),
         regionPacks: {
           for (final e in (json['region_packs'] as Map<String, dynamic>).entries)
+            e.key: RegionPackRef(
+              file: (e.value as Map<String, dynamic>)['file'] as String,
+              sha256: e.value['sha256'] as String,
+            ),
+        },
+        visualPacks: {
+          for (final e in ((json['visual_packs'] as Map<String, dynamic>?) ?? const {}).entries)
             e.key: RegionPackRef(
               file: (e.value as Map<String, dynamic>)['file'] as String,
               sha256: e.value['sha256'] as String,
@@ -98,6 +106,10 @@ class Epoch {
   final int startsUtc;
   final int validUntilUtc;
   final Map<String, RegionPackRef> regionPacks;
+
+  /// Pacote visual de cada região (ruas, água e verde, só desenho). Campo separado do pacote lógico: pode
+  /// ser trocado sem nova época, porque não muda o mundo.
+  final Map<String, RegionPackRef> visualPacks;
 
   /// Os quatro itens fixos de uma célula, na ordem do índice.
   final List<SpawnItemDef> items;
