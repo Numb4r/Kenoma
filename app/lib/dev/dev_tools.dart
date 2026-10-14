@@ -28,6 +28,19 @@ class DevTools extends ChangeNotifier {
 
   bool _useSimulator = false;
 
+  bool _showBiomeGrid = false;
+  bool _showGrid20 = false;
+
+  /// Sobreposição de debug no mapa do jogo: a grade de biomas (a camada lógica) e a grade das células de spawn.
+  bool get showBiomeGrid => _showBiomeGrid;
+  bool get showGrid20 => _showGrid20;
+
+  void setOverlays({bool? biomes, bool? grid20}) {
+    _showBiomeGrid = biomes ?? _showBiomeGrid;
+    _showGrid20 = grid20 ?? _showGrid20;
+    notifyListeners();
+  }
+
   bool get useSimulator => _useSimulator;
 
   Future<void> setUseSimulator(bool value) async {

@@ -16,6 +16,7 @@ import '../../world/world_view.dart';
 import '../collection/collection_screen.dart';
 import '../sprites/sprite_image.dart';
 import '../tuning/vibration_driver.dart';
+import 'art_style.dart';
 import 'encounter_flow.dart';
 import '../../world/location_access.dart';
 import '../../world/player_tracker.dart';
@@ -138,14 +139,16 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   Future<Object> _load() async {
     final dpr = View.of(context).devicePixelRatio;
-    final result = await loadMapAssets(nowUtc: tools.clock.nowUtc, bundle: widget.bundle);
+    final result = await loadMapAssets(nowUtc: tools.clock.nowUtc, bundle: widget.bundle, withVisual: true);
     if (result is String) return result;
     final assets = result as MapAssets;
     final GameData data;
     final GameSession session;
     final sprites = <String, ui.Image>{};
+    final ui.Image playerSprite;
     try {
       data = await GameData.load(widget.bundle);
+      playerSprite = await loadPlayerSprite();
       for (final s in data.tuning.species) {
         sprites[s.id] = (await EcoSprite.load(s.id)).normal;
       }
@@ -169,6 +172,12 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     );
     final game = GameMapGame(
       renderer: assets.makeRenderer(),
+      visual: assets.visual!,
+      style: ArtStyle(assets.biomes),
+      balance: assets.balance,
+      playerSprite: playerSprite,
+      overlayBiomes: () => tools.showBiomeGrid,
+      overlayGrid20: () => tools.showGrid20,
       auraM: assets.balance.auraM,
       defaultWidthM: assets.balance.defaultWidthM,
       minWidthM: assets.balance.zoomMinWidthM,

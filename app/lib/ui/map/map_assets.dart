@@ -9,6 +9,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../../core/biomes.dart';
+import '../../core/epochs.dart';
+import '../../data/visual_pack.dart';
+import '../../world/visual_map.dart';
 import '../../data/region_loader.dart';
 import '../../world/map_balance.dart';
 import '../../world/region_map.dart';
@@ -19,7 +22,7 @@ import 'map_renderer.dart';
 const String kRegion = 'campinas';
 
 class MapAssets {
-  MapAssets({required this.map, required this.atlas, required this.balance, required this.stale});
+  MapAssets({required this.map, required this.atlas, required this.balance, required this.stale, this.visual, this.epoch});
 
   final RegionMap map;
 
@@ -30,6 +33,10 @@ class MapAssets {
   /// O relógio está fora das épocas: o mapa funciona, mas o mundo está desatualizado.
   final bool stale;
 
+  /// As geometrias do pacote visual (ruas, água, verde). Só o mapa do jogo as carrega.
+  final VisualMap? visual;
+  final Epoch? epoch;
+
   BiomeSet get biomes => map.biomes;
 
   MapRenderer makeRenderer() => MapRenderer(map: map, atlas: atlas);
@@ -39,7 +46,7 @@ class MapAssets {
 
 /// Carrega os assets do mapa em [nowUtc] (segundos UTC). Devolve [MapAssets] ou, se o pacote não bate
 /// com a época vigente (ou falta algo), a mensagem de erro em português: nunca lança.
-Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle}) async {
+Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool withVisual = false}) async {
   final assets = bundle ?? rootBundle;
   final region = await loadRegion(region: kRegion, nowUtc: nowUtc, bundle: assets);
   if (region is RegionLoadError) return region.message;
@@ -47,8 +54,15 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle}) async {
   try {
     final biomes = BiomeSet.fromJson(jsonDecode(await assets.loadString('assets/data/biomes.json')) as Map<String, dynamic>);
     final balance = MapBalance(jsonDecode(await assets.loadString('assets/data/balance.json')) as Map<String, dynamic>);
+    VisualMap? visual;
+    if (withVisual) {
+      final pack = await loadVisualPack(region: kRegion, epoch: loaded.epoch, bundle: assets);
+      if (pack is! VisualPack) return pack as String;
+      visual = VisualMap(pack);
+    }
     final atlas = await buildBiomeAtlas(biomes);
-    return MapAssets(map: RegionMap(pack: loaded.pack, biomes: biomes), atlas: atlas, balance: balance, stale: loaded.stale);
+    return MapAssets(
+        map: RegionMap(pack: loaded.pack, biomes: biomes), atlas: atlas, balance: balance, stale: loaded.stale, visual: visual, epoch: loaded.epoch);
   } catch (e) {
     return 'Não consegui ler os dados do mapa: $e';
   }

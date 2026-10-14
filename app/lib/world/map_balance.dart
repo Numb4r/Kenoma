@@ -11,6 +11,9 @@ class MapBalance {
         trackerMax = m['tracker_max'] as int,
         defaultWidthM = (m['view_width_default_m'] as num).toDouble(),
         playerHeightFraction = (m['player_height_fraction'] as num).toDouble(),
+        artPixelDp = (m['art_pixel_dp'] as num).toDouble(),
+        sidewalkArtPx = (m['sidewalk_art_px'] as num).toDouble(),
+        roadWidthM = {for (final e in (m['road_width_m'] as Map<String, dynamic>).entries) e.key: (e.value as num).toDouble()},
         zoomMinWidthM = (m['zoom_min_width_m'] as num).toDouble(),
         zoomMaxWidthM = (m['zoom_max_width_m'] as num).toDouble();
 
@@ -35,4 +38,13 @@ class MapBalance {
   /// Menor e maior largura de tela, em metros, que a pinça alcança.
   final double zoomMinWidthM;
   final double zoomMaxWidthM;
+
+  /// Tamanho de um pixel de arte no zoom padrão, em dp. O mapa é desenhado nesses pixels e ampliado.
+  final double artPixelDp;
+
+  /// Calçada de cada lado da rua, em pixels de arte.
+  final double sidewalkArtPx;
+
+  /// Largura da rua por classe (`principal`, `secondary`, `local`, `pedestrian`), em metros.
+  final Map<String, double> roadWidthM;
 }

@@ -1,6 +1,9 @@
 import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:flame/game.dart';
+
+import 'dart:math' as math;
 
 import '../../capture/eco_type.dart';
 import '../../core/tiles.dart';
@@ -12,7 +15,11 @@ import '../../world/player_avatar.dart';
 import '../../world/player_tracker.dart';
 import '../../world/spawn_field.dart';
 import '../../world/world_view.dart';
+import '../../world/map_balance.dart';
+import '../../world/visual_map.dart';
 import '../map/map_renderer.dart';
+import 'art_renderer.dart';
+import 'art_style.dart';
 import 'spawn_painter.dart';
 import 'tracker_painter.dart';
 import 'player_painter.dart';
@@ -22,6 +29,12 @@ import 'player_painter.dart';
 class GameMapGame extends FlameGame {
   GameMapGame({
     required this.renderer,
+    required this.visual,
+    required this.style,
+    required this.balance,
+    this.playerSprite,
+    this.overlayBiomes = _off,
+    this.overlayGrid20 = _off,
     required this.auraM,
     required this.defaultWidthM,
     required this.minWidthM,
@@ -40,7 +53,19 @@ class GameMapGame extends FlameGame {
     follow = FollowCamera(x: x, y: y);
   }
 
+  /// A grade de biomas: só aparece como sobreposição do menu de debug.
   final MapRenderer renderer;
+
+  /// As geometrias do pacote visual e as cores: o mapa de jogo é desenhado em pixels de arte.
+  final VisualMap visual;
+  final ArtStyle style;
+  final MapBalance balance;
+  final ui.Image? playerSprite;
+
+  /// Sobreposições de debug, lidas a cada quadro: a grade de biomas e a grade das células de spawn (z20).
+  final bool Function() overlayBiomes;
+  final bool Function() overlayGrid20;
+  ArtRenderer? _art;
 
   /// Os spawns e o que o jogador alcança. `null` nos testes que só querem o mapa.
   final WorldView? worldView;
@@ -149,7 +174,13 @@ class GameMapGame extends FlameGame {
     if (size.x <= 0 || size.y <= 0) return;
     final view = Size(size.x, size.y);
     final cam = follow.camera;
-    renderer.paint(canvas, view, camera: cam, crosshair: false);
+    _artRenderer(view).paint(canvas, view, cam, dpr: dpr);
+    if (overlayBiomes() || overlayGrid20()) {
+      // Sobreposição de debug: a grade lógica por cima do desenho, translúcida.
+      canvas.saveLayer(Offset.zero & view, Paint()..color = const Color(0x99FFFFFF));
+      renderer.paint(canvas, view, camera: cam, crosshair: false, grid20: overlayGrid20());
+      canvas.restore();
+    }
     if (!avatar.hasPosition) return;
     final (sx, sy) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
     final center = Offset(sx, sy);
@@ -171,7 +202,7 @@ class GameMapGame extends FlameGame {
         dpr: dpr,
       );
     }
-    paintPlayerMarker(canvas, center, heightDp: heightDp, dpr: dpr);
+    paintPlayerMarker(canvas, center, sprite: playerSprite, heightDp: heightDp, dpr: dpr);
     if (w != null) {
       final off = heightDp / 2;
       final tracked = w.tracked(
@@ -184,6 +215,33 @@ class GameMapGame extends FlameGame {
       );
       paintTracker(canvas, view, tracked, sprites: sprites, typeOf: typeOf);
     }
+  }
+
+  /// O renderizador em pixels de arte. O pixel de arte tem um tamanho fixo em metros, escolhido para que no
+  /// zoom padrão a ampliação seja inteira em pixels físicos; refeito se a tela mudar de tamanho.
+  ArtRenderer _artRenderer(Size view) {
+    final key = (view.width, view.height);
+    if (_art != null && _artKey == key) return _art!;
+    _art?.dispose();
+    final k = math.max(1, (balance.artPixelDp * dpr).round()); // pixels físicos por pixel de arte
+    final artM = defaultWidthM * k / (view.width * dpr);
+    final mpc = metersPerCell(_lat);
+    _artKey = key;
+    return _art = ArtRenderer(
+      visual: visual,
+      style: style,
+      balance: balance,
+      artCells: artM / mpc,
+      metersPerArtPx: artM,
+    );
+  }
+
+  (double, double)? _artKey;
+
+  @override
+  void onRemove() {
+    _art?.dispose();
+    super.onRemove();
   }
 
   /// Altura do Conjurador e dos Ecos na tela, em pixels lógicos.
@@ -210,3 +268,5 @@ class GameMapGame extends FlameGame {
 
 EcoType? _noType(String _) => null;
 int _zero() => 0;
+
+bool _off() => false;

@@ -247,3 +247,69 @@ const Map<String, List<String>> ecoSprites = {
   'frond.eco': frondlingSprite,
   'rill.eco': rilletSprite,
 };
+
+/// Cores do Conjurador (a figura de capuz). Contorno `O` igual ao dos Ecos (#1a1424, nunca preto puro).
+const Map<String, int> playerPalette = {
+  'O': 0xFF1A1424, // contorno
+  'n': 0xFF3A3450, // manto
+  'w': 0xFF2B2540, // manto na sombra
+  'm': 0xFF56507A, // manto na luz
+  'D': 0xFF2E8F86, // rosto iluminado de baixo pelo celular
+  'C': 0xFF5FD3C6, // brilho ciano do sinal (olhos e tela)
+  'W': 0xFFCFF7F1, // reflexo na tela
+  'k': 0xFF22304A, // corpo do celular
+  'g': 0xFF2F5F66, // luz do celular sobre o manto
+  'S': 0xFFE0A878, // mão
+};
+
+/// Conjurador (placeholder): figura de capuz escuro com o celular na mão, o brilho ciano no rosto.
+const List<String> playerSprite = [
+  '................................................',
+  '.....................OOOOOO.....................',
+  '...................OOnnnnnnOO...................',
+  '..................OmmnnnnnnwwO..................',
+  '.................OmmmnnnnnnwwwO.................',
+  '................OmmmmnnnnnnwwwwO................',
+  '...............OmmmmmnnnnnnwwwwwO...............',
+  '...............OmmmmmnnnnnnwwwwwO...............',
+  '...............OmmmmmnwwwwnwwwwwO...............',
+  '..............OmmmmmmwwwwwwwwwwwwO..............',
+  '..............OmmmmmwwwwwwwwwwwwwO..............',
+  '..............OmmmmwwwwwwwwwwwwwwO..............',
+  '..............OmmmmwwwwwwwwwwwwwwO..............',
+  '..............OmmmmwwwwwwwwwwwwwwO..............',
+  '..............OnnnnwwCwwwwCwwwwwwO..............',
+  '...............OnnnwwCwwwwCwwwwwO...............',
+  '...............OnnnwwwwwwwwwwwwwO...............',
+  '...............OnnnnDDDDDDDDwwwwO...............',
+  '................OnnnnDDDDDDwwwwO................',
+  '...............OnnnnnnDDDDnwwwnnO...............',
+  '..............OnnnnnnnnnnnnwwnnnnO..............',
+  '..............OnnnnnnnnnnnnnnnnnnO..............',
+  '...............OnnnnnnnnnnnnnnnnO...............',
+  '...............OnnnnnnnnnnnnnwwwO...............',
+  '..............OnnnnnnnnnnnnwwwwwwO..............',
+  '..............OgggggnnnnnnnwwwwwwO..............',
+  '.............OOggggggnnnnnnwwwwwwO..............',
+  '............OkkkkkkgggnnnnnwwwwwwwO.............',
+  '............OkWWWWkggggnnnnnwwwwwwO.............',
+  '............OkWWWWkggggnnnnnwwwwwwO.............',
+  '............OkCCCCkggggnnnnnwwwwwwwO............',
+  '............OkCCCCkggggnnnnnwwwwwwwO............',
+  '...........OSkCCCCkSgggwnnnnwwwwwwwwO...........',
+  '...........OSkCCCCkSgggwnnnnwwwwwwwwO...........',
+  '...........OgkCCCnnngggwnnnnwwwwwwwwO...........',
+  '..........OggkCCCnnnnggwnnnnwwwwwwwwwO..........',
+  '..........OggkkSSnnnngnwnnnnnwwwwwwwwO..........',
+  '..........OgggggggnnnnnwnnnnnwwwwwwwwO..........',
+  '.........OnnggggggnnnnnwnnnnnwwwwwwwwwO.........',
+  '.........OnnnnnnnnwnnnnwnnnnnwwwwwwwwwO.........',
+  '........OnnnnnnnnnwnnnnwnnnnnwwwwwwwwwwO........',
+  '........OnnnnnnnnnwnnnnwnnnnnwwwwwwwwwwO........',
+  '........OnnnnnnnnnwnnnnwnnnnnwwwwwwwwwwO........',
+  '.......OnnnnnnnnnnwnnnnwnnnnnwwwwwwwwwwwO.......',
+  '.......OwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwO.......',
+  '........OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO........',
+  '................................................',
+  '................................................',
+];

@@ -256,6 +256,21 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
               activeThumbColor: kVeil,
               onChanged: (v) => setState(() => _tools.simulator.noiseM = v ? 5 : 0),
             ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Grade de biomas no mapa do jogo', style: TextStyle(fontSize: 16)),
+              subtitle: const Text('A camada lógica, translúcida por cima do desenho.', style: TextStyle(fontSize: 8, color: kDim)),
+              value: _tools.showBiomeGrid,
+              activeThumbColor: kVeil,
+              onChanged: (v) => _tools.setOverlays(biomes: v),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Grade das células de spawn (z20)', style: TextStyle(fontSize: 16)),
+              value: _tools.showGrid20,
+              activeThumbColor: kVeil,
+              onChanged: (v) => _tools.setOverlays(grid20: v),
+            ),
             const SizedBox(height: 8),
             Row(children: [_coordField('Latitude', _simLat), const SizedBox(width: 8), _coordField('Longitude', _simLon)]),
             const SizedBox(height: 8),
@@ -267,6 +282,10 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
               PixelButton(label: 'Centro', color: kDim, onTap: () => setState(() {
                     _simLat.text = kCentroCampinas.$1.toString();
                     _simLon.text = kCentroCampinas.$2.toString();
+                  })),
+              PixelButton(label: 'Taquaral', color: kDim, onTap: () => setState(() {
+                    _simLat.text = kTaquaral.$1.toString();
+                    _simLon.text = kTaquaral.$2.toString();
                   })),
               PixelButton(label: 'Teleportar', color: kVeil, onTap: _teleport),
             ]),

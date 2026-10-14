@@ -7,20 +7,6 @@ import 'dart:ui';
 
 import '../colors.dart';
 
-/// O Conjurador visto de cima: capuz e manto, com o brilho ciano do celular no rosto.
-/// `V` violeta (contorno), `O` manto, `C` ciano.
-const List<String> _marker = [
-  '..VVV..',
-  '.VOOOV.',
-  '.VOCOV.',
-  '.VOOOV.',
-  'VOOOOOV',
-  'VOOOOOV',
-  '.VOOOV.',
-  '.VVVVV.',
-  '..V.V..',
-];
-
 /// Desenha o círculo da Aura: violeta tracejado, com um preenchimento leve. [radiusPx] já vem na escala
 /// da câmera (`auraRadiusPx`).
 void paintAura(Canvas canvas, Offset center, double radiusPx) {
@@ -47,41 +33,37 @@ void paintAura(Canvas canvas, Offset center, double radiusPx) {
   }
 }
 
-/// Lado de um pixel de arte do marcador, em pixels lógicos: um número inteiro de pixels físicos, o mais
-/// perto de [heightDp] no total.
-double markerUnit(double dpr, double heightDp) => math.max(1, (heightDp * dpr / _marker.length).round()) / dpr;
+/// Tamanho do sprite do Conjurador na tela, em pixels lógicos: [heightDp] de altura, com cada pixel de
+/// arte do sprite de 48 x 48 ocupando um número inteiro de pixels físicos.
+double playerSize(double dpr, double heightDp) => 48 * math.max(1, (heightDp * dpr / 48).round()) / dpr;
 
-/// O retângulo que o marcador ocupa em [center].
+/// O retângulo que o Conjurador ocupa em [center].
 Rect markerRect(Offset center, double dpr, double heightDp) {
-  final u = markerUnit(dpr, heightDp);
-  return Rect.fromCenter(center: center, width: _marker.first.length * u, height: _marker.length * u);
+  final s = playerSize(dpr, heightDp);
+  return Rect.fromCenter(center: center, width: s, height: s);
 }
 
 double _snap(double v, double dpr) => (v * dpr).roundToDouble() / dpr;
 
-/// Desenha o marcador do Conjurador em [center], com [heightDp] de altura em qualquer zoom.
-void paintPlayerMarker(Canvas canvas, Offset center, {required double heightDp, double dpr = 1}) {
-  final px = markerUnit(dpr, heightDp);
-  final w = _marker.first.length * px, h = _marker.length * px;
-  final origin = Offset(_snap(center.dx - w / 2, dpr), _snap(center.dy - h / 2, dpr));
-  final fill = Paint()..isAntiAlias = false;
-  for (var r = 0; r < _marker.length; r++) {
-    for (var c = 0; c < _marker[r].length; c++) {
-      final color = switch (_marker[r][c]) {
-        'V' => kVeil,
-        'O' => kPanel,
-        'C' => kSignal,
-        _ => null,
-      };
-      if (color == null) continue;
-      canvas.drawRect(Rect.fromLTWH(origin.dx + c * px, origin.dy + r * px, px, px), fill..color = color);
-    }
-  }
-  // Contorno ameixa por baixo, na base do manto: assenta o marcador no chão.
-  canvas.drawRect(
-    Rect.fromLTWH(origin.dx + px, origin.dy + h, w - 2 * px, px / 2),
+/// Desenha o Conjurador em [center], com [heightDp] de altura em qualquer zoom. Sem [sprite] (ainda
+/// carregando) não desenha nada.
+void paintPlayerMarker(Canvas canvas, Offset center, {required Image? sprite, required double heightDp, double dpr = 1}) {
+  if (sprite == null) return;
+  final size = playerSize(dpr, heightDp);
+  final dst = Rect.fromLTWH(_snap(center.dx - size / 2, dpr), _snap(center.dy - size / 2, dpr), size, size);
+  // Sombra no chão, sob os pés.
+  canvas.drawOval(
+    Rect.fromCenter(center: dst.bottomCenter.translate(0, -size * 0.04), width: size * 0.62, height: size * 0.14),
     Paint()
-      ..color = kOutline
+      ..color = kOutline.withValues(alpha: 0.5)
+      ..isAntiAlias = false,
+  );
+  canvas.drawImageRect(
+    sprite,
+    Rect.fromLTWH(0, 0, sprite.width.toDouble(), sprite.height.toDouble()),
+    dst,
+    Paint()
+      ..filterQuality = FilterQuality.none
       ..isAntiAlias = false,
   );
 }

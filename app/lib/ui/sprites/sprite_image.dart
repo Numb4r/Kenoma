@@ -14,14 +14,14 @@ const int _seamBright = 0xFFD8CCFF;
 const int _glowBright = 0xFFB59CFF;
 
 /// Pixels RGBA da matriz. Com [brightSeams], as costuras e o brilho ficam mais claros.
-Uint8List spritePixels(List<String> rows, {bool brightSeams = false}) {
+Uint8List spritePixels(List<String> rows, {bool brightSeams = false, Map<String, int> palette = spritePalette}) {
   assert(rows.length == spriteSize && rows.every((r) => r.length == spriteSize), 'sprite deve ser 48 x 48');
   final bytes = Uint8List(spriteSize * spriteSize * 4);
   for (var y = 0; y < spriteSize; y++) {
     for (var x = 0; x < spriteSize; x++) {
       final ch = rows[y][x];
       if (ch == '.') continue;
-      var argb = spritePalette[ch] ?? (throw StateError('Caractere sem cor no sprite: "$ch"'));
+      var argb = palette[ch] ?? (throw StateError('Caractere sem cor no sprite: "$ch"'));
       if (brightSeams && ch == 'v') argb = _seamBright;
       if (brightSeams && ch == 'u') argb = _glowBright;
       final i = (y * spriteSize + x) * 4;
@@ -34,10 +34,10 @@ Uint8List spritePixels(List<String> rows, {bool brightSeams = false}) {
   return bytes;
 }
 
-Future<ui.Image> spriteToImage(List<String> rows, {bool brightSeams = false}) {
+Future<ui.Image> spriteToImage(List<String> rows, {bool brightSeams = false, Map<String, int> palette = spritePalette}) {
   final done = Completer<ui.Image>();
   ui.decodeImageFromPixels(
-    spritePixels(rows, brightSeams: brightSeams),
+    spritePixels(rows, brightSeams: brightSeams, palette: palette),
     spriteSize,
     spriteSize,
     ui.PixelFormat.rgba8888,
@@ -69,3 +69,6 @@ class EcoSprite {
   static Future<EcoSprite> _from(List<String> rows) async =>
       EcoSprite(await spriteToImage(rows), await spriteToImage(rows, brightSeams: true));
 }
+
+/// O sprite do Conjurador, 48 x 48, com a paleta própria dele.
+Future<ui.Image> loadPlayerSprite() => spriteToImage(playerSprite, palette: playerPalette);
