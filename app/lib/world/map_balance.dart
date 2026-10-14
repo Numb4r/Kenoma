@@ -12,6 +12,7 @@ class MapBalance {
         defaultWidthM = (m['view_width_default_m'] as num).toDouble(),
         playerHeightFraction = (m['player_height_fraction'] as num).toDouble(),
         artPixelDp = (m['art_pixel_dp'] as num).toDouble(),
+        compassDeclinationDeg = (m['compass_declination_deg'] as num).toDouble(),
         sidewalkArtPx = (m['sidewalk_art_px'] as num).toDouble(),
         roadWidthM = {for (final e in (m['road_width_m'] as Map<String, dynamic>).entries) e.key: (e.value as num).toDouble()},
         zoomMinWidthM = (m['zoom_min_width_m'] as num).toDouble(),
@@ -41,6 +42,10 @@ class MapBalance {
 
   /// Tamanho de um pixel de arte no zoom padrão, em dp. O mapa é desenhado nesses pixels e ampliado.
   final double artPixelDp;
+
+  /// Declinação magnética do lugar, em graus (leste positivo): a bússola do celular lê o norte magnético e o
+  /// mapa tem o norte verdadeiro. Vale para a região da época (Campinas: cerca de -21°).
+  final double compassDeclinationDeg;
 
   /// Calçada de cada lado da rua, em pixels de arte.
   final double sidewalkArtPx;

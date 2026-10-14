@@ -51,6 +51,7 @@ class FollowCamera {
   double _x, _y;
   double _tx, _ty;
   double _peekX = 0, _peekY = 0;
+  double _rotation = 0;
   double _scale;
   bool _touching = false;
   double _idleS = 0;
@@ -65,13 +66,16 @@ class FollowCamera {
 
   double get pixelsPerCell => _scale;
 
+  /// Rotação do mapa, em radianos, no sentido horário na tela. 0 é o norte para cima.
+  double get rotation => _rotation;
+
   /// Se está espiando (afastada do Conjurador pelo arrasto).
   bool get peeking => _peekX != 0 || _peekY != 0;
 
   bool get touching => _touching;
 
   /// A câmera de mapa que o renderizador usa.
-  MapCamera get camera => MapCamera(centerX: _x + _peekX, centerY: _y + _peekY, pixelsPerCell: _scale);
+  MapCamera get camera => MapCamera(centerX: _x + _peekX, centerY: _y + _peekY, pixelsPerCell: _scale, rotation: _rotation);
 
   /// Para onde seguir (a posição do Conjurador), em células z21 fracionárias.
   void setTarget(double x, double y) {
@@ -101,7 +105,9 @@ class FollowCamera {
   /// outro lado. Limitado a [maxPeekCells].
   void dragBy(double dx, double dy) {
     _idleS = 0;
-    var px = _peekX - dx / _scale, py = _peekY - dy / _scale;
+    // O dedo anda na tela; o mapa anda junto com ele, então o olhar vai no sentido oposto, no mundo.
+    final c = math.cos(_rotation), s = math.sin(_rotation);
+    var px = _peekX - (dx * c + dy * s) / _scale, py = _peekY - (-dx * s + dy * c) / _scale;
     final len = math.sqrt(px * px + py * py);
     if (len > maxPeekCells) {
       px *= maxPeekCells / len;
@@ -109,6 +115,19 @@ class FollowCamera {
     }
     _peekX = px;
     _peekY = py;
+  }
+
+  /// Gira o mapa para [radians] em torno do Conjurador: o espiar gira junto, para ele não sair do lugar na
+  /// tela (a posição do Conjurador na tela é `centro - rotação(espiar)`).
+  void setRotation(double radians) {
+    final delta = radians - _rotation;
+    if (delta != 0 && (_peekX != 0 || _peekY != 0)) {
+      final c = math.cos(-delta), s = math.sin(-delta);
+      final x = _peekX * c - _peekY * s, y = _peekX * s + _peekY * c;
+      _peekX = x;
+      _peekY = y;
+    }
+    _rotation = radians;
   }
 
   /// Muda a escala (pinça), limitada à faixa de jogo.

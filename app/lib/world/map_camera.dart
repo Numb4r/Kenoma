@@ -37,7 +37,7 @@ class CellRange {
 }
 
 class MapCamera {
-  const MapCamera({required this.centerX, required this.centerY, this.pixelsPerCell = defaultScale});
+  const MapCamera({required this.centerX, required this.centerY, this.pixelsPerCell = defaultScale, this.rotation = 0});
 
   /// Câmera centrada numa coordenada.
   factory MapCamera.atLatLon(double lat, double lon, {double pixelsPerCell = defaultScale}) {
@@ -57,37 +57,69 @@ class MapCamera {
   final double centerY;
   final double pixelsPerCell;
 
+  /// Rotação do mapa em radianos, no sentido horário na tela, em torno do centro da tela. 0 é o norte para
+  /// cima. Girar o mapa em [rotation] leva o norte para a direita do alto da tela.
+  final double rotation;
+
   /// Latitude e longitude do centro.
   (double, double) get latLon => tileFractionToLatLon(centerX, centerY, biomeZoom);
 
   /// Arrastar o dedo [dx] e [dy] pixels move o mapa junto com ele, então o centro vai para o outro lado.
-  MapCamera panned(double dx, double dy) =>
-      MapCamera(centerX: centerX - dx / pixelsPerCell, centerY: centerY - dy / pixelsPerCell, pixelsPerCell: pixelsPerCell);
+  MapCamera panned(double dx, double dy) {
+    final (wx, wy) = _unrotate(dx, dy);
+    return MapCamera(centerX: centerX - wx / pixelsPerCell, centerY: centerY - wy / pixelsPerCell, pixelsPerCell: pixelsPerCell, rotation: rotation);
+  }
+
+  /// Desfaz a rotação de um vetor de tela: o vetor do mundo, em pixels, que aparece como ([x], [y]).
+  (double, double) _unrotate(double x, double y) {
+    if (rotation == 0) return (x, y);
+    final c = math.cos(rotation), s = math.sin(rotation);
+    return (x * c + y * s, -x * s + y * c);
+  }
 
   /// Muda a escala (limitada) mantendo parada a célula que está sob o ponto de tela ([focalX], [focalY]).
   MapCamera zoomedAbout(double scale, double focalX, double focalY, double viewW, double viewH) {
     final next = scale.clamp(minScale, maxScale).toDouble();
     final (cx, cy) = screenToCell(focalX, focalY, viewW, viewH);
-    return MapCamera(
-      centerX: cx - (focalX - viewW / 2) / next,
-      centerY: cy - (focalY - viewH / 2) / next,
-      pixelsPerCell: next,
-    );
+    final (wx, wy) = _unrotate(focalX - viewW / 2, focalY - viewH / 2);
+    return MapCamera(centerX: cx - wx / next, centerY: cy - wy / next, pixelsPerCell: next, rotation: rotation);
   }
 
   /// Célula (fracionária) sob o ponto de tela.
-  (double, double) screenToCell(double sx, double sy, double viewW, double viewH) =>
-      (centerX + (sx - viewW / 2) / pixelsPerCell, centerY + (sy - viewH / 2) / pixelsPerCell);
+  (double, double) screenToCell(double sx, double sy, double viewW, double viewH) {
+    final (wx, wy) = _unrotate(sx - viewW / 2, sy - viewH / 2);
+    return (centerX + wx / pixelsPerCell, centerY + wy / pixelsPerCell);
+  }
 
   /// Ponto de tela de uma posição de mundo em células.
-  (double, double) cellToScreen(double cx, double cy, double viewW, double viewH) =>
-      (viewW / 2 + (cx - centerX) * pixelsPerCell, viewH / 2 + (cy - centerY) * pixelsPerCell);
+  (double, double) cellToScreen(double cx, double cy, double viewW, double viewH) {
+    final vx = (cx - centerX) * pixelsPerCell, vy = (cy - centerY) * pixelsPerCell;
+    if (rotation == 0) return (viewW / 2 + vx, viewH / 2 + vy);
+    final c = math.cos(rotation), s = math.sin(rotation);
+    return (viewW / 2 + vx * c - vy * s, viewH / 2 + vx * s + vy * c);
+  }
 
   /// Células z21 que tocam a tela. Só essas se desenham.
   CellRange visibleRange(double viewW, double viewH) {
-    final (left, top) = screenToCell(0, 0, viewW, viewH);
-    final (right, bottom) = screenToCell(viewW, viewH, viewW, viewH);
+    final (left, top, right, bottom) = visibleBounds(viewW, viewH);
     return CellRange(left.floor(), top.floor(), (right - 1e-9).floor(), (bottom - 1e-9).floor());
+  }
+
+  /// O menor retângulo de células, alinhado ao mundo, que contém a tela inteira: com o mapa girado, os
+  /// quatro cantos da tela caem em lugares diferentes e o retângulo cresce.
+  (double, double, double, double) visibleBounds(double viewW, double viewH) {
+    final corners = [
+      screenToCell(0, 0, viewW, viewH),
+      screenToCell(viewW, 0, viewW, viewH),
+      screenToCell(0, viewH, viewW, viewH),
+      screenToCell(viewW, viewH, viewW, viewH),
+    ];
+    return (
+      corners.map((c) => c.$1).reduce(math.min),
+      corners.map((c) => c.$2).reduce(math.min),
+      corners.map((c) => c.$1).reduce(math.max),
+      corners.map((c) => c.$2).reduce(math.max),
+    );
   }
 
   /// Mantém o centro dentro de [bounds] (as bordas incluídas).
@@ -95,5 +127,6 @@ class MapCamera {
         centerX: centerX.clamp(bounds.x0.toDouble(), bounds.x1 + 1.0).toDouble(),
         centerY: centerY.clamp(bounds.y0.toDouble(), bounds.y1 + 1.0).toDouble(),
         pixelsPerCell: pixelsPerCell,
+        rotation: rotation,
       );
 }
