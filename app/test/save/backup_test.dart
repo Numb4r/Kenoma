@@ -148,7 +148,8 @@ void main() {
       expect(s.seed, seedGlobal('CCCCCDDDDD'));
       expect(s.registrySize, 0);
       expect(s.marks, isEmpty);
-      expect((s.collection.length, s.circle, s.count('item.chalk'), s.progress.level), (1, ['1'], 2, level));
+      expect(s.circle, ['1']);
+      expect((s.collection.length, s.count('item.chalk'), s.progress.level), (1, 2, level));
       expect(s.isDone(5), isFalse);
     });
 
