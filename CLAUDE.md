@@ -119,3 +119,17 @@ cd pipeline && .venv/bin/python build_visual.py --region campinas
 O pipeline grava `app/assets/regions/campinas_e0.bin` (versionado) e `pipeline/out/campinas_preview.png` (não versionado). O SHA-256 impresso vai para `region_packs.campinas.sha256` em `app/assets/data/epochs.json`. O extrato do OSM muda todo dia, então regerar dá outro SHA: o `.bin` commitado é a fonte da época 0 e não deve ser regerado por cima. O arquivo do pacote se chama `campinas_e0.bin`, como está em `epochs.json`. O M4 em `docs/marcos.md` diz `campinas.bin`, mas o nome certo é `campinas_e0.bin`.
 
 O `build_visual.py` grava `app/assets/regions/campinas_e0_vis.bin` (versionado) e `pipeline/out/campinas_vis_preview.png` (não versionado). O SHA-256 vai para `visual_packs.campinas.sha256` em `epochs.json`, em campo separado do pacote lógico: o arquivo é só desenho, então pode ser trocado sem época nova. Ele lê o mesmo extrato em `pipeline/cache/` (o da época 0 está registrado em `pipeline/README.md`) e, como o `.bin` lógico, não deve ser regerado por cima com outro extrato.
+
+## Agent skills
+
+### Issue tracker
+
+Issues e specs são arquivos markdown em `.scratch/<feature>/` (sem GitHub Issues). Ver `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Cinco papéis padrão, gravados na linha `Status:` de cada issue. Ver `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` e `docs/adr/` na raiz. Ver `docs/agents/domain.md`.
