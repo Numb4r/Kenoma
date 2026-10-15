@@ -145,7 +145,7 @@ Células com pouca informação no OSM recebem um piso mínimo de spawns genéri
 
 O mapa tem duas camadas. A camada lógica é a grade de biomas em z21, que decide spawns, coleta e tudo que o determinismo cobre. A camada visual é desenhada por cima a partir da geometria real: ruas como linhas finas na largura certa, água e parques com contorno suave por autotiling, e prédios a partir da fase 1. Com a câmera perto do jogador, a grade lógica desenhada direto viraria blocos de 18 m, e as ruas são o que faz o jogador reconhecer o próprio bairro. A camada visual não muda o mundo, então pode melhorar sem quebrar o determinismo.
 
-No jogo a câmera segue o Conjurador pela posição real, com movimento suave. O jogador pode dar zoom dentro de uma faixa e arrastar para espiar em volta, e a câmera volta sozinha depois de alguns segundos. Câmera livre só existe no menu de debug.
+No jogo a câmera segue o Conjurador pela posição real, com movimento suave. A câmera nunca sai do avatar: arrastar com um dedo gira o mapa em torno dele, como no Pokémon GO, e a pinça só dá zoom numa faixa de 70 a 120 m de largura. Uma bússola volta o norte para cima, e o modo "seguir direção" gira o mapa com a bússola do celular. Câmera livre só existe no menu de debug.
 
 ### Geração determinística
 
@@ -1041,6 +1041,71 @@ Algumas fontes pedem chave gratuita ou têm limite para uso não comercial, e pr
 
 Três regras valem para o online. O jogo funciona inteiro sem internet, e o online só acrescenta eventos e visual. A localização enviada a qualquer serviço vai arredondada para cerca de 1 km. O que vem de fora é arredondado por janela de tempo, para amigos no mesmo lugar e hora receberem o mesmo.
 
+### Fontes online opcionais
+
+Online só dá bônus, nunca é obrigação. Bônus pequenos, nunca uma espécie exclusiva de uma fonte, no máximo uma variante ou mais frequência por um tempo. Sem internet, sem permissão ou com o serviço fora do ar, o efeito simplesmente não acontece, sem aviso de erro.
+
+| Fonte | O que dá | Efeito |
+| --- | --- | --- |
+| iNaturalist | observações reais de fauna e flora | Ecos do tipo correspondente mais comuns por alguns dias perto da observação |
+| eBird | aves observadas recentemente | Ecos de Ar e Feéricos mais comuns; aves raras dão variante rara |
+| Paleobiology Database e GBIF | locais reais de fósseis | sítios de escavação com bônus de fósseis |
+| Blitzortung | raios em tempo real | Ecos Elétricos mais fortes perto de raio real por algumas horas |
+| ANA (Hidroweb) | nível dos rios | rio cheio fortalece a Água ao longo dele |
+| INPE BDQueimadas | focos de queimada no Brasil | Ecos de Fogo mais fortes perto de focos reais |
+| Cemaden | pluviômetros e alertas de chuva forte | Fendas de enxurrada temporárias perto de rios e córregos |
+| INMET | estações meteorológicas | calor extremo favorece Fogo, frio favorece Espectral |
+| Open-Meteo, vento e UV | vento e índice UV | vento favorece Feéricos, UV alto favorece Luz |
+| USGS, terremotos | terremotos no mundo | tremor no Véu, evento global com Ecos de Terra |
+| NASA EONET | eventos naturais no mundo | eventos globais do Véu |
+| N2YO ou CelesTrak | satélites passando | na lore, olhos dos Que Escutam; passagem visível aumenta a Exposição e traz um sussurro |
+| NOAA, aurora | tempestades solares | céu de aurora no mapa |
+| NASA APOD | foto astronômica do dia | post diário no fórum Limen |
+| Wikipedia, mais lidos | artigos mais lidos do dia | rumores no fórum, como Lendas Urbanas |
+| Resultados de futebol | jogos de Ponte Preta e Guarani | dia de Dérbi Campineiro vira evento local |
+| CityBikes | estações de bicicleta compartilhada | ponto de troca de veículo no Modo Viagem fora de Campinas |
+| Dados abertos de Campinas | conjuntos da prefeitura | a garimpar: árvores, praças e patrimônio tombado como altares e lugares de memória |
+
+Entram também, offline, o mapa de poluição luminosa (VIIRS), em que espíritos e Sombra preferem o escuro e Luz prefere o iluminado, e o calendário de chuvas de meteoros, em que as noites de chuva soltam Fagulhas raras.
+
+Não se usam dados de criminalidade, localização de pessoas em tempo real, nada que leve a lugares perigosos ou privados, nem contas pessoais do jogador em outros serviços.
+
+### Sensores e recursos do celular
+
+| Recurso | O que lê | Uso |
+| --- | --- | --- |
+| Contador de passos | passos reais | bônus pequeno, como chocar casulos; funciona sem GPS |
+| Barômetro | andares subidos | bônus de subir prédios; só onde o sensor existir |
+| Sensor de luz | escuro real | espíritos noturnos mais frequentes |
+| Inclinação | ângulo do celular | jeito alternativo de girar o dial |
+| Magnetômetro | variações magnéticas | detector de metal real na escavação e Ecos de Metal perto de metal |
+| Microfone, volume | ruído, sem gravação | barulho favorece Urbano e Elétrico, silêncio favorece espíritos |
+| Microfone, altura do som | assobio ou cantarolar | sintonia por voz, também como acessibilidade |
+| Câmera com reconhecimento no aparelho | árvore, água, fogo na foto | Fagulha do tipo correspondente, sem enviar a foto |
+| Câmera do Véu | imagem ao vivo | ver o Eco sobre a rua antes de sintonizar |
+| Sensor de proximidade | celular no bolso | modo bolso, com tela apagada, som e vibração |
+| Fone de ouvido | fone conectado | som 3D apontando o Eco mais próximo |
+| Relógio Wear OS | pulso | vibra quando um Eco entra na Aura; sintonia simples no relógio |
+| Bateria e carregador | carregando em casa | vigília: lures rendem mais durante a carga noturna |
+| Widget | nada novo | Familiar com a lua do dia e Ecos próximos na tela inicial |
+
+### Conexão entre aparelhos e internet sem servidor
+
+| Recurso | Como funciona | Uso |
+| --- | --- | --- |
+| Bluetooth e Nearby Connections | celulares próximos se falam direto | troca de criaturas, ritual em dupla, bônus de grupo, Fenda que só abre com três amigos |
+| NFC | encostar aparelhos ou etiquetas | troca rápida; etiquetas NFC viram relíquias físicas escondidas pela cidade |
+| Contagem de redes Wi-Fi e Bluetooth | só a quantidade | multidão real traz os Ecos de multidão |
+| Arquivos estáticos assinados (GitHub Pages) | JSON assinado publicado de graça | épocas, eventos, Lua Carmim, códigos e as falas do mentor sem atualizar o app |
+| Google Drive do jogador | pasta oculta do app na conta dele | backup automático na nuvem, sem servidor próprio |
+| Trocas por código assinado | par de chaves por jogador, QR ou link por qualquer mensageiro | trocar criatura com amigo distante |
+| Cartões compartilháveis | imagem com QR | mostrar capturas nos stories; o QR abre o bestiário |
+| Deep links | links que abrem o app | convite de grupo e oferta de troca em um toque |
+
+Permissões são pedidas só quando o recurso é ligado, nunca na instalação. Microfone e câmera são analisados no aparelho, sem gravação nem envio, e Wi-Fi e Bluetooth viram só contagem. Nada desta lista é obrigatório para jogar.
+
+Fases sugeridas: arquivos estáticos assinados, backup no Drive, contador de passos e modo bolso na fase 1; Bluetooth, NFC, trocas por código, cartões e as fontes de clima na fase 2; o resto na fase 3 ou como expansão.
+
 ### Fases
 
 Nomes de rua, sol e lua e Tráfego do Véu ambiente na fase 1. Modo Viagem com rota, veículos especiais do tráfego, pontos de interesse e clima na fase 2. Demais fontes online, trem fantasma, carro fugitivo e prédios com altura junto com a fase 3 ou como expansão.
@@ -1192,11 +1257,11 @@ Todos os menus vivem dentro do celular do Conjurador. Tocar no botão central é
 
 ### Câmera
 
-A câmera tem ângulo 3/4 fixo e só gira em torno do eixo vertical. O jogador gira o mapa com dois dedos, sem controle de inclinação nem de perspectiva, porque inclinar não tem função de jogo. Um toque na bússola volta o norte para cima.
+A câmera tem ângulo 3/4 fixo e só gira em torno do eixo vertical. O jogador gira o mapa arrastando um dedo, sem controle de inclinação nem de perspectiva, porque inclinar não tem função de jogo. Um toque na bússola volta o norte para cima.
 
-- Personagem, criaturas e efeitos são sprites 2D sempre em pé e virados para a tela, em qualquer rotação.
+- Personagem, criaturas e efeitos são sprites 2D sempre em pé e virados para a tela, em qualquer rotação. O tamanho é em metros do mundo, numa escala que exagera tudo um pouco mas mantém as proporções entre si: Conjurador e Familiar com 8 m de altura, pedestres fantasmas com 6 m, carros fantasmas com 7 m de comprimento, Ecos com 9 m (Espíritos e camadas acima maiores) e Fagulhas com 3 m. A área de toque de qualquer coisa tocável tem no mínimo 48 dp, mesmo quando o sprite é menor.
 - Prédios são desenhados em 2D a partir dos contornos do OSM, projetando telhado e paredes conforme o ângulo atual. Com inclinação fixa essa projeção é simples e roda no Flame, sem motor 3D.
-- A cena é renderizada numa resolução baixa e ampliada por vizinho mais próximo, mantendo os pixels nítidos e sem tremor durante o giro.
+- A cena é renderizada numa resolução baixa, com o pixel de arte valendo 2 dp na tela, e ampliada por vizinho mais próximo, mantendo os pixels nítidos e sem tremor durante o giro.
 - Girar a câmera também é a forma principal de ver atrás de um prédio. O esmaecimento continua para quando o jogador não girar.
 - A interface nunca gira. A bússola aparece só enquanto o mapa estiver fora do norte.
 
