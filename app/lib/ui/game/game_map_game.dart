@@ -242,8 +242,8 @@ class GameMapGame extends FlameGame {
     final (sx, sy) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
     final center = Offset(sx, sy);
     // De baixo para cima: Aura no chão, spawns, Conjurador por cima de tudo.
-    paintAura(canvas, center, auraRadiusPx(auraM: auraM, lat: _lat, pixelsPerCell: cam.pixelsPerCell));
     final w = worldView;
+    paintAura(canvas, center, auraRadiusPx(auraM: w?.auraRadiusM ?? auraM, lat: _lat, pixelsPerCell: cam.pixelsPerCell));
     final spriteSize = spriteSizePx, sparkSize = sparkSizePx;
     if (w != null) {
       paintSpawns(
@@ -253,7 +253,7 @@ class GameMapGame extends FlameGame {
         w.spawns,
         sprites: sprites,
         typeOf: typeOf,
-        inAura: w.inAura,
+        inAura: w.canReach,
         time: _time,
         avoid: markerRect(center, spriteSize).inflate(6),
         spriteSize: spriteSize,
@@ -265,7 +265,7 @@ class GameMapGame extends FlameGame {
     if (w != null) {
       final off = spriteSize / 2;
       final tracked = w.tracked(
-        trackerM: trackerM,
+        trackerM: w.trackerRangeM,
         max: trackerMax,
         offScreen: (s) {
           final (x, y) = cam.cellToScreen(s.x, s.y, view.width, view.height);

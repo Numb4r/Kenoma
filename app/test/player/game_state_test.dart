@@ -3,8 +3,10 @@ import 'package:kenoma/player/game_session.dart';
 import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/save/save_store.dart';
 
+import '../support/fixtures.dart';
+
 void main() {
-  GameState fresh() => GameState.fresh(groupCode: 'KENOMA-TESTE', startInventory: {'item.seal.simple': 5, 'item.chalk': 3});
+  GameState fresh() => GameState.fresh(groupCode: 'KENOMA-TESTE', startInventory: {'item.seal.simple': 5, 'item.chalk': 3}, balance: loadProgressBalance());
 
   test('o inventário soma e gasta, e não gasta o que não tem', () {
     final s = fresh();
@@ -39,7 +41,7 @@ void main() {
 
   test('o save vai e volta sem perder nada, e guarda campos que não conhece', () async {
     final store = MemorySaveStore();
-    final session = await GameSession.open(store: store, startInventory: {'item.chalk': 3}, nowUtc: () => 99, nextInt: (n) => 1);
+    final session = await GameSession.open(store: store, startInventory: {'item.chalk': 3}, balance: loadProgressBalance(), nowUtc: () => 99, nextInt: (n) => 1);
     final s = session.state;
     expect(s.groupCode, matches(RegExp(r'^[0-9A-Z]{5}-[0-9A-Z]{5}$')));
     s.add('item.herbs', 4);
@@ -47,7 +49,7 @@ void main() {
     await session.flush();
     store.json!['future_field'] = {'x': 1};
 
-    final again = await GameSession.open(store: store, startInventory: {}, nowUtc: () => 200, nextInt: (n) => 0);
+    final again = await GameSession.open(store: store, startInventory: {}, balance: loadProgressBalance(), nowUtc: () => 200, nextInt: (n) => 0);
     expect(again.state.groupCode, s.groupCode, reason: 'a seed não muda ao reabrir');
     expect(again.state.count('item.herbs'), 4);
     expect(again.state.count('item.chalk'), 3);
@@ -58,7 +60,7 @@ void main() {
 
   test('várias mudanças seguidas terminam gravadas em ordem', () async {
     final store = MemorySaveStore();
-    final session = await GameSession.open(store: store, startInventory: {}, nowUtc: () => 1, nextInt: (n) => 0);
+    final session = await GameSession.open(store: store, startInventory: {}, balance: loadProgressBalance(), nowUtc: () => 1, nextInt: (n) => 0);
     for (var i = 0; i < 20; i++) {
       session.state.add('item.scrap', 1);
     }

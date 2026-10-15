@@ -63,9 +63,9 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   final _simLon = TextEditingController(text: kUnicamp.$2.toString());
   final _clockText = TextEditingController();
 
-  /// Nível do Conjurador no jogo (1 a 15), guardado em `save.json`. Os Ecos do mapa e a resistência
-  /// usam este nível. É outro valor que o do seletor da sintonia de teste, mais abaixo.
-  int _gameLevel = 1;
+  /// Override do nível do Conjurador no jogo (1 a 15), guardado em `save.json`; 0 deixa valer o nível real.
+  /// Os Ecos do mapa e a resistência usam o override. É outro valor que o do seletor da sintonia de teste.
+  int _gameLevel = 0;
   SaveStore? _saveStore;
 
   /// Centro inicial do mapa. O padrão é a Unicamp.
@@ -82,8 +82,10 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   Future<void> _loadGameLevel() async {
     try {
       _saveStore = await FileSaveStore.inDocuments();
-      final level = (await _saveStore!.read())?['player_level'] as int?;
-      if (mounted && level != null) setState(() => _gameLevel = level.clamp(1, 15));
+      final json = await _saveStore!.read();
+      final v1 = (json?['schema_version'] ?? 1) == 1;
+      final level = (json?['level_override'] as int?) ?? (v1 ? (json?['player_level'] as int?) : null);
+      if (mounted && level != null) setState(() => _gameLevel = level.clamp(0, 15));
     } catch (_) {
       _saveStore = null;
     }
@@ -95,7 +97,9 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
     final store = _saveStore;
     if (store == null) return;
     try {
-      await store.write({...?await store.read(), 'player_level': level});
+      final json = {...?await store.read()}..remove('player_level');
+      level == 0 ? json.remove('level_override') : json['level_override'] = level;
+      await store.write(json);
     } catch (_) {
       // sem disco, o nível vale só até fechar o menu
     }
@@ -214,14 +218,14 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
             const SizedBox(height: 8),
             PixelButton(label: 'Abrir mapa do jogo', color: kSignal, onTap: _openGame),
             const SizedBox(height: 16),
-            Text('Nível do Conjurador no jogo: $_gameLevel', style: const TextStyle(fontSize: 16)),
-            const Text('Os Ecos do mapa e a resistência usam este nível. Vale na próxima vez que abrir o mapa.', style: TextStyle(fontSize: 8, color: kDim)),
+            Text(_gameLevel == 0 ? 'Nível do Conjurador no jogo: real' : 'Nível do Conjurador no jogo: $_gameLevel (override)', style: const TextStyle(fontSize: 16)),
+            const Text('0 usa o nível real. Um valor aqui manda nos Ecos do mapa e na resistência. Vale na próxima vez que abrir o mapa.', style: TextStyle(fontSize: 8, color: kDim)),
             Slider(
               value: _gameLevel.toDouble(),
-              min: 1,
+              min: 0,
               max: 15,
-              divisions: 14,
-              label: '$_gameLevel',
+              divisions: 15,
+              label: _gameLevel == 0 ? 'real' : '$_gameLevel',
               activeColor: kSignal,
               onChanged: (v) => _setGameLevel(v.round()),
             ),

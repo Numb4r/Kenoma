@@ -4,7 +4,9 @@ import 'dart:typed_data';
 
 import 'package:kenoma/core/biomes.dart';
 import 'package:kenoma/core/epochs.dart';
+import 'package:kenoma/data/game_data.dart';
 import 'package:kenoma/data/region_pack.dart';
+import 'package:kenoma/player/progress_balance.dart';
 
 // `flutter test` roda com o diretório de trabalho em app/.
 Map<String, dynamic> loadJson(String path) => jsonDecode(File(path).readAsStringSync()) as Map<String, dynamic>;
@@ -12,6 +14,8 @@ Map<String, dynamic> loadJson(String path) => jsonDecode(File(path).readAsString
 Map<String, dynamic> epochsJson() => loadJson('assets/data/epochs.json');
 
 EpochSchedule loadEpochs() => EpochSchedule.fromJson(epochsJson());
+
+ProgressBalance loadProgressBalance() => ProgressBalance(loadJson('assets/data/balance.json'));
 
 BiomeSet loadBiomes() => BiomeSet.fromJson(loadJson('assets/data/biomes.json'));
 
@@ -27,3 +31,13 @@ const int vectorCellX = 387213;
 const int vectorCellY = 592857;
 const int vectorTime = 1790000000;
 const int vectorWindow = 1491667;
+
+/// Os dados do jogo lidos de `assets/data/`, sem passar pelo bundle do Flutter.
+GameData loadGameData() => GameData.fromJson(
+      balance: loadJson('assets/data/balance.json'),
+      balanceVersion: 'test',
+      creatures: loadJson('assets/data/creatures.json'),
+      items: loadJson('assets/data/items.json'),
+      epochs: loadJson('assets/data/epochs.json'),
+      recipes: loadJson('assets/data/recipes.json'),
+    );

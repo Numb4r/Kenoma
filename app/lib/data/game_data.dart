@@ -7,18 +7,22 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../core/epochs.dart';
+import '../player/progress_balance.dart';
 import 'balance_version.dart';
 import 'tuning_data.dart';
 
 class Recipe {
-  const Recipe({required this.id, required this.outId, required this.outQty, required this.inputs});
+  const Recipe({required this.id, required this.outId, required this.outQty, required this.inputs, this.anyEssence = 0});
 
   final String id;
   final String outId;
   final int outQty;
 
-  /// Ingredientes `item -> quantidade`. Ingredientes `any:...` (receitas de Essência) não entram aqui.
+  /// Ingredientes `item -> quantidade`, sem a Essência de qualquer tipo.
   final Map<String, int> inputs;
+
+  /// Quantas Essências de qualquer tipo a receita pede (`any:essence`), misturadas ou não.
+  final int anyEssence;
 }
 
 class GameData {
@@ -28,6 +32,7 @@ class GameData {
     required this.itemNames,
     required this.startInventory,
     required this.recipes,
+    required this.progress,
   });
 
   static Future<GameData> load([AssetBundle? bundle]) async {
@@ -35,36 +40,56 @@ class GameData {
     Future<Map<String, dynamic>> json(String name) async =>
         jsonDecode(await b.loadString('assets/data/$name.json')) as Map<String, dynamic>;
     final balanceBytes = (await b.load('assets/data/balance.json')).buffer.asUint8List();
-    final balance = jsonDecode(utf8.decode(balanceBytes)) as Map<String, dynamic>;
-    final items = await json('items');
-    return GameData(
-      tuning: TuningData.fromJson(
-        balance: balance,
-        balanceVersion: balanceVersionOf(balanceBytes),
-        creatures: await json('creatures'),
-        items: items,
-      ),
-      schedule: EpochSchedule.fromJson(await json('epochs')),
-      itemNames: {for (final i in items['items'] as List<dynamic>) (i as Map<String, dynamic>)['id'] as String: i['name'] as String},
-      startInventory: {for (final e in (balance['start_inventory'] as Map<String, dynamic>).entries) e.key: e.value as int},
-      recipes: {
-        for (final r in (await json('recipes'))['recipes'] as List<dynamic>)
-          if (!((r as Map<String, dynamic>)['in'] as List<dynamic>).any((i) => ((i as List<dynamic>)[0] as String).startsWith('any:')))
-            r['id'] as String: Recipe(
+    return GameData.fromJson(
+      balance: jsonDecode(utf8.decode(balanceBytes)) as Map<String, dynamic>,
+      balanceVersion: balanceVersionOf(balanceBytes),
+      creatures: await json('creatures'),
+      items: await json('items'),
+      epochs: await json('epochs'),
+      recipes: await json('recipes'),
+    );
+  }
+
+  factory GameData.fromJson({
+    required Map<String, dynamic> balance,
+    required String balanceVersion,
+    required Map<String, dynamic> creatures,
+    required Map<String, dynamic> items,
+    required Map<String, dynamic> epochs,
+    required Map<String, dynamic> recipes,
+  }) =>
+      GameData(
+        tuning: TuningData.fromJson(balance: balance, balanceVersion: balanceVersion, creatures: creatures, items: items),
+        progress: ProgressBalance(balance),
+        schedule: EpochSchedule.fromJson(epochs),
+        itemNames: {for (final i in items['items'] as List<dynamic>) (i as Map<String, dynamic>)['id'] as String: i['name'] as String},
+        startInventory: {for (final e in (balance['start_inventory'] as Map<String, dynamic>).entries) e.key: e.value as int},
+        recipes: {
+          for (final r in recipes['recipes'] as List<dynamic>)
+            (r as Map<String, dynamic>)['id'] as String: Recipe(
               id: r['id'] as String,
               outId: (r['out'] as List<dynamic>)[0] as String,
               outQty: (r['out'] as List<dynamic>)[1] as int,
-              inputs: {for (final i in r['in'] as List<dynamic>) (i as List<dynamic>)[0] as String: i[1] as int},
+              inputs: {
+                for (final i in r['in'] as List<dynamic>)
+                  if (!((i as List<dynamic>)[0] as String).startsWith('any:')) i[0] as String: i[1] as int,
+              },
+              anyEssence: [
+                for (final i in r['in'] as List<dynamic>)
+                  if (((i as List<dynamic>)[0] as String) == 'any:essence') i[1] as int,
+              ].fold(0, (a, b) => a + b),
             ),
-      },
-    );
-  }
+        },
+      );
 
   final TuningData tuning;
   final EpochSchedule schedule;
   final Map<String, String> itemNames;
   final Map<String, int> startInventory;
   final Map<String, Recipe> recipes;
+
+  /// XP, descanso, marcação e destilação do `balance.json`.
+  final ProgressBalance progress;
 
   String itemName(String id) => itemNames[id] ?? id;
 

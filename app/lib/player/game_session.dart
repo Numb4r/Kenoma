@@ -5,8 +5,10 @@ library;
 import 'dart:async';
 
 import '../core/seed.dart';
+import '../save/migrations.dart';
 import '../save/save_store.dart';
 import 'game_state.dart';
+import 'progress_balance.dart';
 
 class GameSession {
   GameSession._(this.state, this._store, this._nowUtc) {
@@ -17,18 +19,20 @@ class GameSession {
   static Future<GameSession> open({
     required SaveStore store,
     required Map<String, int> startInventory,
+    required ProgressBalance balance,
     required int Function() nowUtc,
     required int Function(int n) nextInt,
   }) async {
-    final json = await store.read();
-    // O menu de debug pode ter gravado só o nível antes de existir um jogo: aí o jogo nasce com ele.
+    final raw = await store.read();
+    final json = raw == null ? null : migrateSave(raw);
+    // O menu de debug pode ter gravado só o override de nível antes de existir um jogo: aí o jogo nasce com ele.
     final hasGame = json?['group_code'] != null;
     final state = hasGame
-        ? GameState.fromJson(json!)
-        : GameState.fresh(groupCode: generateGroupCode(nextInt), startInventory: startInventory)
-      ..playerLevel = (json?['player_level'] as int?) ?? 1;
+        ? GameState.fromJson(json!, balance)
+        : (GameState.fresh(groupCode: generateGroupCode(nextInt), startInventory: startInventory, balance: balance)
+          ..levelOverride = json?['level_override'] as int?);
     final session = GameSession._(state, store, nowUtc);
-    if (!hasGame) await session.save();
+    if (!hasGame || (raw?['schema_version'] ?? 1) != saveSchemaVersion) await session.save();
     return session;
   }
 

@@ -9,7 +9,9 @@ import '../../capture/seal.dart';
 import '../../capture/tuning_setup.dart';
 import '../../data/game_data.dart';
 import '../../data/tuning_data.dart';
+import '../../player/circle.dart';
 import '../../player/game_state.dart';
+import '../../player/progression.dart' show tuningXp;
 import '../../world/spawn_field.dart';
 import '../../world/world_view.dart';
 import '../colors.dart';
@@ -31,6 +33,7 @@ Future<void> runEncounter(
   required GameData data,
   required int Function() nowUtc,
   VibrationPlayer? vibration,
+  void Function(String message)? onMessage,
 }) async {
   final species = data.species(eco.entryId);
   if (species == null) return;
@@ -60,6 +63,7 @@ Future<void> runEncounter(
           playerLevel: state.playerLevel,
           seal: prep.seal,
           tonic: tonic,
+          circleStrong: strongInCircle(state, data, species.type),
         ),
         balance: data.tuning.balance,
         balanceVersion: data.tuning.balanceVersion,
@@ -71,8 +75,17 @@ Future<void> runEncounter(
     if (run == null) return; // saiu no meio: o selo já foi gasto
     final o = run.outcome;
     if (o.success) {
+      final first = !state.hasCaptured(species.id);
       state.capture(uid: eco.uid, speciesId: species.id, level: level, nowUtc: nowUtc());
       state.add('item.ectoplasm', o.ectoplasm);
+      final b = state.balance;
+      final up = state.gainXp(tuningXp(level, b) + (first ? b.firstCapture : 0), nowUtc());
+      final notes = [
+        if (first) 'Primeira ${species.name}! +${b.firstCapture} XP',
+        if (up > 0) 'Nível ${state.progress.level}!',
+        for (final c in awardCircleXp(state)) '${data.species(c.speciesId)?.name ?? c.speciesId} nível ${c.level}',
+      ];
+      if (notes.isNotEmpty) onMessage?.call(notes.join(' · '));
       world.remove(eco);
       return;
     }

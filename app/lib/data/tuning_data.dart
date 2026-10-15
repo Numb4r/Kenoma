@@ -10,12 +10,22 @@ import '../capture/seal.dart';
 import '../capture/tuning_balance.dart';
 import 'balance_version.dart';
 
+/// Habilidade de mapa de uma espécie: o tipo dela e o valor em cada faixa de nível.
+class SpeciesAbility {
+  const SpeciesAbility({required this.kind, required this.bands});
+
+  /// `aura_bonus_m`, `spark_pickup_bonus_m` ou `tracker_range_m`.
+  final String kind;
+  final List<int> bands;
+}
+
 class EcoSpecies {
-  const EcoSpecies({required this.id, required this.name, required this.type});
+  const EcoSpecies({required this.id, required this.name, required this.type, this.ability});
 
   final String id;
   final String name;
   final EcoType type;
+  final SpeciesAbility? ability;
 }
 
 class TuningData {
@@ -25,6 +35,7 @@ class TuningData {
     required this.species,
     required this.seals,
     required this.tonics,
+    this.abilityBands = const [(1, 9), (10, 19), (20, 20)],
   });
 
   factory TuningData.fromJson({
@@ -40,10 +51,23 @@ class TuningData {
       species: [
         for (final s in creatures['species'] as List<dynamic>)
           if ((s as Map<String, dynamic>)['tier'] == 'eco')
-            EcoSpecies(id: s['id'] as String, name: s['name'] as String, type: EcoType.parse(s['type'] as String)),
+            EcoSpecies(
+              id: s['id'] as String,
+              name: s['name'] as String,
+              type: EcoType.parse(s['type'] as String),
+              ability: s['ability'] == null
+                  ? null
+                  : SpeciesAbility(
+                      kind: (s['ability'] as Map<String, dynamic>)['kind'] as String,
+                      bands: [for (final b in (s['ability'] as Map<String, dynamic>)['bands'] as List<dynamic>) (b as num).toInt()],
+                    ),
+            ),
       ],
       seals: parsed.seals,
       tonics: parsed.tonics,
+      abilityBands: [
+        for (final b in creatures['ability_bands_by_level'] as List<dynamic>) ((b as Map<String, dynamic>)['from'] as int, b['to'] as int),
+      ],
     );
   }
 
@@ -67,4 +91,7 @@ class TuningData {
   final List<EcoSpecies> species;
   final List<Seal> seals;
   final List<Tonic> tonics;
+
+  /// Faixas de nível da criatura para as habilidades de mapa: `(de, até)`.
+  final List<(int, int)> abilityBands;
 }

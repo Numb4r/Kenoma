@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
 import '../../data/game_data.dart';
+import '../../player/circle.dart';
 import '../../dev/dev_tools.dart';
 import '../../player/game_session.dart';
 import '../../save/save_store.dart';
@@ -144,13 +145,13 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       case TouchResult.collected:
         break; // o aviso já saiu do WorldView
       case TouchResult.auto:
-        _toast(r.world.inAura(spawn) ? 'A Aura pega sozinha' : 'Entre na Aura para pegar a Fagulha');
+        _toast(r.world.canReach(spawn) ? 'A Aura pega sozinha' : 'Entre na Aura para pegar a Fagulha');
       case TouchResult.tooFar:
         _toast('Longe demais. Chegue com a Aura até lá (${r.world.distanceM(spawn).round()} m)');
       case TouchResult.encounter:
         _busy = true;
         try {
-          await runEncounter(context, eco: spawn, world: r.world, state: r.session.state, data: r.data, nowUtc: () => tools.clock.nowUtc, vibration: widget.vibration);
+          await runEncounter(context, eco: spawn, world: r.world, state: r.session.state, data: r.data, nowUtc: () => tools.clock.nowUtc, vibration: widget.vibration, onMessage: _toast);
         } finally {
           _busy = false;
         }
@@ -188,6 +189,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       session = await GameSession.open(
         store: await _store(),
         startInventory: data.startInventory,
+        balance: data.progress,
         nowUtc: () => tools.clock.nowUtc,
         nextInt: Pcg32(fnv1a64([DateTime.now().microsecondsSinceEpoch]), saltKenoma).nextInt, // só sorteia o código do grupo
       );
@@ -200,6 +202,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       state: session.state,
       auraM: assets.balance.auraM,
       viewM: assets.balance.viewM,
+      trackerM: assets.balance.trackerM,
+      abilities: () => abilitiesOf(session.state, data),
       itemName: data.itemName,
       onMessage: _toast,
     );

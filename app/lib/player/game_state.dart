@@ -1,20 +1,27 @@
-/// O que o jogador tem e fez: inventário, coleção e o registro do que já foi coletado, capturado ou
-/// fugiu. Dart puro. O formato completo do save fica para o M10; este é o mínimo para nada se perder
-/// ao fechar o app.
+/// O que o jogador tem e fez: nível e XP, inventário, coleção, Círculo, bestiário, marcações e o registro do
+/// que já foi coletado, capturado ou fugiu. Dart puro. Tudo vai para o `save.json` (schema 2).
 library;
 
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 import '../core/seed.dart';
+import 'bestiary.dart';
+import 'mark.dart';
+import 'progress_balance.dart';
+import 'progression.dart';
 
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 1;
+const int saveSchemaVersion = 2;
 
 /// Uma criatura capturada. O uid é o do spawn de onde ela veio.
 class CreatureInstance {
   const CreatureInstance({required this.uid, required this.speciesId, required this.level, required this.capturedUtc, this.xp = 0});
+
+  /// Cópia com [level] e [xp] novos.
+  CreatureInstance advanced({required int level, required int xp}) =>
+      CreatureInstance(uid: uid, speciesId: speciesId, level: level, capturedUtc: capturedUtc, xp: xp);
 
   factory CreatureInstance.fromJson(Map<String, dynamic> j) => CreatureInstance(
         uid: j['uid'] as String,
@@ -37,28 +44,47 @@ class CreatureInstance {
 class GameState extends ChangeNotifier {
   GameState({
     required this.groupCode,
+    required this.balance,
     Map<String, int>? inventory,
     List<CreatureInstance>? collection,
     Map<String, int>? collected,
-    this.playerLevel = 1,
+    PlayerProgress? progress,
+    this.levelOverride,
+    List<String>? circle,
+    Map<String, BestiaryEntry>? bestiary,
+    List<Mark>? marks,
     Map<String, dynamic>? extra,
   })  : inventory = {...?inventory},
         collection = [...?collection],
         _collected = {...?collected},
+        progress = progress ?? PlayerProgress(balance: balance),
+        circle = [...?circle],
+        bestiary = {...?bestiary},
+        marks = [...?marks],
         _extra = {...?extra};
 
   /// Jogo novo: seed nova e o inventário inicial do `balance.json`.
-  factory GameState.fresh({required String groupCode, required Map<String, int> startInventory}) =>
-      GameState(groupCode: groupCode, inventory: startInventory);
+  factory GameState.fresh({required String groupCode, required Map<String, int> startInventory, required ProgressBalance balance}) =>
+      GameState(groupCode: groupCode, balance: balance, inventory: startInventory);
 
-  factory GameState.fromJson(Map<String, dynamic> j) {
-    const known = {'schema_version', 'group_code', 'player_level', 'inventory', 'collection', 'collected', 'saved_utc'};
+  factory GameState.fromJson(Map<String, dynamic> j, ProgressBalance balance) {
+    const known = {
+      'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'marks', 'saved_utc',
+    };
+    final progress = PlayerProgress.fromJson(j['player'] as Map<String, dynamic>?, balance)..settleBanked();
     return GameState(
       groupCode: j['group_code'] as String,
-      playerLevel: (j['player_level'] as int?) ?? 1,
+      balance: balance,
+      progress: progress,
+      levelOverride: j['level_override'] as int?,
       inventory: {for (final e in ((j['inventory'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as int},
       collection: [for (final c in (j['collection'] as List<dynamic>?) ?? const []) CreatureInstance.fromJson(c as Map<String, dynamic>)],
       collected: {for (final e in ((j['collected'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as int},
+      circle: [for (final u in (j['circle'] as List<dynamic>?) ?? const []) u as String],
+      bestiary: {
+        for (final e in ((j['bestiary'] as Map<String, dynamic>?) ?? const {}).entries) e.key: BestiaryEntry.fromJson(e.value as Map<String, dynamic>),
+      },
+      marks: [for (final m in (j['marks'] as List<dynamic>?) ?? const []) Mark.fromJson(m as Map<String, dynamic>)],
       // Campos que esta versão não conhece são preservados (spec, seção 10).
       extra: {for (final e in j.entries) if (!known.contains(e.key)) e.key: e.value},
     );
@@ -66,15 +92,34 @@ class GameState extends ChangeNotifier {
 
   /// Código do grupo: a seed do mundo vem dele.
   final String groupCode;
-  int playerLevel;
+  final ProgressBalance balance;
+  final PlayerProgress progress;
+
+  /// Nível forçado pelo menu de debug. `null`: vale o nível real.
+  int? levelOverride;
   final Map<String, int> inventory;
   final List<CreatureInstance> collection;
   final Map<String, int> _collected;
   final Map<String, dynamic> _extra;
 
+  /// Uids das criaturas ativas no Círculo, no máximo 3.
+  final List<String> circle;
+  final Map<String, BestiaryEntry> bestiary;
+  final List<Mark> marks;
+
   late final int seed = seedGlobal(groupCode);
 
+  /// O nível que o jogo usa: o do debug, se houver, senão o real. Define o nível dos Ecos e a resistência.
+  int get playerLevel => levelOverride ?? progress.level;
+
   int count(String itemId) => inventory[itemId] ?? 0;
+
+  /// Ganha XP de Conjurador em [nowUtc]. Devolve quantos níveis subiu.
+  int gainXp(int raw, int nowUtc) {
+    final up = progress.gain(raw, nowUtc);
+    notifyListeners();
+    return up;
+  }
 
   void add(String itemId, int n) {
     if (n <= 0) return;
@@ -112,31 +157,112 @@ class GameState extends ChangeNotifier {
   /// Se o spawn já foi coletado, capturado ou fugiu: não aparece de novo.
   bool isDone(int uid) => _collected.containsKey(uidKey(uid));
 
-  /// Registra o uid em [nowUtc] e limpa o que passou de 48 horas.
+  /// Registra o uid em [nowUtc] e limpa o que passou de 48 horas. Uma marcação desse uid acaba.
   void markDone(int uid, int nowUtc) {
     _collected[uidKey(uid)] = nowUtc;
     _collected.removeWhere((_, at) => nowUtc - at > registryKeepSeconds);
+    marks.removeWhere((m) => m.uid == uidKey(uid));
     notifyListeners();
   }
 
   int get registrySize => _collected.length;
 
-  /// A criatura entra na coleção e o spawn some do registro de vivos.
+  bool hasCaptured(String speciesId) => bestiary[speciesId]?.captured ?? false;
+
+  /// A espécie apareceu na visão do jogador.
+  void markSeen(String speciesId) {
+    if (bestiary[speciesId]?.seen ?? false) return;
+    bestiary[speciesId] = (bestiary[speciesId] ?? const BestiaryEntry()).copyWith(seen: true);
+    notifyListeners();
+  }
+
+  /// A criatura entra na coleção e no bestiário, e o spawn some do registro de vivos.
   CreatureInstance capture({required int uid, required String speciesId, required int level, required int nowUtc}) {
     final c = CreatureInstance(uid: uidKey(uid), speciesId: speciesId, level: level, capturedUtc: nowUtc);
     collection.add(c);
+    bestiary[speciesId] = (bestiary[speciesId] ?? const BestiaryEntry()).copyWith(captured: true);
     markDone(uid, nowUtc);
     return c;
+  }
+
+  CreatureInstance? creature(String uid) {
+    for (final c in collection) {
+      if (c.uid == uid) return c;
+    }
+    return null;
+  }
+
+  /// Troca uma criatura da coleção por uma versão atualizada (nível, XP).
+  void replaceCreature(CreatureInstance next) {
+    final i = collection.indexWhere((c) => c.uid == next.uid);
+    if (i >= 0) collection[i] = next;
+    notifyListeners();
+  }
+
+  bool inCircle(String uid) => circle.contains(uid);
+
+  /// Põe a criatura no Círculo, ou tira se já está. `false` se o Círculo está cheio ou ela não existe.
+  bool toggleCircle(String uid) {
+    if (circle.remove(uid)) {
+      notifyListeners();
+      return true;
+    }
+    if (circle.length >= 3 || creature(uid) == null) return false;
+    circle.add(uid);
+    notifyListeners();
+    return true;
+  }
+
+  /// Tira a criatura da coleção. Criaturas do Círculo não saem.
+  bool removeCreature(String uid) {
+    if (inCircle(uid) || creature(uid) == null) return false;
+    collection.removeWhere((c) => c.uid == uid);
+    notifyListeners();
+    return true;
+  }
+
+  /// As marcações que ainda valem em [nowUtc]. As vencidas saem da lista.
+  List<Mark> activeMarks(int nowUtc) {
+    final before = marks.length;
+    marks.removeWhere((m) => !m.activeAt(nowUtc));
+    if (marks.length != before) notifyListeners();
+    return List.unmodifiable(marks);
+  }
+
+  Mark? markOf(int uid) {
+    for (final m in marks) {
+      if (m.uid == uidKey(uid)) return m;
+    }
+    return null;
+  }
+
+  /// Marca o sinal. `false` se já há o máximo de marcações ativas.
+  bool addMark(Mark m, int nowUtc) {
+    if (activeMarks(nowUtc).length >= balance.markMax) return false;
+    marks.add(m);
+    notifyListeners();
+    return true;
+  }
+
+  bool removeMark(String uid) {
+    final had = marks.any((m) => m.uid == uid);
+    marks.removeWhere((m) => m.uid == uid);
+    if (had) notifyListeners();
+    return had;
   }
 
   Map<String, dynamic> toJson(int nowUtc) => {
         ..._extra,
         'schema_version': saveSchemaVersion,
         'group_code': groupCode,
-        'player_level': playerLevel,
+        'player': progress.toJson(),
+        if (levelOverride != null) 'level_override': levelOverride,
         'saved_utc': nowUtc,
         'inventory': inventory,
         'collection': [for (final c in collection) c.toJson()],
         'collected': _collected,
+        'circle': circle,
+        'bestiary': {for (final e in bestiary.entries) e.key: e.value.toJson()},
+        'marks': [for (final m in marks) m.toJson()],
       };
 }
