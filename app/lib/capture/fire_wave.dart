@@ -1,7 +1,8 @@
 /// Fogo: a onda se parte em duas num ponto de queima e as duas rolam para a esquerda.
 ///
 /// - A **real** fica à direita da queima: o trecho novo desliza para a nova frequência (smoothstep,
-///   `glide_s`) e o salto é permanente.
+///   `glide_s`) e o salto é permanente. Ela usa a mesma fase do dial (`waveTheta`), então com o dial na
+///   frequência dela as duas cristas coincidem; e cobre sempre o ponto de leitura (`waveReadU`).
 /// - A **isca** fica à esquerda e é cinza desde a queima. Continua na frequência antiga, com a deriva
 ///   de base e, acima de `decoy_counter_from` de intensidade, um deslize contrário ao da real. Não tem
 ///   tempo de vida: acaba quando a fronteira sai da tela pela esquerda.
@@ -35,7 +36,7 @@ class FireKick {
   /// Onde a queima caiu na tela, de 0 a 1, no instante do pico.
   final double burnU;
 
-  /// Fase das duas ondas na fronteira, herdada da onda antiga: sem salto de fase na queima.
+  /// Fase da isca na fronteira, herdada da onda antiga: sem salto de fase na queima.
   final double phase;
 
   /// Soma dos saltos dos picos anteriores no instante deste: a frequência antiga da isca.
@@ -113,9 +114,7 @@ class FireWave {
       final lo = math.max(fire.burnU.$1, prevU ?? 0.0);
       final hi = fire.burnU.$2;
       final u = hi - lo >= fire.burnMinLiveU ? lerp(lo, hi, draws[i]) : fire.burnEdgeU;
-      final anchor = prevU ?? 0.5;
-      final basePhase = i == 0 ? waveScroll(at) : built[i - 1].phase;
-      final phase = 2 * math.pi * waveCycles(oldFrequency) * (u - anchor) + basePhase;
+      final phase = waveTheta(oldFrequency, u, waveScroll(at));
       built.add(FireKick(at: at, delta: deltas[i], burnU: u, phase: phase, oldOffset: oldOffset));
     }
     return FireWave._(built, fire, intensity, baseAt);
@@ -173,8 +172,8 @@ class FireWave {
         fromU: math.max(0.0, uk),
         toU: 1,
         frequency: realFrequency,
-        anchorU: uk,
-        phase: kicks[k].phase,
+        anchorU: 0.5,
+        phase: waveScroll(t),
         real: true,
       ),
     ];

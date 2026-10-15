@@ -190,6 +190,11 @@ void _waves(Canvas canvas, TuningLayout l, TuningView v) {
     }
   }
   canvas.drawPath(wave((u) => waveTheta(v.dial, u, scroll), math.sin), _stroke(kVeil, 3));
+  // O tique do ponto de leitura: é aqui que o dial é comparado com a onda real.
+  final readX = r.left + r.width * waveReadU;
+  final tick = _stroke(kSignal.withValues(alpha: 0.7), 2);
+  canvas.drawLine(Offset(readX, r.top), Offset(readX, r.top + 8), tick);
+  canvas.drawLine(Offset(readX, r.bottom - 8), Offset(readX, r.bottom), tick);
   if (fx != null) paintWaveFx(canvas, r, v.target, scroll, fx);
 }
 

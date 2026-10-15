@@ -7,6 +7,10 @@ import 'dart:math' as math;
 /// Ciclos visíveis da onda para a frequência [f].
 double waveCycles(double f) => 1.5 + 5.0 * f;
 
+/// Onde, na largura do painel, o dial é comparado com o sinal. A onda desenhada ali é sempre a real (no
+/// Fogo, a queima nunca passa daqui), e o tique na tela marca este ponto.
+const double waveReadU = 0.88;
+
 /// Envelope da onda: 0 nas pontas do painel, 1 no meio. [u] em `[0, 1]`.
 double waveEnvelope(double u) => math.pow(math.sin(math.pi * u), 0.6).toDouble();
 
