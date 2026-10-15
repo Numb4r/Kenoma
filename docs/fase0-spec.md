@@ -505,6 +505,17 @@ O arquivo tem três partes:
 5. Se o relógio voltar para antes de `last_seen_utc`, o app usa `last_seen_utc`.
 6. O backup é exportado pela folha de compartilhamento do sistema, que permite mandar para o Google Drive, e importado por seletor de arquivo.
 
+## 11. Fase 1, primeira fatia
+
+O que entrou depois da Fase 0, seguindo o `docs/GDD.md` ("Mapa vivo", "O mentor", "Quests", "Tempo"):
+
+- **Nomes de rua, dia e noite e tráfego do Véu:** ver "Renderização" (seção 1). O pacote visual está na versão 2.
+- **Chat com o mentor** (`story/`, `assets/data/mentor.json`, `docs/textos-mentor.md`): o app Chat do celular tem um contato de número desconhecido. O tutorial curto (Aura, sintonia, Bancada, Círculo, marcação, fórum) sai uma mensagem de cada vez, depois de alguns segundos de jogo com o mapa aberto contados desde a anterior; uma mensagem pode esperar um acontecimento (a primeira captura). Um ponto laranja no botão do celular avisa de mensagem nova. Os textos são dado: mudou o texto, mude o JSON e rode `scripts/mentor_md.py`.
+- **Diárias do fórum Limen** (`story/daily_quests.dart`, `assets/data/forum.json`): três pedidos por dia, gerados por `hash(seed, época, data, slot, QUST)`, então amigos do mesmo grupo e do mesmo dia recebem os mesmos pedidos. O dia é o dia local do aparelho. Slot 0 é de explorar ou coletar, o 1 de coletar ou caçar, o 2 é sempre "casa" (fabricar ou destilar). Os três nunca repetem o mesmo evento. A meta cresce 4% por nível. Cada pedido conta um evento de jogo (`walk_m`, `spark`, `material`, `capture`, `craft`, `distill`), escrito como post de um usuário do Limen, e rende XP e materiais ao ser entregue. Um reroll por dia. Fica para depois: o pedido de rumor semanal, as quests do mentor por nível e as condições do tempo real.
+- **Avisos no celular** (`story/notification_plan.dart`, `local_notifier.dart`): opcionais, **desligados por padrão**, com interruptor nos Ajustes (que pede a permissão do sistema na hora). Dois avisos às 9 h locais: diárias renovadas (amanhã) e descanso cheio (no dia em que o saldo chega a 1050). Agendados quando o app sai da tela, com alarme não exato.
+
+Save no **schema 3**: o bloco `story` guarda os contadores de eventos, o chat (entregues, lidas, relógio) e as diárias. A migração v2 → v3 é pura e testada com um save como o da 0.12.1.
+
 ## Fora do escopo
 
 - **Personagem e história:**

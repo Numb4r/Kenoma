@@ -34,6 +34,8 @@ import '../colors.dart';
 import '../map/map_assets.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
 import '../menu/phone_menu.dart';
+import '../../story/local_notifier.dart';
+import '../../story/notification_plan.dart';
 import '../settings/settings_screen.dart';
 import 'game_map_game.dart';
 import 'moon_hud.dart';
@@ -46,7 +48,7 @@ import 'sim_overlay.dart';
 /// A posição vem de `tools.source`: o GPS real (pedindo a permissão com uma explicação curta) ou o
 /// simulador do menu de debug, que entra no lugar sem o resto do código saber.
 class GameMapScreen extends StatefulWidget {
-  const GameMapScreen({required this.tools, this.gateway = const GeolocatorGateway(), this.bundle, this.store, this.openStore, this.vibration, this.headingSource, super.key});
+  const GameMapScreen({required this.tools, this.gateway = const GeolocatorGateway(), this.bundle, this.store, this.openStore, this.vibration, this.headingSource, this.notifier, super.key});
 
   final DevTools tools;
 
@@ -64,6 +66,9 @@ class GameMapScreen extends StatefulWidget {
 
   /// De onde vem o rumo do celular para o "seguir direção". Por padrão, a bússola do aparelho.
   final HeadingSource? headingSource;
+
+  /// Quem agenda as notificações locais. Por padrão, o sistema do aparelho.
+  final Notifier? notifier;
 
   /// Quem vibra na sintonia. Por padrão, o motor do aparelho.
   final VibrationPlayer? vibration;
@@ -108,6 +113,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   }
 
   String _version = 'dev';
+  late final Notifier _notifier = widget.notifier ?? LocalNotifier();
 
   /// O mapa está sendo trocado por um novo: a tela nova já ligou o wake lock e esta não pode desligá-lo.
   bool _restarting = false;
@@ -149,6 +155,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         openStore: widget.openStore,
         vibration: widget.vibration,
         headingSource: widget.headingSource,
+        notifier: widget.notifier,
       ),
     ));
   }
@@ -164,7 +171,16 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
           if (r.game.rotation.followHeading != on) r.game.toggleFollowHeading();
         },
         onRestart: _restart,
+        notifier: _notifier,
       );
+
+  /// Ao sair do app, agenda os avisos de amanhã (se o jogador ligou): diárias renovadas e descanso cheio.
+  void _scheduleNotifications() {
+    final st = _ready?.session.state;
+    if (st == null || !st.setting('notifications')) return;
+    final plan = planNotifications(enabled: true, nowUtc: tools.clock.realNowUtc, progress: st.progress, balance: st.balance);
+    unawaited(_notifier.apply(plan).catchError((_) {}));
+  }
 
   /// Liga ou desliga a leitura da bússola do celular, só enquanto o "seguir direção" está ligado.
   void _setFollowHeading(bool on) {
@@ -413,6 +429,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final ready = _ready;
     if (ready == null) return;
     _inBackground = state != AppLifecycleState.resumed;
+    if (state == AppLifecycleState.paused) _scheduleNotifications();
     if (state == AppLifecycleState.paused) {
       _headingSub?.cancel(); // a bússola também só com o app aberto
       _headingSub = null;

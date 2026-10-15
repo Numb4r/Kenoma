@@ -3,6 +3,10 @@
     <!-- Localização só com o app aberto na Fase 0: sem permissão de segundo plano. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- Avisos opcionais (diárias renovadas, descanso cheio): o jogador liga nos Ajustes e o app pede a permissão na hora. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Para os avisos agendados voltarem depois de o celular reiniciar. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <application
         android:label="kenoma"
         android:name="${applicationName}"

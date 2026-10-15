@@ -7,9 +7,26 @@ import 'package:kenoma/save/backup.dart';
 import 'package:kenoma/save/backup_io.dart';
 import 'package:kenoma/save/ksv1.dart';
 import 'package:kenoma/save/save_store.dart';
+import 'package:kenoma/story/local_notifier.dart';
+import 'package:kenoma/story/notification_plan.dart';
 import 'package:kenoma/ui/settings/settings_screen.dart';
 
 import '../support/fixtures.dart';
+
+class _FakeNotifier implements Notifier {
+  bool grant = true;
+  int asked = 0;
+  final applied = <List<PlannedNotification>>[];
+
+  @override
+  Future<bool> requestPermission() async {
+    asked++;
+    return grant;
+  }
+
+  @override
+  Future<void> apply(List<PlannedNotification> plan) async => applied.add(plan);
+}
 
 class _FakeIo implements BackupIo {
   Uint8List? toPick;
@@ -36,7 +53,7 @@ void main() {
   var restarts = 0;
   var follow = false;
 
-  Future<void> pump(WidgetTester tester, GameSession s, {_FakeIo? io, String? scanned, int? now}) async {
+  Future<void> pump(WidgetTester tester, GameSession s, {_FakeIo? io, String? scanned, int? now, _FakeNotifier? notifier}) async {
     tester.view.physicalSize = const Size(1080, 4800);
     tester.view.devicePixelRatio = 2.625;
     addTearDown(tester.view.reset);
@@ -53,6 +70,7 @@ void main() {
         onFollowHeading: (on) => follow = on,
         onRestart: () async => restarts++,
         io: io ?? _FakeIo(),
+        notifier: notifier ?? _FakeNotifier(),
         scan: (_) async => scanned,
       ),
     ));
@@ -200,5 +218,31 @@ void main() {
     await tester.tap(find.text('Seguir direção'));
     await tester.pump();
     expect(follow, isTrue);
+  });
+
+  testWidgets('avisos no celular: desligados por padrão; ligar pede a permissão e agenda; negar deixa desligado; desligar cancela', (tester) async {
+    final s = await session(MemorySaveStore());
+    final n = _FakeNotifier();
+    await pump(tester, s, notifier: n);
+    expect(s.state.setting('notifications'), isFalse);
+    expect(n.asked, 0);
+
+    n.grant = false;
+    await tester.tap(find.text('Avisos no celular'));
+    await tester.pump();
+    expect(n.asked, 1);
+    expect(s.state.setting('notifications'), isFalse, reason: 'permissão negada: continua desligado');
+    expect(n.applied, isEmpty);
+
+    n.grant = true;
+    await tester.tap(find.text('Avisos no celular'));
+    await tester.pump();
+    expect(s.state.setting('notifications'), isTrue);
+    expect(n.applied.single.map((p) => p.id), contains(notifyDailyId));
+
+    await tester.tap(find.text('Avisos no celular'));
+    await tester.pump();
+    expect(s.state.setting('notifications'), isFalse);
+    expect(n.applied.last, isEmpty, reason: 'desligar cancela tudo');
   });
 }

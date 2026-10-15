@@ -194,3 +194,14 @@ APK de release, ajuste inicial de `balance.json` jogando na rua e lista dos prob
 O resultado decide se o jogo avança para a Fase 1 ou se o Núcleo precisa mudar.
 
 **Status: build pronta (0.12.0+18), teste não começou.** O APK é assinado com a chave de release própria, guardada fora do repositório em `~/.kenoma-signing/` (onde fica, como conferir e como fazer o backup dela: `docs/assinatura.md`). O texto para os amigos está em `docs/beta.md`. Como a 0.11 foi assinada com a chave de debug, o celular de teste precisou desinstalar o app para receber a 0.12 (o save de teste de lá foi perdido); a partir daqui toda atualização instala por cima. **Falta:** guardar as duas cópias do keystore (ver `docs/assinatura.md`), mandar o APK e o QR aos amigos, e jogar na rua para o ajuste de `balance.json`. A permissão `INTERNET` do manifesto fica de propósito, para as próximas fases (registrado em `docs/assinatura.md`).
+
+## Fase 1 · primeira fatia
+
+Segue o `docs/GDD.md` (Mapa vivo, O mentor, Quests, Tempo). Versão 0.13.0. Salvo dito o contrário, tudo é só visual ou de conteúdo e **não muda o mundo**: não precisa de época nova.
+
+- **Nomes de rua.** O `build_visual.py` agora lê `name` e `oneway`: pacote visual **versão 2** (cada linha leva o sentido e, nas principais e secundárias, o nome; 3,13 MB, mesmo extrato da época 0, MD5 `d4778499…`). O leitor do app aceita a versão 1 e a 2. SHA-256 novo nas épocas 0 e 1 de `epochs.json` (`e8491fa2…`). O interruptor dos Ajustes liga rótulos discretos no trecho mais reto de cada rua principal, que giram com o mapa e nunca ficam de cabeça para baixo.
+- **Dia e noite.** `core/astro.dart`: a luz do mapa segue a altura real do sol (posição solar offline, erro abaixo de 0,02°), com amanhecer e anoitecer suaves; o tom quente aparece com o sol baixo. A fase da lua (fase média) está no HUD, espelhada no hemisfério sul. Testado contra o nascer e o pôr do sol de Campinas em 21/12 (05:23 e 18:47) e contra as luas de setembro e outubro de 2026.
+- **Tráfego do Véu.** `world/veil_traffic.dart`: carros e pedestres fantasmas, gerados por seed, rua e janela de 20 min, com a mão única do OSM e a mão de direção (pela direita), com densidade pela hora real do lugar. Interruptor nos Ajustes (ligado). Teto de 160 por quadro. **O fps não foi medido no aparelho.** Ficam para depois: semáforos, ônibus, vans e os veículos especiais da tabela do GDD.
+- **Chat com o mentor** e **diárias do fórum:** ver a seção 11 da spec. Os textos para revisão estão em `docs/textos-mentor.md`.
+- **Avisos no celular:** opcionais e desligados por padrão (seção 11 da spec).
+- **Save schema 3** com migração v2 → v3 testada. Toda versão daqui em diante sai assinada com a mesma chave (`docs/assinatura.md`).

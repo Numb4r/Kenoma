@@ -12,6 +12,8 @@ import '../../player/game_session.dart';
 import '../../save/backup.dart';
 import '../../save/backup_io.dart';
 import '../../save/ksv1.dart';
+import '../../story/local_notifier.dart';
+import '../../story/notification_plan.dart';
 import '../colors.dart';
 import '../menu/screen_frame.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
@@ -32,6 +34,7 @@ class SettingsScreen extends StatefulWidget {
     required this.followHeading,
     required this.onFollowHeading,
     required this.onRestart,
+    required this.notifier,
     this.io = const DeviceBackupIo(),
     this.scan = scanGroupWithCamera,
     super.key,
@@ -53,6 +56,9 @@ class SettingsScreen extends StatefulWidget {
   final Future<void> Function() onRestart;
   final BackupIo io;
   final GroupScanner scan;
+
+  /// Quem agenda as notificações locais no sistema.
+  final Notifier notifier;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -148,6 +154,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     state.changeGroup(code);
     await widget.session.flush();
     await widget.onRestart();
+  }
+
+  /// Liga ou desliga os avisos. Ligar pede a permissão na hora; se o jogador negar, o interruptor volta para desligado.
+  Future<void> _setNotifications(bool on) async {
+    final s = widget.session.state;
+    if (!on) {
+      s.setSetting('notifications', false);
+      await widget.notifier.apply(const []);
+      return;
+    }
+    final granted = await widget.notifier.requestPermission();
+    if (!mounted) return;
+    if (!granted) {
+      _say('Sem a permissão do sistema não dá para avisar. Libere nas configurações do celular.');
+      return;
+    }
+    s.setSetting('notifications', true);
+    await widget.notifier.apply(planNotifications(enabled: true, nowUtc: widget.realNowUtc(), progress: s.progress, balance: s.balance));
   }
 
   Future<void> _export() async {
@@ -278,6 +302,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 widget.onFollowHeading(v);
                 setState(() {});
               },
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Avisos no celular', style: TextStyle(fontSize: 8)),
+              subtitle: const Text('Diárias renovadas e descanso cheio, às 9 h. Desligado por padrão', style: TextStyle(fontSize: 8, color: kDim)),
+              value: s.setting('notifications'),
+              activeThumbColor: kSignal,
+              onChanged: _setNotifications,
             ),
             const SectionTitle('Backup'),
             const Text('O backup é o seu jogo inteiro num arquivo. Mande para o Google Drive ou para si mesmo.', style: TextStyle(fontSize: 8, color: kDim, height: 1.8)),

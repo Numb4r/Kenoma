@@ -8,7 +8,7 @@ quebrar, e é isso que queremos descobrir.
 
 ## 1. Instalar
 
-1. Baixe o arquivo `kenoma-0.12.0.apk` que o Yuri mandou.
+1. Baixe o arquivo `kenoma-0.13.0.apk` que o Yuri mandou.
 2. Abra o arquivo. O Android vai avisar que o app vem de fora da loja: toque em **Configurações** e libere
    **Instalar apps desta fonte** só para o app que você usou para abrir o arquivo (Drive, Chrome, WhatsApp...).
 3. Volte e toque em **Instalar**. Se aparecer "Play Protect", toque em **Instalar mesmo assim**: o app não está na
@@ -22,7 +22,8 @@ A primeira tela é um menu de testes. Toque em **ABRIR MAPA DO JOGO**, aceite a 
 
 - **Tocar** num Eco dentro do círculo (a Aura) abre a captura. **Tocar e segurar** prende o sinal dele por 5 minutos.
 - **Arrastar** com um dedo gira o mapa; a pinça dá zoom.
-- O botão de **celular**, embaixo, abre Coleção, Círculo, Bestiário, Bancada e Ajustes.
+- O botão de **celular**, embaixo, abre Coleção, Círculo, Bestiário, Bancada, **Chat** (o número desconhecido), **Fórum** (três pedidos por dia) e Ajustes. Um ponto laranja avisa de mensagem nova ou pedido pronto.
+- Em Ajustes você liga os **nomes de rua**, desliga o **tráfego do Véu** (carros fantasmas, só visual) e, se quiser, liga os **avisos no celular**.
 
 ## 3. Entrar no grupo do Yuri pelo QR
 
