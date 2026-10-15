@@ -1,0 +1,55 @@
+{
+  "format": 1,
+  "forum": "Limen",
+  "users": ["vesper", "static_saint", "mapmaker", "null_hypothesis", "candlewick", "wren_"],
+  "slots": [
+    { "slot": 0, "categories": ["explorar", "coletar"] },
+    { "slot": 1, "categories": ["coletar", "cacar"] },
+    { "slot": 2, "categories": ["casa"] }
+  ],
+  "level_scale_per_level": 0.04,
+  "templates": [
+    { "id": "walk", "category": "explorar", "kind": "walk_m", "keys": [""], "target": [500, 1500], "step": 100, "user": "mapmaker",
+      "reward": { "xp": 150, "items": { "item.chalk": 1 } },
+      "texts": [
+        "alguém consegue andar uns {n} m por aí hoje? preciso saber se o sinal muda de um quarteirão para o outro.",
+        "mapa novo pela metade. quem sai de casa hoje e anda {n} m me ajuda a conferir as bordas."
+      ] },
+    { "id": "sparks", "category": "coletar", "kind": "spark", "keys": ["fire", "plant", "water", "any"], "target": [5, 12], "step": 1, "user": "static_saint",
+      "reward": { "xp": 150, "items": { "item.dust.fire": 1 } },
+      "texts": [
+        "preciso de {n} fagulhas de {tipo}. pago bem, e não, não vou dizer para quê.",
+        "{n} fagulhas de {tipo} até o fim do dia. o que sobrar eu devolvo."
+      ] },
+    { "id": "materials", "category": "coletar", "kind": "material", "keys": ["item.chalk", "item.herbs", "item.pure_water"], "target": [2, 5], "step": 1, "user": "candlewick",
+      "reward": { "xp": 150, "items": { "item.ectoplasm": 1 } },
+      "texts": [
+        "preciso de {n} de {item}, do tipo que se colhe andando e não do que se compra. alguém?",
+        "quem traz {n} de {item}? é para uma vela, e a vela não pergunta de onde veio."
+      ] },
+    { "id": "hunt", "category": "cacar", "kind": "capture", "keys": ["fire", "plant", "water", "any"], "target": [1, 3], "step": 1, "user": "wren_",
+      "reward": { "xp": 180, "items": { "item.seal.simple": 1 } },
+      "texts": [
+        "quero ver {n} sintonia(s) com um Eco de {tipo} hoje. alguém topa e conta como foi?",
+        "apostei com o meu Familiar que ninguém aqui sela {n} Eco(s) de {tipo} antes de escurecer."
+      ] },
+    { "id": "craft_seal", "category": "casa", "kind": "craft", "keys": ["recipe.seal.simple"], "target": [1, 2], "step": 1, "user": "vesper",
+      "reward": { "xp": 150, "items": { "item.chalk": 1, "item.ectoplasm": 1 } },
+      "texts": [
+        "se estiver chovendo: fabriquem {n} selo(s) simples e me digam se o giz risca diferente.",
+        "dia de ficar em casa? então faça {n} selo(s) simples. ninguém precisa sair para isso."
+      ] },
+    { "id": "craft_tonic", "category": "casa", "kind": "craft", "keys": ["recipe.tonic.focus"], "target": [1, 1], "step": 1, "user": "null_hypothesis",
+      "reward": { "xp": 150, "items": { "item.herbs": 1 } },
+      "texts": [
+        "alguém faz {n} tônico de foco e me diz se o tempo extra é placebo? eu acho que é só placebo.",
+        "pedido de cético: {n} tônico de foco, e um relato honesto sobre os 5 segundos a mais."
+      ] },
+    { "id": "distill", "category": "casa", "kind": "distill", "keys": ["any"], "target": [1, 1], "step": 1, "user": "candlewick",
+      "reward": { "xp": 160, "items": { "item.dust.plant": 1 } },
+      "texts": [
+        "pergunta moral, sem resposta certa: destilar {n} Eco que não está no Círculo. como foi?",
+        "destilem {n} Eco(s) e contem o que sentiram. eu sei o que penso, quero saber o que vocês pensam."
+      ] }
+  ]
+}

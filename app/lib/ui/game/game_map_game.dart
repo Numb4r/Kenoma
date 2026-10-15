@@ -145,6 +145,10 @@ class GameMapGame extends FlameGame {
   /// Acima disto (ms por quadro, média móvel) o gesto rasteriza com o pixel de arte maior.
   static const double coarseOverMs = 9;
 
+  /// Quanto o jogador andou entre duas posições aceitas, em metros (para os pedidos de caminhada do fórum).
+  void Function(double meters)? onWalked;
+  double? _walkLat, _walkLon;
+
   /// O marcador suavizado.
   final avatar = PlayerAvatar();
 
@@ -172,6 +176,7 @@ class GameMapGame extends FlameGame {
     final (x, y) = latLonToTileFraction(p.lat, p.lon, biomeZoom);
     final first = !avatar.hasPosition;
     avatar.setTarget(x, y, metersPerCell: metersPerCell(p.lat), timeMs: p.timeMs);
+    _countWalk(p.lat, p.lon);
     _lat = p.lat;
     _lon = p.lon;
     if (!_hasFix) _refreshIn = 0; // a primeira posição já mostra o mundo
@@ -182,10 +187,23 @@ class GameMapGame extends FlameGame {
     }
   }
 
+  /// Soma a distância andada desde a última posição, ignorando saltos de mais de 25 m (teleporte, GPS ruim).
+  void _countWalk(double lat, double lon) {
+    final la = _walkLat, lo = _walkLon;
+    _walkLat = lat;
+    _walkLon = lon;
+    if (la == null || lo == null) return;
+    final dy = (lat - la) * 111320.0;
+    final dx = (lon - lo) * 111320.0 * math.cos(lat * math.pi / 180);
+    final d = math.sqrt(dx * dx + dy * dy);
+    if (d >= 0.5 && d <= 25) onWalked?.call(d);
+  }
+
   /// Esquece a posição (trocou de fonte): o marcador some até a próxima leitura boa.
   void clearPlayer() {
     avatar.clear();
     _hasFix = false;
+    _walkLat = _walkLon = null;
   }
 
   void touchStart() {

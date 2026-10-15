@@ -8,6 +8,8 @@ import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../core/epochs.dart';
 import '../player/progress_balance.dart';
+import '../story/forum_data.dart';
+import '../story/mentor_script.dart';
 import 'balance_version.dart';
 import 'tuning_data.dart';
 
@@ -33,6 +35,8 @@ class GameData {
     required this.startInventory,
     required this.recipes,
     required this.progress,
+    required this.mentor,
+    required this.forum,
   });
 
   static Future<GameData> load([AssetBundle? bundle]) async {
@@ -47,6 +51,8 @@ class GameData {
       items: await json('items'),
       epochs: await json('epochs'),
       recipes: await json('recipes'),
+      mentor: await json('mentor'),
+      forum: await json('forum'),
     );
   }
 
@@ -57,8 +63,12 @@ class GameData {
     required Map<String, dynamic> items,
     required Map<String, dynamic> epochs,
     required Map<String, dynamic> recipes,
+    required Map<String, dynamic> mentor,
+    required Map<String, dynamic> forum,
   }) =>
       GameData(
+        mentor: MentorScript.fromJson(mentor),
+        forum: ForumData.fromJson(forum),
         tuning: TuningData.fromJson(balance: balance, balanceVersion: balanceVersion, creatures: creatures, items: items),
         progress: ProgressBalance(balance),
         schedule: EpochSchedule.fromJson(epochs),
@@ -90,6 +100,10 @@ class GameData {
 
   /// XP, descanso, marcação e destilação do `balance.json`.
   final ProgressBalance progress;
+
+  /// O roteiro do mentor (chat) e os pedidos do fórum Limen.
+  final MentorScript mentor;
+  final ForumData forum;
 
   String itemName(String id) => itemNames[id] ?? id;
 

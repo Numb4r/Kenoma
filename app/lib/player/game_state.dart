@@ -6,6 +6,9 @@ import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 import '../core/seed.dart';
 import '../save/founder.dart';
+import '../story/forum_data.dart';
+import '../story/mentor_script.dart';
+import '../story/story_state.dart';
 import 'bestiary.dart';
 import 'mark.dart';
 import 'progress_balance.dart';
@@ -14,7 +17,7 @@ import 'progression.dart';
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 2;
+const int saveSchemaVersion = 3;
 
 /// Uma criatura capturada. O uid é o do spawn de onde ela veio.
 class CreatureInstance {
@@ -56,6 +59,7 @@ class GameState extends ChangeNotifier {
     List<Mark>? marks,
     this.founder,
     this.createdUtc,
+    StoryState? story,
     Map<String, dynamic>? settings,
     this.lastSeenUtc = 0,
     Map<String, dynamic>? extra,
@@ -67,6 +71,7 @@ class GameState extends ChangeNotifier {
         bestiary = {...?bestiary},
         marks = [...?marks],
         settings = {...?settings},
+        story = story ?? StoryState(),
         _extra = {...?extra};
 
   /// Jogo novo: seed nova e o inventário inicial do `balance.json`.
@@ -76,7 +81,7 @@ class GameState extends ChangeNotifier {
   factory GameState.fromJson(Map<String, dynamic> j, ProgressBalance balance) {
     const known = {
       'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'marks', 'saved_utc',
-      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings',
+      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story',
     };
     final progress = PlayerProgress.fromJson(j['player'] as Map<String, dynamic>?, balance)..settleBanked();
     return GameState(
@@ -94,6 +99,7 @@ class GameState extends ChangeNotifier {
       marks: [for (final m in (j['marks'] as List<dynamic>?) ?? const []) Mark.fromJson(m as Map<String, dynamic>)],
       founder: j['founder'] == null ? null : Founder.fromJson(j['founder'] as Map<String, dynamic>),
       createdUtc: j['created_utc'] as int?,
+      story: StoryState.fromJson(j['story'] as Map<String, dynamic>?),
       lastSeenUtc: (j['last_seen_utc'] as int?) ?? 0,
       settings: {...?(j['settings'] as Map<String, dynamic>?)},
       // Campos que esta versão não conhece são preservados (spec, seção 10).
@@ -129,6 +135,12 @@ class GameState extends ChangeNotifier {
   String appVersion = '';
   int epochId = 0;
 
+  /// Eventos de jogo, o chat com o mentor e as diárias do fórum.
+  final StoryState story;
+
+  /// Um aviso para o jogador (mensagem nova, pedido concluído). A tela do mapa o mostra.
+  void Function(String message)? onNotice;
+
   /// Interruptores do jogador: `street_names` e `follow_heading`.
   final Map<String, dynamic> settings;
 
@@ -146,6 +158,58 @@ class GameState extends ChangeNotifier {
     marks.clear();
     notifyListeners();
     return true;
+  }
+
+  /// Um evento de jogo aconteceu: conta para o tutorial do mentor e para as diárias do fórum. Avisa se algum
+  /// pedido ficou pronto.
+  void recordEvent(String kind, String key, int n) {
+    if (n <= 0) return;
+    story.events[kind] = story.count(kind) + n;
+    for (final q in story.daily.record(kind, key, n)) {
+      onNotice?.call('Pedido de ${q.user} pronto: entregue no Fórum');
+    }
+    notifyListeners();
+  }
+
+  /// Gera os pedidos de hoje se o dia virou. [today] é o dia local; [forum] e [epochId] vêm dos dados.
+  void ensureDaily(ForumData forum, int epochId, int today) {
+    if (story.daily.ensure(today: today, seed: seed, epochId: epochId, level: playerLevel, forum: forum)) notifyListeners();
+  }
+
+  /// Entrega o pedido do [slot]: XP e materiais. `false` se ainda não está pronto.
+  bool claimDaily(int slot, int nowUtc) {
+    final q = story.daily.atSlot(slot);
+    if (q == null || !q.claimable) return false;
+    q.claimed = true;
+    for (final e in q.rewardItems.entries) {
+      add(e.key, e.value);
+    }
+    gainXp(q.rewardXp, nowUtc);
+    return true;
+  }
+
+  /// Troca o pedido do [slot] (um reroll por dia).
+  bool rerollDaily(int slot, ForumData forum, int epochId) {
+    final ok = story.daily.reroll(slot, seed: seed, epochId: epochId, level: playerLevel, forum: forum);
+    if (ok) notifyListeners();
+    return ok;
+  }
+
+  /// O jogador abriu o chat: tudo o que chegou está lido.
+  void markChatRead() {
+    if (story.chat.unread == 0) return;
+    story.chat.markAllRead();
+    notifyListeners();
+  }
+
+  /// Avança o relógio do tutorial em [dt] segundos de jogo. Devolve a mensagem do mentor que chegou, ou `null`.
+  MentorMessage? tickChat(double dt, int nowUtc, MentorScript script) {
+    final m = story.chat.tick(dt, nowUtc, script, story.count);
+    if (m != null) {
+      onNotice?.call('Nova mensagem de ${script.contactName}');
+      notifyListeners();
+    }
+    return m;
   }
 
   /// Guarda um interruptor do jogador (`street_names`, `follow_heading`).
@@ -312,6 +376,7 @@ class GameState extends ChangeNotifier {
         'epoch': epochId,
         if (founder != null) 'founder': founder!.toJson(),
         'settings': settings,
+        'story': story.toJson(),
         'inventory': inventory,
         'collection': [for (final c in collection) c.toJson()],
         'collected': _collected,

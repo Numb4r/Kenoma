@@ -40,4 +40,6 @@ GameData loadGameData() => GameData.fromJson(
       items: loadJson('assets/data/items.json'),
       epochs: loadJson('assets/data/epochs.json'),
       recipes: loadJson('assets/data/recipes.json'),
+      mentor: loadJson('assets/data/mentor.json'),
+      forum: loadJson('assets/data/forum.json'),
     );

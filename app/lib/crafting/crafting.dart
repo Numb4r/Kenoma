@@ -32,7 +32,9 @@ bool canCraft(GameState s, Recipe r) => craftPlan(s, r) != null;
 /// Fabrica a receita. `false` se falta algum ingrediente (nada é gasto).
 bool craftRecipe(GameState s, Recipe r) {
   final plan = craftPlan(s, r);
-  return plan != null && s.craft(plan, r.outId, r.outQty);
+  if (plan == null || !s.craft(plan, r.outId, r.outQty)) return false;
+  s.recordEvent('craft', r.id, 1);
+  return true;
 }
 
 /// Essência que um Eco de nível [level] rende: 3 do 1 ao 7, 4 do 8 ao 14, 5 do 15 ao 20.
@@ -60,5 +62,6 @@ String? distillBlocker(GameState s, String uid) {
   s.removeCreature(uid);
   final id = 'item.essence.${species.type.name}';
   s.add(id, qty);
+  s.recordEvent('distill', '', 1);
   return (itemId: id, qty: qty);
 }

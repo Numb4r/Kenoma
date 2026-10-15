@@ -14,6 +14,7 @@ import '../../data/game_data.dart';
 import '../../player/circle.dart';
 import '../../player/game_state.dart' show GameState;
 import '../../player/mark.dart';
+import '../../player/progression.dart' show localDay;
 import '../../dev/dev_tools.dart';
 import '../../player/game_session.dart';
 import '../../save/save_store.dart';
@@ -110,6 +111,29 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   /// O mapa está sendo trocado por um novo: a tela nova já ligou o wake lock e esta não pode desligá-lo.
   bool _restarting = false;
+
+  Timer? _storyTimer;
+  bool _inBackground = false;
+  double _walkedM = 0;
+
+  /// O relógio do tutorial do mentor e a virada das diárias: um tique por segundo com o mapa aberto e o jogo à vista.
+  void _storyTick() {
+    final r = _ready;
+    if (r == null || !mounted || _busy || _inBackground) return;
+    final now = tools.clock.nowUtc;
+    final st = r.session.state;
+    st.ensureDaily(r.data.forum, r.data.schedule.select(now).epoch.id, localDay(now));
+    st.tickChat(1, now, r.data.mentor);
+  }
+
+  /// A caminhada conta de 10 em 10 metros, para não gravar o save a cada passo.
+  void _onWalked(double meters) {
+    _walkedM += meters;
+    if (_walkedM < 10) return;
+    final whole = _walkedM.floor();
+    _walkedM -= whole;
+    _ready?.session.state.recordEvent('walk_m', '', whole);
+  }
 
   /// Recomeça o mapa com o save que está em disco: um backup importado ou outro grupo mudam a seed e tudo
   /// que depende dela.
@@ -321,6 +345,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       _rebuild();
     });
     game.onFollowHeading = _setFollowHeading;
+    game.onWalked = _onWalked;
+    session.state.onNotice = _toast;
+    session.state.ensureDaily(data.forum, data.schedule.select(tools.clock.nowUtc).epoch.id, localDay(tools.clock.nowUtc));
+    _storyTimer = Timer.periodic(const Duration(seconds: 1), (_) => _storyTick());
     if (session.state.setting('follow_heading')) {
       game.rotation.toggleFollowHeading(); // volta ao modo que o jogador deixou ligado
       WidgetsBinding.instance.addPostFrameCallback((_) => _setFollowHeading(true));
@@ -384,6 +412,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final ready = _ready;
     if (ready == null) return;
+    _inBackground = state != AppLifecycleState.resumed;
     if (state == AppLifecycleState.paused) {
       _headingSub?.cancel(); // a bússola também só com o app aberto
       _headingSub = null;
@@ -409,6 +438,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     }
     _toastTimer?.cancel();
     _longTimer?.cancel();
+    _storyTimer?.cancel();
     super.dispose();
   }
 
@@ -517,7 +547,22 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                 left: 0,
                 right: 0,
                 bottom: 8,
-                child: Center(child: PhoneButton(onTap: () => showPhoneMenu(context, state: r.session.state, data: r.data, settings: () => _settings(r)))),
+                child: Center(
+                  child: ListenableBuilder(
+                    listenable: r.session.state,
+                    builder: (context, _) => PhoneButton(
+                      alert: phoneHasAlert(r.session.state),
+                      onTap: () => showPhoneMenu(
+                        context,
+                        state: r.session.state,
+                        data: r.data,
+                        settings: () => _settings(r),
+                        nowUtc: () => tools.clock.nowUtc,
+                        epochId: () => r.data.schedule.select(tools.clock.nowUtc).epoch.id,
+                      ),
+                    ),
+                  ),
+                ),
               ),
               Positioned(
                 top: 56,

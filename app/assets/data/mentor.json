@@ -1,0 +1,32 @@
+{
+  "format": 1,
+  "contact": { "name": "Número desconhecido", "note": "sem nome: nomes fazem barulho" },
+  "tutorial": [
+    { "id": "m01", "after_s": 20,
+      "text": "Boa noite. Você deixava o celular gravando estática, não era? Ele ainda está ouvindo. Posso ajudar a entender o que ele escuta. Posso?" },
+    { "id": "m02", "after_s": 25,
+      "text": "Não me pergunte o nome. Nomes fazem barulho. Chame-me do que quiser, menos de um nome." },
+    { "id": "m03", "after_s": 30,
+      "text": "Veja o círculo em volta de você. É a sua Aura: até onde o aparelho enxerga através do Véu. Fagulhas e Ecos só respondem lá dentro. Por que será que tudo se aproxima quando você anda?" },
+    { "id": "m04", "after_s": 30,
+      "text": "As Fagulhas entram sozinhas na Aura e viram pó de Essência. Os pontos de material você precisa tocar. Quanto de você cabe numa caixinha de giz, afinal?" },
+    { "id": "m05", "after_s": 35,
+      "text": "Toque num Eco dentro da Aura e escolha um selo. Depois gire o dial até a sua onda violeta cobrir a dele. O sinal dele anda, e os Ecos mais fortes andam mais depressa. Você ouve quando ele vai mudar?" },
+    { "id": "m06", "after_s": 25,
+      "text": "Alinhado, o progresso sobe. Solto, cai. Aqui não existe batalha, só escuta. Quem escuta com mais calma costuma ganhar. Você tem calma?" },
+    { "id": "m07", "after_s": 5, "requires": { "event": "capture", "min": 1 },
+      "text": "Você capturou? Não é bem capturar, é? É devolver o sinal a quem o perdeu. Guarde o Ectoplasma: tudo que se escuta deixa um resto." },
+    { "id": "m08", "after_s": 40,
+      "text": "Abra a Bancada, no celular. Um selo simples é giz e ectoplasma, nada mais. Com duas Essências você faz um selo reforçado. De onde você acha que vem o giz?" },
+    { "id": "m09", "after_s": 40,
+      "text": "Um Eco que você já tem pode virar Essência: é a destilação. Parece cruel? A Essência não se perde, só muda de forma. Os que estão no seu Círculo não podem ser destilados, a menos que você os tire de lá." },
+    { "id": "m10", "after_s": 40,
+      "text": "Escolha até três criaturas para o seu Círculo. Cada uma melhora o seu mapa: Aura maior, coleta mais longe, rastreador mais fundo. E um tipo forte facilita a sintonia contra o tipo que ele vence. Fogo vence quem mesmo?" },
+    { "id": "m11", "after_s": 40,
+      "text": "Segure o dedo sobre um Eco dentro da Aura e o sinal dele fica preso por cinco minutos. Dá tempo de fazer outra coisa. Dá tempo de se arrepender." },
+    { "id": "m12", "after_s": 40,
+      "text": "Existe um fórum, o Limen. Pedem coisas pequenas todos os dias. Faça o que pedirem, ou não. Quem pede sempre sabe o que quer?" },
+    { "id": "m13", "after_s": 45,
+      "text": "Por ora é só. Se o celular tremer sozinho, não atenda. Última pergunta: quem mais anda por aí com a mesma frequência que a sua?" }
+  ]
+}

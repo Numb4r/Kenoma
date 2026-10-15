@@ -107,7 +107,7 @@ void main() {
 
     test('v1 vira v2: o nível do debug vira override, o nível real começa em 1 e o bestiário vem da coleção', () {
       final out = migrateSave(v1);
-      expect(out['schema_version'], 2);
+      expect(out['schema_version'], 3);
       expect(out.containsKey('player_level'), isFalse);
       expect(out['level_override'], 6);
       expect(out['player'], {'level': 1, 'xp': 0, 'banked_xp': 0});
@@ -136,7 +136,7 @@ void main() {
       final s = session.state;
       expect((s.groupCode, s.count('item.chalk'), s.collection.single.speciesId, s.isDone(42)), ('AAAAA-BBBBB', 3, 'rill.eco', true));
       expect((s.playerLevel, s.progress.level, s.levelOverride), (6, 1, 6));
-      expect(store.json!['schema_version'], 2);
+      expect(store.json!['schema_version'], 3);
       expect(store.json!['future_field'], {'x': 1});
     });
 

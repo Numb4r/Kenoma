@@ -95,6 +95,7 @@ class WorldView {
       state.add(s.entryId, s.quantity);
       state.markDone(s.uid, tUtc);
       _gainXp(state.balance.spark, tUtc);
+      state.recordEvent('spark', s.entryId.replaceFirst('item.dust.', ''), s.quantity);
       collected.add(s);
       onMessage?.call('+${s.quantity} ${itemName(s.entryId)}');
     }
@@ -111,6 +112,7 @@ class WorldView {
     state.add(s.entryId, s.quantity);
     state.markDone(s.uid, tUtc);
     _gainXp(state.balance.material, tUtc);
+    state.recordEvent('material', s.entryId, s.quantity);
     spawns = [for (final o in spawns) if (o.uid != s.uid) o];
     onMessage?.call('+${s.quantity} ${itemName(s.entryId)}');
     return TouchResult.collected;

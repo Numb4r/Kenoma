@@ -6,7 +6,7 @@ import '../player/game_state.dart' show saveSchemaVersion;
 
 typedef _Step = Map<String, dynamic> Function(Map<String, dynamic>);
 
-final Map<int, _Step> _steps = {1: _v1ToV2};
+final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3};
 
 /// Leva [json] ao schema atual. Um save de versão futura passa sem mudar.
 Map<String, dynamic> migrateSave(Map<String, dynamic> json) {
@@ -34,5 +34,17 @@ Map<String, dynamic> _v1ToV2(Map<String, dynamic> j) {
     bestiary[(c as Map<String, dynamic>)['species'] as String] = {'seen': true, 'captured': true};
   }
   out['bestiary'] = bestiary;
+  return out;
+}
+
+/// v2 não tinha o bloco `story` (eventos de jogo, chat com o mentor e diárias do fórum): entra vazio, e o tutorial do
+/// mentor começa na próxima sessão. Todo o resto do save passa intacto.
+Map<String, dynamic> _v2ToV3(Map<String, dynamic> j) {
+  final out = {...j};
+  out['story'] ??= <String, dynamic>{
+    'events': <String, dynamic>{},
+    'chat': <String, dynamic>{'delivered': <dynamic>[], 'read': 0, 'wait_s': 0},
+    'daily': <String, dynamic>{'day': null, 'rerolls': 0, 'quests': <dynamic>[]},
+  };
   return out;
 }

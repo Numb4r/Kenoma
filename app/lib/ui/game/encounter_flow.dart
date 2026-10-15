@@ -78,6 +78,7 @@ Future<void> runEncounter(
       final first = !state.hasCaptured(species.id);
       state.capture(uid: eco.uid, speciesId: species.id, level: level, nowUtc: nowUtc());
       state.add('item.ectoplasm', o.ectoplasm);
+      state.recordEvent('capture', species.type.name, 1);
       final b = state.balance;
       final up = state.gainXp(tuningXp(level, b) + (first ? b.firstCapture : 0), nowUtc());
       final notes = [
