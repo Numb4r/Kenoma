@@ -13,7 +13,7 @@ List<SpawnItem> cell(Epoch epoch, String key, {int cx = vectorCellX, int cy = ve
 /// Cópia da época 0 com a chance de todos os itens trocada por [chance].
 Epoch withChance(double chance) {
   final json = jsonDecode(jsonEncode(epochsJson())) as Map<String, dynamic>;
-  final e0 = (json['epochs'] as List<dynamic>).single as Map<String, dynamic>;
+  final e0 = (json['epochs'] as List<dynamic>).first as Map<String, dynamic>;
   for (final item in (e0['spawn'] as Map<String, dynamic>)['items'] as List<dynamic>) {
     final chances = (item as Map<String, dynamic>)['chance'] as Map<String, dynamic>;
     for (final k in chances.keys) {
@@ -24,7 +24,7 @@ Epoch withChance(double chance) {
 }
 
 void main() {
-  final epoch = loadEpochs().epochs.single;
+  final epoch = loadEpochs().epochs.first;
 
   test('vetores da spec: h_0 e uid_0 da época 0', () {
     expect(spawnHash(vectorSeed, 0, vectorCellX, vectorCellY, vectorWindow, 0), 0x90a9f55334e3a1bc);

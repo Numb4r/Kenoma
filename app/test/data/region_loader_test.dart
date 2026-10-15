@@ -99,7 +99,7 @@ void main() {
 
     test('com o relógio depois do fim da época carrega e avisa que está desatualizado', () async {
       final bundle = _Bundle({'assets/data/epochs.json': utf8.encode(epochsText), 'assets/regions/campinas_e0.bin': bytes});
-      final r = await loadRegion(region: 'campinas', nowUtc: epoch.validUntilUtc + 1, bundle: bundle);
+      final r = await loadRegion(region: 'campinas', nowUtc: loadEpochs().epochs.last.validUntilUtc + 1, bundle: bundle);
       expect((r as RegionLoaded).stale, isTrue);
     });
 

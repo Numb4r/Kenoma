@@ -16,7 +16,7 @@ int utc(String iso) => DateTime.parse(iso).millisecondsSinceEpoch ~/ 1000;
 void main() {
   test('lê a época 0 de assets/data/epochs.json', () {
     final schedule = loadEpochs();
-    final e0 = schedule.epochs.single;
+    final e0 = schedule.epochs.first;
     expect(e0.id, 0);
     expect(e0.startsUtc, utc('2026-09-22T00:00:00Z'));
     expect(e0.validUntilUtc, utc('2026-12-21T00:00:00Z'));
@@ -29,7 +29,7 @@ void main() {
   });
 
   test('toda tabela de spawn tem os quatro biomas e pesos positivos', () {
-    for (final item in loadEpochs().epochs.single.items) {
+    for (final item in loadEpochs().epochs.expand((e) => e.items)) {
       expect(item.chance.keys.toSet(), {'urban', 'green', 'water', 'residential'});
       expect(item.table.keys.toSet(), {'urban', 'green', 'water', 'residential'});
       for (final entries in item.table.values) {
@@ -54,8 +54,20 @@ void main() {
     expect(schedule.current(utc('2028-01-01T00:00:00Z'))!.id, 2);
   });
 
-  group('bordas da época 0 (spec, seção 3)', () {
+  test('a época 1 começa depois da 0, cobre o fim dela e fica em dia até o próprio fim', () {
     final schedule = loadEpochs();
+    final e1 = schedule.epochs.firstWhere((e) => e.id == 1);
+    expect(e1.startsUtc, greaterThan(schedule.epochs.first.startsUtc));
+    expect(e1.validUntilUtc, greaterThan(schedule.epochs.first.validUntilUtc));
+    expect(schedule.select(e1.startsUtc).epoch.id, 1);
+    expect(schedule.select(e1.startsUtc - 1).epoch.id, 0);
+    expect(schedule.select(e1.validUntilUtc - 1).stale, isFalse);
+    expect(schedule.select(e1.validUntilUtc).stale, isTrue);
+  });
+
+  group('bordas da época 0 (spec, seção 3)', () {
+    // Só a época 0: a 1 (densidade maior) cobre o mundo depois do fim dela.
+    final schedule = EpochSchedule([loadEpochs().epochs.first]);
 
     test('1790035199 não tem época vigente; o app usa a primeira e marca desatualizado', () {
       expect(schedule.current(1790035199), isNull);
@@ -115,6 +127,6 @@ void main() {
 
   test('datas de época são lidas em UTC', () {
     // 2026-09-22T00:00:00Z = 1790035200 s desde a época Unix.
-    expect(loadEpochs().epochs.single.startsUtc, 1790035200);
+    expect(loadEpochs().epochs.first.startsUtc, 1790035200);
   });
 }

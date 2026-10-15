@@ -211,13 +211,13 @@ void main() {
     expect(find.textContaining('campinas_e0.bin não está no app'), findsOneWidget);
   });
 
-  testWidgets('relógio depois do fim da época: o mapa abre e avisa que o mundo está desatualizado', (tester) async {
+  testWidgets('relógio depois do fim da última época: o mapa abre e avisa que o mundo está desatualizado', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.625;
     addTearDown(tester.view.reset);
     addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
     final epochs = jsonDecode(File('assets/data/epochs.json').readAsStringSync()) as Map<String, dynamic>;
-    final end = DateTime.parse(((epochs['epochs'] as List).first as Map)['valid_until_utc'] as String).millisecondsSinceEpoch ~/ 1000;
+    final end = DateTime.parse(((epochs['epochs'] as List).last as Map)['valid_until_utc'] as String).millisecondsSinceEpoch ~/ 1000;
     await tester.pumpWidget(MaterialApp(home: MapScreen(lat: -22.8174, lon: -47.0697, nowUtc: end + 1000, bundle: _Bundle(realAssets()))));
     for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
