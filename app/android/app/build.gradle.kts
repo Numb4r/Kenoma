@@ -1,8 +1,16 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// A chave de release fica FORA do repositório (docs/assinatura.md). O caminho do key.properties vem de
+// KENOMA_KEY_PROPERTIES ou, sem ele, de ~/.kenoma-signing/key.properties. Sem o arquivo, a release cai na
+// chave de debug, só para o build de desenvolvimento não quebrar: nunca distribua esse APK.
+val keyPropsFile = file(System.getenv("KENOMA_KEY_PROPERTIES") ?: "${System.getProperty("user.home")}/.kenoma-signing/key.properties")
+val keyProps = Properties().apply { if (keyPropsFile.exists()) keyPropsFile.inputStream().use { load(it) } }
 
 android {
     namespace = "com.numb4r.kenoma"
@@ -29,11 +37,20 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (keyPropsFile.exists()) {
+            create("release") {
+                storeFile = file(keyProps.getProperty("storeFile"))
+                storePassword = keyProps.getProperty("storePassword")
+                keyAlias = keyProps.getProperty("keyAlias")
+                keyPassword = keyProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 }
