@@ -92,6 +92,7 @@ Janelas de spawn têm 20 minutos, com deslocamento próprio por célula. Detalhe
 - **Nunca dar push sem autorização explícita** do usuário, mesmo que ele tenha autorizado outros pushes antes. Commitar só quando pedido.
 - **Nunca capturar a tela do celular** (`adb screencap` e similares) sem checar antes se ele está desbloqueado e com o app em primeiro plano: `adb shell dumpsys window | grep isKeyguardShowing` tem que dar `false` e `adb shell dumpsys window | grep mCurrentFocus` tem que citar `com.numb4r.kenoma`. A tela de bloqueio e os outros apps mostram conteúdo pessoal.
 - **O menu de debug fica acessível em todas as builds de teste, inclusive as de release que vão para os amigos, e nunca é removido por flag de build.** A regra de liberar só com certificado de desenvolvedor vale apenas para a versão pública e entra junto com as assinaturas. Ferramentas de dev (simulador de GPS, relógio, sintonia, mapa) moram nele.
+- **Já há amigos jogando.** Toda versão nova sai assinada com a mesma chave de release (`~/.kenoma-signing/`, ver `docs/assinatura.md`) e com a migração do save testada: quem atualiza instala por cima e não perde nada. Mudou o formato do save? Suba `saveSchemaVersion`, escreva a migração pura e o teste com um save antigo antes do APK. Nada de APK com a chave de debug. Mudança de época continua só por época nova (regra 8), e agora afeta quem já joga.
 - Cores fixas: violeta `#9b7bff` é o Véu, ciano `#5fd3c6` é o sinal, laranja `#ff7a45` é Essência. Contorno `#1a1424`, nunca preto puro.
 
 ## Comandos

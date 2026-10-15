@@ -39,12 +39,16 @@ O digest que o `apksigner` mostra tem de ser o da tabela acima.
 assinatura da versão instalada. Sem a chave, todo amigo teria de desinstalar o app (e perder o save) para receber
 uma versão nova.
 
-1. Copie a pasta inteira `~/.kenoma-signing/` (os dois arquivos) para **dois lugares fora desta máquina**: por
-   exemplo um pendrive guardado em casa e um cofre de senhas ou um arquivo cifrado no Google Drive.
-2. Cifre a cópia que for para a nuvem (`gpg -c` ou um `.zip` com senha forte). O keystore sozinho já pede senha, mas
-   o `key.properties` a guarda em texto.
-3. Depois de copiar, confira: `keytool -list -keystore kenoma-release.jks` na cópia tem de pedir a senha e listar
-   `kenoma-release`.
+1. Gere o arquivo cifrado com o script do repositório (a senha você digita no terminal, quando o `gpg` pedir; ela não
+   fica em arquivo nenhum):
+   ```
+   ./scripts/backup_signing_key.sh /pasta/de/destino
+   ```
+   Ele confere que os dois arquivos existem, junta `kenoma-release.jks` e `key.properties` num `tar.gz` e cifra com
+   AES-256 (`kenoma-signing-AAAAMMDD.tar.gz.gpg`). Guarde a senha num cofre de senhas, separada do arquivo.
+2. Confira o backup: `./scripts/backup_signing_key.sh --verify kenoma-signing-AAAAMMDD.tar.gz.gpg` pede a senha e
+   lista os dois arquivos.
+3. Copie o arquivo para **dois lugares diferentes**: por exemplo um pendrive guardado em casa e a nuvem pessoal.
 4. Refaça a cópia se a chave for trocada. Anote a data do último backup aqui: _(preencher)_.
 
 ## Se a chave vazar
@@ -70,3 +74,18 @@ printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=kenoma-release\nstoreFile=%s\
 Um APK com assinatura diferente **não instala por cima**. Foi o caso na passagem da 0.11 (chave de debug) para a
 0.12 (chave de release) no celular de teste: é preciso `adb uninstall com.numb4r.kenoma`, e isso apaga o save.
 Antes, exporte o backup (a 0.12 tem a opção; a 0.11 não tinha).
+
+## Permissão INTERNET no manifesto
+
+A release declara `INTERNET` (e `ACCESS_NETWORK_STATE`), que vêm de plugins. **Fica de propósito**: as próximas fases
+vão usar rede, então não é esquecimento. Hoje o jogo ainda não faz nenhuma chamada de rede (regra 4 do `CLAUDE.md`:
+nada do Núcleo depende de rede); a permissão só estará em uso quando uma fase nova a usar.
+
+## Toda versão nova (já há amigos jogando)
+
+1. Sai **assinada com a mesma chave** (a de `~/.kenoma-signing/`). Confira com `apksigner verify --print-certs`: o
+   digest tem de ser o da tabela acima. Nunca distribua um APK assinado com a chave de debug.
+2. Sai **com migração de save testada**: quem atualiza instala por cima e não pode perder nada. Mudou o formato do
+   save? Suba `saveSchemaVersion`, escreva a migração pura em `app/lib/save/migrations.dart` e o teste dela
+   (save antigo de verdade como entrada) antes de gerar o APK.
+3. O número de versão sobe (`version:` no `pubspec.yaml`), sempre 0.x enquanto for teste.
