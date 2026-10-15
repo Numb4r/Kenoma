@@ -28,7 +28,7 @@ import 'tracker_painter.dart';
 import 'player_painter.dart';
 
 /// O mapa do jogo em Flame: segue o Conjurador, desenha o marcador e a Aura e repassa os toques para a
-/// câmera. As regras (suavização, espiar e voltar, limites de zoom) estão em `world/`.
+/// câmera. As regras (suavização, giro, limites de zoom) estão em `world/`.
 class GameMapGame extends FlameGame {
   GameMapGame({
     required this.renderer,
@@ -113,7 +113,7 @@ class GameMapGame extends FlameGame {
   /// A câmera de jogo.
   late final FollowCamera follow;
 
-  /// A rotação do mapa: o gesto de dois dedos, a volta ao norte e o "seguir direção".
+  /// A rotação do mapa: o arrasto de um dedo, a volta ao norte e o "seguir direção".
   final rotation = MapRotation();
 
   /// O que a bússola da tela precisa saber: o ângulo, se aparece e se o "seguir direção" está ligado.
@@ -171,25 +171,22 @@ class GameMapGame extends FlameGame {
   }
 
   void touchEnd() {
-    rotation.gestureEnd();
     follow.touchEnd();
   }
 
-  /// Os dedos começaram (ou mudaram de número): a pinça e o giro contam daqui.
-  void gestureStart() {
-    _widthAtStart = widthM;
-    rotation.gestureStart();
+  /// Os dedos começaram (ou mudaram de número): a pinça conta daqui.
+  void gestureStart() => _widthAtStart = widthM;
+
+  /// Pinça com [scale] acumulado desde o início do gesto: só dá zoom.
+  void pinch(double scale) {
+    if (scale != 1.0) widthM = (_widthAtStart / scale).clamp(minWidthM, maxWidthM).toDouble();
   }
 
-  /// Arrasto de [dx], [dy] pixels (espiar), pinça com [scale] e giro de [turn] radianos, acumulados desde o
-  /// início do gesto.
-  void gesture({required double dx, required double dy, required double scale, double turn = 0}) {
-    if (scale != 1.0) widthM = (_widthAtStart / scale).clamp(minWidthM, maxWidthM).toDouble();
-    if (turn != 0) {
-      rotation.gestureRotate(turn);
-      if (!rotation.followHeading) onFollowHeading?.call(false);
-    }
-    if (dx != 0 || dy != 0) follow.dragBy(dx, dy);
+  /// Arrasto de um dedo, [dx] pixels na horizontal: gira o mapa em torno do Conjurador.
+  void dragRotate(double dx) {
+    if (dx == 0) return;
+    rotation.dragBy(dx);
+    onFollowHeading?.call(false);
   }
 
   /// A bússola do celular leu [magneticDeg] (graus a partir do norte magnético, no sentido horário).
@@ -224,7 +221,7 @@ class GameMapGame extends FlameGame {
       // A escala vem dos metros visíveis: segue a largura da tela e a latitude.
       double ppc(double w) => pixelsPerCellFor(widthM: w, viewWidthPx: size.x, lat: _lat);
       follow.limitScale(ppc(maxWidthM), ppc(minWidthM));
-      follow.setScale(ppc(widthM), resetIdle: false);
+      follow.setScale(ppc(widthM));
     }
     rotation.update(dt);
     follow.setRotation(rotation.angle);

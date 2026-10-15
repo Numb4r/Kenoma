@@ -12,6 +12,7 @@ import '../../dev/dev_tools.dart';
 import '../../player/game_session.dart';
 import '../../save/save_store.dart';
 import '../../world/spawn_field.dart';
+import '../../world/touch_gesture.dart';
 import '../../world/world_view.dart';
 import '../collection/collection_screen.dart';
 import '../sprites/sprite_image.dart';
@@ -29,8 +30,8 @@ import '../tuning/tuning_screen.dart' show PixelButton;
 import 'game_map_game.dart';
 import 'sim_overlay.dart';
 
-/// O mapa do jogo (M5): o Conjurador anda com o GPS e a câmera o segue, com a Aura no chão. Arrastar
-/// espia em volta e a câmera volta sozinha depois de 3 s sem toque; pinça dá zoom numa faixa de jogo.
+/// O mapa do jogo (M5): o Conjurador anda com o GPS e a câmera o segue, com a Aura no chão. A câmera
+/// nunca sai do Conjurador: arrastar com um dedo gira o mapa e a pinça dá zoom numa faixa de jogo.
 ///
 /// A posição vem de `tools.source`: o GPS real (pedindo a permissão com uma explicação curta) ou o
 /// simulador do menu de debug, que entra no lugar sem o resto do código saber.
@@ -82,8 +83,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   String? _toastText;
   Timer? _toastTimer;
   bool _busy = false;
-  Offset? _tapStart;
-  Duration _tapAt = Duration.zero;
+  final _touch = TouchGesture();
+  final _sw = Stopwatch()..start();
+  Timer? _longTimer;
 
   DevTools get tools => widget.tools;
 
@@ -115,6 +117,21 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       if (mounted) setState(() => _toastText = null);
     });
   }
+
+  void _pointerGone() {
+    if (--_pointers <= 0) {
+      _pointers = 0;
+      _ready?.game.touchEnd();
+    }
+  }
+
+  void _onLongTimer() {
+    final at = _touch.checkLongPress(_sw.elapsedMilliseconds);
+    if (at != null) _onLongPress(at);
+  }
+
+  /// Toque longo: a marcação (B5) entra aqui.
+  void _onLongPress(Offset at) {}
 
   /// Toque no mapa: o spawn sob o dedo. Material dentro da Aura é coletado; Eco dentro da Aura abre o
   /// encontro; o resto avisa o que falta.
@@ -293,6 +310,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       r.session.dispose();
     }
     _toastTimer?.cancel();
+    _longTimer?.cancel();
     super.dispose();
   }
 
@@ -322,38 +340,33 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         Listener(
           behavior: HitTestBehavior.opaque,
           onPointerDown: (e) {
-            if (_pointers++ == 0) {
-              game.touchStart();
-              _tapStart = e.localPosition;
-              _tapAt = e.timeStamp;
-            } else {
-              _tapStart = null; // dois dedos: pinça, não toque
-            }
+            if (_pointers++ == 0) game.touchStart();
+            _touch.down(e.localPosition, _sw.elapsedMilliseconds);
+            _longTimer?.cancel();
+            if (_touch.pendingLongPress) _longTimer = Timer(Duration(milliseconds: _touch.longPressMs), _onLongTimer);
           },
           onPointerMove: (e) {
-            final start = _tapStart;
-            if (start != null && (e.localPosition - start).distance > 18) _tapStart = null;
+            final dx = _touch.move(e.localPosition);
+            if (dx != 0) game.dragRotate(dx);
+            if (_touch.dragging) _longTimer?.cancel();
           },
           onPointerUp: (e) {
-            final start = _tapStart;
-            if (start != null && e.timeStamp - _tapAt < const Duration(milliseconds: 500)) _onTap(e.localPosition);
-            _tapStart = null;
-            if (--_pointers <= 0) {
-              _pointers = 0;
-              game.touchEnd();
-            }
+            _longTimer?.cancel();
+            final tap = _touch.up(e.localPosition, _sw.elapsedMilliseconds);
+            if (tap != null) _onTap(tap);
+            _pointerGone();
           },
           onPointerCancel: (_) {
-            _tapStart = null;
-            if (--_pointers <= 0) {
-              _pointers = 0;
-              game.touchEnd();
-            }
+            _longTimer?.cancel();
+            _touch.cancel();
+            _pointerGone();
           },
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onScaleStart: (_) => game.gestureStart(),
-            onScaleUpdate: (d) => game.gesture(dx: d.focalPointDelta.dx, dy: d.focalPointDelta.dy, scale: d.scale, turn: d.rotation),
+            onScaleUpdate: (d) {
+              if (d.pointerCount >= 2) game.pinch(d.scale);
+            },
             child: GameWidget(game: game),
           ),
         ),

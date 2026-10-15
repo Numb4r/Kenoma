@@ -139,58 +139,35 @@ void main() {
       expect((r.angle, r.showCompass, r.followHeading), (0.0, false, false));
     });
 
-    test('um giro pequeno dos dedos é ignorado (pinça sem girar); passando do limite o mapa acompanha sem salto', () {
-      final r = MapRotation(slopRad: 0.12);
-      r.gestureStart();
-      r.gestureRotate(0.05);
-      expect(r.angle, 0);
-      r.gestureRotate(0.119);
-      expect(r.angle, 0);
-      r.gestureRotate(0.2); // passou: começa a girar a partir daqui, sem salto
-      expect(r.angle, closeTo(0, 1e-12));
-      r.gestureRotate(0.5);
-      expect(r.angle, closeTo(0.3, 1e-12));
-      expect(r.showCompass, isTrue);
-    });
-
-    test('um novo gesto parte de onde o anterior parou, e soltar perto do norte assenta no norte', () {
+    test('arrastar para a direita gira no sentido horário, direto no dedo, e a bússola aparece', () {
       final r = MapRotation();
-      r.gestureStart();
-      r.gestureRotate(0.3);
-      r.gestureRotate(1.3);
-      r.gestureEnd();
-      final first = r.angle;
-      expect(first, closeTo(1.0, 1e-9));
-      r.gestureStart();
-      r.gestureRotate(-0.4); // passou do limite: começa aqui
-      r.gestureRotate(-1.1);
-      expect(r.angle, closeTo(first - 0.7, 1e-9));
-      r.gestureEnd();
-      for (var i = 0; i < 100; i++) {
-        r.update(0.05);
-      }
-      expect(r.angle, closeTo(first - 0.7, 1e-6), reason: '0,3 rad está acima do limite do norte: fica onde está');
+      r.dragBy(80);
+      expect(r.angle, closeTo(80 * MapRotation.radPerPx, 1e-12));
+      expect(r.showCompass, isTrue);
+      r.dragBy(-80);
+      expect(r.angle, closeTo(0, 1e-12));
     });
 
-    test('soltar a menos de snapNorth do norte assenta no norte', () {
-      final r = MapRotation(slopRad: 0.1, snapNorthRad: 0.12);
-      r.gestureStart();
-      r.gestureRotate(0.3);
-      r.gestureRotate(0.3 + 0.08);
-      r.gestureEnd();
-      for (var i = 0; i < 100; i++) {
-        r.update(0.05);
+    test('o giro manual fica onde está: nem soltar perto do norte nem o tempo o devolvem', () {
+      final r = MapRotation();
+      r.dragBy(4); // 0,05 rad, perto do norte
+      final at = r.angle;
+      for (var i = 0; i < 600; i++) {
+        r.update(0.016);
       }
-      expect(r.angle, 0);
-      expect(r.showCompass, isFalse);
+      expect(r.angle, closeTo(at, 1e-12));
+    });
+
+    test('arrastar além de uma volta normaliza o ângulo', () {
+      final r = MapRotation();
+      r.dragBy(600); // 7,5 rad
+      expect(r.angle, inExclusiveRange(-pi - 1e-9, pi + 1e-9));
+      expect(r.angle, closeTo(7.5 - 2 * pi, 1e-9));
     });
 
     test('tocar na bússola leva ao norte pelo caminho curto, e some a bússola', () {
       final r = MapRotation();
-      r.gestureStart();
-      r.gestureRotate(0.3);
-      r.gestureRotate(3.0);
-      r.gestureEnd();
+      r.dragBy(240); // 3,0 rad
       final start = r.angle;
       expect(start.abs(), greaterThan(2));
       r.goNorth();
@@ -258,17 +235,14 @@ void main() {
 
       r.toggleFollowHeading();
       expect(r.followHeading, isTrue);
-      r.gestureStart();
-      r.gestureRotate(0.5);
+      r.dragBy(40);
       expect(r.followHeading, isFalse);
     });
   });
 
   group('FollowCamera com rotação', () {
-    test('girar o mapa não tira o Conjurador do lugar na tela, nem com o mapa espiado', () {
+    test('girar o mapa não tira o Conjurador do lugar na tela', () {
       final c = FollowCamera(x: 1000, y: 2000, pixelsPerCell: 20);
-      c.touchStart();
-      c.dragBy(80, -50); // espia
       const w = 400.0, h = 800.0;
       final before = c.camera.cellToScreen(1000, 2000, w, h);
       for (final rot in [0.4, 1.3, -2.0, 3.0]) {
@@ -277,16 +251,6 @@ void main() {
         expect(after.$1, closeTo(before.$1, 1e-6), reason: 'rot $rot');
         expect(after.$2, closeTo(before.$2, 1e-6));
       }
-    });
-
-    test('arrastar com o mapa girado move o mapa com o dedo na tela', () {
-      final c = FollowCamera(x: 1000, y: 2000, pixelsPerCell: 20);
-      c.setRotation(pi / 2);
-      c.dragBy(60, 0); // dedo 60 px para a direita
-      const w = 400.0, h = 800.0;
-      final (sx, sy) = c.camera.cellToScreen(1000, 2000, w, h);
-      expect(sx, closeTo(w / 2 + 60, 1e-6), reason: 'o Conjurador anda com o mapa, 60 px para a direita');
-      expect(sy, closeTo(h / 2, 1e-6));
     });
   });
 }

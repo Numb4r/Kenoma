@@ -1,4 +1,4 @@
-/// A rotação do mapa de jogo: o gesto de dois dedos, a volta ao norte e o modo "seguir direção", que gira o
+/// A rotação do mapa de jogo: o arrasto de um dedo, a volta ao norte e o modo "seguir direção", que gira o
 /// mapa com a bússola do celular. Dart puro: quem dirige o tempo é [update] e quem lê a bússola chama
 /// [setHeading].
 ///
@@ -29,22 +29,14 @@ double smoothAngle(double current, double target, double dt, double tauS) =>
 double rotationForHeading(double headingDeg) => normalizeAngle(-headingDeg * math.pi / 180);
 
 class MapRotation {
-  MapRotation({this.slopRad = 0.12, this.snapNorthRad = 0.12, this.northTauS = 0.15, this.headingTauS = 0.35});
+  MapRotation({this.northTauS = 0.15, this.headingTauS = 0.35});
 
-  /// Quanto os dedos precisam girar antes de o mapa girar: dá para fazer pinça sem girar sem querer.
-  final double slopRad;
-
-  /// Ao soltar a menos que isto do norte, o mapa assenta no norte.
-  final double snapNorthRad;
   final double northTauS;
   final double headingTauS;
 
   double _angle = 0;
   double _target = 0;
   double _tau = 0.15;
-  double _base = 0;
-  double _offset = 0;
-  bool _gesturing = false;
 
   /// Se o modo "seguir direção" está ligado.
   bool followHeading = false;
@@ -56,29 +48,16 @@ class MapRotation {
   /// como desligar).
   bool get showCompass => _angle.abs() > 0.0087 || followHeading; // 0,5 grau
 
-  /// Os dedos começaram um gesto: guarda de onde girar.
-  void gestureStart() {
-    _base = _target;
-    _offset = 0;
-    _gesturing = false;
-  }
+  /// Radianos de giro por pixel de arrasto horizontal: uma tela de ~400 px dá uma volta e meia.
+  static const double radPerPx = 0.0125;
 
-  /// Giro acumulado dos dedos desde o início do gesto, em radianos. Só vale depois de passar de [slopRad], e
-  /// aí o mapa acompanha os dedos sem salto. Girar com a mão desliga o "seguir direção".
-  void gestureRotate(double cumulative) {
-    if (!_gesturing) {
-      if (cumulative.abs() < slopRad) return;
-      _gesturing = true;
-      _offset = cumulative;
-      followHeading = false;
-    }
-    _target = normalizeAngle(_base + cumulative - _offset);
+  /// O dedo arrastou [dxPx] pixels na horizontal: o mapa gira junto, sem suavização (já está no dedo).
+  /// Girar com a mão desliga o "seguir direção".
+  void dragBy(double dxPx) {
+    if (dxPx == 0) return;
+    followHeading = false;
+    _target = normalizeAngle(_target + dxPx * radPerPx);
     _angle = _target;
-  }
-
-  void gestureEnd() {
-    if (_gesturing && _target.abs() < snapNorthRad) goNorth();
-    _gesturing = false;
   }
 
   /// Volta ao norte, desligando o "seguir direção".
@@ -107,9 +86,9 @@ class MapRotation {
     if (followHeading) _target = rotationForHeading(headingDeg);
   }
 
-  /// Avança [dt] segundos. Durante o gesto o mapa já está nos dedos; fora dele, suaviza até o alvo.
+  /// Avança [dt] segundos, suavizando até o alvo.
   void update(double dt) {
-    if (dt <= 0 || _gesturing) return;
+    if (dt <= 0) return;
     _angle = smoothAngle(_angle, _target, dt, _tau);
     if (shortestDelta(_angle, _target).abs() < 1e-4) _angle = _target;
   }
@@ -118,6 +97,5 @@ class MapRotation {
   void reset() {
     _angle = _target = 0;
     followHeading = false;
-    _gesturing = false;
   }
 }

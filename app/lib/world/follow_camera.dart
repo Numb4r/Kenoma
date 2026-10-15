@@ -1,6 +1,6 @@
-/// Câmera de jogo: segue o Conjurador com suavização. Arrastar espia em volta e, depois de
-/// [returnAfterS] segundos sem toque, a câmera volta sozinha. O zoom fica numa faixa de jogo, menor que
-/// a da câmera livre do debug. Dart puro: quem dirige o tempo é [update].
+/// Câmera de jogo: presa ao Conjurador, que fica sempre no centro, com suavização. Não há espiar: o dedo gira
+/// o mapa em torno dele. O zoom fica numa faixa de jogo, menor que a da câmera livre do debug. Dart puro: quem
+/// dirige o tempo é [update].
 library;
 
 import 'dart:math' as math;
@@ -13,9 +13,6 @@ class FollowCamera {
     required double y,
     double pixelsPerCell = defaultScale,
     this.followTauS = 0.25,
-    this.returnAfterS = 3.0,
-    this.returnTauS = 0.3,
-    this.maxPeekCells = 40,
     this.snapCells = 200,
   })  : _x = x,
         _y = y,
@@ -31,15 +28,6 @@ class FollowCamera {
   /// Constante de tempo do seguir: em ~3x isto a câmera cobre 95% da distância.
   final double followTauS;
 
-  /// Segundos sem toque até o espiar voltar.
-  final double returnAfterS;
-
-  /// Constante de tempo da volta do espiar.
-  final double returnTauS;
-
-  /// Quanto dá para espiar, em células, para cada lado.
-  final double maxPeekCells;
-
   /// Distância (em células) acima da qual a câmera pula em vez de deslizar (teleporte).
   final double snapCells;
 
@@ -50,32 +38,23 @@ class FollowCamera {
 
   double _x, _y;
   double _tx, _ty;
-  double _peekX = 0, _peekY = 0;
   double _rotation = 0;
   double _scale;
   bool _touching = false;
-  double _idleS = 0;
 
   /// Para onde a câmera olha agora, sem o espiar.
   double get followX => _x;
   double get followY => _y;
-
-  /// O quanto ela está espiando, em células.
-  double get peekX => _peekX;
-  double get peekY => _peekY;
 
   double get pixelsPerCell => _scale;
 
   /// Rotação do mapa, em radianos, no sentido horário na tela. 0 é o norte para cima.
   double get rotation => _rotation;
 
-  /// Se está espiando (afastada do Conjurador pelo arrasto).
-  bool get peeking => _peekX != 0 || _peekY != 0;
-
   bool get touching => _touching;
 
   /// A câmera de mapa que o renderizador usa.
-  MapCamera get camera => MapCamera(centerX: _x + _peekX, centerY: _y + _peekY, pixelsPerCell: _scale, rotation: _rotation);
+  MapCamera get camera => MapCamera(centerX: _x, centerY: _y, pixelsPerCell: _scale, rotation: _rotation);
 
   /// Para onde seguir (a posição do Conjurador), em células z21 fracionárias.
   void setTarget(double x, double y) {
@@ -89,50 +68,15 @@ class FollowCamera {
     _y = _ty;
   }
 
-  /// O dedo encostou: o espiar fica onde está e o relógio de volta zera.
-  void touchStart() {
-    _touching = true;
-    _idleS = 0;
-  }
+  /// O dedo encostou ou saiu: só marca [touching], que o mapa usa para rasterizar mais grosso no gesto.
+  void touchStart() => _touching = true;
+  void touchEnd() => _touching = false;
 
-  /// O dedo saiu: começa a contar [returnAfterS].
-  void touchEnd() {
-    _touching = false;
-    _idleS = 0;
-  }
-
-  /// Arrastar o dedo [dx], [dy] pixels espia: o mapa anda junto com o dedo, então o olhar vai para o
-  /// outro lado. Limitado a [maxPeekCells].
-  void dragBy(double dx, double dy) {
-    _idleS = 0;
-    // O dedo anda na tela; o mapa anda junto com ele, então o olhar vai no sentido oposto, no mundo.
-    final c = math.cos(_rotation), s = math.sin(_rotation);
-    var px = _peekX - (dx * c + dy * s) / _scale, py = _peekY - (-dx * s + dy * c) / _scale;
-    final len = math.sqrt(px * px + py * py);
-    if (len > maxPeekCells) {
-      px *= maxPeekCells / len;
-      py *= maxPeekCells / len;
-    }
-    _peekX = px;
-    _peekY = py;
-  }
-
-  /// Gira o mapa para [radians] em torno do Conjurador: o espiar gira junto, para ele não sair do lugar na
-  /// tela (a posição do Conjurador na tela é `centro - rotação(espiar)`).
-  void setRotation(double radians) {
-    final delta = radians - _rotation;
-    if (delta != 0 && (_peekX != 0 || _peekY != 0)) {
-      final c = math.cos(-delta), s = math.sin(-delta);
-      final x = _peekX * c - _peekY * s, y = _peekX * s + _peekY * c;
-      _peekX = x;
-      _peekY = y;
-    }
-    _rotation = radians;
-  }
+  /// Gira o mapa para [radians] em torno do Conjurador, que não sai do centro.
+  void setRotation(double radians) => _rotation = radians;
 
   /// Muda a escala (pinça), limitada à faixa de jogo.
-  void setScale(double pixelsPerCell, {bool resetIdle = true}) {
-    if (resetIdle) _idleS = 0;
+  void setScale(double pixelsPerCell) {
     _scale = pixelsPerCell.clamp(scaleMin, scaleMax).toDouble();
   }
 
@@ -143,8 +87,7 @@ class FollowCamera {
     _scale = _scale.clamp(min, max).toDouble();
   }
 
-  /// Avança [dt] segundos: segue o alvo com suavização e, passados [returnAfterS] sem toque, traz o
-  /// espiar de volta.
+  /// Avança [dt] segundos, seguindo o alvo com suavização.
   void update(double dt) {
     if (dt <= 0) return;
     if ((_tx - _x).abs() > snapCells || (_ty - _y).abs() > snapCells) {
@@ -153,18 +96,6 @@ class FollowCamera {
       final a = 1 - math.exp(-dt / followTauS);
       _x += (_tx - _x) * a;
       _y += (_ty - _y) * a;
-    }
-    if (!_touching) {
-      _idleS += dt;
-      if (_idleS >= returnAfterS && peeking) {
-        final b = 1 - math.exp(-dt / returnTauS);
-        _peekX -= _peekX * b;
-        _peekY -= _peekY * b;
-        if (_peekX.abs() < 0.005 && _peekY.abs() < 0.005) {
-          _peekX = 0;
-          _peekY = 0;
-        }
-      }
     }
   }
 }

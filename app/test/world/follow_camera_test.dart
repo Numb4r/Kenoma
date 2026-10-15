@@ -17,8 +17,7 @@ void main() {
     test('começa olhando para o alvo, na escala padrão (16 px por célula)', () {
       final c = FollowCamera(x: 1000, y: 2000);
       expect((c.camera.centerX, c.camera.centerY, c.camera.pixelsPerCell), (1000.0, 2000.0, 16.0));
-      expect(c.peeking, isFalse);
-    });
+          });
 
     test('desliza para o alvo: em 3 constantes de tempo cobre ~95%, e nunca passa do alvo', () {
       final c = FollowCamera(x: 0, y: 0)..setTarget(10, 0);
@@ -80,102 +79,16 @@ void main() {
     });
   });
 
-  group('espiar e voltar', () {
-    test('arrastar o dedo para a direita espia para a esquerda (o mapa anda com o dedo)', () {
+  group('presa ao Conjurador', () {
+    test('o centro da câmera é sempre o do Conjurador, mesmo com o dedo na tela e girando', () {
       final c = FollowCamera(x: 100, y: 100);
       c.touchStart();
-      c.dragBy(32, 48); // 16 px por célula
-      expect((c.peekX, c.peekY), (-2.0, -3.0));
-      expect(c.camera.centerX, 98.0);
-      expect(c.camera.centerY, 97.0);
-      expect(c.peeking, isTrue);
-    });
-
-    test('o espiar é limitado a 40 células, em qualquer direção', () {
-      final c = FollowCamera(x: 0, y: 0);
-      c.touchStart();
-      c.dragBy(-100000, 0);
-      expect(c.peekX, closeTo(40, 1e-9));
-      c.dragBy(0, -100000);
-      expect(math.sqrt(c.peekX * c.peekX + c.peekY * c.peekY), closeTo(40, 1e-9));
-    });
-
-    test('depois de 3 s sem toque a câmera volta sozinha ao Conjurador', () {
-      final c = FollowCamera(x: 0, y: 0);
-      c.touchStart();
-      c.dragBy(160, 0);
-      c.touchEnd();
-      expect(c.peekX, -10.0);
-      run(c, 2.9);
-      expect(c.peekX, -10.0, reason: 'antes dos 3 s não mexe');
-      run(c, 0.2);
-      expect(c.peekX, greaterThan(-10.0), reason: 'passou dos 3 s: começa a voltar');
-      run(c, 3);
-      expect(c.peeking, isFalse);
-      expect((c.camera.centerX, c.camera.centerY), (0.0, 0.0));
-    });
-
-    test('tocar de novo no meio da volta zera o relógio dos 3 s', () {
-      final c = FollowCamera(x: 0, y: 0);
-      c.touchStart();
-      c.dragBy(160, 0);
-      c.touchEnd();
-      run(c, 2.5);
-      c.touchStart(); // encostou de novo
-      c.touchEnd();
-      run(c, 2.5);
-      expect(c.peekX, -10.0, reason: 'só 2,5 s desde o último toque');
-      run(c, 1);
-      expect(c.peekX, greaterThan(-10.0));
-    });
-
-    test('com o dedo encostado a câmera não volta, nem depois de muito tempo', () {
-      final c = FollowCamera(x: 0, y: 0);
-      c.touchStart();
-      c.dragBy(160, 0);
-      run(c, 20);
-      expect(c.peekX, -10.0);
+      c.setRotation(1.2);
+      run(c, 5);
+      expect((c.camera.centerX, c.camera.centerY), (100.0, 100.0));
       expect(c.touching, isTrue);
-    });
-
-    test('arrastar mais renova o relógio: a contagem é desde o último toque ou arrasto', () {
-      final c = FollowCamera(x: 0, y: 0);
-      c.touchStart();
-      c.dragBy(160, 0);
       c.touchEnd();
-      run(c, 2.0);
-      c.dragBy(16, 0); // um arrasto solto
-      run(c, 2.0);
-      expect(c.peekX, closeTo(-11.0, 1e-9));
-    });
-
-    test('espiar e seguir juntos: o Conjurador anda, a câmera acompanha e mantém o espiar', () {
-      final c = FollowCamera(x: 0, y: 0);
-      c.touchStart();
-      c.dragBy(160, 0);
-      for (var i = 0; i < 120; i++) {
-        c.setTarget(0.08 * i / 60 * 10, 0);
-        c.update(1 / 60);
-      }
-      expect(c.followX, greaterThan(1.0));
-      expect(c.peekX, -10.0);
-      expect(c.camera.centerX, closeTo(c.followX - 10, 1e-9));
-    });
-
-    test('a volta é suave: sem saltos, sempre em direção ao Conjurador', () {
-      final c = FollowCamera(x: 0, y: 0);
-      c.touchStart();
-      c.dragBy(160, 80);
-      c.touchEnd();
-      run(c, 3.0);
-      var prev = math.sqrt(c.peekX * c.peekX + c.peekY * c.peekY);
-      for (var i = 0; i < 300; i++) {
-        c.update(1 / 60);
-        final len = math.sqrt(c.peekX * c.peekX + c.peekY * c.peekY);
-        expect(len, lessThanOrEqualTo(prev));
-        expect(prev - len, lessThan(1.0), reason: 'menos de 1 célula por quadro');
-        prev = len;
-      }
+      expect(c.touching, isFalse);
     });
   });
 
@@ -198,23 +111,6 @@ void main() {
       expect(FollowCamera(x: 0, y: 0, pixelsPerCell: 99).pixelsPerCell, 24);
     });
 
-    test('dar zoom também adia a volta do espiar (é um toque)', () {
-      final c = FollowCamera(x: 0, y: 0);
-      c.touchStart();
-      c.dragBy(160, 0);
-      c.touchEnd();
-      run(c, 2.5);
-      c.setScale(12);
-      run(c, 2.5);
-      expect(c.peekX, -10.0);
-    });
-
-    test('o espiar em células não muda com o zoom, e o arrasto em pixels vale por célula na escala atual', () {
-      final c = FollowCamera(x: 0, y: 0)..setScale(8);
-      c.touchStart();
-      c.dragBy(80, 0); // 8 px por célula
-      expect(c.peekX, -10.0);
-    });
   });
 
   group('Aura', () {
