@@ -24,6 +24,7 @@ class _Bundle extends CachingAssetBundle {
 }
 
 void main() {
+  final (ux15, uy15) = latLonToTile(-22.8174, -47.0697, 15);
   final bytes = Uint8List.fromList(File('assets/regions/campinas_e0_vis.bin').readAsBytesSync());
   final epoch = loadEpochs().epochs.first;
   final ref = epoch.visualPacks['campinas']!;
@@ -33,6 +34,26 @@ void main() {
     expect(sha256Hex(bytes), ref.sha256);
     expect(ref.sha256, isNot(epoch.regionPacks['campinas']!.sha256));
     expect(epoch.regionPacks['campinas']!.file, 'campinas_e0.bin', reason: 'o pacote lógico não mudou');
+  });
+
+  test('o pacote real é a versão 2: ruas principais com nome, mão única, e nome só nas principais e secundárias', () {
+    final pack = VisualPack.parse(bytes);
+    expect(pack.version, 2);
+    var named = 0, oneway = 0, namedLocal = 0;
+    for (final (x, y) in [for (var dx = -3; dx <= 3; dx++) for (var dy = -3; dy <= 3; dy++) (ux15 + dx, uy15 + dy)]) {
+      final t = pack.decode(x, y);
+      if (t == null) continue;
+      for (final l in t.lines) {
+        if (l.name != null) {
+          named++;
+          if (l.roadClass != RoadClass.principal && l.roadClass != RoadClass.secondary) namedLocal++;
+        }
+        if (l.oneway != OneWay.twoWay) oneway++;
+      }
+    }
+    expect(named, greaterThan(50));
+    expect(oneway, greaterThan(50));
+    expect(namedLocal, 0, reason: 'só as principais e secundárias levam o nome');
   });
 
   test('o arquivo tem o cabeçalho VIS1 e um tamanho pequeno', () {

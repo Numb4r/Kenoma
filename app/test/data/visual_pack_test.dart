@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -114,6 +115,65 @@ void main() {
       map.tile(2, 2);
       map.tile(3, 3);
       expect(map.cachedTiles, lessThanOrEqualTo(2));
+    });
+  });
+
+  group('versão 2: nome da rua e mão única', () {
+    /// Um pacote VIS1 versão 2 montado à mão: tabela de nomes e um tile com três ruas.
+    Uint8List pack2() {
+      List<int> name(String n) => [..._varint(utf8.encode(n).length), ...utf8.encode(n)];
+      final tile = <int>[
+        ..._varint(3),
+        0, 1, ..._varint(2), ..._points([(0, 0), (100, 0)]), // principal, só para a frente, "Av. Brasil"
+        1, 2, ..._varint(1), ..._points([(0, 5), (50, 5)]), // secundária, só para trás, "Rua Três"
+        2, 0, ..._varint(0), ..._points([(1, 1), (2, 2)]), // local, mão dupla, sem nome
+        ..._varint(0),
+      ];
+      final body = <int>[
+        ..._varint(2), ...name('Rua Três'), ...name('Av. Brasil'),
+        ...(ByteData(12)
+              ..setUint32(0, 1, Endian.little)
+              ..setUint32(4, 2, Endian.little)
+              ..setUint32(8, tile.length, Endian.little))
+            .buffer
+            .asUint8List(),
+        ...tile,
+      ];
+      final header = ByteData(13)
+        ..setUint8(0, 0x56)
+        ..setUint8(1, 0x49)
+        ..setUint8(2, 0x53)
+        ..setUint8(3, 0x31)
+        ..setUint16(4, 2, Endian.little)
+        ..setUint8(6, 15)
+        ..setUint16(7, 4096, Endian.little)
+        ..setUint32(9, 1, Endian.little);
+      return Uint8List.fromList([...header.buffer.asUint8List(), ...gzip.encode(body)]);
+    }
+
+    test('lê a tabela de nomes e o sentido de cada linha', () {
+      final pack = VisualPack.parse(pack2());
+      expect(pack.version, 2);
+      final t = pack.decode(1, 2)!;
+      expect(t.lines.map((l) => (l.roadClass, l.oneway, l.name)), [
+        (RoadClass.principal, OneWay.forward, 'Av. Brasil'),
+        (RoadClass.secondary, OneWay.reverse, 'Rua Três'),
+        (RoadClass.local, OneWay.twoWay, null),
+      ]);
+      expect(t.lines[0].xy, [0, 0, 100, 0]);
+    });
+
+    test('o pacote antigo (versão 1) continua legível: sem nome e de mão dupla', () {
+      final pack = VisualPack.parse(syntheticPack());
+      expect(pack.version, 1);
+      final lines = pack.decode(5, 7)!.lines;
+      expect(lines.every((l) => l.name == null && l.oneway == OneWay.twoWay), isTrue);
+      expect(lines[0].xy, [0, 0, 4096, 0, 4100, -30]);
+    });
+
+    test('versão desconhecida e tabela de nomes cortada são recusadas', () {
+      final bad = Uint8List.fromList(pack2())..[4] = 9;
+      expect(() => VisualPack.parse(bad), throwsFormatException);
     });
   });
 }

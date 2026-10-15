@@ -69,16 +69,16 @@ Só desenho: ruas, água e áreas verdes para o mapa de jogo. **A grade de bioma
 | Campo | Tipo | Valor |
 | --- | --- | --- |
 | magic | 4 bytes | `VIS1` |
-| version | uint16 | 1 |
+| version | uint16 | 2 (a 1 continua legível) |
 | tile_zoom | uint8 | 15 |
 | extent | uint16 | 4096, unidades por tile (~0,25 m em Campinas) |
 | tiles | uint32 | quantos tiles vêm depois |
 
-**Dados:** depois do cabeçalho, um stream gzip (`mtime = 0`, para o arquivo sair igual byte a byte). Para cada tile z15, em ordem de `(x, y)`: `x uint32`, `y uint32`, `len uint32` e `len` bytes de carga.
+**Dados:** depois do cabeçalho, um stream gzip (`mtime = 0`, para o arquivo sair igual byte a byte). Na **versão 2** o stream começa com a **tabela de nomes**: `n_nomes` (varint) e, para cada um, `tamanho` (varint) e os bytes UTF-8, em ordem alfabética (o id é a posição, de 1 em diante; 0 é "sem nome"). Depois, para cada tile z15, em ordem de `(x, y)`: `x uint32`, `y uint32`, `len uint32` e `len` bytes de carga.
 
 **Carga do tile**, com `varint` (7 bits por byte, o bit alto continua) e `zigzag` para os deltas com sinal:
 
-1. `n_linhas` (varint), e para cada linha: `classe` (1 byte: 0 principal, 1 secundária, 2 local, 3 pedestre), `n_pontos` (varint) e os pontos.
+1. `n_linhas` (varint), e para cada linha: `classe` (1 byte: 0 principal, 1 secundária, 2 local, 3 pedestre), **(versão 2)** `sentido` (1 byte: 0 mão dupla, 1 só no sentido dos pontos, 2 só no contrário; vem de `oneway`, rotatórias e vias expressas) e `id do nome` (varint; só as principais e secundárias levam o nome, tirado de `name`), `n_pontos` (varint) e os pontos.
 2. `n_áreas` (varint), e para cada área: `tipo` (1 byte: 1 água, 2 verde), `n_anéis` (varint) e, para cada anel, `n_pontos` e os pontos. O primeiro anel é o contorno e os outros são buracos (regra par-ímpar).
 
 **Pontos:** cada ponto é um par de deltas `zigzag(dx)`, `zigzag(dy)` em relação ao ponto anterior, e o primeiro é relativo à origem `(0, 0)`. As coordenadas são inteiras, relativas ao canto superior esquerdo do tile, e podem sair de `[0, extent)`: as linhas passam até 0,01 tile (~10 m) da borda, para a costura entre tiles não aparecer, e as áreas vão inteiras, sem corte, para o contorno não ganhar uma linha falsa no meio.
@@ -86,6 +86,8 @@ Só desenho: ruas, água e áreas verdes para o mapa de jogo. **A grade de bioma
 **O que entra:**
 - **Ruas** (`highway=*`) por classe: principal (`motorway`, `trunk`, `primary` e `_link`), secundária (`secondary`, `tertiary` e `_link`), local (`residential`, `unclassified`, `living_street`, `service`, `road`) e pedestre (`footway`, `pedestrian`, `path`, `steps`, `cycleway`, `track`, `bridleway`). Ficam de fora túneis, ruas de área (`area=yes`), `service=driveway|parking_aisle|drive-through` e vias internas. Simplificadas a 1 m.
 - **Água e verde** pelas mesmas regras de `shared/biomes.json` dos biomas Água e Verde (os rios e canais viram polígonos com a largura do buffer do bioma). Polígonos simplificados a 2 m.
+
+**Migração v1 → v2:** o leitor do app aceita as duas versões (a 1 lê sem nome e de mão dupla). O pacote da região foi regerado em v2 do mesmo extrato da época 0 (MD5 `d4778499…`), com o mesmo nome de arquivo; só o SHA-256 mudou, nas épocas 0 e 1 de `epochs.json`.
 
 **SHA-256:** fica na época, em `visual_packs.<região>`, **em campo separado** de `region_packs`. Como o arquivo não muda o mundo, ele pode ser trocado sem uma época nova. Se o SHA não bate, o app mostra o erro e não abre o mapa de jogo.
 
@@ -97,6 +99,7 @@ Só desenho: ruas, água e áreas verdes para o mapa de jogo. **A grade de bioma
 - **Movimento do Conjurador.** O marcador nunca pula: ele anda pelo caminho das leituras filtradas do GPS com cerca de 1 s de atraso, em linha reta e na velocidade que as leituras indicam, e quando o GPS para ele desacelera até a última posição e para, sem passar dela. Leituras que exigiriam mais de 12 m/s desde a última aceita são descartadas como erro do GPS. Duas leituras seguidas, impossíveis mas juntas, mostram que o jogador mudou de lugar (outra fonte, teleporte do simulador) e o marcador reaparece lá. A câmera segue o marcador suavizado, nunca o GPS cru.
 - **Animação do Conjurador.** Parado, um quadro. Andando, dois quadros de passo que se alternam a cada 0,18 s. O sprite olha para o lado em que anda na tela (espelhado na horizontal para a esquerda) e mantém o lado ao parar.
 - **Câmera presa ao Conjurador.** Ele fica sempre no centro: não existe arrastar para espiar nem volta automática. **Arrastar com um dedo gira o mapa** em torno dele, **acompanhando o dedo**: o giro é o ângulo que o dedo percorre em volta do Conjurador (o centro da tela), então o ponto do mapa sob o dedo continua sob ele, de qualquer lado da tela, e o sentido é o mesmo dos dois lados. Perto demais do centro (menos de 40 px) o ângulo não é confiável e o giro espera (`TouchGesture`, `world/touch_gesture.dart`): passando de cerca de 12 px o gesto é arrasto; antes disso e antes de 500 ms, soltar é um **toque** (seleciona Eco, Fagulha ou material); parado por 500 ms é um **toque longo** (marcação). Um segundo dedo cancela o gesto, e a **pinça só dá zoom**: não gira. O mapa fica no ângulo em que o dedo o deixou: não assenta no norte nem volta sozinho. A câmera livre (arrastar e pinçar o mapa todo) existe só no menu de debug. Uma bússola pequena aparece quando o mapa não está com o norte para cima: **um toque** volta ao norte (e desliga o "seguir direção"); **dois toques** ligam e desligam o "seguir direção", que gira o mapa com a bússola do celular, suavizado. A bússola do celular lê o norte magnético, então o app soma a declinação do lugar (`map.compass_declination_deg`, -21° em Campinas). Girar com a mão desliga o "seguir direção". O toque num spawn passa pela conversão tela-mundo com rotação.
+- **Nomes de rua** (interruptor nos Ajustes, desligado por padrão): texto pequeno e discreto de 8 px no trecho mais reto e longo de cada rua principal e secundária (`world/street_labels.dart`), no máximo 2 por nome por tile e 40 por quadro, só quando o nome cabe no trecho na escala de agora, sem sobreposição e sem repetir o mesmo nome perto. Gira com o mapa e nunca fica de cabeça para baixo.
 - **Camadas, de baixo para cima:** chão neutro da cidade com ruído; áreas verdes e água, com borda de 1 pixel de arte; calçada de 1 pixel de arte em tom mais claro; rua com a largura da classe, em metros (`map.road_width_m`), convertida para pixels de arte a cada zoom; Aura; Fagulhas e materiais; Ecos e Conjurador. As cores saem das paletas de `biomes.json`.
 - Só os tiles visíveis são desenhados: as geometrias vêm do pacote visual por tile z15, e os caminhos de cada tile são montados uma vez e guardados em cache.
 - **A grade de biomas** (a camada lógica) e a grade das células de spawn só aparecem como sobreposição opcional no menu de debug.

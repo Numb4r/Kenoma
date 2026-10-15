@@ -1,6 +1,9 @@
 """Gera o pacote visual de uma região: ruas, água e áreas verdes só para desenhar (docs/fase0-spec.md,
 seção 1, "Pacote visual"). Não muda o mundo: a grade de biomas continua sendo a única camada lógica.
 
+Formato v2 (docs/fase0-spec.md): cada linha leva o sentido (mão única) e o nome da rua (só das principais e
+secundárias, para rotular o mapa e para o tráfego respeitar a mão de direção).
+
 Uso: python build_visual.py --region campinas [--epoch 0]
 """
 
@@ -22,7 +25,7 @@ from build_region import CACHE, OUT, PIPELINE, REGIONS_DIR, ROOT, ensure_source,
 TILE_ZOOM = 15
 EXTENT = 4096          # unidades por tile z15 (~0,25 m em Campinas)
 MARGIN = 0.01          # sobra de cada tile, em tiles (~10 m): costura entre tiles sem emenda
-VERSION = 1
+VERSION = 2
 
 # Classe da rua. A ordem do id é do mais largo para o mais estreito.
 CLASS_NAMES = ["principal", "secundaria", "local", "pedestre"]
@@ -33,6 +36,26 @@ HIGHWAY_CLASS = {
     **dict.fromkeys(["footway", "pedestrian", "path", "steps", "cycleway", "track", "bridleway"], 3),
 }
 SKIP_SERVICE = {"driveway", "parking_aisle", "drive-through"}
+
+# Sentido da linha em relação à ordem dos pontos: 0 mão dupla, 1 só no sentido dos pontos, 2 só no contrário.
+ONEWAY_TWO, ONEWAY_FORWARD, ONEWAY_REVERSE = 0, 1, 2
+NAMED_CLASSES = (0, 1)   # só as ruas principais e secundárias levam o nome (rótulos discretos, pacote pequeno)
+
+
+def oneway_of(tags, cls: int) -> int:
+    """Mão única do OSM: `oneway=yes|true|1`, `-1`, rotatória e vias expressas (implícito). Só vale para ruas de carro."""
+    if cls == 3:
+        return ONEWAY_TWO
+    v = tags.get("oneway")
+    if v in ("-1", "reverse"):
+        return ONEWAY_REVERSE
+    if v in ("yes", "true", "1"):
+        return ONEWAY_FORWARD
+    if v in ("no", "false", "0"):
+        return ONEWAY_TWO
+    if tags.get("junction") in ("roundabout", "circular") or tags.get("highway") in ("motorway", "motorway_link"):
+        return ONEWAY_FORWARD
+    return ONEWAY_TWO
 
 KIND_WATER, KIND_GREEN = 1, 2
 POLY_TOL_M = 2.0
@@ -101,7 +124,7 @@ def collect(pbf: Path, rules: dict, keys: list[str], bbox: list[float]):
     wkb = osmium.geom.WKBFactory()
     all_keys = sorted(set(keys) | {"highway"})
 
-    roads: list[tuple[int, object]] = []
+    roads: list[tuple[int, object, str, int]] = []
     polys: list[tuple[int, object]] = []
     seen = 0
     fp = (osmium.FileProcessor(str(pbf)).with_locations().with_areas().with_filter(osmium.filter.KeyFilter(*all_keys)))
@@ -124,7 +147,8 @@ def collect(pbf: Path, rules: dict, keys: list[str], bbox: list[float]):
                 continue
             geom = geom.intersection(clip).simplify(line_tol, preserve_topology=False)
             if not geom.is_empty:
-                roads.append((cls, geom))
+                name = (tags.get("name") or "").strip() if cls in NAMED_CLASSES else ""
+                roads.append((cls, geom, name, oneway_of(tags, cls)))
             seen += 1
             continue
         # água e verde: as mesmas regras do mapa lógico (shared/biomes.json), biomas 2 e 3
@@ -169,7 +193,7 @@ def parts(geom, want: str):
 
 def build_tiles(roads, polys) -> dict[tuple[int, int], tuple[list, list]]:
     tiles: dict[tuple[int, int], tuple[list, list]] = defaultdict(lambda: ([], []))
-    for cls, geom in roads:
+    for cls, geom, name, oneway in roads:
         for line in parts(geom, "line"):
             minx, miny, maxx, maxy = line.bounds
             for ty in range(math.floor(miny - MARGIN), math.floor(maxy + MARGIN) + 1):
@@ -180,7 +204,7 @@ def build_tiles(roads, polys) -> dict[tuple[int, int], tuple[list, list]]:
                     for piece in parts(line.intersection(box), "line"):
                         pts = quantize(np.asarray(piece.coords), tx, ty)
                         if len(pts) >= 2:
-                            tiles[(tx, ty)][0].append((cls, pts))
+                            tiles[(tx, ty)][0].append((cls, oneway, name, pts))
     for kind, geom in polys:
         for poly in parts(geom, "poly"):
             minx, miny, maxx, maxy = poly.bounds
@@ -198,10 +222,10 @@ def build_tiles(roads, polys) -> dict[tuple[int, int], tuple[list, list]]:
     return tiles
 
 
-def encode_tile(lines, polys) -> bytes:
+def encode_tile(lines, polys, name_ids) -> bytes:
     out = bytearray(varint(len(lines)))
-    for cls, pts in lines:
-        out += bytes([cls]) + encode_points(pts)
+    for cls, oneway, name, pts in lines:
+        out += bytes([cls, oneway]) + varint(name_ids.get(name, 0)) + encode_points(pts)
     out += varint(len(polys))
     for kind, rings in polys:
         out += bytes([kind]) + varint(len(rings))
@@ -211,9 +235,15 @@ def encode_tile(lines, polys) -> bytes:
 
 
 def encode(tiles) -> bytes:
-    body = bytearray()
+    # Tabela de nomes no começo do stream: ids de 1 em diante, em ordem alfabética (o arquivo sai igual byte a byte).
+    names = sorted({n for lines, _ in tiles.values() for _, _, n, _ in lines if n})
+    name_ids = {n: i + 1 for i, n in enumerate(names)}
+    body = bytearray(varint(len(names)))
+    for n in names:
+        raw = n.encode("utf-8")
+        body += varint(len(raw)) + raw
     for (tx, ty) in sorted(tiles):
-        payload = encode_tile(*tiles[(tx, ty)])
+        payload = encode_tile(*tiles[(tx, ty)], name_ids)
         body += struct.pack("<III", tx, ty, len(payload)) + payload
     header = struct.pack("<4sHBHI", b"VIS1", VERSION, TILE_ZOOM, EXTENT, len(tiles))
     # mtime=0 deixa o gzip reprodutível, e com ele o SHA-256.
@@ -247,7 +277,13 @@ def decode(data: bytes):
     magic, version, zoom, extent, count = struct.unpack("<4sHBHI", data[:13])
     assert magic == b"VIS1" and version == VERSION and zoom == TILE_ZOOM and extent == EXTENT
     body = gzip.decompress(data[13:])
-    tiles, i = {}, 0
+    names = [""]
+    n_names, i = read_varint(body, 0)
+    for _ in range(n_names):
+        ln, i = read_varint(body, i)
+        names.append(body[i:i + ln].decode("utf-8"))
+        i += ln
+    tiles = {}
     for _ in range(count):
         tx, ty, ln = struct.unpack("<III", body[i:i + 12])
         i += 12
@@ -255,9 +291,10 @@ def decode(data: bytes):
         n, j = read_varint(body, j)
         lines = []
         for _ in range(n):
-            cls = body[j]
-            pts, j = decode_points(body, j + 1)
-            lines.append((cls, pts))
+            cls, oneway = body[j], body[j + 1]
+            nid, j = read_varint(body, j + 2)
+            pts, j = decode_points(body, j)
+            lines.append((cls, oneway, names[nid], pts))
         n, j = read_varint(body, j)
         polys = []
         for _ in range(n):
@@ -292,7 +329,7 @@ def write_preview(tiles, path: Path, step_m: float = 12.0) -> None:
             for hole in geoms[1:]:
                 outer = outer.difference(hole.buffer(0))
             layers["water" if kind == KIND_WATER else "green"].append(outer)
-        for cls, pts in lines:
+        for cls, _oneway, _name, pts in lines:
             layers["road"][cls].append(shapely.LineString([((tx + x / EXTENT), (ty + y / EXTENT)) for x, y in pts]))
     img = np.zeros((h * px, w * px, 3), dtype=np.uint8)
     img[:] = (40, 36, 48)
@@ -330,6 +367,9 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     path = REGIONS_DIR / f"{args.region}_e{args.epoch}_vis.bin"
     path.write_bytes(data)
+    n_named = sum(1 for v in tiles.values() for l in v[0] if l[2])
+    n_oneway = sum(1 for v in tiles.values() for l in v[0] if l[1])
+    print(f"{n_named} polilinhas com nome, {n_oneway} de mão única")
     n_lines = sum(len(v[0]) for v in tiles.values())
     n_polys = sum(len(v[1]) for v in tiles.values())
     print(f"{len(tiles)} tiles z{TILE_ZOOM}, {n_lines} polilinhas, {n_polys} polígonos")

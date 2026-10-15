@@ -14,7 +14,7 @@
       "visual_packs": {
         "campinas": {
           "file": "campinas_e0_vis.bin",
-          "sha256": "d0ba04db14106e0cffb24b8076adf147116f6e1833f0fdc027c8955ed1fa6f27"
+          "sha256": "e8491fa298a07beb4703cf4fe03d2694ed07490365efa8183d80963aab0c531b"
         }
       },
       "spawn": {
@@ -335,7 +335,7 @@
       "visual_packs": {
         "campinas": {
           "file": "campinas_e0_vis.bin",
-          "sha256": "d0ba04db14106e0cffb24b8076adf147116f6e1833f0fdc027c8955ed1fa6f27"
+          "sha256": "e8491fa298a07beb4703cf4fe03d2694ed07490365efa8183d80963aab0c531b"
         }
       },
       "spawn": {

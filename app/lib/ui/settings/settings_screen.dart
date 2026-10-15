@@ -255,7 +255,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Nomes de rua', style: TextStyle(fontSize: 8)),
-              subtitle: const Text('Ainda sem efeito: o pacote do mapa não tem os nomes', style: TextStyle(fontSize: 8, color: kDim)),
+              subtitle: const Text('Rótulos discretos nas ruas principais, que giram com o mapa', style: TextStyle(fontSize: 8, color: kDim)),
               value: s.setting('street_names'),
               activeThumbColor: kSignal,
               onChanged: (v) => s.setSetting('street_names', v),

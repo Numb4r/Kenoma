@@ -308,6 +308,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       declinationDeg: assets.balance.compassDeclinationDeg,
       dpr: dpr,
       worldView: world,
+      streetNames: () => session.state.setting('street_names'),
       sprites: sprites,
       typeOf: (id) => data.species(id)?.type,
       nowUtc: () => tools.clock.nowUtc,

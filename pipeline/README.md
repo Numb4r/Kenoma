@@ -13,7 +13,7 @@ Comandos em `CLAUDE.md`.
 | Tamanho | 859.555.836 bytes |
 | MD5 | `d4778499e2017add7ee7879dd3b64b3c` (confere com o `.md5` publicado pela Geofabrik) |
 | SHA-256 do `campinas_e0.bin` | `559f3551cf04ef399eaca600a4397e4a074d1c58b8b744f83e46503fabfa4f30` |
-| SHA-256 do `campinas_e0_vis.bin` | `d0ba04db14106e0cffb24b8076adf147116f6e1833f0fdc027c8955ed1fa6f27` (3,02 MB, 1.442 tiles z15; mesmo extrato) |
+| SHA-256 do `campinas_e0_vis.bin` | `e8491fa298a07beb4703cf4fe03d2694ed07490365efa8183d80963aab0c531b` (versão 2, 3,13 MB, 1.442 tiles z15; mesmo extrato). A versão 1, `d0ba04db14106e0cffb24b8076adf147116f6e1833f0fdc027c8955ed1fa6f27`, está no histórico do git |
 
 O extrato muda todo dia. Regerar com outro extrato dá outro `.bin` e outro SHA-256, e isso muda o mundo:
 o pacote novo só entra numa época nova. Com o mesmo extrato (mesmo MD5) e as mesmas regras, o `.bin` sai
