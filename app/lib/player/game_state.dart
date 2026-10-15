@@ -5,6 +5,7 @@ library;
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 import '../core/seed.dart';
+import '../save/founder.dart';
 import 'bestiary.dart';
 import 'mark.dart';
 import 'progress_balance.dart';
@@ -53,6 +54,10 @@ class GameState extends ChangeNotifier {
     List<String>? circle,
     Map<String, BestiaryEntry>? bestiary,
     List<Mark>? marks,
+    this.founder,
+    this.createdUtc,
+    Map<String, dynamic>? settings,
+    this.lastSeenUtc = 0,
     Map<String, dynamic>? extra,
   })  : inventory = {...?inventory},
         collection = [...?collection],
@@ -61,6 +66,7 @@ class GameState extends ChangeNotifier {
         circle = [...?circle],
         bestiary = {...?bestiary},
         marks = [...?marks],
+        settings = {...?settings},
         _extra = {...?extra};
 
   /// Jogo novo: seed nova e o inventário inicial do `balance.json`.
@@ -70,6 +76,7 @@ class GameState extends ChangeNotifier {
   factory GameState.fromJson(Map<String, dynamic> j, ProgressBalance balance) {
     const known = {
       'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'marks', 'saved_utc',
+      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings',
     };
     final progress = PlayerProgress.fromJson(j['player'] as Map<String, dynamic>?, balance)..settleBanked();
     return GameState(
@@ -85,6 +92,10 @@ class GameState extends ChangeNotifier {
         for (final e in ((j['bestiary'] as Map<String, dynamic>?) ?? const {}).entries) e.key: BestiaryEntry.fromJson(e.value as Map<String, dynamic>),
       },
       marks: [for (final m in (j['marks'] as List<dynamic>?) ?? const []) Mark.fromJson(m as Map<String, dynamic>)],
+      founder: j['founder'] == null ? null : Founder.fromJson(j['founder'] as Map<String, dynamic>),
+      createdUtc: j['created_utc'] as int?,
+      lastSeenUtc: (j['last_seen_utc'] as int?) ?? 0,
+      settings: {...?(j['settings'] as Map<String, dynamic>?)},
       // Campos que esta versão não conhece são preservados (spec, seção 10).
       extra: {for (final e in j.entries) if (!known.contains(e.key)) e.key: e.value},
     );
@@ -106,6 +117,20 @@ class GameState extends ChangeNotifier {
   final List<String> circle;
   final Map<String, BestiaryEntry> bestiary;
   final List<Mark> marks;
+
+  /// Registro de fundador (`player_id`, primeira versão e log de versões). `null` num jogo ainda sem registro.
+  Founder? founder;
+
+  /// Quando o jogo nasceu e o último instante em que o app esteve aberto (relógio que volta não passa dele).
+  int? createdUtc;
+  int lastSeenUtc;
+
+  /// Versão do app e época de quando o save foi gravado (o cabeçalho da spec).
+  String appVersion = '';
+  int epochId = 0;
+
+  /// Interruptores do jogador: `street_names` e `follow_heading`.
+  final Map<String, dynamic> settings;
 
   late final int seed = seedGlobal(groupCode);
 
@@ -258,6 +283,12 @@ class GameState extends ChangeNotifier {
         'player': progress.toJson(),
         if (levelOverride != null) 'level_override': levelOverride,
         'saved_utc': nowUtc,
+        'created_utc': createdUtc ?? nowUtc,
+        'last_seen_utc': lastSeenUtc,
+        'app_version': appVersion,
+        'epoch': epochId,
+        if (founder != null) 'founder': founder!.toJson(),
+        'settings': settings,
         'inventory': inventory,
         'collection': [for (final c in collection) c.toJson()],
         'collected': _collected,

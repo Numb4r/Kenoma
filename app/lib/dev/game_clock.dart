@@ -9,12 +9,22 @@ class GameClock extends ChangeNotifier {
 
   final int Function() _realNowMs;
   int? _offsetMs;
+  int _floorMs = 0;
 
   /// Se o relógio está sobreposto.
   bool get overridden => _offsetMs != null;
 
   /// Agora, em milissegundos UTC desde a época Unix.
-  int get nowMs => _realNowMs() + (_offsetMs ?? 0);
+  int get nowMs => _offsetMs != null ? _realNowMs() + _offsetMs! : _floorMs > _realNowMs() ? _floorMs : _realNowMs();
+
+  /// O relógio real, sem override nem piso.
+  int get realNowUtc => _realNowMs() ~/ 1000;
+
+  /// Piso do relógio: se o relógio do aparelho voltar para antes de [lastSeenUtc], o jogo usa [lastSeenUtc]
+  /// (docs/fase0-spec.md, seção 10). O override do debug passa por cima.
+  void raiseFloor(int lastSeenUtc) {
+    if (lastSeenUtc * 1000 > _floorMs) _floorMs = lastSeenUtc * 1000;
+  }
 
   /// Agora, em segundos UTC: a unidade das janelas e das épocas.
   int get nowUtc => nowMs ~/ 1000;

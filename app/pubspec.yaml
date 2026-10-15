@@ -8,13 +8,16 @@ environment:
 
 dependencies:
   crypto: ^3.0.7
+  file_picker: ^13.1.0
   flame: ^1.38.2
   flutter:
     sdk: flutter
   flutter_compass: ^0.8.1
   geolocator: ^14.1.1
+  mobile_scanner: ^7.4.2
   package_info_plus: ^10.2.1
   path_provider: ^2.1.6
+  qr_flutter: ^4.1.0
   share_plus: ^13.3.0
   vibration: ^3.2.1
 

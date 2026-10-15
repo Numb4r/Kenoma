@@ -11,6 +11,7 @@ import '../capture/seal.dart';
 import '../capture/tuning_setup.dart';
 import '../capture/vibe.dart';
 import '../data/session_log_store.dart';
+import '../save/ksv_save_store.dart';
 import '../save/save_store.dart';
 import '../data/tuning_data.dart';
 import '../ui/colors.dart';
@@ -81,7 +82,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   /// Lê o nível do jogo do save. Sem pasta de documentos (testes), fica no 1 e vive só na memória.
   Future<void> _loadGameLevel() async {
     try {
-      _saveStore = await FileSaveStore.inDocuments();
+      _saveStore = await KsvSaveStore.inDocuments();
       final json = await _saveStore!.read();
       final v1 = (json?['schema_version'] ?? 1) == 1;
       final level = (json?['level_override'] as int?) ?? (v1 ? (json?['player_level'] as int?) : null);
@@ -181,7 +182,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
       );
 
   Future<void> _openGame() => Navigator.of(context)
-      .push(MaterialPageRoute<void>(builder: (_) => GameMapScreen(tools: _tools, openStore: FileSaveStore.inDocuments)));
+      .push(MaterialPageRoute<void>(builder: (_) => GameMapScreen(tools: _tools, openStore: KsvSaveStore.inDocuments)));
 
   void _teleport() {
     final lat = double.tryParse(_simLat.text.trim().replaceAll(',', '.'));

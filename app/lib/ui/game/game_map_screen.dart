@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
@@ -112,12 +113,12 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   }
 
   /// Aviso curto no alto da tela ("+1 Pó de Essência de Fogo").
-  void _toast(String message) {
+  void _toast(String message, {int seconds = 2}) {
     if (!mounted) return;
     _toastTimer?.cancel();
     _headingSub?.cancel();
     setState(() => _toastText = message);
-    _toastTimer = Timer(const Duration(seconds: 2), () {
+    _toastTimer = Timer(Duration(seconds: seconds), () {
       if (mounted) setState(() => _toastText = null);
     });
   }
@@ -214,17 +215,29 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       for (final s in data.tuning.species) {
         sprites[s.id] = (await EcoSprite.load(s.id)).normal;
       }
+      var version = 'dev';
+      try {
+        final info = await PackageInfo.fromPlatform();
+        version = '${info.version}+${info.buildNumber}';
+      } catch (_) {
+        // sem o plugin (testes): a versão fica 'dev'
+      }
       session = await GameSession.open(
         store: await _store(),
         startInventory: data.startInventory,
         balance: data.progress,
         nowUtc: () => tools.clock.nowUtc,
+        seenUtc: () => tools.clock.realNowUtc,
+        appVersion: version,
+        epochOf: (t) => data.schedule.select(t).epoch.id,
         nextInt: Pcg32(fnv1a64([DateTime.now().microsecondsSinceEpoch]), saltKenoma).nextInt, // só sorteia o código do grupo
       );
     } catch (e) {
       assets.dispose();
       return 'Não consegui ler os dados do jogo: $e';
     }
+    tools.clock.raiseFloor(session.state.lastSeenUtc);
+    session.onSeen = tools.clock.raiseFloor;
     final world = WorldView(
       field: SpawnField(seed: session.state.seed, schedule: data.schedule, map: assets.map),
       state: session.state,
@@ -266,7 +279,11 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     game.onFollowHeading = _setFollowHeading;
     _ready = _Ready(assets, game, tracker, sub, data, session, world);
     // O acesso é pedido depois do primeiro quadro: o diálogo precisa de uma tela montada.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureAccess());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final note = session.loadNote;
+      if (note != null) _toast(note, seconds: 8);
+      _ensureAccess();
+    });
     return _ready!;
   }
 

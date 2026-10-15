@@ -1,51 +1,25 @@
-/// Onde o save mínimo mora: um JSON local. A escrita é atômica (grava num temporário e renomeia). O
-/// formato completo, com checksum, rodízio e migrações, é o M10.
+/// Onde o save mora. O de verdade é o [KsvSaveStore] (KSV1, escrita atômica, rodízio de 3 cópias).
 library;
 
 import 'dart:convert';
-import 'dart:io';
-
-import 'package:path_provider/path_provider.dart';
 
 abstract class SaveStore {
   /// O save salvo, ou `null` se não há (ou se está ilegível).
   Future<Map<String, dynamic>?> read();
 
+  /// O que aconteceu na última leitura que o jogador precisa saber (cópia corrompida, save antigo migrado), ou
+  /// `null`. Só o [KsvSaveStore] tem o que dizer.
+  String? get loadNote;
+
   Future<void> write(Map<String, dynamic> json);
-}
-
-class FileSaveStore implements SaveStore {
-  FileSaveStore(this.file);
-
-  static Future<FileSaveStore> inDocuments() async {
-    final dir = await getApplicationDocumentsDirectory();
-    return FileSaveStore(File('${dir.path}/save.json'));
-  }
-
-  final File file;
-
-  @override
-  Future<Map<String, dynamic>?> read() async {
-    try {
-      if (!await file.exists()) return null;
-      return jsonDecode(await file.readAsString()) as Map<String, dynamic>;
-    } on FormatException {
-      await file.rename('${file.path}.bad'); // não apaga: o jogo recomeça, mas o arquivo fica para olhar
-      return null;
-    }
-  }
-
-  @override
-  Future<void> write(Map<String, dynamic> json) async {
-    final tmp = File('${file.path}.tmp');
-    await tmp.writeAsString(jsonEncode(json), flush: true);
-    await tmp.rename(file.path);
-  }
 }
 
 /// Sem disco: para testes e para quando o app não acha a pasta de documentos.
 class MemorySaveStore implements SaveStore {
   Map<String, dynamic>? json;
+
+  @override
+  String? get loadNote => null;
 
   @override
   Future<Map<String, dynamic>?> read() async => json;
