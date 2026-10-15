@@ -43,6 +43,7 @@ app/                  # projeto Flutter
     player/           # Conjurador, círculo, bolsa, bestiário, progressão
     crafting/         # receitas, bancada, destilação
     save/             # formato do save, migrações, backup
+    story/            # mentor (chat), diárias do fórum, avisos locais
     ui/               # telas e widgets
     dev/              # ferramentas de debug (simulador de GPS, relógio etc.)
   assets/
