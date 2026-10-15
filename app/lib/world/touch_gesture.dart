@@ -1,5 +1,5 @@
 /// Classifica o dedo no mapa de jogo: toque curto, toque longo ou arrasto (que gira o mapa). Dart puro: a tela
-/// repassa os eventos de ponteiro e um temporizador que chama [checkLongPress].
+/// repassa os eventos de ponteiro e um temporizador que chama [longPress].
 ///
 /// Um segundo dedo cancela o gesto (é pinça, que só dá zoom). Passado o limiar de distância [slopPx] o gesto
 /// vira arrasto e deixa de poder ser toque ou toque longo.
@@ -43,24 +43,25 @@ class TouchGesture {
   }
 
   /// O dedo andou. Devolve o deslocamento horizontal do arrasto desde o último evento, ou 0 se ainda não é
-  /// arrasto. O primeiro movimento depois do limiar conta só a partir do ponto em que o limiar foi vencido,
-  /// então o mapa não dá salto.
+  /// arrasto. O primeiro movimento depois do limiar conta só o que passou dele, então o mapa não dá salto.
   double move(Offset pos) {
     if (!_active) return 0;
     if (!_dragging) {
       if ((pos - _start).distance <= slopPx) return 0;
       _dragging = true;
       _last = pos;
-      return 0;
+      final dx = pos.dx - _start.dx;
+      return dx.abs() <= slopPx ? 0 : dx - slopPx * dx.sign;
     }
     final dx = pos.dx - _last.dx;
     _last = pos;
     return dx;
   }
 
-  /// Chamado pelo temporizador: se o dedo segue parado há [longPressMs], devolve o ponto do toque longo uma vez.
-  Offset? checkLongPress(int nowMs) {
-    if (!pendingLongPress || nowMs - _downMs < longPressMs) return null;
+  /// Chamado pelo temporizador de [longPressMs], armado quando o dedo desce: se o dedo segue parado, devolve
+  /// o ponto do toque longo, uma vez. Arrastar, soltar ou um segundo dedo cancelam o temporizador e o gesto.
+  Offset? longPress() {
+    if (!pendingLongPress) return null;
     _longFired = true;
     return _start;
   }

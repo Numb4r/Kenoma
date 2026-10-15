@@ -46,6 +46,7 @@ void paintSpawns(
   required Map<String, ui.Image> sprites,
   required EcoTypeOf typeOf,
   required bool Function(WorldSpawn) inAura,
+  bool Function(WorldSpawn)? marked,
   required double time,
   required ui.Rect avoid,
   required double spriteSize,
@@ -61,6 +62,7 @@ void paintSpawns(
     final near = inAura(s);
     if (s.isEco) {
       _eco(canvas, center, s, sprites[s.entryId], spriteSize, typeOf, near, time, avoid);
+      if (marked?.call(s) ?? false) _markRing(canvas, center, spriteSize);
     } else if (s.isSpark) {
       _spark(canvas, center, spawnColor(s, typeOf), sparkSize, dpr, near, time + s.uid % 7);
     } else {
@@ -70,6 +72,12 @@ void paintSpawns(
 }
 
 final _flat = ui.Paint()..isAntiAlias = false;
+
+/// Anel violeta quadrado em volta do Eco marcado: o sinal dele está preso.
+void _markRing(ui.Canvas canvas, ui.Offset c, double size) {
+  final r = ui.Rect.fromCenter(center: c, width: size * 0.9, height: size * 0.9);
+  canvas.drawRect(r, ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 2..color = kVeil..isAntiAlias = false);
+}
 
 void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double size, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid) {
   final color = spawnColor(s, typeOf);

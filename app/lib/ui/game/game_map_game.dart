@@ -254,6 +254,7 @@ class GameMapGame extends FlameGame {
         sprites: sprites,
         typeOf: typeOf,
         inAura: w.canReach,
+        marked: (s) => w.state.markOf(s.uid) != null,
         time: _time,
         avoid: markerRect(center, spriteSize).inflate(6),
         spriteSize: spriteSize,

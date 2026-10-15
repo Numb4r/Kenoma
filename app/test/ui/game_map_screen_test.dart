@@ -13,6 +13,9 @@ import 'package:kenoma/world/spawn_field.dart';
 import 'package:kenoma/dev/dev_tools.dart';
 import 'package:kenoma/dev/gps_simulator.dart';
 import 'package:kenoma/ui/game/game_map_game.dart';
+import 'package:kenoma/ui/game/player_hud.dart';
+import 'package:kenoma/ui/menu/circle_screen.dart';
+import 'package:kenoma/ui/menu/phone_menu.dart';
 import 'package:kenoma/ui/game/game_map_screen.dart';
 import 'package:kenoma/ui/game/joystick.dart';
 import 'package:kenoma/world/location_access.dart';
@@ -611,6 +614,107 @@ void main() {
       tools.simulator.advance(const Duration(seconds: 5));
       await tester.pump();
       expect(got, 0);
+    });
+  });
+
+  group('progressão na interface', () {
+    /// Leva o Conjurador para ~4 m de um Eco real e devolve o Eco.
+    Future<WorldSpawn> goToEco(Env env) async {
+      final field = env.game.worldView!.field;
+      final eco = field
+          .around(lat: kUnicamp.$1, lon: kUnicamp.$2, tUtc: env.tools.clock.nowUtc, radiusM: 300, playerLevel: 1)
+          .firstWhere((s) => s.isEco);
+      final (la, lo) = tileFractionToLatLon(eco.x + 0.2, eco.y + 0.2, biomeZoom);
+      env.sim.teleport(la, lo);
+      await env.simulate(const Duration(seconds: 3), frames: 40);
+      return eco;
+    }
+
+    Offset screenOf(Env env, WorldSpawn s) {
+      final (sx, sy) = env.game.follow.camera.cellToScreen(s.x, s.y, env.game.size.x, env.game.size.y);
+      return Offset(sx, sy);
+    }
+
+    testWidgets('o botão do celular abre o menu com Coleção, Círculo, Bestiário e Bancada', (tester) async {
+      final env = await pumpGame(tester);
+      expect(find.byType(PhoneButton), findsOneWidget);
+      await tester.tap(find.byType(PhoneButton));
+      await env.settle(10);
+      for (final label in ['COLEÇÃO', 'CÍRCULO', 'BESTIÁRIO', 'BANCADA']) {
+        expect(find.text(label), findsOneWidget, reason: label);
+      }
+      await tester.tap(find.text('CÍRCULO'));
+      await env.settle(20);
+      expect(find.byType(CircleScreen), findsOneWidget);
+    });
+
+    testWidgets('o retrato mostra o nível e a barra de XP sobe com o XP', (tester) async {
+      final env = await pumpGame(tester);
+      final state = env.game.worldView!.state;
+      expect(find.text('NV 1'), findsOneWidget);
+      expect(find.byType(PortraitHud), findsOneWidget);
+      double bar() => tester.getSize(find.descendant(of: find.byKey(const Key('xp-bar')), matching: find.byType(Container)).last).width;
+      final before = bar();
+      state.gainXp(10, env.tools.clock.nowUtc); // com o descanso, 20 de XP rumo aos 60 do nível 2
+      await env.settle(2);
+      expect(bar(), greaterThan(before));
+      state.gainXp(100, env.tools.clock.nowUtc);
+      await env.settle(2);
+      expect(find.text('NV 2'), findsNothing, reason: '10 + 100, dobrados, passam do nível 2');
+      expect(find.text('NV 3'), findsOneWidget);
+    });
+
+    testWidgets('toque longo num Eco dentro da Aura prende o sinal, aparece a ficha, e outro toque longo solta', (tester) async {
+      final env = await pumpGame(tester);
+      final eco = await goToEco(env);
+      final state = env.game.worldView!.state;
+      expect(state.markOf(eco.uid), isNull);
+      await tester.longPressAt(screenOf(env, eco));
+      await env.settle(4);
+      expect(state.markOf(eco.uid), isNotNull);
+      expect(find.byKey(Key('mark-${eco.uid}')), findsOneWidget);
+      expect(env.game.rotation.angle, 0, reason: 'o toque longo não gira o mapa');
+      await tester.longPressAt(screenOf(env, eco));
+      await env.settle(4);
+      expect(state.markOf(eco.uid), isNull);
+      expect(find.byKey(Key('mark-${eco.uid}')), findsNothing);
+    });
+
+    testWidgets('arrastar a partir de um Eco gira o mapa e não marca nem abre o encontro', (tester) async {
+      final env = await pumpGame(tester);
+      final eco = await goToEco(env);
+      final state = env.game.worldView!.state;
+      await tester.dragFrom(screenOf(env, eco), const Offset(80, 0));
+      await env.settle(4);
+      expect(env.game.rotation.angle, isNot(0));
+      expect(state.markOf(eco.uid), isNull);
+      expect(find.text('SINTONIZAR'), findsNothing);
+    });
+
+    testWidgets('segurar sem soltar e depois arrastar não vira toque longo', (tester) async {
+      final env = await pumpGame(tester);
+      final eco = await goToEco(env);
+      final g = await tester.startGesture(screenOf(env, eco));
+      await tester.pump(const Duration(milliseconds: 200));
+      await g.moveBy(const Offset(60, 0)); // passa do limiar antes dos 500 ms
+      await tester.pump(const Duration(milliseconds: 600));
+      await g.up();
+      await env.settle(4);
+      expect(env.game.worldView!.state.markOf(eco.uid), isNull);
+      expect(env.game.rotation.angle, isNot(0));
+    });
+
+    testWidgets('toque longo em Eco fora da Aura não marca', (tester) async {
+      final env = await pumpGame(tester);
+      final eco = await goToEco(env);
+      env.sim.teleport(kUnicamp.$1 + 0.0006, kUnicamp.$2); // ~65 m ao norte dali
+      await env.simulate(const Duration(seconds: 3), frames: 40);
+      final far = env.game.worldView!.spawns.where((s) => s.isEco && !env.game.worldView!.inAura(s));
+      if (far.isEmpty) return; // sem Eco à vista fora da Aura nesse trecho
+      await tester.longPressAt(screenOf(env, far.first));
+      await env.settle(4);
+      expect(env.game.worldView!.state.markOf(far.first.uid), isNull);
+      expect(eco.uid, isNotNull);
     });
   });
 }

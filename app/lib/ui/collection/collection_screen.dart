@@ -1,5 +1,5 @@
-/// Coleção e bolsa: as criaturas capturadas e o que o jogador carrega. Tela simples, sem o Círculo nem
-/// o bestiário completo (M8).
+/// Coleção e bolsa: as criaturas capturadas e o que o jogador carrega. O Círculo, o bestiário e a
+/// bancada têm telas próprias.
 library;
 
 import 'package:flutter/material.dart';
@@ -8,7 +8,6 @@ import '../../data/game_data.dart';
 import '../../player/game_state.dart';
 import '../colors.dart';
 import '../sprites/sprite_image.dart';
-import '../tuning/tuning_screen.dart' show PixelButton;
 import '../type_label.dart';
 
 class CollectionScreen extends StatefulWidget {
@@ -53,8 +52,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
           builder: (context, _) {
             final s = widget.state;
             final items = [for (final e in s.inventory.entries) if (e.value > 0) e]..sort((a, b) => a.key.compareTo(b.key));
-            final seal = widget.data.recipes['recipe.seal.simple'];
-            final canCraft = seal != null && seal.inputs.entries.every((e) => s.count(e.key) >= e.value);
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               children: [
@@ -84,17 +81,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       Expanded(child: Text(widget.data.itemName(e.key).toUpperCase(), style: const TextStyle(fontSize: 8, color: kText))),
                       Text('×${e.value}', style: const TextStyle(fontSize: 8, color: kEssence)),
                     ]),
-                  ),
-                const SizedBox(height: 16),
-                if (seal != null)
-                  PixelButton(
-                    label: 'Fabricar selo simples',
-                    color: canCraft ? kSignal : kDim,
-                    onTap: () {
-                      if (!s.craft(seal.inputs, seal.outId, seal.outQty)) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Precisa de Giz e Ectoplasma')));
-                      }
-                    },
                   ),
               ],
             );

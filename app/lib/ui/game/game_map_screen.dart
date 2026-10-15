@@ -4,18 +4,20 @@ import 'dart:ui' as ui;
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 
 import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
 import '../../data/game_data.dart';
 import '../../player/circle.dart';
+import '../../player/game_state.dart' show GameState;
+import '../../player/mark.dart';
 import '../../dev/dev_tools.dart';
 import '../../player/game_session.dart';
 import '../../save/save_store.dart';
 import '../../world/spawn_field.dart';
 import '../../world/touch_gesture.dart';
 import '../../world/world_view.dart';
-import '../collection/collection_screen.dart';
 import '../sprites/sprite_image.dart';
 import '../tuning/vibration_driver.dart';
 import '../../data/heading_source.dart';
@@ -28,7 +30,9 @@ import '../../data/geolocator_source.dart';
 import '../colors.dart';
 import '../map/map_assets.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
+import '../menu/phone_menu.dart';
 import 'game_map_game.dart';
+import 'player_hud.dart';
 import 'sim_overlay.dart';
 
 /// O mapa do jogo (M5): o Conjurador anda com o GPS e a câmera o segue, com a Aura no chão. A câmera
@@ -85,7 +89,6 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   Timer? _toastTimer;
   bool _busy = false;
   final _touch = TouchGesture();
-  final _sw = Stopwatch()..start();
   Timer? _longTimer;
 
   DevTools get tools => widget.tools;
@@ -127,12 +130,30 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   }
 
   void _onLongTimer() {
-    final at = _touch.checkLongPress(_sw.elapsedMilliseconds);
+    final at = _touch.longPress();
     if (at != null) _onLongPress(at);
   }
 
-  /// Toque longo: a marcação (B5) entra aqui.
-  void _onLongPress(Offset at) {}
+  /// Toque longo num Eco dentro da Aura: prende o sinal por alguns minutos. Num Eco já marcado, solta a marcação.
+  void _onLongPress(Offset at) {
+    final r = _ready;
+    if (r == null || _busy) return;
+    final eco = r.game.spawnAt(at);
+    if (eco == null || !eco.isEco) return;
+    final state = r.session.state;
+    final now = tools.clock.nowUtc;
+    if (state.markOf(eco.uid) != null) {
+      state.removeMark(GameState.uidKey(eco.uid));
+      _toast('Marcação solta');
+    } else if (!r.world.inAura(eco)) {
+      _toast('Entre na Aura para prender o sinal');
+    } else if (state.addMark(Mark.of(eco, nowUtc: now, durationS: state.balance.markDurationS), now)) {
+      HapticFeedback.mediumImpact();
+      _toast('Sinal preso por ${state.balance.markDurationS ~/ 60} min');
+    } else {
+      _toast('Limite de ${state.balance.markMax} marcações. Solte uma com toque longo');
+    }
+  }
 
   /// Toque no mapa: o spawn sob o dedo. Material dentro da Aura é coletado; Eco dentro da Aura abre o
   /// encontro; o resto avisa o que falta.
@@ -149,14 +170,21 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       case TouchResult.tooFar:
         _toast('Longe demais. Chegue com a Aura até lá (${r.world.distanceM(spawn).round()} m)');
       case TouchResult.encounter:
-        _busy = true;
-        try {
-          await runEncounter(context, eco: spawn, world: r.world, state: r.session.state, data: r.data, nowUtc: () => tools.clock.nowUtc, vibration: widget.vibration, onMessage: _toast);
-        } finally {
-          _busy = false;
-        }
-        if (mounted) setState(() {});
+        await _startEncounter(spawn);
     }
+  }
+
+  /// Abre o encontro com [spawn]: a folha de selo e a sintonia.
+  Future<void> _startEncounter(WorldSpawn spawn) async {
+    final r = _ready;
+    if (r == null || _busy) return;
+    _busy = true;
+    try {
+      await runEncounter(context, eco: spawn, world: r.world, state: r.session.state, data: r.data, nowUtc: () => tools.clock.nowUtc, vibration: widget.vibration, onMessage: _toast);
+    } finally {
+      _busy = false;
+    }
+    if (mounted) setState(() {});
   }
 
   @override
@@ -345,7 +373,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
           behavior: HitTestBehavior.opaque,
           onPointerDown: (e) {
             if (_pointers++ == 0) game.touchStart();
-            _touch.down(e.localPosition, _sw.elapsedMilliseconds);
+            _touch.down(e.localPosition, e.timeStamp.inMilliseconds);
             _longTimer?.cancel();
             if (_touch.pendingLongPress) _longTimer = Timer(Duration(milliseconds: _touch.longPressMs), _onLongTimer);
           },
@@ -356,7 +384,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
           },
           onPointerUp: (e) {
             _longTimer?.cancel();
-            final tap = _touch.up(e.localPosition, _sw.elapsedMilliseconds);
+            final tap = _touch.up(e.localPosition, e.timeStamp.inMilliseconds);
             if (tap != null) _onTap(tap);
             _pointerGone();
           },
@@ -377,7 +405,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         SafeArea(
           child: Stack(
             children: [
-              _StatusHud(state: r.tracker.state, tools: tools, stale: r.assets.stale),
+              Padding(padding: const EdgeInsets.only(bottom: 90), child: _StatusHud(state: r.tracker.state, tools: tools, stale: r.assets.stale)),
               if (tools.useSimulator) SimOverlay(tools: tools),
               Positioned(
                 left: 0,
@@ -404,17 +432,21 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                 ),
               ),
               Positioned(
-                right: 8,
+                left: 8,
                 top: 56,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => CollectionScreen(state: r.session.state, data: r.data))),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.85), border: Border.all(color: kVeil, width: 2)),
-                    child: const Text('COLEÇÃO', style: TextStyle(fontSize: 8, color: kVeil)),
-                  ),
+                child: MarkChips(
+                  state: r.session.state,
+                  nowUtc: () => tools.clock.nowUtc,
+                  sprites: game.sprites,
+                  onTap: (m) => _startEncounter(m.toSpawn()),
                 ),
+              ),
+              Positioned(left: 8, bottom: 8, child: PortraitHud(state: r.session.state, frame: game.playerFrames.isEmpty ? null : game.playerFrames.first)),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 8,
+                child: Center(child: PhoneButton(onTap: () => showPhoneMenu(context, state: r.session.state, data: r.data))),
               ),
               Positioned(
                 top: 56,
