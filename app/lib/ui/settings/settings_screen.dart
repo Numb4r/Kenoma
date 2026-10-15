@@ -262,6 +262,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
+              title: const Text('Tráfego do Véu', style: TextStyle(fontSize: 8)),
+              subtitle: const Text('Carros e pedestres fantasmas nas ruas. Só visual', style: TextStyle(fontSize: 8, color: kDim)),
+              value: s.settingOr('veil_traffic', true),
+              activeThumbColor: kSignal,
+              onChanged: (v) => s.setSetting('veil_traffic', v),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
               title: const Text('Seguir direção', style: TextStyle(fontSize: 8)),
               subtitle: const Text('O mapa gira com a bússola do celular', style: TextStyle(fontSize: 8, color: kDim)),
               value: widget.followHeading(),

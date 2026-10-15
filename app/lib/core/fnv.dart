@@ -12,6 +12,7 @@ const int fnvPrime = 0x100000001b3;
 const int saltSpwn = 0x4E575053; // SPWN
 const int saltOffs = 0x5346464F; // OFFS
 const int saltUid = 0x5F444955; // UID_
+const int saltTraf = 0x46415254; // TRAF, tráfego do Véu
 const int saltKenoma = 0x414D4F4E454B; // KENOMA, sequência do PCG32
 
 /// Calcula o salt de uma string ASCII de até 8 caracteres.

@@ -157,6 +157,9 @@ class GameState extends ChangeNotifier {
 
   bool setting(String key) => settings[key] == true;
 
+  /// Um interruptor que vale [fallback] enquanto o jogador não mexeu nele.
+  bool settingOr(String key, bool fallback) => settings[key] is bool ? settings[key] as bool : fallback;
+
   int count(String itemId) => inventory[itemId] ?? 0;
 
   /// Ganha XP de Conjurador em [nowUtc]. Devolve quantos níveis subiu.

@@ -26,6 +26,7 @@ import 'art_renderer.dart';
 import 'art_style.dart';
 import 'spawn_painter.dart';
 import 'street_label_painter.dart';
+import 'traffic_painter.dart';
 import 'tracker_painter.dart';
 import 'player_painter.dart';
 
@@ -52,6 +53,7 @@ class GameMapGame extends FlameGame {
     this.dpr = 1,
     this.worldView,
     this.streetNames = _off,
+    this.veilTraffic = _off,
     this.sprites = const {},
     this.typeOf = _noType,
     this.nowUtc = _zero,
@@ -77,9 +79,16 @@ class GameMapGame extends FlameGame {
   final bool Function() overlayGrid20;
   late final ArtRenderer _art = ArtRenderer(visual: visual, style: style, balance: balance);
   late final StreetLabelPainter _labels = StreetLabelPainter(visual);
+  late final TrafficPainter _traffic = TrafficPainter(visual);
 
   /// Se os nomes de rua estão ligados nos Ajustes (lido a cada quadro).
   final bool Function() streetNames;
+
+  /// Quantos fantasmas do tráfego foram desenhados no último quadro.
+  int get ghostsDrawn => _traffic.lastDrawn;
+
+  /// Se o tráfego do Véu está ligado nos Ajustes (lido a cada quadro).
+  final bool Function() veilTraffic;
 
   /// Os spawns e o que o jogador alcança. `null` nos testes que só querem o mapa.
   final WorldView? worldView;
@@ -260,6 +269,11 @@ class GameMapGame extends FlameGame {
     final cam = follow.camera;
     _art.paint(canvas, view, cam, dpr: dpr, metersPerCell: metersPerCell(_lat), coarse: coarse);
     _paintLight(canvas, view);
+    if (veilTraffic() && _hasFix && worldView != null) {
+      _traffic.paint(canvas, view, cam, seed: worldView!.field.seed, tUtc: nowUtc(), lonDeg: _lon, metersPerCell: metersPerCell(_lat), light: light);
+    } else {
+      _traffic.lastDrawn = 0;
+    }
     if (streetNames()) _labels.paint(canvas, view, cam);
     if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
     if (!avatar.hasPosition) return;

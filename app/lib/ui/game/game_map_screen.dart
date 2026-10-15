@@ -310,6 +310,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       dpr: dpr,
       worldView: world,
       streetNames: () => session.state.setting('street_names'),
+      veilTraffic: () => session.state.settingOr('veil_traffic', true),
       sprites: sprites,
       typeOf: (id) => data.species(id)?.type,
       nowUtc: () => tools.clock.nowUtc,

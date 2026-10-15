@@ -18,6 +18,7 @@ import 'package:kenoma/ui/menu/phone_menu.dart';
 import 'package:kenoma/ui/game/game_map_screen.dart';
 import 'package:kenoma/ui/game/joystick.dart';
 import 'package:kenoma/world/location_access.dart';
+import 'package:kenoma/save/save_store.dart';
 import 'package:kenoma/world/places.dart';
 
 import '../support/fake_position_source.dart';
@@ -98,6 +99,7 @@ Future<Env> pumpGame(
   FakeGateway? gateway,
   int? clockUtc,
   HeadingSource? heading,
+  MemorySaveStore? store,
 }) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 2.625;
@@ -107,7 +109,7 @@ Future<Env> pumpGame(
   final tools = DevTools(realSource: gps);
   if (clockUtc != null) tools.clock.setUtc(clockUtc);
   if (simulator) await tools.setUseSimulator(true);
-  await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: gw, bundle: _Bundle(realAssets()), headingSource: heading)));
+  await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: gw, bundle: _Bundle(realAssets()), headingSource: heading, store: store)));
   for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pump();
@@ -719,6 +721,54 @@ void main() {
       await env.settle(4);
       expect(env.game.worldView!.state.markOf(far.first.uid), isNull);
       expect(eco.uid, isNotNull);
+    });
+  });
+
+  group('tráfego do Véu e luz do dia', () {
+    // 2026-10-15 em Campinas: 08:00 local (11:00 UTC) é rush; 03:00 local (06:00 UTC) é madrugada, de noite.
+    int utcOf(String iso) => DateTime.parse(iso).millisecondsSinceEpoch ~/ 1000;
+
+    /// O máximo de fantasmas desenhados em [frames] quadros (a seed do jogo muda a cada execução: um quadro só pode ser vazio).
+    Future<int> peak(Env env, {int frames = 40}) async {
+      var best = 0;
+      for (var i = 0; i < frames; i++) {
+        await env.settle(5);
+        if (env.game.ghostsDrawn > best) best = env.game.ghostsDrawn;
+      }
+      return best;
+    }
+
+    MemorySaveStore fixedGroup() => MemorySaveStore()..json = {'schema_version': 2, 'group_code': 'KENOMA-TESTE'};
+
+    testWidgets('no rush aparecem fantasmas, respeitando o teto, e o interruptor os apaga', (tester) async {
+      final env = await pumpGame(tester, clockUtc: utcOf('2026-10-16T11:10:00Z'), store: fixedGroup());
+      final best = await peak(env);
+      expect(best, greaterThan(0));
+      expect(best, lessThanOrEqualTo(160));
+      env.game.worldView!.state.setSetting('veil_traffic', false);
+      await env.settle(4);
+      expect(env.game.ghostsDrawn, 0);
+    });
+
+    testWidgets('de madrugada há bem menos fantasmas que no rush', (tester) async {
+      final rush = await pumpGame(tester, clockUtc: utcOf('2026-10-16T11:10:00Z'), store: fixedGroup());
+      final busy = await peak(rush);
+      await tester.pumpWidget(const SizedBox.shrink());
+      final dead = await pumpGame(tester, clockUtc: utcOf('2026-10-16T06:10:00Z'), store: fixedGroup());
+      final quiet = await peak(dead);
+      expect(busy, greaterThan(0));
+      expect(quiet, lessThan(busy));
+    });
+
+    testWidgets('a luz do mapa segue o sol: noite fechada à 00:00 local, dia pleno ao meio-dia', (tester) async {
+      final night = await pumpGame(tester, clockUtc: utcOf('2026-10-16T03:00:00Z'));
+      await night.settle(130); // a luz é recalculada a cada 5 s
+      expect(night.game.light.night, greaterThan(0.95));
+      await tester.pumpWidget(const SizedBox.shrink());
+      final noon = await pumpGame(tester, clockUtc: utcOf('2026-10-16T15:00:00Z'));
+      await noon.settle(130);
+      expect(noon.game.light.night, 0);
+      expect(find.byKey(const Key('moon-hud')), findsOneWidget);
     });
   });
 }
