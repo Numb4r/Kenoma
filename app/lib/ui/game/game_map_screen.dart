@@ -35,6 +35,7 @@ import '../tuning/tuning_screen.dart' show PixelButton;
 import '../menu/phone_menu.dart';
 import '../settings/settings_screen.dart';
 import 'game_map_game.dart';
+import 'moon_hud.dart';
 import 'player_hud.dart';
 import 'sim_overlay.dart';
 
@@ -494,6 +495,11 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                     child: Text(tools.useSimulator ? 'SIMULADOR' : 'GPS REAL', style: const TextStyle(fontSize: 8, color: kSignal)),
                   ),
                 ),
+              ),
+              Positioned(
+                right: 8,
+                top: 56,
+                child: MoonHud(nowUtc: () => tools.clock.nowUtc, lat: () => game.playerLat),
               ),
               Positioned(
                 left: 8,

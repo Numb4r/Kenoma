@@ -7,6 +7,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import '../../capture/eco_type.dart';
+import '../../core/astro.dart';
 import '../../core/tiles.dart';
 import '../../world/aura.dart';
 import '../../world/follow_camera.dart';
@@ -138,6 +139,13 @@ class GameMapGame extends FlameGame {
   /// O marcador suavizado.
   final avatar = PlayerAvatar();
 
+  /// A luz do mapa pela altura do sol em ([_lat], [_lon]) na hora do jogo. Recalculada a cada poucos segundos.
+  DayLight light = const DayLight(night: 0, warm: 0);
+  double _lightIn = 0;
+
+  /// A latitude de agora (a do último fix; a da Unicamp antes do primeiro).
+  double get playerLat => _lat;
+
   double _lat = kUnicamp.$1;
   double _lon = kUnicamp.$2;
   bool _hasFix = false;
@@ -219,6 +227,11 @@ class GameMapGame extends FlameGame {
     super.update(dt);
     avatar.update(dt);
     _animate(dt);
+    _lightIn -= dt;
+    if (_lightIn <= 0 && _hasFix) {
+      _lightIn = 5;
+      light = dayLightAt(_lat, _lon, nowUtc());
+    }
     _time += dt;
     _refreshIn -= dt;
     if (_hasFix && worldView != null && _refreshIn <= 0) {
@@ -246,6 +259,7 @@ class GameMapGame extends FlameGame {
     final view = Size(size.x, size.y);
     final cam = follow.camera;
     _art.paint(canvas, view, cam, dpr: dpr, metersPerCell: metersPerCell(_lat), coarse: coarse);
+    _paintLight(canvas, view);
     if (streetNames()) _labels.paint(canvas, view, cam);
     if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
     if (!avatar.hasPosition) return;
@@ -284,6 +298,19 @@ class GameMapGame extends FlameGame {
         },
       );
       paintTracker(canvas, view, tracked, sprites: sprites, typeOf: typeOf, bottomInset: bottomInset, rotation: cam.rotation);
+    }
+  }
+
+  /// A luz do dia sobre o desenho do mapa: à noite escurece e esfria (multiplica por um azul profundo), no nascer e
+  /// no pôr do sol esquenta um pouco. Cobre só o mapa; Aura, spawns e Conjurador vêm depois, sem escurecer.
+  void _paintLight(Canvas canvas, Size view) {
+    final rect = Offset.zero & view;
+    if (light.night > 0.004) {
+      const nightTint = Color(0xFF3F4A8C);
+      canvas.drawRect(rect, Paint()..color = Color.lerp(const Color(0xFFFFFFFF), nightTint, light.night)!..blendMode = BlendMode.multiply);
+    }
+    if (light.warm > 0.004) {
+      canvas.drawRect(rect, Paint()..color = Color.fromRGBO(255, 138, 64, 0.17 * light.warm));
     }
   }
 
