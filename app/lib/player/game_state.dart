@@ -102,7 +102,7 @@ class GameState extends ChangeNotifier {
   }
 
   /// Código do grupo: a seed do mundo vem dele.
-  final String groupCode;
+  String groupCode;
   final ProgressBalance balance;
   final PlayerProgress progress;
 
@@ -132,10 +132,21 @@ class GameState extends ChangeNotifier {
   /// Interruptores do jogador: `street_names` e `follow_heading`.
   final Map<String, dynamic> settings;
 
-  late final int seed = seedGlobal(groupCode);
+  int get seed => seedGlobal(groupCode);
 
   /// O nível que o jogo usa: o do debug, se houver, senão o real. Define o nível dos Ecos e a resistência.
   int get playerLevel => levelOverride ?? progress.level;
+
+  /// Entra noutro grupo: a seed muda, então o registro de coletas e as marcações (que são do mundo antigo) saem.
+  /// A coleção, o Círculo, o inventário e o nível ficam. `false` se o código é o mesmo.
+  bool changeGroup(String code) {
+    if (normalizeSeedCode(code) == normalizeSeedCode(groupCode)) return false;
+    groupCode = formatGroupCode(code);
+    _collected.clear();
+    marks.clear();
+    notifyListeners();
+    return true;
+  }
 
   int count(String itemId) => inventory[itemId] ?? 0;
 
