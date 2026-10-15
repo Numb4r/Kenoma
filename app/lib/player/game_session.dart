@@ -18,6 +18,9 @@ class GameSession {
     state.addListener(_changed);
   }
 
+  /// Onde o jogo mora em disco.
+  SaveStore get store => _store;
+
   /// Aviso da abertura para o jogador (cópia corrompida, save antigo migrado), ou `null`.
   String? loadNote;
 

@@ -148,6 +148,15 @@ class GameState extends ChangeNotifier {
     return true;
   }
 
+  /// Guarda um interruptor do jogador (`street_names`, `follow_heading`).
+  void setSetting(String key, Object value) {
+    if (settings[key] == value) return;
+    settings[key] = value;
+    notifyListeners();
+  }
+
+  bool setting(String key) => settings[key] == true;
+
   int count(String itemId) => inventory[itemId] ?? 0;
 
   /// Ganha XP de Conjurador em [nowUtc]. Devolve quantos níveis subiu.

@@ -48,7 +48,7 @@ class _PhonePainter extends CustomPainter {
 }
 
 /// Abre o menu do celular.
-Future<void> showPhoneMenu(BuildContext context, {required GameState state, required GameData data}) {
+Future<void> showPhoneMenu(BuildContext context, {required GameState state, required GameData data, required Widget Function() settings}) {
   void open(Widget screen) {
     Navigator.of(context).pop();
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
@@ -74,6 +74,8 @@ Future<void> showPhoneMenu(BuildContext context, {required GameState state, requ
             PixelButton(label: 'Bestiário', color: kSignal, onTap: () => open(BestiaryScreen(state: state, data: data))),
             const SizedBox(height: 8),
             PixelButton(label: 'Bancada', color: kEssence, onTap: () => open(BenchScreen(state: state, data: data))),
+            const SizedBox(height: 8),
+            PixelButton(label: 'Ajustes', color: kVeil, onTap: () => open(settings())),
           ],
         ),
       ),

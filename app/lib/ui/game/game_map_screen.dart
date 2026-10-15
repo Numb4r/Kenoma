@@ -32,6 +32,7 @@ import '../colors.dart';
 import '../map/map_assets.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
 import '../menu/phone_menu.dart';
+import '../settings/settings_screen.dart';
 import 'game_map_game.dart';
 import 'player_hud.dart';
 import 'sim_overlay.dart';
@@ -103,8 +104,41 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     }
   }
 
+  String _version = 'dev';
+
+  /// Recomeça o mapa com o save que está em disco: um backup importado ou outro grupo mudam a seed e tudo
+  /// que depende dela.
+  Future<void> _restart() async {
+    if (!mounted) return;
+    await Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
+      builder: (_) => GameMapScreen(
+        tools: widget.tools,
+        gateway: widget.gateway,
+        bundle: widget.bundle,
+        store: widget.store ?? _ready?.session.store,
+        openStore: widget.openStore,
+        vibration: widget.vibration,
+        headingSource: widget.headingSource,
+      ),
+    ));
+  }
+
+  SettingsScreen _settings(_Ready r) => SettingsScreen(
+        session: r.session,
+        data: r.data,
+        nowUtc: () => tools.clock.nowUtc,
+        realNowUtc: () => tools.clock.realNowUtc,
+        appVersion: _version,
+        followHeading: () => r.game.rotation.followHeading,
+        onFollowHeading: (on) {
+          if (r.game.rotation.followHeading != on) r.game.toggleFollowHeading();
+        },
+        onRestart: _restart,
+      );
+
   /// Liga ou desliga a leitura da bússola do celular, só enquanto o "seguir direção" está ligado.
   void _setFollowHeading(bool on) {
+    _ready?.session.state.setSetting('follow_heading', on);
     _headingSub?.cancel();
     _headingSub = null;
     final game = _ready?.game;
@@ -215,10 +249,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       for (final s in data.tuning.species) {
         sprites[s.id] = (await EcoSprite.load(s.id)).normal;
       }
-      var version = 'dev';
+      var version = _version;
       try {
         final info = await PackageInfo.fromPlatform();
-        version = '${info.version}+${info.buildNumber}';
+        version = _version = '${info.version}+${info.buildNumber}';
       } catch (_) {
         // sem o plugin (testes): a versão fica 'dev'
       }
@@ -277,6 +311,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       _rebuild();
     });
     game.onFollowHeading = _setFollowHeading;
+    if (session.state.setting('follow_heading')) {
+      game.rotation.toggleFollowHeading(); // volta ao modo que o jogador deixou ligado
+      WidgetsBinding.instance.addPostFrameCallback((_) => _setFollowHeading(true));
+    }
     _ready = _Ready(assets, game, tracker, sub, data, session, world);
     // O acesso é pedido depois do primeiro quadro: o diálogo precisa de uma tela montada.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -463,7 +501,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                 left: 0,
                 right: 0,
                 bottom: 8,
-                child: Center(child: PhoneButton(onTap: () => showPhoneMenu(context, state: r.session.state, data: r.data))),
+                child: Center(child: PhoneButton(onTap: () => showPhoneMenu(context, state: r.session.state, data: r.data, settings: () => _settings(r)))),
               ),
               Positioned(
                 top: 56,
