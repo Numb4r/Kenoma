@@ -24,118 +24,7 @@ O jogador é um Conjurador, um jovem entusiasta de ocultismo cujo celular foi to
 
 ## Lore
 
-A realidade é Kenoma, o mundo material, sob uma pilha de 30 Aethyrs. Os nomes dos Aethyrs seguem a lista de John Dee, do mais alto, LIL, ao mais próximo de Kenoma, TEX. Cada Aethyr era regido por um dos Trinta, os deuses do panteão próprio. Os nove de cima, de LIL a ZIP, são as Eras Antigas, lar dos deuses mais velhos. O décimo, ZAX, é o Abismo.
-
-Há muito tempo, quando Os Que Escutam começaram a rondar, os Trinta decidiram esconder Kenoma. O deus de ZAX, o Décimo, se desfez e envolveu Kenoma como um silêncio. Esse silêncio é o Véu, e desde então ZAX fica entre Kenoma e todo o resto. O nome do Décimo se apagou junto com ele.
-
-O mundo moderno ficou barulhento, com rádio, celulares e milhões de sinais, e numa noite um dos Que Escutam ouviu Kenoma através do Véu. O Véu rachou nas Fendas. Os outros vinte e nove desceram para fechá-lo, se partiram na travessia e morreram, e o que vaza pelas Fendas desde então são os fragmentos deles. O que resta do Décimo apodrece em ZAX, e essa podridão tem nome: Choronzon.
-
-O que atravessa uma Fenda raramente chega inteiro. Criaturas pequenas são fragmentos de entidades maiores que se partiram na travessia. Isso justifica a fusão, já que juntar fragmentos da mesma família reconstitui a entidade original. Os Soberanos atravessaram inteiros e vivem dentro das Fendas (ver Os Soberanos).
-
-O Conjurador não é investigador nem profissional. É um jovem fascinado por ocultismo que, na noite em que as Fendas se abriram, teve o celular tocado pela magia. O aparelho passou a enxergar através do Véu e vai ganhando novas funções conforme a exposição aumenta. O que o Conjurador não sabe é que o aparelho também virou o olho de Os Que Escutam, e cada função nova é um deles enxergando um pouco mais através da tela.
-
-### Panteões
-
-O jogo base é o panteão próprio, Shloshim, conhecido como The Thirty. Shloshim é o nome verdadeiro e significa, em hebraico, os 30 dias de luto depois de um enterro, porque os Trinta morreram ao atravessar o Véu. No fórum e na fala comum eles são The Thirty. Shloshim aparece antes em inscrições, sigilos e grimórios, e o mentor o pronuncia pela primeira vez no Ato II. Vinte e nove dos Trinta deram origem a uma família cada, e juntar os fragmentos pela fusão reconstitui a entidade. O Décimo não tem família, porque virou o Véu. Seus únicos fragmentos lúcidos são os Familiares, um por Conjurador, e a parte que apodreceu é Choronzon. O panteão tem, portanto, 29 famílias e o Familiar.
-
-Depois do nível 40 entram outros panteões, no modelo das expansões do Guild Wars 2. Cada expansão traz um panteão com dimensão, mecânica nova, famílias próprias além das 29 do Shloshim e lore própria, sem mudar a história principal. Os Que Escutam são a ameaça que atravessa todas as expansões, e cada panteão tem a própria história local.
-
-### Os Que Escutam
-
-Entidades superplanares, anteriores e exteriores a todos os Aethyrs, ligadas ao caos, à criação, à entropia e ao vazio completo. Estão além da compreensão, são amorais e não têm nenhuma capacidade de empatia. O poder deles alcança o cosmo, as dimensões e a própria realidade, e os deuses dos panteões são pequenos perto deles. Não têm forma fixa nem motivação que um humano consiga entender. São o horror cósmico do jogo, no espírito de Lovecraft: o problema não é que sejam maus, é que nada do que importa para nós importa para eles.
-
-Para eles, existir é fazer som. O que é silencioso não existe para Os Que Escutam, e por isso o Véu funcionou por eras: não é uma parede, é uma ausência. Eles não destroem mundos por maldade. Ouvem, se aproximam e o mundo muda ao redor deles, criando e desfazendo ao mesmo tempo, como uma maré. Ninguém sabe quantos são, e os textos antigos falam deles no plural e no singular na mesma frase.
-
-No jogo base nenhum deles aparece por inteiro além do mentor, e mesmo ele só como texto. A presença deles é o ciano na tela, a estática, os sinais fantasmas no dial e as mensagens em Aklo. A Exposição ao Véu mede o quanto o Conjurador está audível para eles.
-
-### O mentor
-
-O mentor é um dos Que Escutam, o único que ficou em silêncio. Foi ele quem ouviu Kenoma primeiro e causou a rachadura, e fala pelo celular como se fosse um ocultista humano. Ele parece benevolente e diz que quer consertar o que fez, mas criaturas da sua natureza não sentem culpa nem empatia. Só o fato de ele ajudar já levanta a pergunta que acompanha o jogador até o fim: por quê? Ele nunca deixa de parecer suspeito, nem depois da revelação, com planos sobre planos e sempre prestes a trair. Responde perguntas com outras perguntas, faz pedidos que não fazem sentido na hora e sabe coisas que não deveria saber. O mistério é permanente e nunca precisa ser resolvido.
-
-No celular ele aparece como número desconhecido. Recusa dar um nome, porque nomes fazem barulho, e aceita o que o jogador escolher para salvar o contato.
-
-### Os Trinta
-
-Nomes marcados com ✓ são palavras enoquianas conferidas no dicionário de Laycock, usadas como nome próprio. Os demais são inventados no estilo enoquiano.
-
-| Aethyr | Deus | Tipo | Domínio | Fragmentos |
-| --- | --- | --- | --- | --- |
-| 1 LIL | Iaida ✓, o altíssimo | Luz | a primeira luz, mais velha dos Trinta | reflexos que não vêm de lugar nenhum |
-| 2 ARN | Vovina ✓, o dragão | Dracônico | os dragões e a memória de antes de Kenoma | escamas vivas e brasas que respiram, a linha mais longa do jogo |
-| 3 ZOM | Teloch ✓, morte | Espectral | a morte e a passagem | sombras que repetem o último gesto de alguém |
-| 4 PAZ | Toltorg ✓, terra | Terra | a rocha primeira e as montanhas | pedras que mudam de lugar à noite |
-| 5 LIT | Orvanu | Água | o oceano fundo e escuro | bolhas que sobem de ralos e bueiros |
-| 6 MAZ | Ozongon ✓, ventos | Elétrico | ventos e tempestades | estática no ar antes da chuva |
-| 7 DEO | Laiad ✓, segredos | Digital | segredos, escrita, contagem, informação | glitches que moram em redes e telas quebradas |
-| 8 ZID | Vonpho ✓, ira | Fogo | a ira, incêndios e vulcões | brasas que acendem com gritos e brigas |
-| 9 ZIP | Zildar ✓, voou | Feérico | o voo e o crepúsculo | vultos alados vistos só no nascer e no pôr do sol |
-| 10 ZAX | o Décimo, nome apagado | nenhum | virou o Véu | o Familiar |
-| 11 ICH | Vaoan ✓, verdade | Metal | espelhos e lâminas, o que corta e reflete | cacos que mostram o que não está lá |
-| 12 LOE | Micma ✓, eis | Luz | o olhar e a atenção | olhos soltos em vitrines e faróis |
-| 13 ZIM | Dazhma | Sombra | o sono e os sonhos | formas que só aparecem no canto do olho |
-| 14 UTA | Gemeth | Terra | cavernas e subterrâneo | coisas de túneis, metrô e porões |
-| 15 OXO | Oxiayal ✓, trono poderoso | Metal | peso e estruturas, o que sustenta | vigas e parafusos que rangem sozinhos |
-| 16 LEA | Neiroz | Planta | decomposição e fungos | mofo que se move em muros úmidos |
-| 17 TAN | Vaxol | Elétrico | pulso, nervo e corrente | faíscas que seguem batimentos |
-| 18 ZEN | Pir ✓, os santos | Espectral | cemitérios, velas e devoção | chamas de vela que não queimam |
-| 19 POP | Lonsa ✓, todos | Luz | multidões e praças | Ecos de multidão na hora do rush |
-| 20 CHR | Zodaq | Fogo | forjas e fornalhas | metal em brasa, calor de oficina |
-| 21 ASP | Ulmaeth | Água | pântanos e águas paradas | lodo que prende os pés |
-| 22 LIN | Noco ✓, servo | Metal | ferramentas e máquinas que servem | engrenagens com vontade própria |
-| 23 TOR | Horlach | Terra | pedra de rua, muros e calçadas | paralelepípedos que respiram |
-| 24 NIA | Salman ✓, casa | Sombra | a casa e os cantos escuros | o que mora embaixo da cama e atrás das portas |
-| 25 VTI | Ammeloq | Planta | trepadeiras e ruínas | hera que cobre o que foi esquecido |
-| 26 DES | Soluth | Sombra | o esquecimento e os becos | coisas que ninguém lembra de ter visto |
-| 27 ZAA | Ermaz | Elétrico | postes, fios e lâmpadas | a mariposa de luz que ronda lâmpadas |
-| 28 BAG | Ialprg ✓, chamas ardentes | Fogo | brasas e o calor da cidade | Soot, família do MVP |
-| 29 RII | Zumvi ✓, mares | Água | toda água, do mar à gota | Rill, família do MVP |
-| 30 TEX | Peab ✓, carvalho | Planta | árvores e o que cresce | Frond, família do MVP |
-
-Os nove de cima são mais velhos, mais estranhos e mais raros, com linhas longas que aparecem tarde. Os de baixo ficavam mais perto de Kenoma, e seus domínios lembram coisas do dia a dia, por isso seus fragmentos se misturam à cidade e são os mais comuns. As três famílias do MVP vêm dos três Aethyrs mais baixos. Lendas Urbanas não são fragmentos dos Trinta: nascem da crença, não das Fendas, e não entram na conta.
-
-### Os Soberanos
-
-Cada um dos 29 deuses tinha um Soberano, arauto e guardião do seu deus. Eram menores e mais densos que os Trinta, e por isso atravessaram o Véu inteiros quando os deuses desceram. Chegaram tarde demais: os senhores já tinham se partido. Sem propósito, enlouqueceram. Cada Soberano se aninha numa Fenda e tenta refazer ali o seu Aethyr, e é por isso que uma Fenda altera o cenário ao redor. Eles também caçam os fragmentos do próprio deus, tentando juntá-los do jeito errado. Conter um Soberano rende Essência Divina, o mais perto que existe da essência de um deus morto.
-
-Os Soberanos dos Aethyrs de baixo são os primeiros que o jogador enfrenta. Os das Eras Antigas aparecem ao longo do Ato IV. Choronzon não é arauto de ninguém: é a podridão do Décimo, uma multidão de fragmentos que se dispersa e se refaz, e é o último Soberano da história principal. Nomes inventados no estilo enoquiano, exceto onde indicado.
-
-| Soberano | Aethyr e deus | Como é | Quando |
-| --- | --- | --- | --- |
-| Oquor | 30 TEX, Peab | uma árvore que anda com as raízes para cima, plantando sementes em asfalto | primeiro Soberano, início do Ato III |
-| Nalvoth | 29 RII, Zumvi | uma maré que sobe pelas ruas sem chuva nenhuma | Ato III |
-| Carmaz | 28 BAG, Ialprg | uma fornalha andante que deixa o asfalto mole por onde passa | Ato III |
-| Ixlaid | 7 DEO, Laiad | um coro de sussurros que vive em redes e telas, sem corpo | Ato IV |
-| Telocvovim, aquele que caiu | 2 ARN, Vovina | o único dragão inteiro deste lado do Véu, o primeiro a cair | Ato IV |
-| O Que Vela | 1 LIL, Iaida | uma luz que não ilumina nada, e que não dorme desde a queda | penúltimo, fim do Ato IV |
-| Choronzon | 10 ZAX, o Décimo | a podridão do Véu, dispersa em fragmentos | fim do Ato IV, nível 40 |
-
-### Os Primordiais
-
-Os Primordiais são o que Os Que Escutam deixam para trás por onde passam, como restos de maré: coisas criadas e desfeitas ao mesmo tempo, sem forma estável. São o endgame das expansões. Os Que Escutam em si nunca são capturáveis nem enfrentáveis.
-
-### O Conjurador
-
-O jogador é um jovem entusiasta de ocultismo que passava as noites gravando estática com o celular, atrás de vozes de espíritos. Na noite em que as Fendas se abriram, ele estava gravando, e do outro lado algo gravava de volta. Por isso o celular dele foi tocado, o Familiar o encontrou e o mentor escreveu para ele e não para outro. Ele não foi escolhido por mérito, foi o ouvido que estava aberto na hora errada, e o jogo nunca responde se foi mesmo acaso. O Conjurador não tem nome, rosto ou gênero fixos, e a aparência vem dos cosméticos.
-
-### O Familiar na lore
-
-O Familiar é uma lasca do Décimo. Quando o Véu rachou, pedaços dele caíram junto com os fragmentos dos outros deuses, e um deles encontrou o celular que estava gravando. Por isso existe só um por jogador, não funde, não estabiliza e cresce com o Conjurador: é o Véu tentando se lembrar de si mesmo.
-
-No começo o Familiar não fala. Se comunica por gestos, ícones e silêncios, e aprende palavras ao longo dos atos. Desconfia do mentor desde a primeira mensagem e reage com estática quando o número desconhecido escreve, a primeira pista de que o mentor não é humano. O nome que o jogador dá ao Familiar é, na lore, o novo nome do Décimo, o único que ele terá.
-
-### Figuras do fórum
-
-O fórum ocultista se chama Limen, latim para limiar. Seus usuários fixos dão voz à cidade e carregam boa parte da história.
-
-| Usuário | Quem é | Arco |
-| --- | --- | --- |
-| vesper | moderadora e ocultista veterana, fala pouco e sabe muito | valida rumores e dá reputação; nunca aparece em encontro nenhum, e nunca se explica por quê |
-| static\_saint | caçador de vozes na estática, como o jogador era | primeiro a postar gravações em Aklo; some no Ato III, e o perfil continua postando sozinho |
-| mapmaker | cartógrafa das Fendas, posta coordenadas e mapas | fonte da maioria dos rumores; talvez outra Conjuradora |
-| null\_hypothesis | o cético que explica tudo com ciência | alívio cômico que fica com mais medo a cada ato |
-| candlewick | líder dos Mourners, um grupo que descobriu os Trinta e guarda o Shloshim | acha que capturar e destilar fragmentos é profanar cadáveres de deuses; contraponto moral que nunca está totalmente errado |
-| wren\_ | outra Conjuradora, com Familiar próprio | rival amigável no Ato II; some no Ato III e deixa o Familiar dela para trás |
-| \[deleted\] | posts que já aparecem apagados, com trechos em Aklo | ninguém sabe quem posta |
+Este GDD trata só de mecânica. Todo o lore, incluindo cosmologia, linhagem, personagens, os Trinta, Soberanos e o arco narrativo dos quatro atos, está em Kenoma · Bíblia da franquia.
 
 ## Core loop
 
@@ -253,6 +142,10 @@ Biomas comuns garantem farm em qualquer lugar da cidade. Biomas raros dão spawn
 | Fendas e cicatrizes | Fendas no mapa | escamas, brasas antigas | Dracônico |
 
 Células com pouca informação no OSM recebem um piso mínimo de spawns genéricos.
+
+O mapa tem duas camadas. A camada lógica é a grade de biomas em z21, que decide spawns, coleta e tudo que o determinismo cobre. A camada visual é desenhada por cima a partir da geometria real: ruas como linhas finas na largura certa, água e parques com contorno suave por autotiling, e prédios a partir da fase 1. Com a câmera perto do jogador, a grade lógica desenhada direto viraria blocos de 18 m, e as ruas são o que faz o jogador reconhecer o próprio bairro. A camada visual não muda o mundo, então pode melhorar sem quebrar o determinismo.
+
+No jogo a câmera segue o Conjurador pela posição real, com movimento suave. O jogador pode dar zoom dentro de uma faixa e arrastar para espiar em volta, e a câmera volta sozinha depois de alguns segundos. Câmera livre só existe no menu de debug.
 
 ### Geração determinística
 
@@ -522,7 +415,7 @@ A criatura resiste, e cada tipo resiste de um jeito que o jogador aprende a ler.
 | --- | --- | --- |
 | Fogo | a onda queima num ponto e se parte em duas; a da esquerda fica na frequência antiga como isca e a da direita, a verdadeira, desliza suave para outra frequência | uma brasa avisa onde vai queimar; seguir sempre a onda da direita e ignorar a isca |
 | Água | duas ondas somadas que nunca se repetem, com uma maré que muda a amplitude | ler a tendência e o aviso de virada, sem corrigir demais |
-| Planta | o sinal cresce num sentido e dá brotos, e a janela de alinhamento encolhe aos poucos, como raízes fechando | precisão importa mais que velocidade |
+| Planta | o sinal cresce num sentido e dá brotos, e cada broto finca uma raiz numa faixa fixa do dial; com o dial sobre uma raiz a sintonia é interrompida | decidir quando atravessar uma raiz e quando esperar o sinal sair dela |
 | Terra | o dial fica pesado em certas faixas de frequência | antecipar o movimento antes de entrar na faixa |
 | Elétrico | o sinal salta entre duas ou três frequências em ritmo fixo | decorar o ritmo e chegar antes |
 | Metal | em intervalos o sinal fica blindado e alinhar não dissolve o Véu | manter alinhado mesmo assim para não perder progresso |
@@ -541,9 +434,9 @@ A onda é temática. A mecânica de cada tipo continua a da tabela de resistênc
 
 | Tipo | Como a onda se comporta | O que sobe com a intensidade |
 | --- | --- | --- |
-| Fogo | uma brasa acende num ponto da onda (o aviso) e a chama queima ali, separando duas ondas na tela; a esquerda continua na frequência antiga até virar cinza, a direita é a certa e desliza para a nova frequência | deslize mais rápido, salto maior, isca que dura mais e se move, brasa com menos antecedência |
+| Fogo | uma brasa acende num ponto da onda viva (o aviso) e a chama queima ali; a parte da esquerda vira cinza na hora e sai da tela na frequência antiga, enquanto a nova onda entra pela direita e desliza para a nova frequência; a certa é sempre a da direita | deslize mais rápido, salto maior, isca que dura mais e se move, brasa com menos antecedência |
 | Água | a crista quebra em espuma de alta frequência e depois assenta, por cima da maré de base | ressaca mais longa e mais alta |
-| Planta | a onda solta folhas, cada broto é um nó que salta e raízes crescem pelas bordas da janela conforme ela fecha | crescimento mais rápido, janela mais fechada |
+| Planta | a onda solta folhas, cada broto é um nó que salta e finca uma raiz visível no dial, que fica parada naquela faixa | crescimento mais rápido, mais raízes e mais largas |
 | Terra | faixas pesadas aparecem como estratos de rocha no fundo do eixo | mais faixas, e mais largas |
 | Elétrico | a onda vira arco elétrico nos saltos entre dois ou três pontos | mais pontos, ritmo mais rápido |
 | Metal | placas de blindagem cobrem trechos e alinhar sobre elas só solta faísca | placas mais longas |
@@ -807,16 +700,7 @@ O fórum ocultista traz relatos de usuários fictícios gerados pela seed, com p
 
 ### História
 
-A narrativa chega por mensagens no chat e posts no fórum, disparadas por nível, eventos e Fendas seladas, com o mentor, outros Conjuradores fictícios e números desconhecidos. A história principal vai do nível 1 ao 40 em quatro atos.
-
-| Ato | Níveis | O que acontece |
-| --- | --- | --- |
-| I · A Noite das Fendas | 1 a 10 | o celular é tocado, o Familiar desperta e um número desconhecido escreve; escolas e primeiras capturas; o fórum comenta coisas estranhas |
-| II · Os Fragmentos | 10 a 20 | na primeira fusão de um Espírito a criatura mostra uma memória de um deus; o jogador entende que caça pedaços de deuses mortos; o mentor pronuncia Shloshim e explica The Thirty |
-| III · O Silêncio | 20 a 30 | as incursões levam ao Véu por dentro; glitches começam a mostrar Aklo; Conjuradores do fórum somem um por um; fica claro que o celular está sendo observado; os primeiros Soberanos, dos Aethyrs de baixo |
-| IV · Os Que Escutam | 30 a 40 | Soberanos das Eras Antigas e Choronzon, o próprio Véu apodrecendo e se dispersando |
-
-No nível 40 o mentor revela o que é e conta que o Véu não tem conserto: selar Fendas só ganha tempo. O caminho é atravessar. O jogador vira Veilbreaker e passa a romper o Véu de propósito para chegar a outros Aethyrs e panteões, o que libera os eventos de panteão e as expansões. Selar Fendas continua valendo como defesa da cidade, mas deixa de ser o objetivo.
+A narrativa chega por mensagens no chat e posts no fórum, disparadas por nível, eventos e Fendas seladas. A história principal vai do nível 1 ao 40 em quatro atos, descritos em Kenoma · Bíblia da franquia.
 
 ## Crafting
 
@@ -1087,6 +971,80 @@ Só entram as que servem a um jogo de andar na rua sem batalha.
 
 Escavação, detector, faixas 1 a 3 e mesa de fósseis na fase 2, junto com a casa. Pescaria, sítios anexos, gemas, faixas 4 a 7, ofícios e minibosses de isca na fase 3. O Rasgo e os metais dos Aethyrs no Futuro, junto com as maestrias. Dinossauros como panteão de expansão.
 
+## Mapa vivo
+
+O mapa ganha vida com tráfego simulado, viagens com destino e dados reais gratuitos. Tudo é ligável e desligável nos Ajustes do mapa, e o jogo funciona inteiro sem internet.
+
+### Modo Viagem
+
+O jogador escolhe um destino, pela busca ou tocando no mapa, e o veículo. A rota é calculada no próprio celular sobre o grafo de ruas do OSM, só por ruas e caminhos de pedestre, nunca por áreas privadas ou fechadas. Com a rota definida, o jogo entra no Modo Viagem. Acima da velocidade de caminhada nada exige tocar na tela: tudo acontece sozinho e é resolvido na chegada.
+
+| Veículo | Velocidade aceita | O que acontece na viagem |
+| --- | --- | --- |
+| A pé | até 7 km/h | jogo normal, com a rota desenhada |
+| Bicicleta, patinete | até 25 km/h | coleta automática de Fagulhas numa faixa larga ao longo da rota |
+| Moto, carro | qualquer | totalmente passivo; Ecos no caminho ficam marcados e a tela vira o Rádio do Véu |
+| Ônibus | qualquer | como o carro, com bônus ao passar pelas linhas do Ônibus Espectral |
+
+No carro e no ônibus o jogo vira áudio, o Rádio do Véu, com sons do Véu e falas do mentor e do Familiar. Na chegada abre um baú com o que foi coletado e marcado, proporcional à distância e com teto diário. Os Ecos marcados na viagem ficam guardados por algumas horas para sintonizar depois. Carro, moto e bicicleta têm skins cosméticas, inclusive de temporadas de panteão.
+
+O jogo nunca recompensa dirigir. Em carro ou moto ele pergunta uma vez se o jogador é passageiro, e quem está dirigindo só tem a viagem gravada, com tudo entregue na chegada.
+
+### Tráfego do Véu
+
+Veículos e passantes fantasmas circulam pelas ruas reais, gerados pela seed, pela rua e pela janela de tempo, então o grupo vê o mesmo tráfego na mesma hora. O fluxo segue a hora real: cheio no rush, vazio de madrugada, mais estranho à noite.
+
+| Camada | Fonte | O que acrescenta |
+| --- | --- | --- |
+| Carros fantasmas | ruas e mão de direção do OSM | param nos semáforos reais |
+| Pedestres e ciclistas fantasmas | calçadas e ciclovias do OSM | dão vida às praças e parques |
+| Ônibus Espectral | linhas e pontos reais | para nos pontos de verdade, solta Fagulhas; à noite pode aparecer uma linha que não existe |
+| Van do Mercador Errante | rota gerada pela seed | o Mercador circula e pode ser alcançado para trocar |
+| Carroça de Essência | rota gerada pela seed | interceptada com um toque quando passa dentro da Aura |
+| Carro funerário | só à noite | Ecos Espectrais seguem atrás dele |
+| Procissão | rota fantasma rara | quem acompanha a pé até o fim ganha uma recompensa |
+| Trem fantasma | ferrovias desativadas do OSM | à noite percorre os trilhos mortos de Campinas, com Ecos Espectrais atrás |
+| Carro fugitivo | rota gerada pela seed | leva uma criatura rara; o jogador precisa chegar a pé a um cruzamento antes dele |
+| Engarrafamento do Véu | Fendas | perto de uma Fenda o tráfego para e se deforma |
+
+Avenidas cheias favorecem tipos urbanos e ruas calmas favorecem espíritos.
+
+### Fontes offline
+
+| Fonte | O que dá | Uso |
+| --- | --- | --- |
+| OSM, nomes de rua | nomes | rótulos ligáveis no mapa |
+| OSM, grafo de ruas | conexões | rota do Modo Viagem |
+| OSM, pontos de interesse | igrejas, cemitérios, praças, monumentos, hospitais, pontos de ônibus | altares efêmeros, Ecos Espectrais em cemitérios, rumores citando lugares reais, Tráfego do Véu |
+| Wikipedia e Wikidata | marcos históricos com texto | lugares de memória com lore e missões |
+| IBGE, setores censitários | densidade de população | mais spawns onde o OSM é pobre |
+| Google Open Buildings 2.5D e Overture | contorno e altura dos prédios | prédios com altura da fase 1 |
+| Cálculo de sol e lua | dia, noite e fases | iluminação do mapa e fases da lua |
+| SRTM | relevo | morros e baixadas |
+| Linhas de ônibus (OSM ou extração aberta da EMDEC) | linhas, pontos e frequência | Ônibus Espectral |
+
+### Fontes online
+
+| Fonte | O que dá | Uso |
+| --- | --- | --- |
+| Nominatim ou Photon | busca de lugar pelo nome | destino do Modo Viagem |
+| Open-Meteo | clima, vento, qualidade do ar | chuva no visual e nos spawns, poluição favorecendo Ecos de fuligem |
+| NOAA, clima espacial | tempestade geomagnética | tempestade no Véu, evento raro |
+| OpenSky Network | aviões reais no céu | sombras do Véu passando no mapa |
+| Passagens da ISS | estação espacial visível | estrela cadente do Véu |
+| NASA FIRMS | focos de queimada | Ecos de Fogo mais fortes perto de queimadas reais |
+| BrasilAPI | feriados | eventos de calendário |
+| Wikipedia por proximidade | artigos sobre lugares próximos | lugares de memória em qualquer cidade |
+| Overpass API | OSM sob demanda | jogar fora das regiões com pacote |
+
+Algumas fontes pedem chave gratuita ou têm limite para uso não comercial, e precisam ser revistas antes de um lançamento aberto.
+
+Três regras valem para o online. O jogo funciona inteiro sem internet, e o online só acrescenta eventos e visual. A localização enviada a qualquer serviço vai arredondada para cerca de 1 km. O que vem de fora é arredondado por janela de tempo, para amigos no mesmo lugar e hora receberem o mesmo.
+
+### Fases
+
+Nomes de rua, sol e lua e Tráfego do Véu ambiente na fase 1. Modo Viagem com rota, veículos especiais do tráfego, pontos de interesse e clima na fase 2. Demais fontes online, trem fantasma, carro fugitivo e prédios com altura junto com a fase 3 ou como expansão.
+
 ## Fendas e dungeons
 
 Fendas são o coração do jogo. Aparecem pelo mapa em células grandes, alteram o cenário ao redor e abrigam Soberanos, artefatos e páginas de grimório. Selar uma Fenda é um grande ritual feito na borda dela, e o Soberano lá dentro só é contido com o Círculo certo.
@@ -1313,6 +1271,24 @@ JSON comprimido com `schema_version`, `app_version`, `epoch`, `seed_global`, UTC
 Sem servidor, amigos com versões diferentes do app gerariam mundos diferentes a partir da mesma seed. Por isso toda mudança de conteúdo que afeta o mundo (tabelas de spawn, coleta e materiais, biomas, pacote de região, Fendas) só entra em vigor numa data UTC fixa, o início de uma Época, que coincide com o início de uma estação do ano. Cada versão do app já vem com as tabelas da Época atual e da seguinte, e o número da Época entra no hash. Quem demorou a atualizar continua sincronizado com os amigos até a virada.
 
 Se o app não tiver as tabelas da Época vigente, ele mostra o aviso de mundo desatualizado e segue gerando pela última Época conhecida, deixando claro que os spawns podem diferir dos amigos. Correções que não mudam o mundo, como interface, bugs e balanceamento de crafting, saem a qualquer momento.
+
+### Assinaturas, fundadores e controles
+
+Sem servidor, a confiança vem de assinatura digital. O desenvolvedor tem um par de chaves Ed25519: a chave privada fica só com ele, fora do repositório, e o app leva só a chave pública. O app consegue verificar o que foi assinado, mas não consegue assinar nada, nem desmontado. Hash embutido no app não serve para isso, porque qualquer segredo dentro do APK pode ser extraído.
+
+O save registra a história do jogador desde a primeira abertura: um `player_id` aleatório de 128 bits, a primeira versão instalada, a data UTC e um log das versões abertas, encadeado por hash. O log não prova nada sozinho, mas detecta edição casual e serve de evidência para o desenvolvedor.
+
+| Item assinado | Para quê |
+| --- | --- |
+| Certificado de fundador | prova que o jogador esteve no beta; vale só para o `player_id` dele e libera recompensas cosméticas por faixa de versão de entrada |
+| Épocas | garante que um `epochs.json` vindo de fora do app foi publicado pelo desenvolvedor |
+| Códigos de evento | recompensas de temporada, de encontros presenciais ou de presente, pelo mesmo mecanismo do certificado |
+| Lista de revogação | cancela certificados ou códigos abusados; viaja dentro das épocas assinadas |
+| Certificado de desenvolvedor | libera o menu de debug numa build de release |
+
+O certificado de fundador é emitido sem servidor. O jogador mostra no Ajustes um QR com o `player_id` e o log de versões, o desenvolvedor lê com um script no PC, decide a faixa e devolve o certificado como QR ou código. Quem entrou nas versões 0.x ganha a recompensa mais rara. As recompensas são só cosméticas: forma do Familiar, título no fórum Limen, moldura no bestiário. Quem entrega é o mentor.
+
+O menu de debug fica sempre acessível nas builds de teste e mostra tudo isso: `player_id`, log de versões, certificados presentes, assinatura e validade da época, lista de revogação e códigos resgatados. Na versão pública ele só abre com o certificado de desenvolvedor.
 
 ### Produção com IA
 
