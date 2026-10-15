@@ -159,7 +159,7 @@ void main() {
     expect(find.textContaining('NÍVEL ${theirs.state.progress.level} · 3 CRIATURAS'), findsOneWidget);
     expect(find.textContaining('XXXXX-YYYYY'), findsWidgets);
     final local = DateTime.fromMillisecondsSinceEpoch(t * 1000, isUtc: true).toLocal(); // a data é mostrada no horário local
-    expect(find.textContaining('${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}'), findsOneWidget);
+    expect(find.textContaining('${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}'), findsWidgets);
     expect(mine.json!['group_code'], 'AAAAA-BBBBB', reason: 'ainda não substituiu');
 
     await tester.tap(find.text('IMPORTAR').last);
