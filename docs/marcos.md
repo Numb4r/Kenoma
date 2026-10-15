@@ -134,7 +134,7 @@ Camada só de desenho para o mapa de jogo. **A grade de biomas continua sendo a 
 
 **Pronto quando** o ciclo andar, encontrar, sintonizar, capturar e voltar ao mapa funciona sem intervenção de debug, inclusive sintonizando um Eco marcado depois de sair da célula.
 
-**Status: encontro implementado, marcação não.** Tocar num Eco na Aura abre a folha de selo e depois a sintonia do M3 (sem gravar `sessions.csv`). Sucesso põe a criatura na coleção e dá Ectoplasma; falha gasta o selo e a criatura foge com a chance da spec, e a fuga entra no registro. Há uma tela de coleção e bolsa, com um botão para fabricar o selo simples (Giz + Ectoplasma), para o jogo não parar quando os 5 selos acabam. A marcação por toque longo, o nível e o XP do Conjurador (fica no nível 1) e o Círculo ficam para depois.
+**Status: feito (0.11.0), falta jogar na rua.** Tocar num Eco na Aura abre a folha de selo (com os selos e o tônico que o jogador tem) e depois a sintonia do M3 (sem gravar `sessions.csv`). Sucesso põe a criatura na coleção, dá Ectoplasma, XP e atualiza o bestiário; falha gasta o selo e a criatura foge com a chance da spec, e a fuga entra no registro. **Marcação:** toque longo (500 ms parado) num Eco dentro da Aura prende o sinal por 300 s, no máximo 3; fica numa ficha com contagem regressiva e abre o encontro de qualquer distância. Arrastar cancela o toque longo. Na quarta marcação o app avisa; toque longo num Eco já marcado solta. A marcação vai no `save.json`.
 
 ## M8 · Círculo e bestiário
 
@@ -148,6 +148,8 @@ Camada só de desenho para o mapa de jogo. **A grade de biomas continua sendo a 
 - trocar o Círculo muda de forma visível a Aura, a coleta ou o rastreador;
 - levar um tipo forte deixa a sintonia perceptivelmente mais fácil.
 
+**Status: feito (0.11.0), falta jogar na rua.** O botão do celular, no centro de baixo do mapa, abre o menu com Coleção, Círculo, Bestiário e Bancada. O Círculo tem 3 espaços escolhidos da coleção; as habilidades somam por tipo e valem a maior (Sootling: Aura +5/+8/+12 m; Frondling: coleta +10/+15/+20 m, que vale para Fagulhas e materiais; Rillet: rastreador 150/170/200 m, que também alarga a área de spawns gerada). Cada criatura do Círculo forte contra o tipo do alvo dá ×1,1 de tolerância, até 3. Criaturas no Círculo ganham 10 XP por sintonia concluída (30 × n por nível, até o 20). O bestiário mostra vista e capturada, com silhueta para o que não foi visto. Lógica em `player/circle.dart`.
+
 ## M9 · Bancada e destilação
 
 Bancada com as quatro receitas: selo simples, selo reforçado, selos de tipo e tônico. Destilação de Ecos em Essência.
@@ -156,12 +158,16 @@ Bancada com as quatro receitas: selo simples, selo reforçado, selos de tipo e t
 - dá para sustentar capturas só com selos fabricados a partir do que se coleta andando;
 - destilar um Eco repetido para fazer um selo melhor parece uma boa troca.
 
+**Status: feito (0.11.0), falta jogar na rua.** A Bancada tem as abas Fabricar (as seis receitas: selo simples, reforçado, três selos de tipo e tônico; o reforçado gasta 2 Essências de qualquer tipo, da pilha maior primeiro) e Destilar (Eco vira 3, 4 ou 5 Essências do tipo conforme o nível, com confirmação; Ecos no Círculo não saem). Lógica em `crafting/crafting.dart`. O botão de fabricar na Coleção saiu.
+
 ## M10 · Progressão, save e seed
 
 - XP do Conjurador pela curva da spec, com nível máximo 15 e bônus de descanso.
 - Save no formato da spec (`KSV1`, SHA-256 e JSON em gzip), versionado, com escrita atômica, rodízio de 3 e migrações.
 - Exportar e importar backup.
 - Tela de Ajustes com o código do grupo, QR para mostrar e escanear, e a época atual com o aviso de mundo desatualizado.
+
+**Status: parcial (0.11.0).** Feito: XP e nível do Conjurador pela curva da spec (60 × n^1,25 em dezenas, teto 15, XP além do teto guardado) com o bônus de descanso (350 por dia local rendem o dobro, acumula até 1050); XP de sintonia concluída (20 + 2 × nível do Eco, máx. 60), de primeira captura (100), de Fagulha (2) e de material (5); o nível real manda no nível dos Ecos e na resistência, e o seletor do debug (0 = real) vira override. O retrato com o nível e a barra de XP ficam no canto de baixo à esquerda. O `save.json` está no schema 2 (nível, XP, descanso, Círculo, bestiário, marcações, coleção com XP de cada criatura), com migração pura da v1 (`save/migrations.dart`) e campos desconhecidos preservados. **Ficou de fora:** `KSV1` com SHA-256 e gzip, rodízio de 3 saves, exportar e importar backup, Ajustes (código do grupo, QR, época atual). Hoje o save é JSON puro, com escrita atômica.
 
 **Pronto quando:**
 - fechar e reabrir o app preserva tudo;
