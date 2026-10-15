@@ -5,13 +5,17 @@
 /// vira arrasto e deixa de poder ser toque ou toque longo.
 library;
 
+import 'dart:math' as math;
 import 'dart:ui' show Offset;
 
 class TouchGesture {
-  TouchGesture({this.slopPx = 12, this.longPressMs = 500});
+  TouchGesture({this.slopPx = 12, this.longPressMs = 500, this.minRadiusPx = 40});
 
   /// Quanto o dedo pode andar e ainda contar como parado.
   final double slopPx;
+
+  /// Distância mínima do dedo ao centro para o giro valer.
+  final double minRadiusPx;
 
   /// Quanto tempo parado vira toque longo; abaixo disso, soltar é um toque.
   final int longPressMs;
@@ -42,20 +46,31 @@ class TouchGesture {
     }
   }
 
-  /// O dedo andou. Devolve o deslocamento horizontal do arrasto desde o último evento, ou 0 se ainda não é
-  /// arrasto. O primeiro movimento depois do limiar conta só o que passou dele, então o mapa não dá salto.
-  double move(Offset pos) {
+  /// O dedo andou. Devolve o quanto o mapa deve girar, em radianos (positivo = sentido horário na tela), ou 0 se
+  /// ainda não é arrasto. O mapa gira em torno de [center] (o Conjurador, no centro da tela) e acompanha o dedo:
+  /// o ponto do mapa que está sob o dedo continua sob ele, de qualquer lado da tela. Perto demais do centro o
+  /// ângulo do dedo não é confiável e o giro espera. O primeiro movimento depois do limiar conta desde o ponto
+  /// onde o dedo desceu, então o mapa não fica para trás do dedo.
+  double move(Offset pos, {required Offset center}) {
     if (!_active) return 0;
     if (!_dragging) {
       if ((pos - _start).distance <= slopPx) return 0;
       _dragging = true;
-      _last = pos;
-      final dx = pos.dx - _start.dx;
-      return dx.abs() <= slopPx ? 0 : dx - slopPx * dx.sign;
+      return _turn(_start, pos, center);
     }
-    final dx = pos.dx - _last.dx;
+    final turn = _turn(_last, pos, center);
     _last = pos;
-    return dx;
+    return turn;
+  }
+
+  double _turn(Offset from, Offset to, Offset center) {
+    _last = to;
+    final a = from - center, b = to - center;
+    if (a.distance < minRadiusPx || b.distance < minRadiusPx) return 0;
+    var d = math.atan2(b.dy, b.dx) - math.atan2(a.dy, a.dx);
+    if (d > math.pi) d -= 2 * math.pi;
+    if (d < -math.pi) d += 2 * math.pi;
+    return d;
   }
 
   /// Chamado pelo temporizador de [longPressMs], armado quando o dedo desce: se o dedo segue parado, devolve

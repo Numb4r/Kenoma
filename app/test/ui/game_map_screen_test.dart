@@ -5,7 +5,6 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kenoma/world/map_rotation.dart';
 import 'package:kenoma/core/tiles.dart';
 import 'package:kenoma/data/heading_source.dart';
 import 'package:kenoma/ui/game/compass_button.dart';
@@ -227,7 +226,7 @@ void main() {
       await env.live(6);
       expect(env.game.facingLeft, isTrue, reason: 'parado, continua olhando para onde andava');
       // Com o mapa girado 180°, andar para o leste é andar para a esquerda na tela.
-      env.game.rotation.dragBy(3.141592653589793 / MapRotation.radPerPx);
+      env.game.rotation.rotateBy(3.141592653589793);
       env.sim.setJoystick(1, 0);
       await env.live(8);
       expect(env.game.facingLeft, isTrue);
@@ -291,10 +290,11 @@ void main() {
     testWidgets('arrastar gira o mapa em torno do Conjurador: a câmera não sai dele e o giro não volta', (tester) async {
       final env = await pumpGame(tester);
       final cam = env.game.follow.camera;
-      await tester.drag(gameWidget, const Offset(160, 0));
+      final c = env.game.screenCenter;
+      // O dedo desce pelo lado direito, a 120 px do Conjurador: um quarto de volta é descer 120 px (45°).
+      await tester.dragFrom(c + const Offset(120, 0), const Offset(0, 120));
       await env.settle(2);
-      expect(env.game.rotation.angle, closeTo(160 * MapRotation.radPerPx, 0.35), reason: 'o dedo andou 160 px (menos o limiar)');
-      expect(env.game.rotation.angle, isNot(0));
+      expect(env.game.rotation.angle, closeTo(0.7853981633974483, 1e-6), reason: 'o mapa girou o mesmo ângulo que o dedo: 45° horário');
       expect(env.game.follow.camera.centerX, closeTo(cam.centerX, 0.05));
       expect(env.game.follow.camera.centerY, closeTo(cam.centerY, 0.05));
       final angle = env.game.rotation.angle;
@@ -373,8 +373,8 @@ void main() {
     testWidgets('com o norte para cima não há bússola; arrastar faz a bússola aparecer, e tocar nela volta ao norte', (tester) async {
       final env = await pumpGame(tester);
       expect(find.byType(CompassButton), findsNothing);
-      env.game.dragRotate(40);
-      env.game.dragRotate(40);
+      env.game.dragRotate(0.5);
+      env.game.dragRotate(0.5);
       env.game.touchEnd();
       await env.settle(2);
       expect(env.game.rotation.angle, closeTo(1.0, 1e-6));
@@ -391,7 +391,7 @@ void main() {
     testWidgets('duplo toque na bússola liga o seguir direção: o mapa gira com a bússola do celular, com o norte verdadeiro', (tester) async {
       final heading = FakeHeading();
       final env = await pumpGame(tester, heading: heading);
-      env.game.dragRotate(80);
+      env.game.dragRotate(1.0);
       env.game.touchEnd();
       await env.settle(2);
       expect(env.game.rotation.followHeading, isFalse);
@@ -684,7 +684,10 @@ void main() {
       final env = await pumpGame(tester);
       final eco = await goToEco(env);
       final state = env.game.worldView!.state;
-      await tester.dragFrom(screenOf(env, eco), const Offset(80, 0));
+      final g = await tester.startGesture(screenOf(env, eco));
+      await g.moveBy(const Offset(60, 0));
+      await g.moveBy(const Offset(0, 100)); // já longe do Conjurador: o dedo gira o mapa
+      await g.up();
       await env.settle(4);
       expect(env.game.rotation.angle, isNot(0));
       expect(state.markOf(eco.uid), isNull);
@@ -697,6 +700,7 @@ void main() {
       final g = await tester.startGesture(screenOf(env, eco));
       await tester.pump(const Duration(milliseconds: 200));
       await g.moveBy(const Offset(60, 0)); // passa do limiar antes dos 500 ms
+      await g.moveBy(const Offset(0, 100));
       await tester.pump(const Duration(milliseconds: 600));
       await g.up();
       await env.settle(4);

@@ -6,6 +6,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
@@ -106,10 +107,14 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   String _version = 'dev';
 
+  /// O mapa está sendo trocado por um novo: a tela nova já ligou o wake lock e esta não pode desligá-lo.
+  bool _restarting = false;
+
   /// Recomeça o mapa com o save que está em disco: um backup importado ou outro grupo mudam a seed e tudo
   /// que depende dela.
   Future<void> _restart() async {
     if (!mounted) return;
+    _restarting = true;
     await Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
       builder: (_) => GameMapScreen(
         tools: widget.tools,
@@ -226,6 +231,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // A tela fica acesa enquanto o mapa está aberto: o jogo anda a pé, com o celular na mão e sem tocar.
+    unawaited(WakelockPlus.enable().catchError((_) {})); // sem o plugin (testes) não há o que ligar
     tools.addListener(_rebuild);
     tools.clock.addListener(_rebuild);
   }
@@ -387,6 +394,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    if (!_restarting) unawaited(WakelockPlus.disable().catchError((_) {}));
     tools.removeListener(_rebuild);
     tools.clock.removeListener(_rebuild);
     final r = _ready;
@@ -433,8 +441,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             if (_touch.pendingLongPress) _longTimer = Timer(Duration(milliseconds: _touch.longPressMs), _onLongTimer);
           },
           onPointerMove: (e) {
-            final dx = _touch.move(e.localPosition);
-            if (dx != 0) game.dragRotate(dx);
+            final turn = _touch.move(e.localPosition, center: game.screenCenter);
+            if (turn != 0) game.dragRotate(turn);
             if (_touch.dragging) _longTimer?.cancel();
           },
           onPointerUp: (e) {

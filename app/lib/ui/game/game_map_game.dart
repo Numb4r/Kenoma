@@ -182,12 +182,15 @@ class GameMapGame extends FlameGame {
     if (scale != 1.0) widthM = (_widthAtStart / scale).clamp(minWidthM, maxWidthM).toDouble();
   }
 
-  /// Arrasto de um dedo, [dx] pixels na horizontal: gira o mapa em torno do Conjurador.
-  void dragRotate(double dx) {
-    if (dx == 0) return;
-    rotation.dragBy(dx);
+  /// O dedo girou o mapa em [radians] em torno do Conjurador (sentido horário positivo).
+  void dragRotate(double radians) {
+    if (radians == 0) return;
+    rotation.rotateBy(radians);
     onFollowHeading?.call(false);
   }
+
+  /// O centro da tela, onde o Conjurador fica: o eixo do giro.
+  Offset get screenCenter => Offset(size.x / 2, size.y / 2);
 
   /// A bússola do celular leu [magneticDeg] (graus a partir do norte magnético, no sentido horário).
   void setHeading(double magneticDeg) => rotation.setHeading((magneticDeg + declinationDeg) % 360);

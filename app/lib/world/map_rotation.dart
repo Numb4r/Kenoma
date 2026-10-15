@@ -48,15 +48,12 @@ class MapRotation {
   /// como desligar).
   bool get showCompass => _angle.abs() > 0.0087 || followHeading; // 0,5 grau
 
-  /// Radianos de giro por pixel de arrasto horizontal: uma tela de ~400 px dá uma volta e meia.
-  static const double radPerPx = 0.0125;
-
-  /// O dedo arrastou [dxPx] pixels na horizontal: o mapa gira junto, sem suavização (já está no dedo).
-  /// Girar com a mão desliga o "seguir direção".
-  void dragBy(double dxPx) {
-    if (dxPx == 0) return;
+  /// O dedo girou o mapa em [radians] (sentido horário positivo): o mapa vai junto, direto, sem suavização
+  /// (já está no dedo). Girar com a mão desliga o "seguir direção".
+  void rotateBy(double radians) {
+    if (radians == 0) return;
     followHeading = false;
-    _target = normalizeAngle(_target + dxPx * radPerPx);
+    _target = normalizeAngle(_target + radians);
     _angle = _target;
   }
 

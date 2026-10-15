@@ -139,18 +139,18 @@ void main() {
       expect((r.angle, r.showCompass, r.followHeading), (0.0, false, false));
     });
 
-    test('arrastar para a direita gira no sentido horário, direto no dedo, e a bússola aparece', () {
+    test('girar o mapa pelo dedo é direto, sem suavização, e o sinal positivo é horário, e a bússola aparece', () {
       final r = MapRotation();
-      r.dragBy(80);
-      expect(r.angle, closeTo(80 * MapRotation.radPerPx, 1e-12));
+      r.rotateBy(1.0);
+      expect(r.angle, closeTo(1.0, 1e-12));
       expect(r.showCompass, isTrue);
-      r.dragBy(-80);
+      r.rotateBy(-1.0);
       expect(r.angle, closeTo(0, 1e-12));
     });
 
     test('o giro manual fica onde está: nem soltar perto do norte nem o tempo o devolvem', () {
       final r = MapRotation();
-      r.dragBy(4); // 0,05 rad, perto do norte
+      r.rotateBy(0.05); // perto do norte
       final at = r.angle;
       for (var i = 0; i < 600; i++) {
         r.update(0.016);
@@ -160,14 +160,14 @@ void main() {
 
     test('arrastar além de uma volta normaliza o ângulo', () {
       final r = MapRotation();
-      r.dragBy(600); // 7,5 rad
+      r.rotateBy(7.5);
       expect(r.angle, inExclusiveRange(-pi - 1e-9, pi + 1e-9));
       expect(r.angle, closeTo(7.5 - 2 * pi, 1e-9));
     });
 
     test('tocar na bússola leva ao norte pelo caminho curto, e some a bússola', () {
       final r = MapRotation();
-      r.dragBy(240); // 3,0 rad
+      r.rotateBy(3.0);
       final start = r.angle;
       expect(start.abs(), greaterThan(2));
       r.goNorth();
@@ -235,7 +235,7 @@ void main() {
 
       r.toggleFollowHeading();
       expect(r.followHeading, isTrue);
-      r.dragBy(40);
+      r.rotateBy(0.5);
       expect(r.followHeading, isFalse);
     });
   });
