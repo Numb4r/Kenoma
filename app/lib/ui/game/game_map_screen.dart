@@ -1,3 +1,5 @@
+import '../../dev/tap_latency.dart';
+import '../pressable.dart';
 import '../../core/features.dart';
 import 'dart:async';
 
@@ -310,6 +312,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       case TouchResult.tooFar:
         _toast('a ${r.world.distanceM(spawn).round()} m');
       case TouchResult.encounter:
+        r.game.fx.hop(spawn.uid); // o Eco dá um pulo na hora, enquanto a folha sobe
         await _startEncounter(spawn);
     }
   }
@@ -340,6 +343,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    TapLatency.instance.start(); // mede toque → primeiro quadro, para o menu de debug
     // A tela fica acesa enquanto o mapa está aberto: o jogo anda a pé, com o celular na mão e sem tocar.
     unawaited(WakelockPlus.enable().catchError((_) {})); // sem o plugin (testes) não há o que ligar
     tools.addListener(_rebuild);
@@ -451,6 +455,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     game.onFollowHeading = _setFollowHeading;
     game.onWalked = _onWalked;
     world.onAggressive = _onAggressive;
+    world.onCollected = game.onCollected;
+    world.onFled = game.onEcoFled;
     world.onShiny = _onShiny;
     _weather = WeatherService(
       deterministic: (lat, lon, t) => _weatherAtLatLon(session.state.seed, data, lat, lon, t),
@@ -620,8 +626,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                 top: 0,
                 width: 48,
                 height: 48,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+                child: Pressable(
                   onTap: () => Navigator.of(context).pop(),
                   child: const Center(child: Text('<', style: TextStyle(fontSize: 24, color: kText))),
                 ),
@@ -629,8 +634,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
               Positioned(
                 right: 8,
                 top: 8,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+                child: Pressable(
                   onTap: () => _switchSource(!tools.useSimulator),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),

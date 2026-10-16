@@ -89,6 +89,12 @@ class WorldView {
   /// Devolve `true` se abriu; com `false` (tela ocupada) a chance não se gasta e ele tenta de novo no próximo quadro.
   bool Function(WorldSpawn eco)? onAggressive;
 
+  /// Uma Fagulha ou um material foi coletado (sozinho pela Aura ou por toque): a tela mostra o item voando até o Conjurador.
+  void Function(WorldSpawn item)? onCollected;
+
+  /// Um Eco arisco fugiu: a tela o desfaz em pixels onde estava.
+  void Function(WorldSpawn eco)? onFled;
+
   /// Um Eco Brilhante apareceu à vista (uma vez por Eco): a tela toca um som curto e avisa.
   void Function(WorldSpawn eco)? onShiny;
   final _announced = <int>{};
@@ -179,7 +185,10 @@ class WorldView {
       }
       if (s.isEco && inTouchRange(s)) {
         inAuraNow.add(s.uid);
-        if (!_inAura.contains(s.uid) && _entered(s, tUtc)) continue; // fugiu
+        if (!_inAura.contains(s.uid) && _entered(s, tUtc)) {
+          onFled?.call(s);
+          continue; // fugiu
+        }
         _tryAggressive(s);
       }
       if (!s.isSpark || !canReach(s)) {
@@ -191,6 +200,7 @@ class WorldView {
       _gainXp(state.balance.spark, tUtc);
       state.recordEvent('spark', s.entryId.replaceFirst('item.dust.', ''), s.quantity);
       collected.add(s);
+      onCollected?.call(s);
       onMessage?.call('+${s.quantity} ${itemName(s.entryId)}');
     }
     _inAura
@@ -253,6 +263,7 @@ class WorldView {
     state.recordEvent('material', s.entryId, s.quantity);
     spawns = [for (final o in spawns) if (o.uid != s.uid) o];
     onMessage?.call('+${s.quantity} ${itemName(s.entryId)}');
+    onCollected?.call(s);
     return TouchResult.collected;
   }
 

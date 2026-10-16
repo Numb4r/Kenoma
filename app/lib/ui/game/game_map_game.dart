@@ -1,3 +1,4 @@
+import 'fx.dart';
 import '../../core/features.dart';
 import 'dart:ui';
 import 'dart:ui' as ui;
@@ -190,6 +191,15 @@ class GameMapGame extends FlameGame {
   /// O marcador suavizado.
   final avatar = PlayerAvatar();
 
+  /// Retorno visual: coleta, pulo, costura e fuga dos Ecos.
+  final fx = Fx();
+
+  /// Uma Fagulha ou material foi coletado: voa até o Conjurador.
+  void onCollected(WorldSpawn s) => fx.collected(s, spawnColor(s, typeOf));
+
+  /// Um Eco arisco fugiu: se desfaz onde estava.
+  void onEcoFled(WorldSpawn s) => fx.fled(s, sprites[s.entryId], variantTint?.call(s), ecoSizePx);
+
   /// A luz do mapa pela altura do sol em ([_lat], [_lon]) na hora do jogo. Recalculada a cada poucos segundos.
   DayLight light = const DayLight(night: 0, warm: 0);
   double _lightIn = 0;
@@ -310,6 +320,7 @@ class GameMapGame extends FlameGame {
       light = dayLightAt(_lat, _lon, nowUtc());
     }
     _time += dt;
+    fx.update(dt);
     _refreshIn -= dt;
     if (_hasFix && worldView != null && _refreshIn <= 0) {
       _refreshIn = 0.25;
@@ -317,6 +328,7 @@ class GameMapGame extends FlameGame {
       // mostra dentro é o que a coleta pega.
       final (lat, lon) = avatar.hasPosition ? tileFractionToLatLon(avatar.x, avatar.y, biomeZoom) : (_lat, _lon);
       worldView!.refresh(lat: lat, lon: lon, tUtc: nowUtc());
+      fx.observe(worldView!.spawns);
     }
     if (avatar.hasPosition) follow.setTarget(avatar.x, avatar.y);
     if (size.x > 0) {
@@ -375,6 +387,8 @@ class GameMapGame extends FlameGame {
         inAura: w.canReach,
         marked: (s) => w.state.markOf(s.uid) != null,
         tintOf: variantTint,
+        hopOf: (uid) => fx.hopOffset(uid, 8),
+        appearOf: fx.appear,
         time: _time,
         avoid: markerRect(center, playerSize).inflate(6),
         spriteSize: spriteSize,
@@ -383,7 +397,10 @@ class GameMapGame extends FlameGame {
       );
     }
     if (streetLifeEnabled) _paintFamiliar(canvas, cam, view);
-    paintPlayerMarker(canvas, center, sprite: _playerFrame, size: playerSize, mirrored: _facingLeft, dpr: dpr);
+    // Parado, o Conjurador respira: dois quadros, o segundo um pixel de arte mais alto.
+    final breath = avatar.moving || ((_time / 0.7).floor() % 2 == 0) ? 0.0 : -balance.artPixelDp;
+    paintPlayerMarker(canvas, center.translate(0, breath), sprite: _playerFrame, size: playerSize, mirrored: _facingLeft, dpr: dpr);
+    fx.paint(canvas, view, cam, avatar: center, playerSize: playerSize, sparkSize: sparkSize, dpr: dpr);
     if (w != null) {
       final off = spriteSize / 2;
       final tracked = w.tracked(

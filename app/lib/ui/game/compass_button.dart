@@ -3,6 +3,7 @@
 /// bússola do celular).
 library;
 
+import '../pressable.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -23,8 +24,7 @@ class CompassButton extends StatelessWidget {
   static const double size = 52;
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        behavior: HitTestBehavior.opaque,
+  Widget build(BuildContext context) => Pressable(
         onTap: onNorth,
         onDoubleTap: onToggleFollow,
         child: SizedBox(width: size, height: size, child: CustomPaint(painter: _CompassPainter(angle, follow))),

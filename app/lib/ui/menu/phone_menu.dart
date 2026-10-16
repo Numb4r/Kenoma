@@ -2,6 +2,7 @@
 /// com Coleção, Círculo, Bestiário e Bancada.
 library;
 
+import '../pressable.dart';
 import '../../core/features.dart';
 import 'package:flutter/material.dart';
 
@@ -25,8 +26,7 @@ class PhoneButton extends StatelessWidget {
   final bool alert;
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        behavior: HitTestBehavior.opaque,
+  Widget build(BuildContext context) => Pressable(
         onTap: onTap,
         child: Stack(clipBehavior: Clip.none, children: [
           Container(
@@ -77,6 +77,7 @@ Future<void> showPhoneMenu(
 
   return showModalBottomSheet<void>(
     context: context,
+    sheetAnimationStyle: sheetSlide,
     backgroundColor: kPanel,
     shape: const RoundedRectangleBorder(side: BorderSide(color: kVeil, width: 3)),
     builder: (_) => SafeArea(

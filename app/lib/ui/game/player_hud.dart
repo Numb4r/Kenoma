@@ -2,6 +2,7 @@
 /// e as fichas das marcações ativas com a contagem regressiva.
 library;
 
+import '../pressable.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
 
@@ -104,8 +105,7 @@ class _MarkChipsState extends State<MarkChips> {
           mainAxisSize: MainAxisSize.min,
           children: [
             for (final m in marks)
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
+              Pressable(
                 onTap: () => widget.onTap(m),
                 child: Container(
                   key: Key('mark-${m.uid}'),

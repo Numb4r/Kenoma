@@ -52,6 +52,8 @@ void paintSpawns(
   required bool Function(WorldSpawn) inAura,
   bool Function(WorldSpawn)? marked,
   VariantTintOf? tintOf,
+  double Function(int uid)? hopOf,
+  double Function(int uid)? appearOf,
   required double time,
   required ui.Rect avoid,
   required double spriteSize,
@@ -67,7 +69,18 @@ void paintSpawns(
     final near = inAura(s);
     if (s.isEco) {
       final tint = tintOf?.call(s);
-      _eco(canvas, center, s, sprites[s.entryId], spriteSize, typeOf, near, time, avoid, tint: tint);
+      final appear = appearOf?.call(s.uid) ?? 1.0;
+      final hop = hopOf?.call(s.uid) ?? 0.0;
+      if (appear < 1) {
+        // A costura abre do centro para fora e o Eco aparece dentro dela.
+        canvas.save();
+        canvas.clipRect(ui.Rect.fromCenter(center: center, width: spriteSize * appear + 1, height: spriteSize * 2));
+        _eco(canvas, center.translate(0, hop), s, sprites[s.entryId], spriteSize, typeOf, near, time, avoid, tint: tint);
+        canvas.restore();
+        paintSeam(canvas, center, spriteSize, appear);
+      } else {
+        _eco(canvas, center.translate(0, hop), s, sprites[s.entryId], spriteSize, typeOf, near, time, avoid, tint: tint);
+      }
       if (s.behavior != EcoBehavior.passive) _behaviorIcon(canvas, center, s.behavior, spriteSize);
       if (marked?.call(s) ?? false) _markRing(canvas, center, spriteSize);
     } else if (s.isSpark) {
@@ -174,6 +187,10 @@ void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double 
   if (spot != null) label.paint(canvas, spot.topLeft);
 }
 
+/// A Fagulha e o material fora do mapa (o efeito de coleta os reaproveita).
+void paintSparkIcon(ui.Canvas canvas, ui.Offset c, ui.Color color, double size, double dpr) => _spark(canvas, c, color, size, dpr, true, 0);
+void paintMaterialIcon(ui.Canvas canvas, ui.Offset c, ui.Color color, double size) => _material(canvas, c, color, size, true);
+
 /// Fagulha: uma faísca de [size] pixels de ponta a ponta (cerca de 3 m do mundo).
 void _spark(ui.Canvas canvas, ui.Offset c, ui.Color color, double size, double dpr, bool near, double time) {
   final px = math.max(1, (size / 5 * dpr).round()) / dpr; // 5 pixels de ponta a ponta com o braço maior
@@ -196,4 +213,14 @@ void _material(ui.Canvas canvas, ui.Offset c, ui.Color color, double size, bool 
   canvas.drawRect(r.inflate(2), _flat..color = kOutline);
   canvas.drawRect(r, _flat..color = near ? color : color.withValues(alpha: 0.6));
   canvas.drawRect(ui.Rect.fromLTWH(r.left, r.top, r.width, math.max(1.0, side * 0.2)), _flat..color = kText.withValues(alpha: near ? 0.5 : 0.25));
+}
+
+/// A costura do Véu abrindo em volta de um Eco que acaba de aparecer: duas linhas violeta que se afastam do centro. O
+/// chamador recorta o sprite à largura aberta ([u] de 0 a 1).
+void paintSeam(ui.Canvas canvas, ui.Offset c, double size, double u) {
+  final half = size * 0.5 * u;
+  final h = size * (0.35 + 0.65 * u);
+  for (final sx in [-half, half]) {
+    canvas.drawRect(ui.Rect.fromCenter(center: c.translate(sx, 0), width: 2, height: h), ui.Paint()..color = kVeil..isAntiAlias = false);
+  }
 }

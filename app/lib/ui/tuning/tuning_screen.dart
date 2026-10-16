@@ -1,3 +1,4 @@
+import '../pressable.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
@@ -278,9 +279,8 @@ class PixelButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
       child: Container(
         alignment: Alignment.center,
         constraints: const BoxConstraints(minHeight: 48, minWidth: 96),

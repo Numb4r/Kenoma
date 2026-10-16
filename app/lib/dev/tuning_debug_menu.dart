@@ -3,6 +3,7 @@
 /// relógio UTC. Fica em todas as builds de teste, inclusive as de release (CLAUDE.md).
 library;
 
+import 'tap_latency.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -285,6 +286,19 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
               activeThumbColor: kVeil,
               onChanged: (v) => _tools.setOverlays(radii: v),
             ),
+            Row(children: [
+              Expanded(
+                child: Text(
+                  TapLatency.instance.samples.isEmpty
+                      ? 'LATÊNCIA DO TOQUE: TOQUE EM ALGO E ATUALIZE'
+                      : 'LATÊNCIA DO TOQUE: MEDIANA ${TapLatency.instance.median!.toStringAsFixed(0)} MS · PIOR ${TapLatency.instance.worst!.toStringAsFixed(0)} MS (${TapLatency.instance.samples.length} TOQUES)',
+                  style: const TextStyle(fontSize: 8, color: kDim, height: 1.8),
+                ),
+              ),
+              PixelButton(label: 'Atualizar', color: kDim, onTap: () => setState(() {})),
+              const SizedBox(width: 8),
+              PixelButton(label: 'Zerar', color: kDim, onTap: () => setState(TapLatency.instance.clear)),
+            ]),
             const SizedBox(height: 8),
             Row(children: [_coordField('Latitude', _simLat), const SizedBox(width: 8), _coordField('Longitude', _simLon)]),
             const SizedBox(height: 8),

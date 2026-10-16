@@ -3,6 +3,7 @@
 /// tentar de novo com outro selo. As regras da sintonia estão em `capture/`; aqui só se liga o mapa a ela.
 library;
 
+import '../pressable.dart';
 import 'package:flutter/material.dart';
 
 import '../../capture/seal.dart';
@@ -46,6 +47,7 @@ Future<void> runEncounter(
     final prep = await showModalBottomSheet<Prep>(
       // ignore: use_build_context_synchronously
       context: context,
+      sheetAnimationStyle: sheetSlide,
       backgroundColor: kPanel,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(side: BorderSide(color: kVeil, width: 3)),
