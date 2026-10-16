@@ -1,86 +1,97 @@
-/// Tráfego do Véu ambiente (docs/GDD.md, "Mapa vivo"): carros e pedestres fantasmas que circulam pelas ruas reais.
-/// Só visual: nada aqui é spawn, coleta nem Aura. Cada fantasma sai de `hash(seed, tile, linha, janela)`, então o
-/// grupo vê o mesmo tráfego na mesma hora; a densidade segue a hora real do lugar (cheio no rush, vazio de
-/// madrugada) e os carros respeitam a mão única do OSM e andam pela direita. Dart puro.
+/// Tráfego do Véu ambiente (docs/GDD.md, "Tráfego do Véu"): carros, motos, passantes e ciclistas fantasmas que
+/// circulam pelas ruas reais. Só visual: nada aqui é spawn, coleta nem Aura. Dart puro.
+///
+/// Cada fantasma é uma viagem: nasce numa ponta de rua num instante sorteado por `hash(seed, tile, rua, fatia)`,
+/// segue as ruas ligadas (carro na pista pela direita, passante na calçada, ciclista só em caminho de pedestre) e
+/// some no fim. A posição é função contínua do tempo UTC; nada depende de câmera, tela, aparelho ou latitude do GPS,
+/// então dois aparelhos com a mesma seed veem os mesmos fantasmas nos mesmos lugares. Quem nasce ou morre é
+/// sempre desenhado com [GhostPhase.fadeIn] / [GhostPhase.fadeOut] (costura do Véu de [veilFadeS]); quem entra na
+/// tela andando já existia fora dela.
 library;
 
+import 'dart:collection';
 import 'dart:math' as math;
 
 import '../core/fnv.dart';
 import '../core/pcg32.dart';
+import '../core/tiles.dart';
 import '../data/visual_pack.dart';
+import 'traffic_graph.dart';
+import 'traffic_route.dart';
 
-/// Quanto dura uma janela de tráfego, em segundos. Dentro dela o conjunto de fantasmas de uma rua não muda.
-const int trafficWindowS = 1200;
+export 'traffic_graph.dart' show GhostLine, TrafficGraph, ghostLinesOfTile;
+export 'traffic_route.dart' show RiderKind, TrafficPath;
 
-/// Quanto os fantasmas aparecem e somem no começo e no fim da janela, e nas pontas da rua (no máximo [_fadeEndM], e
-/// um quarto do trecho nos curtos: o pacote parte as ruas em trechos de dezenas de metros).
-const double _fadeS = 8;
-const double _fadeEndM = 15;
+/// Duração das fatias de nascimento, em segundos. Uma viagem dura no máximo [_backSlots] fatias.
+const int trafficSlotS = 120;
+const int _backSlots = 4;
+const double _maxLifeS = trafficSlotS * _backSlots * 1.0;
 
-/// Espaço vazio depois do fim da rua antes de o fantasma reaparecer no começo, em metros (no máximo [_loopGapM], e
-/// metade do trecho nos curtos).
-const double _loopGapM = 60;
+/// Quanto dura a costura do Véu quando um fantasma nasce ou morre, em segundos.
+const double veilFadeS = 0.3;
 
 enum GhostKind { car, pedestrian }
 
-/// Uma polilinha do pacote visual pronta para o tráfego: pontos em células z21 e o comprimento acumulado.
-class GhostLine {
-  GhostLine({required this.key, required this.roadClass, required this.oneway, required this.xy, required this.cum})
-      : lengthCells = cum.last {
-    var x0 = double.infinity, y0 = double.infinity, x1 = -double.infinity, y1 = -double.infinity;
-    for (var i = 0; i < xy.length; i += 2) {
-      x0 = math.min(x0, xy[i]);
-      x1 = math.max(x1, xy[i]);
-      y0 = math.min(y0, xy[i + 1]);
-      y1 = math.max(y1, xy[i + 1]);
-    }
-    minX = x0;
-    minY = y0;
-    maxX = x1;
-    maxY = y1;
-  }
+enum GhostModel {
+  hatch(GhostKind.car, RiderKind.car, 6),
+  sedan(GhostKind.car, RiderKind.car, 6),
+  pickup(GhostKind.car, RiderKind.car, 5),
+  moto(GhostKind.car, RiderKind.car, 4),
+  adult(GhostKind.pedestrian, RiderKind.walker, 5),
+  childPair(GhostKind.pedestrian, RiderKind.walker, 5),
+  elder(GhostKind.pedestrian, RiderKind.walker, 4),
+  cyclist(GhostKind.pedestrian, RiderKind.bike, 4);
 
-  /// Retângulo que contém a rua, em células, para descartar rápido o que está fora da tela.
-  late final double minX, minY, maxX, maxY;
+  const GhostModel(this.kind, this.rider, this.paletteCount);
 
-  /// Identifica a rua na geração: tile e índice da linha dentro dele.
-  final (int, int, int) key;
-  final RoadClass roadClass;
-  final OneWay oneway;
+  final GhostKind kind;
+  final RiderKind rider;
 
-  /// Pontos `x0, y0, x1, y1, ...` em células z21 fracionárias.
-  final List<double> xy;
-
-  /// Comprimento acumulado até cada ponto, em células.
-  final List<double> cum;
-  final double lengthCells;
-
-  bool get isPedestrian => roadClass == RoadClass.pedestrian;
+  /// Quantas paletas o modelo tem (4 a 6).
+  final int paletteCount;
 }
 
-/// As linhas de tráfego de um tile: cada polilinha com duas ou mais pontas distintas.
-List<GhostLine> ghostLinesOfTile(VisualTile tile, int tx, int ty, {required int cellsPerTile, required int extent}) {
-  final unit = cellsPerTile / extent;
-  final out = <GhostLine>[];
-  for (var i = 0; i < tile.lines.length; i++) {
-    final l = tile.lines[i];
-    final n = l.xy.length ~/ 2;
-    if (n < 2) continue;
-    final xy = <double>[], cum = <double>[0.0];
-    for (var k = 0; k < n; k++) {
-      xy
-        ..add(tx * cellsPerTile + l.xy[2 * k] * unit)
-        ..add(ty * cellsPerTile + l.xy[2 * k + 1] * unit);
-      if (k > 0) {
-        final dx = xy[2 * k] - xy[2 * k - 2], dy = xy[2 * k + 1] - xy[2 * k - 1];
-        cum.add(cum.last + math.sqrt(dx * dx + dy * dy));
-      }
-    }
-    if (cum.last <= 0) continue;
-    out.add(GhostLine(key: (tx, ty, i), roadClass: l.roadClass, oneway: l.oneway, xy: xy, cum: cum));
-  }
-  return out;
+/// Em que ponto da vida o fantasma está: nasce e morre pela costura do Véu, no resto está inteiro.
+enum GhostPhase { alive, fadeIn, fadeOut }
+
+class Ghost {
+  const Ghost({
+    required this.id,
+    required this.model,
+    required this.palette,
+    required this.x,
+    required this.y,
+    required this.heading,
+    required this.speedMps,
+    required this.phase,
+    required this.phaseT,
+    required this.travelledM,
+  });
+
+  /// Identidade estável: a mesma nos dois aparelhos e em todos os quadros.
+  final int id;
+  final GhostModel model;
+  final int palette;
+
+  /// Posição em células z21 fracionárias, já no lugar da pista ou da calçada.
+  final double x;
+  final double y;
+
+  /// Direção em radianos (x leste, y sul; horário na tela).
+  final double heading;
+  final double speedMps;
+  final GhostPhase phase;
+
+  /// Progresso da costura de 0 a 1 em [GhostPhase.fadeIn] (se forma) e [GhostPhase.fadeOut] (se desfaz); 1 se inteiro.
+  final double phaseT;
+
+  /// Distância andada desde o nascimento, em metros (para o passo do pedestre).
+  final double travelledM;
+
+  GhostKind get kind => model.kind;
+
+  /// Opacidade de 0 a 1 implícita pela fase.
+  double get alpha => switch (phase) { GhostPhase.alive => 1.0, GhostPhase.fadeIn => phaseT, GhostPhase.fadeOut => 1 - phaseT };
 }
 
 /// A hora local média do lugar, de 0 a 24: o instante UTC mais a longitude (15° por hora). Determinística: não usa o
@@ -102,117 +113,209 @@ double carDensity(double hour) => (0.05 + 0.7 * _bump(hour, 8, 1.3) + 0.7 * _bum
 /// Densidade dos pedestres: sobe no almoço e no fim da tarde, quase some de madrugada.
 double pedestrianDensity(double hour) => (0.03 + 0.35 * _bump(hour, 9, 1.5) + 0.5 * _bump(hour, 12.5, 1.6) + 0.55 * _bump(hour, 18, 1.8) + 0.15 * _bump(hour, 21, 1.5)).clamp(0.03, 1.0);
 
-/// Fantasmas por 100 m de rua com a densidade em 1, por classe: as avenidas enchem mais que as ruas calmas.
-double _ratePer100m(RoadClass c) => switch (c) {
-      RoadClass.principal => 3.5,
-      RoadClass.secondary => 2.4,
-      RoadClass.local => 1.2,
-      RoadClass.pedestrian => 1.0,
-    };
+/// Carros presentes por 100 m de rua com a densidade em 1: as avenidas enchem mais que as ruas calmas.
+double _carConc(RoadClass c) => switch (c) { RoadClass.principal => 3.5, RoadClass.secondary => 2.4, RoadClass.local => 1.2, RoadClass.pedestrian => 0 };
 
-/// Velocidade em m/s de um fantasma, sorteada na faixa da classe.
-(double, double) _speedRange(RoadClass c) => switch (c) {
-      RoadClass.principal => (9.0, 14.0),
-      RoadClass.secondary => (6.0, 10.0),
-      RoadClass.local => (3.5, 7.0),
-      RoadClass.pedestrian => (1.1, 1.7),
-    };
+/// Passantes presentes por 100 m de calçada (ou de caminho, na classe pedestre).
+double _walkConc(RoadClass c) => switch (c) { RoadClass.principal => 0.7, RoadClass.secondary => 0.6, RoadClass.local => 0.45, RoadClass.pedestrian => 1.0 };
 
-class Ghost {
-  const Ghost({required this.kind, required this.x, required this.y, required this.heading, required this.alpha, required this.lengthM, required this.seed});
+const double _bikeConc = 0.25; // só nos caminhos de pedestre
 
-  final GhostKind kind;
+/// Velocidade do carro em m/s, por classe da rua onde nasce.
+(double, double) _carSpeed(RoadClass c) => switch (c) { RoadClass.principal => (9.0, 14.0), RoadClass.secondary => (6.0, 10.0), _ => (3.5, 7.0) };
 
-  /// Posição em células z21 fracionárias, já com o deslocamento da faixa.
-  final double x;
-  final double y;
+const double _carTripM = 400, _carTripSpan = 400; // comprimento da viagem: 400 a 800 m
+const double _walkTripM = 100, _walkTripSpan = 200;
+const double _bikeTripM = 250, _bikeTripSpan = 300;
 
-  /// Direção em radianos (x leste, y sul; horário na tela).
-  final double heading;
+const double _maxSeedsPerLine = 12;
 
-  /// 0 a 1: nasce e some suave, no começo e no fim da janela e nas pontas da rua.
-  final double alpha;
+/// Velocidade máxima de qualquer fantasma, em m/s (os testes usam como teto de salto).
+const double maxGhostSpeedMps = 14;
 
-  /// Comprimento do corpo, em metros: o carro e o pedestre têm tamanhos diferentes.
-  final double lengthM;
+class _Seed {
+  _Seed(this.id, this.line, this.fromFirst, this.tBirth, this.model, this.palette, this.speed, this.targetM, this.side, this.jitter, this.pick, this.mpc);
 
-  /// Sorteio estável do fantasma (para variar a cor sem piscar).
+  final int id;
+  final GhostLine line;
+  final bool fromFirst;
+  final double tBirth;
+  final GhostModel model;
+  final int palette;
+  final double speed, targetM;
+  final int side;
+  final double jitter;
+  final int pick;
+  final double mpc;
+
+  /// O caminho, construído na primeira vez que a viagem chega perto da vista (e guardado junto com a fatia).
+  TrafficPath? path;
+  bool built = false;
+}
+
+/// O campo de fantasmas: sorteia as viagens por tile e fatia, constrói os caminhos sob demanda e diz quem está onde.
+class TrafficField {
+  TrafficField({
+    required this.graph,
+    required this.seed,
+    this.roadWidthM = const {'principal': 12, 'secondary': 9, 'local': 6, 'pedestrian': 2},
+    this.cacheSlots = 160,
+  });
+
+  final TrafficGraph graph;
   final int seed;
-}
 
-/// Quantos fantasmas a [line] tem na janela [window]: o esperado (densidade × taxa × comprimento) com a parte
-/// fracionária sorteada, então as ruas não ficam todas iguais.
-int ghostCount(GhostLine line, int seed, int window, double hour, double metersPerCell) {
-  final lenM = line.lengthCells * metersPerCell;
-  final dens = line.isPedestrian ? pedestrianDensity(hour) : carDensity(hour);
-  final expected = dens * _ratePer100m(line.roadClass) * lenM / 100;
-  final rng = Pcg32(fnv1a64([seed, line.key.$1, line.key.$2, line.key.$3, window, saltTraf]), saltKenoma);
-  final n = expected.floor() + (rng.nextFloat() < expected - expected.floor() ? 1 : 0);
-  return math.min(n, 8);
-}
+  /// Largura da via por classe, em metros (`map.road_width_m` do balance). O pacote visual não guarda a tag `width`.
+  final Map<String, double> roadWidthM;
+  final int cacheSlots;
 
-/// Os fantasmas da [line] no instante [tUtc]. Cada um anda `velocidade × tempo` desde o começo da janela, dando
-/// a volta (com um vazio no fim) para o fluxo não parar. O sentido vem do OSM: mão única fixa; mão dupla sorteia
-/// e o carro anda pela direita da pista.
-List<Ghost> ghostsOn(GhostLine line, {required int seed, required int tUtc, required double hour, required double metersPerCell}) {
-  final window = tUtc ~/ trafficWindowS;
-  final n = ghostCount(line, seed, window, hour, metersPerCell);
-  if (n == 0) return const [];
-  final rng = Pcg32(fnv1a64([seed, line.key.$1, line.key.$2, line.key.$3, window, saltTraf, 1]), saltKenoma);
-  final lenM = line.lengthCells * metersPerCell;
-  final loopM = lenM + math.min(_loopGapM, lenM * 0.5);
-  final into = (tUtc - window * trafficWindowS).toDouble();
-  final fadeWindow = math.min(1.0, math.min(into / _fadeS, (trafficWindowS - into) / _fadeS));
-  final (vLo, vHi) = _speedRange(line.roadClass);
-  final out = <Ghost>[];
-  for (var i = 0; i < n; i++) {
-    final speed = vLo + (vHi - vLo) * rng.nextFloat();
-    final start = rng.nextFloat() * loopM;
-    final dirDraw = rng.nextFloat();
-    final tag = rng.next();
-    final forward = switch (line.oneway) {
-      OneWay.forward => true,
-      OneWay.reverse => false,
-      OneWay.twoWay => dirDraw < 0.5,
-    };
-    var along = (start + speed * into) % loopM; // distância andada no sentido do movimento
-    if (along > lenM) continue; // no vazio do fim da rua: ainda não voltou
-    final s = forward ? along : lenM - along; // posição ao longo da linha, no sentido dos pontos
-    final edge = math.min(along, lenM - along);
-    final fade = fadeWindow * math.min(1.0, edge / math.min(_fadeEndM, lenM * 0.25));
-    if (fade <= 0.01) continue;
-    final p = _pointAt(line, s / metersPerCell);
-    var heading = p.heading;
-    if (!forward) heading += math.pi;
-    var x = p.x, y = p.y;
-    if (!line.isPedestrian && line.oneway == OneWay.twoWay) {
-      // Mão dupla: anda pela direita (no Brasil), deslocado 1,5 m do eixo. A direita de quem vai a leste é o sul (y+).
-      final off = 1.5 / metersPerCell;
-      x += -math.sin(heading) * off;
-      y += math.cos(heading) * off;
-    } else if (line.isPedestrian) {
-      final off = (rng.nextFloat() - 0.5) * 1.2 / metersPerCell; // calçada larga: espalha um pouco
-      x += -math.sin(heading) * off;
-      y += math.cos(heading) * off;
+  final LinkedHashMap<(int, int, int), List<_Seed>> _seeds = LinkedHashMap();
+
+  double _width(RoadClass c) => roadWidthM[c.name] ?? 6;
+
+  /// Largura (m) da via da classe [c] segundo este campo.
+  double widthOf(RoadClass c) => _width(c);
+
+  List<_Seed> _seedsOf(int tx, int ty, int slot) {
+    final key = (tx, ty, slot);
+    final cached = _seeds.remove(key);
+    if (cached != null) {
+      _seeds[key] = cached;
+      return cached;
     }
-    out.add(Ghost(kind: line.isPedestrian ? GhostKind.pedestrian : GhostKind.car, x: x, y: y, heading: heading, alpha: fade, lengthM: line.isPedestrian ? 0.8 : 4.2, seed: tag));
+    final out = _makeSeeds(tx, ty, slot);
+    _seeds[key] = out;
+    while (_seeds.length > cacheSlots) {
+      _seeds.remove(_seeds.keys.first);
+    }
+    return out;
   }
-  return out;
-}
 
-({double x, double y, double heading}) _pointAt(GhostLine line, double cells) {
-  final c = cells.clamp(0.0, line.lengthCells);
-  var lo = 0, hi = line.cum.length - 1;
-  while (hi - lo > 1) {
-    final mid = (lo + hi) ~/ 2;
-    if (line.cum[mid] <= c) {
-      lo = mid;
-    } else {
-      hi = mid;
+  List<_Seed> _makeSeeds(int tx, int ty, int slot) {
+    final lines = graph.linesOfTile(tx, ty);
+    if (lines.isEmpty) return const [];
+    final half = graph.cellsPerTile / 2;
+    final (lat, lon) = tileFractionToLatLon(tx * graph.cellsPerTile + half, ty * graph.cellsPerTile + half, biomeZoom);
+    final mpc = metersPerCell(lat);
+    final slotStart = slot * trafficSlotS;
+    final hour = localHour(slotStart, lon);
+    final carD = carDensity(hour), walkD = pedestrianDensity(hour);
+    final out = <_Seed>[];
+    for (var li = 0; li < lines.length; li++) {
+      final line = lines[li];
+      final lenM = line.lengthCells * mpc;
+      final cls = line.roadClass;
+      if (!line.isPedestrian) _stream(out, tx, ty, li, slot, 0, line, mpc, slotStart, carD * _carConc(cls) * lenM / 100 * trafficSlotS / ((_carTripM + _carTripSpan / 2) / _meanCarSpeed(cls)));
+      _stream(out, tx, ty, li, slot, 1, line, mpc, slotStart, walkD * _walkConc(cls) * lenM / 100 * trafficSlotS / ((_walkTripM + _walkTripSpan / 2) / 1.3));
+      if (line.isPedestrian) _stream(out, tx, ty, li, slot, 2, line, mpc, slotStart, walkD * _bikeConc * lenM / 100 * trafficSlotS / ((_bikeTripM + _bikeTripSpan / 2) / 4.5));
+    }
+    return out;
+  }
+
+  double _meanCarSpeed(RoadClass c) {
+    final (lo, hi) = _carSpeed(c);
+    return (lo + hi) / 2;
+  }
+
+  void _stream(List<_Seed> out, int tx, int ty, int li, int slot, int stream, GhostLine line, double mpc, int slotStart, double expected) {
+    if (expected < 0.002) return;
+    final rng = Pcg32(fnv1a64([seed, tx, ty, li, slot, saltTraf, stream]), saltKenoma);
+    final n = math.min(expected.floor() + (rng.nextFloat() < expected - expected.floor() ? 1 : 0), _maxSeedsPerLine.toInt());
+    for (var i = 0; i < n; i++) {
+      final tBirth = slotStart + rng.nextFloat() * trafficSlotS;
+      final modelDraw = rng.nextFloat();
+      final palette = rng.nextInt(6);
+      final speedDraw = rng.nextFloat();
+      final tripDraw = rng.nextFloat();
+      final endDraw = rng.nextFloat();
+      final sideDraw = rng.nextFloat();
+      final jitter = rng.nextFloat() * 2 - 1;
+      final pick = rng.next();
+      final id = fnv1a64([seed, tx, ty, li, slot, stream, i, saltTraf]) & 0x7fffffffffffffff;
+      final GhostModel model;
+      final double speed, target;
+      switch (stream) {
+        case 0:
+          model = modelDraw < 0.4 ? GhostModel.hatch : modelDraw < 0.7 ? GhostModel.sedan : modelDraw < 0.85 ? GhostModel.pickup : GhostModel.moto;
+          final (lo, hi) = _carSpeed(line.roadClass);
+          speed = lo + (hi - lo) * speedDraw;
+          target = _carTripM + _carTripSpan * tripDraw;
+        case 1:
+          model = modelDraw < 0.6 ? GhostModel.adult : modelDraw < 0.85 ? GhostModel.childPair : GhostModel.elder;
+          speed = switch (model) { GhostModel.elder => 0.7 + 0.3 * speedDraw, GhostModel.childPair => 0.9 + 0.4 * speedDraw, _ => 1.1 + 0.6 * speedDraw };
+          target = _walkTripM + _walkTripSpan * tripDraw;
+        default:
+          model = GhostModel.cyclist;
+          speed = 3.5 + 2.0 * speedDraw;
+          target = _bikeTripM + _bikeTripSpan * tripDraw;
+      }
+      final fromFirst = switch (line.oneway) {
+        // Carro: a mão única manda. Passante e ciclista não têm mão.
+        OneWay.forward when stream == 0 => true,
+        OneWay.reverse when stream == 0 => false,
+        _ => endDraw < 0.5,
+      };
+      out.add(_Seed(id, line, fromFirst, tBirth, model, palette % model.paletteCount, speed, target, sideDraw < 0.5 ? 1 : -1, jitter, pick, mpc));
     }
   }
-  final seg = line.cum[hi] - line.cum[lo];
-  final t = seg <= 0 ? 0.0 : (c - line.cum[lo]) / seg;
-  final x0 = line.xy[2 * lo], y0 = line.xy[2 * lo + 1], x1 = line.xy[2 * hi], y1 = line.xy[2 * hi + 1];
-  return (x: x0 + (x1 - x0) * t, y: y0 + (y1 - y0) * t, heading: math.atan2(y1 - y0, x1 - x0));
+
+  TrafficPath? _pathOf(_Seed s) {
+    if (s.built) return s.path;
+    s.built = true;
+    return s.path = buildTrafficPath(
+      graph,
+      start: s.line,
+      fromFirst: s.fromFirst,
+      kind: s.model.rider,
+      targetM: s.targetM,
+      side: s.side,
+      jitter: s.jitter,
+      pick: s.pick,
+      speed: s.speed,
+      mpc: s.mpc,
+      widthM: _width,
+      maxLifeS: _maxLifeS,
+    );
+  }
+
+  /// Os fantasmas vivos em [tUtc] (segundos UTC, fracionário) cuja posição cai no retângulo
+  /// `[left, right] × [top, bottom]` em células z21. No máximo [maxGhosts]; se passar, ficam os de menor `id`
+  /// (um corte que não depende da câmera, então ninguém pisca ao sair do teto).
+  List<Ghost> ghostsIn(double tUtc, double left, double top, double right, double bottom, {int maxGhosts = 160}) {
+    final n = graph.cellsPerTile.toDouble();
+    final (lat, _) = tileFractionToLatLon((left + right) / 2, (top + bottom) / 2, biomeZoom);
+    final reach = 800 / metersPerCell(lat) * 1.1; // a viagem mais longa, em células
+    final slot0 = (tUtc / trafficSlotS).floor();
+    final out = <Ghost>[];
+    for (var ty = ((top - reach) / n).floor(); ty <= ((bottom + reach) / n).floor(); ty++) {
+      for (var tx = ((left - reach) / n).floor(); tx <= ((right + reach) / n).floor(); tx++) {
+        for (var slot = slot0 - _backSlots; slot <= slot0; slot++) {
+          for (final s in _seedsOf(tx, ty, slot)) {
+            final tau = tUtc - s.tBirth;
+            if (tau < 0 || tau > _maxLifeS) continue;
+            final r = math.min(s.targetM, s.speed * tau) / s.mpc * 1.1 + 2; // não anda mais que a velocidade de cruzeiro
+            final l = s.line;
+            if (l.maxX + r < left || l.minX - r > right || l.maxY + r < top || l.minY - r > bottom) continue;
+            final path = _pathOf(s);
+            if (path == null || tau > path.duration) continue;
+            final dist = path.sAt(tau);
+            final p = path.at(dist);
+            if (p.x < left || p.x > right || p.y < top || p.y > bottom) continue;
+            final left_ = path.duration - tau;
+            final (phase, t) = tau < veilFadeS
+                ? (GhostPhase.fadeIn, tau / veilFadeS)
+                : left_ < veilFadeS
+                    ? (GhostPhase.fadeOut, 1 - left_ / veilFadeS)
+                    : (GhostPhase.alive, 1.0);
+            out.add(Ghost(id: s.id, model: s.model, palette: s.palette, x: p.x, y: p.y, heading: p.heading, speedMps: path.vAt(tau), phase: phase, phaseT: t, travelledM: dist));
+          }
+        }
+      }
+    }
+    if (out.length > maxGhosts) {
+      out.sort((a, b) => a.id.compareTo(b.id));
+      return out.sublist(0, maxGhosts);
+    }
+    return out;
+  }
 }
