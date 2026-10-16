@@ -17,7 +17,7 @@ class _Assets extends CachingAssetBundle {
   @override
   Future<ByteData> load(String key) async {
     if (key == 'assets/data/epochs.json') {
-      return ByteData.sublistView(Uint8List.fromList(File('assets/data/epochs.json').readAsBytesSync()));
+      return ByteData.sublistView(Uint8List.fromList(File('$_fx/epochs_bundled.json').readAsBytesSync()));
     }
     if (packs) return ByteData(1);
     throw Exception('sem $key');
@@ -39,7 +39,8 @@ Directory _cache({bool epochs = true, bool events = true, void Function(Director
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  final bundled = _json('assets/data/epochs.json');
+  // O embutido do teste é um recorte fixo (épocas 0 a 3): o feed assinado de teste acrescenta a época 4.
+  final bundled = _json('$_fx/epochs_bundled.json');
 
   test('os arquivos reais de docs/pages conferem com a chave embutida (openssl -> Dart)', () {
     for (final n in ['epochs.json', 'events.json']) {

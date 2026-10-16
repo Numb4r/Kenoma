@@ -182,7 +182,7 @@ void main() {
     final before = streetLifeEnabled;
     addTearDown(() => streetLifeEnabled = before);
     streetLifeEnabled = true;
-    expect(EpochSchedule.fromJson(epochsJson()).epochs.map((e) => e.id), [0, 1, 2, 3]);
+    expect(EpochSchedule.fromJson(epochsJson()).epochs.map((e) => e.id), [0, 1, 2, 3, 4]);
     streetLifeEnabled = false;
     final off = EpochSchedule.fromJson(epochsJson());
     expect(off.epochs.map((e) => e.id), [0, 1, 2]);

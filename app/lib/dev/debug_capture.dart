@@ -72,7 +72,7 @@ class CaptureDebug extends ChangeNotifier {
     final nav = Navigator.of(context);
     await nav.push(MaterialPageRoute<void>(
       builder: (_) => TuningScreen(
-        pool: hidden ? d.species : [species!],
+        pool: hidden ? [for (final x in d.species) if (!x.isSpirit) x] : [species!],
         buildSetup: (s) => setupFor(d, s),
         balance: d.balance,
         balanceVersion: d.balanceVersion,
@@ -113,7 +113,7 @@ List<DebugItem> captureItems(CaptureDebug c) {
       title: 'Espécie',
       section: DebugSection.capture,
       keywords: const ['eco', 'criatura', 'sintonia', 'sootling', 'rillet', 'frondling'],
-      builder: (_) => when((d) => Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [for (final s in d.species) _speciesTile(c, s)])),
+      builder: (_) => when((d) => Wrap(spacing: 6, runSpacing: 6, children: [for (final s in d.species) _speciesTile(c, s)])),
     ),
     DebugItem(
       id: 'cap.levels',
@@ -122,7 +122,7 @@ List<DebugItem> captureItems(CaptureDebug c) {
       keywords: const ['eco', 'conjurador', 'nível', 'level'],
       builder: (_) => when((d) => DebugColumn([
             _slider('Nível do Eco', c.ecoLevel, 1, 20, (v) => c.update(() => c.ecoLevel = v)),
-            _slider('Conjurador', c.playerLevel, 1, 15, (v) => c.update(() => c.playerLevel = v)),
+            _slider('Conjurador', c.playerLevel, 1, 20, (v) => c.update(() => c.playerLevel = v)),
           ])),
     ),
     DebugItem(
