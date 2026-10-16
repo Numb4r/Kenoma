@@ -226,3 +226,4 @@ Vem antes da Rua viva (0.14.0). Especificação na seção 13 da spec e em `docs
 - Época 2 com a densidade nova e itens sobre os caminhos; a Rua viva passa para a época 3.
 - Retorno visual de toque em menos de 100 ms (efeitos de coleta, pulo, costura e fuga).
 - A 0.13.1 sai com a Rua viva escondida (`STREET_LIFE=false`): névoa, Radar, clima no HUD, chuva e Familiar só aparecem na 0.14.0.
+- Ajustes depois do teste na rua: câmera de 40 a 80 m (50 m no padrão) e pixel de arte de 3 dp; anel do alcance de toque e contorno violeta; densidade por rota com rodovias fora do caminho; Arisco pelo GPS cru; Tráfego do Véu refeito (calçadas, entradas fora da tela, modelos e paletas).
