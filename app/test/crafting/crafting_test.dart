@@ -90,6 +90,14 @@ void main() {
       expect(s.count('item.essence.water'), 0);
     });
 
+    test('Espíritos não se destilam: custaram 5 Ecos e Essência', () {
+      final s = state();
+      s.collection.add(CreatureInstance(uid: 'sp', speciesId: 'soot.spirit', level: 12, capturedUtc: 1));
+      expect(distillBlocker(s, 'sp'), contains('Espírito'));
+      expect(distill(s, 'sp', data), isNull);
+      expect(s.collection, hasLength(1));
+    });
+
     test('uid que não existe não faz nada', () {
       expect(distill(state(), 'x', data), isNull);
     });

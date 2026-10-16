@@ -135,8 +135,11 @@ Future<int> refreshSignedFeed({
         final json = jsonDecode(utf8.decode(data)) as Map<String, dynamic>;
         if (name == 'epochs.json') mergeSignedJson(bundled, json); // lança se alterar época publicada
         if (name == 'events.json' && json['events'] is! List) continue;
+        // Os dois arquivos vão para temporários e só depois trocam de nome, um logo após o outro: a janela em que o dado e a
+        // assinatura não combinam é de microssegundos (e, se a leitura cair nela, a verificação falha e vale o embutido).
         await File('${d.path}/$name.tmp').writeAsBytes(data, flush: true);
-        await File('${d.path}/$name.sig').writeAsBytes(sig, flush: true);
+        await File('${d.path}/$name.sig.tmp').writeAsBytes(sig, flush: true);
+        await File('${d.path}/$name.sig.tmp').rename('${d.path}/$name.sig');
         await File('${d.path}/$name.tmp').rename('${d.path}/$name');
         accepted++;
       } catch (_) {

@@ -1,6 +1,7 @@
 /// A Bancada (docs/fase0-spec.md, seção 7): receitas improvisadas e a destilação de Ecos em Essência. Dart puro.
 library;
 
+import '../core/species_ids.dart';
 import '../data/game_data.dart';
 import '../player/game_state.dart';
 import '../player/progress_balance.dart';
@@ -49,6 +50,7 @@ int distillYield(int level, ProgressBalance b) {
 String? distillBlocker(GameState s, String uid) {
   if (s.creature(uid) == null) return 'Criatura não encontrada';
   if (s.inCircle(uid)) return 'Tire do Círculo antes de destilar';
+  if (tierOfId(s.creature(uid)!.speciesId) != SpeciesTier.eco) return 'Só Ecos se destilam: um Espírito custou 5 Ecos e Essência';
   return null;
 }
 

@@ -39,6 +39,7 @@ Directory _cache({bool epochs = true, bool events = true, void Function(Director
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  signedEpochRules();
   // O embutido do teste é um recorte fixo (épocas 0 a 3): o feed assinado de teste acrescenta a época 4.
   final bundled = _json('$_fx/epochs_bundled.json');
 
@@ -140,6 +141,34 @@ void main() {
         expect(await refreshSignedFeed(nowUtc: t0, dir: d, fetch: fetch, bundle: _Assets(), publicKeyHex: key), 0);
         expect(File('${d.path}/epochs.json').existsSync(), isFalse);
       }
+    });
+  });
+}
+
+/// Épocas novas do feed: datas em UTC, depois da última época do app e com todos os biomas (senão o mundo cai ou diverge).
+void signedEpochRules() {
+  group('época nova do feed: regras', () {
+    final bundled = jsonDecode(File('$_fx/epochs_bundled.json').readAsStringSync()) as Map<String, dynamic>;
+    Map<String, dynamic> epoch5({String? starts, String? until, void Function(Map<String, dynamic>)? tweak}) {
+      final e = jsonDecode(jsonEncode((bundled['epochs'] as List).last)) as Map<String, dynamic>;
+      e['id'] = 5;
+      e['starts_utc'] = starts ?? '2027-03-01T00:00:00Z';
+      e['valid_until_utc'] = until ?? '2027-06-01T00:00:00Z';
+      tweak?.call(e);
+      return {'epochs': [e]};
+    }
+
+    test('aceita a época bem formada', () {
+      expect((mergeSignedJson(bundled, epoch5())['epochs'] as List).length, 5);
+    });
+
+    test('rejeita data sem Z, início antes da última época e bioma sem tabela', () {
+      expect(() => mergeSignedJson(bundled, epoch5(starts: '2027-03-01T00:00:00')), throwsFormatException);
+      expect(() => mergeSignedJson(bundled, epoch5(starts: '2026-01-01T00:00:00Z')), throwsFormatException);
+      expect(
+        () => mergeSignedJson(bundled, epoch5(tweak: (e) => (((e['spawn'] as Map)['items'] as List).first as Map)['chance'].remove('green'))),
+        throwsFormatException,
+      );
     });
   });
 }

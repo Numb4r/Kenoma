@@ -56,6 +56,16 @@ void main() {
         nowUtc: now,
       );
 
+  test('um Eco que já se foi (janela acabou) não deixa gastar nem selar', () {
+    final s = make();
+    s.markDone(uid, now - 60);
+    final before = s.count(soot.materials.first.item);
+    final out = run(s);
+    expect(out.status, RitualStatus.blocked);
+    expect(s.count(soot.materials.first.item), before, reason: 'nada se perde');
+    expect(s.collection.any((c) => c.speciesId == 'soot.ritual'), isFalse);
+  });
+
   group('combinação certa', () {
     test('sela: entra na coleção no nível do spawn e no bestiário, gasta os materiais e revela a receita', () {
       final s = make();

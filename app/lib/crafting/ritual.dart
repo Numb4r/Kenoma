@@ -101,6 +101,7 @@ RitualOutcome performRitual({
   final circleSpecies = circle == null ? null : data.species(circle.speciesId);
   final misses = judgeRitual(recipe, attempt, target: species.type, circleType: circleSpecies?.type, circleLevel: circle?.level ?? 0);
 
+  if (state.isDone(uid)) return const RitualOutcome(RitualStatus.blocked, blockedReason: 'Esse Eco já se foi');
   state.spend(cost);
   if (misses.isNotEmpty) {
     state.markDone(uid, nowUtc); // a criatura escapou: entra no registro de feitos como fuga

@@ -26,7 +26,19 @@ Map<String, dynamic> mergeSignedJson(Map<String, dynamic> bundled, Map<String, d
       if (until.isBefore(oldUntil)) throw FormatException('o feed encurta a época $id');
       out[id] = e;
     } else if (id > maxId) {
+      final starts = e['starts_utc'] as String, until = e['valid_until_utc'] as String;
+      if (!starts.endsWith('Z') || !until.endsWith('Z')) throw const FormatException('a época do feed precisa ter datas em UTC (Z)');
+      final lastStart = base.values.map((b) => DateTime.parse(b['starts_utc'] as String)).reduce((a, b) => a.isAfter(b) ? a : b);
+      if (!DateTime.parse(starts).isAfter(lastStart)) throw FormatException('a época $id do feed começa antes da última época do app');
       Epoch.fromJson(e); // lança se estiver malformada; a época inteira do feed é rejeitada
+      for (final item in ((e['spawn'] as Map<String, dynamic>)['items'] as List<dynamic>)) {
+        for (final biome in const ['urban', 'green', 'water', 'residential']) {
+          final m = item as Map<String, dynamic>;
+          if ((m['chance'] as Map<String, dynamic>)[biome] == null || (m['table'] as Map<String, dynamic>)[biome] == null) {
+            throw FormatException('a época $id do feed não cobre o bioma $biome');
+          }
+        }
+      }
       if (hasPack == null || _packFiles(e).every(hasPack)) out[id] = e;
     } else {
       throw FormatException('o feed traz a época $id, que não existe no app');

@@ -231,9 +231,12 @@ class WorldView {
     traces = [for (final t in traces) if (t.untilUtc > tUtc) t];
     // Os Espíritos só aparecem a partir do nível `spirit_spawn_level`. É individual: o mundo é o mesmo para todos.
     final spiritsOn = state.playerLevel >= state.cb.spiritSpawnLevel;
+    final ritualsOn = state.playerLevel >= state.cb.ritualLevel;
+    bool visibleTier(WorldSpawn s) =>
+        !s.isEco || tierOfId(s.entryId) == SpeciesTier.eco || (isRitualOnlyId(s.entryId) ? ritualsOn : spiritsOn);
     final all = [
       for (final s in field.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel))
-        if (spiritsOn || !s.isEco || tierOfId(s.entryId) == SpeciesTier.eco) _withForce(s),
+        if (visibleTier(s)) _withForce(s),
     ];
     allEcos = [for (final s in all) if (s.isEco && !state.isDone(s.uid)) s];
     final collected = <WorldSpawn>[];
