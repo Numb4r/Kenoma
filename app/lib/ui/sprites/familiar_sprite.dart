@@ -1,9 +1,10 @@
-/// O Familiar (placeholder): um fiapo violeta com olhos ciano, 18 × 18 pixels (cabe em ~8 m com o pixel de arte de
-/// 2 dp). Arte nunca bloqueia código: a forma de verdade vem com a escola do Conjurador.
+/// O Familiar (placeholder): um fiapo violeta com olhos ciano, 18 × 18 pixels redesenhado em 16 × 16 para o mapa (6 m com o pixel de
+/// arte de 3 dp). Arte nunca bloqueia código: a forma de verdade vem com a escola do Conjurador.
 library;
 
 import 'dart:ui' as ui;
 
+import 'sprite_downscale.dart';
 import 'sprite_image.dart';
 
 const Map<String, int> familiarPalette = {
@@ -36,4 +37,4 @@ const List<String> familiarSprite = [
 ];
 
 /// A imagem do Familiar para o mapa.
-Future<ui.Image> loadFamiliarImage() => spriteToImage(familiarSprite, palette: familiarPalette);
+Future<ui.Image> loadFamiliarImage() => spriteToImage(downscaleRows(familiarSprite, mapPlayerPx, keep: 'C'), palette: familiarPalette);

@@ -7,6 +7,7 @@ class MapBalance {
   MapBalance._(Map<String, dynamic> m)
       : auraM = (m['aura_m'] as num).toDouble(),
         touchRangeM = (m['touch_range_m'] as num).toDouble(),
+        touchRingShowM = (m['touch_ring_show_m'] as num).toDouble(),
         viewM = (m['view_m'] as num).toDouble(),
         trackerM = (m['tracker_m'] as num).toDouble(),
         trackerMax = m['tracker_max'] as int,
@@ -29,6 +30,9 @@ class MapBalance {
 
   /// Até onde um Eco responde ao toque (e o Arisco foge, o Agressivo dispara): fixo, sem círculo desenhado.
   final double touchRangeM;
+
+  /// Com um Eco a até esta distância, o anel fino do alcance de toque aparece em volta do avatar.
+  final double touchRingShowM;
 
   /// Até onde os spawns aparecem.
   final double viewM;

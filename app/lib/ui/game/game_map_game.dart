@@ -367,6 +367,14 @@ class GameMapGame extends FlameGame {
     // De baixo para cima: Aura no chão, spawns, Conjurador por cima de tudo.
     final w = worldView;
     paintAura(canvas, center, auraRadiusPx(auraM: w?.auraRadiusM ?? auraM, lat: _lat, pixelsPerCell: cam.pixelsPerCell));
+    if (w != null && w.spawns.any((s) => s.isEco && w.distanceM(s) <= balance.touchRingShowM)) {
+      // Há Eco a até 40 m: um anel fino e fraco mostra o alcance de toque (30 m), diferente do círculo tracejado da Aura.
+      canvas.drawCircle(
+        center,
+        auraRadiusPx(auraM: w.touchRangeM, lat: _lat, pixelsPerCell: cam.pixelsPerCell),
+        Paint()..style = PaintingStyle.stroke..strokeWidth = 1..color = const Color(0xFF5FD3C6).withValues(alpha: 0.3)..isAntiAlias = false,
+      );
+    }
     if (overlayRadii()) {
       final ring = Paint()..style = PaintingStyle.stroke..strokeWidth = 1.5..isAntiAlias = false;
       final ppc = cam.pixelsPerCell;

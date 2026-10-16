@@ -46,10 +46,10 @@ void main() {
   MapCamera over(double ux, double uy, {double widthM = 90, double rotation = 0}) =>
       MapCamera(centerX: (5 + ux / 4096) * 64, centerY: (7 + uy / 4096) * 64, pixelsPerCell: size.width * mpc / widthM, rotation: rotation);
 
-  test('o pixel de arte tem tamanho fixo de tela: 2 dp, em pixels físicos inteiros, em qualquer zoom', () {
+  test('o pixel de arte tem tamanho fixo de tela: 3 dp, em pixels físicos inteiros, em qualquer zoom', () {
     final r = make();
     expect(r.pixelSize(dpr), k);
-    expect(r.pixelSize(2.625), 5, reason: 'moto g54: 2 dp x 2,625 = 5,25 -> 5 pixels físicos');
+    expect(r.pixelSize(2.625), 8, reason: 'moto g54: 3 dp x 2,625 = 7,9 -> 8 pixels físicos');
     expect(r.pixelSize(dpr, coarse: 2), 2 * k);
     for (final w in [60.0, 90.0, 150.0]) {
       r.paint(ui.Canvas(ui.PictureRecorder()), size, over(2048, 2048, widthM: w), dpr: dpr, metersPerCell: mpc);

@@ -13,14 +13,14 @@ void main() {
     expect(b.auraM, lessThan(b.viewM));
   });
 
-  test('escala em metros: 90 m de largura no padrão, pinça de 70 a 120 m, Fagulhas de 3 m e sprites menores que a rua', () {
+  test('escala em metros: 50 m de largura no padrão, pinça de 40 a 80 m, Fagulhas de 3 m e sprites menores que a rua', () {
     final b = MapBalance(loadJson('assets/data/balance.json'));
-    expect((b.defaultWidthM, b.cameraMinWidthM, b.cameraMaxWidthM), (90.0, 70.0, 120.0));
+    expect((b.defaultWidthM, b.cameraMinWidthM, b.cameraMaxWidthM), (50.0, 40.0, 80.0));
     expect((b.sparkSizeM, b.trackerMax), (3.0, 3));
     expect(b.defaultWidthM, inInclusiveRange(b.cameraMinWidthM, b.cameraMaxWidthM));
     expect((b.playerHeightM, b.familiarHeightM, b.ecoHeightM), (6.0, 6.0, 7.0), reason: 'Conjurador e Familiar 6 m, Ecos 7 m');
     expect((b.ghostPedestrianM, b.ghostCarM), (4.5, 6.0), reason: 'pedestre fantasma 4,5 m, carro fantasma 6 m');
-    expect(b.artPixelDp, 2.0, reason: 'o pixel de arte é de 2 dp');
+    expect(b.artPixelDp, 3.0, reason: 'o pixel de arte é de 3 dp');
     for (final m in [b.playerHeightM, b.familiarHeightM, b.ecoHeightM, b.ghostCarM]) {
       expect(m, lessThan(b.roadWidthM['principal']!), reason: 'nenhum sprite passa da largura de uma rua principal');
     }
@@ -35,23 +35,24 @@ void main() {
       expect(px(b.ecoHeightM, widthM) / px(b.auraM * 2, widthM), closeTo(7 / 20, 1e-9), reason: 'largura $widthM m');
       expect(px(b.playerHeightM, widthM) / px(b.ecoHeightM, widthM), closeTo(6 / 7, 1e-9));
     }
-    expect(px(b.ecoHeightM, b.defaultWidthM), closeTo(32.0, 0.2), reason: '7 m em 90 m de uma tela de 411 px');
-    expect(px(b.playerHeightM, b.defaultWidthM), closeTo(27.4, 0.2), reason: '6 m em 90 m');
+    expect(px(b.ecoHeightM, b.defaultWidthM), closeTo(57.5, 0.2), reason: '7 m em 50 m de uma tela de 411 px');
+    expect(px(b.playerHeightM, b.defaultWidthM), closeTo(49.3, 0.2), reason: '6 m em 50 m');
     expect(px(b.ecoHeightM, b.cameraMinWidthM), greaterThan(px(b.ecoHeightM, b.cameraMaxWidthM)));
-    expect(px(b.ecoHeightM, b.cameraMinWidthM) / px(b.ecoHeightM, b.cameraMaxWidthM), closeTo(120 / 70, 1e-9));
-    expect(px(b.sparkSizeM, b.defaultWidthM), closeTo(13.7, 0.1), reason: '3 m em 90 m');
-    // O pixel de arte de 2 dp vale ~0,44 m na largura padrão: o Conjurador de 6 m tem ~14 pixels de arte.
-    expect(b.artPixelDp / px(1, b.defaultWidthM), closeTo(0.44, 0.02));
-    expect(14 * b.artPixelDp / px(1, b.defaultWidthM), closeTo(b.playerHeightM, 0.3));
+    expect(px(b.ecoHeightM, b.cameraMinWidthM) / px(b.ecoHeightM, b.cameraMaxWidthM), closeTo(80 / 40, 1e-9));
+    expect(px(b.sparkSizeM, b.defaultWidthM), closeTo(24.7, 0.1), reason: '3 m em 50 m');
+    // O pixel de arte de 3 dp vale ~0,37 m na largura padrão: o Conjurador de 6 m tem ~16 pixels de arte e o Eco de 7 m, ~19.
+    expect(b.artPixelDp / px(1, b.defaultWidthM), closeTo(0.365, 0.02));
+    expect(16 * b.artPixelDp / px(1, b.defaultWidthM), closeTo(b.playerHeightM, 0.3));
+    expect(19 * b.artPixelDp / px(1, b.defaultWidthM), closeTo(b.ecoHeightM, 0.3));
   });
 
-  test('conversão: metros visíveis e pixels por célula são inversos, e a Aura de 10 m ocupa 20 m dos 90', () {
+  test('conversão: metros visíveis e pixels por célula são inversos, e a Aura de 10 m ocupa 20 m dos 50', () {
     const lat = -22.8174, w = 411.0;
     final b = MapBalance(loadJson('assets/data/balance.json'));
     final ppc = pixelsPerCellFor(widthM: b.defaultWidthM, viewWidthPx: w, lat: lat);
     expect(widthMFor(pixelsPerCell: ppc, viewWidthPx: w, lat: lat), closeTo(b.defaultWidthM, 1e-9));
-    expect(ppc, closeTo(80.4, 0.1));
-    expect(2 * auraRadiusPx(auraM: b.auraM, lat: lat, pixelsPerCell: ppc) / w, closeTo(20 / 90, 1e-9));
+    expect(ppc, closeTo(144.7, 0.2));
+    expect(2 * auraRadiusPx(auraM: b.auraM, lat: lat, pixelsPerCell: ppc) / w, closeTo(20 / 50, 1e-9));
     // Mais metros na tela, menos pixels por célula.
     expect(pixelsPerCellFor(widthM: 120, viewWidthPx: w, lat: lat), lessThan(pixelsPerCellFor(widthM: 70, viewWidthPx: w, lat: lat)));
     expect(pixelsPerCellFor(widthM: 70, viewWidthPx: w, lat: lat) / pixelsPerCellFor(widthM: 120, viewWidthPx: w, lat: lat), closeTo(120 / 70, 1e-9));

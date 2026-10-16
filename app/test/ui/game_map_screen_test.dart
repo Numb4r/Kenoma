@@ -316,7 +316,7 @@ void main() {
       expect(env.game.follow.camera.centerX, closeTo(env.game.avatar.x, 0.05));
     });
 
-    testWidgets('a pinça vai de 70 m a 120 m de largura de tela, com 90 m no padrão', (tester) async {
+    testWidgets('a pinça vai de 40 m a 80 m de largura de tela, com 50 m no padrão', (tester) async {
       final env = await pumpGame(tester);
       Future<void> pinch(double from, double to) async {
         final c = tester.getCenter(gameWidget);
@@ -333,11 +333,11 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
 
-      expect(env.game.widthM, closeTo(90, 0.01));
+      expect(env.game.widthM, closeTo(50, 0.01));
       await pinch(60, 120);
-      expect(env.game.widthM, 70, reason: 'abrir 2x passaria de 70 m: trava no mínimo');
+      expect(env.game.widthM, 40, reason: 'abrir 2x passaria de 40 m: trava no mínimo');
       await pinch(100, 20);
-      expect(env.game.widthM, 120, reason: 'fechar 5x passaria de 120 m: trava no máximo');
+      expect(env.game.widthM, 80, reason: 'fechar 5x passaria de 80 m: trava no máximo');
     });
   });
 

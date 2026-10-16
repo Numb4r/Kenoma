@@ -151,6 +151,18 @@ void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double 
         ..isAntiAlias = true,
     );
   }
+  if (sprite != null && near) {
+    // Ao alcance de toque (30 m): contorno violeta pulsando em volta da silhueta, um pixel de arte de espessura.
+    final px = size / sprite.width;
+    final pulse = 0.45 + 0.55 * (0.5 + 0.5 * math.sin(time * 4.5 + s.uid % 7));
+    final outline = ui.Paint()
+      ..filterQuality = ui.FilterQuality.none
+      ..isAntiAlias = false
+      ..colorFilter = ui.ColorFilter.mode(kVeil.withValues(alpha: pulse), ui.BlendMode.srcIn);
+    for (final (dx, dy) in [(px, 0.0), (-px, 0.0), (0.0, px), (0.0, -px)]) {
+      canvas.drawImageRect(sprite, ui.Rect.fromLTWH(0, 0, sprite.width.toDouble(), sprite.height.toDouble()), dst.shift(ui.Offset(dx, dy)), outline);
+    }
+  }
   if (sprite != null) {
     canvas.drawImageRect(
       sprite,

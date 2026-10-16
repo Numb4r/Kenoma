@@ -78,8 +78,8 @@ class EcoSprite {
 
 /// Lado, em pixels, dos sprites do mapa: Ecos e Conjurador/Familiar. Com o pixel de arte em 2 dp (~0,44 m a 90 m de
 /// largura), 20 pixels dão ~9 m e 18 pixels ~8 m.
-const int mapEcoPx = 20;
-const int mapPlayerPx = 18;
+const int mapEcoPx = 19;
+const int mapPlayerPx = 16;
 
 /// Os quadros do Conjurador para o mapa, redesenhados em [mapPlayerPx] pixels.
 Future<List<ui.Image>> loadPlayerFramesMap() async => [
