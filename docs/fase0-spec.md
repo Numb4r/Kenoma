@@ -95,7 +95,7 @@ Só desenho: ruas, água e áreas verdes para o mapa de jogo. **A grade de bioma
 
 - Flame. Visão de cima, sem prédios em pé e sem rotação. Câmera centrada no jogador.
 - **Mapa de jogo em pixels de arte de tamanho fixo de tela.** A cada quadro a área visível é rasterizada direto num buffer de baixa resolução alinhado à tela, em que cada pixel de arte ocupa um número inteiro de pixels físicos (o inteiro mais perto de `map.art_pixel_dp` dp, **2 dp** desde a 0.14.0: ~0,44 m por pixel de arte na largura padrão de 90 m), e o buffer é ampliado por vizinho mais próximo. A nitidez é a mesma em qualquer zoom e em qualquer ângulo. O ruído do chão é uma textura em pixels de arte que acompanha o mapa mas não cresce com o zoom. Se rasterizar ficar caro durante um gesto, o pixel de arte dobra de tamanho até o dedo soltar (`coarse`); no moto g54 isso não foi preciso.
-- **Sprites em metros do mundo** (0.14.0, todos em `balance.json`, chave `map`): Conjurador e Familiar 8 m de altura (`player_height_m`, `familiar_height_m`), Ecos 9 m (`eco_height_m`), pedestres fantasmas 6 m (`ghost_pedestrian_m`), carros fantasmas 7 m de comprimento (`ghost_car_m`) e as Fagulhas e os materiais 3 m (`spark_size_m`). O avatar e o carro ficam do mesmo tamanho. A proporção com a Aura é a mesma em qualquer zoom: eles crescem e encolhem com o mapa. **Os sprites do mapa são redesenhados na grade nova** (Eco 20 × 20 pixels, Conjurador e Familiar 18 × 18), reduzidos dos de 48 × 48 por votação do caractere mais frequente do bloco, com as costuras violeta e o ciano dos olhos protegidos, e desenhados num múltiplo inteiro de pixels físicos por pixel do sprite: nunca reescalados com filtro. A área de toque continua com no mínimo 48 dp. **Anéis, rótulos "NV n" e o rastreador** têm tamanho fixo de tela. O pixel de arte do mapa também continua fixo de tela. A Aura é em metros reais, porque é alcance de jogo. A câmera vai de 70 a 120 m de largura, com 90 m no padrão (`map.camera_min_width_m`, `map.camera_max_width_m`, `map.view_width_default_m`).
+- **Sprites em metros do mundo** (0.14.0, todos em `balance.json`, chave `map`): Conjurador e Familiar 6 m de altura (`player_height_m`, `familiar_height_m`), Ecos 7 m (`eco_height_m`), pedestres fantasmas 4,5 m (`ghost_pedestrian_m`), carros fantasmas 6 m de comprimento (`ghost_car_m`) e as Fagulhas e os materiais 3 m (`spark_size_m`). O Conjurador fica menor que a largura de uma rua (6 m contra 6 a 12 m). A proporção com a Aura é a mesma em qualquer zoom: eles crescem e encolhem com o mapa. **Os sprites do mapa são redesenhados na grade nova** (Eco 20 × 20 pixels, Conjurador e Familiar 18 × 18), reduzidos dos de 48 × 48 por votação do caractere mais frequente do bloco, com as costuras violeta e o ciano dos olhos protegidos, e desenhados num múltiplo inteiro de pixels físicos por pixel do sprite: nunca reescalados com filtro. A área de toque continua com no mínimo 48 dp. **Anéis, rótulos "NV n" e o rastreador** têm tamanho fixo de tela. O pixel de arte do mapa também continua fixo de tela. A Aura é em metros reais, porque é alcance de jogo. A câmera vai de 70 a 120 m de largura, com 90 m no padrão (`map.camera_min_width_m`, `map.camera_max_width_m`, `map.view_width_default_m`).
 - **Movimento do Conjurador.** O marcador nunca pula: ele anda pelo caminho das leituras filtradas do GPS com cerca de 1 s de atraso, em linha reta e na velocidade que as leituras indicam, e quando o GPS para ele desacelera até a última posição e para, sem passar dela. Leituras que exigiriam mais de 12 m/s desde a última aceita são descartadas como erro do GPS. Duas leituras seguidas, impossíveis mas juntas, mostram que o jogador mudou de lugar (outra fonte, teleporte do simulador) e o marcador reaparece lá. A câmera segue o marcador suavizado, nunca o GPS cru.
 - **Animação do Conjurador.** Parado, um quadro. Andando, dois quadros de passo que se alternam a cada 0,18 s. O sprite olha para o lado em que anda na tela (espelhado na horizontal para a esquerda) e mantém o lado ao parar.
 - **Câmera presa ao Conjurador.** Ele fica sempre no centro: não existe arrastar para espiar nem volta automática. **Arrastar com um dedo gira o mapa** em torno dele, **acompanhando o dedo**: o giro é o ângulo que o dedo percorre em volta do Conjurador (o centro da tela), então o ponto do mapa sob o dedo continua sob ele, de qualquer lado da tela, e o sentido é o mesmo dos dois lados. Perto demais do centro (menos de 40 px) o ângulo não é confiável e o giro espera (`TouchGesture`, `world/touch_gesture.dart`): passando de cerca de 12 px o gesto é arrasto; antes disso e antes de 500 ms, soltar é um **toque** (seleciona Eco, Fagulha ou material); parado por 500 ms é um **toque longo** (marcação). Um segundo dedo cancela o gesto, e a **pinça só dá zoom**: não gira. O mapa fica no ângulo em que o dedo o deixou: não assenta no norte nem volta sozinho. A câmera livre (arrastar e pinçar o mapa todo) existe só no menu de debug. Uma bússola pequena aparece quando o mapa não está com o norte para cima: **um toque** volta ao norte (e desliga o "seguir direção"); **dois toques** ligam e desligam o "seguir direção", que gira o mapa com a bússola do celular, suavizado. A bússola do celular lê o norte magnético, então o app soma a declinação do lugar (`map.compass_declination_deg`, -21° em Campinas). Girar com a mão desliga o "seguir direção". O toque num spawn passa pela conversão tela-mundo com rotação.
@@ -112,7 +112,7 @@ Só desenho: ruas, água e áreas verdes para o mapa de jogo. **A grade de bioma
 - Posição via `geolocator`, a cada poucos metros (2 m), só com o app aberto: a fonte para quando o app vai para segundo plano e não há serviço em primeiro plano nem permissão de segundo plano. A permissão é pedida com uma explicação curta antes do diálogo do sistema.
 - Leitura com precisão pior que 50 m é recusada. O filtro (`world/gps_filter.dart`) usa a média das leituras quando o jogador está parado, para o marcador não tremer, e um filtro de Kalman de posição e velocidade quando ele anda.
 - Câmera de jogo: segue o Conjurador com suavização, arrastar espia em volta e ela volta sozinha depois de 3 s sem toque, e o zoom por pinça vai de 8 a 24 px por célula (a câmera livre do debug vai de 1 a 32 e só existe no menu de debug).
-- Aura de 40 m, desenhada como círculo violeta tracejado. Interação só dentro da Aura.
+- Aura de 10 m (0.13.1), desenhada como círculo violeta tracejado: é o raio de coleta automática de Fagulhas e materiais. Os Ecos respondem ao toque a até 30 m, sem círculo desenhado; fora disso aparecem esmaecidos e o toque mostra "a N m".
 - Spawns visíveis até 120 m. O rastreador também mostra até 120 m.
 - Ferramenta de dev obrigatória, acessível pelo menu de debug (que não some por flag de build, ver CLAUDE.md):
   - simulador de GPS com joystick na tela;
@@ -266,7 +266,7 @@ O nível máximo do Eco é 20. Na Fase 0 os Ecos aparecem até o nível 17 (teto
 
 | Eco | Habilidade de mapa | Faixas por nível (1 a 9, 10 a 19, 20) |
 | --- | --- | --- |
-| Sootling | Aura maior | +5, +8, +12 m |
+| Sootling | Aura maior | +3, +5, +8 m |
 | Frondling | coleta Fagulhas de mais longe | +10, +15, +20 m |
 | Rillet | rastreador vê além da visão | 150, 170, 200 m |
 
@@ -280,7 +280,7 @@ A captura é um minigame de rádio. Não existe batalha.
 
 ### Início
 
-1. Tocar num Eco dentro da Aura, ou num Eco marcado, abre uma folha de preparo. Nela o jogador escolhe o selo entre os que tem, marca opcionalmente um tônico e confirma com **Sintonizar**.
+1. Tocar num Eco a até 30 m, ou num Eco marcado, abre uma folha de preparo. Nela o jogador escolhe o selo entre os que tem, marca opcionalmente um tônico e confirma com **Sintonizar**.
 2. Cancelar antes de confirmar não custa nada.
 3. Ao confirmar, o selo e o tônico são consumidos e a sintonia começa.
 
@@ -288,7 +288,7 @@ Na Fase 0 todos os Ecos são passivos.
 
 ### Marcação
 
-- Tocar e segurar num Eco dentro da Aura prende o sinal dele por 5 minutos, com o nível já calculado.
+- Tocar e segurar num Eco a até 30 m prende o sinal dele por 5 minutos, com o nível já calculado.
 - A sintonia de um Eco marcado pode ser feita de qualquer lugar, mesmo depois que a janela acabar.
 - Máximo de 3 marcações ativas. Na quarta, o app avisa o limite. Tocar e segurar num Eco já marcado solta a marcação.
 - Arrastar cancela o toque longo: o gesto que gira o mapa nunca marca.
@@ -530,8 +530,8 @@ O que muda o mundo (comportamento, variante, Brilhante e o efeito do clima nos s
 
 Passivo (70), Arisco (12), Agressivo (10) e Oculto (8), sorteados no fluxo v2. O comportamento aparece como ícone pequeno sobre o Eco e na folha de preparo.
 
-- **Arisco:** se o jogador **entra** na Aura com média acima de 2,5 m/s nos últimos 5 s, o Eco foge (a fuga entra no registro). Só a entrada conta. O sinal oscila 1,6 vezes mais.
-- **Agressivo:** ao entrar na Aura o celular vibra uma vez e a folha de preparo abre sozinha (dá para fechar), uma vez por Eco. A resistência sobe um degrau (+0,15 de intensidade).
+- **Arisco:** se o jogador **chega a 30 m do Eco** com média acima de 2,5 m/s nos últimos 5 s, o Eco foge (a fuga entra no registro). Só a entrada conta. O sinal oscila 1,6 vezes mais.
+- **Agressivo:** ao chegar a 30 m o celular vibra uma vez e a folha de preparo abre sozinha (dá para fechar), uma vez por Eco. A resistência sobe um degrau (+0,15 de intensidade).
 - **Oculto:** fora do mapa e do rastreador até o Radar o revelar a menos de 60 m; fica à vista por 15 minutos. O sinal oscila a metade.
 
 ### Variantes e Brilhante
@@ -596,3 +596,12 @@ Menu de debug (sempre acessível): forçar comportamento, variante, Brilhante e 
   - tipos além de Fogo, Planta e Água;
   - batalha;
   - iOS e web.
+
+## 13. Fatia 2a (0.13.1): escala, Aura, densidade e resposta ao toque
+
+Detalhes da densidade em `docs/densidade-epoca2.md`.
+
+- **Aura e alcance separados.** Aura (`map.aura_m` = 10): só a coleta automática de Fagulhas e materiais. Bônus do Círculo: Sootling +3, +5 e +8 m; Frondling segue +10, +15, +20 m de coleta; Familiar +2 m (`familiar.pickup_bonus_m`). **Um só valor** (`WorldView.auraRadiusM`) alimenta a lógica e o círculo desenhado. Alcance de toque dos Ecos (`map.touch_range_m` = 30), fixo, sem círculo; o Arisco foge e o Agressivo dispara a 30 m. Causa da diferença da 0.13.0: o círculo desenhava a Aura, mas a coleta usava Aura + bônus de coleta + Familiar, e a lógica lia a posição crua do GPS enquanto o desenho usava o marcador suavizado (cerca de 1 s atrás). Agora a lógica lê a posição suavizada e roda a cada 0,25 s. Teste: `test/world/aura_consistency_test.dart`. O menu de debug desenha o raio lógico (laranja) e o de 30 m (ciano).
+- **Sprites:** Conjurador e Familiar 6 m, Ecos 7 m, pedestres 4,5 m, carros 6 m, Fagulhas 3 m. Área de toque mínima de 48 dp.
+- **Época 2 = densidade.** 1 Eco, 5 Fagulhas e 2 materiais por célula e janela, projetados no caminho andável mais próximo da célula (geometria do pacote visual, fixada por SHA-256 na época). Ecos até 15 m fora do caminho. **A época 3 (Rua viva, 0.14.0)** copia a época 2 e acrescenta o fluxo `v2`; ela tem `requires_feature: street_life` e a 0.13.1 (`--dart-define=STREET_LIFE=false`) não a carrega.
+- **Resposta ao toque** (`ui/game/fx.dart`, `ui/pressable.dart`): botões afundam 2 dp em 80 ms; a coleta voa até o Conjurador em 300 ms, brilha e vira "+N" (coletas seguidas somam); o Eco tocado pula 200 ms e a folha sobe em 200 ms; o Eco novo surge pela costura do Véu em 250 ms; o Eco que foge se desfaz para cima em 400 ms; o Conjurador parado respira em 2 quadros. O menu de debug mostra a latência do toque ao primeiro quadro (`dev/tap_latency.dart`).

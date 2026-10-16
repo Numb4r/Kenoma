@@ -217,3 +217,12 @@ Segue o `docs/GDD.md`; os detalhes e as divergências estão na seção 12 da sp
 - **Escala dos sprites.** Pixel de arte de 2 dp; Conjurador e Familiar 8 m, Ecos 9 m, fantasmas 6 m e 7 m; sprites redesenhados em 20 × 20 e 18 × 18, sem filtro.
 - **Save schema 4**, migração v3 → v4 testada com um save real da 0.13.0.
 - **Release.** Época 2 começa em 2026-10-16T04:40:00Z. APK assinado com a mesma chave (SHA-256 a5ee03b0…). Instalação por cima da 0.13.0 e conferência no aparelho **pendentes**: o celular não estava conectado por adb. Até lá, o que passou só em teste: Arisco, Oculto, variantes, névoa, clima, escala dos sprites e o save v3 → v4.
+
+## Fase 1 · fatia 2a · Escala, Aura e densidade (0.13.1)
+
+Vem antes da Rua viva (0.14.0). Especificação na seção 13 da spec e em `docs/densidade-epoca2.md`.
+
+- Aura de 10 m só para coleta, alcance de toque de 30 m para Ecos, um raio só para lógica e desenho, lógica na posição suavizada. Sprites menores.
+- Época 2 com a densidade nova e itens sobre os caminhos; a Rua viva passa para a época 3.
+- Retorno visual de toque em menos de 100 ms (efeitos de coleta, pulo, costura e fuga).
+- A 0.13.1 sai com a Rua viva escondida (`STREET_LIFE=false`): névoa, Radar, clima no HUD, chuva e Familiar só aparecem na 0.14.0.
