@@ -4,6 +4,7 @@ library;
 
 import 'dart:ui' as ui;
 
+import '../../player/conjurer_balance.dart';
 import 'sprite_downscale.dart';
 import 'sprite_image.dart';
 
@@ -37,4 +38,5 @@ const List<String> familiarSprite = [
 ];
 
 /// A imagem do Familiar para o mapa.
-Future<ui.Image> loadFamiliarImage() => spriteToImage(downscaleRows(familiarSprite, mapPlayerPx, keep: 'C'), palette: familiarPalette);
+/// [school] ainda é ignorado: a forma por escola vem com a arte.
+Future<ui.Image> loadFamiliarImage({School? school}) => spriteToImage(downscaleRows(familiarSprite, mapPlayerPx, keep: 'C'), palette: familiarPalette);

@@ -726,7 +726,13 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
               Positioned(left: 8, bottom: 8, child: PortraitHud(
                 state: r.session.state,
                 frame: game.playerFrames.isEmpty ? null : game.playerFrames.first,
-                onTap: () => Navigator.of(context).push(phoneRoute<void>(ProfileScreen(state: r.session.state, data: r.data))),
+                onTap: () => Navigator.of(context).push(phoneRoute<void>(ProfileScreen(
+                  state: r.session.state,
+                  data: r.data,
+                  nowUtc: () => tools.clock.nowUtc,
+                  cellSideM: () => 2 * metersPerCell(r.game.playerLat),
+                  onOpenSettings: () => Navigator.of(context).push(phoneRoute<void>(_settings(r))),
+                ))),
               )),
               Positioned(
                 left: 0,

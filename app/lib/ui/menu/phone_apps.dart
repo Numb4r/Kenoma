@@ -64,6 +64,9 @@ class PhoneApps {
 
 String phoneSeenKey(String appId) => 'phone_seen_$appId';
 
+/// Há pontos de talento que o jogador ainda não viu no Perfil (o Perfil grava o saldo visto ao abrir).
+bool profileHasNews(GameState s) => s.conjurer.talentAvailable > ((s.settings['profile_seen_talent'] as int?) ?? 0);
+
 int claimableRequests(GameState s) => s.story.daily.quests.where((q) => q.claimable).length;
 
 /// Pontos de novidade (a bolinha laranja): um `bool Function(GameState)` por id de app. Para ligar um app novo ao ponto,
@@ -72,7 +75,7 @@ final Map<String, bool Function(GameState)> phoneAppBadges = {
   PhoneAppId.chat: (s) => s.story.chat.unread > 0,
   PhoneAppId.forum: (s) => claimableRequests(s) > 0,
   PhoneAppId.bench: (_) => false, // fusão possível
-  PhoneAppId.profile: (_) => false,
+  PhoneAppId.profile: profileHasNews,
 };
 
 /// O app [a] tem novidade agora (e está liberado).

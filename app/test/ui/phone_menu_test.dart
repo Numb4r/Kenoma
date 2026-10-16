@@ -104,7 +104,7 @@ void main() {
     await tester.tap(find.byKey(const Key('app-profile')));
     await settle(tester);
     expect(find.byType(ProfileScreen), findsOneWidget);
-    expect(find.text('NÍVEL 1'), findsOneWidget);
+    expect(find.byKey(const Key('profile-level')), findsOneWidget);
   });
 
   testWidgets('no nível 2 os apps abrem e o botão voltar de cada tela devolve ao celular', (tester) async {

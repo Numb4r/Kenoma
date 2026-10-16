@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../core/tiles.dart';
 import '../../core/weather.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
@@ -94,7 +95,13 @@ Future<void> showPhoneMenu(
       PhoneAppId.bench => BenchScreen(state: state, data: data),
       PhoneAppId.chat => ChatScreen(state: state, data: data),
       PhoneAppId.forum => ForumScreen(state: state, data: data, nowUtc: nowUtc, epochId: epochId),
-      PhoneAppId.profile => ProfileScreen(state: state, data: data),
+      PhoneAppId.profile => ProfileScreen(
+        state: state,
+        data: data,
+        nowUtc: nowUtc,
+        cellSideM: lat == null ? null : () => 2 * metersPerCell(lat()),
+        onOpenSettings: () => Navigator.of(context).push(phoneRoute<void>(settings())),
+      ),
       PhoneAppId.settings => settings(),
       _ => null, // vision
     };

@@ -277,7 +277,15 @@ class GameState extends ChangeNotifier {
 
   /// Gera os pedidos de hoje se o dia virou. [today] é o dia local; [forum] e [epochId] vêm dos dados.
   void ensureDaily(ForumData forum, int epochId, int today) {
-    if (story.daily.ensure(today: today, seed: seed, epochId: epochId, level: playerLevel, forum: forum)) notifyListeners();
+    final newDay = conjurer.markDay(today); // dias jogados, para o Perfil
+    if (story.daily.ensure(today: today, seed: seed, epochId: epochId, level: playerLevel, forum: forum) || newDay) notifyListeners();
+  }
+
+  /// O nome do Conjurador (já limpo por `sanitizeName`); vazio volta a "Conjurador".
+  void setPlayerName(String name) {
+    if (conjurer.playerName == name) return;
+    conjurer.playerName = name;
+    notifyListeners();
   }
 
   /// Entrega o pedido do [slot]: XP e materiais. `false` se ainda não está pronto.
