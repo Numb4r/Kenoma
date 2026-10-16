@@ -35,8 +35,12 @@ flutter:
     - assets/data/
     - assets/regions/
     - assets/fonts/OFL-Silkscreen.txt
+    - assets/fonts/OFL-PixelifySans.txt
 
   fonts:
     - family: Silkscreen
       fonts:
         - asset: assets/fonts/Silkscreen-Regular.ttf
+    - family: Pixelify Sans
+      fonts:
+        - asset: assets/fonts/PixelifySans.ttf
