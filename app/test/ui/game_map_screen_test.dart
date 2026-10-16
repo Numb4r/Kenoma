@@ -100,6 +100,7 @@ Future<Env> pumpGame(
   int? clockUtc,
   HeadingSource? heading,
   MemorySaveStore? store,
+  bool realClock = false,
 }) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 2.625;
@@ -107,7 +108,9 @@ Future<Env> pumpGame(
   final gps = FakeGps();
   final gw = gateway ?? FakeGateway(state: LocationPermissionState.granted);
   final tools = DevTools(realSource: gps);
-  if (clockUtc != null) tools.clock.setUtc(clockUtc);
+  // Por padrão o relógio fica na época 1 (sem o fluxo v2): comportamentos aleatórios abririam a folha de preparo no meio
+  // dos testes de toque. Os testes da época 2 passam o horário que querem.
+  if (!realClock || clockUtc != null) tools.clock.setUtc(clockUtc ?? 1792080000);
   if (simulator) await tools.setUseSimulator(true);
   await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: gw, bundle: _Bundle(realAssets()), headingSource: heading, store: store)));
   for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
@@ -559,7 +562,7 @@ void main() {
     });
 
     testWidgets('sem override o painel não fala do relógio', (tester) async {
-      await pumpGame(tester);
+      await pumpGame(tester, realClock: true);
       expect(find.textContaining('RELÓGIO UTC'), findsNothing);
     });
   });

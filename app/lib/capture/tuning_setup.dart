@@ -18,6 +18,8 @@ class TuningSetup {
     required this.seal,
     this.tonic,
     this.circleStrong = 0,
+    this.intensityAdd = 0,
+    this.wanderScale = 1,
   });
 
   final EcoType type;
@@ -29,6 +31,10 @@ class TuningSetup {
   /// Criaturas do Círculo fortes contra o tipo do alvo (até 3).
   final int circleStrong;
 
+  /// Um degrau a mais de resistência (o Eco agressivo) e a escala da deriva do sinal (o Arisco 1,6; o Oculto 0,5).
+  final double intensityAdd;
+  final double wanderScale;
+
   /// Diferença de nível: Eco menos Conjurador.
   int get gap => levelGap(playerLevel: playerLevel, ecoLevel: ecoLevel);
 
@@ -36,7 +42,7 @@ class TuningSetup {
   int overlevel(TuningBalance b) => overlevelOf(playerLevel: playerLevel, ecoLevel: ecoLevel, balance: b);
 
   double intensity(TuningBalance b) =>
-      resistanceIntensity(playerLevel: playerLevel, ecoLevel: ecoLevel, balance: b);
+      (resistanceIntensity(playerLevel: playerLevel, ecoLevel: ecoLevel, balance: b) + intensityAdd).clamp(0.0, 1.0);
 
   double tolerance(TuningBalance b) =>
       tuningTolerance(seal: seal, target: type, balance: b, circleStrong: circleStrong);
@@ -46,7 +52,7 @@ class TuningSetup {
 
   /// Começa uma sintonia. O [rng] define o sinal, então a mesma semente repete a sintonia.
   TuningSession start(TuningBalance b, Pcg32 rng) => TuningSession(
-        signal: TargetSignal.generate(type: type, intensity: intensity(b), rng: rng, balance: b),
+        signal: TargetSignal.generate(type: type, intensity: intensity(b), rng: rng, balance: b, wanderScale: wanderScale),
         baseTolerance: tolerance(b),
         balance: b,
         timeLimitS: timeLimitS(b),

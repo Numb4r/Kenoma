@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 
+import '../world/debug_force.dart';
 import '../world/places.dart';
 import '../world/position_source.dart';
 import 'game_clock.dart';
@@ -22,6 +23,9 @@ class DevTools extends ChangeNotifier {
   /// O simulador. Sempre existe: usá-lo ou não é o [useSimulator].
   final SimulatedPositionSource simulator;
   final GameClock clock;
+
+  /// O que o menu de debug força no próximo spawn (comportamento, variante, Brilhante) e o clima forçado.
+  final DebugForce force = DebugForce();
 
   /// A fonte que o jogo ouve. Troca entre o GPS real e o simulador sem o jogo perceber.
   late final SwitchablePositionSource source;

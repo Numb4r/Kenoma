@@ -7,6 +7,7 @@ import 'package:kenoma/core/epochs.dart';
 import 'package:kenoma/data/game_data.dart';
 import 'package:kenoma/data/region_pack.dart';
 import 'package:kenoma/player/progress_balance.dart';
+import 'package:kenoma/world/street_life_balance.dart';
 
 // `flutter test` roda com o diretório de trabalho em app/.
 Map<String, dynamic> loadJson(String path) => jsonDecode(File(path).readAsStringSync()) as Map<String, dynamic>;
@@ -14,6 +15,8 @@ Map<String, dynamic> loadJson(String path) => jsonDecode(File(path).readAsString
 Map<String, dynamic> epochsJson() => loadJson('assets/data/epochs.json');
 
 EpochSchedule loadEpochs() => EpochSchedule.fromJson(epochsJson());
+
+StreetLifeBalance loadStreetBalance() => StreetLifeBalance(loadJson('assets/data/balance.json'));
 
 ProgressBalance loadProgressBalance() => ProgressBalance(loadJson('assets/data/balance.json'));
 

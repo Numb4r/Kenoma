@@ -6,6 +6,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../capture/seal.dart';
+import '../../core/behavior.dart';
 import '../../capture/tuning_setup.dart';
 import '../../data/game_data.dart';
 import '../../data/tuning_data.dart';
@@ -48,7 +49,15 @@ Future<void> runEncounter(
       backgroundColor: kPanel,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(side: BorderSide(color: kVeil, width: 3)),
-      builder: (_) => PrepSheet(species: species, level: level, seals: seals, count: state.count, tonics: state.count(_tonicId)),
+      builder: (_) => PrepSheet(
+        species: species,
+        level: level,
+        seals: seals,
+        count: state.count,
+        tonics: state.count(_tonicId),
+        behavior: eco.behavior,
+        variant: data.variantInfo(biome: eco.variant, shiny: eco.shiny),
+      ),
     );
     if (prep == null || !context.mounted) return; // cancelar não custa nada
     state.take(prep.seal.id);
@@ -64,6 +73,12 @@ Future<void> runEncounter(
           seal: prep.seal,
           tonic: tonic,
           circleStrong: strongInCircle(state, data, species.type),
+          intensityAdd: eco.behavior == EcoBehavior.aggressive ? data.street.aggressiveIntensityAdd : 0,
+          wanderScale: switch (eco.behavior) {
+            EcoBehavior.skittish => data.street.skittishWanderScale,
+            EcoBehavior.hidden => data.street.hiddenWanderScale,
+            _ => 1.0,
+          },
         ),
         balance: data.tuning.balance,
         balanceVersion: data.tuning.balanceVersion,
@@ -76,7 +91,7 @@ Future<void> runEncounter(
     final o = run.outcome;
     if (o.success) {
       final first = !state.hasCaptured(species.id);
-      state.capture(uid: eco.uid, speciesId: species.id, level: level, nowUtc: nowUtc());
+      state.capture(uid: eco.uid, speciesId: species.id, level: level, nowUtc: nowUtc(), variant: eco.variant, shiny: eco.shiny);
       state.add('item.ectoplasm', o.ectoplasm);
       state.recordEvent('capture', species.type.name, 1);
       final b = state.balance;
@@ -100,13 +115,26 @@ Future<void> runEncounter(
 
 /// A folha de preparo: o Eco, os selos que o jogador tem e o tônico, se houver.
 class PrepSheet extends StatefulWidget {
-  const PrepSheet({required this.species, required this.level, required this.seals, required this.count, required this.tonics, super.key});
+  const PrepSheet({
+    required this.species,
+    required this.level,
+    required this.seals,
+    required this.count,
+    required this.tonics,
+    this.behavior = EcoBehavior.passive,
+    this.variant,
+    super.key,
+  });
 
   final EcoSpecies species;
   final int level;
   final List<Seal> seals;
   final int Function(String itemId) count;
   final int tonics;
+
+  /// O comportamento do Eco e a variante (ou Brilhante) dele, mostrados na folha.
+  final EcoBehavior behavior;
+  final VariantInfo? variant;
 
   @override
   State<PrepSheet> createState() => _PrepSheetState();
@@ -128,6 +156,10 @@ class _PrepSheetState extends State<PrepSheet> {
             Text('${widget.species.name} · NV ${widget.level}', style: const TextStyle(fontSize: 16, color: kText)),
             const SizedBox(height: 4),
             Text(typeLabel(widget.species.type), style: TextStyle(fontSize: 8, color: typeColorOf(widget.species))),
+            if (widget.variant != null)
+              Text('VARIANTE ${widget.variant!.name.toUpperCase()} · ${widget.variant!.trait.toUpperCase()}', key: const Key('prep-variant'), style: TextStyle(fontSize: 8, color: Color(widget.variant!.tint), height: 1.8)),
+            if (widget.behavior != EcoBehavior.passive)
+              Text('${widget.behavior.label.toUpperCase()}: ${behaviorHint(widget.behavior)}', key: const Key('prep-behavior'), style: const TextStyle(fontSize: 8, color: kEssence, height: 1.8)),
             const SizedBox(height: 16),
             if (widget.seals.isEmpty)
               const Text('VOCÊ NÃO TEM SELOS. FABRIQUE UM NA BOLSA (GIZ + ECTOPLASMA).', style: TextStyle(fontSize: 8, color: kEssence, height: 1.8))
@@ -170,3 +202,11 @@ class _PrepSheetState extends State<PrepSheet> {
 
   Color typeColorOf(EcoSpecies s) => typeColor(s.type);
 }
+
+/// O que o comportamento faz, em uma frase, para a folha de preparo.
+String behaviorHint(EcoBehavior b) => switch (b) {
+      EcoBehavior.passive => 'sinal normal',
+      EcoBehavior.skittish => 'foge se você chegar correndo; o sinal oscila mais',
+      EcoBehavior.aggressive => 'resistência mais forte',
+      EcoBehavior.hidden => 'só aparece com o Radar; o sinal é mais estável',
+    };

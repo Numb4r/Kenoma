@@ -9,6 +9,8 @@ import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 import '../core/epochs.dart';
 import '../player/progress_balance.dart';
 import '../story/forum_data.dart';
+import '../core/weather.dart';
+import '../world/street_life_balance.dart';
 import '../story/mentor_script.dart';
 import 'balance_version.dart';
 import 'tuning_data.dart';
@@ -48,6 +50,7 @@ class GameData {
     required this.progress,
     required this.mentor,
     required this.forum,
+    required this.street,
     this.variants = const {},
   });
 
@@ -81,6 +84,7 @@ class GameData {
       GameData(
         mentor: MentorScript.fromJson(mentor),
         forum: ForumData.fromJson(forum),
+        street: StreetLifeBalance(balance),
         variants: {
           for (final e in ((creatures['variants'] as Map<String, dynamic>?) ?? const {}).entries)
             e.key: VariantInfo(
@@ -125,11 +129,22 @@ class GameData {
   final MentorScript mentor;
   final ForumData forum;
 
+  /// Comportamentos, Radar, névoa e Familiar do `balance.json`.
+  final StreetLifeBalance street;
+
   /// As variantes: `urban`, `green`, `water`, `residential` e `shiny`.
   final Map<String, VariantInfo> variants;
 
   /// A variante de um Eco: a Brilhante vale mais que a de bioma. `null` se é comum.
   VariantInfo? variantInfo({String? biome, bool shiny = false}) => variants[shiny ? 'shiny' : biome];
+
+  /// O modelo do clima da época mais nova que o traz (para o HUD e a chuva, mesmo antes de a época 2 começar).
+  WeatherModel? get weatherModel {
+    for (final e in schedule.epochs.reversed) {
+      if (e.ecoV2 != null) return e.ecoV2!.weather;
+    }
+    return null;
+  }
 
   String itemName(String id) => itemNames[id] ?? id;
 

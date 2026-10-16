@@ -25,6 +25,7 @@ void main() {
       auraM: 40,
       viewM: 120,
       itemName: (id) => id,
+      street: loadStreetBalance(),
       onMessage: msgs.add,
     );
     return (view, state, msgs);
@@ -94,7 +95,7 @@ void main() {
     final hit = find('spark');
     final (a, state, _) = make();
     a.refresh(lat: hit.$1, lon: hit.$2, tUtc: t0);
-    final b = WorldView(field: a.field, state: state, auraM: 40, viewM: 120, itemName: (i) => i);
+    final b = WorldView(field: a.field, state: state, auraM: 40, viewM: 120, itemName: (i) => i, street: loadStreetBalance());
     b.refresh(lat: hit.$1, lon: hit.$2, tUtc: t0 + 60);
     expect(b.spawns.any((s) => s.uid == hit.$3.uid), isFalse);
   });
@@ -107,6 +108,7 @@ void main() {
           viewM: 120,
           trackerM: 120,
           itemName: (id) => id,
+          street: loadStreetBalance(),
           abilities: abilities ?? () => MapAbilities.none,
         );
 
@@ -149,7 +151,7 @@ void main() {
 
     test('alcance de coleta do Círculo pega Fagulhas de mais longe, e o rastreador alarga a área gerada', () {
       final v = viewWith(fresh(), abilities: () => const MapAbilities(pickupBonusM: 10, trackerRangeM: 200));
-      expect(v.pickupRadiusM, 35);
+      expect(v.pickupRadiusM, 40, reason: 'Aura 25 + Círculo 10 + Familiar 5');
       expect(v.trackerRangeM, 200);
       expect(v.reachM, 200);
       expect(viewWith(fresh(), abilities: () => const MapAbilities(trackerRangeM: 90)).trackerRangeM, 120, reason: 'nunca abaixo do padrão');

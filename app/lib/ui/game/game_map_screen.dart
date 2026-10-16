@@ -10,6 +10,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
+import '../../core/weather.dart';
 import '../../data/game_data.dart';
 import '../../player/circle.dart';
 import '../../player/game_state.dart' show GameState;
@@ -113,6 +114,16 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   }
 
   String _version = 'dev';
+
+  /// O clima determinístico de uma célula (o que pesa nos spawns). O debug pode forçá-lo.
+  Weather _weatherOfCell(int seed, GameData data, int cx, int cy, int t) {
+    final forced = tools.force.weather;
+    if (forced != null) return forced;
+    final model = data.weatherModel;
+    if (model == null) return Weather.clear;
+    final (rx, ry) = weatherRegionOfCell(cx, cy);
+    return model.at(seed: seed, tUtc: t, regionX: rx, regionY: ry);
+  }
   late final Notifier _notifier = widget.notifier ?? LocalNotifier();
 
   /// O mapa está sendo trocado por um novo: a tela nova já ligou o wake lock e esta não pode desligá-lo.
@@ -255,6 +266,13 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     }
   }
 
+  /// Um Eco agressivo entrou na Aura: o celular vibra uma vez e a folha de preparo abre sozinha (dá para fechar).
+  void _onAggressive(WorldSpawn eco) {
+    if (_busy || !mounted) return;
+    HapticFeedback.heavyImpact();
+    unawaited(_startEncounter(eco));
+  }
+
   /// Abre o encontro com [spawn]: a folha de selo e a sintonia.
   Future<void> _startEncounter(WorldSpawn spawn) async {
     final r = _ready;
@@ -321,8 +339,17 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     tools.clock.raiseFloor(session.state.lastSeenUtc);
     session.onSeen = tools.clock.raiseFloor;
     final world = WorldView(
-      field: SpawnField(seed: session.state.seed, schedule: data.schedule, map: assets.map),
+      field: SpawnField(
+        seed: session.state.seed,
+        schedule: data.schedule,
+        map: assets.map,
+        typeOf: (id) => data.species(id)?.type.name,
+        weatherAt: (cx, cy, t) => _weatherOfCell(session.state.seed, data, cx, cy, t),
+      ),
       state: session.state,
+      street: data.street,
+      force: tools.force,
+      typeOf: (id) => data.species(id)?.type.name,
       auraM: assets.balance.auraM,
       viewM: assets.balance.viewM,
       trackerM: assets.balance.trackerM,
@@ -362,6 +389,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     });
     game.onFollowHeading = _setFollowHeading;
     game.onWalked = _onWalked;
+    world.onAggressive = _onAggressive;
     session.state.onNotice = _toast;
     session.state.ensureDaily(data.forum, data.schedule.select(tools.clock.nowUtc).epoch.id, localDay(tools.clock.nowUtc));
     _storyTimer = Timer.periodic(const Duration(seconds: 1), (_) => _storyTick());
