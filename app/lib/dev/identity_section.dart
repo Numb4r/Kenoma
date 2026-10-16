@@ -110,7 +110,6 @@ class _IdentitySectionState extends State<IdentitySection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Padding(padding: EdgeInsets.only(bottom: 12), child: Text('IDENTIDADE · SAVE', style: TextStyle(fontSize: 24, color: kVeil))),
         if (_error != null) Text('ERRO: $_error', style: const TextStyle(fontSize: 8, color: kEssence)),
         if (r == null && _error == null) const Text('LENDO O SAVE...', style: TextStyle(fontSize: 8, color: kDim)),
         if (r != null) ...[
@@ -141,7 +140,6 @@ class _IdentitySectionState extends State<IdentitySection> {
           const SizedBox(height: 8),
           PixelButton(label: 'Reler o save', color: kDim, onTap: _load),
         ],
-        const SizedBox(height: 24),
       ],
     );
   }

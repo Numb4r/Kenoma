@@ -9,7 +9,9 @@ import 'package:kenoma/capture/session_record.dart';
 import 'package:kenoma/capture/tuning_setup.dart';
 import 'package:kenoma/data/session_log_store.dart';
 import 'package:kenoma/data/tuning_data.dart';
+import 'package:kenoma/dev/debug_prefs.dart';
 import 'package:kenoma/dev/dev_tools.dart';
+import 'package:kenoma/save/save_store.dart';
 import 'package:kenoma/dev/gps_simulator.dart';
 import 'package:kenoma/ui/game/game_map_screen.dart';
 import 'package:kenoma/world/places.dart';
@@ -75,7 +77,7 @@ Future<({SessionLogStore store, FakeExporter exporter})> pumpMenu(WidgetTester t
   }
   rootBundle.evict('assets/regions/campinas_e0.bin');
   await tester.runAsync(TuningData.load);
-  await tester.pumpWidget(MaterialApp(home: TuningDebugMenu(store: store, exporter: exporter, devTools: tools)));
+  await tester.pumpWidget(MaterialApp(home: TuningDebugMenu(store: store, exporter: exporter, devTools: tools, prefs: DebugPrefs(defaultOpen: true), saveStore: MemorySaveStore())));
   for (var i = 0; i < 300 && find.text('INICIAR SINTONIA').evaluate().isEmpty; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
     await tester.pump();
@@ -263,11 +265,11 @@ void main() {
 
     testWidgets('o menu tem a seção do mapa no topo, com o centro padrão na Unicamp, e a sintonia continua nele', (tester) async {
       await pumpMenu(tester);
-      expect(find.text('MAPA LIVRE · DEBUG'), findsOneWidget);
+      expect(find.text('MAPA LIVRE'), findsOneWidget);
       expect(field(tester, 'Latitude'), '-22.8174');
       expect(field(tester, 'Longitude'), '-47.0697');
       expect(find.text('ABRIR MAPA'), findsOneWidget);
-      expect(find.text('SINTONIA · DEBUG'), findsOneWidget);
+      expect(find.text('ABRIR SINTONIA'), findsOneWidget);
       await tester.ensureVisible(find.text('INICIAR SINTONIA'));
       expect(find.text('INICIAR SINTONIA'), findsOneWidget, reason: 'a sintonia segue acessível');
     });
@@ -313,7 +315,7 @@ void main() {
       expect(find.textContaining('CENTRO -22.90560, -47.06080'), findsOneWidget);
       await tapVisible(tester, find.text('<'));
       await tester.pumpAndSettle();
-      expect(find.text('MAPA LIVRE · DEBUG'), findsOneWidget, reason: 'o < volta ao menu');
+      expect(find.text('MAPA LIVRE'), findsOneWidget, reason: 'o < volta ao menu');
     });
   });
 
@@ -322,11 +324,11 @@ void main() {
 
     testWidgets('o menu tem o mapa do jogo, o simulador com as três velocidades e o relógio UTC', (tester) async {
       await pumpMenu(tester, tools: newTools());
-      for (final t in ['JOGO · MAPA', 'ABRIR MAPA DO JOGO', 'Simulador de GPS', 'Ruído de GPS (5 m)', 'TELEPORTAR', 'RELÓGIO UTC', 'APLICAR', 'RELÓGIO REAL']) {
+      for (final t in ['MAPA DO JOGO', 'ABRIR MAPA DO JOGO', 'Simulador de GPS', 'Ruído de GPS (5 m)', 'TELEPORTAR', 'RELÓGIO UTC', 'APLICAR', 'RELÓGIO REAL']) {
         expect(find.text(t), findsOneWidget, reason: t);
       }
       for (final s in SimSpeed.values) {
-        expect(find.text('${s.label} ${s.mps.toStringAsFixed(1)} m/s'), findsOneWidget, reason: s.label);
+        expect(find.text('${s.label} ${s.mps.toStringAsFixed(1)} m/s'.toUpperCase()), findsOneWidget, reason: s.label);
       }
       expect(find.text('Fonte de posição: GPS real'), findsOneWidget);
     });
@@ -338,10 +340,10 @@ void main() {
       await tester.pump();
       expect(tools.useSimulator, isTrue);
       expect(find.text('Fonte de posição: simulador'), findsOneWidget);
-      await tapVisible(tester, find.text('Bicicleta 6.0 m/s'));
+      await tapVisible(tester, find.text('BICICLETA 6.0 M/S'));
       await tester.pump();
       expect(tools.simulator.speedMps, 6.0);
-      await tapVisible(tester, find.text('Correndo 3.0 m/s'));
+      await tapVisible(tester, find.text('CORRENDO 3.0 M/S'));
       await tester.pump();
       expect(tools.simulator.speedMps, 3.0);
       expect(tools.simulator.noiseM, 0);
@@ -425,7 +427,7 @@ void main() {
       expect(find.textContaining('-22.8174'), findsOneWidget);
       await tapVisible(tester, find.text('<'));
       await tester.pumpAndSettle();
-      expect(find.text('JOGO · MAPA'), findsOneWidget, reason: 'o < volta ao menu');
+      expect(find.text('MAPA DO JOGO'), findsOneWidget, reason: 'o < volta ao menu');
     });
 
     testWidgets('o relógio sobreposto vale também no mapa livre: depois do fim da época o mundo está desatualizado', (tester) async {
