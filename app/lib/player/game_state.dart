@@ -152,6 +152,9 @@ class GameState extends ChangeNotifier {
     // Um ponto de talento por nível já subido: saves antigos (e o XP guardado que o teto novo libera) entram com o que o nível pede.
     final owed = (progress.level - 1) * state.cb.talentPerLevel;
     if (state.conjurer.talentEarned < owed) state.conjurer.talentEarned = owed;
+    for (var l = 2; l <= progress.level; l++) {
+      state.story.events.putIfAbsent('level_$l', () => 1); // saves antigos: os níveis já subidos contam para o mentor
+    }
     return state;
   }
 
@@ -334,6 +337,10 @@ class GameState extends ChangeNotifier {
   int gainXp(int raw, int nowUtc) {
     final up = progress.gain(raw, nowUtc);
     conjurer.talentEarned += up * cb.talentPerLevel;
+    // Cada nível alcançado vira o evento `level_N`: o mentor liga mensagens a ele (a fusão, no `level_6`).
+    for (var l = progress.level - up + 1; l <= progress.level; l++) {
+      story.events['level_$l'] = 1;
+    }
     notifyListeners();
     return up;
   }
@@ -410,6 +417,15 @@ class GameState extends ChangeNotifier {
     }
     markDone(uid, nowUtc);
     return c;
+  }
+
+  /// Põe uma criatura que não veio de um spawn (a fusão) na coleção e no bestiário como capturada.
+  void addCreature(CreatureInstance c) {
+    collection.add(c);
+    for (final k in bestiaryKeys(c.speciesId, variant: c.variant, shiny: c.shiny)) {
+      bestiary[k] = (bestiary[k] ?? const BestiaryEntry()).copyWith(captured: true);
+    }
+    notifyListeners();
   }
 
   CreatureInstance? creature(String uid) {
