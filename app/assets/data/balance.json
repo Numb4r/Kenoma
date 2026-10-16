@@ -53,5 +53,6 @@
     "creature_level_cap": 20
   },
   "distill": { "eco_yield": [ { "from": 1, "to": 7, "value": 3 }, { "from": 8, "to": 14, "value": 4 }, { "from": 15, "to": 20, "value": 5 } ] },
+  "steps": { "per_spark": 1000, "max_jump": 20000 },
   "start_inventory": { "item.seal.simple": 5, "item.chalk": 3 }
 }

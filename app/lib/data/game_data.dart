@@ -11,6 +11,7 @@ import '../net/signed_feed.dart';
 import '../player/progress_balance.dart';
 import '../story/forum_data.dart';
 import '../core/weather.dart';
+import '../world/steps.dart';
 import '../world/street_life_balance.dart';
 import '../story/mentor_script.dart';
 import 'balance_version.dart';
@@ -52,6 +53,7 @@ class GameData {
     required this.mentor,
     required this.forum,
     required this.street,
+    required this.steps,
     this.variants = const {},
   });
 
@@ -86,6 +88,7 @@ class GameData {
         mentor: MentorScript.fromJson(mentor),
         forum: ForumData.fromJson(forum),
         street: StreetLifeBalance(balance),
+        steps: StepsBalance.fromJson(balance),
         variants: {
           for (final e in ((creatures['variants'] as Map<String, dynamic>?) ?? const {}).entries)
             e.key: VariantInfo(
@@ -132,6 +135,9 @@ class GameData {
 
   /// Comportamentos, Radar, névoa e Familiar do `balance.json`.
   final StreetLifeBalance street;
+
+  /// Passos por Fagulha do contador opcional (`balance.json`, bloco `steps`).
+  final StepsBalance steps;
 
   /// As variantes: `urban`, `green`, `water`, `residential` e `shiny`.
   final Map<String, VariantInfo> variants;

@@ -97,6 +97,9 @@ class WorldView {
 
   /// Um Eco Brilhante apareceu à vista (uma vez por Eco): a tela toca um som curto e avisa.
   void Function(WorldSpawn eco)? onShiny;
+
+  /// Um Eco passou a estar a até `touchRangeM` (uma vez por entrada; não chama se ele fugiu). O modo bolso vibra aqui.
+  void Function(WorldSpawn eco)? onEnteredRange;
   final _announced = <int>{};
 
   /// Os que já apareceram nesta sessão (o debug só força o primeiro Eco *novo*), e o que o debug forçou em cada um.
@@ -204,9 +207,12 @@ class WorldView {
       }
       if (s.isEco && inTouchRange(s)) {
         inAuraNow.add(s.uid);
-        if (!_inAura.contains(s.uid) && _entered(s, tUtc)) {
-          onFled?.call(s);
-          continue; // fugiu
+        if (!_inAura.contains(s.uid)) {
+          if (_entered(s, tUtc)) {
+            onFled?.call(s);
+            continue; // fugiu
+          }
+          onEnteredRange?.call(s);
         }
         _tryAggressive(s);
       }
