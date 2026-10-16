@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Auto Backup do Android 11 e anterior (android:fullBackupContent).
+     O save é gravado por KsvSaveStore em getApplicationDocumentsDirectory(), que no Android é
+     <dataDir>/app_flutter/ (NÃO é files/). Por isso domain="root" (a pasta de dados do app) e o caminho
+     começa em app_flutter/. Com ao menos um <include>, tudo o mais fica de fora (caches, feed/, temporários). -->
+<full-backup-content>
+    <include domain="root" path="app_flutter/save.ksv"/>
+    <include domain="root" path="app_flutter/save.ksv.1"/>
+    <include domain="root" path="app_flutter/save.ksv.2"/>
+</full-backup-content>

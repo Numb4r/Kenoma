@@ -9,9 +9,18 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private val device = DeviceChannels(this)
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        device.onRequestPermissionsResult(requestCode, grantResults)
+    }
+
+
     // Um som curto para o aparecimento de um Eco Brilhante, sem arquivo de áudio nem pacote: o gerador de tons do sistema.
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        device.register(flutterEngine.dartExecutor.binaryMessenger)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kenoma/sound").setMethodCallHandler { call, result ->
             if (call.method == "chime") {
                 try {
