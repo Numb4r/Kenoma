@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 import '../core/seed.dart';
 import '../save/founder.dart';
+import '../story/chat_state.dart' show ChatEntry;
 import '../story/forum_data.dart';
 import '../story/mentor_script.dart';
 import '../story/story_state.dart';
@@ -156,13 +157,14 @@ class GameState extends ChangeNotifier {
   }
 
   /// O Conjurador já pode escolher a escola (nível 3 ou mais) e ainda não escolheu.
-  bool get canChooseSchool => conjurer.school == null && progress.level >= cb.schoolLevel;
+  bool get canChooseSchool => conjurer.school == null && playerLevel >= cb.schoolLevel;
 
   /// Escolhe a escola, de forma definitiva (a troca vem só no nível 30, numa fatia futura). `false` se não pode.
   bool chooseSchool(School school) {
     if (!canChooseSchool) return false;
     conjurer.school = school;
     recordEvent('school_chosen', school.id, 1);
+    recordEvent('school_chosen_${school.id}', '', 1); // a fala do Familiar de cada escola
     notifyListeners();
     return true;
   }
@@ -318,10 +320,20 @@ class GameState extends ChangeNotifier {
   MentorMessage? tickChat(double dt, int nowUtc, MentorScript script) {
     final m = story.chat.tick(dt, nowUtc, script, story.count);
     final fam = story.chat.deliverFamiliar(nowUtc, script, story.count);
-    if (m != null) onNotice?.call('Nova mensagem de ${script.contactName}');
+    final offered = _offerSchoolTests(nowUtc, script);
+    if (m != null || offered) onNotice?.call('Nova mensagem de ${script.contactName}');
     if (fam.isNotEmpty) onNotice?.call('O Familiar tem algo a dizer');
-    if (m != null || fam.isNotEmpty) notifyListeners();
+    if (m != null || fam.isNotEmpty || offered) notifyListeners();
     return m;
+  }
+
+  /// No nível da escola, na primeira sessão em que os testes ainda não foram oferecidos, o mentor manda o convite. Uma vez só.
+  bool _offerSchoolTests(int nowUtc, MentorScript script) {
+    final msg = script.byId('school_tests');
+    if (msg == null || conjurer.testsOffered || conjurer.school != null || playerLevel < cb.schoolLevel) return false;
+    story.chat.delivered.add(ChatEntry(id: msg.id, utc: nowUtc));
+    conjurer.testsOffered = true;
+    return true;
   }
 
   /// Guarda um interruptor do jogador (`street_names`, `follow_heading`).

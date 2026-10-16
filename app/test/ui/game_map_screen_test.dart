@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/features.dart';
 import 'package:kenoma/core/tiles.dart';
 import 'package:kenoma/data/heading_source.dart';
+import 'package:kenoma/player/conjurer_balance.dart';
 import 'package:kenoma/ui/game/compass_button.dart';
 import 'package:kenoma/world/spawn_field.dart';
 import 'package:kenoma/dev/dev_tools.dart';
@@ -895,6 +896,20 @@ void main() {
       await env.settle(10);
       expect(find.text('RADAR'), findsNothing);
       expect(find.text('BESTIÁRIO'), findsOneWidget);
+    });
+
+    testWidgets('escolher a escola troca a forma do Familiar no mapa na hora', (tester) async {
+      final env = await pumpGame(tester);
+      final state = env.game.worldView!.state;
+      final before = env.game.familiarImage;
+      expect(before, isNotNull);
+      state.levelOverride = 3;
+      expect(state.chooseSchool(School.shaman), isTrue);
+      for (var i = 0; i < 20 && identical(env.game.familiarImage, before); i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+        await tester.pump();
+      }
+      expect(identical(env.game.familiarImage, before), isFalse, reason: 'a imagem foi recarregada com a paleta da escola');
     });
   });
 }

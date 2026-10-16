@@ -64,7 +64,7 @@ class ChatState {
   /// vez cada. Devolve as entregues agora.
   List<MentorMessage> deliverFamiliar(int nowUtc, MentorScript script, int Function(String event) eventCount) {
     final out = <MentorMessage>[];
-    for (final m in script.familiar) {
+    for (final m in [...script.familiar, ...script.school.where((m) => m.requires != null)]) {
       final req = m.requires;
       if (delivered.any((e) => e.id == m.id) || (req != null && eventCount(req.event) < req.min)) continue;
       delivered.add(ChatEntry(id: m.id, utc: nowUtc));

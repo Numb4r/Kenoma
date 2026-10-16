@@ -35,6 +35,21 @@ O Familiar ainda não fala (GDD): ele se comunica por gestos, ícones e silênci
 | 1 | `f01` | variant_seen ≥ 1 | *O Familiar inclina o corpo para a cor nova do Eco e fica parado, como quem escuta. Um chiado curto sai dele. Parece dizer: tem o lugar dentro dele.* |
 | 2 | `f02` | shiny_seen ≥ 1 | *O Familiar acende por um instante, violeta e depois quase branco, e dá três voltas ao seu redor sem tocar o chão. Depois fica quieto, olhando o brilho. Parece querer que você olhe também.* |
 | 3 | `f03` | hidden_revealed ≥ 1 | *O Familiar arrepia o contorno quando o Radar varre. Aponta para onde nada estava e a estática fecha atrás do dedo dele. Parece dizer: eu já sabia que estava ali.* |
+| 4 | `school_best_technomancer` | school_best_technomancer ≥ 1 | *O Familiar eriça uma antena fina quando o sinal firmou na sua mão. Aponta para ela, depois para você. Parece dizer: este foi o seu melhor.* |
+| 5 | `school_best_shaman` | school_best_shaman ≥ 1 | *O Familiar se abaixa e fica imóvel, igual ao Eco que parou de fugir. Ergue uma folha pequena na sua direção. Parece dizer: este foi o seu melhor.* |
+| 6 | `school_best_sealer` | school_best_sealer ≥ 1 | *O Familiar passa o contorno pelo traço que você deixou no ar, como quem confere uma costura. Parece dizer: este foi o seu melhor.* |
+| 7 | `school_choose_technomancer` | school_chosen_technomancer ≥ 1 | *O Familiar pisca em ciano e o corpo dele ganha linhas retas, como um circuito. Uma antena sobe e capta algo que você não ouve.* |
+| 8 | `school_choose_shaman` | school_chosen_shaman ≥ 1 | *O Familiar esquenta até ficar laranja e solta uma folha de dentro de si. Ela cheira a terra molhada, mesmo em cima do asfalto.* |
+| 9 | `school_choose_sealer` | school_chosen_sealer ≥ 1 | *O Familiar fica ainda mais violeta e um fio de costura o atravessa de lado a lado. Ele parece satisfeito, como quem acha a própria família.* |
+
+## Escola no nível 3
+
+No nível 3, na primeira sessão em que os testes ainda não foram oferecidos (também em saves que já passaram do nível), o mentor manda o convite aos três testes, com um botão que abre os testes no Chat. Sai uma vez só. Depois de escolher, o mentor comenta e o Familiar reage (`school_choose_*`). O comentário do Familiar sobre o teste em que o jogador foi melhor (`school_best_*`) aparece na tela de escolha.
+
+| Id | Quando | Botão | Texto |
+| --- | --- | --- | --- |
+| `school_tests` | nível ≥ 3 e testes ainda não oferecidos | `school_tests` | Você já anda pelo Véu sem tropeçar. Falta escolher o jeito de andar. Preparei três testes curtos, um de cada escola: sinal, calma e sigilo. Faça todos, na ordem que quiser, quantas vezes quiser. Eu não tenho preferência. Isso deveria te preocupar. |
+| `school_after` | school_chosen ≥ 1 | - | Está feito. A escola agora te molda, e não volta tão fácil. Só bem mais tarde alguém fala em desfazer isso. Eu falaria, mas não agora. Faça valer. |
 
 ## Falas de desbloqueio do celular
 

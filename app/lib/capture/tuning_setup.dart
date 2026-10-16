@@ -20,6 +20,8 @@ class TuningSetup {
     this.circleStrong = 0,
     this.intensityAdd = 0,
     this.wanderScale = 1,
+    this.toleranceMult = 1,
+    this.progressUpMult = 1,
   });
 
   final EcoType type;
@@ -35,6 +37,10 @@ class TuningSetup {
   final double intensityAdd;
   final double wanderScale;
 
+  /// Bônus da escola do Conjurador: a tolerância vezes isto (Tecnomante) e o progresso sobe vezes isto (Selador).
+  final double toleranceMult;
+  final double progressUpMult;
+
   /// Diferença de nível: Eco menos Conjurador.
   int get gap => levelGap(playerLevel: playerLevel, ecoLevel: ecoLevel);
 
@@ -45,7 +51,7 @@ class TuningSetup {
       (resistanceIntensity(playerLevel: playerLevel, ecoLevel: ecoLevel, balance: b) + intensityAdd).clamp(0.0, 1.0);
 
   double tolerance(TuningBalance b) =>
-      tuningTolerance(seal: seal, target: type, balance: b, circleStrong: circleStrong);
+      tuningTolerance(seal: seal, target: type, balance: b, circleStrong: circleStrong) * toleranceMult;
 
   /// 20 s, ou 25 s com tônico.
   double timeLimitS(TuningBalance b) => b.timeLimitS + (tonic?.extraTimeS ?? 0);
@@ -57,5 +63,6 @@ class TuningSetup {
         balance: b,
         timeLimitS: timeLimitS(b),
         overlevel: overlevel(b),
+        progressUpMult: progressUpMult,
       );
 }

@@ -75,6 +75,8 @@ Future<void> runEncounter(
           seal: prep.seal,
           tonic: tonic,
           circleStrong: strongInCircle(state, data, species.type),
+          toleranceMult: state.cb.toleranceMultFor(state.conjurer.school),
+          progressUpMult: state.cb.progressUpMultFor(state.conjurer.school),
           intensityAdd: eco.behavior == EcoBehavior.aggressive ? data.street.aggressiveIntensityAdd : 0,
           wanderScale: switch (eco.behavior) {
             EcoBehavior.skittish => data.street.skittishWanderScale,

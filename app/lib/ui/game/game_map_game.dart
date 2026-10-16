@@ -116,7 +116,7 @@ class GameMapGame extends FlameGame {
   /// A paleta da variante ou do Brilhante (0xAARRGGBB), ou `null`; o sprite do Familiar; quantas gotas tem a chuva e a
   /// que distância (m) o Familiar anda ao lado do Conjurador.
   final VariantTintOf? variantTint;
-  final ui.Image? familiarImage;
+  ui.Image? familiarImage;
   final int rainDrops;
   final double familiarOffsetM;
 

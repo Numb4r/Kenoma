@@ -36,6 +36,25 @@
       "text": "*O Familiar acende por um instante, violeta e depois quase branco, e dá três voltas ao seu redor sem tocar o chão. Depois fica quieto, olhando o brilho. Parece querer que você olhe também.*" },
     { "id": "f03", "requires": { "event": "hidden_revealed", "min": 1 },
       "text": "*O Familiar arrepia o contorno quando o Radar varre. Aponta para onde nada estava e a estática fecha atrás do dedo dele. Parece dizer: eu já sabia que estava ali.*" }
+,
+    { "id": "school_best_technomancer", "requires": { "event": "school_best_technomancer", "min": 1 },
+      "text": "*O Familiar eriça uma antena fina quando o sinal firmou na sua mão. Aponta para ela, depois para você. Parece dizer: este foi o seu melhor.*" },
+    { "id": "school_best_shaman", "requires": { "event": "school_best_shaman", "min": 1 },
+      "text": "*O Familiar se abaixa e fica imóvel, igual ao Eco que parou de fugir. Ergue uma folha pequena na sua direção. Parece dizer: este foi o seu melhor.*" },
+    { "id": "school_best_sealer", "requires": { "event": "school_best_sealer", "min": 1 },
+      "text": "*O Familiar passa o contorno pelo traço que você deixou no ar, como quem confere uma costura. Parece dizer: este foi o seu melhor.*" },
+    { "id": "school_choose_technomancer", "requires": { "event": "school_chosen_technomancer", "min": 1 },
+      "text": "*O Familiar pisca em ciano e o corpo dele ganha linhas retas, como um circuito. Uma antena sobe e capta algo que você não ouve.*" },
+    { "id": "school_choose_shaman", "requires": { "event": "school_chosen_shaman", "min": 1 },
+      "text": "*O Familiar esquenta até ficar laranja e solta uma folha de dentro de si. Ela cheira a terra molhada, mesmo em cima do asfalto.*" },
+    { "id": "school_choose_sealer", "requires": { "event": "school_chosen_sealer", "min": 1 },
+      "text": "*O Familiar fica ainda mais violeta e um fio de costura o atravessa de lado a lado. Ele parece satisfeito, como quem acha a própria família.*" }
+  ],
+  "school": [
+    { "id": "school_tests", "action": "school_tests",
+      "text": "Você já anda pelo Véu sem tropeçar. Falta escolher o jeito de andar. Preparei três testes curtos, um de cada escola: sinal, calma e sigilo. Faça todos, na ordem que quiser, quantas vezes quiser. Eu não tenho preferência. Isso deveria te preocupar." },
+    { "id": "school_after", "requires": { "event": "school_chosen", "min": 1 },
+      "text": "Está feito. A escola agora te molda, e não volta tão fácil. Só bem mais tarde alguém fala em desfazer isso. Eu falaria, mas não agora. Faça valer." }
   ],
   "phone_unlock": {
     "radar": "*O Familiar encosta no ícone novo e uma onda fraca sai dele, em círculo. Parece dizer: agora eu alcanço mais longe.*",

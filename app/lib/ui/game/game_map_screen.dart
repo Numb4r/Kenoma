@@ -23,6 +23,7 @@ import '../sprites/familiar_sprite.dart';
 import '../../data/game_data.dart';
 import '../../player/circle.dart';
 import '../../player/game_state.dart' show GameState;
+import '../../player/conjurer_balance.dart' show School;
 import '../../player/mark.dart';
 import '../../player/progression.dart' show localDay;
 import '../../dev/debug_tag.dart';
@@ -532,6 +533,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       WidgetsBinding.instance.addPostFrameCallback((_) => _setFollowHeading(true));
     }
     _ready = _Ready(assets, game, tracker, sub, data, session, world);
+    _familiarSchool = session.state.conjurer.school;
+    if (_familiarSchool != null) unawaited(_reloadFamiliar(game, session.state));
+    session.state.addListener(_onStateForFamiliar);
     // O acesso é pedido depois do primeiro quadro: o diálogo precisa de uma tela montada.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final note = session.loadNote;
@@ -539,6 +543,21 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       _ensureAccess();
     });
     return _ready!;
+  }
+
+  School? _familiarSchool;
+
+  /// A escola mudou (escolhida nos testes do Chat ou no debug): o Familiar do mapa troca de forma na hora.
+  void _onStateForFamiliar() {
+    final r = _ready;
+    if (r == null || r.session.state.conjurer.school == _familiarSchool) return;
+    _familiarSchool = r.session.state.conjurer.school;
+    unawaited(_reloadFamiliar(r.game, r.session.state));
+  }
+
+  Future<void> _reloadFamiliar(GameMapGame game, GameState state) async {
+    final image = await loadFamiliarImage(school: state.conjurer.school);
+    if (mounted) game.familiarImage = image;
   }
 
   /// Garante a permissão (explicando antes) e liga a fonte. O simulador não precisa de permissão.
@@ -611,6 +630,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     tools.clock.removeListener(_rebuild);
     final r = _ready;
     if (r != null) {
+      r.session.state.removeListener(_onStateForFamiliar);
       r.sub.cancel();
       r.tracker.dispose();
       r.assets.dispose();

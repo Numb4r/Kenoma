@@ -2,6 +2,8 @@
 /// libera, os bônus de cada escola, o custo da fusão e os pontos de talento. Nenhum vive no código.
 library;
 
+import 'school_tests.dart';
+
 /// As escolas de Conjuração, em ids estáveis (o save grava o id).
 enum School {
   technomancer('technomancer', 'Tecnomante'),
@@ -42,7 +44,8 @@ class ConjurerBalance {
         fusionAnimS = _d(b['fusion'], 'anim_s'),
         spiritHeightM = _d(b['spirit'], 'height_m'),
         spiritAbilitySteps = _i(b['spirit'], 'ability_steps'),
-        talentPerLevel = _i(b['talent'], 'points_per_level');
+        talentPerLevel = _i(b['talent'], 'points_per_level'),
+        schoolTests = SchoolTestsBalance(b['school_tests'] as Map<String, dynamic>);
 
   static int _i(Object? m, String k) => ((m as Map<String, dynamic>)[k] as num).toInt();
   static double _d(Object? m, String k) => ((m as Map<String, dynamic>)[k] as num).toDouble();
@@ -77,4 +80,13 @@ class ConjurerBalance {
 
   /// Pontos de talento por nível.
   final int talentPerLevel;
+
+  /// Os números dos três testes de escola do nível 3 (bloco `school_tests`).
+  final SchoolTestsBalance schoolTests;
+
+  /// Fator da tolerância da sintonia para a [school] (Tecnomante); 1 para as outras e para quem não tem escola.
+  double toleranceMultFor(School? school) => school == School.technomancer ? techToleranceMult : 1.0;
+
+  /// Fator da velocidade com que o progresso da sintonia sobe para a [school] (Selador); 1 nos outros casos.
+  double progressUpMultFor(School? school) => school == School.sealer ? sealerProgressMult : 1.0;
 }
