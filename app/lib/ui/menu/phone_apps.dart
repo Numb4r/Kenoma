@@ -2,6 +2,7 @@
 /// o ponto laranja de novidade ficam aqui. Dart puro.
 library;
 
+import '../../crafting/ritual.dart' show ritualResearchUnseen;
 import '../../player/game_state.dart';
 
 /// Os ids dos apps. Mudou um id? Mude também o `balance.json` e as falas de `phone_unlock` do `mentor.json`.
@@ -73,6 +74,7 @@ final Map<String, bool Function(GameState)> phoneAppBadges = {
   PhoneAppId.forum: (s) => claimableRequests(s) > 0,
   PhoneAppId.bench: (_) => false, // fusão possível
   PhoneAppId.profile: (_) => false,
+  PhoneAppId.bestiary: ritualResearchUnseen, // espaço de ritual novo revelado e ainda não visto
 };
 
 /// O app [a] tem novidade agora (e está liberado).

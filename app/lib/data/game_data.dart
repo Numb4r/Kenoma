@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../core/epochs.dart';
+import '../crafting/ritual_data.dart';
 import '../net/signed_feed.dart';
 import '../player/progress_balance.dart';
 import '../story/forum_data.dart';
@@ -57,7 +58,8 @@ class GameData {
     required this.steps,
     this.variants = const {},
     this.phone = const PhoneApps([]),
-  });
+    RitualBook? ritual,
+  }) : ritual = ritual ?? RitualBook(balance: RitualBalance(const {}));
 
   static Future<GameData> load([AssetBundle? bundle]) async {
     final b = bundle ?? rootBundle;
@@ -73,6 +75,7 @@ class GameData {
       recipes: await json('recipes'),
       mentor: await json('mentor'),
       forum: await json('forum'),
+      rituals: await json('rituals').catchError((_) => <String, dynamic>{}), // sem o arquivo, o ritual fica sem receitas
     );
   }
 
@@ -85,8 +88,10 @@ class GameData {
     required Map<String, dynamic> recipes,
     required Map<String, dynamic> mentor,
     required Map<String, dynamic> forum,
+    Map<String, dynamic>? rituals,
   }) =>
       GameData(
+        ritual: RitualBook.fromJson(rituals, balance),
         mentor: MentorScript.fromJson(mentor),
         forum: ForumData.fromJson(forum),
         street: StreetLifeBalance(balance),
@@ -134,6 +139,9 @@ class GameData {
 
   /// A tabela de apps do celular e o nível que libera cada um (`phone.apps` do `balance.json`).
   final PhoneApps phone;
+
+  /// As receitas do ritual básico (`rituals.json`) e o bloco `ritual` do `balance.json`.
+  final RitualBook ritual;
 
   /// O roteiro do mentor (chat) e os pedidos do fórum Limen.
   final MentorScript mentor;

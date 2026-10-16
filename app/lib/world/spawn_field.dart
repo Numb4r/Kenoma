@@ -61,10 +61,10 @@ class WorldSpawn {
   final bool shiny;
 
   /// Cópia com o comportamento, a variante e o Brilhante trocados (o debug força o próximo spawn).
-  WorldSpawn withTraits({required EcoBehavior behavior, String? variant, required bool shiny}) => WorldSpawn(
+  WorldSpawn withTraits({required EcoBehavior behavior, String? variant, required bool shiny, String? entryId}) => WorldSpawn(
         uid: uid,
         kind: kind,
-        entryId: entryId,
+        entryId: entryId ?? this.entryId,
         quantity: quantity,
         x: x,
         y: y,

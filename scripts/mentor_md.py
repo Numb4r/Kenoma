@@ -38,6 +38,15 @@ for i, m in enumerate(mentor.get("familiar", []), 1):
     req = m["requires"]
     out.append(f"| {i} | `{m['id']}` | {req['event']} ≥ {req['min']} | {m['text']} |")
 out.append("")
+out.append("## Mensagens do mentor por acontecimento (ritual)\n")
+out.append("Saem sozinhas, uma vez cada, quando o acontecimento acontece, sem esperar a fila do tutorial (lista `event_messages` do JSON). `ritual_teach` sai ao chegar no nível do ritual (8); as dicas, na primeira vez que o jogador vê um Eco de ritual "
+           "da família.\n")
+out.append("| Id | Quando | Texto |\n| --- | --- | --- |")
+for m in mentor.get("event_messages", []):
+    req = m["requires"]
+    who = "Familiar" if m.get("from") == "familiar" else "mentor"
+    out.append(f"| `{m['id']}` ({who}) | {req['event']} ≥ {req['min']} | {m['text']} |")
+out.append("")
 out.append("## Falas de desbloqueio do celular\n")
 out.append("Quando um app novo do celular se forma (o nível do Conjurador liberou), o Familiar comenta num balão dentro do celular. "
            "Os apps de nível 1 já vêm abertos e não têm fala.\n")

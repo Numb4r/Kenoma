@@ -45,4 +45,5 @@ GameData loadGameData() => GameData.fromJson(
       recipes: loadJson('assets/data/recipes.json'),
       mentor: loadJson('assets/data/mentor.json'),
       forum: loadJson('assets/data/forum.json'),
+      rituals: loadJson('assets/data/rituals.json'),
     );

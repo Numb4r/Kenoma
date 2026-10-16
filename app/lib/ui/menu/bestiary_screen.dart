@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
 import '../colors.dart';
+import '../ritual/ritual_research_panel.dart';
 import '../sprites/sprite_image.dart';
 import '../type_label.dart';
 import 'screen_frame.dart';
@@ -62,6 +63,7 @@ class _BestiaryScreenState extends State<BestiaryScreen> {
                         (b[s.id]?.captured ?? false) ? 'CAPTURADA' : ((b[s.id]?.seen ?? false) ? 'VISTA' : 'AINDA NÃO ENCONTRADA'),
                         style: TextStyle(fontSize: 8, color: (b[s.id]?.captured ?? false) ? kSignal : kDim),
                       ),
+                      if (s.ritualOnly && (b[s.id]?.seen ?? false)) RitualResearchPanel(state: widget.state, data: widget.data, species: s),
                       // Variantes de bioma e Brilhante: vistas e capturadas por variante.
                       for (final key in widget.data.variants.keys)
                         if (b['${s.id}@$key']?.seen ?? false)

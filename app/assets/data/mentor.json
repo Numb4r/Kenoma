@@ -37,6 +37,18 @@
     { "id": "f03", "requires": { "event": "hidden_revealed", "min": 1 },
       "text": "*O Familiar arrepia o contorno quando o Radar varre. Aponta para onde nada estava e a estática fecha atrás do dedo dele. Parece dizer: eu já sabia que estava ali.*" }
   ],
+  "event_messages": [
+    { "id": "ritual_teach", "from": "mentor", "requires": { "event": "ritual_unlocked", "min": 1 },
+      "text": "Algumas coisas não respondem ao dial. Não ouvem sinal nenhum. Para elas existe o ritual: um círculo, materiais, a hora certa e alguém seu ao lado. Se errar, elas vão embora e o que você pôs se perde. Quem já se aproximou de algo que não escuta?" },
+    { "id": "ritual_hint_soot", "from": "mentor", "requires": { "event": "ritual_seen_soot", "min": 1 },
+      "text": "Aquela brasa que você viu não é um Eco. Kilnshade só se deixa chamar quando o dia já esfriou. O que arde precisa de alguém que o apague, não?" },
+    { "id": "ritual_hint_frond", "from": "mentor", "requires": { "event": "ritual_seen_frond", "min": 1 },
+      "text": "Rootseer não se mexe por sintonia. Ela escuta onde o chão ainda é verde. Quem queima o mato aprende a respeitá-lo. Você olhou o que cresce debaixo do concreto?" },
+    { "id": "ritual_hint_rill", "from": "mentor", "requires": { "event": "ritual_seen_rill", "min": 1 },
+      "text": "Wellmirror só se mostra quando a luz da noite está inteira. Água se espelha, mas a raiz bebe até o fundo. Você anda de noite?" },
+    { "id": "ritual_first", "from": "familiar", "requires": { "event": "ritual_done", "min": 1 },
+      "text": "*O Familiar anda uma vez em volta do desenho que se fechou, devagar, como quem confere uma costura. Depois se senta no centro, onde a criatura estava. Parece dizer: ainda está quente.*" }
+  ],
   "phone_unlock": {
     "radar": "*O Familiar encosta no ícone novo e uma onda fraca sai dele, em círculo. Parece dizer: agora eu alcanço mais longe.*",
     "bench": "*O Familiar rodeia o ícone novo e solta um estalo seco, como giz riscando pedra. Parece dizer: aqui se faz coisa.*",

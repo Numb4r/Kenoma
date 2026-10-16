@@ -6,6 +6,9 @@ library;
 import 'dart:math' as math;
 
 import '../core/features.dart';
+import '../core/species_ids.dart';
+import '../crafting/ritual.dart';
+import '../crafting/ritual_data.dart';
 
 import '../core/behavior.dart';
 import '../core/tiles.dart';
@@ -19,7 +22,15 @@ import 'street_life_balance.dart';
 import 'tracker.dart';
 
 /// O que um toque num spawn faz.
-enum TouchResult { collected, encounter, tooFar, auto }
+enum TouchResult {
+  collected,
+  encounter,
+  tooFar,
+  auto,
+
+  /// O Eco está a até 30 m e é `ritualOnly`: a tela abre o ritual em vez da sintonia.
+  ritual,
+}
 
 class WorldView {
   WorldView({
@@ -35,9 +46,13 @@ class WorldView {
     this.trackerM = 120,
     this.abilities = _noAbilities,
     this.onMessage,
+    this.ritual,
   });
 
   final SpawnField field;
+
+  /// As receitas de ritual, para a pesquisa por avistamento. `null`: sem pesquisa (testes).
+  final RitualBook? ritual;
   final GameState state;
 
   /// Comportamentos, Radar e Familiar do `balance.json`.
@@ -105,13 +120,17 @@ class WorldView {
   /// Um Eco Brilhante apareceu à vista (uma vez por Eco): a tela toca um som curto e avisa.
   void Function(WorldSpawn eco)? onShiny;
 
+  /// O jogador tocou num Eco de ritual a até `touchRangeM` (junto com [TouchResult.ritual]): a tela abre o ritual.
+  void Function(WorldSpawn eco)? onRitualTarget;
+  final _ritualSeen = <int>{};
+
   /// Um Eco passou a estar a até `touchRangeM` (uma vez por entrada; não chama se ele fugiu). O modo bolso vibra aqui.
   void Function(WorldSpawn eco)? onEnteredRange;
   final _announced = <int>{};
 
   /// Os que já apareceram nesta sessão (o debug só força o primeiro Eco *novo*), e o que o debug forçou em cada um.
   final _known = <int>{};
-  final _forced = <int, ({EcoBehavior behavior, bool variant, bool shiny})>{};
+  final _forced = <int, ({EcoBehavior behavior, bool variant, bool shiny, bool ritual})>{};
   final _inAura = <int>{};
   final _aggroFired = <int>{};
 
@@ -180,7 +199,12 @@ class WorldView {
     }
     _known.add(s.uid);
     if (f == null) return s;
-    return s.withTraits(behavior: f.behavior, variant: f.variant ? (s.variant ?? 'urban') : s.variant, shiny: f.shiny || s.shiny);
+    return s.withTraits(
+      behavior: f.behavior,
+      variant: f.variant ? (s.variant ?? 'urban') : s.variant,
+      shiny: f.shiny || s.shiny,
+      entryId: f.ritual && !isRitualOnlyId(s.entryId) ? '${familyOfId(s.entryId)}.ritual' : null,
+    );
   }
 
   /// Recalcula os spawns em volta de ([lat], [lon]) em [tUtc], coleta as Fagulhas dentro do alcance e dispara o que a
@@ -191,6 +215,7 @@ class WorldView {
     _py = py;
     _mpc = metersPerCell(lat);
     _hasPlayer = true;
+    syncRitualUnlock(state);
     // Um salto de mais de 25 m entre duas leituras é teleporte ou troca de fonte: o percurso recomeça.
     if (_track.isNotEmpty) {
       final jx = px - _track.last.x, jy = py - _track.last.y;
@@ -210,6 +235,7 @@ class WorldView {
       if (hiddenAway) continue;
       if (s.isEco && distanceM(s) <= viewM) {
         state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny);
+        if (ritual != null && isRitualOnlyId(s.entryId)) noteRitualSighting(state, ritual!, s.uid, s.entryId, _ritualSeen);
         if (s.shiny && _announced.add(s.uid)) onShiny?.call(s);
       }
       if (s.isEco && inTouchRange(s)) {
@@ -287,6 +313,11 @@ class WorldView {
   /// Toque num spawn. Material ao alcance é coletado aqui; Eco dentro da Aura (ou marcado) abre o encontro.
   TouchResult touch(WorldSpawn s, int tUtc) {
     if (s.isSpark) return TouchResult.auto;
+    if (s.isEco && isRitualOnlyId(s.entryId)) {
+      if (!inTouchRange(s)) return TouchResult.tooFar; // o ritual pede o Eco perto: a marcação não vale
+      onRitualTarget?.call(s);
+      return TouchResult.ritual;
+    }
     if (s.isEco && state.markOf(s.uid) != null) return TouchResult.encounter;
     if (!canReach(s)) return TouchResult.tooFar;
     if (s.isEco) return TouchResult.encounter;

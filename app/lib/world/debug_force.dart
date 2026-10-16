@@ -13,12 +13,16 @@ class DebugForce extends ChangeNotifier {
   bool nextVariant = false;
   bool nextShiny = false;
 
+  /// O próximo Eco novo vira o Eco de ritual da família dele.
+  bool nextRitual = false;
+
   /// Clima forçado: vale para o HUD, a chuva e os pesos de spawn enquanto estiver ligado. `null`: o de verdade.
   Weather? weather;
 
-  bool get pendingEco => nextBehavior != null || nextVariant || nextShiny;
+  bool get pendingEco => nextBehavior != null || nextVariant || nextShiny || nextRitual;
 
-  void set({EcoBehavior? behavior, bool? variant, bool? shiny, Weather? weather, bool clearWeather = false}) {
+  void set({EcoBehavior? behavior, bool? variant, bool? shiny, bool? ritual, Weather? weather, bool clearWeather = false}) {
+    if (ritual != null) nextRitual = ritual;
     if (behavior != null) nextBehavior = behavior;
     if (variant != null) nextVariant = variant;
     if (shiny != null) nextShiny = shiny;
@@ -28,8 +32,9 @@ class DebugForce extends ChangeNotifier {
   }
 
   /// Gasta os pedidos pendentes: devolve o que forçar no Eco que acabou de aparecer.
-  ({EcoBehavior behavior, bool variant, bool shiny}) take() {
-    final out = (behavior: nextBehavior ?? EcoBehavior.passive, variant: nextVariant, shiny: nextShiny);
+  ({EcoBehavior behavior, bool variant, bool shiny, bool ritual}) take() {
+    final out = (behavior: nextBehavior ?? EcoBehavior.passive, variant: nextVariant, shiny: nextShiny, ritual: nextRitual);
+    nextRitual = false;
     nextBehavior = null;
     nextVariant = false;
     nextShiny = false;
@@ -41,6 +46,7 @@ class DebugForce extends ChangeNotifier {
     nextBehavior = null;
     nextVariant = false;
     nextShiny = false;
+    nextRitual = false;
     weather = null;
     notifyListeners();
   }

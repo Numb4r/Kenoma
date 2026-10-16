@@ -36,6 +36,18 @@ O Familiar ainda não fala (GDD): ele se comunica por gestos, ícones e silênci
 | 2 | `f02` | shiny_seen ≥ 1 | *O Familiar acende por um instante, violeta e depois quase branco, e dá três voltas ao seu redor sem tocar o chão. Depois fica quieto, olhando o brilho. Parece querer que você olhe também.* |
 | 3 | `f03` | hidden_revealed ≥ 1 | *O Familiar arrepia o contorno quando o Radar varre. Aponta para onde nada estava e a estática fecha atrás do dedo dele. Parece dizer: eu já sabia que estava ali.* |
 
+## Mensagens do mentor por acontecimento (ritual)
+
+Saem sozinhas, uma vez cada, quando o acontecimento acontece, sem esperar a fila do tutorial (lista `event_messages` do JSON). `ritual_teach` sai ao chegar no nível do ritual (8); as dicas, na primeira vez que o jogador vê um Eco de ritual da família.
+
+| Id | Quando | Texto |
+| --- | --- | --- |
+| `ritual_teach` (mentor) | ritual_unlocked ≥ 1 | Algumas coisas não respondem ao dial. Não ouvem sinal nenhum. Para elas existe o ritual: um círculo, materiais, a hora certa e alguém seu ao lado. Se errar, elas vão embora e o que você pôs se perde. Quem já se aproximou de algo que não escuta? |
+| `ritual_hint_soot` (mentor) | ritual_seen_soot ≥ 1 | Aquela brasa que você viu não é um Eco. Kilnshade só se deixa chamar quando o dia já esfriou. O que arde precisa de alguém que o apague, não? |
+| `ritual_hint_frond` (mentor) | ritual_seen_frond ≥ 1 | Rootseer não se mexe por sintonia. Ela escuta onde o chão ainda é verde. Quem queima o mato aprende a respeitá-lo. Você olhou o que cresce debaixo do concreto? |
+| `ritual_hint_rill` (mentor) | ritual_seen_rill ≥ 1 | Wellmirror só se mostra quando a luz da noite está inteira. Água se espelha, mas a raiz bebe até o fundo. Você anda de noite? |
+| `ritual_first` (Familiar) | ritual_done ≥ 1 | *O Familiar anda uma vez em volta do desenho que se fechou, devagar, como quem confere uma costura. Depois se senta no centro, onde a criatura estava. Parece dizer: ainda está quente.* |
+
 ## Falas de desbloqueio do celular
 
 Quando um app novo do celular se forma (o nível do Conjurador liberou), o Familiar comenta num balão dentro do celular. Os apps de nível 1 já vêm abertos e não têm fala.

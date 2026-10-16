@@ -16,7 +16,7 @@ class MentorMessage {
 
   factory MentorMessage.fromJson(Map<String, dynamic> j, {String from = 'mentor'}) => MentorMessage(
         id: j['id'] as String,
-        from: from,
+        from: (j['from'] as String?) ?? from,
         afterS: ((j['after_s'] as num?) ?? 0).toDouble(),
         text: j['text'] as String,
         requires: j['requires'] == null
@@ -26,7 +26,8 @@ class MentorMessage {
 
   final String id;
 
-  /// Quem fala: `mentor` ou `familiar` (as falas do Familiar saem sozinhas quando o evento acontece).
+  /// Quem fala: `mentor` ou `familiar` (as falas do Familiar saem sozinhas quando o evento acontece). Uma mensagem pode trazer
+  /// `"from"` no JSON; sem ele vale o padrão da lista.
   final String from;
 
   /// Segundos de jogo com o mapa aberto, desde a mensagem anterior, até esta sair.
@@ -36,13 +37,14 @@ class MentorMessage {
 }
 
 class MentorScript {
-  const MentorScript({required this.contactName, required this.contactNote, required this.tutorial, this.familiar = const [], this.phoneUnlock = const {}});
+  const MentorScript({required this.contactName, required this.contactNote, required this.tutorial, this.familiar = const [], this.events = const [], this.phoneUnlock = const {}});
 
   factory MentorScript.fromJson(Map<String, dynamic> j) => MentorScript(
         contactName: (j['contact'] as Map<String, dynamic>)['name'] as String,
         contactNote: ((j['contact'] as Map<String, dynamic>)['note'] as String?) ?? '',
         tutorial: [for (final m in j['tutorial'] as List<dynamic>) MentorMessage.fromJson(m as Map<String, dynamic>)],
         familiar: [for (final m in (j['familiar'] as List<dynamic>?) ?? const []) MentorMessage.fromJson(m as Map<String, dynamic>, from: 'familiar')],
+        events: [for (final m in (j['event_messages'] as List<dynamic>?) ?? const []) MentorMessage.fromJson(m as Map<String, dynamic>)],
         phoneUnlock: {for (final e in ((j['phone_unlock'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as String},
       );
 
@@ -53,11 +55,15 @@ class MentorScript {
   /// As falas do Familiar, cada uma ligada a um acontecimento do jogo.
   final List<MentorMessage> familiar;
 
+  /// Mensagens por acontecimento (`event_messages`), do mentor ou do Familiar conforme o `from`: saem sozinhas, uma vez cada,
+  /// sem esperar a fila do tutorial (as do ritual, `ritual_*`).
+  final List<MentorMessage> events;
+
   /// A fala do Familiar quando um app novo do celular se forma (id do app -> texto). Só os apps de nível 2 em diante.
   final Map<String, String> phoneUnlock;
 
   MentorMessage? byId(String id) {
-    for (final m in [...tutorial, ...familiar]) {
+    for (final m in [...tutorial, ...familiar, ...events]) {
       if (m.id == id) return m;
     }
     return null;

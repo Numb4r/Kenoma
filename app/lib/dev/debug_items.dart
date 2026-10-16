@@ -4,6 +4,7 @@ library;
 import 'debug_capture.dart';
 import 'debug_env.dart';
 import 'debug_items_position.dart';
+import 'debug_items_ritual.dart';
 import 'debug_items_save.dart';
 import 'debug_items_world.dart';
 import 'debug_registry.dart';
@@ -18,4 +19,5 @@ DebugRegistry buildDefaultRegistry(DebugEnv env) => DebugRegistry()
   ..addAll(captureItems(env.capture))
   ..addAll(signatureItems(env))
   ..addAll(performanceItems())
-  ..addAll(saveItems(env));
+  ..addAll(saveItems(env))
+  ..addAll(ritualDebugItems(env));

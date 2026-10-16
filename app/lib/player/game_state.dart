@@ -310,9 +310,10 @@ class GameState extends ChangeNotifier {
   MentorMessage? tickChat(double dt, int nowUtc, MentorScript script) {
     final m = story.chat.tick(dt, nowUtc, script, story.count);
     final fam = story.chat.deliverFamiliar(nowUtc, script, story.count);
-    if (m != null) onNotice?.call('Nova mensagem de ${script.contactName}');
-    if (fam.isNotEmpty) onNotice?.call('O Familiar tem algo a dizer');
-    if (m != null || fam.isNotEmpty) notifyListeners();
+    final ev = story.chat.deliverEvents(nowUtc, script, story.count);
+    if (m != null || ev.any((e) => e.from == 'mentor')) onNotice?.call('Nova mensagem de ${script.contactName}');
+    if (fam.isNotEmpty || ev.any((e) => e.from == 'familiar')) onNotice?.call('O Familiar tem algo a dizer');
+    if (m != null || fam.isNotEmpty || ev.isNotEmpty) notifyListeners();
     return m;
   }
 
@@ -352,6 +353,17 @@ class GameState extends ChangeNotifier {
       inventory.remove(itemId);
     } else {
       inventory[itemId] = have - 1;
+    }
+    notifyListeners();
+    return true;
+  }
+
+  /// Gasta vários itens de uma vez (o ritual). `false`, sem gastar nada, se falta algum.
+  bool spend(Map<String, int> items) {
+    if (items.entries.any((e) => count(e.key) < e.value)) return false;
+    for (final e in items.entries) {
+      final left = count(e.key) - e.value;
+      left == 0 ? inventory.remove(e.key) : inventory[e.key] = left;
     }
     notifyListeners();
     return true;
