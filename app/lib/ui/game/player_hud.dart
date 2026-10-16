@@ -13,9 +13,12 @@ import '../../player/mark.dart';
 import '../colors.dart';
 
 class PortraitHud extends StatelessWidget {
-  const PortraitHud({required this.state, required this.frame, super.key});
+  const PortraitHud({required this.state, required this.frame, this.onTap, super.key});
 
   final GameState state;
+
+  /// Tocar no retrato abre o Perfil.
+  final VoidCallback? onTap;
 
   /// O quadro parado do Conjurador. `null` nos testes sem sprites.
   final ui.Image? frame;
@@ -29,7 +32,11 @@ class PortraitHud extends StatelessWidget {
       builder: (context, _) {
         final p = state.progress;
         final overridden = state.levelOverride != null;
-        return Column(
+        return GestureDetector(
+          key: const Key('portrait-hud'),
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -55,7 +62,7 @@ class PortraitHud extends StatelessWidget {
               child: FractionallySizedBox(widthFactor: p.fraction.clamp(0.0, 1.0), child: Container(color: kSignal)),
             ),
           ],
-        );
+        ));
       },
     );
   }
