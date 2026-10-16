@@ -36,13 +36,14 @@ class MentorMessage {
 }
 
 class MentorScript {
-  const MentorScript({required this.contactName, required this.contactNote, required this.tutorial, this.familiar = const []});
+  const MentorScript({required this.contactName, required this.contactNote, required this.tutorial, this.familiar = const [], this.phoneUnlock = const {}});
 
   factory MentorScript.fromJson(Map<String, dynamic> j) => MentorScript(
         contactName: (j['contact'] as Map<String, dynamic>)['name'] as String,
         contactNote: ((j['contact'] as Map<String, dynamic>)['note'] as String?) ?? '',
         tutorial: [for (final m in j['tutorial'] as List<dynamic>) MentorMessage.fromJson(m as Map<String, dynamic>)],
         familiar: [for (final m in (j['familiar'] as List<dynamic>?) ?? const []) MentorMessage.fromJson(m as Map<String, dynamic>, from: 'familiar')],
+        phoneUnlock: {for (final e in ((j['phone_unlock'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as String},
       );
 
   final String contactName;
@@ -51,6 +52,9 @@ class MentorScript {
 
   /// As falas do Familiar, cada uma ligada a um acontecimento do jogo.
   final List<MentorMessage> familiar;
+
+  /// A fala do Familiar quando um app novo do celular se forma (id do app -> texto). Só os apps de nível 2 em diante.
+  final Map<String, String> phoneUnlock;
 
   MentorMessage? byId(String id) {
     for (final m in [...tutorial, ...familiar]) {

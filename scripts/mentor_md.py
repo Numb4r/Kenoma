@@ -38,6 +38,13 @@ for i, m in enumerate(mentor.get("familiar", []), 1):
     req = m["requires"]
     out.append(f"| {i} | `{m['id']}` | {req['event']} ≥ {req['min']} | {m['text']} |")
 out.append("")
+out.append("## Falas de desbloqueio do celular\n")
+out.append("Quando um app novo do celular se forma (o nível do Conjurador liberou), o Familiar comenta num balão dentro do celular. "
+           "Os apps de nível 1 já vêm abertos e não têm fala.\n")
+out.append("| App | Texto |\n| --- | --- |")
+for k, v in mentor.get("phone_unlock", {}).items():
+    out.append(f"| `{k}` | {v} |")
+out.append("")
 out.append(f"## Fórum {forum['forum']}: pedidos diários\n")
 out.append("Três pedidos por dia, sorteados por `hash(seed, época, data, slot)`. O texto tem `{n}` (a meta), `{tipo}` (Fogo, Planta, "
            "Água ou qualquer tipo) e `{item}` (giz, ervas, água pura). Usuários: " + ", ".join(f"`{u}`" for u in forum["users"]) + ".\n")
