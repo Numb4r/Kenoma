@@ -94,7 +94,15 @@ SpawnItem _generateItem(
   final table = def.table[biomeKey] ?? (throw StateError('Item ${def.index} sem tabela para $biomeKey'));
 
   // Todo item consome sempre os mesmos sorteios, nesta ordem, existindo ou não.
-  final exists = rng.nextFloat() < chance;
+  // Épocas com caminhos: a chance de Fagulhas e materiais da célula é proporcional ao comprimento andável dentro dela (quarteirão pobre em ruas dá
+  // menos itens, a avenida dá mais, e o item por metro de caminho fica parecido por toda parte). O sorteio é o mesmo.
+  final walkable = epoch.walkable;
+  var factor = 1.0;
+  if (walkable != null && snapper != null && def.kind != 'eco') {
+    final len = snapper.walkLengthM(cellX, cellY);
+    if (len != null) factor = len / walkable.refLengthM > walkable.maxFactor ? walkable.maxFactor : len / walkable.refLengthM;
+  }
+  var exists = rng.nextFloat() < chance * factor;
   var pick = rng.nextInt(table.fold(0, (sum, e) => sum + e.weight));
   var entry = table.last;
   for (final e in table) {
@@ -111,10 +119,12 @@ SpawnItem _generateItem(
   var py = rng.nextFloat();
   // Épocas com caminhos: Fagulhas e materiais nascem sobre o que dá para andar; os Ecos preferem, mas podem ficar um pouco
   // fora. Os sorteios acima não mudam: só a posição final é levada ao caminho.
-  final walkable = epoch.walkable;
   if (walkable != null && snapper != null) {
-    final s = snapper.snap(cellX, cellY, px, py, maxOffM: def.kind == 'eco' ? walkable.ecoOffPathM : 0);
-    if (s != null) (px, py) = s;
+    final s = snapper.snap(cellX, cellY, px, py, maxOffM: def.kind == 'eco' ? walkable.ecoOffPathM : 0, maxDistM: walkable.maxDistM);
+    if (s != null) {
+      (px, py) = (s.px, s.py);
+      if (!s.keep) exists = false; // só rodovia por perto, ou nenhum caminho a menos de maxDistM: não nasce
+    }
   }
 
   // Épocas com o fluxo v2: comportamento, variante, Brilhante e o clima nos pesos. Tudo sai de um gerador separado,

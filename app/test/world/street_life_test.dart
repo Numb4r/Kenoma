@@ -110,6 +110,23 @@ void main() {
       expect(state.isDone(eco.uid), isFalse);
     });
 
+    test('a velocidade do Arisco vem do GPS cru: o marcador suavizado, mais lento, não o esconde', () {
+      final (eco, la, lo) = anEco(sch);
+      final state = newState();
+      final v = viewOf(state, sch);
+      var t = t0, raw = 70.0, smooth = 70.0;
+      while (raw > 5) {
+        final (rla, rlo) = south(la, lo, raw);
+        v.noteGps(lat: rla, lon: rlo, tUtc: t); // o GPS anda a 4 m/s
+        final (pla, plo) = south(la, lo, smooth);
+        v.refresh(lat: pla, lon: plo, tUtc: t); // o marcador anda a 1 m/s (lógica de coleta)
+        raw -= 4;
+        smooth = (smooth - 1).clamp(0, 100).toDouble();
+        t++;
+      }
+      expect(v.playerSpeedMps, closeTo(4.0, 0.3));
+    });
+
     test('quem já estava dentro da Aura não foge de novo: só a entrada conta', () {
       final (eco, la, lo) = anEco(sch);
       final state = newState();

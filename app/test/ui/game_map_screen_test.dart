@@ -43,6 +43,7 @@ Map<String, List<int>> realAssets() => {
       for (final f in ['epochs', 'biomes', 'balance', 'creatures', 'items', 'recipes', 'mentor', 'forum']) 'assets/data/$f.json': File('assets/data/$f.json').readAsBytesSync(),
       'assets/regions/campinas_e0.bin': File('assets/regions/campinas_e0.bin').readAsBytesSync(),
       'assets/regions/campinas_e0_vis.bin': File('assets/regions/campinas_e0_vis.bin').readAsBytesSync(),
+      'assets/regions/campinas_e2_nowalk.bin': File('assets/regions/campinas_e2_nowalk.bin').readAsBytesSync(),
     };
 
 final gameWidget = find.byWidgetPredicate((w) => w is GameWidget);

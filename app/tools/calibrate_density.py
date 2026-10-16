@@ -9,6 +9,8 @@ ap = argparse.ArgumentParser()
 ap.add_argument('--eco', type=float, required=True)
 ap.add_argument('--sparks', nargs=2, type=float, required=True)
 ap.add_argument('--materials', nargs=2, type=float, required=True)
+ap.add_argument('--ref', type=float, default=70, help='ref_length_m: comprimento andável que vale fator 1')
+ap.add_argument('--maxf', type=float, default=3, help='max_factor: teto do fator')
 a = ap.parse_args()
 P = 'assets/data/epochs.json'
 d = json.load(open(P))
@@ -28,6 +30,8 @@ for kind, tpl, (n, q) in (('spark', spark, a.sparks), ('material', mat, a.materi
 for e in d['epochs']:
     if e['id'] in (2, 3):
         e['spawn']['items'] = copy.deepcopy(items)
+        e['walkable']['ref_length_m'] = a.ref
+        e['walkable']['max_factor'] = a.maxf
 json.dump(d, open(P, 'w'), indent=2, ensure_ascii=False)
 open(P, 'a').write('\n')
 print('itens:', [(i['index'], i['kind']) for i in items])

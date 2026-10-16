@@ -400,7 +400,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         schedule: data.schedule,
         map: assets.map,
         typeOf: (id) => data.species(id)?.type.name,
-        snapper: WalkPaths(assets.visual!),
+        snapper: WalkPaths(assets.visual!, blocked: assets.noWalk),
         weatherAt: (cx, cy, t) => _weatherOfCell(session.state.seed, data, cx, cy, t),
       ),
       state: session.state,

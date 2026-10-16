@@ -50,14 +50,14 @@ void main() {
       }
     });
 
-    test('Frondling: coleta +10, +15, +20 m; Rillet: rastreador 150, 170, 200 m', () {
+    test('Frondling: coleta +3, +5, +8 m; Rillet: rastreador 150, 170, 200 m', () {
       final s = state();
       give(s, 'f', 'frond.eco', 10);
       give(s, 'r', 'rill.eco', 20);
       s.toggleCircle('f');
       s.toggleCircle('r');
       final a = of(s);
-      expect((a.pickupBonusM, a.trackerRangeM, a.auraBonusM), (15.0, 200.0, 0.0));
+      expect((a.pickupBonusM, a.trackerRangeM, a.auraBonusM), (5.0, 200.0, 0.0));
     });
 
     test('habilidades iguais não se somam: vale a maior', () {

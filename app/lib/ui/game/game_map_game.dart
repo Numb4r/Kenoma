@@ -228,6 +228,7 @@ class GameMapGame extends FlameGame {
     final first = !avatar.hasPosition;
     avatar.setTarget(x, y, metersPerCell: metersPerCell(p.lat), timeMs: p.timeMs);
     _countWalk(p.lat, p.lon);
+    worldView?.noteGps(lat: p.lat, lon: p.lon, tUtc: nowUtc());
     _lat = p.lat;
     _lon = p.lon;
     if (!_hasFix) _refreshIn = 0; // a primeira posição já mostra o mundo

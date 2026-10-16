@@ -39,3 +39,7 @@ Testamos transformar em Urbano as células Vazio de blocos de ~105 m com pelo me
 - os blocos de ~105 m deixam bordas quadradas visíveis.
 
 Reavaliar numa época futura se o teste de rua mostrar que o centro parece vazio demais.
+
+## Vias onde não se anda (época 2)
+
+`build_nowalk.py --region campinas` lê do mesmo extrato da época 0 (MD5 acima) as vias `motorway`, `trunk` e os links delas e grava `app/assets/regions/campinas_e2_nowalk.bin` (1.966 vias, 40.913 bytes, SHA-256 `05c64cf5a9c29511bc0e32ec06863d5cd9a4a9de0e0e909d9c0c19a1acdaf625`). A época 2 fixa esse SHA-256: Fagulhas, materiais e Ecos não nascem sobre essas vias.

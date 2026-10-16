@@ -90,13 +90,32 @@ class EcoV2 {
 }
 
 /// Épocas com posições sobre o que dá para andar: Fagulhas e materiais são projetados no caminho mais próximo da célula
-/// (geometria do pacote visual, fixada pelo SHA-256 da época) e os Ecos podem ficar até [ecoOffPathM] metros fora dele.
+/// (geometria do pacote visual, menos rodovias e vias expressas, fixadas pelo SHA-256 da época), os Ecos podem ficar até
+/// [ecoOffPathM] metros fora dele, e a chance de nascer é proporcional ao comprimento andável da célula.
 class Walkable {
-  const Walkable({required this.ecoOffPathM});
+  const Walkable({required this.ecoOffPathM, required this.maxDistM, required this.refLengthM, required this.maxFactor, this.exclude});
 
-  factory Walkable.fromJson(Map<String, dynamic> j) => Walkable(ecoOffPathM: (j['eco_off_path_m'] as num).toDouble());
+  factory Walkable.fromJson(Map<String, dynamic> j) => Walkable(
+        ecoOffPathM: (j['eco_off_path_m'] as num).toDouble(),
+        maxDistM: (j['max_dist_m'] as num).toDouble(),
+        refLengthM: (j['ref_length_m'] as num).toDouble(),
+        maxFactor: (j['max_factor'] as num).toDouble(),
+        exclude: j['exclude_pack'] == null
+            ? null
+            : RegionPackRef(file: (j['exclude_pack'] as Map<String, dynamic>)['file'] as String, sha256: j['exclude_pack']['sha256'] as String),
+      );
 
   final double ecoOffPathM;
+
+  /// Se o caminho andável mais próximo está além disto (metros), o item não nasce.
+  final double maxDistM;
+
+  /// A chance da célula é multiplicada por `min(maxFactor, comprimento andável / refLengthM)`.
+  final double refLengthM;
+  final double maxFactor;
+
+  /// Pacote das vias onde não se anda (rodovias e vias expressas), com o SHA-256 fixado.
+  final RegionPackRef? exclude;
 }
 
 class Epoch {

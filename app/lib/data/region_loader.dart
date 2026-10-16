@@ -10,6 +10,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../core/epochs.dart';
+import 'nowalk_pack.dart';
 import 'region_pack.dart';
 import 'visual_pack.dart';
 
@@ -138,5 +139,29 @@ Future<Object> loadVisualPack({required String region, required Epoch epoch, Ass
     return VisualPack.parse(bytes);
   } catch (e) {
     return 'O mapa visual ${ref.file} está corrompido: $e.';
+  }
+}
+
+/// Lê o pacote das vias onde não se anda que [epoch] fixa (`walkable.exclude_pack`) e confere o SHA-256. `null` se a época
+/// não usa (épocas 0 e 1); a mensagem de erro (String) se o arquivo falta, não bate ou está corrompido. Nunca lança.
+Future<Object?> loadNoWalkPack({required Epoch epoch, AssetBundle? bundle}) async {
+  final ref = epoch.walkable?.exclude;
+  if (ref == null) return null;
+  final assets = bundle ?? rootBundle;
+  final Uint8List bytes;
+  try {
+    final data = await assets.load('assets/regions/${ref.file}');
+    bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+  } catch (e) {
+    return 'O mapa de vias ${ref.file} não está no app: $e';
+  }
+  final actual = sha256Hex(bytes);
+  if (actual != ref.sha256.toLowerCase()) {
+    return 'O mapa de vias ${ref.file} não é o da época ${epoch.id}.\nSHA-256 esperado: ${_short(ref.sha256)}\nSHA-256 lido: ${_short(actual)}';
+  }
+  try {
+    return NoWalkPack.parse(bytes);
+  } catch (e) {
+    return 'O mapa de vias ${ref.file} está corrompido: $e.';
   }
 }

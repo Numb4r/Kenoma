@@ -11,6 +11,7 @@ import 'package:kenoma/core/biomes.dart';
 import 'package:kenoma/core/epochs.dart';
 import 'package:kenoma/core/seed.dart';
 import 'package:kenoma/core/tiles.dart';
+import 'package:kenoma/data/nowalk_pack.dart';
 import 'package:kenoma/data/region_pack.dart';
 import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/world/region_map.dart';
@@ -76,10 +77,13 @@ Route buildRoute(String name, VisualMap vm, double lat, double lon, Set<RoadClas
   });
   final pts = <(double, double)>[pos[cur]!];
   (int, int)? prev;
+  final visited = <(int, int)>{cur};
   var total = 0.0;
   while (total < routeM) {
     final here = pos[cur]!;
     var opts = [for (final n in adj[cur]!) if (n != prev) n];
+    final fresh = [for (final n in opts) if (!visited.contains(n)) n];
+    if (fresh.isNotEmpty) opts = fresh; // prefere trechos ainda não andados
     if (opts.isEmpty && prev != null) opts = [prev]; // beco sem saída: volta pelo mesmo caminho
     if (opts.isEmpty) break;
     // Direção de chegada: a do último trecho (no primeiro, qualquer uma serve: a de maior alcance).
@@ -106,6 +110,7 @@ Route buildRoute(String name, VisualMap vm, double lat, double lon, Set<RoadClas
     pts.add(p);
     prev = cur;
     cur = next;
+    visited.add(cur);
   }
   return Route(name, pts, total);
 }
@@ -180,16 +185,40 @@ void main(List<String> args) {
   final biomes = BiomeSet.fromJson(_json('assets/data/biomes.json'));
   final pack = RegionPack.parse(Uint8List.fromList(File('assets/regions/campinas_e0.bin').readAsBytesSync()));
   final vm = VisualMap(VisualPack.parse(Uint8List.fromList(File('assets/regions/campinas_e0_vis.bin').readAsBytesSync())), cacheTiles: 256);
+  final nowalk = NoWalkPack.parse(Uint8List.fromList(File('assets/regions/campinas_e2_nowalk.bin').readAsBytesSync()));
   final all = EpochSchedule.fromJson(_json('assets/data/epochs.json'));
 
   // Pontos de partida reais (Campinas): rua residencial no Barão Geraldo, a Av. Barão de Itapura e a trilha do Parque Portugal.
+  // A rota residencial é a primeira dos candidatos (bairros de Campinas) que anda de fato ~800 m adiante: pelo menos 20 células.
+  Route residential() {
+    for (final (lat, lon) in [(-22.8165, -47.0705), (-22.8230, -47.0780), (-22.8890, -47.0600), (-22.8950, -47.0430), (-22.9150, -47.0750), (-22.8420, -47.0530), (-22.8600, -47.0450), (-22.9000, -47.0900), (-22.8700, -47.0800), (-22.9250, -47.0600)]) {
+      final r = buildRoute('residencial', vm, lat, lon, {RoadClass.local, RoadClass.secondary, RoadClass.pedestrian});
+      final cells = <(int, int)>{};
+      for (var d = 0.0; d <= r.lengthM; d += 5) {
+        final (x, y) = r.at(d, metersPerCell(-22.85));
+        cells.add(((x / 2).floor(), (y / 2).floor()));
+      }
+      if (cells.length >= 20) {
+        print('residencial parte de $lat,$lon');
+        return r;
+      }
+    }
+    throw StateError('nenhuma rota residencial de 20 células');
+  }
+
   final routes = [
-    buildRoute('residencial', vm, -22.8165, -47.0705, {RoadClass.local, RoadClass.secondary, RoadClass.pedestrian}),
+    residential(),
     buildRoute('avenida', vm, -22.9035, -47.0585, {RoadClass.principal, RoadClass.secondary, RoadClass.local}),
     buildRoute('parque', vm, -22.8755, -47.0490, {RoadClass.pedestrian, RoadClass.local}),
   ];
   for (final r in routes) {
     print('rota ${r.name}: ${r.lengthM.round()} m, ${r.pts.length} vértices');
+  }
+  if (args.contains('--debug')) {
+    final wp = WalkPaths(vm, blocked: nowalk);
+    for (final r in routes) {
+      diagnose(r, wp);
+    }
   }
   final homes = [(-22.8165, -47.0705), (-22.9035, -47.0585), (-22.8960, -47.0450)];
   const base = 1792080000;
@@ -200,7 +229,7 @@ void main(List<String> args) {
       seed: seedGlobal('KENOMA-TESTE'),
       schedule: EpochSchedule([epoch]),
       map: RegionMap(pack: pack, biomes: biomes),
-      snapper: epoch.walkable == null ? null : WalkPaths(vm),
+      snapper: epoch.walkable == null ? null : WalkPaths(vm, blocked: nowalk),
     );
     final mean = Counts();
     for (final r in routes) {
@@ -223,4 +252,24 @@ void main(List<String> args) {
     }
     print('|  | parado 1 h em casa | | | ${(idleSum / n).toStringAsFixed(2)} | |');
   }
+}
+
+/// Diagnóstico de uma rota: células z20 atravessadas, quantas sem via no mapa e o comprimento andável médio nelas.
+void diagnose(Route r, WalkPaths wp) {
+  final cells = <(int, int)>{};
+  for (var d = 0.0; d <= r.lengthM; d += 5) {
+    final (x, y) = r.at(d, metersPerCell(-22.85));
+    cells.add(((x / 2).floor(), (y / 2).floor()));
+  }
+  var raw = 0, sum = 0.0;
+  for (final (cx, cy) in cells) {
+    final l = wp.walkLengthM(cx, cy);
+    if (l == null) {
+      raw++;
+    } else {
+      sum += l;
+    }
+  }
+  final distinct = <(int, int)>{for (final p in r.pts) (p.$1.round(), p.$2.round())}.length;
+  print('  ${r.name}: ${cells.length} células, $raw sem via, comprimento andável médio ${(sum / math.max(1, cells.length - raw)).toStringAsFixed(0)} m, vértices distintos $distinct de ${r.pts.length}');
 }

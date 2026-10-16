@@ -665,10 +665,10 @@
             "index": 0,
             "kind": "eco",
             "chance": {
-              "urban": 0.33,
-              "green": 0.33,
-              "water": 0.33,
-              "residential": 0.264
+              "urban": 0.2475,
+              "green": 0.2475,
+              "water": 0.2475,
+              "residential": 0.198
             },
             "table": {
               "urban": [
@@ -1101,10 +1101,10 @@
             "index": 6,
             "kind": "material",
             "chance": {
-              "urban": 0.25,
-              "green": 0.25,
-              "water": 0.25,
-              "residential": 0.25
+              "urban": 0.2,
+              "green": 0.2,
+              "water": 0.2,
+              "residential": 0.2
             },
             "table": {
               "urban": [
@@ -1181,10 +1181,10 @@
             "index": 7,
             "kind": "material",
             "chance": {
-              "urban": 0.25,
-              "green": 0.25,
-              "water": 0.25,
-              "residential": 0.25
+              "urban": 0.2,
+              "green": 0.2,
+              "water": 0.2,
+              "residential": 0.2
             },
             "table": {
               "urban": [
@@ -1260,7 +1260,14 @@
         ]
       },
       "walkable": {
-        "eco_off_path_m": 15
+        "eco_off_path_m": 15,
+        "max_dist_m": 35,
+        "ref_length_m": 25.0,
+        "max_factor": 1.0,
+        "exclude_pack": {
+          "file": "campinas_e2_nowalk.bin",
+          "sha256": "05c64cf5a9c29511bc0e32ec06863d5cd9a4a9de0e0e909d9c0c19a1acdaf625"
+        }
       }
     },
     {
@@ -1285,10 +1292,10 @@
             "index": 0,
             "kind": "eco",
             "chance": {
-              "urban": 0.33,
-              "green": 0.33,
-              "water": 0.33,
-              "residential": 0.264
+              "urban": 0.2475,
+              "green": 0.2475,
+              "water": 0.2475,
+              "residential": 0.198
             },
             "table": {
               "urban": [
@@ -1721,10 +1728,10 @@
             "index": 6,
             "kind": "material",
             "chance": {
-              "urban": 0.25,
-              "green": 0.25,
-              "water": 0.25,
-              "residential": 0.25
+              "urban": 0.2,
+              "green": 0.2,
+              "water": 0.2,
+              "residential": 0.2
             },
             "table": {
               "urban": [
@@ -1801,10 +1808,10 @@
             "index": 7,
             "kind": "material",
             "chance": {
-              "urban": 0.25,
-              "green": 0.25,
-              "water": 0.25,
-              "residential": 0.25
+              "urban": 0.2,
+              "green": 0.2,
+              "water": 0.2,
+              "residential": 0.2
             },
             "table": {
               "urban": [
@@ -1880,7 +1887,14 @@
         ]
       },
       "walkable": {
-        "eco_off_path_m": 15
+        "eco_off_path_m": 15,
+        "max_dist_m": 35,
+        "ref_length_m": 25.0,
+        "max_factor": 1.0,
+        "exclude_pack": {
+          "file": "campinas_e2_nowalk.bin",
+          "sha256": "05c64cf5a9c29511bc0e32ec06863d5cd9a4a9de0e0e909d9c0c19a1acdaf625"
+        }
       },
       "requires_feature": "street_life",
       "eco_v2": {

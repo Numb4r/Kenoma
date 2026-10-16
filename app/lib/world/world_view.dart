@@ -111,11 +111,30 @@ class WorldView {
   /// A velocidade média do jogador na janela do Arisco, em m/s: o deslocamento do primeiro ao último ponto dividido pelo
   /// tempo (o caminho inteiro somaria o tremor do GPS). 0 com menos de 3 s de percurso.
   double get playerSpeedMps {
-    if (_track.length < 2) return 0;
-    final span = _track.last.t - _track.first.t;
+    // A fuga do Arisco usa a velocidade do GPS cru (a que o jogador de fato anda); sem leituras cruas, a do marcador.
+    final raw = _gpsTrack.length >= 2;
+    final track = raw ? _gpsTrack : _track;
+    if (track.length < 2) return 0;
+    final span = track.last.t - track.first.t;
     if (span < 3) return 0;
-    final dx = _track.last.x - _track.first.x, dy = _track.last.y - _track.first.y;
-    return math.sqrt(dx * dx + dy * dy) * _mpc / span;
+    final dx = track.last.x - track.first.x, dy = track.last.y - track.first.y;
+    return math.sqrt(dx * dx + dy * dy) * (raw ? _gpsMpc : _mpc) / span;
+  }
+
+  /// O percurso do GPS cru, só para a velocidade do Arisco: a coleta e a Aura seguem a posição suavizada do marcador.
+  final _gpsTrack = <({int t, double x, double y})>[];
+  double _gpsMpc = 1;
+
+  /// Uma leitura nova do GPS, antes de qualquer suavização.
+  void noteGps({required double lat, required double lon, required int tUtc}) {
+    final (x, y) = latLonToTileFraction(lat, lon, biomeZoom);
+    _gpsMpc = metersPerCell(lat);
+    if (_gpsTrack.isNotEmpty) {
+      final jx = x - _gpsTrack.last.x, jy = y - _gpsTrack.last.y;
+      if (math.sqrt(jx * jx + jy * jy) * _gpsMpc > 25) _gpsTrack.clear(); // teleporte ou troca de fonte
+    }
+    _gpsTrack.add((t: tUtc, x: x, y: y));
+    _gpsTrack.removeWhere((p) => tUtc - p.t > street.skittishSpeedWindowS);
   }
 
   double _px = 0, _py = 0, _mpc = 1;
