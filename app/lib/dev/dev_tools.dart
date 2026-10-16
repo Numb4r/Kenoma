@@ -52,6 +52,21 @@ class DevTools extends ChangeNotifier {
 
   bool get useSimulator => _useSimulator;
 
+  int _levelOverride = 0;
+
+  /// Nível do Conjurador forçado no save (1 a 15); 0 é o nível real. O menu carrega do save e mantém em dia.
+  int get levelOverride => _levelOverride;
+
+  void setLevelOverride(int level) {
+    if (level == _levelOverride) return;
+    _levelOverride = level;
+    notifyListeners();
+  }
+
+  /// Algo forçado está ativo: simulador, relógio, nível, pedidos de spawn, clima ou sobreposições. Liga a etiqueta DEBUG.
+  bool get anyForcing =>
+      _useSimulator || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || _showBiomeGrid || _showGrid20 || _showRadii;
+
   Future<void> setUseSimulator(bool value) async {
     if (value == _useSimulator) return;
     _useSimulator = value;

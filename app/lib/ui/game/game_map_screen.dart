@@ -24,6 +24,7 @@ import '../../player/circle.dart';
 import '../../player/game_state.dart' show GameState;
 import '../../player/mark.dart';
 import '../../player/progression.dart' show localDay;
+import '../../dev/debug_tag.dart';
 import '../../dev/dev_tools.dart';
 import '../../player/game_session.dart';
 import '../../save/save_store.dart';
@@ -621,6 +622,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             children: [
               Padding(padding: const EdgeInsets.only(bottom: 90), child: _StatusHud(state: r.tracker.state, tools: tools, stale: r.assets.stale)),
               if (tools.useSimulator) SimOverlay(tools: tools),
+              Positioned(right: 120, top: 8, child: DebugTag(tools: tools)), // etiqueta enquanto algo estiver forçado
               Positioned(
                 left: 0,
                 top: 0,
