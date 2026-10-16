@@ -2,6 +2,7 @@
 /// desatualizado, a versão e o player_id, os interruptores do mapa e o backup.
 library;
 
+import '../../core/features.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:qr_flutter/qr_flutter.dart';
@@ -280,6 +281,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ]),
             ),
             const SectionTitle('Mapa'),
+            if (streetLifeEnabled)
             Container(
               key: const Key('fog-area'),
               padding: const EdgeInsets.all(12),
@@ -306,6 +308,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               activeThumbColor: kSignal,
               onChanged: (v) => s.setSetting('veil_traffic', v),
             ),
+            if (streetLifeEnabled) ...[
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Chuva no mapa', style: TextStyle(fontSize: 8)),
@@ -322,6 +325,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               activeThumbColor: kSignal,
               onChanged: (v) => s.setSetting('weather_online', v),
             ),
+            ],
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Seguir direção', style: TextStyle(fontSize: 8)),

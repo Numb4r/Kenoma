@@ -1,3 +1,4 @@
+import '../../core/features.dart';
 import 'dart:async';
 
 import 'dart:ui' as ui;
@@ -283,8 +284,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     if (state.markOf(eco.uid) != null) {
       state.removeMark(GameState.uidKey(eco.uid));
       _toast('Marcação solta');
-    } else if (!r.world.inAura(eco)) {
-      _toast('Entre na Aura para prender o sinal');
+    } else if (!r.world.inTouchRange(eco)) {
+      _toast('Longe demais para prender o sinal (a ${r.world.distanceM(eco).round()} m)');
     } else if (state.addMark(Mark.of(eco, nowUtc: now, durationS: state.balance.markDurationS), now)) {
       HapticFeedback.mediumImpact();
       _toast('Sinal preso por ${state.balance.markDurationS ~/ 60} min');
@@ -304,9 +305,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       case TouchResult.collected:
         break; // o aviso já saiu do WorldView
       case TouchResult.auto:
-        _toast(r.world.canReach(spawn) ? 'A Aura pega sozinha' : 'Entre na Aura para pegar a Fagulha');
+        _toast(r.world.canReach(spawn) ? 'A Aura pega sozinha' : 'Entre na Aura para pegar a Fagulha (a ${r.world.distanceM(spawn).round()} m)');
       case TouchResult.tooFar:
-        _toast('Longe demais. Chegue com a Aura até lá (${r.world.distanceM(spawn).round()} m)');
+        _toast('a ${r.world.distanceM(spawn).round()} m');
       case TouchResult.encounter:
         await _startEncounter(spawn);
     }
@@ -401,6 +402,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       force: tools.force,
       typeOf: (id) => data.species(id)?.type.name,
       auraM: assets.balance.auraM,
+      touchRangeM: assets.balance.touchRangeM,
       viewM: assets.balance.viewM,
       trackerM: assets.balance.trackerM,
       abilities: () => abilitiesOf(session.state, data),
@@ -415,6 +417,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       playerFrames: playerFrames,
       overlayBiomes: () => tools.showBiomeGrid,
       overlayGrid20: () => tools.showGrid20,
+      overlayRadii: () => tools.showRadii,
       auraM: assets.balance.auraM,
       defaultWidthM: assets.balance.defaultWidthM,
       minWidthM: assets.balance.cameraMinWidthM,
@@ -427,8 +430,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       worldView: world,
       streetNames: () => session.state.setting('street_names'),
       veilTraffic: () => session.state.settingOr('veil_traffic', true),
-      rainFx: () => session.state.settingOr('rain_fx', true),
-      weatherShown: () => _shownWeather,
+      rainFx: () => streetLifeEnabled && session.state.settingOr('rain_fx', true),
+      weatherShown: () => streetLifeEnabled ? _shownWeather : Weather.clear,
       variantTint: (s) => data.variantInfo(biome: s.variant, shiny: s.shiny)?.tint,
       familiarImage: familiar,
       rainDrops: data.street.rainParticles,
@@ -637,7 +640,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
               Positioned(
                 right: 8,
                 top: 56,
-                child: MoonHud(nowUtc: () => tools.clock.nowUtc, lat: () => game.playerLat, weather: () => _shownWeather),
+                child: MoonHud(nowUtc: () => tools.clock.nowUtc, lat: () => game.playerLat, weather: streetLifeEnabled ? () => _shownWeather : null),
               ),
               Positioned(
                 left: 8,

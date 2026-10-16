@@ -140,7 +140,7 @@ void main() {
       expect(env.game.avatar.x, closeTo(x, 0.5), reason: 'a posição filtrada é a primeira leitura');
       expect(env.game.avatar.y, closeTo(y, 0.5));
       expect(env.game.follow.followX, closeTo(env.game.avatar.x, 1e-6), reason: 'a primeira posição não desliza');
-      expect(env.game.auraM, 25.0);
+      expect(env.game.auraM, 10.0);
       expect(find.textContaining('SEGUINDO'), findsOneWidget);
       expect(find.textContaining('-22.8174'), findsOneWidget);
       expect(find.text('SIMULADOR'), findsOneWidget);

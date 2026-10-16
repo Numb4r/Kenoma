@@ -5,6 +5,8 @@ library;
 
 import 'dart:math' as math;
 
+import '../core/features.dart';
+
 import '../core/behavior.dart';
 import '../core/tiles.dart';
 import '../player/circle.dart' show MapAbilities;
@@ -23,6 +25,7 @@ class WorldView {
     required this.field,
     required this.state,
     required this.auraM,
+    this.touchRangeM = 30,
     required this.viewM,
     required this.itemName,
     required this.street,
@@ -47,18 +50,18 @@ class WorldView {
 
   /// Raio da Aura, raio de visão e alcance do rastreador, em metros, do `balance.json`.
   final double auraM;
+
+  /// Alcance de toque dos Ecos, em metros (fixo).
+  final double touchRangeM;
   final double viewM;
   final double trackerM;
 
   /// As habilidades de mapa do Círculo de agora (Aura maior, coleta mais longe, rastreador mais longe).
   final MapAbilities Function() abilities;
 
-  /// Raio da Aura com o Círculo: só dentro dele o jogador encontra um Eco.
-  double get auraRadiusM => auraM + abilities().auraBonusM;
-
-  /// Até onde Fagulhas e materiais são pegos: a Aura mais o bônus de coleta do Círculo e o do Familiar, que anda ao
-  /// lado do Conjurador e não ocupa espaço no Círculo.
-  double get pickupRadiusM => auraRadiusM + abilities().pickupBonusM + street.familiarPickupBonusM;
+  /// O raio de coleta automática de Fagulhas e materiais: a Aura base mais o Círculo (Aura e coleta) e o Familiar, que
+  /// anda ao lado do Conjurador e não ocupa espaço no Círculo. É o ÚNICO valor: a lógica e o círculo desenhado leem este.
+  double get auraRadiusM => auraM + abilities().auraBonusM + abilities().pickupBonusM + (streetLifeEnabled ? street.familiarPickupBonusM : 0);
 
   /// Alcance do rastreador: o maior entre o padrão e o do Círculo.
   double get trackerRangeM => math.max(trackerM, abilities().trackerRangeM);
@@ -122,8 +125,11 @@ class WorldView {
 
   bool inAura(WorldSpawn s) => _hasPlayer && distanceM(s) <= auraRadiusM;
 
+  /// Se o Eco está ao alcance de toque (30 m).
+  bool inTouchRange(WorldSpawn s) => _hasPlayer && distanceM(s) <= touchRangeM;
+
   /// Se o jogador alcança o spawn: o Eco, dentro da Aura; Fagulha e material, dentro do alcance de coleta.
-  bool canReach(WorldSpawn s) => _hasPlayer && distanceM(s) <= (s.isEco ? auraRadiusM : pickupRadiusM);
+  bool canReach(WorldSpawn s) => _hasPlayer && (s.isEco ? inTouchRange(s) : inAura(s));
 
   void _gainXp(int raw, int tUtc) {
     if (state.gainXp(raw, tUtc) > 0) onMessage?.call('Nível ${state.progress.level}!');
@@ -171,7 +177,7 @@ class WorldView {
         state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny);
         if (s.shiny && _announced.add(s.uid)) onShiny?.call(s);
       }
-      if (s.isEco && inAura(s)) {
+      if (s.isEco && inTouchRange(s)) {
         inAuraNow.add(s.uid);
         if (!_inAura.contains(s.uid) && _entered(s, tUtc)) continue; // fugiu
         _tryAggressive(s);

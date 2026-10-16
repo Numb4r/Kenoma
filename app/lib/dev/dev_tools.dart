@@ -34,12 +34,17 @@ class DevTools extends ChangeNotifier {
 
   bool _showBiomeGrid = false;
   bool _showGrid20 = false;
+  bool _showRadii = false;
 
   /// Sobreposição de debug no mapa do jogo: a grade de biomas (a camada lógica) e a grade das células de spawn.
   bool get showBiomeGrid => _showBiomeGrid;
   bool get showGrid20 => _showGrid20;
 
-  void setOverlays({bool? biomes, bool? grid20}) {
+  /// Desenha o raio lógico da Aura e o alcance de 30 m por cima do mapa.
+  bool get showRadii => _showRadii;
+
+  void setOverlays({bool? biomes, bool? grid20, bool? radii}) {
+    _showRadii = radii ?? _showRadii;
     _showBiomeGrid = biomes ?? _showBiomeGrid;
     _showGrid20 = grid20 ?? _showGrid20;
     notifyListeners();

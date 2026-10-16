@@ -1,3 +1,4 @@
+import '../../core/features.dart';
 import 'dart:ui';
 import 'dart:ui' as ui;
 
@@ -48,6 +49,7 @@ class GameMapGame extends FlameGame {
     this.playerFrames = const [],
     this.overlayBiomes = _off,
     this.overlayGrid20 = _off,
+    this.overlayRadii = _off,
     required this.auraM,
     required this.defaultWidthM,
     required this.minWidthM,
@@ -89,6 +91,9 @@ class GameMapGame extends FlameGame {
   /// Sobreposições de debug, lidas a cada quadro: a grade de biomas e a grade das células de spawn (z20).
   final bool Function() overlayBiomes;
   final bool Function() overlayGrid20;
+
+  /// Debug: desenha por cima o raio lógico da coleta (laranja) e o alcance de toque dos Ecos (ciano).
+  final bool Function() overlayRadii;
   late final ArtRenderer _art = ArtRenderer(visual: visual, style: style, balance: balance);
   late final StreetLabelPainter _labels = StreetLabelPainter(visual);
   late final TrafficPainter _traffic = TrafficPainter(visual, carM: balance.ghostCarM, pedestrianM: balance.ghostPedestrianM);
@@ -307,8 +312,11 @@ class GameMapGame extends FlameGame {
     _time += dt;
     _refreshIn -= dt;
     if (_hasFix && worldView != null && _refreshIn <= 0) {
-      _refreshIn = 0.5;
-      worldView!.refresh(lat: _lat, lon: _lon, tUtc: nowUtc());
+      _refreshIn = 0.25;
+      // A lógica lê a MESMA posição que o desenho (o marcador suavizado), não a leitura crua do GPS: assim o que o círculo
+      // mostra dentro é o que a coleta pega.
+      final (lat, lon) = avatar.hasPosition ? tileFractionToLatLon(avatar.x, avatar.y, biomeZoom) : (_lat, _lon);
+      worldView!.refresh(lat: lat, lon: lon, tUtc: nowUtc());
     }
     if (avatar.hasPosition) follow.setTarget(avatar.x, avatar.y);
     if (size.x > 0) {
@@ -338,7 +346,7 @@ class GameMapGame extends FlameGame {
       _traffic.lastDrawn = 0;
     }
     if (streetNames()) _labels.paint(canvas, view, cam);
-    if (worldView != null && _hasFix) _fog.paint(canvas, view, cam, worldView!.state.fog);
+    if (streetLifeEnabled && worldView != null && _hasFix) _fog.paint(canvas, view, cam, worldView!.state.fog);
     if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
     if (!avatar.hasPosition) return;
     final (sx, sy) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
@@ -346,6 +354,12 @@ class GameMapGame extends FlameGame {
     // De baixo para cima: Aura no chão, spawns, Conjurador por cima de tudo.
     final w = worldView;
     paintAura(canvas, center, auraRadiusPx(auraM: w?.auraRadiusM ?? auraM, lat: _lat, pixelsPerCell: cam.pixelsPerCell));
+    if (overlayRadii()) {
+      final ring = Paint()..style = PaintingStyle.stroke..strokeWidth = 1.5..isAntiAlias = false;
+      final ppc = cam.pixelsPerCell;
+      canvas.drawCircle(center, auraRadiusPx(auraM: w?.auraRadiusM ?? auraM, lat: _lat, pixelsPerCell: ppc), ring..color = const Color(0xFFFF7A45));
+      canvas.drawCircle(center, auraRadiusPx(auraM: w?.touchRangeM ?? 30, lat: _lat, pixelsPerCell: ppc), ring..color = const Color(0xFF5FD3C6));
+    }
     final spriteSize = ecoSizePx, playerSize = playerSizePx, sparkSize = sparkSizePx;
     if (w != null && w.traces.isNotEmpty) {
       _trace.paint(canvas, view, cam, traces: w.traces, ecos: w.allEcos, playerX: avatar.x, playerY: avatar.y, metersPerCell: metersPerCell(_lat), nowUtc: nowUtc());
@@ -368,7 +382,7 @@ class GameMapGame extends FlameGame {
         dpr: dpr,
       );
     }
-    _paintFamiliar(canvas, cam, view);
+    if (streetLifeEnabled) _paintFamiliar(canvas, cam, view);
     paintPlayerMarker(canvas, center, sprite: _playerFrame, size: playerSize, mirrored: _facingLeft, dpr: dpr);
     if (w != null) {
       final off = spriteSize / 2;

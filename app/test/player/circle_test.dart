@@ -41,8 +41,8 @@ void main() {
       expect(of(s).trackerRangeM, 0);
     });
 
-    test('Sootling: Aura +5, +8, +12 m nas faixas 1–9, 10–19 e 20', () {
-      for (final (lv, bonus) in [(1, 5.0), (9, 5.0), (10, 8.0), (19, 8.0), (20, 12.0)]) {
+    test('Sootling: Aura +3, +5, +8 m nas faixas 1–9, 10–19 e 20', () {
+      for (final (lv, bonus) in [(1, 3.0), (9, 3.0), (10, 5.0), (19, 5.0), (20, 8.0)]) {
         final s = state();
         give(s, 'a', 'soot.eco', lv);
         s.toggleCircle('a');
@@ -68,7 +68,7 @@ void main() {
       for (final u in ['a', 'b', 'c']) {
         s.toggleCircle(u);
       }
-      expect(of(s).auraBonusM, 8);
+      expect(of(s).auraBonusM, 5);
     });
 
     test('quem está fora do Círculo não aplica nada, e trocar o Círculo muda o efeito', () {
@@ -76,7 +76,7 @@ void main() {
       give(s, 'a', 'soot.eco', 1);
       give(s, 'r', 'rill.eco', 1);
       s.toggleCircle('a');
-      expect(of(s).auraBonusM, 5);
+      expect(of(s).auraBonusM, 3);
       s.toggleCircle('a');
       s.toggleCircle('r');
       expect((of(s).auraBonusM, of(s).trackerRangeM), (0.0, 150.0));

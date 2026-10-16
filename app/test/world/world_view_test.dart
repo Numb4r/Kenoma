@@ -104,7 +104,7 @@ void main() {
     WorldView viewWith(GameState state, {MapAbilities Function()? abilities}) => WorldView(
           field: SpawnField(seed: seedGlobal('KENOMA-TESTE'), schedule: loadEpochs(), map: RegionMap(pack: loadCampinasPack(), biomes: loadBiomes())),
           state: state,
-          auraM: 25,
+          auraM: 10,
           viewM: 120,
           trackerM: 120,
           itemName: (id) => id,
@@ -138,20 +138,18 @@ void main() {
       expect(state.bestiary[eco.$3.entryId]?.captured, isFalse);
     });
 
-    test('Aura maior do Círculo: um Eco a ~30 m passa a ser alcançável', () {
+    test('o alcance de toque do Eco é fixo em 30 m: a Aura do Círculo não o muda', () {
       final eco = find('eco');
-      final (la, lo) = (eco.$1 + 30 / 111320, eco.$2); // ~30 m ao norte do Eco
-      final plain = viewWith(fresh())..refresh(lat: la, lon: lo, tUtc: t0);
-      final spawn = plain.spawns.firstWhere((x) => x.uid == eco.$3.uid);
-      expect(plain.touch(spawn, t0), TouchResult.tooFar);
-      final boosted = viewWith(fresh(), abilities: () => const MapAbilities(auraBonusM: 12))..refresh(lat: la, lon: lo, tUtc: t0);
-      expect(boosted.auraRadiusM, 37);
-      expect(boosted.touch(boosted.spawns.firstWhere((x) => x.uid == eco.$3.uid), t0), TouchResult.encounter);
+      for (final (m, expected) in [(40.0, TouchResult.tooFar), (20.0, TouchResult.encounter)]) {
+        final (la, lo) = (eco.$1 + m / 111320, eco.$2);
+        final v = viewWith(fresh(), abilities: () => const MapAbilities(auraBonusM: 12))..refresh(lat: la, lon: lo, tUtc: t0);
+        expect(v.touch(v.spawns.firstWhere((x) => x.uid == eco.$3.uid), t0), expected, reason: '$m m');
+      }
     });
 
     test('alcance de coleta do Círculo pega Fagulhas de mais longe, e o rastreador alarga a área gerada', () {
       final v = viewWith(fresh(), abilities: () => const MapAbilities(pickupBonusM: 10, trackerRangeM: 200));
-      expect(v.pickupRadiusM, 40, reason: 'Aura 25 + Círculo 10 + Familiar 5');
+      expect(v.auraRadiusM, 10 + 10 + 2, reason: 'Aura 10 + coleta do Círculo 10 + Familiar 2');
       expect(v.trackerRangeM, 200);
       expect(v.reachM, 200);
       expect(viewWith(fresh(), abilities: () => const MapAbilities(trackerRangeM: 90)).trackerRangeM, 120, reason: 'nunca abaixo do padrão');

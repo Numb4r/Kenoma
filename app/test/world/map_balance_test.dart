@@ -7,9 +7,9 @@ import 'package:kenoma/world/map_scale.dart';
 import '../support/fixtures.dart';
 
 void main() {
-  test('os raios vêm do balance.json: Aura de 25 m, spawns e rastreador até 120 m', () {
+  test('os raios vêm do balance.json: Aura de 10 m, toque de 30 m, spawns e rastreador até 120 m', () {
     final b = MapBalance(loadJson('assets/data/balance.json'));
-    expect((b.auraM, b.viewM, b.trackerM), (25.0, 120.0, 120.0));
+    expect((b.auraM, b.touchRangeM, b.viewM, b.trackerM), (10.0, 30.0, 120.0, 120.0));
     expect(b.auraM, lessThan(b.viewM));
   });
 
@@ -18,8 +18,8 @@ void main() {
     expect((b.defaultWidthM, b.cameraMinWidthM, b.cameraMaxWidthM), (90.0, 70.0, 120.0));
     expect((b.sparkSizeM, b.trackerMax), (3.0, 3));
     expect(b.defaultWidthM, inInclusiveRange(b.cameraMinWidthM, b.cameraMaxWidthM));
-    expect((b.playerHeightM, b.familiarHeightM, b.ecoHeightM), (8.0, 8.0, 9.0), reason: 'Conjurador e Familiar 8 m, Ecos 9 m');
-    expect((b.ghostPedestrianM, b.ghostCarM), (6.0, 7.0), reason: 'pedestre fantasma 6 m, carro fantasma 7 m');
+    expect((b.playerHeightM, b.familiarHeightM, b.ecoHeightM), (6.0, 6.0, 7.0), reason: 'Conjurador e Familiar 6 m, Ecos 7 m');
+    expect((b.ghostPedestrianM, b.ghostCarM), (4.5, 6.0), reason: 'pedestre fantasma 4,5 m, carro fantasma 6 m');
     expect(b.artPixelDp, 2.0, reason: 'o pixel de arte é de 2 dp');
     for (final m in [b.playerHeightM, b.familiarHeightM, b.ecoHeightM, b.ghostCarM]) {
       expect(m, lessThan(b.roadWidthM['principal']!), reason: 'nenhum sprite passa da largura de uma rua principal');
@@ -32,26 +32,26 @@ void main() {
     final b = MapBalance(loadJson('assets/data/balance.json'));
     double px(double meters, double widthM) => meters / metersPerCell(lat) * pixelsPerCellFor(widthM: widthM, viewWidthPx: w, lat: lat);
     for (final widthM in [b.cameraMinWidthM, b.defaultWidthM, b.cameraMaxWidthM]) {
-      expect(px(b.ecoHeightM, widthM) / px(b.auraM * 2, widthM), closeTo(9 / 50, 1e-9), reason: 'largura $widthM m');
-      expect(px(b.playerHeightM, widthM) / px(b.ecoHeightM, widthM), closeTo(8 / 9, 1e-9));
+      expect(px(b.ecoHeightM, widthM) / px(b.auraM * 2, widthM), closeTo(7 / 20, 1e-9), reason: 'largura $widthM m');
+      expect(px(b.playerHeightM, widthM) / px(b.ecoHeightM, widthM), closeTo(6 / 7, 1e-9));
     }
-    expect(px(b.ecoHeightM, b.defaultWidthM), closeTo(41.1, 0.2), reason: '9 m em 90 m de uma tela de 411 px');
-    expect(px(b.playerHeightM, b.defaultWidthM), closeTo(36.6, 0.2), reason: '8 m em 90 m');
+    expect(px(b.ecoHeightM, b.defaultWidthM), closeTo(32.0, 0.2), reason: '7 m em 90 m de uma tela de 411 px');
+    expect(px(b.playerHeightM, b.defaultWidthM), closeTo(27.4, 0.2), reason: '6 m em 90 m');
     expect(px(b.ecoHeightM, b.cameraMinWidthM), greaterThan(px(b.ecoHeightM, b.cameraMaxWidthM)));
     expect(px(b.ecoHeightM, b.cameraMinWidthM) / px(b.ecoHeightM, b.cameraMaxWidthM), closeTo(120 / 70, 1e-9));
     expect(px(b.sparkSizeM, b.defaultWidthM), closeTo(13.7, 0.1), reason: '3 m em 90 m');
-    // O pixel de arte de 2 dp vale ~0,44 m na largura padrão: um sprite de 18 pixels cabe em ~8 m.
+    // O pixel de arte de 2 dp vale ~0,44 m na largura padrão: o Conjurador de 6 m tem ~14 pixels de arte.
     expect(b.artPixelDp / px(1, b.defaultWidthM), closeTo(0.44, 0.02));
-    expect(18 * b.artPixelDp / px(1, b.defaultWidthM), closeTo(b.playerHeightM, 0.3));
+    expect(14 * b.artPixelDp / px(1, b.defaultWidthM), closeTo(b.playerHeightM, 0.3));
   });
 
-  test('conversão: metros visíveis e pixels por célula são inversos, e a Aura de 25 m ocupa 50 m dos 90', () {
+  test('conversão: metros visíveis e pixels por célula são inversos, e a Aura de 10 m ocupa 20 m dos 90', () {
     const lat = -22.8174, w = 411.0;
     final b = MapBalance(loadJson('assets/data/balance.json'));
     final ppc = pixelsPerCellFor(widthM: b.defaultWidthM, viewWidthPx: w, lat: lat);
     expect(widthMFor(pixelsPerCell: ppc, viewWidthPx: w, lat: lat), closeTo(b.defaultWidthM, 1e-9));
     expect(ppc, closeTo(80.4, 0.1));
-    expect(2 * auraRadiusPx(auraM: b.auraM, lat: lat, pixelsPerCell: ppc) / w, closeTo(50 / 90, 1e-9));
+    expect(2 * auraRadiusPx(auraM: b.auraM, lat: lat, pixelsPerCell: ppc) / w, closeTo(20 / 90, 1e-9));
     // Mais metros na tela, menos pixels por célula.
     expect(pixelsPerCellFor(widthM: 120, viewWidthPx: w, lat: lat), lessThan(pixelsPerCellFor(widthM: 70, viewWidthPx: w, lat: lat)));
     expect(pixelsPerCellFor(widthM: 70, viewWidthPx: w, lat: lat) / pixelsPerCellFor(widthM: 120, viewWidthPx: w, lat: lat), closeTo(120 / 70, 1e-9));

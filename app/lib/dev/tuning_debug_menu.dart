@@ -278,6 +278,13 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
               activeThumbColor: kVeil,
               onChanged: (v) => _tools.setOverlays(grid20: v),
             ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Raios lógicos: coleta (laranja) e toque 30 m (ciano)', style: TextStyle(fontSize: 16)),
+              value: _tools.showRadii,
+              activeThumbColor: kVeil,
+              onChanged: (v) => _tools.setOverlays(radii: v),
+            ),
             const SizedBox(height: 8),
             Row(children: [_coordField('Latitude', _simLat), const SizedBox(width: 8), _coordField('Longitude', _simLon)]),
             const SizedBox(height: 8),

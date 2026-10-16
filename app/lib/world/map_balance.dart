@@ -6,6 +6,7 @@ class MapBalance {
 
   MapBalance._(Map<String, dynamic> m)
       : auraM = (m['aura_m'] as num).toDouble(),
+        touchRangeM = (m['touch_range_m'] as num).toDouble(),
         viewM = (m['view_m'] as num).toDouble(),
         trackerM = (m['tracker_m'] as num).toDouble(),
         trackerMax = m['tracker_max'] as int,
@@ -25,6 +26,9 @@ class MapBalance {
 
   /// Raio da Aura: só dentro dela o jogador interage.
   final double auraM;
+
+  /// Até onde um Eco responde ao toque (e o Arisco foge, o Agressivo dispara): fixo, sem círculo desenhado.
+  final double touchRangeM;
 
   /// Até onde os spawns aparecem.
   final double viewM;

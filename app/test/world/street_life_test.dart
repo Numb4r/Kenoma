@@ -40,7 +40,7 @@ GameState newState() => GameState(groupCode: 'KENOMA-TESTE', balance: loadProgre
 WorldView viewOf(GameState s, EpochSchedule sch, {DebugForce? force, List<String>? msgs}) => WorldView(
       field: SpawnField(seed: seed, schedule: sch, map: map, typeOf: (id) => id.split('.').first == 'soot' ? 'fire' : (id.startsWith('frond') ? 'plant' : 'water')),
       state: s,
-      auraM: 25,
+      auraM: 10,
       viewM: 120,
       trackerM: 120,
       itemName: (i) => i,
@@ -372,8 +372,8 @@ void main() {
   group('Familiar', () {
     test('soma o bônus de coleta ao raio, junto com o do Círculo', () {
       final v = viewOf(newState(), schedule({'passive': 100}));
-      expect(street.familiarPickupBonusM, 5);
-      expect(v.pickupRadiusM, 25 + 5);
+      expect(street.familiarPickupBonusM, 2);
+      expect(v.auraRadiusM, 10 + 2);
     });
   });
 }

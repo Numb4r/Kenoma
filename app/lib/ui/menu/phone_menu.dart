@@ -2,6 +2,7 @@
 /// com Coleção, Círculo, Bestiário e Bancada.
 library;
 
+import '../../core/features.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/game_data.dart';
@@ -95,8 +96,10 @@ Future<void> showPhoneMenu(
             const SizedBox(height: 8),
             PixelButton(label: 'Bancada', color: kEssence, onTap: () => open(BenchScreen(state: state, data: data))),
             const SizedBox(height: 8),
-            PixelButton(label: 'Radar', color: kSignal, onTap: () => open(radar())),
-            const SizedBox(height: 8),
+            if (streetLifeEnabled) ...[
+              PixelButton(label: 'Radar', color: kSignal, onTap: () => open(radar())),
+              const SizedBox(height: 8),
+            ],
             PixelButton(
               label: 'Chat${state.story.chat.unread > 0 ? ' (${state.story.chat.unread})' : ''}',
               color: state.story.chat.unread > 0 ? kEssence : kVeil,
