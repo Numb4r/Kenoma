@@ -63,7 +63,7 @@ void main() {
         ],
       };
       final json = readBackup(exportBackup(v1));
-      expect(json['schema_version'], 3);
+      expect(json['schema_version'], 4);
       final p = previewBackup(json);
       expect((p.level, p.creatures, p.savedUtc), (1, 1, 77));
     });

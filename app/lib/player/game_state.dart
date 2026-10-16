@@ -9,6 +9,7 @@ import '../save/founder.dart';
 import '../story/forum_data.dart';
 import '../story/mentor_script.dart';
 import '../story/story_state.dart';
+import '../world/fog.dart';
 import 'bestiary.dart';
 import 'mark.dart';
 import 'progress_balance.dart';
@@ -17,15 +18,23 @@ import 'progression.dart';
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 3;
+const int saveSchemaVersion = 4;
 
 /// Uma criatura capturada. O uid é o do spawn de onde ela veio.
 class CreatureInstance {
-  const CreatureInstance({required this.uid, required this.speciesId, required this.level, required this.capturedUtc, this.xp = 0});
+  const CreatureInstance({
+    required this.uid,
+    required this.speciesId,
+    required this.level,
+    required this.capturedUtc,
+    this.xp = 0,
+    this.variant,
+    this.shiny = false,
+  });
 
   /// Cópia com [level] e [xp] novos.
   CreatureInstance advanced({required int level, required int xp}) =>
-      CreatureInstance(uid: uid, speciesId: speciesId, level: level, capturedUtc: capturedUtc, xp: xp);
+      CreatureInstance(uid: uid, speciesId: speciesId, level: level, capturedUtc: capturedUtc, xp: xp, variant: variant, shiny: shiny);
 
   factory CreatureInstance.fromJson(Map<String, dynamic> j) => CreatureInstance(
         uid: j['uid'] as String,
@@ -33,6 +42,8 @@ class CreatureInstance {
         level: j['level'] as int,
         xp: (j['xp'] as int?) ?? 0,
         capturedUtc: j['captured_utc'] as int,
+        variant: j['variant'] as String?,
+        shiny: (j['shiny'] as bool?) ?? false,
       );
 
   /// Uid do spawn, em texto (o inteiro de 64 bits com sinal, em decimal).
@@ -42,7 +53,19 @@ class CreatureInstance {
   final int xp;
   final int capturedUtc;
 
-  Map<String, dynamic> toJson() => {'uid': uid, 'species': speciesId, 'level': level, 'xp': xp, 'captured_utc': capturedUtc};
+  /// A chave do bioma da variante (`urban`...), ou `null`; e se é Brilhante.
+  final String? variant;
+  final bool shiny;
+
+  Map<String, dynamic> toJson() => {
+        'uid': uid,
+        'species': speciesId,
+        'level': level,
+        'xp': xp,
+        'captured_utc': capturedUtc,
+        if (variant != null) 'variant': variant,
+        if (shiny) 'shiny': true,
+      };
 }
 
 class GameState extends ChangeNotifier {
@@ -60,6 +83,9 @@ class GameState extends ChangeNotifier {
     this.founder,
     this.createdUtc,
     StoryState? story,
+    FogState? fog,
+    this.radarLastUtc = 0,
+    Map<String, int>? hiddenRevealed,
     Map<String, dynamic>? settings,
     this.lastSeenUtc = 0,
     Map<String, dynamic>? extra,
@@ -72,6 +98,8 @@ class GameState extends ChangeNotifier {
         marks = [...?marks],
         settings = {...?settings},
         story = story ?? StoryState(),
+        fog = fog ?? FogState(),
+        hiddenRevealed = {...?hiddenRevealed},
         _extra = {...?extra};
 
   /// Jogo novo: seed nova e o inventário inicial do `balance.json`.
@@ -81,7 +109,7 @@ class GameState extends ChangeNotifier {
   factory GameState.fromJson(Map<String, dynamic> j, ProgressBalance balance) {
     const known = {
       'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'marks', 'saved_utc',
-      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story',
+      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', 'fog', 'radar',
     };
     final progress = PlayerProgress.fromJson(j['player'] as Map<String, dynamic>?, balance)..settleBanked();
     return GameState(
@@ -100,6 +128,11 @@ class GameState extends ChangeNotifier {
       founder: j['founder'] == null ? null : Founder.fromJson(j['founder'] as Map<String, dynamic>),
       createdUtc: j['created_utc'] as int?,
       story: StoryState.fromJson(j['story'] as Map<String, dynamic>?),
+      fog: FogState.fromJson(j['fog'] as Map<String, dynamic>?),
+      radarLastUtc: ((j['radar'] as Map<String, dynamic>?)?['last_utc'] as int?) ?? 0,
+      hiddenRevealed: {
+        for (final e in (((j['radar'] as Map<String, dynamic>?)?['revealed'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as int,
+      },
       lastSeenUtc: (j['last_seen_utc'] as int?) ?? 0,
       settings: {...?(j['settings'] as Map<String, dynamic>?)},
       // Campos que esta versão não conhece são preservados (spec, seção 10).
@@ -137,6 +170,31 @@ class GameState extends ChangeNotifier {
 
   /// Eventos de jogo, o chat com o mentor e as diárias do fórum.
   final StoryState story;
+
+  /// A névoa de guerra: as células z20 reveladas pelo caminho andado.
+  final FogState fog;
+
+  /// A última varredura do Radar (segundos UTC) e os Ocultos que ela revelou, `uid -> até quando`.
+  int radarLastUtc;
+  final Map<String, int> hiddenRevealed;
+
+  /// Revela a névoa em volta de ([x21], [y21]) (células z21). Com [debug], vai para o conjunto do simulador.
+  void revealFog(double x21, double y21, double radiusM, double metersPerCell21, {bool debug = false}) {
+    if (fog.reveal(x21, y21, radiusM, metersPerCell21, debug: debug) > 0) notifyListeners();
+  }
+
+  /// O Radar varreu em [nowUtc] e revelou os Ocultos [uids] até [untilUtc].
+  void recordSweep(int nowUtc, Iterable<int> uids, int untilUtc) {
+    radarLastUtc = nowUtc;
+    hiddenRevealed.removeWhere((_, until) => until <= nowUtc);
+    for (final u in uids) {
+      hiddenRevealed[uidKey(u)] = untilUtc;
+    }
+    notifyListeners();
+  }
+
+  /// Se o Oculto [uid] foi revelado por uma varredura e ainda está à vista em [nowUtc].
+  bool isHiddenRevealed(int uid, int nowUtc) => (hiddenRevealed[uidKey(uid)] ?? 0) > nowUtc;
 
   /// Um aviso para o jogador (mensagem nova, pedido concluído). A tela do mapa o mostra.
   void Function(String message)? onNotice;
@@ -281,18 +339,28 @@ class GameState extends ChangeNotifier {
 
   bool hasCaptured(String speciesId) => bestiary[speciesId]?.captured ?? false;
 
-  /// A espécie apareceu na visão do jogador.
-  void markSeen(String speciesId) {
-    if (bestiary[speciesId]?.seen ?? false) return;
-    bestiary[speciesId] = (bestiary[speciesId] ?? const BestiaryEntry()).copyWith(seen: true);
+  /// A espécie (e a variante ou o Brilhante, se for) apareceu na visão do jogador. A primeira variante e o primeiro
+  /// Brilhante contam como eventos de jogo (o Familiar comenta no chat).
+  void markSeen(String speciesId, {String? variant, bool shiny = false}) {
+    var changed = false;
+    for (final k in bestiaryKeys(speciesId, variant: variant, shiny: shiny)) {
+      if (bestiary[k]?.seen ?? false) continue;
+      bestiary[k] = (bestiary[k] ?? const BestiaryEntry()).copyWith(seen: true);
+      changed = true;
+    }
+    if (!changed) return;
+    if (shiny && story.count('shiny_seen') == 0) story.events['shiny_seen'] = 1;
+    if (variant != null && story.count('variant_seen') == 0) story.events['variant_seen'] = 1;
     notifyListeners();
   }
 
   /// A criatura entra na coleção e no bestiário, e o spawn some do registro de vivos.
-  CreatureInstance capture({required int uid, required String speciesId, required int level, required int nowUtc}) {
-    final c = CreatureInstance(uid: uidKey(uid), speciesId: speciesId, level: level, capturedUtc: nowUtc);
+  CreatureInstance capture({required int uid, required String speciesId, required int level, required int nowUtc, String? variant, bool shiny = false}) {
+    final c = CreatureInstance(uid: uidKey(uid), speciesId: speciesId, level: level, capturedUtc: nowUtc, variant: variant, shiny: shiny);
     collection.add(c);
-    bestiary[speciesId] = (bestiary[speciesId] ?? const BestiaryEntry()).copyWith(captured: true);
+    for (final k in bestiaryKeys(speciesId, variant: variant, shiny: shiny)) {
+      bestiary[k] = (bestiary[k] ?? const BestiaryEntry()).copyWith(captured: true);
+    }
     markDone(uid, nowUtc);
     return c;
   }
@@ -377,6 +445,8 @@ class GameState extends ChangeNotifier {
         if (founder != null) 'founder': founder!.toJson(),
         'settings': settings,
         'story': story.toJson(),
+        'fog': fog.toJson(),
+        'radar': {'last_utc': radarLastUtc, 'revealed': hiddenRevealed},
         'inventory': inventory,
         'collection': [for (final c in collection) c.toJson()],
         'collected': _collected,

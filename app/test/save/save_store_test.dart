@@ -159,7 +159,7 @@ void main() {
       expect((s.groupCode, s.count('item.chalk'), s.count('item.seal.simple'), s.collection.single.speciesId, s.isDone(42)), ('AAAAA-BBBBB', 3, 2, 'rill.eco', true));
       expect(s.levelOverride, 4);
       final disk = decodeKsv(copyBytes(store.current));
-      expect(disk['schema_version'], 3);
+      expect(disk['schema_version'], 4);
       expect(disk['group_code'], 'AAAAA-BBBBB');
       expect(File('${dir.path}/save.json.migrated').existsSync(), isTrue);
     });

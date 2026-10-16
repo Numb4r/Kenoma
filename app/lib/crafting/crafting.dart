@@ -60,7 +60,8 @@ String? distillBlocker(GameState s, String uid) {
   if (c == null || species == null || distillBlocker(s, uid) != null) return null;
   final qty = distillYield(c.level, s.balance);
   s.removeCreature(uid);
-  final id = 'item.essence.${species.type.name}';
+  // A Brilhante rende Essência prismática; a variante de bioma, Essência com o traço do bioma; as outras, a do tipo.
+  final id = c.shiny ? 'item.essence.prismatic' : (c.variant != null ? 'item.essence.trait.${c.variant}' : 'item.essence.${species.type.name}');
   s.add(id, qty);
   s.recordEvent('distill', '', 1);
   return (itemId: id, qty: qty);

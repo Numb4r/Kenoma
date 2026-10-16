@@ -1,0 +1,196 @@
+{
+  "schema_version": 3,
+  "group_code": "77777-77777",
+  "player": {
+    "level": 6,
+    "xp": 20,
+    "banked_xp": 0,
+    "rest_balance": 0,
+    "rest_day": 20741
+  },
+  "saved_utc": 1792080000,
+  "created_utc": 1792080000,
+  "last_seen_utc": 1792080000,
+  "app_version": "0.13.0+20",
+  "epoch": 1,
+  "founder": {
+    "player_id": "0b30557a9fc4e90e33587da2c7ec1136",
+    "first_install_version": "0.13.0+20",
+    "first_seen_utc": 1792080000,
+    "versions_seen": [
+      {
+        "version": "0.13.0+20",
+        "utc": 1792080000,
+        "prev": "",
+        "hash": "d529f9ab670ce9a82df400309021b3e0617d195e33183c0854b8d84c57069a23"
+      }
+    ]
+  },
+  "settings": {
+    "street_names": true,
+    "veil_traffic": true
+  },
+  "story": {
+    "events": {
+      "capture": 4,
+      "spark": 6,
+      "walk_m": 1830
+    },
+    "chat": {
+      "delivered": [
+        {
+          "id": "m01",
+          "utc": 1792080000
+        },
+        {
+          "id": "m02",
+          "utc": 1792080060
+        },
+        {
+          "id": "m03",
+          "utc": 1792080120
+        },
+        {
+          "id": "m04",
+          "utc": 1792080180
+        },
+        {
+          "id": "m05",
+          "utc": 1792080240
+        },
+        {
+          "id": "m06",
+          "utc": 1792080300
+        }
+      ],
+      "read": 6,
+      "wait_s": 0.0
+    },
+    "daily": {
+      "day": 20741,
+      "rerolls": 0,
+      "quests": [
+        {
+          "slot": 0,
+          "template": "walk",
+          "kind": "walk_m",
+          "key": "",
+          "target": 1500,
+          "user": "mapmaker",
+          "text": "alguém consegue andar uns 1500 m por aí hoje? preciso saber se o sinal muda de um quarteirão para o outro.",
+          "reward_xp": 150,
+          "reward_items": {
+            "item.chalk": 1
+          },
+          "progress": 1500,
+          "claimed": false
+        },
+        {
+          "slot": 1,
+          "template": "hunt",
+          "kind": "capture",
+          "key": "any",
+          "target": 2,
+          "user": "wren_",
+          "text": "apostei com o meu Familiar que ninguém aqui sela 2 Eco(s) de qualquer tipo antes de escurecer.",
+          "reward_xp": 180,
+          "reward_items": {
+            "item.seal.simple": 1
+          },
+          "progress": 2,
+          "claimed": false
+        },
+        {
+          "slot": 2,
+          "template": "distill",
+          "kind": "distill",
+          "key": "any",
+          "target": 1,
+          "user": "candlewick",
+          "text": "destilem 1 Eco(s) e contem o que sentiram. eu sei o que penso, quero saber o que vocês pensam.",
+          "reward_xp": 160,
+          "reward_items": {
+            "item.dust.plant": 1
+          },
+          "progress": 0,
+          "claimed": false
+        }
+      ]
+    }
+  },
+  "inventory": {
+    "item.seal.simple": 5,
+    "item.chalk": 7,
+    "item.herbs": 2,
+    "item.dust.fire": 5
+  },
+  "collection": [
+    {
+      "uid": "1000",
+      "species": "soot.eco",
+      "level": 3,
+      "xp": 0,
+      "captured_utc": 1792080000
+    },
+    {
+      "uid": "1001",
+      "species": "frond.eco",
+      "level": 4,
+      "xp": 0,
+      "captured_utc": 1792080100
+    },
+    {
+      "uid": "1002",
+      "species": "rill.eco",
+      "level": 5,
+      "xp": 0,
+      "captured_utc": 1792080200
+    },
+    {
+      "uid": "1003",
+      "species": "soot.eco",
+      "level": 6,
+      "xp": 0,
+      "captured_utc": 1792080300
+    }
+  ],
+  "collected": {
+    "1000": 1792080000,
+    "1001": 1792080100,
+    "1002": 1792080200,
+    "1003": 1792080300,
+    "77": 1792080000
+  },
+  "circle": [
+    "1000",
+    "1002"
+  ],
+  "bestiary": {
+    "soot.eco": {
+      "seen": true,
+      "captured": true
+    },
+    "frond.eco": {
+      "seen": true,
+      "captured": true
+    },
+    "rill.eco": {
+      "seen": true,
+      "captured": true
+    }
+  },
+  "marks": [
+    {
+      "uid": "88",
+      "species": "rill.eco",
+      "level": 5,
+      "x": 774426.5,
+      "y": 1185714.5,
+      "cell_x": 387213,
+      "cell_y": 592857,
+      "window": 1493400,
+      "marked_utc": 1792080000,
+      "expires_utc": 1792080300
+    }
+  ]
+}

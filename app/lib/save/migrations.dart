@@ -6,7 +6,7 @@ import '../player/game_state.dart' show saveSchemaVersion;
 
 typedef _Step = Map<String, dynamic> Function(Map<String, dynamic>);
 
-final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3};
+final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4};
 
 /// Leva [json] ao schema atual. Um save de versão futura passa sem mudar.
 Map<String, dynamic> migrateSave(Map<String, dynamic> json) {
@@ -46,5 +46,14 @@ Map<String, dynamic> _v2ToV3(Map<String, dynamic> j) {
     'chat': <String, dynamic>{'delivered': <dynamic>[], 'read': 0, 'wait_s': 0},
     'daily': <String, dynamic>{'day': null, 'rerolls': 0, 'quests': <dynamic>[]},
   };
+  return out;
+}
+
+/// v3 não tinha a névoa de guerra nem o Radar, e as criaturas não tinham variante: entram vazios (o mapa começa
+/// encoberto e o Radar pronto). As criaturas capturadas antes seguem sem variante. Todo o resto passa intacto.
+Map<String, dynamic> _v3ToV4(Map<String, dynamic> j) {
+  final out = {...j};
+  out['fog'] ??= <String, dynamic>{'cells': <String, dynamic>{}, 'debug': <String, dynamic>{}};
+  out['radar'] ??= <String, dynamic>{'last_utc': 0, 'revealed': <String, dynamic>{}};
   return out;
 }

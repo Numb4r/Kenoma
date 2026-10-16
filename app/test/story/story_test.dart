@@ -316,7 +316,7 @@ void main() {
 
     test('v2 vira v3 com a história vazia e todo o resto intacto, inclusive campos desconhecidos', () {
       final out = migrateSave(v2);
-      expect(out['schema_version'], 3);
+      expect(out['schema_version'], 4);
       expect(out['story'], {
         'events': <String, dynamic>{},
         'chat': {'delivered': <dynamic>[], 'read': 0, 'wait_s': 0},
@@ -332,7 +332,7 @@ void main() {
       expect(migrateSave(withStory)['story'], withStory['story']);
     });
 
-    test('abrir o save v2 mantém o jogo, começa o tutorial do zero e regrava em v3', () async {
+    test('abrir o save v2 mantém o jogo, começa o tutorial do zero e regrava no schema atual', () async {
       final store = MemorySaveStore()..json = jsonDecode(jsonEncode(v2)) as Map<String, dynamic>;
       final session = await GameSession.open(store: store, startInventory: {}, balance: b, nowUtc: () => 1790041000, nextInt: (n) => 0, appVersion: '0.13.0+20');
       await session.flush();
@@ -344,7 +344,7 @@ void main() {
       expect(s.settingOr('veil_traffic', true), isFalse);
       expect(s.founder!.playerId, '00112233445566778899aabbccddeeff');
       expect(s.story.chat.delivered, isEmpty);
-      expect(store.json!['schema_version'], 3);
+      expect(store.json!['schema_version'], 4);
       expect(store.json!['campo_do_futuro'], {'x': 1});
       expect(store.json!['story'], isNotNull);
     });

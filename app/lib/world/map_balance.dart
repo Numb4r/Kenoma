@@ -11,6 +11,11 @@ class MapBalance {
         trackerMax = m['tracker_max'] as int,
         defaultWidthM = (m['view_width_default_m'] as num).toDouble(),
         spriteHeightM = (m['sprite_height_m'] as num).toDouble(),
+        playerHeightM = (m['player_height_m'] as num).toDouble(),
+        familiarHeightM = (m['familiar_height_m'] as num).toDouble(),
+        ecoHeightM = (m['eco_height_m'] as num).toDouble(),
+        ghostPedestrianM = (m['ghost_pedestrian_m'] as num).toDouble(),
+        ghostCarM = (m['ghost_car_m'] as num).toDouble(),
         sparkSizeM = (m['spark_size_m'] as num).toDouble(),
         artPixelDp = (m['art_pixel_dp'] as num).toDouble(),
         compassDeclinationDeg = (m['compass_declination_deg'] as num).toDouble(),
@@ -37,6 +42,14 @@ class MapBalance {
   /// Altura do Conjurador e dos Ecos, em metros do mundo: mais ou menos a largura de uma rua. A proporção
   /// com as ruas é a mesma em qualquer zoom.
   final double spriteHeightM;
+
+  /// Alturas dos sprites em metros do mundo: Conjurador, Familiar e Ecos; e o tamanho dos fantasmas do tráfego
+  /// (pedestre: altura; carro: comprimento).
+  final double playerHeightM;
+  final double familiarHeightM;
+  final double ecoHeightM;
+  final double ghostPedestrianM;
+  final double ghostCarM;
 
   /// Tamanho das Fagulhas e dos pontos de material, em metros do mundo.
   final double sparkSizeM;

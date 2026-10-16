@@ -27,6 +27,17 @@ class Recipe {
   final int anyEssence;
 }
 
+/// Uma variante (de bioma ou Brilhante): o nome, o traço passivo (só dado por enquanto) e a cor da paleta.
+class VariantInfo {
+  const VariantInfo({required this.name, required this.trait, required this.tint});
+
+  final String name;
+  final String trait;
+
+  /// A cor (0xAARRGGBB) que troca a paleta do sprite: sem arte nova.
+  final int tint;
+}
+
 class GameData {
   GameData({
     required this.tuning,
@@ -37,6 +48,7 @@ class GameData {
     required this.progress,
     required this.mentor,
     required this.forum,
+    this.variants = const {},
   });
 
   static Future<GameData> load([AssetBundle? bundle]) async {
@@ -69,6 +81,14 @@ class GameData {
       GameData(
         mentor: MentorScript.fromJson(mentor),
         forum: ForumData.fromJson(forum),
+        variants: {
+          for (final e in ((creatures['variants'] as Map<String, dynamic>?) ?? const {}).entries)
+            e.key: VariantInfo(
+              name: (e.value as Map<String, dynamic>)['name'] as String,
+              trait: e.value['trait'] as String,
+              tint: 0xFF000000 | int.parse((e.value['tint'] as String).substring(1), radix: 16),
+            ),
+        },
         tuning: TuningData.fromJson(balance: balance, balanceVersion: balanceVersion, creatures: creatures, items: items),
         progress: ProgressBalance(balance),
         schedule: EpochSchedule.fromJson(epochs),
@@ -104,6 +124,12 @@ class GameData {
   /// O roteiro do mentor (chat) e os pedidos do fórum Limen.
   final MentorScript mentor;
   final ForumData forum;
+
+  /// As variantes: `urban`, `green`, `water`, `residential` e `shiny`.
+  final Map<String, VariantInfo> variants;
+
+  /// A variante de um Eco: a Brilhante vale mais que a de bioma. `null` se é comum.
+  VariantInfo? variantInfo({String? biome, bool shiny = false}) => variants[shiny ? 'shiny' : biome];
 
   String itemName(String id) => itemNames[id] ?? id;
 

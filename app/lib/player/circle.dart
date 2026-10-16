@@ -66,7 +66,7 @@ CreatureInstance withCreatureXp(CreatureInstance c, ProgressBalance b, {int? amo
     level++;
   }
   if (level >= b.creatureLevelCap) xp = 0;
-  return CreatureInstance(uid: c.uid, speciesId: c.speciesId, level: level, capturedUtc: c.capturedUtc, xp: xp);
+  return c.advanced(level: level, xp: xp);
 }
 
 /// Os membros do Círculo de [s] com a espécie e o nível, na ordem dos espaços.

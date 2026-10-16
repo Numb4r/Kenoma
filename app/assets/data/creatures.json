@@ -12,5 +12,12 @@
     "plant": { "beats": "water" },
     "water": { "beats": "fire" }
   },
+  "variants": {
+    "urban": { "name": "Urbana", "trait": "Cinzenta: o ruído da rua não a incomoda", "tint": "#8a8fa3" },
+    "green": { "name": "Verde", "trait": "Folhosa: cresce mais devagar e dura mais", "tint": "#6bd36a" },
+    "water": { "name": "Aquática", "trait": "Úmida: acompanha a maré do sinal", "tint": "#4aa8ff" },
+    "residential": { "name": "Residencial", "trait": "Caseira: aparece mais perto de casa", "tint": "#ffb36b" },
+    "shiny": { "name": "Brilhante", "trait": "Prismática: rara em qualquer lugar", "tint": "#ffe9a8" }
+  },
   "ability_bands_by_level": [ { "from": 1, "to": 9 }, { "from": 10, "to": 19 }, { "from": 20, "to": 20 } ]
 }

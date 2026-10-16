@@ -36,6 +36,7 @@ class TargetSignal {
     required this.type,
     required this.intensity,
     required this.balance,
+    required this.wanderScale,
     required this.start,
     required this.wanderPhase,
     required this.waterPhase,
@@ -54,6 +55,7 @@ class TargetSignal {
     required Pcg32 rng,
     required TuningBalance balance,
     double horizonS = 60,
+    double wanderScale = 1.0,
   }) {
     final s = balance.signal;
     // Ordem dos sorteios: a frequência inicial, a fase da deriva, a fase da primeira senoide da
@@ -98,11 +100,12 @@ class TargetSignal {
     final rootDraws = [if (type == EcoType.plant) for (final _ in cues) rng.nextFloat()];
 
     double baseAt(double t) =>
-        start + s.wanderAmplitude * math.sin(2 * math.pi * t / s.wanderPeriodS + wanderPhase);
+        start + s.wanderAmplitude * wanderScale * math.sin(2 * math.pi * t / s.wanderPeriodS + wanderPhase);
     final signal = TargetSignal._(
       type: type,
       intensity: intensity,
       balance: balance,
+      wanderScale: wanderScale,
       start: start,
       wanderPhase: wanderPhase,
       waterPhase: waterPhase,
@@ -131,6 +134,9 @@ class TargetSignal {
   final EcoType type;
   final double intensity;
   final TuningBalance balance;
+
+  /// Quanto a deriva de base é maior (Arisco) ou menor (Oculto) que a normal. 1 nos outros.
+  final double wanderScale;
   final double start;
   final double wanderPhase;
   final double waterPhase;
@@ -174,7 +180,7 @@ class TargetSignal {
   /// Frequência inicial mais a deriva lenta de base, que todas as ondas compartilham.
   double _baseAt(double t) {
     final s = balance.signal;
-    return start + s.wanderAmplitude * math.sin(2 * math.pi * t / s.wanderPeriodS + wanderPhase);
+    return start + s.wanderAmplitude * wanderScale * math.sin(2 * math.pi * t / s.wanderPeriodS + wanderPhase);
   }
 
   /// Frequência da isca do pico [i] em [t] (ver `FireWave.decoyFrequencyAt`).

@@ -18,3 +18,11 @@ class BestiaryEntry {
 
   Map<String, dynamic> toJson() => {'seen': seen, 'captured': captured};
 }
+
+/// As chaves do bestiário de um Eco: a da espécie e, se é variante ou Brilhante, a de cada uma (`espécie@bioma`,
+/// `espécie@shiny`). Ver e capturar uma variante marca a espécie também.
+List<String> bestiaryKeys(String speciesId, {String? variant, bool shiny = false}) => [
+      speciesId,
+      if (variant != null) '$speciesId@$variant',
+      if (shiny) '$speciesId@shiny',
+    ];

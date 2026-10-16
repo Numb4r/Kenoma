@@ -19,13 +19,13 @@ void main() {
     }
     final r = IdentityReport.fromSave(store.json);
     expect(r.founder!.versionsSeen.map((e) => e.version), ['0.11.0+17', '0.12.0+18']);
-    expect((r.chainValid, r.savedEpoch, r.appVersion, r.schemaVersion), (true, 1, '0.12.0+18', 3));
+    expect((r.chainValid, r.savedEpoch, r.appVersion, r.schemaVersion), (true, 1, '0.12.0+18', 4));
 
     final tampered = {...store.json!, 'founder': {...(store.json!['founder'] as Map<String, dynamic>), 'versions_seen': [(store.json!['founder'] as Map)['versions_seen'][1]]}};
     expect(IdentityReport.fromSave(tampered).chainValid, isFalse);
 
     final old = IdentityReport.fromSave({'schema_version': 1, 'group_code': 'AAAAA-BBBBB'});
-    expect((old.founder, old.chainValid, old.schemaVersion), (null, false, 3));
+    expect((old.founder, old.chainValid, old.schemaVersion), (null, false, 4));
     expect(IdentityReport.fromSave(null).groupCode, isNull);
   });
 
