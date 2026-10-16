@@ -157,10 +157,10 @@ Cada janela dura 20 minutos, mas cada célula tem um deslocamento próprio tirad
 
 | Parâmetro | Valor inicial | Resultado esperado |
 | --- | --- | --- |
-| Aura | 40 m, com spawns visíveis até cerca de 120 m | umas 70 células numa caminhada de 10 min |
-| Chance de Eco por célula e janela | 10% | cerca de 7 Ecos em 10 min andando |
-| Chance de Fagulha por célula e janela | 25%, com 1 ou 2 | cerca de 25 Fagulhas em 10 min |
-| Parado em casa | Aura cobre umas 6 células | cerca de 2 Ecos por hora |
+| Aura | raio de 10 m para coleta; Ecos tocáveis até 30 m e visíveis até 120 m | uma faixa de 20 m ao longo do caminho, menor que a largura de uma avenida |
+| Chance de Eco por célula e janela | 10% | 6 a 10 Ecos ao alcance em 10 min andando |
+| Chance de Fagulha por célula e janela | calibrada por simulação de caminhada, com Fagulhas e materiais posicionados sobre ruas, calçadas e caminhos | 20 a 30 Fagulhas e 5 a 8 materiais coletados em 10 min |
+| Parado em casa | alcance de toque cobre umas 3 células | cerca de 2 Ecos por hora |
 | Fendas | célula z15, sorteio diário | detalhado na fase 3 |
 
 ### Tempo, astronomia e clima
@@ -249,7 +249,7 @@ Três famílias com Fagulha e Eco, em triângulo de Fogo, Planta e Água. Todo b
 
 | Família | Bioma | Tipo | Fagulha | Eco | Habilidade de mapa |
 | --- | --- | --- | --- | --- | --- |
-| Soot | Urbano | Fogo | Ember Mote, brasa de bituca e asfalto quente | Sootling, bicho de fuligem com brasa no peito que vive em bueiros | Aura maior, +5, +8 e +12 m por faixa de nível |
+| Soot | Urbano | Fogo | Ember Mote, brasa de bituca e asfalto quente | Sootling, bicho de fuligem com brasa no peito que vive em bueiros | Aura maior, +3, +5 e +8 m por faixa de nível |
 | Frond | Verde | Planta | Seed Mote | Frondling, fronde fractal inspirada na Charnia que anda sobre raízes | coleta Fagulhas de mais longe, +10, +15 e +20 m |
 | Rill | Água | Água | Drip Mote | Rillet, gota que reflete o céu e faz um som de pingo | rastreador vê Ecos além da visão, 150, 170 e 200 m |
 
@@ -396,7 +396,7 @@ Cada espécie aceita um ou mais métodos, e o bestiário mostra quais conforme a
 
 | Comportamento | Como inicia | Efeito |
 | --- | --- | --- |
-| Passivo | toque dentro da Aura | sinal normal |
+| Passivo | toque com o Eco a até 30 m | sinal normal |
 | Arisco | foge se o jogador se aproximar rápido demais | sinal instável |
 | Agressivo | inicia a sintonia sozinho ao entrar no raio, o celular vibra | resistência mais forte |
 | Oculto | só aparece após seguir rastros ou usar o scanner | sinal mais estável |
@@ -1259,7 +1259,7 @@ Todos os menus vivem dentro do celular do Conjurador. Tocar no botão central é
 
 A câmera tem ângulo 3/4 fixo e só gira em torno do eixo vertical. O jogador gira o mapa arrastando um dedo, sem controle de inclinação nem de perspectiva, porque inclinar não tem função de jogo. Um toque na bússola volta o norte para cima.
 
-- Personagem, criaturas e efeitos são sprites 2D sempre em pé e virados para a tela, em qualquer rotação. O tamanho é em metros do mundo, numa escala que exagera tudo um pouco mas mantém as proporções entre si: Conjurador e Familiar com 8 m de altura, pedestres fantasmas com 6 m, carros fantasmas com 7 m de comprimento, Ecos com 9 m (Espíritos e camadas acima maiores) e Fagulhas com 3 m. A área de toque de qualquer coisa tocável tem no mínimo 48 dp, mesmo quando o sprite é menor.
+- Personagem, criaturas e efeitos são sprites 2D sempre em pé e virados para a tela, em qualquer rotação. O tamanho é em metros do mundo, numa escala que exagera tudo um pouco mas mantém as proporções entre si: Conjurador e Familiar com 6 m de altura, sempre menores que a largura da rua, pedestres fantasmas com 4,5 m, carros fantasmas com 6 m de comprimento, Ecos com 7 m (Espíritos e camadas acima maiores) e Fagulhas com 3 m. A área de toque de qualquer coisa tocável tem no mínimo 48 dp, mesmo quando o sprite é menor.
 - Prédios são desenhados em 2D a partir dos contornos do OSM, projetando telhado e paredes conforme o ângulo atual. Com inclinação fixa essa projeção é simples e roda no Flame, sem motor 3D.
 - A cena é renderizada numa resolução baixa, com o pixel de arte valendo 2 dp na tela, e ampliada por vizinho mais próximo, mantendo os pixels nítidos e sem tremor durante o giro.
 - Girar a câmera também é a forma principal de ver atrás de um prédio. O esmaecimento continua para quando o jogador não girar.
