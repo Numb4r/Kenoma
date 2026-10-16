@@ -11,6 +11,7 @@ import '../core/behavior.dart';
 import '../core/epochs.dart';
 import '../core/spawn.dart';
 import '../core/tiles.dart';
+import '../core/walkable.dart';
 import '../core/weather.dart';
 import '../core/windows.dart';
 import 'region_map.dart';
@@ -90,7 +91,7 @@ class WorldSpawn {
 }
 
 class SpawnField {
-  SpawnField({required this.seed, required this.schedule, required this.map, this.maxCached = 4000, this.weatherAt, this.typeOf});
+  SpawnField({required this.seed, required this.schedule, required this.map, this.maxCached = 4000, this.weatherAt, this.typeOf, this.snapper});
 
   final int seed;
   final EpochSchedule schedule;
@@ -102,6 +103,9 @@ class SpawnField {
 
   /// O tipo (`fire`, `plant`, `water`) de uma espécie, para o clima mexer nos pesos.
   final String? Function(String entryId)? typeOf;
+
+  /// Leva as posições para o que dá para andar (épocas com `walkable`). `null`: posições cruas do sorteio.
+  final PathSnapper? snapper;
 
   final _cells = <(int, int, int, int), List<SpawnItem>>{};
   final _levels = <int, int>{};
@@ -125,7 +129,7 @@ class SpawnField {
     if (cached != null) return cached;
     if (_cells.length >= maxCached) _cells.clear();
     final biome = map.biomes.spawnKey(map.spawnBiomeAtCell(cx, cy));
-    return _cells[key] = generateCell(seed: seed, epoch: epoch, cellX: cx, cellY: cy, window: window, biomeKey: biome, weather: weather, typeOf: typeOf);
+    return _cells[key] = generateCell(seed: seed, epoch: epoch, cellX: cx, cellY: cy, window: window, biomeKey: biome, weather: weather, typeOf: typeOf, snapper: snapper);
   }
 
   /// Segundos até a janela da célula acabar.

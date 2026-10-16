@@ -25,7 +25,7 @@ final double lat0 = kCentroCampinas.$1, lon0 = kCentroCampinas.$2;
 /// Uma época de teste que força o comportamento (e as chances de variante e Brilhante) de todos os Ecos.
 EpochSchedule schedule(Map<String, int> weights, {double variant = 0, double shiny = 0}) {
   final j = jsonDecode(jsonEncode(epochsJson())) as Map<String, dynamic>;
-  final e = (j['epochs'] as List).cast<Map<String, dynamic>>().firstWhere((e) => e['id'] == 2);
+  final e = (j['epochs'] as List).cast<Map<String, dynamic>>().firstWhere((e) => e['id'] == 3);
   e['starts_utc'] = '2026-01-01T00:00:00Z';
   e['valid_until_utc'] = '2027-12-31T00:00:00Z';
   final v2 = e['eco_v2'] as Map<String, dynamic>;

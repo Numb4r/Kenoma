@@ -13,6 +13,7 @@ import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
 import '../../core/tiles.dart';
 import '../../core/weather.dart';
+import '../../world/walk_paths.dart';
 import '../../world/weather_source.dart';
 import '../chime.dart';
 import '../sprites/familiar_sprite.dart';
@@ -395,6 +396,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         schedule: data.schedule,
         map: assets.map,
         typeOf: (id) => data.species(id)?.type.name,
+        snapper: WalkPaths(assets.visual!),
         weatherAt: (cx, cy, t) => _weatherOfCell(session.state.seed, data, cx, cy, t),
       ),
       state: session.state,

@@ -5,6 +5,7 @@ import 'behavior.dart';
 import 'epochs.dart';
 import 'fnv.dart';
 import 'pcg32.dart';
+import 'walkable.dart';
 import 'weather.dart';
 
 /// Sal do fluxo de sorteios `v2` (comportamento, variante, Brilhante e clima dos Ecos): separado do fluxo original, que
@@ -68,10 +69,11 @@ List<SpawnItem> generateCell({
   required String biomeKey,
   Weather weather = Weather.clear,
   String? Function(String entryId)? typeOf,
+  PathSnapper? snapper,
 }) =>
     [
       for (final def in epoch.items)
-        _generateItem(seed, epoch, cellX, cellY, window, biomeKey, def, weather, typeOf),
+        _generateItem(seed, epoch, cellX, cellY, window, biomeKey, def, weather, typeOf, snapper),
     ];
 
 SpawnItem _generateItem(
@@ -84,6 +86,7 @@ SpawnItem _generateItem(
   SpawnItemDef def,
   Weather weather,
   String? Function(String entryId)? typeOf,
+  PathSnapper? snapper,
 ) {
   final epochId = epoch.id;
   final rng = Pcg32(spawnHash(seed, epochId, cellX, cellY, window, def.index), saltKenoma);
@@ -104,8 +107,15 @@ SpawnItem _generateItem(
   final deltaSpan = def.hasLevelDelta ? def.levelDeltaMax! - def.levelDeltaMin! + 1 : 1;
   final deltaDraw = rng.nextInt(deltaSpan);
   final quantity = def.qtyMin + rng.nextInt(def.qtyMax - def.qtyMin + 1);
-  final px = rng.nextFloat();
-  final py = rng.nextFloat();
+  var px = rng.nextFloat();
+  var py = rng.nextFloat();
+  // Épocas com caminhos: Fagulhas e materiais nascem sobre o que dá para andar; os Ecos preferem, mas podem ficar um pouco
+  // fora. Os sorteios acima não mudam: só a posição final é levada ao caminho.
+  final walkable = epoch.walkable;
+  if (walkable != null && snapper != null) {
+    final s = snapper.snap(cellX, cellY, px, py, maxOffM: def.kind == 'eco' ? walkable.ecoOffPathM : 0);
+    if (s != null) (px, py) = s;
+  }
 
   // Épocas com o fluxo v2: comportamento, variante, Brilhante e o clima nos pesos. Tudo sai de um gerador separado,
   // que sempre consome os mesmos sorteios, existindo o Eco ou não, e não toca nos sorteios acima.

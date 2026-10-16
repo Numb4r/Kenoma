@@ -39,7 +39,7 @@ void main() {
   final schedule = loadEpochs();
   final e0 = schedule.epochs.firstWhere((e) => e.id == 0);
   final e1 = schedule.epochs.firstWhere((e) => e.id == 1);
-  final e2 = schedule.epochs.firstWhere((e) => e.id == 2);
+  final e3 = schedule.epochs.firstWhere((e) => e.id == 3);
   final seed = seedGlobal('KENOMA-TESTE');
 
   group('o que já existe não muda', () {
@@ -61,27 +61,27 @@ void main() {
 
     test('na época 2 com tempo limpo, existência, espécie, nível, quantidade, posição e uid saem iguais aos da época 1', () {
       // Só o número da época entra no hash, então comparar com a época 1 exige o mesmo id: troca-se só o fluxo v2 ligado.
-      final plain = Epoch(id: e2.id, startsUtc: e2.startsUtc, validUntilUtc: e2.validUntilUtc, regionPacks: e2.regionPacks, items: e2.items);
-      expect(fingerprint(e2), fingerprint(plain), reason: 'o fluxo v2 não mexe nos sorteios originais');
+      final plain = Epoch(id: e3.id, startsUtc: e3.startsUtc, validUntilUtc: e3.validUntilUtc, regionPacks: e3.regionPacks, items: e3.items);
+      expect(fingerprint(e3), fingerprint(plain), reason: 'o fluxo v2 não mexe nos sorteios originais');
     });
   });
 
   group('fluxo v2 da época 2', () {
     List<SpawnItem> ecos({String biome = 'green', int n = 4000, Weather weather = Weather.clear}) => [
           for (var i = 0; i < n; i++)
-            generateCell(seed: seed, epoch: e2, cellX: 387000 + i % 100, cellY: 592000 + i ~/ 100, window: 1491667 + i % 7, biomeKey: biome, weather: weather, typeOf: _typeOf).first,
+            generateCell(seed: seed, epoch: e3, cellX: 387000 + i % 100, cellY: 592000 + i ~/ 100, window: 1491667 + i % 7, biomeKey: biome, weather: weather, typeOf: _typeOf).first,
         ];
 
     test('é determinístico: a mesma célula dá o mesmo comportamento, variante e Brilhante', () {
       for (var i = 0; i < 50; i++) {
-        final a = generateCell(seed: seed, epoch: e2, cellX: 387000 + i, cellY: 592000, window: 1491667, biomeKey: 'urban').first;
-        final b = generateCell(seed: seed, epoch: e2, cellX: 387000 + i, cellY: 592000, window: 1491667, biomeKey: 'urban').first;
+        final a = generateCell(seed: seed, epoch: e3, cellX: 387000 + i, cellY: 592000, window: 1491667, biomeKey: 'urban').first;
+        final b = generateCell(seed: seed, epoch: e3, cellX: 387000 + i, cellY: 592000, window: 1491667, biomeKey: 'urban').first;
         expect((a.behavior, a.variantBiome, a.shiny, a.entryId), (b.behavior, b.variantBiome, b.shiny, b.entryId));
       }
     });
 
     test('só o item Eco ganha comportamento; Fagulhas e materiais saem como antes', () {
-      for (final it in generateCell(seed: seed, epoch: e2, cellX: 387210, cellY: 592860, window: 1491667, biomeKey: 'urban').skip(1)) {
+      for (final it in generateCell(seed: seed, epoch: e3, cellX: 387210, cellY: 592860, window: 1491667, biomeKey: 'urban').skip(1)) {
         expect((it.behavior, it.variantBiome, it.shiny), (EcoBehavior.passive, null, false));
       }
     });
@@ -89,7 +89,7 @@ void main() {
     test('os comportamentos seguem os pesos da época: maioria passivo, e os outros três aparecem', () {
       final all = ecos();
       final counts = {for (final b in EcoBehavior.values) b: all.where((i) => i.behavior == b).length};
-      final w = e2.ecoV2!.behaviorWeights;
+      final w = e3.ecoV2!.behaviorWeights;
       final total = w.values.fold(0, (a, b) => a + b);
       for (final b in EcoBehavior.values) {
         expect(counts[b]! / all.length, closeTo(w[b.id]! / total, 0.03), reason: b.id);
@@ -101,12 +101,12 @@ void main() {
       for (final biome in ['urban', 'green', 'water', 'residential']) {
         final all = ecos(biome: biome, n: 6000);
         final variants = all.where((i) => i.variantBiome != null);
-        expect(variants.length / all.length, closeTo(e2.ecoV2!.variantChance, 0.025), reason: biome);
+        expect(variants.length / all.length, closeTo(e3.ecoV2!.variantChance, 0.025), reason: biome);
         expect(variants.every((i) => i.variantBiome == biome), isTrue, reason: 'a variante é do bioma da célula');
       }
       final big = [for (final b in ['urban', 'green', 'water', 'residential']) ...ecos(biome: b, n: 20000)];
       final shinies = big.where((i) => i.shiny).length;
-      expect(e2.ecoV2!.shinyChance, 1 / 400);
+      expect(e3.ecoV2!.shinyChance, 1 / 400);
       expect(shinies / big.length, closeTo(1 / 400, 0.0015));
       expect(shinies, greaterThan(0));
     });
@@ -121,7 +121,7 @@ void main() {
   });
 
   group('clima determinístico', () {
-    final model = e2.ecoV2!.weather;
+    final model = e3.ecoV2!.weather;
     const t0 = 1790040000;
 
     test('o mesmo aparelho ou outro, com a mesma seed, janela e região, vê o mesmo clima', () {
@@ -169,7 +169,7 @@ void main() {
       Map<String, int> species(Weather w) {
         final m = <String, int>{};
         for (var i = 0; i < 12000; i++) {
-          final it = generateCell(seed: seed, epoch: e2, cellX: 387000 + i % 120, cellY: 592000 + i ~/ 120, window: 1491667, biomeKey: 'green', weather: w, typeOf: _typeOf).first;
+          final it = generateCell(seed: seed, epoch: e3, cellX: 387000 + i % 120, cellY: 592000 + i ~/ 120, window: 1491667, biomeKey: 'green', weather: w, typeOf: _typeOf).first;
           m[it.entryId] = (m[it.entryId] ?? 0) + 1;
         }
         return m;
@@ -180,9 +180,9 @@ void main() {
       expect(rain['soot.eco']!, lessThan(clear['soot.eco']!));
       expect(storm['soot.eco']!, lessThan(rain['soot.eco']!));
       // Com tempo limpo é a espécie do fluxo original.
-      final original = Epoch(id: e2.id, startsUtc: e2.startsUtc, validUntilUtc: e2.validUntilUtc, regionPacks: e2.regionPacks, items: e2.items);
+      final original = Epoch(id: e3.id, startsUtc: e3.startsUtc, validUntilUtc: e3.validUntilUtc, regionPacks: e3.regionPacks, items: e3.items);
       for (var i = 0; i < 300; i++) {
-        final a = generateCell(seed: seed, epoch: e2, cellX: 387000 + i, cellY: 592100, window: 1491667, biomeKey: 'green', typeOf: _typeOf).first;
+        final a = generateCell(seed: seed, epoch: e3, cellX: 387000 + i, cellY: 592100, window: 1491667, biomeKey: 'green', typeOf: _typeOf).first;
         final b = generateCell(seed: seed, epoch: original, cellX: 387000 + i, cellY: 592100, window: 1491667, biomeKey: 'green').first;
         expect(a.entryId, b.entryId);
       }
@@ -190,8 +190,8 @@ void main() {
 
     test('o clima não muda existência, nível, quantidade nem posição, só a espécie do Eco', () {
       for (var i = 0; i < 200; i++) {
-        final clear = generateCell(seed: seed, epoch: e2, cellX: 387000 + i, cellY: 592200, window: 1491667, biomeKey: 'urban', typeOf: _typeOf);
-        final rain = generateCell(seed: seed, epoch: e2, cellX: 387000 + i, cellY: 592200, window: 1491667, biomeKey: 'urban', weather: Weather.rain, typeOf: _typeOf);
+        final clear = generateCell(seed: seed, epoch: e3, cellX: 387000 + i, cellY: 592200, window: 1491667, biomeKey: 'urban', typeOf: _typeOf);
+        final rain = generateCell(seed: seed, epoch: e3, cellX: 387000 + i, cellY: 592200, window: 1491667, biomeKey: 'urban', weather: Weather.rain, typeOf: _typeOf);
         for (var k = 0; k < 4; k++) {
           expect((clear[k].exists, clear[k].quantity, clear[k].levelDelta, clear[k].px, clear[k].py, clear[k].uid), (rain[k].exists, rain[k].quantity, rain[k].levelDelta, rain[k].px, rain[k].py, rain[k].uid));
           if (k > 0) expect(clear[k].entryId, rain[k].entryId);

@@ -1,6 +1,7 @@
 /// Épocas (epochs.json): pacote de região e tabelas de spawn de cada uma (docs/fase0-spec.md, seção 3).
 library;
 
+import 'features.dart';
 import 'weather.dart';
 
 class WeightedEntry {
@@ -88,6 +89,16 @@ class EcoV2 {
   final WeatherModel weather;
 }
 
+/// Épocas com posições sobre o que dá para andar: Fagulhas e materiais são projetados no caminho mais próximo da célula
+/// (geometria do pacote visual, fixada pelo SHA-256 da época) e os Ecos podem ficar até [ecoOffPathM] metros fora dele.
+class Walkable {
+  const Walkable({required this.ecoOffPathM});
+
+  factory Walkable.fromJson(Map<String, dynamic> j) => Walkable(ecoOffPathM: (j['eco_off_path_m'] as num).toDouble());
+
+  final double ecoOffPathM;
+}
+
 class Epoch {
   const Epoch({
     required this.id,
@@ -97,6 +108,8 @@ class Epoch {
     required this.items,
     this.visualPacks = const {},
     this.ecoV2,
+    this.walkable,
+    this.requiresFeature,
   });
 
   factory Epoch.fromJson(Map<String, dynamic> json) => Epoch(
@@ -117,6 +130,8 @@ class Epoch {
               sha256: e.value['sha256'] as String,
             ),
         },
+        walkable: json['walkable'] == null ? null : Walkable.fromJson(json['walkable'] as Map<String, dynamic>),
+        requiresFeature: json['requires_feature'] as String?,
         ecoV2: json['eco_v2'] == null ? null : EcoV2.fromJson(json['eco_v2'] as Map<String, dynamic>),
         items: [
           for (final i in (json['spawn'] as Map<String, dynamic>)['items'] as List<dynamic>)
@@ -138,7 +153,13 @@ class Epoch {
   /// Os quatro itens fixos de uma célula, na ordem do índice.
   final List<SpawnItemDef> items;
 
-  /// Comportamento, variantes, Brilhante e clima dos Ecos. `null` nas épocas 0 e 1.
+  /// Posições sobre caminhos andáveis (a partir da época 2). `null` nas épocas 0 e 1.
+  final Walkable? walkable;
+
+  /// A época só existe em builds com esta funcionalidade ligada (`street_life`: a 0.13.1 sai sem ela e não conhece a época).
+  final String? requiresFeature;
+
+  /// Comportamento, variantes, Brilhante e clima dos Ecos. `null` nas épocas 0, 1 e 2.
   final EcoV2? ecoV2;
 }
 
@@ -148,8 +169,11 @@ class EpochSchedule {
   }
 
   factory EpochSchedule.fromJson(Map<String, dynamic> json) => EpochSchedule([
-        for (final e in json['epochs'] as List<dynamic>) Epoch.fromJson(e as Map<String, dynamic>),
+        for (final e in json['epochs'] as List<dynamic>)
+          if (_available((e as Map<String, dynamic>)['requires_feature'] as String?)) Epoch.fromJson(e),
       ]);
+
+  static bool _available(String? feature) => feature == null || (feature == 'street_life' && streetLifeEnabled);
 
   final List<Epoch> epochs;
 
