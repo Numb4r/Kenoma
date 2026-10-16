@@ -40,7 +40,7 @@ void main() {
     });
 
     test('as condições só pedem eventos que o jogo conta', () {
-      const known = {'capture', 'craft', 'distill', 'spark', 'material', 'walk_m'};
+      const known = {'capture', 'craft', 'distill', 'spark', 'material', 'walk_m', 'level_6'};
       for (final m in script.tutorial) {
         if (m.requires != null) expect(known, contains(m.requires!.event), reason: m.id);
       }

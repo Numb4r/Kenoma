@@ -45,7 +45,7 @@ class SectionTitle extends StatelessWidget {
 
 /// O sprite de uma espécie; [silhouette] pinta só a forma, para o que o jogador ainda não viu.
 class SpeciesImage extends StatelessWidget {
-  const SpeciesImage({required this.sprite, this.silhouette = false, this.size = 64, this.tint, super.key});
+  const SpeciesImage({required this.sprite, this.silhouette = false, this.size = 64, this.tint, this.aura = false, super.key});
 
   final EcoSprite? sprite;
   final bool silhouette;
@@ -54,12 +54,16 @@ class SpeciesImage extends StatelessWidget {
   /// A paleta da variante (0xAARRGGBB): um tom por cima da silhueta, sem arte nova.
   final int? tint;
 
+  /// A aura do Espírito: o brilho suave do Véu atrás do sprite.
+  final bool aura;
+
   @override
   Widget build(BuildContext context) {
     final img = sprite == null ? null : RawImage(image: sprite!.normal, filterQuality: FilterQuality.none, fit: BoxFit.contain);
-    return SizedBox(
+    return Container(
       width: size,
       height: size,
+      decoration: aura ? const BoxDecoration(gradient: RadialGradient(colors: [Color(0x669B7BFF), Color(0x009B7BFF)])) : null,
       child: img == null
           ? null
           : silhouette

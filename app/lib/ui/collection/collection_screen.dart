@@ -5,6 +5,8 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../data/game_data.dart';
+import '../../core/species_ids.dart';
+import '../../player/attributes.dart';
 import '../../player/game_state.dart';
 import '../colors.dart';
 import '../menu/phone_shell.dart';
@@ -94,14 +96,18 @@ class _CreatureTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final species = data.species(creature.speciesId);
     final variant = data.variantInfo(biome: creature.variant, shiny: creature.shiny);
+    final attrs = attributesOf(creature, data);
+    final spirit = tierOfId(creature.speciesId) == SpeciesTier.spirit;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(color: kPanel, border: Border.all(color: kPanelLine, width: 2)),
       child: Row(children: [
-        SizedBox(
+        Container(
           width: 64,
           height: 64,
+          // A aura do Espírito: o brilho suave do Véu, o único brilho permitido.
+          decoration: spirit ? const BoxDecoration(gradient: RadialGradient(colors: [Color(0x669B7BFF), Color(0x009B7BFF)])) : null,
           child: sprite == null
               ? null
               : variant == null
@@ -120,8 +126,12 @@ class _CreatureTile extends StatelessWidget {
               'NV ${creature.level}${species == null ? '' : ' · ${typeLabel(species.type).toUpperCase()}'}',
               style: const TextStyle(fontSize: 8, color: kDim),
             ),
-            if (variant != null)
-              Text('VARIANTE ${variant.name.toUpperCase()} · ${variant.trait.toUpperCase()}', key: Key('variant-${creature.uid}'), style: TextStyle(fontSize: 8, color: Color(variant.tint), height: 1.8)),
+            Text('PODER ${attrs.power}', key: Key('power-${creature.uid}'), style: const TextStyle(fontSize: 8, color: kEssence, height: 1.8)),
+            if (attrs.ability != null) Text('HABILIDADE ${attrs.ability!.toUpperCase()}', key: Key('ability-${creature.uid}'), style: const TextStyle(fontSize: 8, color: kSignal, height: 1.8)),
+            Text(attrs.traitsCounter.toUpperCase(), key: Key('traits-${creature.uid}'), style: const TextStyle(fontSize: 8, color: kText, height: 1.8)),
+            for (final (i, t) in attrs.traits.indexed)
+              Text('VARIANTE ${t.name.toUpperCase()} · ${t.description.toUpperCase()}',
+                  key: Key(i == 0 && creature.traits.isEmpty ? 'variant-${creature.uid}' : 'trait-${creature.uid}-${t.key}'), style: TextStyle(fontSize: 8, color: Color(t.tint), height: 1.8)),
             Text('CAPTURADO $date', style: const TextStyle(fontSize: 8, color: kDim)),
           ]),
         ),

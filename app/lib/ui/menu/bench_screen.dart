@@ -11,6 +11,7 @@ import '../colors.dart';
 import '../sprites/sprite_image.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
 import '../type_label.dart';
+import 'fusion_screen.dart';
 import 'screen_frame.dart';
 
 class BenchScreen extends StatefulWidget {
@@ -25,6 +26,7 @@ class BenchScreen extends StatefulWidget {
 
 class _BenchScreenState extends State<BenchScreen> {
   bool _distill = false;
+  bool _fusion = false;
   Map<String, EcoSprite> _sprites = {};
 
   @override
@@ -68,13 +70,19 @@ class _BenchScreenState extends State<BenchScreen> {
         title: 'Bancada',
         subtitle: 'Improviso: vale em qualquer lugar',
         children: [
-          Row(children: [
-            Expanded(child: PixelButton(label: 'Fabricar', color: _distill ? kDim : kSignal, onTap: () => setState(() => _distill = false))),
-            const SizedBox(width: 8),
-            Expanded(child: PixelButton(label: 'Destilar', color: _distill ? kEssence : kDim, onTap: () => setState(() => _distill = true))),
+          // Wrap: três abas de 16 pt não cabem lado a lado nas telas estreitas.
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            PixelButton(label: 'Fabricar', color: _distill || _fusion ? kDim : kSignal, onTap: () => setState(() => _distill = _fusion = false)),
+            PixelButton(label: 'Destilar', color: _distill ? kEssence : kDim, onTap: () => setState(() { _distill = true; _fusion = false; })),
+            // Antes do nível da fusão a aba é um ???.
+            PixelButton(
+              label: widget.state.playerLevel < widget.state.cb.fusionLevel ? '???' : 'Fusão',
+              color: _fusion ? kVeil : kDim,
+              onTap: () => setState(() { _fusion = true; _distill = false; }),
+            ),
           ]),
           const SizedBox(height: 16),
-          if (_distill) ..._distillTab() else ..._craftTab(),
+          if (_fusion) FusionPanel(state: widget.state, data: widget.data, sprites: _sprites) else if (_distill) ..._distillTab() else ..._craftTab(),
         ],
       ),
     );

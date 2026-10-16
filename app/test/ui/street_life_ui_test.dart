@@ -164,9 +164,10 @@ void main() {
     final script = data.mentor;
 
     test('o Familiar tem 3 falas, ligadas a variante, Brilhante e Radar, no JSON e no documento de revisão', () {
-      expect(script.familiar.map((m) => m.id), ['f01', 'f02', 'f03']);
+      final street = script.familiar.where((m) => RegExp(r'^f\d+$').hasMatch(m.id)); // as de outras fatias têm prefixo (`fusion_f01`)
+      expect(street.map((m) => m.id), ['f01', 'f02', 'f03']);
       expect(script.familiar.every((m) => m.from == 'familiar' && m.requires != null), isTrue);
-      expect(script.familiar.map((m) => m.requires!.event), ['variant_seen', 'shiny_seen', 'hidden_revealed']);
+      expect(street.map((m) => m.requires!.event), ['variant_seen', 'shiny_seen', 'hidden_revealed']);
     });
 
     test('saem sozinhas quando o acontecimento acontece, uma vez cada, e não atrapalham o tutorial', () {
@@ -176,7 +177,7 @@ void main() {
       expect(first.map((m) => m.id), ['f02']);
       expect(chat.deliverFamiliar(t + 1, script, (e) => e == 'shiny_seen' ? 1 : 0), isEmpty, reason: 'só uma vez');
       final rest = chat.deliverFamiliar(t + 2, script, (_) => 1);
-      expect(rest.map((m) => m.id), ['f01', 'f03']);
+      expect(rest.map((m) => m.id).where((id) => RegExp(r'^f\d+$').hasMatch(id)), ['f01', 'f03']);
       expect(chat.mentorDelivered(script), 0, reason: 'as falas do Familiar não contam como o tutorial do mentor');
       expect(chat.tick(script.tutorial.first.afterS, t + 3, script, (_) => 0)?.id, script.tutorial.first.id);
     });
