@@ -39,7 +39,7 @@ Future<void> runEncounter(
 }) async {
   final species = data.species(eco.entryId);
   if (species == null) return;
-  final level = eco.level ?? 1;
+  final level = (eco.level ?? 1).clamp(1, state.balance.levelCapFor(species.id)); // o Espírito vai ao teto 30, o Eco ao 20
   final navigator = Navigator.of(context);
   while (context.mounted) {
     final seals = [for (final s in data.tuning.seals) if (state.count(s.id) > 0) s];
@@ -75,7 +75,7 @@ Future<void> runEncounter(
           seal: prep.seal,
           tonic: tonic,
           circleStrong: strongInCircle(state, data, species.type),
-          intensityAdd: eco.behavior == EcoBehavior.aggressive ? data.street.aggressiveIntensityAdd : 0,
+          intensityAdd: (eco.behavior == EcoBehavior.aggressive ? data.street.aggressiveIntensityAdd : 0) + (species.isSpirit ? state.cb.spiritResistanceAdd : 0), // Espírito: resistência forte do tipo
           wanderScale: switch (eco.behavior) {
             EcoBehavior.skittish => data.street.skittishWanderScale,
             EcoBehavior.hidden => data.street.hiddenWanderScale,

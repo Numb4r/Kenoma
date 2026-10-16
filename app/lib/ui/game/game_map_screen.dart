@@ -370,6 +370,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         _toast(r.world.canReach(spawn) ? 'A Aura pega sozinha' : 'Entre na Aura para pegar a Fagulha (a ${r.world.distanceM(spawn).round()} m)');
       case TouchResult.tooFar:
         _toast('a ${r.world.distanceM(spawn).round()} m');
+      case TouchResult.ritual:
+        break; // só o ritual responde: `WorldView.onRitualTarget` já avisou quem o trata
       case TouchResult.encounter:
         r.game.fx.hop(spawn.uid); // o Eco dá um pulo na hora, enquanto a folha sobe
         await _startEncounter(spawn);
@@ -461,6 +463,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         typeOf: (id) => data.species(id)?.type.name,
         snapper: WalkPaths(assets.visual!, blocked: assets.noWalk),
         weatherAt: (cx, cy, t) => _weatherOfCell(session.state.seed, data, cx, cy, t),
+        levelCapOf: data.progress.levelCapFor,
       ),
       state: session.state,
       street: data.street,

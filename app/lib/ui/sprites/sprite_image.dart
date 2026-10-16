@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import '../../core/species_ids.dart';
 import 'sprite_data.dart';
 import 'sprite_downscale.dart';
 
@@ -56,8 +57,26 @@ Future<Uint8List> spriteToPng(List<String> rows) async {
 }
 
 /// A matriz do sprite da espécie. Espíritos usam o sprite do Eco da família (visual provisório; a arte final vai para o backlog).
-List<String> ecoSpriteRows(String speciesId) =>
-    ecoSprites[speciesId] ?? ecoSprites['${speciesId.split('.').first}.eco'] ?? (throw StateError('Sem sprite para $speciesId'));
+List<String> ecoSpriteRows(String speciesId) {
+  final rows = ecoSprites[speciesId] ?? ecoSprites['${speciesId.split('.').first}.eco'] ?? (throw StateError('Sem sprite para $speciesId'));
+  return tierOfId(speciesId) == SpeciesTier.spirit && !ecoSprites.containsKey(speciesId) ? spiritRows(rows) : rows;
+}
+
+/// O visual provisório do Espírito: o sprite do Eco com menos costuras violeta (só metade dos blocos de 2 x 2 mantém a
+/// costura; o resto vira o corpo vizinho). O brilho suave do Véu em volta é desenhado por quem usa o sprite.
+List<String> spiritRows(List<String> eco) {
+  String at(int x, int y) => y < 0 || y >= eco.length || x < 0 || x >= eco[y].length ? '.' : eco[y][x];
+  return [
+    for (var y = 0; y < eco.length; y++)
+      [
+        for (var x = 0; x < eco[y].length; x++)
+          if (eco[y][x] != 'v' || (x ~/ 2 + y ~/ 2) % 2 == 0)
+            eco[y][x]
+          else
+            [at(x - 1, y), at(x + 1, y), at(x, y - 1), at(x, y + 1)].firstWhere((c) => !'.vu'.contains(c), orElse: () => 'O'),
+      ].join(),
+  ];
+}
 
 /// Sprite de um Eco em duas versões: normal e com as costuras acesas.
 class EcoSprite {
@@ -73,7 +92,7 @@ class EcoSprite {
 
   /// O Eco redesenhado na grade do mapa ([mapEcoPx] pixels de lado), para o mapa de jogo.
   static Future<EcoSprite> loadMap(String speciesId) =>
-      _from(downscaleRows(ecoSpriteRows(speciesId), mapEcoPx));
+      _from(downscaleRows(ecoSpriteRows(speciesId), tierOfId(speciesId) == SpeciesTier.spirit ? mapSpiritPx : mapEcoPx));
 
   static Future<EcoSprite> _from(List<String> rows) async =>
       EcoSprite(await spriteToImage(rows), await spriteToImage(rows, brightSeams: true));
@@ -83,6 +102,9 @@ class EcoSprite {
 /// largura), 20 pixels dão ~9 m e 18 pixels ~8 m.
 const int mapEcoPx = 19;
 const int mapPlayerPx = 16;
+
+/// O Espírito (9 m, contra 7 m do Eco) é o mesmo sprite ampliado para 24 pixels: 19 × 9 / 7.
+const int mapSpiritPx = 24;
 
 /// Os quadros do Conjurador para o mapa, redesenhados em [mapPlayerPx] pixels.
 Future<List<ui.Image>> loadPlayerFramesMap() async => [

@@ -9,6 +9,7 @@ import 'package:flutter/painting.dart' show TextPainter, TextSpan, TextStyle, Te
 
 import '../../capture/eco_type.dart';
 import '../../core/behavior.dart';
+import '../../core/species_ids.dart';
 import '../../world/map_camera.dart';
 import '../../world/spawn_field.dart';
 import '../colors.dart';
@@ -39,8 +40,11 @@ const double kRingRadiusDp = 22;
 
 /// Raio de toque de um spawn, em pixels. O Eco vale pelo sprite (de [spriteSize] pixels), com um mínimo para
 /// dedo; Fagulhas e materiais valem por [sparkSize], também com um mínimo.
-double hitRadius(WorldSpawn s, double spriteSize, double sparkSize) =>
-    s.isEco ? math.max(26, spriteSize * 0.55) : math.max(28, sparkSize * 1.3);
+double hitRadius(WorldSpawn s, double spriteSize, double sparkSize, {double? spiritSize}) =>
+    s.isEco ? math.max(26, (isSpiritSpawn(s) ? (spiritSize ?? spriteSize) : spriteSize) * 0.55) : math.max(28, sparkSize * 1.3);
+
+/// O spawn é de um Espírito (camada acima do Eco): maior no mapa e com a aura do Véu.
+bool isSpiritSpawn(WorldSpawn s) => s.isEco && tierOfId(s.entryId) == SpeciesTier.spirit;
 
 void paintSpawns(
   ui.Canvas canvas,
@@ -58,6 +62,7 @@ void paintSpawns(
   required ui.Rect avoid,
   required double spriteSize,
   required double sparkSize,
+  double? spiritSize,
   double dpr = 1,
 }) {
   final ordered = [...spawns]..sort((a, b) => a.y.compareTo(b.y));
@@ -68,21 +73,22 @@ void paintSpawns(
     final center = ui.Offset(sx.roundToDouble(), sy.roundToDouble());
     final near = inAura(s);
     if (s.isEco) {
+      final size = isSpiritSpawn(s) ? (spiritSize ?? spriteSize) : spriteSize;
       final tint = tintOf?.call(s);
       final appear = appearOf?.call(s.uid) ?? 1.0;
       final hop = hopOf?.call(s.uid) ?? 0.0;
       if (appear < 1) {
         // A costura abre do centro para fora e o Eco aparece dentro dela.
         canvas.save();
-        canvas.clipRect(ui.Rect.fromCenter(center: center, width: spriteSize * appear + 1, height: spriteSize * 2));
-        _eco(canvas, center.translate(0, hop), s, sprites[s.entryId], spriteSize, typeOf, near, time, avoid, tint: tint);
+        canvas.clipRect(ui.Rect.fromCenter(center: center, width: size * appear + 1, height: size * 2));
+        _eco(canvas, center.translate(0, hop), s, sprites[s.entryId], size, typeOf, near, time, avoid, tint: tint);
         canvas.restore();
-        paintSeam(canvas, center, spriteSize, appear);
+        paintSeam(canvas, center, size, appear);
       } else {
-        _eco(canvas, center.translate(0, hop), s, sprites[s.entryId], spriteSize, typeOf, near, time, avoid, tint: tint);
+        _eco(canvas, center.translate(0, hop), s, sprites[s.entryId], size, typeOf, near, time, avoid, tint: tint);
       }
-      if (s.behavior != EcoBehavior.passive) _behaviorIcon(canvas, center, s.behavior, spriteSize);
-      if (marked?.call(s) ?? false) _markRing(canvas, center, spriteSize);
+      if (s.behavior != EcoBehavior.passive) _behaviorIcon(canvas, center, s.behavior, size);
+      if (marked?.call(s) ?? false) _markRing(canvas, center, size);
     } else if (s.isSpark) {
       _spark(canvas, center, spawnColor(s, typeOf), sparkSize, dpr, near, time + s.uid % 7);
     } else {
@@ -139,6 +145,18 @@ void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double 
   );
   final bob = near ? (math.sin(time * 3 + s.uid % 5) * 2).roundToDouble() : 0.0;
   final dst = ui.Rect.fromCenter(center: c.translate(0, bob), width: size, height: size);
+  if (isSpiritSpawn(s)) {
+    // A aura do Espírito: um brilho suave do Véu que respira (o único brilho permitido; arte final no backlog).
+    final pulse = 0.7 + 0.3 * math.sin(time * 1.6 + s.uid % 9);
+    final r = size * 0.95;
+    canvas.drawCircle(
+      dst.center,
+      r,
+      ui.Paint()
+        ..shader = ui.Gradient.radial(dst.center, r, [kVeil.withValues(alpha: 0.4 * pulse), kVeil.withValues(alpha: 0)])
+        ..isAntiAlias = true,
+    );
+  }
   if (s.shiny) {
     // O Brilhante: um halo suave que pulsa. É o único brilho permitido no estilo.
     final pulse = 0.65 + 0.35 * math.sin(time * 2.4 + s.uid % 9);
