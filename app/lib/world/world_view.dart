@@ -8,6 +8,7 @@ import 'dart:math' as math;
 import '../core/features.dart';
 
 import '../core/behavior.dart';
+import '../core/species_ids.dart';
 import '../core/tiles.dart';
 import '../player/conjurer_balance.dart' show School;
 import '../player/circle.dart' show MapAbilities;
@@ -18,8 +19,9 @@ import 'spawn_field.dart';
 import 'street_life_balance.dart';
 import 'tracker.dart';
 
-/// O que um toque num spawn faz.
-enum TouchResult { collected, encounter, tooFar, auto }
+/// O que um toque num spawn faz. `ritual`: o Eco só responde ao ritual (`*.ritual`); o toque não abre a sintonia e
+/// [WorldView.onRitualTarget] avisa quem trata o ritual.
+enum TouchResult { collected, encounter, tooFar, auto, ritual }
 
 class WorldView {
   WorldView({
@@ -105,13 +107,16 @@ class WorldView {
   /// Um Eco Brilhante apareceu à vista (uma vez por Eco): a tela toca um som curto e avisa.
   void Function(WorldSpawn eco)? onShiny;
 
+  /// Gancho do ritual: o jogador tocou, ao alcance, num Eco `ritualOnly` (a sintonia não abre). Quem trata o ritual preenche.
+  void Function(WorldSpawn eco)? onRitualTarget;
+
   /// Um Eco passou a estar a até `touchRangeM` (uma vez por entrada; não chama se ele fugiu). O modo bolso vibra aqui.
   void Function(WorldSpawn eco)? onEnteredRange;
   final _announced = <int>{};
 
   /// Os que já apareceram nesta sessão (o debug só força o primeiro Eco *novo*), e o que o debug forçou em cada um.
   final _known = <int>{};
-  final _forced = <int, ({EcoBehavior behavior, bool variant, bool shiny})>{};
+  final _forced = <int, ({EcoBehavior behavior, bool variant, bool shiny, bool spirit})>{};
   final _inAura = <int>{};
   final _aggroFired = <int>{};
 
@@ -180,6 +185,10 @@ class WorldView {
     }
     _known.add(s.uid);
     if (f == null) return s;
+    if (f.spirit && tierOfId(s.entryId) == SpeciesTier.eco) {
+      final id = '${familyOfId(s.entryId)}.spirit';
+      s = s.withSpecies(id, math.min(s.level ?? 1, state.balance.levelCapFor(id)));
+    }
     return s.withTraits(behavior: f.behavior, variant: f.variant ? (s.variant ?? 'urban') : s.variant, shiny: f.shiny || s.shiny);
   }
 
@@ -199,7 +208,12 @@ class WorldView {
     _track.add((t: tUtc, x: px, y: py));
     _track.removeWhere((p) => tUtc - p.t > street.skittishSpeedWindowS);
     traces = [for (final t in traces) if (t.untilUtc > tUtc) t];
-    final all = [for (final s in field.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel)) _withForce(s)];
+    // Os Espíritos só aparecem a partir do nível `spirit_spawn_level`. É individual: o mundo é o mesmo para todos.
+    final spiritsOn = state.playerLevel >= state.cb.spiritSpawnLevel;
+    final all = [
+      for (final s in field.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel))
+        if (spiritsOn || !s.isEco || tierOfId(s.entryId) == SpeciesTier.eco) _withForce(s),
+    ];
     allEcos = [for (final s in all) if (s.isEco && !state.isDone(s.uid)) s];
     final collected = <WorldSpawn>[];
     final inAuraNow = <int>{};
@@ -245,7 +259,7 @@ class WorldView {
 
   /// O Agressivo dentro da Aura abre a folha uma vez por Eco. Se a tela estava ocupada, tenta de novo no próximo quadro.
   void _tryAggressive(WorldSpawn s) {
-    if (s.behavior != EcoBehavior.aggressive || _aggroFired.contains(s.uid)) return;
+    if (s.behavior != EcoBehavior.aggressive || _aggroFired.contains(s.uid) || isRitualOnlyId(s.entryId)) return;
     if (onAggressive?.call(s) ?? false) _aggroFired.add(s.uid);
   }
 
@@ -287,6 +301,11 @@ class WorldView {
   /// Toque num spawn. Material ao alcance é coletado aqui; Eco dentro da Aura (ou marcado) abre o encontro.
   TouchResult touch(WorldSpawn s, int tUtc) {
     if (s.isSpark) return TouchResult.auto;
+    if (s.isEco && isRitualOnlyId(s.entryId)) {
+      if (!canReach(s)) return TouchResult.tooFar;
+      onRitualTarget?.call(s);
+      return TouchResult.ritual;
+    }
     if (s.isEco && state.markOf(s.uid) != null) return TouchResult.encounter;
     if (!canReach(s)) return TouchResult.tooFar;
     if (s.isEco) return TouchResult.encounter;

@@ -60,12 +60,13 @@ int circleStrongCount(Iterable<EcoType> memberTypes, EcoType target) => memberTy
 
 /// A criatura depois de ganhar XP de sintonia: `por_nível × n` para ir do nível n ao n+1, até o teto.
 CreatureInstance withCreatureXp(CreatureInstance c, ProgressBalance b, {int? amount}) {
+  final cap = b.levelCapFor(c.speciesId);
   var level = c.level, xp = c.xp + (amount ?? b.creaturePerTuning);
-  while (level < b.creatureLevelCap && xp >= b.creatureCurvePerLevel * level) {
+  while (level < cap && xp >= b.creatureCurvePerLevel * level) {
     xp -= b.creatureCurvePerLevel * level;
     level++;
   }
-  if (level >= b.creatureLevelCap) xp = 0;
+  if (level >= cap) xp = 0;
   return c.advanced(level: level, xp: xp);
 }
 

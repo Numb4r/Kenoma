@@ -146,7 +146,7 @@ class _Tile extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 'NV ${creature.level}${sp == null ? '' : ' · ${typeLabel(sp.type).toUpperCase()}'}'
-                '${creature.level >= state.balance.creatureLevelCap ? '' : ' · XP ${creature.xp}/$next'}',
+                '${creature.level >= state.balance.levelCapFor(creature.speciesId) ? '' : ' · XP ${creature.xp}/$next'}',
                 style: const TextStyle(fontSize: 8, color: kDim),
               ),
               if (sp != null) Text(abilityText(sp, creature.level, bands).toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal)),

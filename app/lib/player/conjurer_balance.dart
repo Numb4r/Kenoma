@@ -44,8 +44,15 @@ class ConjurerBalance {
         fusionAnimS = _d(b['fusion'], 'anim_s'),
         spiritHeightM = _d(b['spirit'], 'height_m'),
         spiritAbilitySteps = _i(b['spirit'], 'ability_steps'),
+        spiritResistanceAdd = _d(b['spirit'], 'resistance_add'),
+        _powerBase = _tiers(b['power'], 'base'),
+        _powerPerLevel = _tiers(b['power'], 'per_level'),
         talentPerLevel = _i(b['talent'], 'points_per_level'),
         schoolTests = SchoolTestsBalance(b['school_tests'] as Map<String, dynamic>);
+
+  static Map<String, double> _tiers(Object? m, String k) => {
+        for (final e in ((m as Map<String, dynamic>)[k] as Map<String, dynamic>).entries) e.key: (e.value as num).toDouble(),
+      };
 
   static int _i(Object? m, String k) => ((m as Map<String, dynamic>)[k] as num).toInt();
   static double _d(Object? m, String k) => ((m as Map<String, dynamic>)[k] as num).toDouble();
@@ -77,6 +84,14 @@ class ConjurerBalance {
   /// Altura do Espírito no mapa e quantos degraus a habilidade de mapa dele é mais forte que a do Eco.
   final double spiritHeightM;
   final int spiritAbilitySteps;
+
+  /// Degraus de resistência a mais na sintonia de um Espírito (a resistência forte do tipo).
+  final double spiritResistanceAdd;
+
+  /// Poder de uma criatura: `base + por_nível × nível`, por camada (`eco`, `spirit`). Sem estabilidade ainda.
+  final Map<String, double> _powerBase;
+  final Map<String, double> _powerPerLevel;
+  int power(String tier, int level) => (_powerBase[tier]! + _powerPerLevel[tier]! * level).round();
 
   /// Pontos de talento por nível.
   final int talentPerLevel;

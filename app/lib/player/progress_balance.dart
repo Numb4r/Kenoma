@@ -1,6 +1,7 @@
 /// Números de progressão lidos de `balance.json` (chaves `xp`, `mark` e `distill`). Nenhum vive no código.
 library;
 
+import '../core/species_ids.dart';
 import 'conjurer_balance.dart';
 
 class Band {
@@ -63,6 +64,12 @@ class ProgressBalance {
   final int creaturePerTuning;
   final int creatureCurvePerLevel;
   final int creatureLevelCap;
+
+  /// O teto de nível da criatura por camada: o Eco vai a [creatureLevelCap]; o Espírito, a `spirit_level_cap`.
+  int levelCapFor(String speciesId) => tierOfId(speciesId) == SpeciesTier.spirit ? conjurer.spiritLevelCap : creatureLevelCap;
+
+  /// Quantos traços a criatura da espécie [speciesId] pode ter (Eco 1, Espírito 2).
+  int traitCapFor(String speciesId) => tierOfId(speciesId) == SpeciesTier.spirit ? conjurer.spiritTraitsMax : conjurer.ecoTraitsMax;
 
   /// Duração da marcação e quantas podem estar ativas.
   final int markDurationS;

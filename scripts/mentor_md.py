@@ -55,6 +55,15 @@ out.append("| App | Texto |\n| --- | --- |")
 for k, v in mentor.get("phone_unlock", {}).items():
     out.append(f"| `{k}` | {v} |")
 out.append("")
+out.append("## Fusão (nível 6)\n")
+out.append("O mentor ensina a fusão quando o Conjurador chega ao nível 6 (evento `level_6`): cinco Ecos da mesma família mais Essência do tipo "
+           "viram o Espírito da família. O Familiar comenta a primeira fusão. Estas são as falas, também listadas nas tabelas acima.\n")
+out.append("| Id | Quando | Texto |\n| --- | --- | --- |")
+for m in [*mentor["tutorial"], *mentor.get("familiar", [])]:
+    if m["id"].startswith("fusion_"):
+        req = m.get("requires")
+        out.append(f"| `{m['id']}` | {req['event'] + ' ≥ ' + str(req['min']) if req else 'depois da anterior'} | {m['text']} |")
+out.append("")
 out.append(f"## Fórum {forum['forum']}: pedidos diários\n")
 out.append("Três pedidos por dia, sorteados por `hash(seed, época, data, slot)`. O texto tem `{n}` (a meta), `{tipo}` (Fogo, Planta, "
            "Água ou qualquer tipo) e `{item}` (giz, ervas, água pura). Usuários: " + ", ".join(f"`{u}`" for u in forum["users"]) + ".\n")

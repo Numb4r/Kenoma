@@ -25,6 +25,8 @@ O tutorial sai uma mensagem de cada vez, depois de alguns segundos de jogo com o
 | 11 | `m11` | 40 s | - | Segure o dedo sobre um Eco dentro da Aura e o sinal dele fica preso por cinco minutos. Dá tempo de fazer outra coisa. Dá tempo de se arrepender. |
 | 12 | `m12` | 40 s | - | Existe um fórum, o Limen. Pedem coisas pequenas todos os dias. Faça o que pedirem, ou não. Quem pede sempre sabe o que quer? |
 | 13 | `m13` | 45 s | - | Por ora é só. Se o celular tremer sozinho, não atenda. Última pergunta: quem mais anda por aí com a mesma frequência que a sua? |
+| 14 | `fusion_01` | 20 s | level_6 ≥ 1 | Seis. Você anda há tempo bastante para ouvir uma coisa nova. Cinco Ecos da mesma família, mais Essência do tipo deles, cabem num molde só. O que sai não é mais um Eco. Procure a Fusão na Bancada. |
+| 15 | `fusion_02` | 40 s | - | Você escolhe quais cinco entram, e eles não voltam. Se algum estiver no Círculo, a vaga fica vazia. O que nasce guarda o nível médio deles e até dois traços: o Brilhante primeiro, depois as variantes. Quem vale mais para você, o Eco ou o que ele pode virar? |
 
 ## Falas do Familiar
 
@@ -41,6 +43,7 @@ O Familiar ainda não fala (GDD): ele se comunica por gestos, ícones e silênci
 | 7 | `school_choose_technomancer` | school_chosen_technomancer ≥ 1 | *O Familiar pisca em ciano e o corpo dele ganha linhas retas, como um circuito. Uma antena sobe e capta algo que você não ouve.* |
 | 8 | `school_choose_shaman` | school_chosen_shaman ≥ 1 | *O Familiar esquenta até ficar laranja e solta uma folha de dentro de si. Ela cheira a terra molhada, mesmo em cima do asfalto.* |
 | 9 | `school_choose_sealer` | school_chosen_sealer ≥ 1 | *O Familiar fica ainda mais violeta e um fio de costura o atravessa de lado a lado. Ele parece satisfeito, como quem acha a própria família.* |
+| 10 | `fusion_f01` | fusion ≥ 1 | *O Familiar encosta a testa na tela quando as costuras se fecham e fica assim, parado, até o Espírito respirar. Depois dá uma volta devagar em torno dele. Parece dizer: agora são um só.* |
 
 ## Escola no nível 3
 
@@ -61,6 +64,16 @@ Quando um app novo do celular se forma (o nível do Conjurador liberou), o Famil
 | `bench` | *O Familiar rodeia o ícone novo e solta um estalo seco, como giz riscando pedra. Parece dizer: aqui se faz coisa.* |
 | `chat` | *O Familiar vira o rosto para o ícone novo e fica imóvel. A tela pisca uma vez, sem som. Parece dizer: alguém está do outro lado.* |
 | `forum` | *O Familiar espia o ícone novo por cima do seu ombro e bate de leve na tela, duas vezes. Parece dizer: tem gente pedindo.* |
+
+## Fusão (nível 6)
+
+O mentor ensina a fusão quando o Conjurador chega ao nível 6 (evento `level_6`): cinco Ecos da mesma família mais Essência do tipo viram o Espírito da família. O Familiar comenta a primeira fusão. Estas são as falas, também listadas nas tabelas acima.
+
+| Id | Quando | Texto |
+| --- | --- | --- |
+| `fusion_01` | level_6 ≥ 1 | Seis. Você anda há tempo bastante para ouvir uma coisa nova. Cinco Ecos da mesma família, mais Essência do tipo deles, cabem num molde só. O que sai não é mais um Eco. Procure a Fusão na Bancada. |
+| `fusion_02` | depois da anterior | Você escolhe quais cinco entram, e eles não voltam. Se algum estiver no Círculo, a vaga fica vazia. O que nasce guarda o nível médio deles e até dois traços: o Brilhante primeiro, depois as variantes. Quem vale mais para você, o Eco ou o que ele pode virar? |
+| `fusion_f01` | fusion ≥ 1 | *O Familiar encosta a testa na tela quando as costuras se fecham e fica assim, parado, até o Espírito respirar. Depois dá uma volta devagar em torno dele. Parece dizer: agora são um só.* |
 
 ## Fórum Limen: pedidos diários
 

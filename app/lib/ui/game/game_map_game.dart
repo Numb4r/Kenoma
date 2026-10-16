@@ -27,7 +27,7 @@ import '../../world/map_balance.dart';
 import '../../world/visual_map.dart';
 import '../map/map_renderer.dart';
 import '../sprites/sprite_downscale.dart' show snapSpriteSize;
-import '../sprites/sprite_image.dart' show mapEcoPx, mapPlayerPx;
+import '../sprites/sprite_image.dart' show mapEcoPx, mapPlayerPx, mapSpiritPx;
 import 'art_renderer.dart';
 import 'art_style.dart';
 import 'spawn_painter.dart';
@@ -415,6 +415,7 @@ class GameMapGame extends FlameGame {
         time: _time,
         avoid: markerRect(center, playerSize).inflate(6),
         spriteSize: spriteSize,
+        spiritSize: spiritSizePx,
         sparkSize: sparkSize,
         dpr: dpr,
       );
@@ -491,6 +492,7 @@ class GameMapGame extends FlameGame {
   /// Alturas na tela, em pixels lógicos: os metros do mundo (`balance.json`) convertidos pelo zoom de agora e ajustados
   /// a um múltiplo inteiro de pixels físicos por pixel do sprite (nada de pixel mais gordo que o vizinho).
   double get ecoSizePx => snapSpriteSize(balance.ecoHeightM / metersPerCell(_lat) * follow.pixelsPerCell, dpr, mapEcoPx);
+  double get spiritSizePx => snapSpriteSize((worldView?.state.cb.spiritHeightM ?? balance.ecoHeightM) / metersPerCell(_lat) * follow.pixelsPerCell, dpr, mapSpiritPx);
   double get playerSizePx => snapSpriteSize(balance.playerHeightM / metersPerCell(_lat) * follow.pixelsPerCell, dpr, mapPlayerPx);
   double get familiarSizePx => snapSpriteSize(balance.familiarHeightM / metersPerCell(_lat) * follow.pixelsPerCell, dpr, mapPlayerPx);
 
@@ -536,7 +538,7 @@ class GameMapGame extends FlameGame {
     for (final s in w.spawns) {
       final (sx, sy) = cam.cellToScreen(s.x, s.y, size.x, size.y);
       final d = (Offset(sx, sy) - screen).distance;
-      if (d <= hitRadius(s, ecoSizePx, sparkSizePx) && d < bestD) {
+      if (d <= hitRadius(s, ecoSizePx, sparkSizePx, spiritSize: spiritSizePx) && d < bestD) {
         best = s;
         bestD = d;
       }

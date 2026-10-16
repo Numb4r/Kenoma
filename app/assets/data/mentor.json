@@ -27,7 +27,11 @@
     { "id": "m12", "after_s": 40,
       "text": "Existe um fórum, o Limen. Pedem coisas pequenas todos os dias. Faça o que pedirem, ou não. Quem pede sempre sabe o que quer?" },
     { "id": "m13", "after_s": 45,
-      "text": "Por ora é só. Se o celular tremer sozinho, não atenda. Última pergunta: quem mais anda por aí com a mesma frequência que a sua?" }
+      "text": "Por ora é só. Se o celular tremer sozinho, não atenda. Última pergunta: quem mais anda por aí com a mesma frequência que a sua?" },
+    { "id": "fusion_01", "after_s": 20, "requires": { "event": "level_6", "min": 1 },
+      "text": "Seis. Você anda há tempo bastante para ouvir uma coisa nova. Cinco Ecos da mesma família, mais Essência do tipo deles, cabem num molde só. O que sai não é mais um Eco. Procure a Fusão na Bancada." },
+    { "id": "fusion_02", "after_s": 40,
+      "text": "Você escolhe quais cinco entram, e eles não voltam. Se algum estiver no Círculo, a vaga fica vazia. O que nasce guarda o nível médio deles e até dois traços: o Brilhante primeiro, depois as variantes. Quem vale mais para você, o Eco ou o que ele pode virar?" }
   ],
   "familiar": [
     { "id": "f01", "requires": { "event": "variant_seen", "min": 1 },
@@ -48,7 +52,9 @@
     { "id": "school_choose_shaman", "requires": { "event": "school_chosen_shaman", "min": 1 },
       "text": "*O Familiar esquenta até ficar laranja e solta uma folha de dentro de si. Ela cheira a terra molhada, mesmo em cima do asfalto.*" },
     { "id": "school_choose_sealer", "requires": { "event": "school_chosen_sealer", "min": 1 },
-      "text": "*O Familiar fica ainda mais violeta e um fio de costura o atravessa de lado a lado. Ele parece satisfeito, como quem acha a própria família.*" }
+      "text": "*O Familiar fica ainda mais violeta e um fio de costura o atravessa de lado a lado. Ele parece satisfeito, como quem acha a própria família.*" },
+    { "id": "fusion_f01", "requires": { "event": "fusion", "min": 1 },
+      "text": "*O Familiar encosta a testa na tela quando as costuras se fecham e fica assim, parado, até o Espírito respirar. Depois dá uma volta devagar em torno dele. Parece dizer: agora são um só.*" }
   ],
   "school": [
     { "id": "school_tests", "action": "school_tests",

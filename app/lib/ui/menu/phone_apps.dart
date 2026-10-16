@@ -2,6 +2,7 @@
 /// o ponto laranja de novidade ficam aqui. Dart puro.
 library;
 
+import '../../crafting/fusion.dart' show fusionPossible;
 import '../../player/game_state.dart';
 
 /// Os ids dos apps. Mudou um id? Mude também o `balance.json` e as falas de `phone_unlock` do `mentor.json`.
@@ -74,7 +75,7 @@ int claimableRequests(GameState s) => s.story.daily.quests.where((q) => q.claima
 final Map<String, bool Function(GameState)> phoneAppBadges = {
   PhoneAppId.chat: (s) => s.story.chat.unread > 0,
   PhoneAppId.forum: (s) => claimableRequests(s) > 0,
-  PhoneAppId.bench: (_) => false, // fusão possível
+  PhoneAppId.bench: fusionPossible, // fusão possível
   PhoneAppId.profile: profileHasNews,
 };
 

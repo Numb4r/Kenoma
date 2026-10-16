@@ -60,6 +60,23 @@ class WorldSpawn {
   final String? variant;
   final bool shiny;
 
+  /// Cópia com a espécie e o nível trocados (o debug força um Espírito no lugar do Eco).
+  WorldSpawn withSpecies(String entryId, int level) => WorldSpawn(
+        uid: uid,
+        kind: kind,
+        entryId: entryId,
+        quantity: quantity,
+        x: x,
+        y: y,
+        cellX: cellX,
+        cellY: cellY,
+        window: window,
+        level: level,
+        behavior: behavior,
+        variant: variant,
+        shiny: shiny,
+      );
+
   /// Cópia com o comportamento, a variante e o Brilhante trocados (o debug força o próximo spawn).
   WorldSpawn withTraits({required EcoBehavior behavior, String? variant, required bool shiny}) => WorldSpawn(
         uid: uid,
@@ -91,7 +108,7 @@ class WorldSpawn {
 }
 
 class SpawnField {
-  SpawnField({required this.seed, required this.schedule, required this.map, this.maxCached = 4000, this.weatherAt, this.typeOf, this.snapper});
+  SpawnField({required this.seed, required this.schedule, required this.map, this.maxCached = 4000, this.weatherAt, this.typeOf, this.snapper, this.levelCapOf});
 
   final int seed;
   final EpochSchedule schedule;
@@ -107,13 +124,16 @@ class SpawnField {
   /// Leva as posições para o que dá para andar (épocas com `walkable`). `null`: posições cruas do sorteio.
   final PathSnapper? snapper;
 
+  /// O teto de nível de uma espécie (o Eco vai a 20, o Espírito a 30). `null`: 20 para todas.
+  final int Function(String entryId)? levelCapOf;
+
   final _cells = <(int, int, int, int), List<SpawnItem>>{};
   final _levels = <int, int>{};
 
-  /// Nível do Eco: `limitar(nível do Conjurador + delta, 1, 20)`, calculado na primeira vez que ele
+  /// Nível do Eco: `limitar(nível do Conjurador + delta, 1, teto da camada)`, calculado na primeira vez que ele
   /// entra no raio de visão e guardado pelo uid.
   int _levelOf(SpawnItem item, int playerLevel) =>
-      _levels.putIfAbsent(item.uid, () => (playerLevel + (item.levelDelta ?? 0)).clamp(1, 20));
+      _levels.putIfAbsent(item.uid, () => (playerLevel + (item.levelDelta ?? 0)).clamp(1, levelCapOf?.call(item.entryId) ?? 20));
 
   /// Os itens da célula z20 `(cx, cy)` no instante [tUtc]. Todos, existam ou não.
   List<SpawnItem> cellItems(int cx, int cy, int tUtc) {

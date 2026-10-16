@@ -51,7 +51,7 @@ class _BestiaryScreenState extends State<BestiaryScreen> {
                 padding: const EdgeInsets.all(8),
                 decoration: panelBox(line: (b[s.id]?.captured ?? false) ? kSignal : kPanelLine),
                 child: Row(children: [
-                  SpeciesImage(sprite: _sprites[s.id], silhouette: !(b[s.id]?.seen ?? false), size: 72),
+                  SpeciesImage(sprite: _sprites[s.id], silhouette: !(b[s.id]?.seen ?? false), size: 72, aura: s.isSpirit && (b[s.id]?.seen ?? false)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

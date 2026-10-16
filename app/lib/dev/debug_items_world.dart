@@ -12,6 +12,7 @@ import '../ui/map/map_screen.dart';
 import '../ui/tema.dart';
 import '../world/places.dart';
 import 'debug_env.dart';
+import 'debug_items_fusion.dart';
 import 'debug_registry.dart';
 import 'debug_widgets.dart';
 import 'street_debug_section.dart';
@@ -46,6 +47,16 @@ List<DebugItem> spawnItems(DebugEnv env) {
       builder: (_) => listen(() => DebugChip('Brilhante', on: force.nextShiny, onTap: () => force.set(shiny: !force.nextShiny))),
     ),
     DebugItem(
+      id: 'spawn.spirit',
+      title: 'Forçar Espírito',
+      section: DebugSection.spawns,
+      keywords: const ['espírito', 'spirit', 'fusão', 'próximo spawn'],
+      builder: (_) => listen(() => DebugColumn([
+            const DebugNote('O próximo Eco novo à vista vira o Espírito da família dele, mesmo abaixo do nível 8.'),
+            DebugChip('Espírito', on: force.nextSpirit, color: KCores.veuVioleta, onTap: () => force.set(spirit: !force.nextSpirit)),
+          ])),
+    ),
+    DebugItem(
       id: 'spawn.clear',
       title: 'Pedidos forçados',
       section: DebugSection.spawns,
@@ -55,7 +66,7 @@ List<DebugItem> spawnItems(DebugEnv env) {
         color: KCores.textoMudo,
         onTap: () {
           force.nextBehavior = null;
-          force.set(variant: false, shiny: false);
+          force.set(variant: false, shiny: false, spirit: false);
         },
       ),
     ),
@@ -210,6 +221,7 @@ List<DebugItem> playerItems(DebugEnv env) => [
         keywords: const ['nível', 'level', 'override', 'conjurador', 'forçar'],
         builder: (_) => _LevelOverride(env: env),
       ),
+      ...fusionItems(env),
     ];
 
 /// Override do nível (1 a 15) guardado no save; 0 deixa valer o nível real. Os Ecos do mapa e a resistência usam o
