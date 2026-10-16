@@ -1,6 +1,8 @@
 /// Épocas (epochs.json): pacote de região e tabelas de spawn de cada uma (docs/fase0-spec.md, seção 3).
 library;
 
+import 'weather.dart';
+
 class WeightedEntry {
   const WeightedEntry(this.id, this.weight);
 
@@ -66,6 +68,26 @@ class SpawnItemDef {
   bool get hasLevelDelta => levelDeltaMin != null && levelDeltaMax != null;
 }
 
+/// O que a época 2 acrescenta aos Ecos (docs/GDD.md): comportamento, variante de bioma, Brilhante e o efeito do
+/// clima nos spawns. Entra num fluxo de sorteios separado (`v2`) e só vale em épocas que o trazem: nas outras os
+/// itens saem exatamente como antes.
+class EcoV2 {
+  const EcoV2({required this.behaviorWeights, required this.variantChance, required this.shinyChance, required this.weather});
+
+  factory EcoV2.fromJson(Map<String, dynamic> j) => EcoV2(
+        behaviorWeights: {for (final e in (j['behavior_weights'] as Map<String, dynamic>).entries) e.key: e.value as int},
+        variantChance: (j['variant_chance'] as num).toDouble(),
+        shinyChance: (j['shiny_chance'] as num).toDouble(),
+        weather: WeatherModel.fromJson(j['weather'] as Map<String, dynamic>),
+      );
+
+  /// Peso de cada comportamento (`passive`, `skittish`, `aggressive`, `hidden`), na ordem de [EcoBehavior].
+  final Map<String, int> behaviorWeights;
+  final double variantChance;
+  final double shinyChance;
+  final WeatherModel weather;
+}
+
 class Epoch {
   const Epoch({
     required this.id,
@@ -74,6 +96,7 @@ class Epoch {
     required this.regionPacks,
     required this.items,
     this.visualPacks = const {},
+    this.ecoV2,
   });
 
   factory Epoch.fromJson(Map<String, dynamic> json) => Epoch(
@@ -94,6 +117,7 @@ class Epoch {
               sha256: e.value['sha256'] as String,
             ),
         },
+        ecoV2: json['eco_v2'] == null ? null : EcoV2.fromJson(json['eco_v2'] as Map<String, dynamic>),
         items: [
           for (final i in (json['spawn'] as Map<String, dynamic>)['items'] as List<dynamic>)
             SpawnItemDef.fromJson(i as Map<String, dynamic>),
@@ -113,6 +137,9 @@ class Epoch {
 
   /// Os quatro itens fixos de uma célula, na ordem do índice.
   final List<SpawnItemDef> items;
+
+  /// Comportamento, variantes, Brilhante e clima dos Ecos. `null` nas épocas 0 e 1.
+  final EcoV2? ecoV2;
 }
 
 class EpochSchedule {

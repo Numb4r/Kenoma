@@ -7,9 +7,11 @@ library;
 
 import 'dart:math' as math;
 
+import '../core/behavior.dart';
 import '../core/epochs.dart';
 import '../core/spawn.dart';
 import '../core/tiles.dart';
+import '../core/weather.dart';
 import '../core/windows.dart';
 import 'region_map.dart';
 
@@ -26,6 +28,9 @@ class WorldSpawn {
     required this.cellY,
     required this.window,
     this.level,
+    this.behavior = EcoBehavior.passive,
+    this.variant,
+    this.shiny = false,
   });
 
   final int uid;
@@ -49,6 +54,32 @@ class WorldSpawn {
   /// Nível do Eco para o Conjurador de quando ele apareceu. `null` nos outros.
   final int? level;
 
+  /// Só nos Ecos de épocas com o fluxo v2: o comportamento, a chave do bioma da variante e se é Brilhante.
+  final EcoBehavior behavior;
+  final String? variant;
+  final bool shiny;
+
+  /// Cópia com o comportamento, a variante e o Brilhante trocados (o debug força o próximo spawn).
+  WorldSpawn withTraits({required EcoBehavior behavior, String? variant, required bool shiny}) => WorldSpawn(
+        uid: uid,
+        kind: kind,
+        entryId: entryId,
+        quantity: quantity,
+        x: x,
+        y: y,
+        cellX: cellX,
+        cellY: cellY,
+        window: window,
+        level: level,
+        behavior: behavior,
+        variant: variant,
+        shiny: shiny,
+      );
+
+  /// Se é um Eco raro: variante, Brilhante ou Oculto (ou, com [playerLevel], de nível acima do jogador). Só os raros
+  /// deixam rastros.
+  bool isRare(int playerLevel) => isEco && (variant != null || shiny || behavior == EcoBehavior.hidden || (level ?? 0) > playerLevel);
+
   bool get isEco => kind == 'eco';
   bool get isSpark => kind == 'spark';
   bool get isMaterial => kind == 'material';
@@ -59,12 +90,18 @@ class WorldSpawn {
 }
 
 class SpawnField {
-  SpawnField({required this.seed, required this.schedule, required this.map, this.maxCached = 4000});
+  SpawnField({required this.seed, required this.schedule, required this.map, this.maxCached = 4000, this.weatherAt, this.typeOf});
 
   final int seed;
   final EpochSchedule schedule;
   final RegionMap map;
   final int maxCached;
+
+  /// O clima de uma célula z20 no instante, para os pesos de spawn das épocas com o fluxo v2. `null`: sempre limpo.
+  final Weather Function(int cellX, int cellY, int tUtc)? weatherAt;
+
+  /// O tipo (`fire`, `plant`, `water`) de uma espécie, para o clima mexer nos pesos.
+  final String? Function(String entryId)? typeOf;
 
   final _cells = <(int, int, int, int), List<SpawnItem>>{};
   final _levels = <int, int>{};
@@ -78,12 +115,14 @@ class SpawnField {
   List<SpawnItem> cellItems(int cx, int cy, int tUtc) {
     final epoch = schedule.select(tUtc).epoch;
     final window = windowIndex(seed, cx, cy, tUtc);
-    final key = (epoch.id, cx, cy, window);
+    // O clima só entra nas épocas que o trazem; nas outras a célula não depende dele.
+    final weather = epoch.ecoV2 == null || weatherAt == null ? Weather.clear : weatherAt!(cx, cy, tUtc);
+    final key = (epoch.id * 8 + weather.index, cx, cy, window);
     final cached = _cells[key];
     if (cached != null) return cached;
     if (_cells.length >= maxCached) _cells.clear();
     final biome = map.biomes.spawnKey(map.spawnBiomeAtCell(cx, cy));
-    return _cells[key] = generateCell(seed: seed, epoch: epoch, cellX: cx, cellY: cy, window: window, biomeKey: biome);
+    return _cells[key] = generateCell(seed: seed, epoch: epoch, cellX: cx, cellY: cy, window: window, biomeKey: biome, weather: weather, typeOf: typeOf);
   }
 
   /// Segundos até a janela da célula acabar.
@@ -117,6 +156,9 @@ class SpawnField {
             cellY: cy,
             window: window,
             level: item.kind == 'eco' ? _levelOf(item, playerLevel) : null,
+            behavior: item.behavior,
+            variant: item.variantBiome,
+            shiny: item.shiny,
           );
           if (spawn.distanceM(px, py, mpc) <= radiusM) out.add(spawn);
         }

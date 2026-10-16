@@ -1,9 +1,15 @@
 /// Geração dos quatro itens de uma célula de spawn (docs/fase0-spec.md, seção 3).
 library;
 
+import 'behavior.dart';
 import 'epochs.dart';
 import 'fnv.dart';
 import 'pcg32.dart';
+import 'weather.dart';
+
+/// Sal do fluxo de sorteios `v2` (comportamento, variante, Brilhante e clima dos Ecos): separado do fluxo original, que
+/// nunca muda de ordem nem de resultado.
+final int saltV2 = salt('v2');
 
 class SpawnItem {
   const SpawnItem({
@@ -16,6 +22,9 @@ class SpawnItem {
     required this.py,
     required this.uid,
     this.levelDelta,
+    this.behavior = EcoBehavior.passive,
+    this.variantBiome,
+    this.shiny = false,
   });
 
   final int index;
@@ -33,6 +42,11 @@ class SpawnItem {
   final double px;
   final double py;
   final int uid;
+
+  /// Só nos Ecos de épocas com o fluxo `v2`: comportamento, a chave do bioma da variante (ou `null`) e se é Brilhante.
+  final EcoBehavior behavior;
+  final String? variantBiome;
+  final bool shiny;
 }
 
 /// `h_i = FNV(seed_global, época, cell_x, cell_y, janela, i, SPWN)`: semente do PCG32 do item `i`.
@@ -52,21 +66,26 @@ List<SpawnItem> generateCell({
   required int cellY,
   required int window,
   required String biomeKey,
+  Weather weather = Weather.clear,
+  String? Function(String entryId)? typeOf,
 }) =>
     [
       for (final def in epoch.items)
-        _generateItem(seed, epoch.id, cellX, cellY, window, biomeKey, def),
+        _generateItem(seed, epoch, cellX, cellY, window, biomeKey, def, weather, typeOf),
     ];
 
 SpawnItem _generateItem(
   int seed,
-  int epochId,
+  Epoch epoch,
   int cellX,
   int cellY,
   int window,
   String biomeKey,
   SpawnItemDef def,
+  Weather weather,
+  String? Function(String entryId)? typeOf,
 ) {
+  final epochId = epoch.id;
   final rng = Pcg32(spawnHash(seed, epochId, cellX, cellY, window, def.index), saltKenoma);
   final chance = def.chance[biomeKey] ?? (throw StateError('Item ${def.index} sem chance para $biomeKey'));
   final table = def.table[biomeKey] ?? (throw StateError('Item ${def.index} sem tabela para $biomeKey'));
@@ -88,6 +107,44 @@ SpawnItem _generateItem(
   final px = rng.nextFloat();
   final py = rng.nextFloat();
 
+  // Épocas com o fluxo v2: comportamento, variante, Brilhante e o clima nos pesos. Tudo sai de um gerador separado,
+  // que sempre consome os mesmos sorteios, existindo o Eco ou não, e não toca nos sorteios acima.
+  var behavior = EcoBehavior.passive;
+  String? variantBiome;
+  var shiny = false;
+  final v2 = epoch.ecoV2;
+  if (v2 != null && def.kind == 'eco') {
+    final r2 = Pcg32(fnv1a64([seed, epochId, cellX, cellY, window, def.index, saltV2]), saltKenoma);
+    final weights = [for (final b in EcoBehavior.values) v2.behaviorWeights[b.id] ?? 0];
+    var bp = r2.nextInt(weights.fold(0, (a, b) => a + b));
+    for (var i = 0; i < weights.length; i++) {
+      if (bp < weights[i]) {
+        behavior = EcoBehavior.values[i];
+        break;
+      }
+      bp -= weights[i];
+    }
+    if (r2.nextFloat() < v2.variantChance) variantBiome = biomeKey;
+    shiny = r2.nextFloat() < v2.shinyChance;
+    final speciesRoll = r2.nextFloat();
+    // O clima mexe nos pesos por tipo. Com tempo limpo, ou sem regra para nenhuma espécie da tabela, a espécie é a original.
+    if (typeOf != null && weather != Weather.clear) {
+      final mult = [for (final e in table) v2.weather.multiplier(weather, typeOf(e.id) ?? '')];
+      if (mult.any((m) => m != 1.0)) {
+        final adj = [for (var i = 0; i < table.length; i++) table[i].weight * mult[i]];
+        var target = speciesRoll * adj.fold(0.0, (a, b) => a + b);
+        entry = table.last;
+        for (var i = 0; i < table.length; i++) {
+          if (target < adj[i]) {
+            entry = table[i];
+            break;
+          }
+          target -= adj[i];
+        }
+      }
+    }
+  }
+
   return SpawnItem(
     index: def.index,
     kind: def.kind,
@@ -98,5 +155,8 @@ SpawnItem _generateItem(
     px: px,
     py: py,
     uid: spawnUid(seed, epochId, cellX, cellY, window, def.index),
+    behavior: behavior,
+    variantBiome: variantBiome,
+    shiny: shiny,
   );
 }

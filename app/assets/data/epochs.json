@@ -642,6 +642,377 @@
           }
         ]
       }
+    },
+    {
+      "id": 2,
+      "starts_utc": "2026-10-15T19:20:00Z",
+      "valid_until_utc": "2027-01-13T19:20:00Z",
+      "region_packs": {
+        "campinas": {
+          "file": "campinas_e0.bin",
+          "sha256": "559f3551cf04ef399eaca600a4397e4a074d1c58b8b744f83e46503fabfa4f30"
+        }
+      },
+      "visual_packs": {
+        "campinas": {
+          "file": "campinas_e0_vis.bin",
+          "sha256": "e8491fa298a07beb4703cf4fe03d2694ed07490365efa8183d80963aab0c531b"
+        }
+      },
+      "spawn": {
+        "items": [
+          {
+            "index": 0,
+            "kind": "eco",
+            "chance": {
+              "urban": 0.15,
+              "green": 0.15,
+              "water": 0.15,
+              "residential": 0.12
+            },
+            "table": {
+              "urban": [
+                [
+                  "soot.eco",
+                  6
+                ],
+                [
+                  "frond.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "frond.eco",
+                  6
+                ],
+                [
+                  "soot.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "rill.eco",
+                  6
+                ],
+                [
+                  "soot.eco",
+                  1
+                ],
+                [
+                  "frond.eco",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "soot.eco",
+                  1
+                ],
+                [
+                  "frond.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ],
+            "level_delta": [
+              -2,
+              2
+            ]
+          },
+          {
+            "index": 1,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.5,
+              "green": 0.5,
+              "water": 0.5,
+              "residential": 0.5
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.25,
+              "green": 0.25,
+              "water": 0.25,
+              "residential": 0.25
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "material",
+            "chance": {
+              "urban": 0.24,
+              "green": 0.24,
+              "water": 0.24,
+              "residential": 0.24
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.scrap",
+                  3
+                ],
+                [
+                  "item.chalk",
+                  3
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.herbs",
+                  4
+                ],
+                [
+                  "item.chalk",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.pure_water",
+                  4
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.chalk",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.scrap",
+                  2
+                ],
+                [
+                  "item.chalk",
+                  2
+                ],
+                [
+                  "item.herbs",
+                  2
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              3
+            ]
+          }
+        ]
+      },
+      "eco_v2": {
+        "behavior_weights": {
+          "passive": 70,
+          "skittish": 12,
+          "aggressive": 10,
+          "hidden": 8
+        },
+        "variant_chance": 0.12,
+        "shiny_chance": 0.0025,
+        "weather": {
+          "window_s": 10800,
+          "probs": {
+            "summer": [
+              0.3,
+              0.25,
+              0.32,
+              0.13
+            ],
+            "autumn": [
+              0.45,
+              0.3,
+              0.2,
+              0.05
+            ],
+            "winter": [
+              0.65,
+              0.27,
+              0.07,
+              0.01
+            ],
+            "spring": [
+              0.4,
+              0.3,
+              0.2,
+              0.1
+            ]
+          },
+          "spawn_multipliers": {
+            "rain": {
+              "water": 1.6,
+              "fire": 0.55
+            },
+            "storm": {
+              "water": 1.4,
+              "electric": 2.0,
+              "fire": 0.4
+            }
+          }
+        }
+      }
     }
   ]
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/core/epochs.dart';
 
 import '../support/fixtures.dart';
 import '../support/walk_sim.dart';
@@ -6,7 +7,8 @@ import '../support/walk_sim.dart';
 /// Metas de densidade da época 1, medidas andando a 1,4 m/s por Barão Geraldo (docs/fase0-spec.md, seção 3).
 /// A Aura tem 25 m e a visão 120 m, do `balance.json`. As caminhadas saem da Unicamp em 8 rumos e 2 horários.
 void main() {
-  final schedule = loadEpochs();
+  // Só até a época 1: as metas de densidade são dela, e a época 2 muda o hash do mundo.
+  final schedule = EpochSchedule([for (final e in loadEpochs().epochs) if (e.id <= 1) e]);
   final aura = (loadJson('assets/data/balance.json')['map'] as Map<String, dynamic>)['aura_m'] as num;
   final epoch1 = schedule.epochs.firstWhere((e) => e.id == 1);
 

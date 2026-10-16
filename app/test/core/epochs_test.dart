@@ -55,7 +55,7 @@ void main() {
   });
 
   test('a época 1 começa depois da 0, cobre o fim dela e fica em dia até o próprio fim', () {
-    final schedule = loadEpochs();
+    final schedule = EpochSchedule([for (final e in loadEpochs().epochs) if (e.id <= 1) e]); // a época 2 cobre o fim da 1
     final e1 = schedule.epochs.firstWhere((e) => e.id == 1);
     expect(e1.startsUtc, greaterThan(schedule.epochs.first.startsUtc));
     expect(e1.validUntilUtc, greaterThan(schedule.epochs.first.validUntilUtc));
