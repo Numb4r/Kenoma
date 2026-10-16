@@ -77,7 +77,12 @@ class Fx {
       if (_known.add(s.uid) && _primed) _appear[s.uid] = 0;
     }
     _primed = true;
-    if (_known.length > 4000) _known.clear();
+    if (_known.length > 4000) {
+      // Esquece os antigos sem reabrir a costura dos que estão à vista agora.
+      _known
+        ..clear()
+        ..addAll([for (final s in spawns) if (s.isEco) s.uid]);
+    }
   }
 
   /// Quanto do pulo do Eco [uid] em pixels (negativo = para cima). 0 sem pulo.
@@ -188,6 +193,7 @@ class Fx {
       canvas.drawRect(ui.Rect.fromLTWH(left, base.dy + 1, 8, 8).inflate(1), _flat..color = kOutline.withValues(alpha: alpha));
       canvas.drawRect(ui.Rect.fromLTWH(left, base.dy + 1, 8, 8), _flat..color = p.color.withValues(alpha: alpha));
       tp.paint(canvas, ui.Offset(left + 12, base.dy));
+      tp.dispose();
     }
   }
 

@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/epochs.dart';
 import 'package:kenoma/core/features.dart';
+import 'package:kenoma/core/fnv.dart';
 import 'package:kenoma/core/seed.dart';
 import 'package:kenoma/core/spawn.dart';
 import 'package:kenoma/core/tiles.dart';
@@ -82,7 +83,18 @@ void main() {
     }
     expect(snappedItems, greaterThan(1000));
     expect(ecos, greaterThan(100));
-    expect(rawCells, greaterThanOrEqualTo(0));
+  });
+
+  test('impressão digital travada das posições da época 2 (muda só com época nova ou pacote novo)', () {
+    final parts = <int>[];
+    for (var dx = -12; dx <= 12; dx++) {
+      for (var dy = -12; dy <= 12; dy++) {
+        for (final it in generateCell(seed: seed, epoch: e2, cellX: c0x + dx, cellY: c0y + dy, window: 1491700, biomeKey: 'urban', snapper: paths)) {
+          parts.addAll([it.index, (it.px * 1e6).round(), (it.py * 1e6).round()]);
+        }
+      }
+    }
+    expect(fnv1a64(parts), -7897202211706606778);
   });
 
   test('é determinístico: dois leitores independentes do pacote dão exatamente os mesmos pontos', () {
@@ -107,9 +119,10 @@ void main() {
   });
 
   test('a época 3 (Rua viva) só existe com a funcionalidade ligada: a 0.13.1 não a conhece', () {
-    expect(schedule.epochs.map((e) => e.id), [0, 1, 2, 3]);
     final before = streetLifeEnabled;
     addTearDown(() => streetLifeEnabled = before);
+    streetLifeEnabled = true;
+    expect(EpochSchedule.fromJson(epochsJson()).epochs.map((e) => e.id), [0, 1, 2, 3]);
     streetLifeEnabled = false;
     final off = EpochSchedule.fromJson(epochsJson());
     expect(off.epochs.map((e) => e.id), [0, 1, 2]);

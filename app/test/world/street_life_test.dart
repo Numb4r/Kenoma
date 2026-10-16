@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/core/features.dart';
 import 'package:kenoma/core/behavior.dart';
 import 'package:kenoma/core/epochs.dart';
 import 'package:kenoma/core/seed.dart';
@@ -371,6 +372,7 @@ void main() {
 
   group('Familiar', () {
     test('soma o bônus de coleta ao raio, junto com o do Círculo', () {
+      streetLifeEnabled = true;
       final v = viewOf(newState(), schedule({'passive': 100}));
       expect(street.familiarPickupBonusM, 2);
       expect(v.auraRadiusM, 10 + 2);

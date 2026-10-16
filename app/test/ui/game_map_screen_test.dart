@@ -5,6 +5,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/core/features.dart';
 import 'package:kenoma/core/tiles.dart';
 import 'package:kenoma/data/heading_source.dart';
 import 'package:kenoma/ui/game/compass_button.dart';
@@ -871,6 +872,17 @@ void main() {
       await tester.tap(find.byType(PhoneButton));
       await env.settle(10);
       expect(find.text('RADAR'), findsOneWidget);
+    });
+
+    testWidgets('na 0.13.1 (STREET_LIFE desligado) o celular não tem Radar e o HUD não mostra o clima', (tester) async {
+      streetLifeEnabled = false;
+      addTearDown(() => streetLifeEnabled = true);
+      final env = await pumpGame(tester);
+      expect(find.byKey(const Key('weather-glyph')), findsNothing);
+      await tester.tap(find.byType(PhoneButton));
+      await env.settle(10);
+      expect(find.text('RADAR'), findsNothing);
+      expect(find.text('BESTIÁRIO'), findsOneWidget);
     });
   });
 }
