@@ -21,11 +21,23 @@ void main() {
   final data = load();
 
   test('lê os três Ecos com id, nome e tipo', () {
-    expect([for (final s in data.species) (s.id, s.name, s.type)], [
+    expect([for (final s in data.species) if (!s.isSpirit) (s.id, s.name, s.type)], [
       ('soot.eco', 'Sootling', EcoType.fire),
       ('frond.eco', 'Frondling', EcoType.plant),
       ('rill.eco', 'Rillet', EcoType.water),
     ]);
+  });
+
+  test('lê os seis Espíritos: um por família que a fusão forma e um só de ritual', () {
+    expect([for (final s in data.species) if (s.isSpirit) (s.id, s.family, s.ritualOnly)], [
+      ('soot.spirit', 'soot', false),
+      ('frond.spirit', 'frond', false),
+      ('rill.spirit', 'rill', false),
+      ('soot.ritual', 'soot', true),
+      ('frond.ritual', 'frond', true),
+      ('rill.ritual', 'rill', true),
+    ]);
+    expect(data.species.firstWhere((s) => s.id == 'soot.spirit').ability!.bands, [5, 8, 11], reason: 'um degrau acima do Eco (3, 5, 8)');
   });
 
   test('lê os cinco selos e o tônico', () {

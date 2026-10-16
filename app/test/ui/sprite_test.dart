@@ -10,8 +10,15 @@ void main() {
   const outline = 0xFF1A1424;
 
   test('cada Eco de creatures.json tem sprite', () {
-    final species = [for (final s in loadJson('assets/data/creatures.json')['species'] as List<dynamic>) (s as Map<String, dynamic>)['id']];
+    final species = [for (final s in loadJson('assets/data/creatures.json')['species'] as List<dynamic>) if ((s as Map<String, dynamic>)['tier'] == 'eco') s['id']];
     expect(ecoSprites.keys.toSet(), species.toSet());
+  });
+
+  test('os Espíritos usam o sprite do Eco da família (visual provisório)', () {
+    for (final s in loadJson('assets/data/creatures.json')['species'] as List<dynamic>) {
+      final id = (s as Map<String, dynamic>)['id'] as String;
+      expect(ecoSpriteRows(id), isNotEmpty, reason: id);
+    }
   });
 
   group('matrizes', () {

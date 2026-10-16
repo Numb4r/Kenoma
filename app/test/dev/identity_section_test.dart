@@ -34,6 +34,7 @@ void main() {
     final s = await GameSession.open(store: store, startInventory: {}, balance: loadProgressBalance(), nowUtc: () => 1790040000, nextInt: (n) => 0, appVersion: '0.12.0+18', epochOf: (_) => 0);
     await s.flush();
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: IdentitySection(clock: GameClock(), store: store)))));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300))); // a seção lê o save e as épocas do disco
     await tester.pump();
     await tester.pump();
     expect(find.text(s.state.founder!.playerId), findsOneWidget);

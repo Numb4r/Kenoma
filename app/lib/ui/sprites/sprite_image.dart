@@ -55,6 +55,10 @@ Future<Uint8List> spriteToPng(List<String> rows) async {
   return data!.buffer.asUint8List();
 }
 
+/// A matriz do sprite da espécie. Espíritos usam o sprite do Eco da família (visual provisório; a arte final vai para o backlog).
+List<String> ecoSpriteRows(String speciesId) =>
+    ecoSprites[speciesId] ?? ecoSprites['${speciesId.split('.').first}.eco'] ?? (throw StateError('Sem sprite para $speciesId'));
+
 /// Sprite de um Eco em duas versões: normal e com as costuras acesas.
 class EcoSprite {
   const EcoSprite(this.normal, this.bright);
@@ -62,15 +66,14 @@ class EcoSprite {
   final ui.Image normal;
   final ui.Image bright;
 
-  static Future<EcoSprite> load(String speciesId) =>
-      _from(ecoSprites[speciesId] ?? (throw StateError('Sem sprite para $speciesId')));
+  static Future<EcoSprite> load(String speciesId) => _from(ecoSpriteRows(speciesId));
 
   /// Silhueta neutra, para o modo de tipo oculto.
   static Future<EcoSprite> loadNeutral() => _from(neutralSprite);
 
   /// O Eco redesenhado na grade do mapa ([mapEcoPx] pixels de lado), para o mapa de jogo.
   static Future<EcoSprite> loadMap(String speciesId) =>
-      _from(downscaleRows(ecoSprites[speciesId] ?? (throw StateError('Sem sprite para $speciesId')), mapEcoPx));
+      _from(downscaleRows(ecoSpriteRows(speciesId), mapEcoPx));
 
   static Future<EcoSprite> _from(List<String> rows) async =>
       EcoSprite(await spriteToImage(rows), await spriteToImage(rows, brightSeams: true));

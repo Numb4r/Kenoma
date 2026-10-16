@@ -20,12 +20,19 @@ class SpeciesAbility {
 }
 
 class EcoSpecies {
-  const EcoSpecies({required this.id, required this.name, required this.type, this.ability});
+  const EcoSpecies({required this.id, required this.name, required this.type, this.ability, this.family = '', this.tier = 'eco', this.ritualOnly = false});
 
   final String id;
   final String name;
   final EcoType type;
   final SpeciesAbility? ability;
+
+  /// A linha de fusão (`soot`, `frond`, `rill`) e a camada: `eco` ou `spirit`. `ritualOnly`: não responde à sintonia, só ao ritual.
+  final String family;
+  final String tier;
+  final bool ritualOnly;
+
+  bool get isSpirit => tier == 'spirit';
 }
 
 class TuningData {
@@ -50,11 +57,14 @@ class TuningData {
       balanceVersion: balanceVersion,
       species: [
         for (final s in creatures['species'] as List<dynamic>)
-          if ((s as Map<String, dynamic>)['tier'] == 'eco')
+          if ((s as Map<String, dynamic>)['tier'] == 'eco' || s['tier'] == 'spirit')
             EcoSpecies(
               id: s['id'] as String,
               name: s['name'] as String,
               type: EcoType.parse(s['type'] as String),
+              family: (s['family'] as String?) ?? '',
+              tier: s['tier'] as String,
+              ritualOnly: (s['ritual_only'] as bool?) ?? false,
               ability: s['ability'] == null
                   ? null
                   : SpeciesAbility(

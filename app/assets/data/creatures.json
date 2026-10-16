@@ -5,7 +5,16 @@
     { "id": "frond.eco", "name": "Frondling", "family": "frond", "type": "plant", "tier": "eco", "god": "Peab",
       "ability": { "kind": "spark_pickup_bonus_m", "bands": [3, 5, 8] } },
     { "id": "rill.eco", "name": "Rillet", "family": "rill", "type": "water", "tier": "eco", "god": "Zumvi",
-      "ability": { "kind": "tracker_range_m", "bands": [150, 170, 200] } }
+      "ability": { "kind": "tracker_range_m", "bands": [150, 170, 200] } },
+    { "id": "soot.spirit", "name": "Cinderkin", "family": "soot", "type": "fire", "tier": "spirit", "god": "Ialprg",
+      "ability": { "kind": "aura_bonus_m", "bands": [5, 8, 11] } },
+    { "id": "frond.spirit", "name": "Thicketkin", "family": "frond", "type": "plant", "tier": "spirit", "god": "Peab",
+      "ability": { "kind": "spark_pickup_bonus_m", "bands": [5, 8, 11] } },
+    { "id": "rill.spirit", "name": "Brookkin", "family": "rill", "type": "water", "tier": "spirit", "god": "Zumvi",
+      "ability": { "kind": "tracker_range_m", "bands": [170, 200, 230] } },
+    { "id": "soot.ritual", "name": "Kilnshade", "family": "soot", "type": "fire", "tier": "spirit", "ritual_only": true, "god": "Ialprg" },
+    { "id": "frond.ritual", "name": "Rootseer", "family": "frond", "type": "plant", "tier": "spirit", "ritual_only": true, "god": "Peab" },
+    { "id": "rill.ritual", "name": "Wellmirror", "family": "rill", "type": "water", "tier": "spirit", "ritual_only": true, "god": "Zumvi" }
   ],
   "types": {
     "fire": { "beats": "plant" },
