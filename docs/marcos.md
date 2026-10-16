@@ -216,4 +216,4 @@ Segue o `docs/GDD.md`; os detalhes e as divergências estão na seção 12 da sp
 - **Radar e rastros** (níveis 1 e 2). **Névoa de guerra** em blocos z17 de 64 bits. **Clima** determinístico e opcional pela rede (só visual), com HUD e chuva. **Familiar** companheiro com +5 m de coleta e três falas.
 - **Escala dos sprites.** Pixel de arte de 2 dp; Conjurador e Familiar 8 m, Ecos 9 m, fantasmas 6 m e 7 m; sprites redesenhados em 20 × 20 e 18 × 18, sem filtro.
 - **Save schema 4**, migração v3 → v4 testada com um save real da 0.13.0.
-- **Ficou de fora ou ainda não foi visto no celular:** ver o resumo do release.
+- **Release.** Época 2 começa em 2026-10-16T04:40:00Z. APK assinado com a mesma chave (SHA-256 a5ee03b0…). Instalação por cima da 0.13.0 e conferência no aparelho **pendentes**: o celular não estava conectado por adb. Até lá, o que passou só em teste: Arisco, Oculto, variantes, névoa, clima, escala dos sprites e o save v3 → v4.
