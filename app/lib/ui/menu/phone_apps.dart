@@ -3,6 +3,7 @@
 library;
 
 import '../../crafting/fusion.dart' show fusionPossible;
+import '../../crafting/ritual.dart' show ritualResearchUnseen;
 import '../../player/game_state.dart';
 
 /// Os ids dos apps. Mudou um id? Mude também o `balance.json` e as falas de `phone_unlock` do `mentor.json`.
@@ -77,6 +78,7 @@ final Map<String, bool Function(GameState)> phoneAppBadges = {
   PhoneAppId.forum: (s) => claimableRequests(s) > 0,
   PhoneAppId.bench: fusionPossible, // fusão possível
   PhoneAppId.profile: profileHasNews,
+  PhoneAppId.bestiary: ritualResearchUnseen, // espaço de ritual novo revelado e ainda não visto
 };
 
 /// O app [a] tem novidade agora (e está liberado).

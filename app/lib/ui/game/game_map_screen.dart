@@ -16,6 +16,10 @@ import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
 import '../../core/tiles.dart';
 import '../../core/weather.dart';
+import '../../core/astro.dart' show moonPhase;
+import '../../core/species_ids.dart' show isRitualOnlyId;
+import '../../crafting/ritual_data.dart';
+import '../ritual/ritual_screen.dart';
 import '../../world/walk_paths.dart';
 import '../../world/weather_source.dart';
 import '../chime.dart';
@@ -371,11 +375,11 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         _toast(r.world.canReach(spawn) ? 'A Aura pega sozinha' : 'Entre na Aura para pegar a Fagulha (a ${r.world.distanceM(spawn).round()} m)');
       case TouchResult.tooFar:
         _toast('a ${r.world.distanceM(spawn).round()} m');
-      case TouchResult.ritual:
-        break; // só o ritual responde: `WorldView.onRitualTarget` já avisou quem o trata
       case TouchResult.encounter:
         r.game.fx.hop(spawn.uid); // o Eco dá um pulo na hora, enquanto a folha sobe
         await _startEncounter(spawn);
+      case TouchResult.ritual:
+        break; // o WorldView já chamou onRitualTarget (_startRitual)
     }
   }
 
@@ -392,9 +396,38 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   Future<void> _startEncounter(WorldSpawn spawn) async {
     final r = _ready;
     if (r == null || _busy) return;
+    if (isRitualOnlyId(spawn.entryId)) return _startRitual(spawn); // não responde à sintonia
     _busy = true;
     try {
       await runEncounter(context, eco: spawn, world: r.world, state: r.session.state, data: r.data, nowUtc: () => tools.clock.nowUtc, vibration: widget.vibration, onMessage: _toast);
+    } finally {
+      _busy = false;
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// O mundo na célula do Eco: hora local do relógio do jogo, bioma da célula, lua e o clima determinístico.
+  WorldCondition _ritualWorld(_Ready r, WorldSpawn eco) {
+    final t = tools.clock.nowUtc;
+    return WorldCondition(
+      hour: localHourOf(t),
+      biome: r.assets.map.biomes.spawnKey(r.assets.map.spawnBiomeAtCell(eco.cellX, eco.cellY)),
+      moon: moonPhase(t),
+      weather: _weatherOfCell(r.session.state.seed, r.data, eco.cellX, eco.cellY, t),
+    );
+  }
+
+  /// Abre o ritual do Eco que não responde à sintonia (a até 30 m).
+  Future<void> _startRitual(WorldSpawn spawn) async {
+    final r = _ready;
+    final recipe = r?.data.ritual.of(spawn.entryId);
+    if (r == null || recipe == null || _busy) return;
+    _busy = true;
+    try {
+      final st = r.session.state;
+      final status = await runRitual(context,
+          state: st, data: r.data, recipe: recipe, uid: spawn.uid, level: spawn.level ?? 1, world: () => _ritualWorld(r, spawn), nowUtc: () => tools.clock.nowUtc, variant: spawn.variant, shiny: spawn.shiny);
+      if (status != null) r.world.remove(spawn); // selou ou escapou: o Eco sai do mapa
     } finally {
       _busy = false;
     }
@@ -475,6 +508,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       viewM: assets.balance.viewM,
       trackerM: assets.balance.trackerM,
       abilities: () => abilitiesOf(session.state, data),
+      ritual: data.ritual,
       itemName: data.itemName,
       onMessage: _toast,
     );
@@ -519,6 +553,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     game.onFollowHeading = _setFollowHeading;
     game.onWalked = _onWalked;
     world.onAggressive = _onAggressive;
+    world.onRitualTarget = _startRitual;
     world.onCollected = game.onCollected;
     world.onFled = game.onEcoFled;
     world.onShiny = _onShiny;

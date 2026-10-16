@@ -1,0 +1,35 @@
+{
+  "format": 1,
+  "rituals": [
+    {
+      "species": "soot.ritual",
+      "condition": { "kind": "hour", "from": 18, "to": 23 },
+      "materials": [
+        { "item": "item.scrap", "qty": 2 },
+        { "item": "item.essence.fire", "qty": 1 },
+        { "item": "item.chalk", "qty": 1 }
+      ],
+      "circle": { "min_level": 5 }
+    },
+    {
+      "species": "frond.ritual",
+      "condition": { "kind": "biome", "value": "green" },
+      "materials": [
+        { "item": "item.herbs", "qty": 3 },
+        { "item": "item.essence.plant", "qty": 1 },
+        { "item": "item.chalk", "qty": 1 }
+      ],
+      "circle": { "min_level": 5 }
+    },
+    {
+      "species": "rill.ritual",
+      "condition": { "kind": "moon", "value": "fullMoon" },
+      "materials": [
+        { "item": "item.pure_water", "qty": 2 },
+        { "item": "item.essence.water", "qty": 1 },
+        { "item": "item.ectoplasm", "qty": 1 }
+      ],
+      "circle": { "min_level": 5 }
+    }
+  ]
+}

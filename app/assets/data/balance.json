@@ -76,5 +76,6 @@
     "shaman": { "start_m": 14, "stop_m": 1.5, "max_speed_mps": 3, "calm_speed_mps": 0.8, "spook_jump_m": 3, "spook_cooldown_s": 1, "par_s": 16, "timeout_s": 40, "spook_penalty": 12, "time_penalty_per_s": 1.5, "timeout_cap": 40 },
     "sealer": { "min_points": 12, "smooth_window": 5, "min_sweep_turns": 0.85, "max_cv": 0.4, "closure_full": 0.25, "closure_zero": 1.0, "size_min": 0.45, "size_max": 1.9, "size_ok_min": 0.7, "size_ok_max": 1.4 }
   },
+  "ritual": { "slots_per_sighting": 1, "seal_anim_s": 2.0, "material_max_qty": 9 },
   "start_inventory": { "item.seal.simple": 5, "item.chalk": 3 }
 }

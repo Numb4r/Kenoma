@@ -62,9 +62,16 @@ class ChatState {
 
   /// As falas do Familiar cujo acontecimento já houve e que ainda não saíram. Saem na hora, todas de uma vez, e só uma
   /// vez cada. Devolve as entregues agora.
-  List<MentorMessage> deliverFamiliar(int nowUtc, MentorScript script, int Function(String event) eventCount) {
+  List<MentorMessage> deliverFamiliar(int nowUtc, MentorScript script, int Function(String event) eventCount) =>
+      _deliverOnEvent([...script.familiar, ...script.school.where((m) => m.requires != null)], nowUtc, eventCount);
+
+  /// Igual a [deliverFamiliar], para as mensagens por acontecimento do JSON (`event_messages`, as do ritual).
+  List<MentorMessage> deliverEvents(int nowUtc, MentorScript script, int Function(String event) eventCount) =>
+      _deliverOnEvent(script.events, nowUtc, eventCount);
+
+  List<MentorMessage> _deliverOnEvent(List<MentorMessage> list, int nowUtc, int Function(String event) eventCount) {
     final out = <MentorMessage>[];
-    for (final m in [...script.familiar, ...script.school.where((m) => m.requires != null)]) {
+    for (final m in list) {
       final req = m.requires;
       if (delivered.any((e) => e.id == m.id) || (req != null && eventCount(req.event) < req.min)) continue;
       delivered.add(ChatEntry(id: m.id, utc: nowUtc));
