@@ -53,7 +53,7 @@ O jogo precisa sustentar cinco anos ou mais. A progressão vertical, o nível do
 | 6 meses | especialização avançada, primeiras grandes obras, Soberanos em dificuldade alta, pactos de favor alto |
 | 1 ano | ciclo completo de estações e do calendário de eventos, primeiro Avatar, maestrias intermediárias |
 | 2 anos | coleções de variantes e Brilhantes, várias Divindades, amuletos sazonais de segundo ciclo |
-| 5 anos | maestrias máximas, cidade inteira purificada, amuletos de quinto ciclo, títulos lendários |
+| 5 anos | maestrias máximas, cidade inteira explorada, amuletos de quinto ciclo, títulos lendários |
 
 Amuletos sazonais evoluem por ciclo. O amuleto de verão do primeiro ano, com materiais do verão seguinte, vira a versão de segundo ciclo, e assim até o quinto, com visual novo a cada ciclo. O calendário real vira o eixo do longo prazo, e as temporadas de panteões externos continuam acrescentando conteúdo.
 
@@ -173,7 +173,54 @@ Fase da lua, nascer e pôr do sol e eclipses são calculados offline a partir de
 - Meio-dia de sol forte enfraquece criaturas noturnas.
 - À noite a Aura encolhe, criaturas noturnas ficam mais fortes e capturar exige selos melhores, mas os spawns são mais raros.
 
-Clima vem do Open-Meteo quando há internet. Sem rede, o jogo usa clima determinístico gerado pela seed. Chuva real aumenta aquáticos e melhora a qualidade de materiais de água.
+Clima vem do Open-Meteo quando há internet. Sem rede, o jogo usa clima determinístico gerado pela seed, por janela de 3 horas e região. O sorteio normal só usa os climas nativos de Campinas, seguindo as estações: tempestades de tarde no verão e neblina, frio, poeira e fumaça no inverno seco. Climas de outras regiões e climas místicos entram por evento (calendário, `events.json` assinado, Lua Carmim, Fendas) ou pelo debug. Todo efeito no mapa que muda o mundo, como o ponto onde um raio cai, sai da seed, para amigos juntos verem o mesmo.
+
+Cada clima interage com o mapa por cinco mecânicas genéricas, combinadas em dados: **ponto de impacto** (algo cai num ponto sorteado e gera spawn ou material ali), **zona temporária** (uma área do mapa ganha modificador por alguns minutos), **coletável que cai do céu**, **modificador do jogador** (Aura, alcance de visão, sintonia) e **movimento** (Fagulhas e tráfego se deslocam).
+
+| Clima nativo | Visual | Spawn | Interação com o mapa |
+| --- | --- | --- | --- |
+| Limpo | nada | nenhum | nenhuma |
+| Sol forte | asfalto tremendo de calor, cores lavadas ao meio-dia | Fogo +, noturnos − | miragens no asfalto: zonas onde nascem Ecos de Fogo |
+| Nublado | sombras de nuvem passando devagar | Sombra + | dentro da sombra de uma nuvem, Sombra ++ enquanto ela passa |
+| Garoa | gotas finas e esparsas | Água + | nenhuma |
+| Chuva | chuva cheia, ruas brilhando | Água ++, Fogo − | poças: zonas onde nascem Ecos de Água e água pura |
+| Tempestade | chuva forte inclinada, céu escuro | Elétrico ++, Água + | raios: ponto de impacto com clarão, trovão, poeira e marca queimada; às vezes nasce um Eco Elétrico ali |
+| Granizo | pedras de gelo quicando no chão | Terra +, Água + | coletável: pedras de granizo viram cristal de gelo, material raro, por poucos minutos |
+| Arco-íris | arco no céu depois de chuva com sol | Luz ++, Feérico + | o pé do arco é um ponto no mapa com material raro e chance de Feérico |
+| Neblina | véu branco nas bordas, vultos ao longe | Espectral ++ | visão dos Ecos cai para 60 m; Espectrais aparecem e somem a até 40 m |
+| Frio | sopro visível, geada nas áreas verdes de manhã | Espectral +, Fogo − | geada guarda pegadas: rastros de Ecos ficam visíveis por mais tempo |
+| Vento | folhas e papéis cruzando a tela | Feérico + | Fagulhas derivam devagar na direção do vento |
+| Vendaval | lixo e galhos voando, árvores curvadas | Feérico ++ | papéis voando são coletáveis e viram rumores no fórum |
+| Poeira seca | partículas amareladas, céu amarelado | Terra ++, Fogo +, Planta − | redemoinhos de poeira andam pela rua e deixam Ecos de Terra e poeira por onde passam |
+| Fumaça de queimada | céu alaranjado, cinza caindo | Fogo ++, Planta − | zonas de cinza com Ecos de Fogo; vem do INPE quando online |
+
+| Clima de outras regiões (eventos) | Visual | Spawn | Interação com o mapa |
+| --- | --- | --- | --- |
+| Neve | neve acumulando em parques e telhados | Água +, Espectral + | pegadas do jogador e dos Ecos ficam marcadas na neve, e seguir pegadas leva ao Eco |
+| Nevasca | neve horizontal, visão curta | Espectral ++ | visão dos Ecos cai para 40 m e a Aura encolhe 2 m |
+| Tempestade de areia | parede de areia, dunas nas ruas | Terra ++ | dunas temporárias escondem materiais que só aparecem cavando (escavação) |
+| Dilúvio | ruas alagadas, tráfego lento | Água +++ | ruas viram zonas de água com Ecos de Água por toda parte |
+| Onda de calor | asfalto derretendo, sol branco | Fogo +++ | Fagulhas evaporam se não forem coletadas em 2 minutos |
+| Tornado | funil cruzando o mapa | Feérico ++, Elétrico + | puxa Fagulhas no caminho e as solta mais adiante, numa trilha |
+| Aurora | céu ondulando em verde e violeta | Luz ++, Espectral + | tolerância da sintonia maior durante a aurora |
+| Chuva ácida | gotas esverdeadas, metal enferrujando | Metal ++ | sucata enferrujada aparece como material extra no Urbano |
+| Chuva de meteoros | estrelas cadentes | Luz +, Dracônico + | pontos de impacto com Fagulhas raras, como os raios |
+
+| Clima místico (do Véu) | Visual | Spawn | Interação com o mapa |
+| --- | --- | --- | --- |
+| Neve do Véu | flocos cinza-violeta lentos que não acumulam | Espectral ++, Sombra + | flocos que tocam o chão viram Pó de Essência coletável por pouco tempo; o Familiar avisa que não é neve |
+| Chuva Carmim | gotas vermelhas, só na Lua Carmim | variantes Carmesim ++ | poças vermelhas onde nascem Carmesins |
+| Chuva de Fagulhas | Fagulhas caindo do céu como brasas | Fagulhas +++ | coletáveis que caem do céu: o grande evento de farm |
+| Tempestade de Ecos | raios violeta, céu rachado | nível dos Ecos + | raios violeta abrem microfendas temporárias com Ecos de nível alto |
+| Estática | pixels e glitch caindo, HUD falhando | Digital ++, Elétrico + | sintonia com ruído extra; o Tecnomante fica imune ao ruído |
+| Silêncio | som some, cores dessaturam | Espectral +, todos mais calmos | Ecos não fogem nem atacam, mas a Exposição ao Véu sobe; os Que Escutam estão ouvindo |
+| Cinzas do Véu | cinza violeta caindo devagar | Corrompidas + | chance de Corrompida nos spawns; risco e recompensa |
+| Procissão na névoa | névoa com figuras andando em fila | Espectral +++ | as figuras deixam rastro; seguir até o fim leva a um Espectral raro |
+| Vento das Fendas | vento violeta soprando numa direção fixa | Dracônico + | Fagulhas derivam na direção da Fenda mais próxima, apontando onde ela está |
+| Céu Invertido | chuva subindo, objetos flutuando | Feérico ++ | Fagulhas flutuam e somem no céu se não forem pegas logo |
+| Maré do Véu | o mapa ondula, prédios antigos aparecem translúcidos | Ecos das Eras Antigas | zonas fantasmas com construções de outra era e spawns antigos |
+| Sol Negro | dia escuro, sombras invertidas | Sombra +++, Luz − | sombras viram zonas onde Sombra nasce em dobro |
+| Garoa Prismática | gotas que refratam em cores | Brilhante ×2 | chance de Brilhante dobrada enquanto durar |
 
 ### Eventos
 
@@ -183,10 +230,6 @@ Clima vem do Open-Meteo quando há internet. Sem rede, o jogo usa clima determin
 - Temporadas de panteão, quando Fendas de um panteão externo ficam mais frequentes por algumas semanas.
 
 Eventos forçados vêm de duas fontes. Um calendário embarcado no app e um JSON estático no GitHub Pages consultado quando houver internet.
-
-### Névoa de guerra
-
-O mapa começa encoberto e é revelado conforme o jogador anda, salvo localmente. Bairros totalmente revelados viram purificados e dão bônus permanente pequeno. Áreas reveladas também liberam expedições.
 
 ### Ley Lines
 
@@ -542,7 +585,7 @@ A escola é escolhida cedo, no nível 3 do tutorial, e define o estilo de jogo d
 
 | Escola | Criaturas | Modificação | Captura | Mapa |
 | --- | --- | --- | --- | --- |
-| Tecnomante | fabrica Artificiais (autômatos e golens) | Implantes, módulos tecnomágicos instaláveis em qualquer criatura | tolerância maior na sintonia, gadgets que estabilizam o sinal | Sentinelas, balizas fixas em células que revelam névoa e detectam rastros à distância |
+| Tecnomante | fabrica Artificiais (autômatos e golens) | Implantes, módulos tecnomágicos instaláveis em qualquer criatura | tolerância maior na sintonia, gadgets que estabilizam o sinal | Sentinelas, balizas fixas em células que revelam Ecos ocultos e detectam rastros à distância |
 | Xamã Urbano | Guardiões de Lugar, espíritos de lugares reais frequentados | Vínculo ampliado, vincula criaturas que para os outros só aceitam selo, inclusive agressivas | afinidade em dobro no vínculo, Incorporação amplia a sintonia | conversa com criaturas, ariscas não fogem e a Aura é maior |
 | Selador | Quimeras, duas criaturas de famílias diferentes num mesmo selo | Relicários, sela uma criatura num objeto e cria equipamento com a habilidade dela | mais tempo e sigilos avançados na fase de pressão do ritual | armadilhas de selo que capturam Ecos sozinhas na ausência |
 
@@ -595,7 +638,7 @@ Depois do 40, a experiência alimenta maestrias, progressão horizontal que não
 | --- | --- | --- |
 | Sintonia | capturas | tolerância, novos minigames, padrões raros |
 | Criação | crafting | qualidade, receitas raras, grandes obras e Núcleo mais baratos |
-| Cidade | névoa, bairros purificados, Ley Lines | Aura, Leys próprias, pontos de interesse |
+| Cidade | exploração, Ley Lines | Aura, Leys próprias, pontos de interesse |
 | Véu | Fendas, incursões, dimensões | resistência à Exposição, acesso a dimensões |
 | Ciclos | eventos, sazonais, lua | receitas de janela raras, coleções anuais |
 
@@ -847,7 +890,7 @@ De tempos em tempos, de forma determinística, uma Fenda pequena abre na casa du
 
 ### Expedições
 
-Criaturas são enviadas a células que o jogador já revelou na névoa de guerra e voltam depois de algumas horas reais com materiais daquele bioma. Só funciona em lugares já visitados.
+Criaturas são enviadas a células por onde o jogador já passou e voltam depois de algumas horas reais com materiais daquele bioma. Só funciona em lugares já visitados.
 
 ### Fenda Profunda
 
@@ -1318,7 +1361,7 @@ Sem servidor não há anti-cheat real. As proteções visam só o grupo de amigo
 ### Save, segundo plano e tempo
 
 - Save local com backup por arquivo e Google Drive desde a fase 0 (ver Formato do save).
-- GPS só com o app aberto. A distância com o app fechado vem do contador de passos do sistema, usado nas recompensas de caminhada (companheiro, smartwatch, Ley Lines).
+- Com o app fechado há dois modos. O contador de passos do sistema funciona sempre e vira recompensa de caminhada ao abrir o app, com teto diário. A Patrulha do Véu é opcional e ligada pelo jogador: um serviço em primeiro plano com notificação fixa mantém o GPS, coleta Fagulhas e materiais na Aura, marca Ecos ao alcance e vibra para avisar, sem sintonia; ela desliga sozinha depois de duas horas ou com bateria baixa. Sintonizar continua exigindo o app aberto.
 - Notificações locais para lures, invasões, pedidos do patrono, Fendas crescendo e Lendas chegando ao Mito.
 - Janelas de spawn, eventos e ciclos são calculadas em UTC. Só a exibição usa o horário local.
 
@@ -1388,7 +1431,7 @@ Este GDD é a visão de longo prazo, não o escopo de implementação. Cada sist
 | Fase | Prioridade | Sistemas | Critério para avançar |
 | --- | --- | --- | --- |
 | 0 | Núcleo | pipeline OSM da região, mapa pixel art procedural, spawns determinísticos, Fagulhas e Ecos de 3 famílias curtas, tipos dos biomas do MVP, sintonia por dial com resistência por tipo, marcação, Essência e destilação de Ecos, Círculo com habilidades de mapa, crafting de selos e tônicos, nível do Conjurador até 15, seed do grupo por QR, bestiário básico, save local com backup, janelas em UTC | jogar duas semanas andando e ainda querer abrir o app |
-| 1 | Expansão | horários e astronomia offline, rotação da câmera, clima, névoa de guerra, rastros e scanner, comportamento das criaturas, variantes de bioma e Brilhante, qualidade de material, descoberta de receitas, coletores, refino, receitas de lua e estação do ano, Espíritos e fusão, ritual básico, atributos e níveis do Conjurador até 20, notificações locais, Familiar, tutorial com mentor e fórum no chat, escolha de escola com bônus de captura, diárias do fórum | loop de rua completo e variado |
+| 1 | Expansão | horários e astronomia offline, rotação da câmera, clima, rastros e scanner, comportamento das criaturas, variantes de bioma e Brilhante, qualidade de material, descoberta de receitas, coletores, refino, receitas de lua e estação do ano, Espíritos e fusão, ritual básico, atributos e níveis do Conjurador até 20, notificações locais, Familiar, tutorial com mentor e fórum no chat, escolha de escola com bônus de captura, diárias do fórum | loop de rua completo e variado |
 | 2 | Expansão | casa, estações no mundo, gadgets, combinação de equipamentos, Constelações, lures, decoração, expedições, estabilidade, companheiro, vínculo | jogo se sustenta em dias sem sair |
 | 3 | Expansão | Fendas com ciclo de vida, prédios com altura, Incursões de dungeon e de Fenda, Soberanos, tipos Dracônico, Feérico e Digital, Artificiais e Quimeras das escolas, Entidades Maiores, Exposição ao Véu, mecânicas exclusivas das escolas, linhas de especialização, build com magias e transcrição, níveis até 40, troca de escola, magias, grimórios, fase de pressão do ritual, rituais de mundo, grandes obras, receitas de janela, altares efêmeros, Corrompidas, história completa do mentor, semanal do mentor, Mercador Errante | progressão do Conjurador completa |
 | Futuro | Futuro | dimensões e panteões de expansão, Arquétipos, Divindades e Primordiais, marcas Singular, Lenda Urbana, Divino e Herói, rumores com dedução, Fenda Profunda, invasões, maestrias, especializações avançadas, amuletos de ciclo, Ley Lines próprias, pactos, Divindades e Avatares, modo trânsito, trilha adaptativa, eventos de calendário e Lua Carmim, convergências e panteões externos, social, sugestão de pontos, anti-cheat robusto, minigames extras de sintonia, cosméticos | revisado quando a fase 3 estiver pronta |

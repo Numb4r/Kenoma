@@ -612,3 +612,16 @@ Detalhes da densidade em `docs/densidade-epoca2.md`.
 - **Alcance de toque visível.** Com um Eco a até 40 m (`map.touch_ring_show_m`), um anel fino e fraco de 30 m aparece em volta do avatar, diferente do círculo tracejado da Aura. O Eco a até 30 m ganha um contorno violeta pulsando; fora disso fica esmaecido.
 - **Densidade por rota e rodovias:** ver `docs/densidade-epoca2.md`.
 - **Arisco:** a fuga usa a velocidade do GPS cru (média de 5 s); a coleta e a Aura seguem o marcador suavizado.
+
+## 14. Fatia 3 (0.15.0): progressão, celular e perfil
+
+Números em `balance.json` (blocos `unlocks`, `school`, `school_tests`, `fusion`, `spirit`, `power`, `talent`, `ritual`, `phone`, `steps`).
+
+- **Níveis:** teto 20; curva `60 × n^1,25` em dezenas; um ponto de talento por nível; Aura +1 m nos níveis 10 e 20 (`unlocks.aura_bonus`). Desbloqueios: escola 3, fusão 6, ritual 8, Espíritos no mapa 8. `saveSchemaVersion` 5: bloco `conjurer` (escola, testes, talentos, pesquisa de ritual, dias jogados, fusões, nome).
+- **Escolas** (`School`: technomancer, shaman, sealer): tolerância +10% (Tecnomante), Aura +2 m e Ariscos não fogem (Xamã Urbano), progresso da sintonia +15% (Selador). Os testes pontuam 0 a 100; a escolha só vale depois dos três testes e é definitiva até o nível 30.
+- **Espíritos:** `<família>.spirit` (fusão ou spawn raro; habilidade de mapa um degrau acima; nível até 30; até 2 traços) e `<família>.ritual` (`ritual_only`). A camada é lida pelo sufixo do id (`core/species_ids.dart`). Resistência de sintonia do Espírito `+spirit.resistance_add`. Altura no mapa `spirit.height_m` (9 m).
+- **Fusão:** 5 Ecos da mesma família (média dos níveis, arredondada) + `fusion.essence_cost` de Essência do tipo. Os Ecos escolhidos saem; se algum está no Círculo o jogador confirma.
+- **Ritual:** `assets/data/rituals.json` por espécie ritual (espaços de material, condição do mundo, Círculo). Cada Eco de ritual visto revela `ritual.slots_per_sighting` espaços; combinação certa sela, errada faz a criatura fugir e perde os materiais. Fase de pressão: fase 3.
+- **Épocas:** a época 4 acrescenta os itens 9 (Espírito) e 10 (ritual) à densidade da época 3. A época 3 e a 4 só existem com `street_life`.
+- **Feed assinado:** `epochs.json` e `events.json` com `.sig` Ed25519 (hex, 128 caracteres) sobre os bytes do arquivo; a chave pública está em `app/lib/net/feed_config.dart`. O feed só pode acrescentar épocas novas ou estender `valid_until_utc` de uma época igual; qualquer outra mudança rejeita o arquivo. Ver `docs/assinatura.md`.
+

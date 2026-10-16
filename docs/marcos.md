@@ -227,3 +227,16 @@ Vem antes da Rua viva (0.14.0). Especificação na seção 13 da spec e em `docs
 - Retorno visual de toque em menos de 100 ms (efeitos de coleta, pulo, costura e fuga).
 - A 0.13.1 sai com a Rua viva escondida (`STREET_LIFE=false`): névoa, Radar, clima no HUD, chuva e Familiar só aparecem na 0.14.0.
 - Ajustes depois do teste na rua: câmera de 40 a 80 m (50 m no padrão) e pixel de arte de 3 dp; anel do alcance de toque e contorno violeta; densidade por rota com rodovias fora do caminho; Arisco pelo GPS cru; Tráfego do Véu refeito (calçadas, entradas fora da tela, modelos e paletas).
+
+## Fase 1 · fatia 3 · Progressão, celular e perfil (0.15.0)
+
+Spec na seção 14 de `docs/fase0-spec.md`. **A época 4 muda o mundo** (Espíritos e Espíritos de ritual raros, itens 9 e 10); o resto é cliente.
+
+- **Níveis até 20**, curva 60 × n^1,25 (21.290 XP do 1 ao 20), um ponto de talento por nível (só acumulam), Aura +1 m nos níveis 10 e 20. **Save schema 5**, migração v4 → v5 testada num save gravado pelo código da 0.14.0.
+- **Escola no nível 3:** três testes (sinal, calma, sigilo), escolha definitiva até o nível 30, bônus de captura por escola e Familiar com a cor e o acessório da escola.
+- **Fusão no nível 6** (5 Ecos + Essência viram o Espírito), **Espíritos no mapa no nível 8**, atributos Poder, Habilidade e Traços na Coleção.
+- **Ritual básico no nível 8**, três espécies só de ritual, espaços revelados pela pesquisa.
+- **Perfil** (retrato do HUD ou app), **celular redesenhado** (tema do Design System, apps bloqueados por nível, bolinhas de novidade), **menu de debug reorganizado** (busca, favoritos, seções).
+- **Conectividade leve:** épocas e eventos assinados (Ed25519), backup automático do Android, contador de passos e modo bolso, tudo opcional.
+- **Ficou de fora:** árvores de talento, troca de escola, estabilidade, fase de pressão do ritual, publicação no GitHub Pages (os arquivos assinados estão em `docs/pages/`; nada foi publicado).
+
