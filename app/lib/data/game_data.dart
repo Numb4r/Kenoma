@@ -12,6 +12,7 @@ import '../story/forum_data.dart';
 import '../core/weather.dart';
 import '../world/street_life_balance.dart';
 import '../story/mentor_script.dart';
+import '../ui/menu/phone_apps.dart';
 import 'balance_version.dart';
 import 'tuning_data.dart';
 
@@ -52,6 +53,7 @@ class GameData {
     required this.forum,
     required this.street,
     this.variants = const {},
+    this.phone = const PhoneApps([]),
   });
 
   static Future<GameData> load([AssetBundle? bundle]) async {
@@ -85,6 +87,7 @@ class GameData {
         mentor: MentorScript.fromJson(mentor),
         forum: ForumData.fromJson(forum),
         street: StreetLifeBalance(balance),
+        phone: PhoneApps.fromBalance(balance),
         variants: {
           for (final e in ((creatures['variants'] as Map<String, dynamic>?) ?? const {}).entries)
             e.key: VariantInfo(
@@ -124,6 +127,9 @@ class GameData {
 
   /// XP, descanso, marcação e destilação do `balance.json`.
   final ProgressBalance progress;
+
+  /// A tabela de apps do celular e o nível que libera cada um (`phone.apps` do `balance.json`).
+  final PhoneApps phone;
 
   /// O roteiro do mentor (chat) e os pedidos do fórum Limen.
   final MentorScript mentor;

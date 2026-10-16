@@ -43,6 +43,8 @@ import '../colors.dart';
 import '../map/map_assets.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
 import '../menu/phone_menu.dart';
+import '../menu/phone_shell.dart';
+import '../menu/profile_screen.dart';
 import '../menu/radar_screen.dart';
 import '../../story/local_notifier.dart';
 import '../../story/notification_plan.dart';
@@ -658,7 +660,11 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                   onTap: (m) => _startEncounter(m.toSpawn()),
                 ),
               ),
-              Positioned(left: 8, bottom: 8, child: PortraitHud(state: r.session.state, frame: game.playerFrames.isEmpty ? null : game.playerFrames.first)),
+              Positioned(left: 8, bottom: 8, child: PortraitHud(
+                state: r.session.state,
+                frame: game.playerFrames.isEmpty ? null : game.playerFrames.first,
+                onTap: () => Navigator.of(context).push(phoneRoute<void>(ProfileScreen(state: r.session.state, data: r.data))),
+              )),
               Positioned(
                 left: 0,
                 right: 0,
@@ -667,7 +673,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                   child: ListenableBuilder(
                     listenable: r.session.state,
                     builder: (context, _) => PhoneButton(
-                      alert: phoneHasAlert(r.session.state),
+                      alert: phoneHasAlert(r.session.state, r.data.phone),
                       onTap: () => showPhoneMenu(
                         context,
                         state: r.session.state,
@@ -680,6 +686,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                           onSweep: () => r.world.radar(tools.clock.nowUtc),
                         ),
                         nowUtc: () => tools.clock.nowUtc,
+                        weather: () => _shownWeather,
+                        lat: () => game.playerLat,
                         epochId: () => r.data.schedule.select(tools.clock.nowUtc).epoch.id,
                       ),
                     ),

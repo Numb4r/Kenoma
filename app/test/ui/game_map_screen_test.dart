@@ -18,6 +18,7 @@ import 'package:kenoma/core/behavior.dart';
 import 'package:kenoma/ui/game/player_hud.dart';
 import 'package:kenoma/ui/menu/circle_screen.dart';
 import 'package:kenoma/ui/menu/phone_menu.dart';
+import 'package:kenoma/ui/menu/profile_screen.dart';
 import 'package:kenoma/ui/game/game_map_screen.dart';
 import 'package:kenoma/ui/game/joystick.dart';
 import 'package:kenoma/world/location_access.dart';
@@ -646,17 +647,26 @@ void main() {
       return Offset(sx, sy);
     }
 
-    testWidgets('o botão do celular abre o menu com Coleção, Círculo, Bestiário e Bancada', (tester) async {
+    testWidgets('o botão do celular abre o menu: apps do nível 1 abertos, o resto bloqueado', (tester) async {
       final env = await pumpGame(tester);
       expect(find.byType(PhoneButton), findsOneWidget);
       await tester.tap(find.byType(PhoneButton));
       await env.settle(10);
-      for (final label in ['COLEÇÃO', 'CÍRCULO', 'BESTIÁRIO', 'BANCADA']) {
+      for (final label in ['BOLSA', 'CÍRCULO', 'BESTIÁRIO', 'PERFIL']) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
+      expect(find.text('BANCADA'), findsNothing, reason: 'nível 2');
+      expect(find.text('???'), findsNWidgets(4));
       await tester.tap(find.text('CÍRCULO'));
       await env.settle(20);
       expect(find.byType(CircleScreen), findsOneWidget);
+    });
+
+    testWidgets('tocar no retrato abre o Perfil', (tester) async {
+      final env = await pumpGame(tester);
+      await tester.tap(find.byKey(const Key('portrait-hud')));
+      await env.settle(20);
+      expect(find.byType(ProfileScreen), findsOneWidget);
     });
 
     testWidgets('o retrato mostra o nível e a barra de XP sobe com o XP', (tester) async {
@@ -868,8 +878,9 @@ void main() {
       expect(w.state.story.count('hidden_revealed'), greaterThan(0));
     });
 
-    testWidgets('o menu do celular tem o Radar', (tester) async {
+    testWidgets('o menu do celular tem o Radar a partir do nível 2', (tester) async {
       final env = await pumpGame(tester);
+      env.game.worldView!.state.levelOverride = 2;
       await tester.tap(find.byType(PhoneButton));
       await env.settle(10);
       expect(find.text('RADAR'), findsOneWidget);

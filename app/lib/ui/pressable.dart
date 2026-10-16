@@ -1,4 +1,4 @@
-/// Toque com retorno na hora: o filho afunda 2 dp ao encostar o dedo e volta em 80 ms. O retorno não espera o resultado
+/// Toque com retorno na hora: o filho afunda 3 dp ao encostar o dedo e volta em 80 ms. O retorno não espera o resultado
 /// do toque (abrir tela, salvar): ele aparece no primeiro quadro depois do dedo.
 library;
 
@@ -6,7 +6,7 @@ import 'package:flutter/material.dart' show AnimationStyle;
 import 'package:flutter/widgets.dart';
 
 const Duration pressDuration = Duration(milliseconds: 80);
-const double pressDepth = 2;
+const double pressDepth = 3;
 
 /// As folhas de baixo (celular, preparo do encontro) deslizam em 200 ms ao abrir e ao fechar.
 const AnimationStyle sheetSlide = AnimationStyle(duration: Duration(milliseconds: 200), reverseDuration: Duration(milliseconds: 200));
