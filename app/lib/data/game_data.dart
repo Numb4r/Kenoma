@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../core/epochs.dart';
+import '../net/signed_feed.dart';
 import '../player/progress_balance.dart';
 import '../story/forum_data.dart';
 import '../core/weather.dart';
@@ -64,7 +65,7 @@ class GameData {
       balanceVersion: balanceVersionOf(balanceBytes),
       creatures: await json('creatures'),
       items: await json('items'),
-      epochs: await json('epochs'),
+      epochs: await loadEpochsJson(bundle: b),
       recipes: await json('recipes'),
       mentor: await json('mentor'),
       forum: await json('forum'),

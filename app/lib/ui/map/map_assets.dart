@@ -10,6 +10,7 @@ import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../../core/biomes.dart';
 import '../../core/epochs.dart';
+import '../../net/signed_feed.dart';
 import '../../data/nowalk_pack.dart';
 import '../../data/visual_pack.dart';
 import '../../world/visual_map.dart';
@@ -65,7 +66,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       if (pack is! VisualPack) return pack as String;
       visual = VisualMap(pack);
       // A época 2 em diante fixa as vias bloqueadas; vale o pacote da primeira época que o lista, mesmo antes dela começar.
-      final schedule = EpochSchedule.fromJson(jsonDecode(await assets.loadString('assets/data/epochs.json')) as Map<String, dynamic>);
+      final schedule = EpochSchedule.fromJson(await loadEpochsJson(bundle: assets));
       final withNoWalk = schedule.epochs.where((e) => e.walkable?.exclude != null).toList();
       if (withNoWalk.isNotEmpty) {
         final nw = await loadNoWalkPack(epoch: withNoWalk.first, bundle: assets);
