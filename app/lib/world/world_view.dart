@@ -9,6 +9,7 @@ import '../core/features.dart';
 
 import '../core/behavior.dart';
 import '../core/tiles.dart';
+import '../player/conjurer_balance.dart' show School;
 import '../player/circle.dart' show MapAbilities;
 import '../player/game_state.dart';
 import 'debug_force.dart';
@@ -61,7 +62,13 @@ class WorldView {
 
   /// O raio de coleta automática de Fagulhas e materiais: a Aura base mais o Círculo (Aura e coleta) e o Familiar, que
   /// anda ao lado do Conjurador e não ocupa espaço no Círculo. É o ÚNICO valor: a lógica e o círculo desenhado leem este.
-  double get auraRadiusM => auraM + abilities().auraBonusM + abilities().pickupBonusM + (streetLifeEnabled ? street.familiarPickupBonusM : 0);
+  double get auraRadiusM =>
+      auraM +
+      abilities().auraBonusM +
+      abilities().pickupBonusM +
+      (streetLifeEnabled ? street.familiarPickupBonusM : 0) +
+      state.cb.auraBonusFor(state.playerLevel) +
+      (state.conjurer.school == School.shaman ? state.cb.shamanAuraBonusM : 0);
 
   /// Alcance do rastreador: o maior entre o padrão e o do Círculo.
   double get trackerRangeM => math.max(trackerM, abilities().trackerRangeM);
@@ -240,7 +247,8 @@ class WorldView {
   bool _entered(WorldSpawn s, int tUtc) {
     switch (s.behavior) {
       case EcoBehavior.skittish:
-        if (playerSpeedMps > street.skittishFleeSpeedMps) {
+        // O Xamã Urbano conversa com as criaturas: os Ariscos não fogem dele.
+        if (state.conjurer.school != School.shaman && playerSpeedMps > street.skittishFleeSpeedMps) {
           state.markDone(s.uid, tUtc); // a fuga entra no registro, como na falha
           onMessage?.call('Um Eco arisco fugiu: você chegou rápido demais');
           return true;

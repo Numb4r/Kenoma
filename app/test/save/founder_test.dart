@@ -126,7 +126,7 @@ void main() {
       final s = await GameSession.open(store: store, startInventory: {}, balance: loadProgressBalance(), nowUtc: () => 1790040000, nextInt: (n) => 0, appVersion: '0.12.0+18', epochOf: (t) => 1);
       await s.flush();
       final j = store.json!;
-      expect((j['schema_version'], j['app_version'], j['epoch'], j['created_utc'], j['last_seen_utc']), (4, '0.12.0+18', 1, 1790040000, 1790040000));
+      expect((j['schema_version'], j['app_version'], j['epoch'], j['created_utc'], j['last_seen_utc']), (5, '0.12.0+18', 1, 1790040000, 1790040000));
     });
 
     test('o override do debug não empurra o last_seen_utc: ele segue o relógio real', () async {

@@ -16,7 +16,7 @@ void main() {
   group('operações no save', () {
     test('revelar névoa marca o conjunto de debug, não o real, e migra o save antigo sem perder nada', () {
       final out = revealDebugFog(v3, kUnicamp.$1, kUnicamp.$2, 600);
-      expect(out['schema_version'], 4);
+      expect(out['schema_version'], 5);
       expect(out['inventory'], {'item.chalk': 2});
       final fog = FogState.fromJson(out['fog'] as Map<String, dynamic>);
       expect(fog.debugCount, greaterThan(500), reason: '600 m de raio são centenas de células de 35 m');

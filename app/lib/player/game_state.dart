@@ -11,6 +11,8 @@ import '../story/mentor_script.dart';
 import '../story/story_state.dart';
 import '../world/fog.dart';
 import 'bestiary.dart';
+import 'conjurer.dart';
+import 'conjurer_balance.dart';
 import 'mark.dart';
 import 'progress_balance.dart';
 import 'progression.dart';
@@ -18,7 +20,7 @@ import 'progression.dart';
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 4;
+const int saveSchemaVersion = 5;
 
 /// Uma criatura capturada. O uid é o do spawn de onde ela veio.
 class CreatureInstance {
@@ -30,11 +32,12 @@ class CreatureInstance {
     this.xp = 0,
     this.variant,
     this.shiny = false,
+    this.traits = const [],
   });
 
   /// Cópia com [level] e [xp] novos.
   CreatureInstance advanced({required int level, required int xp}) =>
-      CreatureInstance(uid: uid, speciesId: speciesId, level: level, capturedUtc: capturedUtc, xp: xp, variant: variant, shiny: shiny);
+      CreatureInstance(uid: uid, speciesId: speciesId, level: level, capturedUtc: capturedUtc, xp: xp, variant: variant, shiny: shiny, traits: traits);
 
   factory CreatureInstance.fromJson(Map<String, dynamic> j) => CreatureInstance(
         uid: j['uid'] as String,
@@ -44,6 +47,7 @@ class CreatureInstance {
         capturedUtc: j['captured_utc'] as int,
         variant: j['variant'] as String?,
         shiny: (j['shiny'] as bool?) ?? false,
+        traits: [for (final t in (j['traits'] as List<dynamic>?) ?? const []) t as String],
       );
 
   /// Uid do spawn, em texto (o inteiro de 64 bits com sinal, em decimal).
@@ -57,6 +61,9 @@ class CreatureInstance {
   final String? variant;
   final bool shiny;
 
+  /// Traços herdados (só os Espíritos, vindos dos Ecos da fusão): chaves de variante (`urban`...) ou `shiny`.
+  final List<String> traits;
+
   Map<String, dynamic> toJson() => {
         'uid': uid,
         'species': speciesId,
@@ -65,6 +72,7 @@ class CreatureInstance {
         'captured_utc': capturedUtc,
         if (variant != null) 'variant': variant,
         if (shiny) 'shiny': true,
+        if (traits.isNotEmpty) 'traits': traits,
       };
 }
 
@@ -84,6 +92,7 @@ class GameState extends ChangeNotifier {
     this.createdUtc,
     StoryState? story,
     FogState? fog,
+    ConjurerState? conjurer,
     this.radarLastUtc = 0,
     Map<String, int>? hiddenRevealed,
     Map<String, dynamic>? settings,
@@ -99,6 +108,7 @@ class GameState extends ChangeNotifier {
         settings = {...?settings},
         story = story ?? StoryState(),
         fog = fog ?? FogState(),
+        conjurer = conjurer ?? ConjurerState(),
         hiddenRevealed = {...?hiddenRevealed},
         _extra = {...?extra};
 
@@ -109,10 +119,10 @@ class GameState extends ChangeNotifier {
   factory GameState.fromJson(Map<String, dynamic> j, ProgressBalance balance) {
     const known = {
       'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'marks', 'saved_utc',
-      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', 'fog', 'radar',
+      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', 'fog', 'radar', 'conjurer',
     };
     final progress = PlayerProgress.fromJson(j['player'] as Map<String, dynamic>?, balance)..settleBanked();
-    return GameState(
+    final state = GameState(
       groupCode: j['group_code'] as String,
       balance: balance,
       progress: progress,
@@ -129,6 +139,7 @@ class GameState extends ChangeNotifier {
       createdUtc: j['created_utc'] as int?,
       story: StoryState.fromJson(j['story'] as Map<String, dynamic>?),
       fog: FogState.fromJson(j['fog'] as Map<String, dynamic>?),
+      conjurer: ConjurerState.fromJson(j['conjurer'] as Map<String, dynamic>?),
       radarLastUtc: ((j['radar'] as Map<String, dynamic>?)?['last_utc'] as int?) ?? 0,
       hiddenRevealed: {
         for (final e in (((j['radar'] as Map<String, dynamic>?)?['revealed'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as int,
@@ -138,6 +149,35 @@ class GameState extends ChangeNotifier {
       // Campos que esta versão não conhece são preservados (spec, seção 10).
       extra: {for (final e in j.entries) if (!known.contains(e.key)) e.key: e.value},
     );
+    // Um ponto de talento por nível já subido: saves antigos (e o XP guardado que o teto novo libera) entram com o que o nível pede.
+    final owed = (progress.level - 1) * state.cb.talentPerLevel;
+    if (state.conjurer.talentEarned < owed) state.conjurer.talentEarned = owed;
+    return state;
+  }
+
+  /// O Conjurador já pode escolher a escola (nível 3 ou mais) e ainda não escolheu.
+  bool get canChooseSchool => conjurer.school == null && progress.level >= cb.schoolLevel;
+
+  /// Escolhe a escola, de forma definitiva (a troca vem só no nível 30, numa fatia futura). `false` se não pode.
+  bool chooseSchool(School school) {
+    if (!canChooseSchool) return false;
+    conjurer.school = school;
+    recordEvent('school_chosen', school.id, 1);
+    notifyListeners();
+    return true;
+  }
+
+  /// O mentor mandou os testes (a escola já é possível e eles ainda não foram oferecidos).
+  void offerSchoolTests() {
+    if (conjurer.testsOffered) return;
+    conjurer.testsOffered = true;
+    notifyListeners();
+  }
+
+  /// A nota (0 a 100) do jogador no teste da [school].
+  void recordSchoolTest(School school, int score) {
+    conjurer.testScores[school.id] = score.clamp(0, 100);
+    notifyListeners();
   }
 
   /// Código do grupo: a seed do mundo vem dele.
@@ -173,6 +213,12 @@ class GameState extends ChangeNotifier {
 
   /// A névoa de guerra: as células z20 reveladas pelo caminho andado.
   final FogState fog;
+
+  /// Escola, testes, talentos, pesquisa de rituais e contagens do Perfil.
+  final ConjurerState conjurer;
+
+  /// Os números do Conjurador do `balance.json`: desbloqueios, escolas, fusão.
+  ConjurerBalance get cb => balance.conjurer;
 
   /// A última varredura do Radar (segundos UTC) e os Ocultos que ela revelou, `uid -> até quando`.
   int radarLastUtc;
@@ -287,6 +333,7 @@ class GameState extends ChangeNotifier {
   /// Ganha XP de Conjurador em [nowUtc]. Devolve quantos níveis subiu.
   int gainXp(int raw, int nowUtc) {
     final up = progress.gain(raw, nowUtc);
+    conjurer.talentEarned += up * cb.talentPerLevel;
     notifyListeners();
     return up;
   }
@@ -446,6 +493,7 @@ class GameState extends ChangeNotifier {
         'settings': settings,
         'story': story.toJson(),
         'fog': fog.toJson(),
+        'conjurer': conjurer.toJson(),
         'radar': {'last_utc': radarLastUtc, 'revealed': hiddenRevealed},
         'inventory': inventory,
         'collection': [for (final c in collection) c.toJson()],

@@ -44,7 +44,7 @@
   },
   "xp": {
     "player_curve": { "a": 60, "exponent": 1.25, "round_to": 10 },
-    "player_level_cap": 15,
+    "player_level_cap": 20,
     "tuning_base": 20, "tuning_per_eco_level": 2, "tuning_max": 60,
     "first_capture": 100, "spark": 2, "material": 5,
     "rest": { "daily_doubled_xp": 350, "max_banked_xp": 1050 },
@@ -52,6 +52,21 @@
     "creature_curve_per_level": 30,
     "creature_level_cap": 20
   },
+  "unlocks": {
+    "school_level": 3,
+    "fusion_level": 6,
+    "ritual_level": 8,
+    "spirit_spawn_level": 8,
+    "aura_bonus": [ { "level": 10, "m": 1 }, { "level": 20, "m": 1 } ]
+  },
+  "school": {
+    "technomancer": { "tolerance_mult": 1.10 },
+    "shaman": { "aura_bonus_m": 2 },
+    "sealer": { "progress_up_mult": 1.15 }
+  },
+  "fusion": { "eco_count": 5, "essence_cost": 5, "spirit_level_cap": 30, "eco_traits_max": 1, "spirit_traits_max": 2, "anim_s": 2 },
+  "spirit": { "height_m": 9, "ability_steps": 1 },
+  "talent": { "points_per_level": 1 },
   "distill": { "eco_yield": [ { "from": 1, "to": 7, "value": 3 }, { "from": 8, "to": 14, "value": 4 }, { "from": 15, "to": 20, "value": 5 } ] },
   "start_inventory": { "item.seal.simple": 5, "item.chalk": 3 }
 }

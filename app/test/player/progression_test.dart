@@ -74,25 +74,33 @@ void main() {
       expect(p.fraction, closeTo(5 / 340, 1e-9));
     });
 
-    test('o teto é 15: o XP além dele fica guardado, e o nível não passa', () {
+    test('o teto é 20: o XP além dele fica guardado, e o nível não passa', () {
       final p = fresh()..restBalance = 0;
-      p.gain(11000, noon, offset: utcOnly); // 10930 chegam ao 15
-      expect(p.level, 15);
+      p.gain(21360, noon, offset: utcOnly); // 21290 chegam ao 20
+      expect(p.level, 20);
       expect(p.atCap, isTrue);
       expect((p.xp, p.bankedXp), (0, 70));
       p.gain(500, noon, offset: utcOnly);
       expect(p.bankedXp, 570);
-      expect(p.level, 15);
+      expect(p.level, 20);
     });
 
     test('com o teto mais alto, o XP guardado entra', () {
       final p = fresh()..restBalance = 0;
-      p.gain(11000, noon, offset: utcOnly);
+      p.gain(21360, noon, offset: utcOnly);
       final raised = {...loadJson('assets/data/balance.json')};
-      raised['xp'] = {...(raised['xp'] as Map<String, dynamic>), 'player_level_cap': 16};
+      raised['xp'] = {...(raised['xp'] as Map<String, dynamic>), 'player_level_cap': 21};
       final q = PlayerProgress(level: p.level, xp: p.xp, bankedXp: p.bankedXp, restBalance: 0, balance: ProgressBalance(raised));
-      expect(q.settleBanked(), 0, reason: '70 não chega aos ${xpToNext(15, ProgressBalance(raised))} do nível 15');
-      expect((q.level, q.xp, q.bankedXp), (15, 70, 0));
+      expect(q.settleBanked(), 0, reason: '70 não chega aos ${xpToNext(20, ProgressBalance(raised))} do nível 20');
+      expect((q.level, q.xp, q.bankedXp), (20, 70, 0));
+    });
+
+    test('a curva do GDD: 60 × n^1,25 em dezenas, 21.290 do nível 1 ao 20', () {
+      final b = ProgressBalance(loadJson('assets/data/balance.json'));
+      expect(xpToNext(1, b), 60);
+      expect(xpToNext(10, b), 1070);
+      expect(xpToNext(19, b), 2380);
+      expect([for (var n = 1; n < 20; n++) xpToNext(n, b)].reduce((a, c) => a + c), 21290);
     });
 
     test('ganhar zero ou menos não faz nada', () {

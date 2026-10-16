@@ -22,7 +22,7 @@ void main() {
 
   test('v3 vira v4: névoa e Radar entram vazios e todo o resto passa intacto', () {
     final out = migrateSave(real);
-    expect(out['schema_version'], 4);
+    expect(out['schema_version'], 5);
     expect(out['fog'], {'cells': <String, dynamic>{}, 'debug': <String, dynamic>{}});
     expect(out['radar'], {'last_utc': 0, 'revealed': <String, dynamic>{}});
     for (final k in real.keys.where((k) => k != 'schema_version')) {
@@ -37,7 +37,7 @@ void main() {
     expect(migrateSave(once), once);
   });
 
-  test('abrir o save real da 0.13.0: o jogo continua o mesmo, a névoa começa coberta e grava no schema 4', () async {
+  test('abrir o save real da 0.13.0: o jogo continua o mesmo, a névoa começa coberta e grava no schema atual', () async {
     final store = MemorySaveStore()..json = jsonDecode(jsonEncode(real)) as Map<String, dynamic>;
     final session = await GameSession.open(store: store, startInventory: {}, balance: loadProgressBalance(), nowUtc: () => 1792083600, nextInt: (n) => 0, appVersion: '0.14.0+21');
     await session.flush();
@@ -58,7 +58,7 @@ void main() {
     expect(s.founder!.versionsSeen.map((e) => e.version), ['0.13.0+20', '0.14.0+21'], reason: 'a versão nova entra no log');
     expect(s.fog.revealedCount, 0);
     expect(s.radarLastUtc, 0);
-    expect(store.json!['schema_version'], 4);
+    expect(store.json!['schema_version'], 5);
     expect(store.json!['fog'], isNotNull);
   });
 

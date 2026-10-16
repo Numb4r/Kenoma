@@ -6,7 +6,7 @@ import '../player/game_state.dart' show saveSchemaVersion;
 
 typedef _Step = Map<String, dynamic> Function(Map<String, dynamic>);
 
-final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4};
+final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5};
 
 /// Leva [json] ao schema atual. Um save de versão futura passa sem mudar.
 Map<String, dynamic> migrateSave(Map<String, dynamic> json) {
@@ -55,5 +55,22 @@ Map<String, dynamic> _v3ToV4(Map<String, dynamic> j) {
   final out = {...j};
   out['fog'] ??= <String, dynamic>{'cells': <String, dynamic>{}, 'debug': <String, dynamic>{}};
   out['radar'] ??= <String, dynamic>{'last_utc': 0, 'revealed': <String, dynamic>{}};
+  return out;
+}
+
+/// v4 não tinha o bloco `conjurer`: a escola entra vazia (quem já passou do nível 3 recebe os testes na próxima abertura) e os
+/// pontos de talento ganhos saem do nível atual, um por nível já subido. Todo o resto passa intacto.
+Map<String, dynamic> _v4ToV5(Map<String, dynamic> j) {
+  final out = {...j};
+  final level = ((out['player'] as Map<String, dynamic>?)?['level'] as int?) ?? 1;
+  out['conjurer'] ??= <String, dynamic>{
+    'tests_offered': false,
+    'test_scores': <String, dynamic>{},
+    'talent_earned': level - 1,
+    'talent_spent': 0,
+    'ritual_research': <String, dynamic>{},
+    'days_played': <dynamic>[],
+    'fusions': 0,
+  };
   return out;
 }

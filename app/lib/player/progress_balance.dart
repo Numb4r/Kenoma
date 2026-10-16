@@ -1,6 +1,8 @@
 /// Números de progressão lidos de `balance.json` (chaves `xp`, `mark` e `distill`). Nenhum vive no código.
 library;
 
+import 'conjurer_balance.dart';
+
 class Band {
   const Band(this.from, this.to, this.value);
 
@@ -11,9 +13,9 @@ class Band {
 
 class ProgressBalance {
   ProgressBalance(Map<String, dynamic> balance)
-      : this._(balance['xp'] as Map<String, dynamic>, balance['mark'] as Map<String, dynamic>, balance['distill'] as Map<String, dynamic>);
+      : this._(balance['xp'] as Map<String, dynamic>, balance['mark'] as Map<String, dynamic>, balance['distill'] as Map<String, dynamic>, ConjurerBalance(balance));
 
-  ProgressBalance._(Map<String, dynamic> xp, Map<String, dynamic> mark, Map<String, dynamic> distill)
+  ProgressBalance._(Map<String, dynamic> xp, Map<String, dynamic> mark, Map<String, dynamic> distill, this.conjurer)
       : curveA = ((xp['player_curve'] as Map<String, dynamic>)['a'] as num).toDouble(),
         curveExponent = ((xp['player_curve'] as Map<String, dynamic>)['exponent'] as num).toDouble(),
         curveRoundTo = (xp['player_curve'] as Map<String, dynamic>)['round_to'] as int,
@@ -35,6 +37,9 @@ class ProgressBalance {
           for (final b in distill['eco_yield'] as List<dynamic>)
             Band((b as Map<String, dynamic>)['from'] as int, b['to'] as int, b['value'] as int),
         ];
+
+  /// O que cada nível libera, as escolas, a fusão e os talentos.
+  final ConjurerBalance conjurer;
 
   /// Curva do Conjurador: `a × n^expoente`, arredondado para o múltiplo de [curveRoundTo].
   final double curveA;

@@ -316,7 +316,7 @@ void main() {
 
     test('v2 vira v3 com a história vazia e todo o resto intacto, inclusive campos desconhecidos', () {
       final out = migrateSave(v2);
-      expect(out['schema_version'], 4);
+      expect(out['schema_version'], 5);
       expect(out['story'], {
         'events': <String, dynamic>{},
         'chat': {'delivered': <dynamic>[], 'read': 0, 'wait_s': 0},
@@ -344,7 +344,7 @@ void main() {
       expect(s.settingOr('veil_traffic', true), isFalse);
       expect(s.founder!.playerId, '00112233445566778899aabbccddeeff');
       expect(s.story.chat.delivered, isEmpty);
-      expect(store.json!['schema_version'], 4);
+      expect(store.json!['schema_version'], 5);
       expect(store.json!['campo_do_futuro'], {'x': 1});
       expect(store.json!['story'], isNotNull);
     });
