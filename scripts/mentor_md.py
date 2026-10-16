@@ -38,6 +38,16 @@ for i, m in enumerate(mentor.get("familiar", []), 1):
     req = m["requires"]
     out.append(f"| {i} | `{m['id']}` | {req['event']} ≥ {req['min']} | {m['text']} |")
 out.append("")
+out.append("## Escola no nível 3\n")
+out.append("No nível 3, na primeira sessão em que os testes ainda não foram oferecidos (também em saves que já passaram do nível), o mentor manda o convite "
+           "aos três testes, com um botão que abre os testes no Chat. Sai uma vez só. Depois de escolher, o mentor comenta e o Familiar reage "
+           "(`school_choose_*`). O comentário do Familiar sobre o teste em que o jogador foi melhor (`school_best_*`) aparece na tela de escolha.\n")
+out.append("| Id | Quando | Botão | Texto |\n| --- | --- | --- | --- |")
+for m in mentor.get("school", []):
+    req = m.get("requires")
+    cond = f"{req['event']} ≥ {req['min']}" if req else "nível ≥ 3 e testes ainda não oferecidos"
+    out.append(f"| `{m['id']}` | {cond} | {('`' + m['action'] + '`') if m.get('action') else '-'} | {m['text']} |")
+out.append("")
 out.append("## Falas de desbloqueio do celular\n")
 out.append("Quando um app novo do celular se forma (o nível do Conjurador liberou), o Familiar comenta num balão dentro do celular. "
            "Os apps de nível 1 já vêm abertos e não têm fala.\n")

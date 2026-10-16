@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
 import '../colors.dart';
+import '../school/school_flow.dart';
+import '../school/test_shell.dart' show SchoolButton;
 import 'screen_frame.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -30,6 +32,23 @@ class _ChatScreenState extends State<ChatScreen> {
     final t = DateTime.fromMillisecondsSinceEpoch(utc * 1000, isUtc: true).toLocal();
     String two(int n) => n.toString().padLeft(2, '0');
     return '${two(t.hour)}:${two(t.minute)}';
+  }
+
+  /// O botão opcional de uma mensagem (campo `action` do JSON). `school_tests`: abre os testes de escola enquanto ainda
+  /// dá para escolher.
+  Widget _action(String action) {
+    if (action != 'school_tests') return const SizedBox.shrink();
+    final s = widget.state;
+    if (!s.canChooseSchool) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(s.conjurer.school == null ? 'AINDA NÃO DÁ PARA ESCOLHER' : 'ESCOLA: ${s.conjurer.school!.label.toUpperCase()}', key: const Key('chat-action-done'), style: const TextStyle(fontSize: 8, color: kDim)),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: SchoolButton(key: const Key('chat-action-school_tests'), label: 'Fazer os testes', onTap: () => openSchoolFlow(context, s, widget.data)),
+    );
   }
 
   @override
@@ -81,6 +100,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       if (m.from == 'familiar') const Text('FAMILIAR', style: TextStyle(fontSize: 8, color: kSignal)),
                       Text(m.text, style: const TextStyle(fontSize: 8, color: kText, height: 1.8)),
+                      if (m.action != null) _action(m.action!),
                       const SizedBox(height: 6),
                       Text(_time(e.utc), style: const TextStyle(fontSize: 8, color: kDim)),
                     ]),
