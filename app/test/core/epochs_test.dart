@@ -14,6 +14,13 @@ Map<String, dynamic> epochJson(int id, String starts, String until) => {
 int utc(String iso) => DateTime.parse(iso).millisecondsSinceEpoch ~/ 1000;
 
 void main() {
+  test('os inícios das épocas de epochs.json crescem estritamente (um empate daria a época errada)', () {
+    final starts = [for (final e in loadEpochs().epochs) e.startsUtc];
+    for (var i = 1; i < starts.length; i++) {
+      expect(starts[i], greaterThan(starts[i - 1]), reason: 'época $i');
+    }
+  });
+
   test('lê a época 0 de assets/data/epochs.json', () {
     final schedule = loadEpochs();
     final e0 = schedule.epochs.first;
