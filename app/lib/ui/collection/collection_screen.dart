@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
 import '../colors.dart';
+import '../menu/phone_shell.dart';
 import '../sprites/sprite_image.dart';
 import '../type_label.dart';
 
@@ -44,10 +45,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: kOutline,
-      body: SafeArea(
-        child: ListenableBuilder(
+    return PhoneScreen(
+      title: 'Coleção',
+      child: ListenableBuilder(
           listenable: widget.state,
           builder: (context, _) {
             final s = widget.state;
@@ -55,14 +55,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               children: [
-                Row(children: [
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => Navigator.of(context).pop(),
-                    child: const SizedBox(width: 48, height: 48, child: Center(child: Text('<', style: TextStyle(fontSize: 24, color: kText)))),
-                  ),
-                  const Expanded(child: Text('COLEÇÃO', style: TextStyle(fontSize: 24, color: kVeil))),
-                ]),
                 Text('GRUPO ${s.groupCode}', style: const TextStyle(fontSize: 8, color: kDim)),
                 const SizedBox(height: 16),
                 Text('CRIATURAS · ${s.collection.length}', style: const TextStyle(fontSize: 16, color: kSignal)),
@@ -85,7 +77,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
               ],
             );
           },
-        ),
       ),
     );
   }

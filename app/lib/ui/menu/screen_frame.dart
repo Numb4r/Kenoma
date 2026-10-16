@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../data/game_data.dart';
 import '../colors.dart';
 import '../sprites/sprite_image.dart';
+import 'phone_shell.dart';
 
 class ScreenFrame extends StatelessWidget {
   const ScreenFrame({required this.title, required this.children, this.subtitle, super.key});
@@ -17,25 +18,15 @@ class ScreenFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: kOutline,
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          children: [
-            Row(children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.of(context).pop(),
-                child: const SizedBox(width: 48, height: 48, child: Center(child: Text('<', style: TextStyle(fontSize: 24, color: kText)))),
-              ),
-              Expanded(child: Text(title.toUpperCase(), style: const TextStyle(fontSize: 24, color: kVeil))),
-            ]),
-            if (subtitle != null) Text(subtitle!.toUpperCase(), style: const TextStyle(fontSize: 8, color: kDim)),
-            const SizedBox(height: 16),
-            ...children,
-          ],
-        ),
+    return PhoneScreen(
+      title: title,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        children: [
+          if (subtitle != null) Text(subtitle!.toUpperCase(), style: const TextStyle(fontSize: 8, color: kDim)),
+          if (subtitle != null) const SizedBox(height: 16),
+          ...children,
+        ],
       ),
     );
   }

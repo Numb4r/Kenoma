@@ -71,12 +71,12 @@ class _MoonHudState extends State<MoonHud> {
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
       decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.85), border: Border.all(color: kPanelLine, width: 2)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        CustomPaint(size: const Size(24, 24), painter: _MoonPainter(moonCycle(t), widget.lat() < 0)),
+        CustomPaint(size: const Size(24, 24), painter: MoonPainter(moonCycle(t), widget.lat() < 0)),
         const SizedBox(width: 8),
         Text(moonPhaseNames[phase]!.toUpperCase(), style: const TextStyle(fontSize: 8, color: kText)),
         if (widget.weather != null) ...[
           const SizedBox(width: 10),
-          CustomPaint(key: const Key('weather-glyph'), size: const Size(18, 18), painter: _WeatherPainter(widget.weather!())),
+          CustomPaint(key: const Key('weather-glyph'), size: const Size(18, 18), painter: WeatherGlyphPainter(widget.weather!())),
           const SizedBox(width: 6),
           Text(widget.weather!().label.toUpperCase(), key: const Key('weather-label'), style: const TextStyle(fontSize: 8, color: kText)),
         ],
@@ -85,8 +85,8 @@ class _MoonHudState extends State<MoonHud> {
   }
 }
 
-class _MoonPainter extends CustomPainter {
-  _MoonPainter(this.cycle, this.southern);
+class MoonPainter extends CustomPainter {
+  MoonPainter(this.cycle, this.southern);
 
   final double cycle;
   final bool southern;
@@ -102,12 +102,12 @@ class _MoonPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_MoonPainter old) => old.cycle != cycle || old.southern != southern;
+  bool shouldRepaint(MoonPainter old) => old.cycle != cycle || old.southern != southern;
 }
 
 /// O clima em um glifo de pixels de 18 × 18: sol, nuvem, chuva ou raio.
-class _WeatherPainter extends CustomPainter {
-  _WeatherPainter(this.weather);
+class WeatherGlyphPainter extends CustomPainter {
+  WeatherGlyphPainter(this.weather);
 
   final Weather weather;
 
@@ -142,5 +142,5 @@ class _WeatherPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_WeatherPainter old) => old.weather != weather;
+  bool shouldRepaint(WeatherGlyphPainter old) => old.weather != weather;
 }
