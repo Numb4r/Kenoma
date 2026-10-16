@@ -145,7 +145,7 @@ Células com pouca informação no OSM recebem um piso mínimo de spawns genéri
 
 O mapa tem duas camadas. A camada lógica é a grade de biomas em z21, que decide spawns, coleta e tudo que o determinismo cobre. A camada visual é desenhada por cima a partir da geometria real: ruas como linhas finas na largura certa, água e parques com contorno suave por autotiling, e prédios a partir da fase 1. Com a câmera perto do jogador, a grade lógica desenhada direto viraria blocos de 18 m, e as ruas são o que faz o jogador reconhecer o próprio bairro. A camada visual não muda o mundo, então pode melhorar sem quebrar o determinismo.
 
-No jogo a câmera segue o Conjurador pela posição real, com movimento suave. A câmera nunca sai do avatar: arrastar com um dedo gira o mapa em torno dele, como no Pokémon GO, e a pinça só dá zoom numa faixa de 70 a 120 m de largura. Uma bússola volta o norte para cima, e o modo "seguir direção" gira o mapa com a bússola do celular. Câmera livre só existe no menu de debug.
+No jogo a câmera segue o Conjurador pela posição real, com movimento suave. A câmera nunca sai do avatar: arrastar com um dedo gira o mapa em torno dele, como no Pokémon GO, e a pinça só dá zoom numa faixa de 40 a 80 m de largura, com 50 m como padrão. A câmera fica perto para os sprites terem detalhe; Ecos fora da tela aparecem no rastreador. Uma bússola volta o norte para cima, e o modo "seguir direção" gira o mapa com a bússola do celular. Câmera livre só existe no menu de debug.
 
 ### Geração determinística
 
@@ -1007,7 +1007,7 @@ Veículos e passantes fantasmas circulam pelas ruas reais, gerados pela seed, pe
 | Carro fugitivo | rota gerada pela seed | leva uma criatura rara; o jogador precisa chegar a pé a um cruzamento antes dele |
 | Engarrafamento do Véu | Fendas | perto de uma Fenda o tráfego para e se deforma |
 
-Avenidas cheias favorecem tipos urbanos e ruas calmas favorecem espíritos.
+Avenidas cheias favorecem tipos urbanos e ruas calmas favorecem espíritos. Pedestres andam nas calçadas, dos dois lados da rua, e nos caminhos de pedestre; carros andam na pista, na mão certa. Ninguém surge nem some na tela: o tráfego entra e sai pelas bordas, e quando uma troca de janela obriga alguém a aparecer ou sumir à vista, ele se desfaz ou se forma no Véu, com a costura violeta. Há variedade de carros e passantes por troca de paleta e alguns modelos diferentes.
 
 ### Fontes offline
 
@@ -1261,7 +1261,7 @@ A câmera tem ângulo 3/4 fixo e só gira em torno do eixo vertical. O jogador g
 
 - Personagem, criaturas e efeitos são sprites 2D sempre em pé e virados para a tela, em qualquer rotação. O tamanho é em metros do mundo, numa escala que exagera tudo um pouco mas mantém as proporções entre si: Conjurador e Familiar com 6 m de altura, sempre menores que a largura da rua, pedestres fantasmas com 4,5 m, carros fantasmas com 6 m de comprimento, Ecos com 7 m (Espíritos e camadas acima maiores) e Fagulhas com 3 m. A área de toque de qualquer coisa tocável tem no mínimo 48 dp, mesmo quando o sprite é menor.
 - Prédios são desenhados em 2D a partir dos contornos do OSM, projetando telhado e paredes conforme o ângulo atual. Com inclinação fixa essa projeção é simples e roda no Flame, sem motor 3D.
-- A cena é renderizada numa resolução baixa, com o pixel de arte valendo 2 dp na tela, e ampliada por vizinho mais próximo, mantendo os pixels nítidos e sem tremor durante o giro.
+- A cena é renderizada numa resolução baixa, com o pixel de arte valendo 3 dp na tela, e ampliada por vizinho mais próximo, mantendo os pixels nítidos e sem tremor durante o giro.
 - Girar a câmera também é a forma principal de ver atrás de um prédio. O esmaecimento continua para quando o jogador não girar.
 - A interface nunca gira. A bússola aparece só enquanto o mapa estiver fora do norte.
 
