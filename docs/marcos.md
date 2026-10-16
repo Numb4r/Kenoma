@@ -205,3 +205,15 @@ Segue o `docs/GDD.md` (Mapa vivo, O mentor, Quests, Tempo). Versão 0.13.0. Salv
 - **Chat com o mentor** e **diárias do fórum:** ver a seção 11 da spec. Os textos para revisão estão em `docs/textos-mentor.md`.
 - **Avisos no celular:** opcionais e desligados por padrão (seção 11 da spec).
 - **Save schema 3** com migração v2 → v3 testada. Toda versão daqui em diante sai assinada com a mesma chave (`docs/assinatura.md`).
+
+## Fase 1 · fatia 2 · Rua viva (0.14.0)
+
+Segue o `docs/GDD.md`; os detalhes e as divergências estão na seção 12 da spec. **A época 2 muda o mundo** (comportamento, variantes, Brilhante, clima nos spawns): ela começa no release. Tudo o resto é visual ou de conteúdo.
+
+- **Época 2 e fluxo v2.** Sorteios novos num fluxo separado; impressões digitais da 0.13.0 travadas em teste. Os pesos e as chances vivem em `epochs.json`, não no `balance.json` como o pedido dizia: regra 8.
+- **Comportamentos.** Arisco foge por velocidade média na entrada da Aura; Agressivo abre a folha; Oculto só pelo Radar. Ícone sobre o Eco e na folha de preparo.
+- **Variantes e Brilhante.** Paleta por tom sobre a silhueta, halo e som no Brilhante, Essência de Traço e Prismática ao destilar, bestiário por variante.
+- **Radar e rastros** (níveis 1 e 2). **Névoa de guerra** em blocos z17 de 64 bits. **Clima** determinístico e opcional pela rede (só visual), com HUD e chuva. **Familiar** companheiro com +5 m de coleta e três falas.
+- **Escala dos sprites.** Pixel de arte de 2 dp; Conjurador e Familiar 8 m, Ecos 9 m, fantasmas 6 m e 7 m; sprites redesenhados em 20 × 20 e 18 × 18, sem filtro.
+- **Save schema 4**, migração v3 → v4 testada com um save real da 0.13.0.
+- **Ficou de fora ou ainda não foi visto no celular:** ver o resumo do release.

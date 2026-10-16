@@ -48,7 +48,7 @@ void main() {
 
     test('os textos do docs/textos-mentor.md batem com o JSON (rode scripts/mentor_md.py)', () {
       final md = File('../docs/textos-mentor.md').readAsStringSync();
-      for (final m in script.tutorial) {
+      for (final m in [...script.tutorial, ...script.familiar]) {
         expect(md, contains(m.text), reason: m.id);
       }
       for (final t in forum.templates) {

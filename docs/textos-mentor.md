@@ -26,6 +26,16 @@ O tutorial sai uma mensagem de cada vez, depois de alguns segundos de jogo com o
 | 12 | `m12` | 40 s | - | Existe um fórum, o Limen. Pedem coisas pequenas todos os dias. Faça o que pedirem, ou não. Quem pede sempre sabe o que quer? |
 | 13 | `m13` | 45 s | - | Por ora é só. Se o celular tremer sozinho, não atenda. Última pergunta: quem mais anda por aí com a mesma frequência que a sua? |
 
+## Falas do Familiar
+
+O Familiar ainda não fala (GDD): ele se comunica por gestos, ícones e silêncios, então as falas são **gestos entre asteriscos**. Cada uma sai sozinha, uma vez, quando o acontecimento acontece, e aparece no chat com o nome FAMILIAR.
+
+| # | Id | Quando | Texto |
+| --- | --- | --- | --- |
+| 1 | `f01` | variant_seen ≥ 1 | *O Familiar inclina o corpo para a cor nova do Eco e fica parado, como quem escuta. Um chiado curto sai dele. Parece dizer: tem o lugar dentro dele.* |
+| 2 | `f02` | shiny_seen ≥ 1 | *O Familiar acende por um instante, violeta e depois quase branco, e dá três voltas ao seu redor sem tocar o chão. Depois fica quieto, olhando o brilho. Parece querer que você olhe também.* |
+| 3 | `f03` | hidden_revealed ≥ 1 | *O Familiar arrepia o contorno quando o Radar varre. Aponta para onde nada estava e a estática fecha atrás do dedo dele. Parece dizer: eu já sabia que estava ali.* |
+
 ## Fórum Limen: pedidos diários
 
 Três pedidos por dia, sorteados por `hash(seed, época, data, slot)`. O texto tem `{n}` (a meta), `{tipo}` (Fogo, Planta, Água ou qualquer tipo) e `{item}` (giz, ervas, água pura). Usuários: `vesper`, `static_saint`, `mapmaker`, `null_hypothesis`, `candlewick`, `wren_`.

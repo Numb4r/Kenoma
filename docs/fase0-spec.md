@@ -94,8 +94,8 @@ Só desenho: ruas, água e áreas verdes para o mapa de jogo. **A grade de bioma
 ### Renderização
 
 - Flame. Visão de cima, sem prédios em pé e sem rotação. Câmera centrada no jogador.
-- **Mapa de jogo em pixels de arte de tamanho fixo de tela.** A cada quadro a área visível é rasterizada direto num buffer de baixa resolução alinhado à tela, em que cada pixel de arte ocupa um número inteiro de pixels físicos (o inteiro mais perto de `map.art_pixel_dp` dp, 3 dp), e o buffer é ampliado por vizinho mais próximo. A nitidez é a mesma em qualquer zoom e em qualquer ângulo. O ruído do chão é uma textura em pixels de arte que acompanha o mapa mas não cresce com o zoom. Se rasterizar ficar caro durante um gesto, o pixel de arte dobra de tamanho até o dedo soltar (`coarse`); no moto g54 isso não foi preciso.
-- **Sprites em metros do mundo.** O Conjurador e os Ecos têm 12 m de altura (`map.sprite_height_m`), mais ou menos a largura de uma rua principal, e as Fagulhas e os materiais 3 m (`map.spark_size_m`). A proporção com as ruas e com a Aura é a mesma em qualquer zoom: eles crescem e encolhem com o mapa. **Anéis, rótulos "NV n" e o rastreador** têm tamanho fixo de tela. O pixel de arte do mapa também continua fixo de tela. A Aura é em metros reais, porque é alcance de jogo. A câmera vai de 70 a 120 m de largura, com 90 m no padrão (`map.camera_min_width_m`, `map.camera_max_width_m`, `map.view_width_default_m`).
+- **Mapa de jogo em pixels de arte de tamanho fixo de tela.** A cada quadro a área visível é rasterizada direto num buffer de baixa resolução alinhado à tela, em que cada pixel de arte ocupa um número inteiro de pixels físicos (o inteiro mais perto de `map.art_pixel_dp` dp, **2 dp** desde a 0.14.0: ~0,44 m por pixel de arte na largura padrão de 90 m), e o buffer é ampliado por vizinho mais próximo. A nitidez é a mesma em qualquer zoom e em qualquer ângulo. O ruído do chão é uma textura em pixels de arte que acompanha o mapa mas não cresce com o zoom. Se rasterizar ficar caro durante um gesto, o pixel de arte dobra de tamanho até o dedo soltar (`coarse`); no moto g54 isso não foi preciso.
+- **Sprites em metros do mundo** (0.14.0, todos em `balance.json`, chave `map`): Conjurador e Familiar 8 m de altura (`player_height_m`, `familiar_height_m`), Ecos 9 m (`eco_height_m`), pedestres fantasmas 6 m (`ghost_pedestrian_m`), carros fantasmas 7 m de comprimento (`ghost_car_m`) e as Fagulhas e os materiais 3 m (`spark_size_m`). O avatar e o carro ficam do mesmo tamanho. A proporção com a Aura é a mesma em qualquer zoom: eles crescem e encolhem com o mapa. **Os sprites do mapa são redesenhados na grade nova** (Eco 20 × 20 pixels, Conjurador e Familiar 18 × 18), reduzidos dos de 48 × 48 por votação do caractere mais frequente do bloco, com as costuras violeta e o ciano dos olhos protegidos, e desenhados num múltiplo inteiro de pixels físicos por pixel do sprite: nunca reescalados com filtro. A área de toque continua com no mínimo 48 dp. **Anéis, rótulos "NV n" e o rastreador** têm tamanho fixo de tela. O pixel de arte do mapa também continua fixo de tela. A Aura é em metros reais, porque é alcance de jogo. A câmera vai de 70 a 120 m de largura, com 90 m no padrão (`map.camera_min_width_m`, `map.camera_max_width_m`, `map.view_width_default_m`).
 - **Movimento do Conjurador.** O marcador nunca pula: ele anda pelo caminho das leituras filtradas do GPS com cerca de 1 s de atraso, em linha reta e na velocidade que as leituras indicam, e quando o GPS para ele desacelera até a última posição e para, sem passar dela. Leituras que exigiriam mais de 12 m/s desde a última aceita são descartadas como erro do GPS. Duas leituras seguidas, impossíveis mas juntas, mostram que o jogador mudou de lugar (outra fonte, teleporte do simulador) e o marcador reaparece lá. A câmera segue o marcador suavizado, nunca o GPS cru.
 - **Animação do Conjurador.** Parado, um quadro. Andando, dois quadros de passo que se alternam a cada 0,18 s. O sprite olha para o lado em que anda na tela (espelhado na horizontal para a esquerda) e mantém o lado ao parar.
 - **Câmera presa ao Conjurador.** Ele fica sempre no centro: não existe arrastar para espiar nem volta automática. **Arrastar com um dedo gira o mapa** em torno dele, **acompanhando o dedo**: o giro é o ângulo que o dedo percorre em volta do Conjurador (o centro da tela), então o ponto do mapa sob o dedo continua sob ele, de qualquer lado da tela, e o sentido é o mesmo dos dois lados. Perto demais do centro (menos de 40 px) o ângulo não é confiável e o giro espera (`TouchGesture`, `world/touch_gesture.dart`): passando de cerca de 12 px o gesto é arrasto; antes disso e antes de 500 ms, soltar é um **toque** (seleciona Eco, Fagulha ou material); parado por 500 ms é um **toque longo** (marcação). Um segundo dedo cancela o gesto, e a **pinça só dá zoom**: não gira. O mapa fica no ângulo em que o dedo o deixou: não assenta no norte nem volta sozinho. A câmera livre (arrastar e pinçar o mapa todo) existe só no menu de debug. Uma bússola pequena aparece quando o mapa não está com o norte para cima: **um toque** volta ao norte (e desliga o "seguir direção"); **dois toques** ligam e desligam o "seguir direção", que gira o mapa com a bússola do celular, suavizado. A bússola do celular lê o norte magnético, então o app soma a declinação do lugar (`map.compass_declination_deg`, -21° em Campinas). Girar com a mão desliga o "seguir direção". O toque num spawn passa pela conversão tela-mundo com rotação.
@@ -515,6 +515,52 @@ O que entrou depois da Fase 0, seguindo o `docs/GDD.md` ("Mapa vivo", "O mentor"
 - **Avisos no celular** (`story/notification_plan.dart`, `local_notifier.dart`): opcionais, **desligados por padrão**, com interruptor nos Ajustes (que pede a permissão do sistema na hora). Dois avisos às 9 h locais: diárias renovadas (amanhã) e descanso cheio (no dia em que o saldo chega a 1050). Agendados quando o app sai da tela, com alarme não exato.
 
 Save no **schema 3**: o bloco `story` guarda os contadores de eventos, o chat (entregues, lidas, relógio) e as diárias. A migração v2 → v3 é pura e testada com um save como o da 0.12.1.
+
+## 12. Fase 1 · fatia 2: Rua viva (0.14.0)
+
+Segue o `docs/GDD.md` (Início do encontro, Variantes, Rastros e scanner, Névoa de guerra, Tempo, Familiar, Destilação).
+
+### Época 2
+
+O que muda o mundo (comportamento, variante, Brilhante e o efeito do clima nos spawns) entra na **época 2** (`epochs.json`, bloco `eco_v2`), que começa no instante do release, arredondado para a próxima janela de 20 minutos (`scripts/set_epoch_start.py`). Os sorteios novos saem de **um fluxo separado**, `hash(seed, época, célula, janela, índice, "v2")`, e nunca mudam a ordem nem o resultado dos sorteios que já existiam: um teste fixa as impressões digitais dos itens das épocas 0 e 1 como estavam na 0.13.0 e confere que a época 2, com tempo limpo, devolve os mesmos itens da época 1. Quem está numa versão antiga continua gerando pela época 1 (o app antigo não tem como saber da 2: o aviso de mundo desatualizado só aparece se o relógio passar do fim da última época que ele conhece).
+
+**Divergência do pedido, de propósito:** os pesos dos comportamentos, a chance de variante e a de Brilhante estão em `epochs.json`, não em `balance.json`, porque mudam o que existe no mundo e a regra 8 manda isso para a época (o `balance.json` só vale por aparelho). Tudo que não muda o mundo (velocidade do Arisco, Radar, névoa, tamanhos) está no `balance.json`.
+
+### Comportamento
+
+Passivo (70), Arisco (12), Agressivo (10) e Oculto (8), sorteados no fluxo v2. O comportamento aparece como ícone pequeno sobre o Eco e na folha de preparo.
+
+- **Arisco:** se o jogador **entra** na Aura com média acima de 2,5 m/s nos últimos 5 s, o Eco foge (a fuga entra no registro). Só a entrada conta. O sinal oscila 1,6 vezes mais.
+- **Agressivo:** ao entrar na Aura o celular vibra uma vez e a folha de preparo abre sozinha (dá para fechar), uma vez por Eco. A resistência sobe um degrau (+0,15 de intensidade).
+- **Oculto:** fora do mapa e do rastreador até o Radar o revelar a menos de 60 m; fica à vista por 15 minutos. O sinal oscila a metade.
+
+### Variantes e Brilhante
+
+**Variante de bioma:** chance de 12%; a paleta e o traço passivo vêm do bioma da célula (`creatures.json`, bloco `variants`; o traço é só dado por enquanto). A paleta é um tom por cima da silhueta do sprite, sem arte nova. **Brilhante:** 1 em 400, em qualquer bioma, com um halo suave que pulsa (o único brilho do estilo) e um som curto ao aparecer (gerador de tons do Android). **Destilar:** variante de bioma rende Essência de Traço do bioma (`item.essence.trait.<bioma>`), Brilhante rende Essência Prismática (`item.essence.prismatic`); os dois existem no inventário mesmo sem receita. **Bestiário:** "vista" e "capturada" por variante (chaves `espécie@bioma` e `espécie@shiny`).
+
+### Radar e rastros
+
+App Radar no celular, recarga de 2 minutos. **Nível 1:** a varredura mostra os **rastros** (pegadas que apontam, com erro de até 30° fixo por Eco e por janela de 20 min) dos Ecos raros a até 250 m, a partir de 40 m (mais perto o Eco já está à vista), por 5 minutos, e revela os **Ocultos a até 60 m**. **Nível 2**, no nível 5 do Conjurador: a pegada leva a cor do tipo. São raros: variante, Brilhante, Oculto e Eco de nível acima do Conjurador. Interpretação: os rastros só aparecem depois de uma varredura. Níveis 3 e 4 ficam para depois.
+
+### Névoa de guerra
+
+O mapa começa coberto por um véu escuro e translúcido; o caminho real revela as células de spawn (z20, ~35 m) que tocam um círculo de 40 m. **Guardadas em blocos z17:** cada bloco cobre 8 × 8 células e é um inteiro de 64 bits no save (a célula z17 sozinha, ~280 m, seria grossa demais para um raio de 40 m). O simulador revela num conjunto de debug, que dá para limpar. O véu cobre só o desenho do mapa: Aura, Fagulhas, Ecos e Conjurador nunca ficam escondidos, e o raio de 40 m cobre a Aura mais o bônus do Círculo. Os Ajustes mostram a área revelada em km². O Modo Viagem ainda não existe. Bairro purificado fica para a fase 2.
+
+### Clima
+
+**Determinístico**, igual em todo aparelho e sem rede: `hash(seed, janela de 3 h, região z12)`, com a probabilidade pela estação (verão: 32% chuva, 13% tempestade; inverno: 7% e 1%). **Só ele pesa nos spawns:** chuva multiplica o peso das espécies de Água por 1,6 e as de Fogo por 0,55; tempestade, Água ×1,4, Elétrico ×2 (ainda sem espécie) e Fogo ×0,4. Com tempo limpo a espécie é a do sorteio original. **Com a internet ligada** (Ajustes, desligado por padrão) o HUD e a chuva usam o Open-Meteo, com a posição arredondada a ~1 km e o clima da hora do meio da janela de 3 h, para amigos juntos verem o mesmo; qualquer falha volta ao determinístico, sem aviso. **O clima da rede só muda o que se vê**, nunca os spawns: o mundo tem de ser igual em todos os aparelhos e funcionar sem rede. O clima aparece no HUD junto da lua; a chuva em pixels sobre o mapa é desligável.
+
+### Familiar
+
+Anda ao lado do Conjurador (a direita de quem anda e um pouco atrás, 6 m, suavizado como o avatar), não ocupa espaço no Círculo e soma **+5 m** ao raio de coleta de Fagulhas e materiais, junto com o do Círculo. Sprite placeholder 18 × 18. Fala no chat três vezes (`mentor.json`, bloco `familiar`): na primeira variante, no primeiro Brilhante e na primeira varredura que revela um Oculto.
+
+### Debug
+
+Menu de debug (sempre acessível): forçar comportamento, variante, Brilhante e clima do próximo Eco novo; revelar a névoa (600 m) e limpar a de debug; zerar a recarga do Radar.
+
+### Save
+
+**Schema 4**: `fog` (células reveladas e de debug), `radar` (última varredura e Ocultos revelados), variante e Brilhante em cada criatura, e os interruptores `rain_fx` e `weather_online`. Migração v3 → v4 testada com um save gravado pelo código da própria 0.13.0 (`app/test/fixtures/save_v3_0130.json`).
 
 ## Fora do escopo
 

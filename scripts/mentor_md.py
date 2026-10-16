@@ -30,6 +30,14 @@ for i, m in enumerate(mentor["tutorial"], 1):
     cond = f"{req['event']} ≥ {req['min']}" if req else "-"
     out.append(f"| {i} | `{m['id']}` | {m['after_s']:g} s | {cond} | {m['text']} |")
 out.append("")
+out.append("## Falas do Familiar\n")
+out.append("O Familiar ainda não fala (GDD): ele se comunica por gestos, ícones e silêncios, então as falas são **gestos entre asteriscos**. Cada uma sai sozinha, uma vez, "
+           "quando o acontecimento acontece, e aparece no chat com o nome FAMILIAR.\n")
+out.append("| # | Id | Quando | Texto |\n| --- | --- | --- | --- |")
+for i, m in enumerate(mentor.get("familiar", []), 1):
+    req = m["requires"]
+    out.append(f"| {i} | `{m['id']}` | {req['event']} ≥ {req['min']} | {m['text']} |")
+out.append("")
 out.append(f"## Fórum {forum['forum']}: pedidos diários\n")
 out.append("Três pedidos por dia, sorteados por `hash(seed, época, data, slot)`. O texto tem `{n}` (a meta), `{tipo}` (Fogo, Planta, "
            "Água ou qualquer tipo) e `{item}` (giz, ervas, água pura). Usuários: " + ", ".join(f"`{u}`" for u in forum["users"]) + ".\n")
