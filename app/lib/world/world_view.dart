@@ -83,7 +83,8 @@ class WorldView {
   List<Trace> traces = const [];
 
   /// Um Agressivo entrou na Aura: a tela abre a folha de preparo sozinha (e o celular vibra).
-  void Function(WorldSpawn eco)? onAggressive;
+  /// Devolve `true` se abriu; com `false` (tela ocupada) a chance não se gasta e ele tenta de novo no próximo quadro.
+  bool Function(WorldSpawn eco)? onAggressive;
 
   /// Um Eco Brilhante apareceu à vista (uma vez por Eco): a tela toca um som curto e avisa.
   void Function(WorldSpawn eco)? onShiny;
@@ -98,17 +99,14 @@ class WorldView {
   /// O percurso recente do jogador, para a velocidade média dos últimos segundos (o Arisco foge de quem chega correndo).
   final _track = <({int t, double x, double y})>[];
 
-  /// A velocidade média do jogador na janela do Arisco, em m/s. 0 com menos de 2 s de percurso.
+  /// A velocidade média do jogador na janela do Arisco, em m/s: o deslocamento do primeiro ao último ponto dividido pelo
+  /// tempo (o caminho inteiro somaria o tremor do GPS). 0 com menos de 3 s de percurso.
   double get playerSpeedMps {
     if (_track.length < 2) return 0;
     final span = _track.last.t - _track.first.t;
-    if (span < 2) return 0;
-    var path = 0.0;
-    for (var i = 1; i < _track.length; i++) {
-      final dx = _track[i].x - _track[i - 1].x, dy = _track[i].y - _track[i - 1].y;
-      path += math.sqrt(dx * dx + dy * dy);
-    }
-    return path * _mpc / span;
+    if (span < 3) return 0;
+    final dx = _track.last.x - _track.first.x, dy = _track.last.y - _track.first.y;
+    return math.sqrt(dx * dx + dy * dy) * _mpc / span;
   }
 
   double _px = 0, _py = 0, _mpc = 1;
@@ -152,6 +150,11 @@ class WorldView {
     _py = py;
     _mpc = metersPerCell(lat);
     _hasPlayer = true;
+    // Um salto de mais de 25 m entre duas leituras é teleporte ou troca de fonte: o percurso recomeça.
+    if (_track.isNotEmpty) {
+      final jx = px - _track.last.x, jy = py - _track.last.y;
+      if (math.sqrt(jx * jx + jy * jy) * _mpc > 25) _track.clear();
+    }
     _track.add((t: tUtc, x: px, y: py));
     _track.removeWhere((p) => tUtc - p.t > street.skittishSpeedWindowS);
     traces = [for (final t in traces) if (t.untilUtc > tUtc) t];
@@ -171,6 +174,7 @@ class WorldView {
       if (s.isEco && inAura(s)) {
         inAuraNow.add(s.uid);
         if (!_inAura.contains(s.uid) && _entered(s, tUtc)) continue; // fugiu
+        _tryAggressive(s);
       }
       if (!s.isSpark || !canReach(s)) {
         visible.add(s);
@@ -187,7 +191,14 @@ class WorldView {
       ..clear()
       ..addAll(inAuraNow);
     spawns = visible;
+    allEcos = [for (final s in allEcos) if (!state.isDone(s.uid)) s]; // o que fugiu ou foi pego neste quadro sai
     return collected;
+  }
+
+  /// O Agressivo dentro da Aura abre a folha uma vez por Eco. Se a tela estava ocupada, tenta de novo no próximo quadro.
+  void _tryAggressive(WorldSpawn s) {
+    if (s.behavior != EcoBehavior.aggressive || _aggroFired.contains(s.uid)) return;
+    if (onAggressive?.call(s) ?? false) _aggroFired.add(s.uid);
   }
 
   /// Um Eco acabou de entrar na Aura. Devolve `true` se ele fugiu (Arisco e o jogador chegou acima da velocidade).
@@ -199,10 +210,8 @@ class WorldView {
           onMessage?.call('Um Eco arisco fugiu: você chegou rápido demais');
           return true;
         }
-      case EcoBehavior.aggressive:
-        if (_aggroFired.add(s.uid)) onAggressive?.call(s);
-      case EcoBehavior.passive || EcoBehavior.hidden:
-        break;
+      case EcoBehavior.aggressive || EcoBehavior.passive || EcoBehavior.hidden:
+        break; // o Agressivo é tratado a cada quadro em [_tryAggressive]
     }
     return false;
   }
@@ -211,7 +220,7 @@ class WorldView {
   /// recarga é conferida por quem chama (`radarWaitS`). Os Ocultos revelados passam a aparecer no mapa na hora.
   RadarOutcome radar(int tUtc) {
     final out = sweep(
-      all: allEcos,
+      all: [for (final s in allEcos) if (!state.isDone(s.uid)) s],
       distanceM: distanceM,
       typeOf: typeOf,
       seed: field.seed,
@@ -242,7 +251,10 @@ class WorldView {
   }
 
   /// Tira o spawn da vista (o Eco foi capturado ou fugiu).
-  void remove(WorldSpawn s) => spawns = [for (final o in spawns) if (o.uid != s.uid) o];
+  void remove(WorldSpawn s) {
+    spawns = [for (final o in spawns) if (o.uid != s.uid) o];
+    allEcos = [for (final o in allEcos) if (o.uid != s.uid) o];
+  }
 }
 
 MapAbilities _noAbilities() => MapAbilities.none;

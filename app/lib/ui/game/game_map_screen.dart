@@ -158,7 +158,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   Weather _weatherOfCell(int seed, GameData data, int cx, int cy, int t) {
     final forced = tools.force.weather;
     if (forced != null) return forced;
-    final model = data.weatherModel;
+    // O modelo é o da época ATIVA naquele instante (nunca o da mais nova): o mundo de cada época é só dela.
+    final model = data.schedule.select(t).epoch.ecoV2?.weather;
     if (model == null) return Weather.clear;
     final (rx, ry) = weatherRegionOfCell(cx, cy);
     return model.at(seed: seed, tUtc: t, regionX: rx, regionY: ry);
@@ -253,7 +254,6 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   void _toast(String message, {int seconds = 2}) {
     if (!mounted) return;
     _toastTimer?.cancel();
-    _headingSub?.cancel();
     setState(() => _toastText = message);
     _toastTimer = Timer(Duration(seconds: seconds), () {
       if (mounted) setState(() => _toastText = null);
@@ -313,10 +313,12 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   }
 
   /// Um Eco agressivo entrou na Aura: o celular vibra uma vez e a folha de preparo abre sozinha (dá para fechar).
-  void _onAggressive(WorldSpawn eco) {
-    if (_busy || !mounted) return;
+  bool _onAggressive(WorldSpawn eco) {
+    // Só com o mapa à vista: com o celular, a Bancada ou os Ajustes abertos a folha não pula por cima. A chance não se gasta.
+    if (_busy || !mounted || ModalRoute.of(context)?.isCurrent != true) return false;
     HapticFeedback.heavyImpact();
     unawaited(_startEncounter(eco));
+    return true;
   }
 
   /// Abre o encontro com [spawn]: a folha de selo e a sintonia.

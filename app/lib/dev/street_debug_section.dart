@@ -89,6 +89,8 @@ class _StreetDebugSectionState extends State<StreetDebugSection> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Padding(padding: EdgeInsets.only(bottom: 12), child: Text('RUA VIVA · DEBUG', style: TextStyle(fontSize: 24, color: kVeil))),
+          const Text('ATENÇÃO: O QUE FOR FORÇADO E CAPTURADO FICA NO SEU SAVE COMO SE FOSSE DE VERDADE.', style: TextStyle(fontSize: 8, color: kEssence, height: 1.8)),
+          const SizedBox(height: 8),
           const Text('PRÓXIMO ECO NOVO À VISTA', style: TextStyle(fontSize: 8, color: kDim)),
           const SizedBox(height: 6),
           Wrap(spacing: 8, runSpacing: 8, children: [

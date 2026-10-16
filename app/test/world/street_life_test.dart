@@ -144,7 +144,10 @@ void main() {
       final (eco, la, lo) = anEco(sch);
       final v = viewOf(newState(), sch);
       final fired = <int>[];
-      v.onAggressive = (s) => fired.add(s.uid);
+      v.onAggressive = (s) {
+        fired.add(s.uid);
+        return true;
+      };
       var t = t0;
       void at(double d) {
         final (pla, plo) = south(la, lo, d);
@@ -160,13 +163,34 @@ void main() {
       expect(fired.where((u) => u == eco.uid).length, 1);
     });
 
+    test('tela ocupada: a chance não se gasta e tenta de novo no quadro seguinte', () {
+      final (eco, la, lo) = anEco(sch);
+      final v = viewOf(newState(), sch);
+      var busy = true;
+      final opened = <int>[];
+      v.onAggressive = (s) {
+        if (busy) return false;
+        opened.add(s.uid);
+        return true;
+      };
+      final (pla, plo) = south(la, lo, 10);
+      v.refresh(lat: pla, lon: plo, tUtc: t0);
+      expect(opened, isEmpty);
+      busy = false;
+      v.refresh(lat: pla, lon: plo, tUtc: t0 + 1);
+      expect(opened, contains(eco.uid));
+    });
+
     test('Passivo e Oculto não disparam a folha sozinhos', () {
       for (final b in ['passive', 'hidden']) {
         final sch2 = schedule({b: 100});
         final (eco, la, lo) = anEco(sch2);
         final v = viewOf(newState(), sch2);
         var fired = 0;
-        v.onAggressive = (_) => fired++;
+        v.onAggressive = (_) {
+          fired++;
+          return true;
+        };
         final (pla, plo) = south(la, lo, 10);
         v.refresh(lat: pla, lon: plo, tUtc: t0);
         expect(fired, 0, reason: b);

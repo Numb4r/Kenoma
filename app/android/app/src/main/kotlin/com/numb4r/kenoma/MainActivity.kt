@@ -2,6 +2,8 @@ package com.numb4r.kenoma
 
 import android.media.AudioManager
 import android.media.ToneGenerator
+import android.os.Handler
+import android.os.Looper
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -15,6 +17,8 @@ class MainActivity : FlutterActivity() {
                 try {
                     val tone = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 70)
                     tone.startTone(ToneGenerator.TONE_PROP_ACK, 220)
+                    // Libera o gerador logo depois do tom: cada um segura um AudioTrack nativo.
+                    Handler(Looper.getMainLooper()).postDelayed({ tone.release() }, 400)
                 } catch (_: RuntimeException) {
                     // sem som neste aparelho: o aviso na tela basta
                 }

@@ -115,8 +115,11 @@ class SpawnField {
   List<SpawnItem> cellItems(int cx, int cy, int tUtc) {
     final epoch = schedule.select(tUtc).epoch;
     final window = windowIndex(seed, cx, cy, tUtc);
-    // O clima só entra nas épocas que o trazem; nas outras a célula não depende dele.
-    final weather = epoch.ecoV2 == null || weatherAt == null ? Weather.clear : weatherAt!(cx, cy, tUtc);
+    // O clima só entra nas épocas que o trazem; nas outras a célula não depende dele. É o do COMEÇO da janela de 20 min da
+    // célula, não o do instante: assim a espécie de um Eco não muda enquanto o jogador anda até ele, ainda que a janela de 3 h
+    // do clima vire no meio.
+    final windowStart = window * windowSeconds - windowOffset(seed, cx, cy);
+    final weather = epoch.ecoV2 == null || weatherAt == null ? Weather.clear : weatherAt!(cx, cy, windowStart);
     final key = (epoch.id * 8 + weather.index, cx, cy, window);
     final cached = _cells[key];
     if (cached != null) return cached;
