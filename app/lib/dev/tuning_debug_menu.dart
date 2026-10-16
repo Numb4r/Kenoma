@@ -22,6 +22,7 @@ import '../data/geolocator_source.dart';
 import 'clock_input.dart';
 import 'dev_tools.dart';
 import 'identity_section.dart';
+import 'street_debug_section.dart';
 import 'gps_simulator.dart';
 import '../ui/sprites/sprite_image.dart';
 import '../ui/tuning/log_exporter.dart';
@@ -351,6 +352,10 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
         children: [
         _simSection(),
         IdentitySection(clock: _tools.clock),
+        StreetDebugSection(
+          tools: _tools,
+          center: () => (double.tryParse(_lat.text) ?? kUnicamp.$1, double.tryParse(_lon.text) ?? kUnicamp.$2),
+        ),
         const Text('MAPA LIVRE · DEBUG', style: TextStyle(fontSize: 24, color: kVeil)),
         const SizedBox(height: 12),
         Row(children: [_coordField('Latitude', _lat), const SizedBox(width: 8), _coordField('Longitude', _lon)]),

@@ -62,6 +62,14 @@ class _BestiaryScreenState extends State<BestiaryScreen> {
                         (b[s.id]?.captured ?? false) ? 'CAPTURADA' : ((b[s.id]?.seen ?? false) ? 'VISTA' : 'AINDA NÃO ENCONTRADA'),
                         style: TextStyle(fontSize: 8, color: (b[s.id]?.captured ?? false) ? kSignal : kDim),
                       ),
+                      // Variantes de bioma e Brilhante: vistas e capturadas por variante.
+                      for (final key in widget.data.variants.keys)
+                        if (b['${s.id}@$key']?.seen ?? false)
+                          Text(
+                            '${widget.data.variants[key]!.name.toUpperCase()}: ${(b['${s.id}@$key']?.captured ?? false) ? 'CAPTURADA' : 'VISTA'}',
+                            key: Key('bestiary-${s.id}@$key'),
+                            style: TextStyle(fontSize: 8, color: Color(widget.data.variants[key]!.tint), height: 1.8),
+                          ),
                     ]),
                   ),
                 ]),

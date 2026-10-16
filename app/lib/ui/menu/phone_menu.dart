@@ -65,6 +65,7 @@ Future<void> showPhoneMenu(
   required GameState state,
   required GameData data,
   required Widget Function() settings,
+  required Widget Function() radar,
   required int Function() nowUtc,
   required int Function() epochId,
 }) {
@@ -93,6 +94,8 @@ Future<void> showPhoneMenu(
             PixelButton(label: 'Bestiário', color: kSignal, onTap: () => open(BestiaryScreen(state: state, data: data))),
             const SizedBox(height: 8),
             PixelButton(label: 'Bancada', color: kEssence, onTap: () => open(BenchScreen(state: state, data: data))),
+            const SizedBox(height: 8),
+            PixelButton(label: 'Radar', color: kSignal, onTap: () => open(radar())),
             const SizedBox(height: 8),
             PixelButton(
               label: 'Chat${state.story.chat.unread > 0 ? ' (${state.story.chat.unread})' : ''}',

@@ -85,6 +85,10 @@ class WorldView {
   /// Um Agressivo entrou na Aura: a tela abre a folha de preparo sozinha (e o celular vibra).
   void Function(WorldSpawn eco)? onAggressive;
 
+  /// Um Eco Brilhante apareceu à vista (uma vez por Eco): a tela toca um som curto e avisa.
+  void Function(WorldSpawn eco)? onShiny;
+  final _announced = <int>{};
+
   /// Os que já apareceram nesta sessão (o debug só força o primeiro Eco *novo*), e o que o debug forçou em cada um.
   final _known = <int>{};
   final _forced = <int, ({EcoBehavior behavior, bool variant, bool shiny})>{};
@@ -160,7 +164,10 @@ class WorldView {
       if (state.isDone(s.uid)) continue;
       final hiddenAway = s.isEco && s.behavior == EcoBehavior.hidden && !state.isHiddenRevealed(s.uid, tUtc);
       if (hiddenAway) continue;
-      if (s.isEco && distanceM(s) <= viewM) state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny);
+      if (s.isEco && distanceM(s) <= viewM) {
+        state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny);
+        if (s.shiny && _announced.add(s.uid)) onShiny?.call(s);
+      }
       if (s.isEco && inAura(s)) {
         inAuraNow.add(s.uid);
         if (!_inAura.contains(s.uid) && _entered(s, tUtc)) continue; // fugiu

@@ -1,5 +1,5 @@
 {
-  "map": { "aura_m": 25, "view_m": 120, "tracker_m": 120, "tracker_max": 3, "view_width_default_m": 90, "camera_min_width_m": 70, "camera_max_width_m": 120, "sprite_height_m": 12, "player_height_m": 8, "familiar_height_m": 8, "eco_height_m": 9, "ghost_pedestrian_m": 6, "ghost_car_m": 7, "spark_size_m": 3, "art_pixel_dp": 2, "compass_declination_deg": -21, "sidewalk_art_px": 1, "road_width_m": { "principal": 12, "secondary": 9, "local": 6, "pedestrian": 2 } },
+  "map": { "aura_m": 25, "view_m": 120, "tracker_m": 120, "tracker_max": 3, "view_width_default_m": 90, "camera_min_width_m": 70, "camera_max_width_m": 120, "player_height_m": 8, "familiar_height_m": 8, "eco_height_m": 9, "ghost_pedestrian_m": 6, "ghost_car_m": 7, "spark_size_m": 3, "art_pixel_dp": 2, "compass_declination_deg": -21, "sidewalk_art_px": 1, "road_width_m": { "principal": 12, "secondary": 9, "local": 6, "pedestrian": 2 } },
   "mark": { "duration_s": 300, "max_active": 3 },
   "behavior": {
     "skittish": { "flee_speed_mps": 2.5, "speed_window_s": 5, "wander_scale": 1.6 },

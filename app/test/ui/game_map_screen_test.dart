@@ -12,6 +12,8 @@ import 'package:kenoma/world/spawn_field.dart';
 import 'package:kenoma/dev/dev_tools.dart';
 import 'package:kenoma/dev/gps_simulator.dart';
 import 'package:kenoma/ui/game/game_map_game.dart';
+import 'package:kenoma/core/weather.dart';
+import 'package:kenoma/core/behavior.dart';
 import 'package:kenoma/ui/game/player_hud.dart';
 import 'package:kenoma/ui/menu/circle_screen.dart';
 import 'package:kenoma/ui/menu/phone_menu.dart';
@@ -101,6 +103,7 @@ Future<Env> pumpGame(
   HeadingSource? heading,
   MemorySaveStore? store,
   bool realClock = false,
+  void Function(DevTools tools)? beforeOpen,
 }) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 2.625;
@@ -112,6 +115,7 @@ Future<Env> pumpGame(
   // dos testes de toque. Os testes da época 2 passam o horário que querem.
   if (!realClock || clockUtc != null) tools.clock.setUtc(clockUtc ?? 1792080000);
   if (simulator) await tools.setUseSimulator(true);
+  beforeOpen?.call(tools);
   await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: gw, bundle: _Bundle(realAssets()), headingSource: heading, store: store)));
   for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
@@ -772,6 +776,101 @@ void main() {
       await noon.settle(130);
       expect(noon.game.light.night, 0);
       expect(find.byKey(const Key('moon-hud')), findsOneWidget);
+    });
+  });
+
+  group('rua viva no mapa', () {
+    testWidgets('o Familiar anda ao lado do Conjurador e o acompanha quando ele anda', (tester) async {
+      final env = await pumpGame(tester);
+      expect(env.game.companion.hasPosition, isTrue);
+      env.sim.setJoystick(1, 0);
+      await env.live(8);
+      final ax = env.game.avatar.x, ay = env.game.avatar.y;
+      final d = ((env.game.companion.x - ax) * (env.game.companion.x - ax) + (env.game.companion.y - ay) * (env.game.companion.y - ay));
+      expect(d, lessThan(1.0), reason: 'a menos de uma célula (~17 m) do avatar');
+      expect(env.game.companion.y - ay, greaterThan(0), reason: 'andando a leste, ele vai pela direita: ao sul');
+      env.sim.setJoystick(0, 0);
+    });
+
+    testWidgets('o clima forçado pelo debug aparece no HUD junto da lua e faz chover no mapa; sem chuva, nada cai', (tester) async {
+      final env = await pumpGame(tester);
+      expect(find.byKey(const Key('weather-label')), findsOneWidget);
+      env.tools.force.set(weather: Weather.rain);
+      await env.live(12); // o clima que se vê é atualizado a cada 10 s
+      expect(find.text('CHUVA'), findsOneWidget);
+      expect(env.game.rainCount, greaterThan(20));
+      env.tools.force.set(weather: Weather.clear);
+      await env.live(12);
+      expect(find.text('CHUVA'), findsNothing);
+      for (var i = 0; i < 40; i++) {
+        await tester.pump(const Duration(milliseconds: 250));
+      }
+      expect(env.game.rainCount, 0);
+    });
+
+    testWidgets('o interruptor "chuva no mapa" apaga a chuva mesmo com o clima de chuva', (tester) async {
+      final env = await pumpGame(tester);
+      env.tools.force.set(weather: Weather.storm);
+      await env.live(12);
+      expect(env.game.rainCount, greaterThan(40));
+      env.game.worldView!.state.setSetting('rain_fx', false);
+      for (var i = 0; i < 60; i++) {
+        await tester.pump(const Duration(milliseconds: 250));
+      }
+      expect(env.game.rainCount, 0);
+    });
+
+    testWidgets('a névoa: o caminho do simulador revela em volta do Conjurador no conjunto de debug, e o véu recorta as células', (tester) async {
+      final env = await pumpGame(tester);
+      await env.live(4);
+      final fog = env.game.worldView!.state.fog;
+      expect(fog.debugCount, greaterThan(3), reason: 'o simulador revela, marcado como debug');
+      expect(fog.revealedCount, 0, reason: 'o contador de área só conta o caminho real');
+      expect(env.game.fogCuts, greaterThan(3));
+    });
+
+    /// Leva o Conjurador até um Eco real da área (a 300 m do Unicamp), para haver Ecos novos à vista.
+    Future<void> goToSomeEco(Env env) async {
+      final eco = env.game.worldView!.field
+          .around(lat: kUnicamp.$1, lon: kUnicamp.$2, tUtc: env.tools.clock.nowUtc, radiusM: 300, playerLevel: 1)
+          .firstWhere((s) => s.isEco);
+      final (la, lo) = tileFractionToLatLon(eco.x + 0.2, eco.y + 0.2, biomeZoom);
+      env.sim.teleport(la, lo);
+      await env.simulate(const Duration(seconds: 6), frames: 120);
+    }
+
+    testWidgets('um Eco Brilhante forçado pelo debug avisa com a mensagem e fica no bestiário como visto', (tester) async {
+      final env = await pumpGame(tester, beforeOpen: (t) => t.force.set(shiny: true));
+      if (env.tools.force.pendingEco) await goToSomeEco(env); // sem Eco à vista no começo: vai até um
+      expect(env.tools.force.pendingEco, isFalse, reason: 'o pedido caiu no primeiro Eco novo');
+      final seen = env.game.worldView!.state.bestiary.keys.where((k) => k.endsWith('@shiny'));
+      expect(seen, isNotEmpty);
+      expect(env.game.worldView!.state.story.count('shiny_seen'), 1);
+      expect(env.tools.force.pendingEco, isFalse);
+    });
+
+    testWidgets('um Eco oculto forçado não aparece no mapa até a varredura do Radar, e depois aparece', (tester) async {
+      final env = await pumpGame(tester, beforeOpen: (t) => t.force.set(behavior: EcoBehavior.hidden));
+      final w = env.game.worldView!;
+      if (env.tools.force.pendingEco) await goToSomeEco(env); // sem Eco à vista no começo: vai até um
+      final hidden = w.allEcos.where((e) => e.behavior == EcoBehavior.hidden).toList();
+      expect(hidden, hasLength(1));
+      final target = hidden.single;
+      expect(w.spawns.any((s) => s.uid == target.uid), isFalse, reason: 'oculto: fora do mapa e do rastreador');
+      final (la, lo) = tileFractionToLatLon(target.x + 0.2, target.y + 0.2, biomeZoom);
+      env.sim.teleport(la, lo);
+      await env.simulate(const Duration(seconds: 6), frames: 120);
+      w.radar(env.tools.clock.nowUtc);
+      await env.settle(4);
+      expect(w.spawns.any((s) => s.uid == target.uid), isTrue);
+      expect(w.state.story.count('hidden_revealed'), greaterThan(0));
+    });
+
+    testWidgets('o menu do celular tem o Radar', (tester) async {
+      final env = await pumpGame(tester);
+      await tester.tap(find.byType(PhoneButton));
+      await env.settle(10);
+      expect(find.text('RADAR'), findsOneWidget);
     });
   });
 }

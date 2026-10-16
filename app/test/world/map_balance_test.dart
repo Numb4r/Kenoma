@@ -13,26 +13,36 @@ void main() {
     expect(b.auraM, lessThan(b.viewM));
   });
 
-  test('escala em metros: 90 m de largura no padrão, pinça de 70 a 120 m, sprites de 12 m e Fagulhas de 3 m', () {
+  test('escala em metros: 90 m de largura no padrão, pinça de 70 a 120 m, Fagulhas de 3 m e sprites menores que a rua', () {
     final b = MapBalance(loadJson('assets/data/balance.json'));
     expect((b.defaultWidthM, b.cameraMinWidthM, b.cameraMaxWidthM), (90.0, 70.0, 120.0));
-    expect((b.spriteHeightM, b.sparkSizeM, b.trackerMax), (12.0, 3.0, 3));
+    expect((b.sparkSizeM, b.trackerMax), (3.0, 3));
     expect(b.defaultWidthM, inInclusiveRange(b.cameraMinWidthM, b.cameraMaxWidthM));
-    expect(b.spriteHeightM, b.roadWidthM['principal'], reason: 'o sprite tem a largura de uma rua principal');
+    expect((b.playerHeightM, b.familiarHeightM, b.ecoHeightM), (8.0, 8.0, 9.0), reason: 'Conjurador e Familiar 8 m, Ecos 9 m');
+    expect((b.ghostPedestrianM, b.ghostCarM), (6.0, 7.0), reason: 'pedestre fantasma 6 m, carro fantasma 7 m');
+    expect(b.artPixelDp, 2.0, reason: 'o pixel de arte é de 2 dp');
+    for (final m in [b.playerHeightM, b.familiarHeightM, b.ecoHeightM, b.ghostCarM]) {
+      expect(m, lessThan(b.roadWidthM['principal']!), reason: 'nenhum sprite passa da largura de uma rua principal');
+    }
+    expect(b.ghostPedestrianM, lessThan(b.playerHeightM), reason: 'o pedestre fantasma é menor que o avatar');
   });
 
-  test('sprites em metros: a proporção com as ruas é a mesma em qualquer zoom, e eles crescem com o zoom', () {
+  test('sprites em metros: a proporção com a Aura é a mesma em qualquer zoom, e eles crescem com o zoom', () {
     const lat = -22.8174, w = 411.0;
     final b = MapBalance(loadJson('assets/data/balance.json'));
     double px(double meters, double widthM) => meters / metersPerCell(lat) * pixelsPerCellFor(widthM: widthM, viewWidthPx: w, lat: lat);
     for (final widthM in [b.cameraMinWidthM, b.defaultWidthM, b.cameraMaxWidthM]) {
-      expect(px(b.spriteHeightM, widthM) / px(b.roadWidthM['principal']!, widthM), closeTo(1, 1e-9), reason: 'largura $widthM m');
-      expect(px(b.spriteHeightM, widthM) / px(b.auraM * 2, widthM), closeTo(12 / 50, 1e-9), reason: 'e a Aura de 25 m de raio');
+      expect(px(b.ecoHeightM, widthM) / px(b.auraM * 2, widthM), closeTo(9 / 50, 1e-9), reason: 'largura $widthM m');
+      expect(px(b.playerHeightM, widthM) / px(b.ecoHeightM, widthM), closeTo(8 / 9, 1e-9));
     }
-    expect(px(b.spriteHeightM, b.defaultWidthM), closeTo(54.8, 0.2), reason: '12 m em 90 m de uma tela de 411 px');
-    expect(px(b.spriteHeightM, b.cameraMinWidthM), greaterThan(px(b.spriteHeightM, b.cameraMaxWidthM)));
-    expect(px(b.spriteHeightM, b.cameraMinWidthM) / px(b.spriteHeightM, b.cameraMaxWidthM), closeTo(120 / 70, 1e-9));
+    expect(px(b.ecoHeightM, b.defaultWidthM), closeTo(41.1, 0.2), reason: '9 m em 90 m de uma tela de 411 px');
+    expect(px(b.playerHeightM, b.defaultWidthM), closeTo(36.6, 0.2), reason: '8 m em 90 m');
+    expect(px(b.ecoHeightM, b.cameraMinWidthM), greaterThan(px(b.ecoHeightM, b.cameraMaxWidthM)));
+    expect(px(b.ecoHeightM, b.cameraMinWidthM) / px(b.ecoHeightM, b.cameraMaxWidthM), closeTo(120 / 70, 1e-9));
     expect(px(b.sparkSizeM, b.defaultWidthM), closeTo(13.7, 0.1), reason: '3 m em 90 m');
+    // O pixel de arte de 2 dp vale ~0,44 m na largura padrão: um sprite de 18 pixels cabe em ~8 m.
+    expect(b.artPixelDp / px(1, b.defaultWidthM), closeTo(0.44, 0.02));
+    expect(18 * b.artPixelDp / px(1, b.defaultWidthM), closeTo(b.playerHeightM, 0.3));
   });
 
   test('conversão: metros visíveis e pixels por célula são inversos, e a Aura de 25 m ocupa 50 m dos 90', () {

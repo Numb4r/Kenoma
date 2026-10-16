@@ -28,5 +28,13 @@
       "text": "Existe um fórum, o Limen. Pedem coisas pequenas todos os dias. Faça o que pedirem, ou não. Quem pede sempre sabe o que quer?" },
     { "id": "m13", "after_s": 45,
       "text": "Por ora é só. Se o celular tremer sozinho, não atenda. Última pergunta: quem mais anda por aí com a mesma frequência que a sua?" }
+  ],
+  "familiar": [
+    { "id": "f01", "requires": { "event": "variant_seen", "min": 1 },
+      "text": "*O Familiar inclina o corpo para a cor nova do Eco e fica parado, como quem escuta. Um chiado curto sai dele. Parece dizer: tem o lugar dentro dele.*" },
+    { "id": "f02", "requires": { "event": "shiny_seen", "min": 1 },
+      "text": "*O Familiar acende por um instante, violeta e depois quase branco, e dá três voltas ao seu redor sem tocar o chão. Depois fica quieto, olhando o brilho. Parece querer que você olhe também.*" },
+    { "id": "f03", "requires": { "event": "hidden_revealed", "min": 1 },
+      "text": "*O Familiar arrepia o contorno quando o Radar varre. Aponta para onde nada estava e a estática fecha atrás do dedo dele. Parece dizer: eu já sabia que estava ali.*" }
   ]
 }

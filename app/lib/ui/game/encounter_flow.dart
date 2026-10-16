@@ -159,7 +159,7 @@ class _PrepSheetState extends State<PrepSheet> {
             if (widget.variant != null)
               Text('VARIANTE ${widget.variant!.name.toUpperCase()} · ${widget.variant!.trait.toUpperCase()}', key: const Key('prep-variant'), style: TextStyle(fontSize: 8, color: Color(widget.variant!.tint), height: 1.8)),
             if (widget.behavior != EcoBehavior.passive)
-              Text('${widget.behavior.label.toUpperCase()}: ${behaviorHint(widget.behavior)}', key: const Key('prep-behavior'), style: const TextStyle(fontSize: 8, color: kEssence, height: 1.8)),
+              Text('${widget.behavior.label}: ${behaviorHint(widget.behavior)}'.toUpperCase(), key: const Key('prep-behavior'), style: const TextStyle(fontSize: 8, color: kEssence, height: 1.8)),
             const SizedBox(height: 16),
             if (widget.seals.isEmpty)
               const Text('VOCÊ NÃO TEM SELOS. FABRIQUE UM NA BOLSA (GIZ + ECTOPLASMA).', style: TextStyle(fontSize: 8, color: kEssence, height: 1.8))

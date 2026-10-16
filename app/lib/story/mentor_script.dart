@@ -12,11 +12,12 @@ class MentorRequirement {
 }
 
 class MentorMessage {
-  const MentorMessage({required this.id, required this.afterS, required this.text, this.requires});
+  const MentorMessage({required this.id, required this.afterS, required this.text, this.requires, this.from = 'mentor'});
 
-  factory MentorMessage.fromJson(Map<String, dynamic> j) => MentorMessage(
+  factory MentorMessage.fromJson(Map<String, dynamic> j, {String from = 'mentor'}) => MentorMessage(
         id: j['id'] as String,
-        afterS: (j['after_s'] as num).toDouble(),
+        from: from,
+        afterS: ((j['after_s'] as num?) ?? 0).toDouble(),
         text: j['text'] as String,
         requires: j['requires'] == null
             ? null
@@ -25,6 +26,9 @@ class MentorMessage {
 
   final String id;
 
+  /// Quem fala: `mentor` ou `familiar` (as falas do Familiar saem sozinhas quando o evento acontece).
+  final String from;
+
   /// Segundos de jogo com o mapa aberto, desde a mensagem anterior, até esta sair.
   final double afterS;
   final String text;
@@ -32,20 +36,24 @@ class MentorMessage {
 }
 
 class MentorScript {
-  const MentorScript({required this.contactName, required this.contactNote, required this.tutorial});
+  const MentorScript({required this.contactName, required this.contactNote, required this.tutorial, this.familiar = const []});
 
   factory MentorScript.fromJson(Map<String, dynamic> j) => MentorScript(
         contactName: (j['contact'] as Map<String, dynamic>)['name'] as String,
         contactNote: ((j['contact'] as Map<String, dynamic>)['note'] as String?) ?? '',
         tutorial: [for (final m in j['tutorial'] as List<dynamic>) MentorMessage.fromJson(m as Map<String, dynamic>)],
+        familiar: [for (final m in (j['familiar'] as List<dynamic>?) ?? const []) MentorMessage.fromJson(m as Map<String, dynamic>, from: 'familiar')],
       );
 
   final String contactName;
   final String contactNote;
   final List<MentorMessage> tutorial;
 
+  /// As falas do Familiar, cada uma ligada a um acontecimento do jogo.
+  final List<MentorMessage> familiar;
+
   MentorMessage? byId(String id) {
-    for (final m in tutorial) {
+    for (final m in [...tutorial, ...familiar]) {
       if (m.id == id) return m;
     }
     return null;

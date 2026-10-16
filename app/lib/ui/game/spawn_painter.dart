@@ -8,12 +8,16 @@ import 'dart:ui' as ui;
 import 'package:flutter/painting.dart' show TextPainter, TextSpan, TextStyle, TextDirection;
 
 import '../../capture/eco_type.dart';
+import '../../core/behavior.dart';
 import '../../world/map_camera.dart';
 import '../../world/spawn_field.dart';
 import '../colors.dart';
 
 /// Tipo do Eco por espécie, para a cor do anel. Vem de `creatures.json` pelo mapa.
 typedef EcoTypeOf = EcoType? Function(String speciesId);
+
+/// A cor da paleta de uma variante ou Brilhante (0xAARRGGBB), ou `null` se o Eco é comum.
+typedef VariantTintOf = int? Function(WorldSpawn spawn);
 
 /// Cor da Fagulha ou do material.
 ui.Color spawnColor(WorldSpawn s, EcoTypeOf typeOf) {
@@ -47,6 +51,7 @@ void paintSpawns(
   required EcoTypeOf typeOf,
   required bool Function(WorldSpawn) inAura,
   bool Function(WorldSpawn)? marked,
+  VariantTintOf? tintOf,
   required double time,
   required ui.Rect avoid,
   required double spriteSize,
@@ -61,7 +66,9 @@ void paintSpawns(
     final center = ui.Offset(sx.roundToDouble(), sy.roundToDouble());
     final near = inAura(s);
     if (s.isEco) {
-      _eco(canvas, center, s, sprites[s.entryId], spriteSize, typeOf, near, time, avoid);
+      final tint = tintOf?.call(s);
+      _eco(canvas, center, s, sprites[s.entryId], spriteSize, typeOf, near, time, avoid, tint: tint);
+      if (s.behavior != EcoBehavior.passive) _behaviorIcon(canvas, center, s.behavior, spriteSize);
       if (marked?.call(s) ?? false) _markRing(canvas, center, spriteSize);
     } else if (s.isSpark) {
       _spark(canvas, center, spawnColor(s, typeOf), sparkSize, dpr, near, time + s.uid % 7);
@@ -73,13 +80,44 @@ void paintSpawns(
 
 final _flat = ui.Paint()..isAntiAlias = false;
 
+/// O ícone do comportamento, pequeno, no canto de cima à direita do Eco: dois chevrons (Arisco), um ponto de exclamação
+/// (Agressivo) ou um olho (Oculto revelado).
+void _behaviorIcon(ui.Canvas canvas, ui.Offset c, EcoBehavior b, double size) {
+  final o = c.translate(size * 0.42, -size * 0.5);
+  final box = ui.Rect.fromCenter(center: o, width: 13, height: 13);
+  canvas.drawRect(box.inflate(1.5), _flat..color = kOutline);
+  canvas.drawRect(box, _flat..color = kPanel);
+  switch (b) {
+    case EcoBehavior.skittish:
+      _flat.color = kSignal;
+      for (final dx in [-3.0, 1.0]) {
+        canvas.drawRect(ui.Rect.fromLTWH(o.dx + dx, o.dy - 4, 2, 2), _flat);
+        canvas.drawRect(ui.Rect.fromLTWH(o.dx + dx + 2, o.dy - 2, 2, 2), _flat);
+        canvas.drawRect(ui.Rect.fromLTWH(o.dx + dx + 2, o.dy, 2, 2), _flat);
+        canvas.drawRect(ui.Rect.fromLTWH(o.dx + dx, o.dy + 2, 2, 2), _flat);
+      }
+    case EcoBehavior.aggressive:
+      _flat.color = kEssence;
+      canvas.drawRect(ui.Rect.fromLTWH(o.dx - 1, o.dy - 5, 2, 6), _flat);
+      canvas.drawRect(ui.Rect.fromLTWH(o.dx - 1, o.dy + 2, 2, 2), _flat);
+    case EcoBehavior.hidden:
+      _flat.color = kVeil;
+      canvas.drawRect(ui.Rect.fromLTWH(o.dx - 4, o.dy - 1, 8, 2), _flat);
+      canvas.drawRect(ui.Rect.fromLTWH(o.dx - 3, o.dy - 3, 6, 2), _flat);
+      canvas.drawRect(ui.Rect.fromLTWH(o.dx - 3, o.dy + 1, 6, 2), _flat);
+      canvas.drawRect(ui.Rect.fromLTWH(o.dx - 1, o.dy - 1, 2, 2), _flat..color = kText);
+    case EcoBehavior.passive:
+      break;
+  }
+}
+
 /// Anel violeta quadrado em volta do Eco marcado: o sinal dele está preso.
 void _markRing(ui.Canvas canvas, ui.Offset c, double size) {
   final r = ui.Rect.fromCenter(center: c, width: size * 0.9, height: size * 0.9);
   canvas.drawRect(r, ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 2..color = kVeil..isAntiAlias = false);
 }
 
-void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double size, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid) {
+void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double size, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid, {int? tint}) {
   final color = spawnColor(s, typeOf);
   // Sombra no chão.
   canvas.drawOval(
@@ -88,12 +126,29 @@ void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double 
   );
   final bob = near ? (math.sin(time * 3 + s.uid % 5) * 2).roundToDouble() : 0.0;
   final dst = ui.Rect.fromCenter(center: c.translate(0, bob), width: size, height: size);
+  if (s.shiny) {
+    // O Brilhante: um halo suave que pulsa. É o único brilho permitido no estilo.
+    final pulse = 0.65 + 0.35 * math.sin(time * 2.4 + s.uid % 9);
+    final r = size * 0.85;
+    canvas.drawCircle(
+      dst.center,
+      r,
+      ui.Paint()
+        ..shader = ui.Gradient.radial(dst.center, r, [const ui.Color(0xFFFFE9A8).withValues(alpha: 0.45 * pulse), const ui.Color(0x00FFE9A8)])
+        ..isAntiAlias = true,
+    );
+  }
   if (sprite != null) {
     canvas.drawImageRect(
       sprite,
       ui.Rect.fromLTWH(0, 0, sprite.width.toDouble(), sprite.height.toDouble()),
       dst,
-      ui.Paint()..filterQuality = ui.FilterQuality.none..isAntiAlias = false..color = ui.Color.fromRGBO(255, 255, 255, near ? 1 : 0.55),
+      ui.Paint()
+        ..filterQuality = ui.FilterQuality.none
+        ..isAntiAlias = false
+        ..color = ui.Color.fromRGBO(255, 255, 255, near ? 1 : 0.55)
+        // A paleta da variante: um tom por cima da silhueta (srcATop), sem arte nova.
+        ..colorFilter = tint == null ? null : ui.ColorFilter.mode(ui.Color(tint).withValues(alpha: s.shiny ? 0.55 : 0.4), ui.BlendMode.srcATop),
     );
   } else {
     canvas.drawRect(dst.deflate(size * 0.2), _flat..color = color);

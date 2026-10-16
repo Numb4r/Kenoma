@@ -102,6 +102,7 @@ class _CreatureTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final species = data.species(creature.speciesId);
+    final variant = data.variantInfo(biome: creature.variant, shiny: creature.shiny);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(8),
@@ -110,7 +111,14 @@ class _CreatureTile extends StatelessWidget {
         SizedBox(
           width: 64,
           height: 64,
-          child: sprite == null ? null : RawImage(image: sprite!.normal, filterQuality: FilterQuality.none, fit: BoxFit.contain),
+          child: sprite == null
+              ? null
+              : variant == null
+                  ? RawImage(image: sprite!.normal, filterQuality: FilterQuality.none, fit: BoxFit.contain)
+                  : ColorFiltered(
+                      colorFilter: ColorFilter.mode(Color(variant.tint).withValues(alpha: 0.4), BlendMode.srcATop),
+                      child: RawImage(image: sprite!.normal, filterQuality: FilterQuality.none, fit: BoxFit.contain),
+                    ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -121,6 +129,8 @@ class _CreatureTile extends StatelessWidget {
               'NV ${creature.level}${species == null ? '' : ' · ${typeLabel(species.type).toUpperCase()}'}',
               style: const TextStyle(fontSize: 8, color: kDim),
             ),
+            if (variant != null)
+              Text('VARIANTE ${variant.name.toUpperCase()} · ${variant.trait.toUpperCase()}', key: Key('variant-${creature.uid}'), style: TextStyle(fontSize: 8, color: Color(variant.tint), height: 1.8)),
             Text('CAPTURADO $date', style: const TextStyle(fontSize: 8, color: kDim)),
           ]),
         ),

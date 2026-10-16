@@ -14,9 +14,13 @@ import '../../world/visual_map.dart';
 import '../colors.dart';
 
 class TrafficPainter {
-  TrafficPainter(this.visual, {this.cacheTiles = 96, this.maxGhosts = 160});
+  TrafficPainter(this.visual, {required this.carM, required this.pedestrianM, this.cacheTiles = 96, this.maxGhosts = 160});
 
   final VisualMap visual;
+
+  /// O comprimento do carro fantasma e a altura do pedestre fantasma, em metros (`balance.json`).
+  final double carM;
+  final double pedestrianM;
   final int cacheTiles;
   final int maxGhosts;
 
@@ -75,13 +79,23 @@ class TrafficPainter {
   }
 
   void _draw(ui.Canvas canvas, Ghost g, double sx, double sy, double rotation, double pxPerM, double night) {
+    final tone = night > 0.5 ? kSignal : kVeil;
     if (g.kind == GhostKind.pedestrian) {
-      _fill.color = (night > 0.5 ? kSignal : kText).withValues(alpha: 0.6 * g.alpha);
-      canvas.drawCircle(ui.Offset(sx, sy), math.max(1.4, 0.45 * pxPerM), _fill);
+      // Um boneco de pixels de 13 de altura: cabeça, tronco e duas pernas que se alternam com a posição. A altura em
+      // metros vem do balanceamento; o "pixel" do boneco é essa altura dividida por 13.
+      final u = math.max(1.0, pedestrianM * pxPerM / 13);
+      final swing = (math.sin((sx + sy) * 0.35 + g.seed % 7) > 0) ? 1.0 : -1.0;
+      _fill.color = (night > 0.5 ? kSignal : kText).withValues(alpha: 0.55 * g.alpha);
+      final left = sx - 1.5 * u, top = sy - 6.5 * u;
+      canvas.drawRect(ui.Rect.fromLTWH(left, top, 3 * u, 3 * u), _fill); // cabeça
+      canvas.drawRect(ui.Rect.fromLTWH(left - 0.5 * u, top + 3.5 * u, 4 * u, 5 * u), _fill); // tronco
+      canvas.drawRect(ui.Rect.fromLTWH(left + (swing > 0 ? 0 : 1.5 * u), top + 8.5 * u, 1.5 * u, 4.5 * u), _fill); // pernas
+      canvas.drawRect(ui.Rect.fromLTWH(left + (swing > 0 ? 1.5 * u : 0), top + 8.5 * u, 1.5 * u, 3.5 * u), _fill);
       return;
     }
-    // O carro: um retângulo de 4,2 × 1,9 m girado com o mapa. De dia é um vulto violeta; à noite brilha em ciano.
-    final len = math.max(5.0, g.lengthM * pxPerM) / 2, wid = math.max(2.4, 1.9 * pxPerM) / 2;
+    // O carro: um retângulo de [carM] de comprimento e ~45% disso de largura, girado com o mapa. De dia é um vulto
+    // violeta; à noite brilha em ciano.
+    final len = math.max(5.0, carM * pxPerM) / 2, wid = math.max(2.4, carM * 0.45 * pxPerM) / 2;
     final a = g.heading + rotation, ca = math.cos(a), sa = math.sin(a);
     ui.Offset p(double u, double v) => ui.Offset(sx + u * ca - v * sa, sy + u * sa + v * ca);
     final body = ui.Path()
@@ -90,7 +104,6 @@ class TrafficPainter {
       ..lineTo(p(len, wid).dx, p(len, wid).dy)
       ..lineTo(p(-len, wid).dx, p(-len, wid).dy)
       ..close();
-    final tone = night > 0.5 ? kSignal : kVeil;
     _fill.color = tone.withValues(alpha: (0.45 + 0.3 * night) * g.alpha);
     canvas.drawPath(body, _fill);
     final head = p(len * 0.8, 0); // um ponto claro na frente, para se ler o sentido

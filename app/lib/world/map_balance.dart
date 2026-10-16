@@ -10,7 +10,6 @@ class MapBalance {
         trackerM = (m['tracker_m'] as num).toDouble(),
         trackerMax = m['tracker_max'] as int,
         defaultWidthM = (m['view_width_default_m'] as num).toDouble(),
-        spriteHeightM = (m['sprite_height_m'] as num).toDouble(),
         playerHeightM = (m['player_height_m'] as num).toDouble(),
         familiarHeightM = (m['familiar_height_m'] as num).toDouble(),
         ecoHeightM = (m['eco_height_m'] as num).toDouble(),
@@ -38,10 +37,6 @@ class MapBalance {
 
   /// Largura da tela, em metros, no zoom padrão.
   final double defaultWidthM;
-
-  /// Altura do Conjurador e dos Ecos, em metros do mundo: mais ou menos a largura de uma rua. A proporção
-  /// com as ruas é a mesma em qualquer zoom.
-  final double spriteHeightM;
 
   /// Alturas dos sprites em metros do mundo: Conjurador, Familiar e Ecos; e o tamanho dos fantasmas do tráfego
   /// (pedestre: altura; carro: comprimento).

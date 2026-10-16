@@ -10,7 +10,11 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
+import '../../core/tiles.dart';
 import '../../core/weather.dart';
+import '../../world/weather_source.dart';
+import '../chime.dart';
+import '../sprites/familiar_sprite.dart';
 import '../../data/game_data.dart';
 import '../../player/circle.dart';
 import '../../player/game_state.dart' show GameState;
@@ -35,6 +39,7 @@ import '../colors.dart';
 import '../map/map_assets.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
 import '../menu/phone_menu.dart';
+import '../menu/radar_screen.dart';
 import '../../story/local_notifier.dart';
 import '../../story/notification_plan.dart';
 import '../settings/settings_screen.dart';
@@ -115,6 +120,40 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   String _version = 'dev';
 
+  WeatherService? _weather;
+  Weather _shownWeather = Weather.clear;
+
+  /// O clima determinístico (o da seed) numa posição: o que pesa nos spawns e o que se vê sem a rede.
+  Weather _weatherAtLatLon(int seed, GameData data, double lat, double lon, int t) {
+    final (cx, cy) = latLonToTile(lat, lon, 20);
+    return _weatherOfCell(seed, data, cx, cy, t);
+  }
+
+  /// Atualiza o clima que se vê (HUD e chuva): o forçado pelo debug, ou o da rede se ligado, ou o determinístico.
+  void _updateWeather() {
+    final r = _ready, svc = _weather;
+    if (r == null || svc == null) return;
+    final now = tools.clock.nowUtc;
+    final lat = r.game.playerLat, lon = r.game.playerLon;
+    unawaited(svc.refresh(lat, lon, now));
+    final next = tools.force.weather ?? svc.shown(lat, lon, now);
+    if (next != _shownWeather) setState(() => _shownWeather = next);
+  }
+
+  /// A névoa de guerra: revela em volta do caminho andado (o do simulador vai para o conjunto de debug).
+  void _revealFog(PlayerState s, GameState state, GameData data) {
+    final p = s.position;
+    if (p == null) return;
+    final (x, y) = latLonToTileFraction(p.lat, p.lon, biomeZoom);
+    state.revealFog(x, y, data.street.fogRevealRadiusM, metersPerCell(p.lat), debug: tools.useSimulator);
+  }
+
+  /// Um Eco Brilhante apareceu: som curto e aviso.
+  void _onShiny(WorldSpawn eco) {
+    unawaited(playChime());
+    _toast('Um Eco Brilhante apareceu por perto!', seconds: 4);
+  }
+
   /// O clima determinístico de uma célula (o que pesa nos spawns). O debug pode forçá-lo.
   Weather _weatherOfCell(int seed, GameData data, int cx, int cy, int t) {
     final forced = tools.force.weather;
@@ -141,7 +180,13 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final st = r.session.state;
     st.ensureDaily(r.data.forum, r.data.schedule.select(now).epoch.id, localDay(now));
     st.tickChat(1, now, r.data.mentor);
+    if (_weatherIn-- <= 0) {
+      _weatherIn = 10;
+      _updateWeather();
+    }
   }
+
+  int _weatherIn = 0;
 
   /// A caminhada conta de 10 em 10 metros, para não gravar o save a cada passo.
   void _onWalked(double meters) {
@@ -177,6 +222,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         nowUtc: () => tools.clock.nowUtc,
         realNowUtc: () => tools.clock.realNowUtc,
         appVersion: _version,
+        cellSideM: () => 2 * metersPerCell(r.game.playerLat),
         followHeading: () => r.game.rotation.followHeading,
         onFollowHeading: (on) {
           if (r.game.rotation.followHeading != on) r.game.toggleFollowHeading();
@@ -309,11 +355,13 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final GameSession session;
     final sprites = <String, ui.Image>{};
     final List<ui.Image> playerFrames;
+    final ui.Image familiar;
     try {
       data = await GameData.load(widget.bundle);
-      playerFrames = await loadPlayerFrames();
+      playerFrames = await loadPlayerFramesMap();
+      familiar = await loadFamiliarImage();
       for (final s in data.tuning.species) {
-        sprites[s.id] = (await EcoSprite.load(s.id)).normal;
+        sprites[s.id] = (await EcoSprite.loadMap(s.id)).normal;
       }
       var version = _version;
       try {
@@ -369,7 +417,6 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       defaultWidthM: assets.balance.defaultWidthM,
       minWidthM: assets.balance.cameraMinWidthM,
       maxWidthM: assets.balance.cameraMaxWidthM,
-      spriteHeightM: assets.balance.spriteHeightM,
       sparkSizeM: assets.balance.sparkSizeM,
       trackerM: assets.balance.trackerM,
       trackerMax: assets.balance.trackerMax,
@@ -378,6 +425,12 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       worldView: world,
       streetNames: () => session.state.setting('street_names'),
       veilTraffic: () => session.state.settingOr('veil_traffic', true),
+      rainFx: () => session.state.settingOr('rain_fx', true),
+      weatherShown: () => _shownWeather,
+      variantTint: (s) => data.variantInfo(biome: s.variant, shiny: s.shiny)?.tint,
+      familiarImage: familiar,
+      rainDrops: data.street.rainParticles,
+      familiarOffsetM: data.street.familiarFollowOffsetM,
       sprites: sprites,
       typeOf: (id) => data.species(id)?.type,
       nowUtc: () => tools.clock.nowUtc,
@@ -385,11 +438,18 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final tracker = PlayerTracker(source: tools.source);
     final sub = tracker.states.listen((s) {
       game.onPlayerState(s);
+      _revealFog(s, session.state, data);
       _rebuild();
     });
     game.onFollowHeading = _setFollowHeading;
     game.onWalked = _onWalked;
     world.onAggressive = _onAggressive;
+    world.onShiny = _onShiny;
+    _weather = WeatherService(
+      deterministic: (lat, lon, t) => _weatherAtLatLon(session.state.seed, data, lat, lon, t),
+      source: OpenMeteoSource(),
+      online: () => session.state.setting('weather_online'),
+    );
     session.state.onNotice = _toast;
     session.state.ensureDaily(data.forum, data.schedule.select(tools.clock.nowUtc).epoch.id, localDay(tools.clock.nowUtc));
     _storyTimer = Timer.periodic(const Duration(seconds: 1), (_) => _storyTick());
@@ -575,7 +635,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
               Positioned(
                 right: 8,
                 top: 56,
-                child: MoonHud(nowUtc: () => tools.clock.nowUtc, lat: () => game.playerLat),
+                child: MoonHud(nowUtc: () => tools.clock.nowUtc, lat: () => game.playerLat, weather: () => _shownWeather),
               ),
               Positioned(
                 left: 8,
@@ -602,6 +662,12 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                         state: r.session.state,
                         data: r.data,
                         settings: () => _settings(r),
+                        radar: () => RadarScreen(
+                          state: r.session.state,
+                          street: r.data.street,
+                          nowUtc: () => tools.clock.nowUtc,
+                          onSweep: () => r.world.radar(tools.clock.nowUtc),
+                        ),
                         nowUtc: () => tools.clock.nowUtc,
                         epochId: () => r.data.schedule.select(tools.clock.nowUtc).epoch.id,
                       ),

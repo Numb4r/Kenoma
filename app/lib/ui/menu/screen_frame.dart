@@ -54,11 +54,14 @@ class SectionTitle extends StatelessWidget {
 
 /// O sprite de uma espécie; [silhouette] pinta só a forma, para o que o jogador ainda não viu.
 class SpeciesImage extends StatelessWidget {
-  const SpeciesImage({required this.sprite, this.silhouette = false, this.size = 64, super.key});
+  const SpeciesImage({required this.sprite, this.silhouette = false, this.size = 64, this.tint, super.key});
 
   final EcoSprite? sprite;
   final bool silhouette;
   final double size;
+
+  /// A paleta da variante (0xAARRGGBB): um tom por cima da silhueta, sem arte nova.
+  final int? tint;
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +69,13 @@ class SpeciesImage extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: img == null || !silhouette ? img : ColorFiltered(colorFilter: const ColorFilter.mode(kPanelLine, BlendMode.srcIn), child: img),
+      child: img == null
+          ? null
+          : silhouette
+              ? ColorFiltered(colorFilter: const ColorFilter.mode(kPanelLine, BlendMode.srcIn), child: img)
+              : tint == null
+                  ? img
+                  : ColorFiltered(colorFilter: ColorFilter.mode(Color(tint!).withValues(alpha: 0.4), BlendMode.srcATop), child: img),
     );
   }
 }

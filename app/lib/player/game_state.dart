@@ -263,10 +263,10 @@ class GameState extends ChangeNotifier {
   /// Avança o relógio do tutorial em [dt] segundos de jogo. Devolve a mensagem do mentor que chegou, ou `null`.
   MentorMessage? tickChat(double dt, int nowUtc, MentorScript script) {
     final m = story.chat.tick(dt, nowUtc, script, story.count);
-    if (m != null) {
-      onNotice?.call('Nova mensagem de ${script.contactName}');
-      notifyListeners();
-    }
+    final fam = story.chat.deliverFamiliar(nowUtc, script, story.count);
+    if (m != null) onNotice?.call('Nova mensagem de ${script.contactName}');
+    if (fam.isNotEmpty) onNotice?.call('O Familiar tem algo a dizer');
+    if (m != null || fam.isNotEmpty) notifyListeners();
     return m;
   }
 

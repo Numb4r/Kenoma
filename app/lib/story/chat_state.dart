@@ -37,7 +37,13 @@ class ChatState {
 
   int get unread => delivered.length - readCount;
 
-  bool tutorialDone(MentorScript script) => delivered.length >= script.tutorial.length;
+  /// Quantas mensagens do tutorial do mentor já saíram (as do Familiar não contam).
+  int mentorDelivered(MentorScript script) {
+    final ids = {for (final m in script.tutorial) m.id};
+    return delivered.where((e) => ids.contains(e.id)).length;
+  }
+
+  bool tutorialDone(MentorScript script) => mentorDelivered(script) >= script.tutorial.length;
 
   void markAllRead() => readCount = delivered.length;
 
@@ -45,13 +51,26 @@ class ChatState {
   /// [eventCount] diz quantas vezes um evento do jogo aconteceu.
   MentorMessage? tick(double dt, int nowUtc, MentorScript script, int Function(String event) eventCount) {
     if (tutorialDone(script)) return null;
-    final next = script.tutorial[delivered.length];
+    final next = script.tutorial[mentorDelivered(script)];
     waitS += dt;
     final req = next.requires;
     if (waitS < next.afterS || (req != null && eventCount(req.event) < req.min)) return null;
     delivered.add(ChatEntry(id: next.id, utc: nowUtc));
     waitS = 0;
     return next;
+  }
+
+  /// As falas do Familiar cujo acontecimento já houve e que ainda não saíram. Saem na hora, todas de uma vez, e só uma
+  /// vez cada. Devolve as entregues agora.
+  List<MentorMessage> deliverFamiliar(int nowUtc, MentorScript script, int Function(String event) eventCount) {
+    final out = <MentorMessage>[];
+    for (final m in script.familiar) {
+      final req = m.requires;
+      if (delivered.any((e) => e.id == m.id) || (req != null && eventCount(req.event) < req.min)) continue;
+      delivered.add(ChatEntry(id: m.id, utc: nowUtc));
+      out.add(m);
+    }
+    return out;
   }
 
   Map<String, dynamic> toJson() => {'delivered': [for (final e in delivered) e.toJson()], 'read': readCount, 'wait_s': waitS};

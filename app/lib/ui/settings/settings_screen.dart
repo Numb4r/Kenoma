@@ -31,6 +31,7 @@ class SettingsScreen extends StatefulWidget {
     required this.nowUtc,
     required this.realNowUtc,
     required this.appVersion,
+    required this.cellSideM,
     required this.followHeading,
     required this.onFollowHeading,
     required this.onRestart,
@@ -47,6 +48,9 @@ class SettingsScreen extends StatefulWidget {
   final int Function() nowUtc;
   final int Function() realNowUtc;
   final String appVersion;
+
+  /// O lado de uma célula z20 (~35 m) na latitude de agora, para a área revelada em km².
+  final double Function() cellSideM;
 
   /// O "seguir direção" de agora, e como ligar e desligar.
   final bool Function() followHeading;
@@ -276,6 +280,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ]),
             ),
             const SectionTitle('Mapa'),
+            Container(
+              key: const Key('fog-area'),
+              padding: const EdgeInsets.all(12),
+              decoration: panelBox(),
+              child: Text(
+                'ÁREA REVELADA: ${s.fog.areaKm2(widget.cellSideM()).toStringAsFixed(2)} KM² · ${s.fog.revealedCount} CÉLULAS',
+                style: const TextStyle(fontSize: 8, color: kText, height: 1.8),
+              ),
+            ),
+            const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Nomes de rua', style: TextStyle(fontSize: 8)),
@@ -291,6 +305,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: s.settingOr('veil_traffic', true),
               activeThumbColor: kSignal,
               onChanged: (v) => s.setSetting('veil_traffic', v),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Chuva no mapa', style: TextStyle(fontSize: 8)),
+              subtitle: const Text('Gotas em pixels quando chove. Só visual', style: TextStyle(fontSize: 8, color: kDim)),
+              value: s.settingOr('rain_fx', true),
+              activeThumbColor: kSignal,
+              onChanged: (v) => s.setSetting('rain_fx', v),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Clima pela internet', style: TextStyle(fontSize: 8)),
+              subtitle: const Text('Mostra o clima real (Open-Meteo, posição arredondada a ~1 km). Só visual: os spawns usam o clima da seed', style: TextStyle(fontSize: 8, color: kDim)),
+              value: s.setting('weather_online'),
+              activeThumbColor: kSignal,
+              onChanged: (v) => s.setSetting('weather_online', v),
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,

@@ -8,6 +8,8 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import '../../capture/eco_type.dart';
 import '../../core/astro.dart';
+import '../../core/weather.dart';
+import '../../world/companion.dart';
 import '../../core/tiles.dart';
 import '../../world/aura.dart';
 import '../../world/follow_camera.dart';
@@ -22,10 +24,15 @@ import '../../world/world_view.dart';
 import '../../world/map_balance.dart';
 import '../../world/visual_map.dart';
 import '../map/map_renderer.dart';
+import '../sprites/sprite_downscale.dart' show snapSpriteSize;
+import '../sprites/sprite_image.dart' show mapEcoPx, mapPlayerPx;
 import 'art_renderer.dart';
 import 'art_style.dart';
 import 'spawn_painter.dart';
+import 'fog_painter.dart';
+import 'rain_painter.dart';
 import 'street_label_painter.dart';
+import 'trace_painter.dart';
 import 'traffic_painter.dart';
 import 'tracker_painter.dart';
 import 'player_painter.dart';
@@ -45,7 +52,6 @@ class GameMapGame extends FlameGame {
     required this.defaultWidthM,
     required this.minWidthM,
     required this.maxWidthM,
-    required this.spriteHeightM,
     required this.sparkSizeM,
     required this.trackerM,
     required this.trackerMax,
@@ -54,6 +60,12 @@ class GameMapGame extends FlameGame {
     this.worldView,
     this.streetNames = _off,
     this.veilTraffic = _off,
+    this.rainFx = _off,
+    this.weatherShown = _clear,
+    this.variantTint,
+    this.familiarImage,
+    this.rainDrops = 70,
+    this.familiarOffsetM = 6,
     this.sprites = const {},
     this.typeOf = _noType,
     this.nowUtc = _zero,
@@ -79,10 +91,32 @@ class GameMapGame extends FlameGame {
   final bool Function() overlayGrid20;
   late final ArtRenderer _art = ArtRenderer(visual: visual, style: style, balance: balance);
   late final StreetLabelPainter _labels = StreetLabelPainter(visual);
-  late final TrafficPainter _traffic = TrafficPainter(visual);
+  late final TrafficPainter _traffic = TrafficPainter(visual, carM: balance.ghostCarM, pedestrianM: balance.ghostPedestrianM);
+  final FogPainter _fog = FogPainter();
+  final TracePainter _trace = TracePainter();
+  late final RainPainter _rain = RainPainter(maxDrops: rainDrops);
+
+  /// O Familiar que anda ao lado do Conjurador.
+  final companion = Companion();
+  bool _familiarFacingLeft = false;
 
   /// Se os nomes de rua estão ligados nos Ajustes (lido a cada quadro).
   final bool Function() streetNames;
+
+  /// A chuva no mapa está ligada nos Ajustes, e o clima que se vê agora (o que o HUD mostra).
+  final bool Function() rainFx;
+  final Weather Function() weatherShown;
+
+  /// A paleta da variante ou do Brilhante (0xAARRGGBB), ou `null`; o sprite do Familiar; quantas gotas tem a chuva e a
+  /// que distância (m) o Familiar anda ao lado do Conjurador.
+  final VariantTintOf? variantTint;
+  final ui.Image? familiarImage;
+  final int rainDrops;
+  final double familiarOffsetM;
+
+  /// Quantas gotas de chuva e quantas células reveladas (recortes do véu) foram desenhadas no último quadro.
+  int get rainCount => _rain.count;
+  int get fogCuts => _fog.lastCut;
 
   /// Quantos fantasmas do tráfego foram desenhados no último quadro.
   int get ghostsDrawn => _traffic.lastDrawn;
@@ -109,7 +143,6 @@ class GameMapGame extends FlameGame {
   final double maxWidthM;
 
   /// Altura do Conjurador e dos Ecos, e tamanho das Fagulhas e dos materiais, em metros do mundo.
-  final double spriteHeightM;
   final double sparkSizeM;
 
   /// Alcance do rastreador, em metros, e quantos Ecos ele mostra.
@@ -155,6 +188,9 @@ class GameMapGame extends FlameGame {
   /// A luz do mapa pela altura do sol em ([_lat], [_lon]) na hora do jogo. Recalculada a cada poucos segundos.
   DayLight light = const DayLight(night: 0, warm: 0);
   double _lightIn = 0;
+
+  /// A longitude de agora (a do último fix).
+  double get playerLon => _lon;
 
   /// A latitude de agora (a do último fix; a da Unicamp antes do primeiro).
   double get playerLat => _lat;
@@ -254,6 +290,15 @@ class GameMapGame extends FlameGame {
     super.update(dt);
     avatar.update(dt);
     _animate(dt);
+    if (avatar.hasPosition) {
+      companion.update(dt, ax: avatar.x, ay: avatar.y, vx: avatar.velocityX, vy: avatar.velocityY, offsetCells: familiarOffsetM / metersPerCell(_lat));
+    } else {
+      companion.clear();
+    }
+    if (size.x > 0) {
+      final w = weatherShown();
+      _rain.update(dt, Size(size.x, size.y), rainFx() ? (w == Weather.storm ? 1.6 : (w == Weather.rain ? 1.0 : 0.0)) : 0.0);
+    }
     _lightIn -= dt;
     if (_lightIn <= 0 && _hasFix) {
       _lightIn = 5;
@@ -293,6 +338,7 @@ class GameMapGame extends FlameGame {
       _traffic.lastDrawn = 0;
     }
     if (streetNames()) _labels.paint(canvas, view, cam);
+    if (worldView != null && _hasFix) _fog.paint(canvas, view, cam, worldView!.state.fog);
     if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
     if (!avatar.hasPosition) return;
     final (sx, sy) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
@@ -300,7 +346,10 @@ class GameMapGame extends FlameGame {
     // De baixo para cima: Aura no chão, spawns, Conjurador por cima de tudo.
     final w = worldView;
     paintAura(canvas, center, auraRadiusPx(auraM: w?.auraRadiusM ?? auraM, lat: _lat, pixelsPerCell: cam.pixelsPerCell));
-    final spriteSize = spriteSizePx, sparkSize = sparkSizePx;
+    final spriteSize = ecoSizePx, playerSize = playerSizePx, sparkSize = sparkSizePx;
+    if (w != null && w.traces.isNotEmpty) {
+      _trace.paint(canvas, view, cam, traces: w.traces, ecos: w.allEcos, playerX: avatar.x, playerY: avatar.y, metersPerCell: metersPerCell(_lat), nowUtc: nowUtc());
+    }
     if (w != null) {
       paintSpawns(
         canvas,
@@ -311,14 +360,16 @@ class GameMapGame extends FlameGame {
         typeOf: typeOf,
         inAura: w.canReach,
         marked: (s) => w.state.markOf(s.uid) != null,
+        tintOf: variantTint,
         time: _time,
-        avoid: markerRect(center, spriteSize).inflate(6),
+        avoid: markerRect(center, playerSize).inflate(6),
         spriteSize: spriteSize,
         sparkSize: sparkSize,
         dpr: dpr,
       );
     }
-    paintPlayerMarker(canvas, center, sprite: _playerFrame, size: spriteSize, mirrored: _facingLeft, dpr: dpr);
+    _paintFamiliar(canvas, cam, view);
+    paintPlayerMarker(canvas, center, sprite: _playerFrame, size: playerSize, mirrored: _facingLeft, dpr: dpr);
     if (w != null) {
       final off = spriteSize / 2;
       final tracked = w.tracked(
@@ -331,6 +382,7 @@ class GameMapGame extends FlameGame {
       );
       paintTracker(canvas, view, tracked, sprites: sprites, typeOf: typeOf, bottomInset: bottomInset, rotation: cam.rotation);
     }
+    _rain.paint(canvas);
   }
 
   /// A luz do dia sobre o desenho do mapa: à noite escurece e esfria (multiplica por um azul profundo), no nascer e
@@ -344,6 +396,17 @@ class GameMapGame extends FlameGame {
     if (light.warm > 0.004) {
       canvas.drawRect(rect, Paint()..color = Color.fromRGBO(255, 138, 64, 0.17 * light.warm));
     }
+  }
+
+  /// O Familiar, ao lado do Conjurador: o mesmo cuidado do avatar (suavizado, olha para o lado em que anda na tela, com um
+  /// leve balanço ao andar).
+  void _paintFamiliar(Canvas canvas, MapCamera cam, Size view) {
+    if (familiarImage == null || !companion.hasPosition) return;
+    final screenVx = math.cos(companion.heading + cam.rotation);
+    if (companion.moving && screenVx.abs() > 1e-3) _familiarFacingLeft = screenVx < 0;
+    final (sx, sy) = cam.cellToScreen(companion.x, companion.y, view.width, view.height);
+    final bob = companion.moving ? (math.sin(_time * 7) * 1.5).roundToDouble() : (math.sin(_time * 2) * 1.0).roundToDouble();
+    paintPlayerMarker(canvas, Offset(sx.roundToDouble(), sy.roundToDouble() + bob), sprite: familiarImage, size: familiarSizePx, mirrored: _familiarFacingLeft, dpr: dpr);
   }
 
   /// Sobreposição de debug: a grade de biomas (a camada lógica) e a das células de spawn, translúcidas por
@@ -371,8 +434,11 @@ class GameMapGame extends FlameGame {
   /// Barra de navegação do sistema embaixo, em pixels lógicos: o rastreador fica acima dela.
   double bottomInset = 0;
 
-  /// Altura do Conjurador e dos Ecos na tela, em pixels: 12 m do mundo convertidos pelo zoom de agora.
-  double get spriteSizePx => spriteHeightM / metersPerCell(_lat) * follow.pixelsPerCell;
+  /// Alturas na tela, em pixels lógicos: os metros do mundo (`balance.json`) convertidos pelo zoom de agora e ajustados
+  /// a um múltiplo inteiro de pixels físicos por pixel do sprite (nada de pixel mais gordo que o vizinho).
+  double get ecoSizePx => snapSpriteSize(balance.ecoHeightM / metersPerCell(_lat) * follow.pixelsPerCell, dpr, mapEcoPx);
+  double get playerSizePx => snapSpriteSize(balance.playerHeightM / metersPerCell(_lat) * follow.pixelsPerCell, dpr, mapPlayerPx);
+  double get familiarSizePx => snapSpriteSize(balance.familiarHeightM / metersPerCell(_lat) * follow.pixelsPerCell, dpr, mapPlayerPx);
 
   /// Tamanho das Fagulhas e dos materiais na tela, em pixels.
   double get sparkSizePx => sparkSizeM / metersPerCell(_lat) * follow.pixelsPerCell;
@@ -416,7 +482,7 @@ class GameMapGame extends FlameGame {
     for (final s in w.spawns) {
       final (sx, sy) = cam.cellToScreen(s.x, s.y, size.x, size.y);
       final d = (Offset(sx, sy) - screen).distance;
-      if (d <= hitRadius(s, spriteSizePx, sparkSizePx) && d < bestD) {
+      if (d <= hitRadius(s, ecoSizePx, sparkSizePx) && d < bestD) {
         best = s;
         bestD = d;
       }
@@ -429,3 +495,4 @@ EcoType? _noType(String _) => null;
 int _zero() => 0;
 
 bool _off() => false;
+Weather _clear() => Weather.clear;

@@ -77,8 +77,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.82),
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: kPanel, border: Border.all(color: kVeil, width: 2)),
+                    decoration: BoxDecoration(color: kPanel, border: Border.all(color: m.from == 'familiar' ? kSignal : kVeil, width: 2)),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      if (m.from == 'familiar') const Text('FAMILIAR', style: TextStyle(fontSize: 8, color: kSignal)),
                       Text(m.text, style: const TextStyle(fontSize: 8, color: kText, height: 1.8)),
                       const SizedBox(height: 6),
                       Text(_time(e.utc), style: const TextStyle(fontSize: 8, color: kDim)),
