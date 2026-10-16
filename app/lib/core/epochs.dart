@@ -183,14 +183,17 @@ class Epoch {
 }
 
 class EpochSchedule {
-  EpochSchedule(List<Epoch> epochs) : epochs = List.unmodifiable(epochs) {
+  EpochSchedule(List<Epoch> epochs, {this.source}) : epochs = List.unmodifiable(epochs) {
     assert(epochs.isNotEmpty, 'epochs.json sem épocas');
   }
 
   factory EpochSchedule.fromJson(Map<String, dynamic> json) => EpochSchedule([
         for (final e in json['epochs'] as List<dynamic>)
           if (_available((e as Map<String, dynamic>)['requires_feature'] as String?)) Epoch.fromJson(e),
-      ]);
+      ], source: json);
+
+  /// O JSON de onde veio (todas as épocas, também as de funcionalidade desligada). Usado pela fusão do feed assinado.
+  final Map<String, dynamic>? source;
 
   static bool _available(String? feature) => feature == null || (feature == 'street_life' && streetLifeEnabled);
 

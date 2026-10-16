@@ -9,10 +9,15 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Para os avisos agendados voltarem depois de o celular reiniciar. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Contador de passos opcional (Ajustes): o app só pede a permissão quando o jogador liga o interruptor. -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
     <application
         android:label="kenoma"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"

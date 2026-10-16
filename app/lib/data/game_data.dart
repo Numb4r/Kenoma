@@ -7,9 +7,11 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../core/epochs.dart';
+import '../net/signed_feed.dart';
 import '../player/progress_balance.dart';
 import '../story/forum_data.dart';
 import '../core/weather.dart';
+import '../world/steps.dart';
 import '../world/street_life_balance.dart';
 import '../story/mentor_script.dart';
 import '../ui/menu/phone_apps.dart';
@@ -52,6 +54,7 @@ class GameData {
     required this.mentor,
     required this.forum,
     required this.street,
+    required this.steps,
     this.variants = const {},
     this.phone = const PhoneApps([]),
   });
@@ -66,7 +69,7 @@ class GameData {
       balanceVersion: balanceVersionOf(balanceBytes),
       creatures: await json('creatures'),
       items: await json('items'),
-      epochs: await json('epochs'),
+      epochs: await loadEpochsJson(bundle: b),
       recipes: await json('recipes'),
       mentor: await json('mentor'),
       forum: await json('forum'),
@@ -88,6 +91,7 @@ class GameData {
         forum: ForumData.fromJson(forum),
         street: StreetLifeBalance(balance),
         phone: PhoneApps.fromBalance(balance),
+        steps: StepsBalance.fromJson(balance),
         variants: {
           for (final e in ((creatures['variants'] as Map<String, dynamic>?) ?? const {}).entries)
             e.key: VariantInfo(
@@ -137,6 +141,9 @@ class GameData {
 
   /// Comportamentos, Radar, névoa e Familiar do `balance.json`.
   final StreetLifeBalance street;
+
+  /// Passos por Fagulha do contador opcional (`balance.json`, bloco `steps`).
+  final StepsBalance steps;
 
   /// As variantes: `urban`, `green`, `water`, `residential` e `shiny`.
   final Map<String, VariantInfo> variants;

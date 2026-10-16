@@ -18,6 +18,7 @@ import '../../story/notification_plan.dart';
 import '../colors.dart';
 import '../menu/screen_frame.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
+import 'connectivity_section.dart';
 import 'qr_scan_screen.dart';
 
 /// Abre a câmera e devolve o código de grupo lido, ou `null`.
@@ -345,6 +346,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               activeThumbColor: kSignal,
               onChanged: _setNotifications,
             ),
+            ConnectivitySection(state: s, data: widget.data, nowUtc: widget.nowUtc),
             const SectionTitle('Backup'),
             const Text('O backup é o seu jogo inteiro num arquivo. Mande para o Google Drive ou para si mesmo.', style: TextStyle(fontSize: 8, color: kDim, height: 1.8)),
             const SizedBox(height: 8),

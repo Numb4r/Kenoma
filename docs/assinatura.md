@@ -89,3 +89,56 @@ nada do Núcleo depende de rede); a permissão só estará em uso quando uma fas
    save? Suba `saveSchemaVersion`, escreva a migração pura em `app/lib/save/migrations.dart` e o teste dela
    (save antigo de verdade como entrada) antes de gerar o APK.
 3. O número de versão sobe (`version:` no `pubspec.yaml`), sempre 0.x enquanto for teste.
+
+## Feed assinado de épocas e eventos (Ed25519)
+
+O app, com internet e **no máximo uma vez por dia UTC**, baixa `epochs.json` e `events.json` do GitHub Pages
+(`https://numb4r.github.io/Kenoma/`, constante `kFeedBaseUrl` em `app/lib/net/feed_config.dart`). Cada arquivo vem com
+`X.json.sig`: assinatura Ed25519 de 64 bytes em **hex** (128 caracteres), sobre os bytes exatos do arquivo. O app só
+aceita se a assinatura bater com a chave pública embutida (`kFeedPublicKeyHex`). Rede fora, assinatura ausente ou
+inválida, JSON ruim, época alterada: ignora em silêncio e segue com o `epochs.json` do app e o último feed aceito
+(guardado em `<documentos>/feed/`, reverificado a cada leitura). O que vale é aplicado na **próxima abertura** do app.
+
+O que o feed pode fazer com épocas (regra 8): acrescentar épocas **novas** (id maior que o maior embutido) e **estender**
+o `valid_until_utc` de uma época existente com conteúdo idêntico. Qualquer outra diferença numa época já publicada
+rejeita o arquivo inteiro. Época nova cujo pacote (`assets/regions/...`) o app não tem é ignorada. `events.json` por
+enquanto só é lido e guardado (`loadSignedEvents()`), ainda não há sistema de eventos.
+
+### Chave de publicação
+
+Fica em `~/.kenoma-signing/publicacao_ed25519.pem` (permissão 600, fora do repositório; `backup_signing_key.sh` a inclui
+no backup cifrado). **Chave pública embutida no app** (hex, 32 bytes):
+
+```
+56b32fe7af4341199ea6b922385739edb5def059905d238545e60ba6631dcf25
+```
+
+### Como assinar e publicar
+
+```
+./scripts/assinar_publicacao.sh                       # usa app/assets/data/epochs.json e docs/pages/events.json
+./scripts/assinar_publicacao.sh outro_epochs.json outro_events.json
+```
+
+O script copia os arquivos para `docs/pages/`, assina com `openssl pkeyutl -sign -rawin` (OpenSSL 3), grava
+`docs/pages/X.json.sig`, confere a assinatura de volta com a chave pública e imprime os passos. Ele **não publica nada**.
+Para publicar: commitar `docs/pages/`, dar push (só você decide) e ativar GitHub Pages em Settings > Pages > Deploy from
+branch, pasta `/docs/pages` (ou copiar a pasta para uma branch `gh-pages`). Confira com
+`curl -s https://numb4r.github.io/Kenoma/events.json.sig`. As `.sig` são públicas e entram no repositório.
+
+Para criar uma época nova: acrescente-a ao `epochs.json` publicado (copie o do app e acrescente), e o app antigo a
+recebe sem atualização, desde que tenha os pacotes dela. Reassine sempre depois de qualquer edição, byte a byte.
+
+### Rotação de chave
+
+1. Apague (ou mova) `publicacao_ed25519.pem` e rode `assinar_publicacao.sh`: ele cria outra e imprime a pública nova.
+2. Troque `kFeedPublicKeyHex` em `app/lib/net/feed_config.dart` e solte uma versão nova do app (assinada com a chave de
+   release, com migração testada). Quem ainda está na versão antiga ignora o feed assinado com a chave nova (cai no
+   `epochs.json` embutido), então não quebra, só deixa de receber épocas até atualizar.
+3. Republique `docs/pages/` reassinado.
+
+### Se a chave vazar
+
+Quem tiver a chave privada pode publicar épocas novas e estender validades, **não** pode alterar uma época já
+publicada nem executar código (o app só lê JSON e a regra 8 vale). Mesmo assim: faça a rotação acima, tire o conteúdo
+suspeito do Pages e confira `docs/pages/` no histórico. Nunca cole a chave privada em issue, chat ou commit.

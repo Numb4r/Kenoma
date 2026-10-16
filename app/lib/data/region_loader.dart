@@ -3,13 +3,13 @@
 /// mensagem que a tela mostra (docs/fase0-spec.md, seção 1 e CLAUDE.md, regra 8).
 library;
 
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../core/epochs.dart';
+import '../net/signed_feed.dart';
 import 'nowalk_pack.dart';
 import 'region_pack.dart';
 import 'visual_pack.dart';
@@ -95,7 +95,7 @@ Future<RegionLoad> loadRegion({required String region, required int nowUtc, Asse
   final assets = bundle ?? rootBundle;
   final EpochSelection selection;
   try {
-    final json = jsonDecode(await assets.loadString('assets/data/epochs.json')) as Map<String, dynamic>;
+    final json = await loadEpochsJson(bundle: assets);
     selection = EpochSchedule.fromJson(json).select(nowUtc);
   } catch (e) {
     return RegionLoadError(RegionLoadErrorKind.epochs, 'Não consegui ler as épocas (epochs.json): $e');

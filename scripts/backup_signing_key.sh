@@ -22,6 +22,7 @@ DEST="${1:-}"
 for f in "${need[@]}"; do
   [[ -s "$SRC/$f" ]] || { echo "falta $SRC/$f: a chave não está completa" >&2; exit 1; }
 done
+[[ -s "$SRC/publicacao_ed25519.pem" ]] && need+=(publicacao_ed25519.pem) # chave de assinatura do feed (docs/assinatura.md)
 OUT="$DEST/kenoma-signing-$(date +%Y%m%d).tar.gz.gpg"
 [[ ! -e "$OUT" ]] || { echo "já existe $OUT; não sobrescrevo" >&2; exit 1; }
 

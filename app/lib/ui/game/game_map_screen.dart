@@ -9,6 +9,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:vibration/vibration.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/fnv.dart';
@@ -53,7 +54,12 @@ import '../settings/settings_screen.dart';
 import 'game_map_game.dart';
 import 'moon_hud.dart';
 import 'player_hud.dart';
+import 'pocket_overlay.dart';
 import 'sim_overlay.dart';
+import '../settings/connectivity_section.dart' show kPocketSetting, kStepsSetting;
+import '../../world/device_sensors.dart';
+import '../../world/pocket_mode.dart';
+import '../../world/steps.dart';
 
 /// O mapa do jogo (M5): o Conjurador anda com o GPS e a câmera o segue, com a Aura no chão. A câmera
 /// nunca sai do Conjurador: arrastar com um dedo gira o mapa e a pinça dá zoom numa faixa de jogo.
@@ -155,6 +161,15 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     state.revealFog(x, y, data.street.fogRevealRadiusM, metersPerCell(p.lat), debug: tools.useSimulator);
   }
 
+  /// O bioma da última posição conhecida, para o contador de passos (só com ele ligado).
+  void _rememberBiome(PlayerState s, GameState state, MapAssets assets) {
+    final p = s.position;
+    if (p == null || !state.setting(kStepsSetting)) return;
+    try {
+      state.setSetting('last_biome', assets.map.biomes.spawnKey(assets.map.spawnBiomeAtLatLon(p.lat, p.lon)));
+    } catch (_) {}
+  }
+
   /// Um Eco Brilhante apareceu: som curto e aviso.
   void _onShiny(WorldSpawn eco) {
     unawaited(playChime());
@@ -188,6 +203,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final st = r.session.state;
     st.ensureDaily(r.data.forum, r.data.schedule.select(now).epoch.id, localDay(now));
     st.tickChat(1, now, r.data.mentor);
+    _optionalSensors(r, st, now);
     if (_weatherIn-- <= 0) {
       _weatherIn = 10;
       _updateWeather();
@@ -195,6 +211,46 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   }
 
   int _weatherIn = 0;
+
+  // Opcionais dos Ajustes (desligados por padrão): modo bolso e contador de passos. Falham em silêncio.
+  final _pocket = PocketMode();
+  StreamSubscription<bool>? _proxSub;
+  int _stepsIn = 0;
+
+  void _optionalSensors(_Ready r, GameState st, int now) {
+    try {
+      final pocketOn = st.setting(kPocketSetting);
+      if (pocketOn && _proxSub == null) {
+        _proxSub = const DeviceSensors().proximity().listen(_pocket.onProximity, onError: (_) {});
+      } else if (!pocketOn && _proxSub != null) {
+        _stopProximity();
+      }
+      if (st.setting(kStepsSetting) && _stepsIn-- <= 0) {
+        _stepsIn = 30;
+        final tracker = StepTracker(state: st, balance: r.data.steps, read: const DeviceSensors().readSteps);
+        unawaited(tracker.sync(r.data.schedule.select(now).epoch).then((n) {
+          if (n > 0 && mounted) _toast('+$n ${n == 1 ? 'Fagulha' : 'Fagulhas'} pelos seus passos');
+        }));
+      }
+    } catch (_) {
+      // sensores são opcionais
+    }
+  }
+
+  void _stopProximity() {
+    _proxSub?.cancel();
+    _proxSub = null;
+    _pocket.reset();
+  }
+
+  /// Um Eco entrou no alcance de toque: com o modo bolso ligado e o sensor coberto, uma vibração curta.
+  void _onEnteredRange(WorldSpawn eco) {
+    final on = _ready?.session.state.setting(kPocketSetting) ?? false;
+    if (!shouldBuzz(enabled: on, covered: _pocket.covered)) return;
+    try {
+      unawaited(Vibration.vibrate(duration: 120).catchError((_) {}));
+    } catch (_) {}
+  }
 
   /// A caminhada conta de 10 em 10 metros, para não gravar o save a cada passo.
   void _onWalked(double meters) {
@@ -452,6 +508,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final tracker = PlayerTracker(source: tools.source);
     final sub = tracker.states.listen((s) {
       game.onPlayerState(s);
+      _rememberBiome(s, session.state, assets);
       _revealFog(s, session.state, data);
       _rebuild();
     });
@@ -461,6 +518,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     world.onCollected = game.onCollected;
     world.onFled = game.onEcoFled;
     world.onShiny = _onShiny;
+    world.onEnteredRange = _onEnteredRange;
     _weather = WeatherService(
       deterministic: (lat, lon, t) => _weatherAtLatLon(session.state.seed, data, lat, lon, t),
       source: OpenMeteoSource(),
@@ -538,6 +596,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       _headingSub?.cancel(); // a bússola também só com o app aberto
       _headingSub = null;
       ready.tracker.stop(); // só com o app aberto
+      _stopProximity();
     } else if (state == AppLifecycleState.resumed) {
       _ensureAccess(); // o jogador pode ter mexido nos ajustes
       if (ready.game.rotation.followHeading) _setFollowHeading(true);
@@ -560,6 +619,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _toastTimer?.cancel();
     _longTimer?.cancel();
     _storyTimer?.cancel();
+    _stopProximity();
+    _pocket.dispose();
     super.dispose();
   }
 
@@ -726,6 +787,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             ],
           ),
         ),
+        PocketOverlay(mode: _pocket, enabled: () => r.session.state.setting(kPocketSetting)),
       ],
     );
   }

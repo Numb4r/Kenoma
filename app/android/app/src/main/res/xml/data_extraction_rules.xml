@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12 e posterior (android:dataExtractionRules): backup na nuvem e transferência entre aparelhos.
+     Mesmos arquivos de backup_rules.xml: o save KSV1 e as duas cópias rotativas, em <dataDir>/app_flutter/
+     (getApplicationDocumentsDirectory() do path_provider). Nada mais é incluído: save.ksv.tmp, feed/ e caches ficam de fora. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="root" path="app_flutter/save.ksv"/>
+        <include domain="root" path="app_flutter/save.ksv.1"/>
+        <include domain="root" path="app_flutter/save.ksv.2"/>
+    </cloud-backup>
+    <device-transfer>
+        <include domain="root" path="app_flutter/save.ksv"/>
+        <include domain="root" path="app_flutter/save.ksv.1"/>
+        <include domain="root" path="app_flutter/save.ksv.2"/>
+    </device-transfer>
+</data-extraction-rules>

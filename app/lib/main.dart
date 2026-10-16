@@ -1,13 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'dev/tuning_debug_menu.dart';
+import 'net/signed_feed.dart';
 import 'ui/colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(const KenomaApp());
+  // Opcional e silencioso: no máximo uma consulta por dia ao feed assinado; o resultado vale a partir da próxima abertura.
+  unawaited(refreshSignedFeed(nowUtc: DateTime.now().millisecondsSinceEpoch ~/ 1000));
 }
 
 class KenomaApp extends StatelessWidget {
