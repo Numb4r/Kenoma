@@ -70,5 +70,10 @@
   "distill": { "eco_yield": [ { "from": 1, "to": 7, "value": 3 }, { "from": 8, "to": 14, "value": 4 }, { "from": 15, "to": 20, "value": 5 } ] },
   "phone": { "apps": [ { "id": "vision", "unlock_level": 1 }, { "id": "radar", "unlock_level": 2 }, { "id": "bestiary", "unlock_level": 1 }, { "id": "circle", "unlock_level": 1 }, { "id": "bag", "unlock_level": 1 }, { "id": "bench", "unlock_level": 2 }, { "id": "chat", "unlock_level": 2 }, { "id": "forum", "unlock_level": 2 }, { "id": "profile", "unlock_level": 1 }, { "id": "settings", "unlock_level": 1 } ] },
   "steps": { "per_spark": 1000, "max_jump": 20000 },
+  "school_tests": {
+    "techno": { "duration_s": 15, "band": 0.12, "wander_amp": 0.22, "wander_period_s": 6, "noise_amp": 0.3, "noise_period_s": 0.9, "stabilize_s": 2, "stabilize_cooldown_s": 4, "stabilize_charges": 3 },
+    "shaman": { "start_m": 14, "stop_m": 1.5, "max_speed_mps": 3, "calm_speed_mps": 0.8, "spook_jump_m": 3, "spook_cooldown_s": 1, "par_s": 16, "timeout_s": 40, "spook_penalty": 12, "time_penalty_per_s": 1.5, "timeout_cap": 40 },
+    "sealer": { "min_points": 12, "smooth_window": 5, "min_sweep_turns": 0.85, "max_cv": 0.4, "closure_full": 0.25, "closure_zero": 1.0, "size_min": 0.45, "size_max": 1.9, "size_ok_min": 0.7, "size_ok_max": 1.4 }
+  },
   "start_inventory": { "item.seal.simple": 5, "item.chalk": 3 }
 }

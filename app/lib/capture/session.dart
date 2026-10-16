@@ -16,6 +16,7 @@ class TuningSession {
     required this.balance,
     required this.timeLimitS,
     this.overlevel = 0,
+    this.progressUpMult = 1,
     double initialDial = 0.5,
   })  : dial = initialDial,
         _overlevelTolerance = overlevelToleranceFactor(overlevel, balance),
@@ -32,6 +33,9 @@ class TuningSession {
 
   /// Sobrenível `g` desta sintonia (ver `overlevel.dart`). 0 se o Eco não passa de `overlevel_free`.
   final int overlevel;
+
+  /// Bônus da escola (Selador): o progresso sobe vezes isto.
+  final double progressUpMult;
   final double _overlevelTolerance;
   final double _overlevelDown;
 
@@ -67,7 +71,7 @@ class TuningSession {
     if (nowAligned) alignedTimeS += dt;
     if (_wasAligned && !nowAligned) alignmentLosses++;
     _wasAligned = nowAligned;
-    final rate = nowAligned ? balance.progressUpPerS : -balance.progressDownPerS * _overlevelDown;
+    final rate = nowAligned ? balance.progressUpPerS * progressUpMult : -balance.progressDownPerS * _overlevelDown;
     progress = (progress + rate * dt).clamp(0.0, 1.0);
     if (progress >= 1) {
       phase = TuningPhase.success;
