@@ -97,7 +97,7 @@ class GameMapGame extends FlameGame {
   final bool Function() overlayRadii;
   late final ArtRenderer _art = ArtRenderer(visual: visual, style: style, balance: balance);
   late final StreetLabelPainter _labels = StreetLabelPainter(visual);
-  late final TrafficPainter _traffic = TrafficPainter(visual, carM: balance.ghostCarM, pedestrianM: balance.ghostPedestrianM);
+  late final TrafficPainter _traffic = TrafficPainter(visual, carM: balance.ghostCarM, pedestrianM: balance.ghostPedestrianM, roadWidthM: balance.roadWidthM);
   final FogPainter _fog = FogPainter();
   final TracePainter _trace = TracePainter();
   late final RainPainter _rain = RainPainter(maxDrops: rainDrops);
@@ -199,6 +199,20 @@ class GameMapGame extends FlameGame {
 
   /// Um Eco arisco fugiu: se desfaz onde estava.
   void onEcoFled(WorldSpawn s) => fx.fled(s, sprites[s.entryId], variantTint?.call(s), ecoSizePx);
+
+  int _utcSecond = -1;
+  double _utcAnchor = 0;
+
+  /// O UTC do jogo com fração de segundo: o segundo inteiro vem do relógio do jogo e a fração, do tempo de jogo desde que ele
+  /// virou. Dois aparelhos com a mesma hora desenham o tráfego no mesmo ponto (erro de um quadro).
+  double _exactUtc() {
+    final s = nowUtc();
+    if (s != _utcSecond) {
+      _utcSecond = s;
+      _utcAnchor = _time;
+    }
+    return s + (_time - _utcAnchor).clamp(0.0, 0.999);
+  }
 
   /// A luz do mapa pela altura do sol em ([_lat], [_lon]) na hora do jogo. Recalculada a cada poucos segundos.
   DayLight light = const DayLight(night: 0, warm: 0);
@@ -354,7 +368,7 @@ class GameMapGame extends FlameGame {
     _art.paint(canvas, view, cam, dpr: dpr, metersPerCell: metersPerCell(_lat), coarse: coarse);
     _paintLight(canvas, view);
     if (veilTraffic() && _hasFix && worldView != null) {
-      _traffic.paint(canvas, view, cam, seed: worldView!.field.seed, tUtc: nowUtc(), lonDeg: _lon, metersPerCell: metersPerCell(_lat), light: light);
+      _traffic.paint(canvas, view, cam, seed: worldView!.field.seed, tUtc: nowUtc(), tUtcExact: _exactUtc(), lonDeg: _lon, metersPerCell: metersPerCell(_lat), light: light);
     } else {
       _traffic.lastDrawn = 0;
     }

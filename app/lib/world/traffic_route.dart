@@ -56,7 +56,7 @@ class TrafficPath {
   int _node(double tau) {
     var lo = 0, hi = kt.length - 1;
     while (hi - lo > 1) {
-      final mid = (lo + hi) >> 1;
+      final mid = (lo + hi) ~/ 2;
       if (kt[mid] <= tau) {
         lo = mid;
       } else {
@@ -71,7 +71,7 @@ class TrafficPath {
     final c = s.clamp(0.0, length);
     var lo = 0, hi = cum.length - 1;
     while (hi - lo > 1) {
-      final mid = (lo + hi) >> 1;
+      final mid = (lo + hi) ~/ 2;
       if (cum[mid] <= c) {
         lo = mid;
       } else {
