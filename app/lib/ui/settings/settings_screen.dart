@@ -9,6 +9,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../core/seed.dart';
 import '../../data/game_data.dart';
+import '../../net/region_manager.dart';
 import '../../player/game_session.dart';
 import '../../save/backup.dart';
 import '../../save/backup_io.dart';
@@ -20,6 +21,7 @@ import '../menu/screen_frame.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
 import 'connectivity_section.dart';
 import 'qr_scan_screen.dart';
+import 'regions_section.dart';
 
 /// Abre a câmera e devolve o código de grupo lido, ou `null`.
 typedef GroupScanner = Future<String?> Function(BuildContext context);
@@ -40,6 +42,7 @@ class SettingsScreen extends StatefulWidget {
     required this.notifier,
     this.io = const DeviceBackupIo(),
     this.scan = scanGroupWithCamera,
+    this.regions,
     super.key,
   });
 
@@ -65,6 +68,9 @@ class SettingsScreen extends StatefulWidget {
 
   /// Quem agenda as notificações locais no sistema.
   final Notifier notifier;
+
+  /// Os pacotes baixáveis. `null` fora do mapa do jogo.
+  final RegionManager? regions;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -346,6 +352,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               activeThumbColor: kSignal,
               onChanged: _setNotifications,
             ),
+            if (widget.regions != null) RegionsSection(manager: widget.regions!),
             ConnectivitySection(state: s, data: widget.data, nowUtc: widget.nowUtc),
             const SectionTitle('Backup'),
             const Text('O backup é o seu jogo inteiro num arquivo. Mande para o Google Drive ou para si mesmo.', style: TextStyle(fontSize: 8, color: kDim, height: 1.8)),

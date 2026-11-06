@@ -4,6 +4,7 @@ library;
 
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 
+import '../net/feed_config.dart';
 import '../world/debug_force.dart';
 import '../world/places.dart';
 import '../world/position_source.dart';
@@ -52,6 +53,18 @@ class DevTools extends ChangeNotifier {
 
   bool get useSimulator => _useSimulator;
 
+  String? _feedUrl;
+
+  /// A base do feed de regiões, terminada em `/`: a publicada ou a que o debug pôs, para testar com servidor local via `adb
+  /// reverse`. Vale até fechar o app. A assinatura continua obrigatória.
+  String get feedBaseUrl => _feedUrl ?? kFeedBaseUrl;
+
+  void setFeedBaseUrl(String? url) {
+    final u = url?.trim() ?? '';
+    _feedUrl = u.isEmpty ? null : (u.endsWith('/') ? u : '$u/');
+    notifyListeners();
+  }
+
   int _levelOverride = 0;
 
   /// Nível do Conjurador forçado no save (1 a 15); 0 é o nível real. O menu carrega do save e mantém em dia.
@@ -65,7 +78,7 @@ class DevTools extends ChangeNotifier {
 
   /// Algo forçado está ativo: simulador, relógio, nível, pedidos de spawn, clima ou sobreposições. Liga a etiqueta DEBUG.
   bool get anyForcing =>
-      _useSimulator || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || _showBiomeGrid || _showGrid20 || _showRadii;
+      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || _showBiomeGrid || _showGrid20 || _showRadii;
 
   Future<void> setUseSimulator(bool value) async {
     if (value == _useSimulator) return;

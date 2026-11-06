@@ -8,7 +8,7 @@ import 'dart:math' as math;
 
 import '../core/tiles.dart';
 import '../core/walkable.dart';
-import '../data/nowalk_pack.dart';
+import '../data/map_sources.dart';
 import 'visual_map.dart';
 
 class WalkPaths implements PathSnapper {
@@ -17,7 +17,7 @@ class WalkPaths implements PathSnapper {
   final VisualMap map;
 
   /// Rodovias e vias expressas: os trechos do pacote visual sobre elas não contam como caminho.
-  final NoWalkPack? blocked;
+  final NoWalkSource? blocked;
 
   /// Metros de uma célula z20 na latitude: se a célula tem via no mapa, mas nenhuma andável.
   final _meta = <(int, int), _Meta>{};
@@ -25,9 +25,15 @@ class WalkPaths implements PathSnapper {
 
   /// Segmentos recortados por célula, em fração da célula: `x0, y0, x1, y1, ...`. Vazio: nada andável ali.
   final LinkedHashMap<(int, int), List<double>> _cells = LinkedHashMap();
+  int _revision = 0;
 
   /// Os segmentos andáveis da célula z20 `(cx, cy)`, recortados no quadrado dela.
   List<double> segments(int cx, int cy) {
+    if (map.pack.revision != _revision) {
+      _revision = map.pack.revision;
+      _cells.clear();
+      _meta.clear();
+    }
     final key = (cx, cy);
     final hit = _cells.remove(key);
     if (hit != null) return _cells[key] = hit;

@@ -8,10 +8,12 @@ library;
 import 'dart:io' show gzip;
 import 'dart:typed_data';
 
+import 'map_sources.dart';
+
 const int _headerSize = 23;
 const int _voidBiome = 0;
 
-class RegionPack {
+class RegionPack implements BiomeGrid {
   RegionPack._({
     required this.zoom,
     required this.x0,
@@ -46,13 +48,21 @@ class RegionPack {
   }
 
   final int zoom;
+  @override
   final int x0;
+  @override
   final int y0;
+  @override
   final int width;
+  @override
   final int height;
   final Uint8List _cells;
 
+  @override
+  int get revision => 0;
+
   /// Id do bioma da célula z21 `(x, y)`. Fora do pacote vale Vazio.
+  @override
   int biomeAt(int x, int y) {
     final col = x - x0;
     final row = y - y0;
@@ -61,6 +71,7 @@ class RegionPack {
   }
 
   /// As quatro células z21 de uma célula z20, na ordem (noroeste, nordeste, sudoeste, sudeste).
+  @override
   List<int> quadOf(int cellX, int cellY) {
     final x = cellX * 2;
     final y = cellY * 2;

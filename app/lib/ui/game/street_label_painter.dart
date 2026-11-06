@@ -20,10 +20,15 @@ class StreetLabelPainter {
 
   final LinkedHashMap<(int, int), List<LabelSpot>> _spots = LinkedHashMap();
   final Map<String, (TextPainter, TextPainter)> _text = {};
+  int _revision = 0;
 
   static const double _fontSize = 8;
 
   List<LabelSpot> _spotsOf(int tx, int ty) {
+    if (visual.pack.revision != _revision) {
+      _revision = visual.pack.revision;
+      _spots.clear();
+    }
     final key = (tx, ty);
     final cached = _spots.remove(key);
     if (cached != null) {

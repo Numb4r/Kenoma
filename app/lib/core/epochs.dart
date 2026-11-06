@@ -4,6 +4,9 @@ library;
 import 'features.dart';
 import 'weather.dart';
 
+/// A região embutida nos assets do app. As outras vêm de `regions.json`, baixadas sob demanda.
+const String kBundledRegion = 'campinas';
+
 class WeightedEntry {
   const WeightedEntry(this.id, this.weight);
 
@@ -93,7 +96,7 @@ class EcoV2 {
 /// (geometria do pacote visual, menos rodovias e vias expressas, fixadas pelo SHA-256 da época), os Ecos podem ficar até
 /// [ecoOffPathM] metros fora dele, e a chance de nascer é proporcional ao comprimento andável da célula.
 class Walkable {
-  const Walkable({required this.ecoOffPathM, required this.maxDistM, required this.refLengthM, required this.maxFactor, this.exclude});
+  const Walkable({required this.ecoOffPathM, required this.maxDistM, required this.refLengthM, required this.maxFactor, this.exclude, this.excludePacks = const {}});
 
   factory Walkable.fromJson(Map<String, dynamic> j) => Walkable(
         ecoOffPathM: (j['eco_off_path_m'] as num).toDouble(),
@@ -103,6 +106,10 @@ class Walkable {
         exclude: j['exclude_pack'] == null
             ? null
             : RegionPackRef(file: (j['exclude_pack'] as Map<String, dynamic>)['file'] as String, sha256: j['exclude_pack']['sha256'] as String),
+        excludePacks: {
+          for (final e in ((j['exclude_packs'] as Map<String, dynamic>?) ?? const {}).entries)
+            e.key: RegionPackRef(file: (e.value as Map<String, dynamic>)['file'] as String, sha256: e.value['sha256'] as String),
+        },
       );
 
   final double ecoOffPathM;
@@ -116,6 +123,9 @@ class Walkable {
 
   /// Pacote das vias onde não se anda (rodovias e vias expressas), com o SHA-256 fixado.
   final RegionPackRef? exclude;
+
+  /// O mesmo pacote para as regiões baixadas, por id. [exclude] continua valendo para a região embutida.
+  final Map<String, RegionPackRef> excludePacks;
 }
 
 class Epoch {

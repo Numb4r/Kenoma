@@ -4,16 +4,18 @@ library;
 
 import 'dart:collection';
 
+import '../data/map_sources.dart';
 import '../data/visual_pack.dart';
 
 class VisualMap {
   VisualMap(this.pack, {this.cacheTiles = 64});
 
-  final VisualPack pack;
+  final VisualSource pack;
   final int cacheTiles;
 
   /// Tiles decodificados, do menos para o mais recentemente usado. Tile sem geometria entra como `null`.
   final LinkedHashMap<(int, int), VisualTile?> _cache = LinkedHashMap();
+  int _revision = 0;
 
   int get cachedTiles => _cache.length;
 
@@ -22,6 +24,10 @@ class VisualMap {
 
   /// O tile `(x, y)`, ou `null` se não há nada nele.
   VisualTile? tile(int x, int y) {
+    if (pack.revision != _revision) {
+      _revision = pack.revision;
+      _cache.clear();
+    }
     final key = (x, y);
     if (_cache.containsKey(key)) {
       final t = _cache.remove(key);

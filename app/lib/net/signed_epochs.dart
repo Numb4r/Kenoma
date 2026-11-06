@@ -55,12 +55,13 @@ EpochSchedule mergeSigned(EpochSchedule bundled, Map<String, dynamic> signedJson
   return EpochSchedule.fromJson(mergeSignedJson(src, signedJson, hasPack: hasPack));
 }
 
-/// Os arquivos de pacote (`assets/regions/`) que uma época do JSON exige.
+/// Os arquivos de pacote (`assets/regions/`) que uma época do JSON exige: só os da região embutida. As outras regiões são
+/// baixadas sob demanda (`region_manager.dart`) e, sem elas, o jogador fica no fallback: não invalidam a época.
 List<String> epochPackFiles(Map<String, dynamic> epoch) => _packFiles(epoch);
 
 List<String> _packFiles(Map<String, dynamic> e) => [
       for (final k in ['region_packs', 'visual_packs'])
-        for (final v in ((e[k] as Map<String, dynamic>?) ?? const {}).values) (v as Map<String, dynamic>)['file'] as String,
+        if (((e[k] as Map<String, dynamic>?) ?? const {})[kBundledRegion] case final Map<String, dynamic> v) v['file'] as String,
       if ((e['walkable'] as Map<String, dynamic>?)?['exclude_pack'] != null) ((e['walkable'] as Map<String, dynamic>)['exclude_pack'] as Map<String, dynamic>)['file'] as String,
     ];
 

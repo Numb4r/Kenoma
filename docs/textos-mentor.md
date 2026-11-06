@@ -44,6 +44,7 @@ O Familiar ainda não fala (GDD): ele se comunica por gestos, ícones e silênci
 | 8 | `school_choose_shaman` | school_chosen_shaman ≥ 1 | *O Familiar esquenta até ficar laranja e solta uma folha de dentro de si. Ela cheira a terra molhada, mesmo em cima do asfalto.* |
 | 9 | `school_choose_sealer` | school_chosen_sealer ≥ 1 | *O Familiar fica ainda mais violeta e um fio de costura o atravessa de lado a lado. Ele parece satisfeito, como quem acha a própria família.* |
 | 10 | `fusion_f01` | fusion ≥ 1 | *O Familiar encosta a testa na tela quando as costuras se fecham e fica assim, parado, até o Espírito respirar. Depois dá uma volta devagar em torno dele. Parece dizer: agora são um só.* |
+| 11 | `floor_f01` | map_floor_seen ≥ 1 | *O Familiar estica o contorno até quase sumir e tateia o chão, sem achar rua nenhuma. Volta encolhido e olha para você. Parece dizer: aqui o Véu está fino demais para ler as ruas.* |
 
 ## Escola no nível 3
 

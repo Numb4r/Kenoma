@@ -20,6 +20,9 @@ import '../../core/astro.dart' show moonPhase;
 import '../../core/species_ids.dart' show isRitualOnlyId;
 import '../../crafting/ritual_data.dart';
 import '../ritual/ritual_screen.dart';
+import '../../net/region_catalog.dart' show RegionEntry;
+import '../../world/layered_world.dart';
+import '../../world/map_layers.dart';
 import '../../world/walk_paths.dart';
 import '../../world/weather_source.dart';
 import '../chime.dart';
@@ -55,9 +58,11 @@ import '../menu/profile_screen.dart';
 import '../menu/radar_screen.dart';
 import '../../story/local_notifier.dart';
 import '../../story/notification_plan.dart';
+import '../settings/regions_section.dart' show regionSizeLabel;
 import '../settings/settings_screen.dart';
 import 'game_map_game.dart';
 import 'moon_hud.dart';
+import 'veil_badge.dart';
 import 'player_hud.dart';
 import 'pocket_overlay.dart';
 import 'sim_overlay.dart';
@@ -102,7 +107,7 @@ class GameMapScreen extends StatefulWidget {
 }
 
 class _Ready {
-  _Ready(this.assets, this.game, this.tracker, this.sub, this.data, this.session, this.world);
+  _Ready(this.assets, this.game, this.tracker, this.sub, this.data, this.session, this.world, this.layers);
 
   final GameData data;
   final GameSession session;
@@ -111,6 +116,7 @@ class _Ready {
   final GameMapGame game;
   final PlayerTracker tracker;
   final StreamSubscription<PlayerState> sub;
+  final MapLayers layers;
 }
 
 class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserver {
@@ -208,11 +214,41 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final st = r.session.state;
     st.ensureDaily(r.data.forum, r.data.schedule.select(now).epoch.id, localDay(now));
     st.tickChat(1, now, r.data.mentor);
+    _tickLayers(r, st);
     _optionalSensors(r, st, now);
     if (_weatherIn-- <= 0) {
       _weatherIn = 10;
       _updateWeather();
     }
+  }
+
+  /// Um passo das camadas do mapa. Na primeira vez no piso, o Familiar comenta (o `setting` não deixa repetir).
+  void _tickLayers(_Ready r, GameState st) {
+    if (!r.game.avatar.hasPosition) return;
+    unawaited(r.layers.tick(r.game.playerLat, r.game.playerLon));
+    if (r.layers.source.value == MapSourceKind.floor && !st.setting(kFloorSeenSetting)) {
+      st.setSetting(kFloorSeenSetting, true);
+      st.recordEvent(kFloorSeenEvent, '', 1);
+    }
+  }
+
+  /// O aviso de tamanho antes de baixar uma região grande.
+  Future<bool> _confirmRegion(RegionEntry region, int bytes) async {
+    if (!mounted) return false;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: kPanel,
+        shape: const RoundedRectangleBorder(side: BorderSide(color: kSignal, width: 3)),
+        title: Text('BAIXAR ${region.name.toUpperCase()}?', style: const TextStyle(fontSize: 16, color: kSignal)),
+        content: Text('O mapa da região ocupa ${regionSizeLabel(bytes)}. Vale usar Wi-Fi.', style: const TextStyle(fontSize: 8, color: kText, height: 1.8)),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('AGORA NÃO', style: TextStyle(fontSize: 8, color: kDim))),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('BAIXAR', style: TextStyle(fontSize: 8, color: kSignal))),
+        ],
+      ),
+    );
+    return ok ?? false;
   }
 
   int _weatherIn = 0;
@@ -298,6 +334,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         },
         onRestart: _restart,
         notifier: _notifier,
+        regions: r.layers.regions,
       );
 
   /// Ao sair do app, agenda os avisos de amanhã (se o jogador ligou): diárias renovadas e descanso cheio.
@@ -537,15 +574,28 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       weatherShown: () => streetLifeEnabled ? _shownWeather : Weather.clear,
       variantTint: (s) => data.variantInfo(biome: s.variant, shiny: s.shiny)?.tint,
       familiarImage: familiar,
+      floorTile: assets.world!.isFloorTile,
+      floorGridCells: assets.fallback!.floorGridCells,
       rainDrops: data.street.rainParticles,
       familiarOffsetM: data.street.familiarFollowOffsetM,
       sprites: sprites,
       typeOf: (id) => data.species(id)?.type,
       nowUtc: () => tools.clock.nowUtc,
     );
+    final layers = await openMapLayers(
+      assets: assets,
+      schedule: data.schedule,
+      appVersion: _version,
+      nowUtc: () => tools.clock.nowUtc,
+      realNowUtc: () => tools.clock.realNowUtc,
+      baseUrl: () => tools.feedBaseUrl,
+      onNotice: _toast,
+      confirm: _confirmRegion,
+    );
     final tracker = PlayerTracker(source: tools.source);
     final sub = tracker.states.listen((s) {
       game.onPlayerState(s);
+      layers.noteFix(s.lastRaw);
       _rememberBiome(s, session.state, assets);
       _revealFog(s, session.state, data);
       _rebuild();
@@ -570,7 +620,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       game.rotation.toggleFollowHeading(); // volta ao modo que o jogador deixou ligado
       WidgetsBinding.instance.addPostFrameCallback((_) => _setFollowHeading(true));
     }
-    _ready = _Ready(assets, game, tracker, sub, data, session, world);
+    _ready = _Ready(assets, game, tracker, sub, data, session, world, layers);
     _familiarSchool = session.state.conjurer.school;
     if (_familiarSchool != null) unawaited(_reloadFamiliar(game, session.state));
     session.state.addListener(_onStateForFamiliar);
@@ -671,6 +721,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       r.session.state.removeListener(_onStateForFamiliar);
       r.sub.cancel();
       r.tracker.dispose();
+      r.layers.dispose();
       r.assets.dispose();
       r.session.dispose();
     }
@@ -770,6 +821,11 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                 right: 8,
                 top: 56,
                 child: MoonHud(nowUtc: () => tools.clock.nowUtc, lat: () => game.playerLat, weather: streetLifeEnabled ? () => _shownWeather : null),
+              ),
+              Positioned(
+                right: 8,
+                top: 112,
+                child: VeilBadge(source: r.layers.source, onExplain: () => _toast(kVeilBadgeHelp, seconds: 6)),
               ),
               Positioned(
                 left: 8,

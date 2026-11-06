@@ -11,3 +11,6 @@ const String kFeedPublicKeyHex = '56b32fe7af4341199ea6b922385739edb5def059905d23
 
 /// Tempo máximo de cada pedido de rede do feed.
 const Duration kFeedTimeout = Duration(seconds: 8);
+
+/// Tempo máximo sem chegar nenhum byte num download de pacote.
+const Duration kDownloadIdle = Duration(seconds: 30);

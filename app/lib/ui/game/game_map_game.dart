@@ -72,6 +72,8 @@ class GameMapGame extends FlameGame {
     this.sprites = const {},
     this.typeOf = _noType,
     this.nowUtc = _zero,
+    this.floorTile,
+    this.floorGridCells = 2,
     (double, double) fallbackCenter = kUnicamp,
   }) {
     final (x, y) = latLonToTileFraction(fallbackCenter.$1, fallbackCenter.$2, biomeZoom);
@@ -86,6 +88,10 @@ class GameMapGame extends FlameGame {
   final VisualMap visual;
   final ArtStyle style;
   final MapBalance balance;
+
+  /// Tile z15 sem dado nenhum: o desenho marca o piso (`ArtRenderer.floorTile`).
+  final bool Function(int tx, int ty)? floorTile;
+  final int floorGridCells;
   /// Os quadros do Conjurador: parado e os dois do passo.
   final List<ui.Image> playerFrames;
 
@@ -95,7 +101,7 @@ class GameMapGame extends FlameGame {
 
   /// Debug: desenha por cima o raio lógico da coleta (laranja) e o alcance de toque dos Ecos (ciano).
   final bool Function() overlayRadii;
-  late final ArtRenderer _art = ArtRenderer(visual: visual, style: style, balance: balance);
+  late final ArtRenderer _art = ArtRenderer(visual: visual, style: style, balance: balance, floorTile: floorTile, floorGridCells: floorGridCells);
   late final StreetLabelPainter _labels = StreetLabelPainter(visual);
   late final TrafficPainter _traffic = TrafficPainter(visual, carM: balance.ghostCarM, pedestrianM: balance.ghostPedestrianM, roadWidthM: balance.roadWidthM);
   final FogPainter _fog = FogPainter();

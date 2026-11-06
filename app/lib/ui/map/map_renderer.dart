@@ -7,6 +7,7 @@ import 'dart:collection';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import '../../data/region_pack.dart';
 import '../../world/chunks.dart';
 import '../../world/map_camera.dart';
 import '../../world/map_probe.dart';
@@ -34,6 +35,7 @@ class MapRenderer {
   /// Chunks montados, do menos para o mais recentemente usado. Chunk fora do pacote não entra: é o Vazio liso.
   final LinkedHashMap<_Key, ui.Image> _cache = LinkedHashMap();
   int _bytes = 0;
+  int _revision = 0;
 
   /// Buffers do atlas, reaproveitados em cada chunk: o motor copia os dados ao gravar o desenho, então
   /// montar um chunk não gera lixo para o coletor (o que dava picos de quadro ao montar vários).
@@ -63,6 +65,10 @@ class MapRenderer {
     bool crosshair = true,
   }) {
     lastBuilds = 0;
+    if (map.pack.revision != _revision) {
+      _revision = map.pack.revision; // a sobreposição de biomas refaz os chunks do bloco que chegou
+      dispose();
+    }
     canvas.drawRect(ui.Offset.zero & size, ui.Paint()..color = _voidColor);
     final w = size.width, h = size.height;
     final range = camera.visibleRange(w, h);
@@ -72,7 +78,7 @@ class MapRenderer {
       ..isAntiAlias = false;
     for (final id in chunksIn(range)) {
       final cells = cellsOfChunk(id);
-      if (cells.intersect(_packCells).isEmpty) continue; // fora do pacote é Vazio, já pintado
+      if (map.pack is RegionPack && cells.intersect(_packCells).isEmpty) continue; // fora do pacote é Vazio, já pintado
       final key = (lod, id.$1, id.$2);
       var image = _touch(key);
       if (image == null) {

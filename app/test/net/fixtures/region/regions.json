@@ -1,0 +1,39 @@
+{
+ "format": 1,
+ "regions": [
+  {
+   "id": "test_city",
+   "name": "Cidade Teste",
+   "bbox": [
+    -46.68,
+    -23.6,
+    -46.580000000000005,
+    -23.5
+   ],
+   "epoch": 5,
+   "files": {
+    "logic": {
+     "file": "test_e5.bin",
+     "url": "test_e5.bin",
+     "sha256": "a0543006cfbe5cb8359bad14e7d0d8064e32dbffa582490b07985686f07a669e",
+     "bytes": 62,
+     "sig": "0d3a5c931a0357d283ece21ec8a3bfc2debfbca5953f247a8dc0e2463569bbed1dfce521d3e861dcdb5a11f540431bafcb8e6f46b52a7ca175221ad742b2950f"
+    },
+    "visual": {
+     "file": "test_e5_vis.bin",
+     "url": "test_e5_vis.bin",
+     "sha256": "d8878dd49113b7c0a660929bfa5d96b8e793607669ebb17f510bc632b051663e",
+     "bytes": 58,
+     "sig": "34121525ffc59227b9c57d145b249e3d1a048b6596ccd3c19a74960d38b94d987120937d644a0027a82dfc35a30bb2e512f5d62d2801f6a1b8405b149c549108"
+    },
+    "nowalk": {
+     "file": "test_e5_nowalk.bin",
+     "url": "test_e5_nowalk.bin",
+     "sha256": "64bd37c491717f473a28047423e46b4326e76f10cdbf39bf0a547d2ad1da8165",
+     "bytes": 37,
+     "sig": "b5c288bff85925e5e2fc1c8d18462991dd3af5b442cc0c139ac667a6243eb55c35fe91b82a807169b2d744e56d8b6777d7f90251bd989232c65d80be51b1f80b"
+    }
+   }
+  }
+ ]
+}
