@@ -54,7 +54,9 @@
     { "id": "school_choose_sealer", "requires": { "event": "school_chosen_sealer", "min": 1 },
       "text": "*O Familiar fica ainda mais violeta e um fio de costura o atravessa de lado a lado. Ele parece satisfeito, como quem acha a própria família.*" },
     { "id": "fusion_f01", "requires": { "event": "fusion", "min": 1 },
-      "text": "*O Familiar encosta a testa na tela quando as costuras se fecham e fica assim, parado, até o Espírito respirar. Depois dá uma volta devagar em torno dele. Parece dizer: agora são um só.*" }
+      "text": "*O Familiar encosta a testa na tela quando as costuras se fecham e fica assim, parado, até o Espírito respirar. Depois dá uma volta devagar em torno dele. Parece dizer: agora são um só.*" },
+    { "id": "floor_f01", "requires": { "event": "map_floor_seen", "min": 1 },
+      "text": "*O Familiar estica o contorno até quase sumir e tateia o chão, sem achar rua nenhuma. Volta encolhido e olha para você. Parece dizer: aqui o Véu está fino demais para ler as ruas.*" }
   ],
   "school": [
     { "id": "school_tests", "action": "school_tests",

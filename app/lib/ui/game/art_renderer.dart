@@ -41,7 +41,7 @@ class _TileArt {
 }
 
 class ArtRenderer {
-  ArtRenderer({required this.visual, required this.style, required this.balance, this.cacheTiles = 48}) {
+  ArtRenderer({required this.visual, required this.style, required this.balance, this.cacheTiles = 48, this.floorTile, this.floorGridCells = 2}) {
     _groundNoise = _noiseTexture(style.ground, 1);
     _greenNoise = _noiseTexture(style.green, 2);
     _waterNoise = _noiseTexture(style.water, 3);
@@ -52,10 +52,15 @@ class ArtRenderer {
   final MapBalance balance;
   final int cacheTiles;
 
+  /// O tile z15 não tem dado nenhum: chão liso com a grade fraca, de [floorGridCells] células z21.
+  final bool Function(int tx, int ty)? floorTile;
+  final int floorGridCells;
+
   late final ui.Image _groundNoise;
   late final ui.Image _greenNoise;
   late final ui.Image _waterNoise;
   final LinkedHashMap<(int, int), _TileArt?> _art = LinkedHashMap();
+  int _revision = 0;
 
   /// Tempo médio (média móvel) de rasterizar um quadro, em milissegundos. Quem chama pode usar para cair
   /// numa resolução mais baixa durante um gesto.
@@ -75,6 +80,10 @@ class ArtRenderer {
   /// pixel de arte fica [coarse] vezes maior: é o recurso para segurar o fps durante um gesto.
   void paint(ui.Canvas canvas, ui.Size size, MapCamera cam, {required double dpr, required double metersPerCell, int coarse = 1}) {
     final watch = Stopwatch()..start();
+    if (visual.pack.revision != _revision) {
+      _revision = visual.pack.revision; // chegou bloco ou região
+      _art.clear();
+    }
     final k = pixelSize(dpr, coarse: coarse);
     final lowW = (size.width * dpr / k).ceil(), lowH = (size.height * dpr / k).ceil();
     if (lowW <= 0 || lowH <= 0) return;
@@ -115,6 +124,23 @@ class ArtRenderer {
     Float64List tileMatrix(int tx, int ty) {
       final dx = (tx * cpt - cam.centerX) * ppcLow, dy = (ty * cpt - cam.centerY) * ppcLow;
       return Float64List.fromList([sc * cosR, sc * sinR, 0, 0, -sc * sinR, sc * cosR, 0, 0, 0, 0, 1, 0, ax + dx * cosR - dy * sinR, ay + dx * sinR + dy * cosR, 0, 1]);
+    }
+
+    if (floorTile != null) {
+      final grid = ui.Paint()
+        ..style = ui.PaintingStyle.stroke
+        ..strokeWidth = 1 / sc
+        ..color = style.ground.dark.withValues(alpha: 0.4)
+        ..isAntiAlias = false;
+      for (var ty = (t / cpt).floor(); ty <= (b / cpt).floor(); ty++) {
+        for (var tx = (l / cpt).floor(); tx <= (r / cpt).floor(); tx++) {
+          if (!floorTile!(tx, ty)) continue;
+          c.save();
+          c.transform(tileMatrix(tx, ty));
+          c.drawPath(_floorGrid, grid);
+          c.restore();
+        }
+      }
     }
 
     // Áreas: verde e depois água. Preenche, põe o ruído do material dentro e contorna com 1 pixel de arte.
@@ -184,6 +210,20 @@ class ArtRenderer {
     image.dispose();
     rasterMs = rasterMs == 0 ? watch.elapsedMicroseconds / 1000 : rasterMs * 0.9 + watch.elapsedMicroseconds / 1000 * 0.1;
   }
+
+  /// A grade do piso em unidades do tile: montada uma vez, igual em todo tile.
+  late final ui.Path _floorGrid = () {
+    final path = ui.Path();
+    final e = visual.pack.extent.toDouble(), step = e * floorGridCells / visual.cellsPerTile;
+    for (var v = 0.0; v < e; v += step) {
+      path
+        ..moveTo(v, 0)
+        ..lineTo(v, e)
+        ..moveTo(0, v)
+        ..lineTo(e, v);
+    }
+    return path;
+  }();
 
   _TileArt? _artOf(int tx, int ty) {
     final key = (tx, ty);

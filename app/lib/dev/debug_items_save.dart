@@ -15,6 +15,7 @@ import '../ui/tema.dart';
 import 'debug_env.dart';
 import 'debug_registry.dart';
 import 'debug_widgets.dart';
+import 'dev_tools.dart';
 import 'identity_section.dart';
 import 'tap_latency.dart';
 
@@ -49,7 +50,50 @@ List<DebugItem> signatureItems(DebugEnv env) => [
                   : const DebugNote('Lendo o save...'),
         ),
       ),
+      DebugItem(
+        id: 'sign.feed_url',
+        title: 'URL do feed de regiões',
+        section: DebugSection.signatures,
+        keywords: const ['regions.json', 'região', 'pacote', 'servidor local', 'adb reverse', 'url'],
+        builder: (_) => _FeedUrlItem(tools: env.tools),
+      ),
     ];
+
+class _FeedUrlItem extends StatefulWidget {
+  const _FeedUrlItem({required this.tools});
+
+  final DevTools tools;
+
+  @override
+  State<_FeedUrlItem> createState() => _FeedUrlItemState();
+}
+
+class _FeedUrlItemState extends State<_FeedUrlItem> {
+  late final _url = TextEditingController(text: widget.tools.feedBaseUrl);
+
+  @override
+  void dispose() {
+    _url.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => DebugColumn([
+        const DebugNote('Vale até fechar o app. A assinatura continua obrigatória: o servidor precisa servir regions.json e pacotes assinados.'),
+        DebugField('URL base', _url),
+        DebugWrap([
+          DebugButton(label: 'Usar', onTap: () => widget.tools.setFeedBaseUrl(_url.text)),
+          DebugButton(
+            label: 'Voltar ao publicado',
+            color: KCores.textoMudo,
+            onTap: () {
+              widget.tools.setFeedBaseUrl(null);
+              _url.text = widget.tools.feedBaseUrl;
+            },
+          ),
+        ]),
+      ]);
+}
 
 List<DebugItem> performanceItems() => [
       DebugItem(
