@@ -75,6 +75,13 @@ class WorldView {
   /// As habilidades de mapa do Círculo de agora (Aura maior, coleta mais longe, rastreador mais longe).
   final MapAbilities Function() abilities;
 
+  /// Modo Viagem: em moto, carro e ônibus o mundo fica calado (nada de coleta, fuga, vibração nem folha do Agressivo).
+  /// Quem é passageiro recebe pelo baú; quem dirige não recebe nada.
+  bool Function() quiet = _never;
+
+  /// Modo Viagem: a faixa de coleta ao longo da rota, de bicicleta.
+  double Function() travelPickupM = _noPickup;
+
   /// O raio de coleta automática de Fagulhas e materiais: a Aura base mais o Círculo (Aura e coleta) e o Familiar, que
   /// anda ao lado do Conjurador e não ocupa espaço no Círculo. É o ÚNICO valor: a lógica e o círculo desenhado leem este.
   double get auraRadiusM =>
@@ -82,6 +89,7 @@ class WorldView {
       abilities().auraBonusM +
       abilities().pickupBonusM +
       (streetLifeEnabled ? street.familiarPickupBonusM : 0) +
+      travelPickupM() +
       state.cb.auraBonusFor(state.playerLevel) +
       (state.conjurer.school == School.shaman ? state.cb.shamanAuraBonusM : 0);
 
@@ -241,11 +249,16 @@ class WorldView {
     allEcos = [for (final s in all) if (s.isEco && !state.isDone(s.uid)) s];
     final collected = <WorldSpawn>[];
     final inAuraNow = <int>{};
+    final silent = quiet();
     final visible = <WorldSpawn>[];
     for (final s in all) {
       if (state.isDone(s.uid)) continue;
       final hiddenAway = s.isEco && s.behavior == EcoBehavior.hidden && !state.isHiddenRevealed(s.uid, tUtc);
       if (hiddenAway) continue;
+      if (silent) {
+        visible.add(s);
+        continue;
+      }
       if (s.isEco && distanceM(s) <= viewM) {
         state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny);
         if (ritual != null && isRitualOnlyId(s.entryId)) noteRitualSighting(state, ritual!, s.uid, s.entryId, _ritualSeen);
@@ -352,4 +365,6 @@ class WorldView {
 }
 
 MapAbilities _noAbilities() => MapAbilities.none;
+bool _never() => false;
+double _noPickup() => 0;
 String? _noType(String _) => null;
