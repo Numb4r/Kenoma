@@ -77,5 +77,25 @@
     "sealer": { "min_points": 12, "smooth_window": 5, "min_sweep_turns": 0.85, "max_cv": 0.4, "closure_full": 0.25, "closure_zero": 1.0, "size_min": 0.45, "size_max": 1.9, "size_ok_min": 0.7, "size_ok_max": 1.4 }
   },
   "ritual": { "slots_per_sighting": 1, "seal_anim_s": 2.0, "material_max_qty": 9 },
+  "travel": {
+    "vehicles": {
+      "foot": { "max_kmh": 7, "band_m": 0, "sparks_per_km": 0 },
+      "bike": { "max_kmh": 25, "band_m": 25, "sparks_per_km": 1 },
+      "moto": { "max_kmh": 200, "band_m": 0, "sparks_per_km": 2 },
+      "car": { "max_kmh": 200, "band_m": 0, "sparks_per_km": 2 },
+      "bus": { "max_kmh": 200, "band_m": 0, "sparks_per_km": 2 }
+    },
+    "auto_mark_m": 30,
+    "mark_duration_s": 7200,
+    "chest_daily_cap": 30,
+    "min_step_m": 5,
+    "arrival": { "radius_m": 40, "hold_s": 8, "speed_mps": 1.5 },
+    "route": { "snap_m": 150, "max_nodes": 300000, "slice_nodes": 2000 },
+    "view": { "pick_m": 600, "trip_m": 200 },
+    "avatar_max_mps": 60,
+    "radio_line_s": 12,
+    "ride": { "urban_speed_mps": 7, "eta_default_min": 5, "eta_max_min": 60, "car_tries": 8, "board_s": 1.2, "leave_s": 8, "leave_speed_mps": 10 },
+    "search": { "min_interval_s": 1, "viewbox_deg": 0.2, "limit": 5, "timeout_s": 6 }
+  },
   "start_inventory": { "item.seal.simple": 5, "item.chalk": 3 }
 }

@@ -79,5 +79,17 @@
     "bench": "*O Familiar rodeia o ícone novo e solta um estalo seco, como giz riscando pedra. Parece dizer: aqui se faz coisa.*",
     "chat": "*O Familiar vira o rosto para o ícone novo e fica imóvel. A tela pisca uma vez, sem som. Parece dizer: alguém está do outro lado.*",
     "forum": "*O Familiar espia o ícone novo por cima do seu ombro e bate de leve na tela, duas vezes. Parece dizer: tem gente pedindo.*"
-  }
+  },
+  "radio": [
+    { "id": "radio_01", "from": "mentor", "text": "A cidade passa mais depressa que o Véu. Quem acompanha quem?" },
+    { "id": "radio_02", "from": "mentor", "text": "Não olhe para mim. Olhe pela janela. Alguém acenou de volta?" },
+    { "id": "radio_03", "from": "familiar", "text": "*O Familiar encosta o contorno no vidro e deixa um chiado baixo, igual ao do motor.*" },
+    { "id": "radio_04", "from": "mentor", "text": "Tem um sinal andando na mesma velocidade que você. Faz tempo. Isso te incomoda?" },
+    { "id": "radio_05", "from": "mentor", "text": "Eu guardo o que passar perto. Você só precisa chegar. Consegue não fazer nada?" },
+    { "id": "radio_06", "from": "familiar", "text": "*O Familiar conta alguma coisa nos postes, um a um, e perde a conta de propósito.*" },
+    { "id": "radio_07", "from": "mentor", "text": "As ruas têm mão e contramão. O Véu não. Para onde você acha que está indo?" },
+    { "id": "radio_08", "from": "mentor", "text": "Este chiado é o trânsito ou sou eu? Você já sabe a resposta." },
+    { "id": "radio_09", "from": "familiar", "text": "*O Familiar dorme de um olho só. O outro acompanha um carro que não está ali.*" },
+    { "id": "radio_10", "from": "mentor", "text": "Falta pouco, ou falta tudo. Depende de quem pergunta. Quem está perguntando?" }
+  ]
 }

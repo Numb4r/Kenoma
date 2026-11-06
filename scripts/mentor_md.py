@@ -73,6 +73,14 @@ for m in [*mentor["tutorial"], *mentor.get("familiar", [])]:
         req = m.get("requires")
         out.append(f"| `{m['id']}` | {req['event'] + ' ≥ ' + str(req['min']) if req else 'depois da anterior'} | {m['text']} |")
 out.append("")
+out.append("## Rádio do Véu\n")
+out.append("Falas curtas, em rodízio, no painel do Modo Viagem em moto, carro e ônibus, para quem vai de passageiro. Quem dirige não ouve o rádio. "
+           "As falas do Familiar continuam sendo gestos.\n")
+out.append("| Id | Quem | Texto |\n| --- | --- | --- |")
+for m in mentor.get("radio", []):
+    who = "Familiar" if m.get("from") == "familiar" else "mentor"
+    out.append(f"| `{m['id']}` | {who} | {m['text']} |")
+out.append("")
 out.append(f"## Fórum {forum['forum']}: pedidos diários\n")
 out.append("Três pedidos por dia, sorteados por `hash(seed, época, data, slot)`. O texto tem `{n}` (a meta), `{tipo}` (Fogo, Planta, "
            "Água ou qualquer tipo) e `{item}` (giz, ervas, água pura). Usuários: " + ", ".join(f"`{u}`" for u in forum["users"]) + ".\n")

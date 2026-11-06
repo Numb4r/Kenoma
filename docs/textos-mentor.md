@@ -86,6 +86,23 @@ O mentor ensina a fusão quando o Conjurador chega ao nível 6 (evento `level_6`
 | `fusion_02` | depois da anterior | Você escolhe quais cinco entram, e eles não voltam. Se algum estiver no Círculo, a vaga fica vazia. O que nasce guarda o nível médio deles e até dois traços: o Brilhante primeiro, depois as variantes. Quem vale mais para você, o Eco ou o que ele pode virar? |
 | `fusion_f01` | fusion ≥ 1 | *O Familiar encosta a testa na tela quando as costuras se fecham e fica assim, parado, até o Espírito respirar. Depois dá uma volta devagar em torno dele. Parece dizer: agora são um só.* |
 
+## Rádio do Véu
+
+Falas curtas, em rodízio, no painel do Modo Viagem em moto, carro e ônibus, para quem vai de passageiro. Quem dirige não ouve o rádio. As falas do Familiar continuam sendo gestos.
+
+| Id | Quem | Texto |
+| --- | --- | --- |
+| `radio_01` | mentor | A cidade passa mais depressa que o Véu. Quem acompanha quem? |
+| `radio_02` | mentor | Não olhe para mim. Olhe pela janela. Alguém acenou de volta? |
+| `radio_03` | Familiar | *O Familiar encosta o contorno no vidro e deixa um chiado baixo, igual ao do motor.* |
+| `radio_04` | mentor | Tem um sinal andando na mesma velocidade que você. Faz tempo. Isso te incomoda? |
+| `radio_05` | mentor | Eu guardo o que passar perto. Você só precisa chegar. Consegue não fazer nada? |
+| `radio_06` | Familiar | *O Familiar conta alguma coisa nos postes, um a um, e perde a conta de propósito.* |
+| `radio_07` | mentor | As ruas têm mão e contramão. O Véu não. Para onde você acha que está indo? |
+| `radio_08` | mentor | Este chiado é o trânsito ou sou eu? Você já sabe a resposta. |
+| `radio_09` | Familiar | *O Familiar dorme de um olho só. O outro acompanha um carro que não está ali.* |
+| `radio_10` | mentor | Falta pouco, ou falta tudo. Depende de quem pergunta. Quem está perguntando? |
+
 ## Fórum Limen: pedidos diários
 
 Três pedidos por dia, sorteados por `hash(seed, época, data, slot)`. O texto tem `{n}` (a meta), `{tipo}` (Fogo, Planta, Água ou qualquer tipo) e `{item}` (giz, ervas, água pura). Usuários: `vesper`, `static_saint`, `mapmaker`, `null_hypothesis`, `candlewick`, `wren_`.

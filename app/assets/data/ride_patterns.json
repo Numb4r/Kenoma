@@ -1,0 +1,51 @@
+{
+  "format": 1,
+  "note": "Padrões das notificações de corrida. Regex sem diferença de maiúsculas. Escritos sem amostras reais: conferir com corrida real e ajustar aqui, sem mexer no código.",
+  "apps": {
+    "com.ubercab": {
+      "name": "Uber",
+      "states": {
+        "searching": ["procurando (um |seu )?motorista", "buscando (um |seu )?motorista", "encontrando (um |seu )?motorista"],
+        "driver_coming": ["motorista (est[aá] )?a caminho", "(est[aá]|chega) (a|em) \\d+ ?min", "indo at[eé] voc[eê]"],
+        "arrived": ["motorista chegou", "chegou ao (local|ponto) de (embarque|partida)", "seu uber chegou", "est[aá] te esperando", "est[aá] aguardando"],
+        "in_trip": ["viagem (iniciada|come[cç]ou|em andamento)", "a caminho do (seu )?destino"],
+        "finished": ["viagem (finalizada|conclu[ií]da|encerrada)", "voc[eê] chegou", "chegou ao (seu )?destino", "avalie (sua|a) viagem"]
+      },
+      "eta": ["(\\d+) ?min"]
+    },
+    "com.taxis99": {
+      "name": "99",
+      "states": {
+        "searching": ["procurando (um |seu )?motorista", "buscando (um |seu )?motorista", "chamando motoristas?"],
+        "driver_coming": ["motorista (est[aá] )?a caminho", "corrida aceita", "motorista aceitou", "(est[aá]|chega) (a|em) \\d+ ?min"],
+        "arrived": ["motorista chegou", "chegou ao (local|ponto) de (embarque|partida)", "est[aá] te esperando", "est[aá] aguardando"],
+        "in_trip": ["corrida (iniciada|come[cç]ou|em andamento)", "viagem (iniciada|come[cç]ou|em andamento)", "a caminho do (seu )?destino"],
+        "finished": ["corrida (finalizada|conclu[ií]da|encerrada)", "viagem (finalizada|conclu[ií]da|encerrada)", "voc[eê] chegou", "chegou ao (seu )?destino", "avalie (sua|a) (corrida|viagem)"]
+      },
+      "eta": ["(\\d+) ?min"]
+    }
+  },
+  "car": {
+    "default_type": "hatch",
+    "default_color": "#8A8FA3",
+    "models": {
+      "suv": ["corolla cross", "tracker", "creta", "t-?cross", "nivus", "renegade", "compass", "kicks", "hr-?v", "duster", "captur", "pulse", "fastback", "tiggo", "ecosport", "sw4"],
+      "sedan": ["onix plus", "hb20s", "cronos", "virtus", "voyage", "logan", "versa", "city", "corolla", "civic", "cruze", "sentra", "prisma", "siena", "cobalt"],
+      "hatch": ["mobi", "kwid", "onix", "hb20", "argo", "gol", "polo", "sandero", "fit", "ka", "up", "c3", "208", "palio", "uno", "celta", "fox", "yaris", "etios", "march"]
+    },
+    "colors": [
+      { "pattern": "branc[oa]", "hex": "#E8E4F4" },
+      { "pattern": "pret[oa]", "hex": "#2A2236" },
+      { "pattern": "prata", "hex": "#B8BCC8" },
+      { "pattern": "cinza|grafite", "hex": "#6E7284" },
+      { "pattern": "vermelh[oa]", "hex": "#C8403A" },
+      { "pattern": "azul", "hex": "#3F6FC4" },
+      { "pattern": "verde", "hex": "#3E9A5C" },
+      { "pattern": "amarel[oa]", "hex": "#E0B83C" },
+      { "pattern": "laranja", "hex": "#E0813C" },
+      { "pattern": "marrom|bronze", "hex": "#7A5236" },
+      { "pattern": "bege", "hex": "#CDB892" },
+      { "pattern": "vinho|bord[oô]", "hex": "#6E2438" }
+    ]
+  }
+}
