@@ -351,6 +351,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--region", required=True)
     parser.add_argument("--epoch", type=int, default=0)
+    parser.add_argument("--out-dir", type=Path, default=REGIONS_DIR, help="fora de assets para pacotes baixáveis")
     args = parser.parse_args()
 
     region = json.loads((PIPELINE / "regions.json").read_text())[args.region]
@@ -363,9 +364,9 @@ def main() -> None:
     data = encode(tiles)
     assert decode(data).keys() == tiles.keys()
 
-    REGIONS_DIR.mkdir(parents=True, exist_ok=True)
+    args.out_dir.mkdir(parents=True, exist_ok=True)
     OUT.mkdir(parents=True, exist_ok=True)
-    path = REGIONS_DIR / f"{args.region}_e{args.epoch}_vis.bin"
+    path = args.out_dir / f"{args.region}_e{args.epoch}_vis.bin"
     path.write_bytes(data)
     n_named = sum(1 for v in tiles.values() for l in v[0] if l[2])
     n_oneway = sum(1 for v in tiles.values() for l in v[0] if l[1])
@@ -373,7 +374,7 @@ def main() -> None:
     n_lines = sum(len(v[0]) for v in tiles.values())
     n_polys = sum(len(v[1]) for v in tiles.values())
     print(f"{len(tiles)} tiles z{TILE_ZOOM}, {n_lines} polilinhas, {n_polys} polígonos")
-    print(f"{path.relative_to(ROOT)}  {len(data) / 1e6:.2f} MB")
+    print(f"{path}  {len(data) / 1e6:.2f} MB")
     write_preview(decode(data), OUT / f"{args.region}_vis_preview.png")
     print(f"sha256 {hashlib.sha256(data).hexdigest()}")
 

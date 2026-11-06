@@ -6,6 +6,7 @@ import argparse
 import gzip
 import json
 import math
+from pathlib import Path
 
 import numpy as np
 import osmium
@@ -23,6 +24,8 @@ LINE_TOL_M = 1.0
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--region", required=True)
+    ap.add_argument("--epoch", type=int, default=2)
+    ap.add_argument("--out-dir", type=Path, default=REGIONS_DIR, help="fora de assets para pacotes baixáveis")
     args = ap.parse_args()
     region = json.loads((ROOT / "pipeline/regions.json").read_text())[args.region]
     pbf = ensure_source(region["source"])
@@ -63,7 +66,8 @@ def main() -> None:
         for x, y in pts:
             body += varint(zigzag(x - px)) + varint(zigzag(y - py))
             px, py = x, y
-    out = ROOT / f"app/assets/regions/{args.region}_e2_nowalk.bin"
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    out = args.out_dir / f"{args.region}_e{args.epoch}_nowalk.bin"
     out.write_bytes(b"NWK1" + gzip.compress(bytes(body), compresslevel=9, mtime=0))
     print(f"{len(lines)} vias bloqueadas, {out.stat().st_size} bytes, sha256 {hashlib.sha256(out.read_bytes()).hexdigest()}")
 

@@ -160,6 +160,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--region", required=True)
     parser.add_argument("--epoch", type=int, default=0)
+    parser.add_argument("--out-dir", type=Path, default=REGIONS_DIR, help="fora de assets para pacotes baixáveis")
     args = parser.parse_args()
 
     region = json.loads((PIPELINE / "regions.json").read_text())[args.region]
@@ -173,9 +174,9 @@ def main() -> None:
     data = encode(grid, x0, y0, region["zoom"])
     assert np.array_equal(decode(data)[0], grid)
 
-    REGIONS_DIR.mkdir(parents=True, exist_ok=True)
+    args.out_dir.mkdir(parents=True, exist_ok=True)
     OUT.mkdir(parents=True, exist_ok=True)
-    bin_path = REGIONS_DIR / f"{args.region}_e{args.epoch}.bin"
+    bin_path = args.out_dir / f"{args.region}_e{args.epoch}.bin"
     bin_path.write_bytes(data)
     preview_path = OUT / f"{args.region}_preview.png"
     write_preview(grid, preview_path)
@@ -185,8 +186,8 @@ def main() -> None:
     print(f"grade {grid.shape[1]}x{grid.shape[0]} em z{region['zoom']}, origem ({x0}, {y0})")
     for biome_id, count in enumerate(counts[:len(names)]):
         print(f"  {names[biome_id]:<12} {100 * count / grid.size:5.1f}%")
-    print(f"{bin_path.relative_to(ROOT)}  {len(data) / 1e6:.2f} MB")
-    print(f"{preview_path.relative_to(ROOT)}")
+    print(f"{bin_path}  {len(data) / 1e6:.2f} MB")
+    print(f"{preview_path}")
     print(f"sha256 {hashlib.sha256(data).hexdigest()}")
 
 
