@@ -2,7 +2,6 @@
 /// do toque (abrir tela, salvar): ele aparece no primeiro quadro depois do dedo.
 library;
 
-import 'package:flutter/material.dart' show AnimationStyle;
 import 'package:flutter/widgets.dart';
 
 const Duration pressDuration = Duration(milliseconds: 80);

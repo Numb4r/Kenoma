@@ -32,7 +32,7 @@ EpochSchedule _schedule({String? logicSha, bool listed = true}) {
   final cat = _catalog();
   final e = (json['epochs'] as List).last as Map<String, dynamic>;
   if (listed) {
-    (e['region_packs'] as Map)['test_city'] = {..._ref(_fileOf(cat, 'logic')), if (logicSha != null) 'sha256': logicSha};
+    (e['region_packs'] as Map)['test_city'] = {..._ref(_fileOf(cat, 'logic')), 'sha256': ?logicSha};
     (e['visual_packs'] as Map)['test_city'] = _ref(_fileOf(cat, 'visual'));
     (e['walkable'] as Map)['exclude_packs'] = {'test_city': _ref(_fileOf(cat, 'nowalk'))};
   }
