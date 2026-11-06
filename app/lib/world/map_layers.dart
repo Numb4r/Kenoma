@@ -39,6 +39,5 @@ class MapLayers {
 
   void dispose() {
     source.dispose();
-    regions?.dispose();
   }
 }
