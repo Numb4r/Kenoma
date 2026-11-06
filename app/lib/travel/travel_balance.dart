@@ -54,6 +54,7 @@ class TravelBalance {
         arrivalHoldS = _m(t, 'arrival')['hold_s'] as int,
         arrivalSpeedMps = _d(_m(t, 'arrival')['speed_mps']),
         snapM = _d(_m(t, 'route')['snap_m']),
+        highwayTolM = _d(_m(t, 'route')['highway_tol_m']),
         maxNodes = _m(t, 'route')['max_nodes'] as int,
         sliceNodes = _m(t, 'route')['slice_nodes'] as int,
         pickViewM = _d(_m(t, 'view')['pick_m']),
@@ -94,6 +95,9 @@ class TravelBalance {
 
   /// Rota: até onde a origem e o destino procuram uma rua, o teto de nós do A* e quantos nós por fatia, sem travar a tela.
   final double snapM;
+
+  /// Distância até uma via bloqueada que faz o trecho contar como rodovia, a mesma tolerância de `WalkPaths`.
+  final double highwayTolM;
   final int maxNodes;
   final int sliceNodes;
 

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/pcg32.dart';
+import 'package:kenoma/data/map_sources.dart';
 import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/travel/travel_path.dart';
 import 'package:kenoma/world/traffic_graph.dart';
@@ -29,6 +30,15 @@ TrafficGraph grid({bool empty = false}) {
 TravelPath? route(TrafficGraph g, (int, int) a, (int, int) b, {bool motorized = true, int maxNodes = 100000}) => findRoute(g,
     fromX: nx(a.$1), fromY: ny(a.$2), toX: nx(b.$1), toY: ny(b.$2), rules: RouteRules(motorized: motorized), mpc: mpc, snapM: 100, maxNodes: maxNodes);
 
+class _NoWalk implements NoWalkSource {
+  _NoWalk(this.segments);
+
+  final List<double> segments;
+
+  @override
+  List<double> near(int cx, int cy) => segments;
+}
+
 void main() {
   const block = 8 * mpc; // uma quadra, em metros
 
@@ -49,6 +59,16 @@ void main() {
       expect(route(grid(), (2, 5), (2, 2), motorized: false)!.lengthM, closeTo(3 * block, 1e-6));
       expect(route(grid(), (2, 5), (2, 2))!.lengthM, closeTo(5 * block, 1e-6), reason: 'desvia pela paralela');
       expect(route(grid(), (2, 2), (2, 5))!.lengthM, closeTo(3 * block, 1e-6), reason: 'a favor da mão vai reto');
+    });
+
+    test('a pé e de bicicleta a rota desvia de rodovia; de carro passa por ela', () {
+      // A horizontal y=3 entre os nós 2 e 6 é rodovia.
+      final rodovia = _NoWalk([nx(2), ny(3), nx(6), ny(3)]);
+      final rules = RouteRules(motorized: false, highway: highwayTest(rodovia, 1));
+      final g = grid();
+      final aPe = findRoute(g, fromX: nx(3), fromY: ny(3), toX: nx(5), toY: ny(3), rules: rules, mpc: mpc, snapM: 100, maxNodes: 100000)!;
+      expect(aPe.lengthM, closeTo(4 * block, 1e-6), reason: 'sai da rodovia e volta pela paralela');
+      expect(route(g, (3, 3), (5, 3))!.lengthM, closeTo(2 * block, 1e-6));
     });
 
     test('motorizado fica fora do caminho de pedestre', () {

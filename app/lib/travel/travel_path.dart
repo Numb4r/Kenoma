@@ -5,6 +5,7 @@ library;
 import 'dart:math' as math;
 
 import '../core/pcg32.dart';
+import '../data/map_sources.dart' show NoWalkSource;
 import '../data/visual_pack.dart' show OneWay;
 import '../world/traffic_graph.dart';
 
@@ -68,14 +69,38 @@ double _hypot(double a, double b) => math.sqrt(a * a + b * b);
 
 /// Quem pode passar por onde.
 class RouteRules {
-  const RouteRules({required this.motorized});
+  const RouteRules({required this.motorized, this.highway});
 
-  /// Motorizado respeita a mão única e fica fora dos caminhos de pedestre. A pé e de bicicleta vale tudo.
+  /// Motorizado respeita a mão única e fica fora dos caminhos de pedestre. A pé e de bicicleta vale tudo, menos rodovia.
   final bool motorized;
 
-  bool allows(GhostLine l) => !motorized || !l.isPedestrian;
+  /// Se a linha é rodovia ou via expressa. `null`: não há dado, nenhuma é.
+  final bool Function(GhostLine)? highway;
+
+  bool allows(GhostLine l) => motorized ? !l.isPedestrian : !(highway?.call(l) ?? false);
   bool forward(GhostLine l) => !motorized || l.oneway != OneWay.reverse;
   bool backward(GhostLine l) => !motorized || l.oneway != OneWay.forward;
+}
+
+/// Devolve o teste de rodovia sobre [source], com memória por linha: o meio de algum trecho da linha a até [tolCells] de
+/// uma via bloqueada. A mesma regra de `WalkPaths`, que tira esses trechos dos caminhos andáveis.
+bool Function(GhostLine) highwayTest(NoWalkSource source, double tolCells) {
+  final memo = <(int, int, int), bool>{};
+  return (l) => memo[l.key] ??= _nearBlocked(l, source, tolCells);
+}
+
+bool _nearBlocked(GhostLine l, NoWalkSource source, double tol) {
+  for (var i = 0; i + 3 < l.xy.length; i += 2) {
+    final mx = (l.xy[i] + l.xy[i + 2]) / 2, my = (l.xy[i + 1] + l.xy[i + 3]) / 2;
+    final near = source.near((mx / 2).floor(), (my / 2).floor());
+    for (var k = 0; k + 3 < near.length; k += 4) {
+      final ax = near[k], ay = near[k + 1], dx = near[k + 2] - ax, dy = near[k + 3] - ay;
+      final len = dx * dx + dy * dy;
+      final t = len <= 0 ? 0.0 : (((mx - ax) * dx + (my - ay) * dy) / len).clamp(0.0, 1.0);
+      if (_hypot(ax + dx * t - mx, ay + dy * t - my) <= tol) return true;
+    }
+  }
+  return false;
 }
 
 typedef _Key = (int, int, int, int);

@@ -59,6 +59,7 @@ import '../menu/radar_screen.dart';
 import '../../story/local_notifier.dart';
 import '../../story/notification_plan.dart';
 import '../settings/regions_section.dart' show regionSizeLabel;
+import '../../travel/travel_path.dart' show highwayTest;
 import '../../travel/travel_session.dart';
 import '../travel/travel_layer.dart';
 import '../travel/travel_overlay.dart';
@@ -620,6 +621,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       sparkItem: (lat, lon, t) => sparkForBiome(data.schedule.select(t).epoch, _biomeKeyAt(assets, lat, lon)),
       ecosInReach: () => [for (final s in world.spawns) if (s.isEco && world.distanceM(s) <= data.travel.autoMarkM) s],
       nowUtc: () => tools.clock.nowUtc,
+      highway: assets.noWalk == null ? null : highwayTest(assets.noWalk!, data.travel.highwayTolM / metersPerCell(game.playerLat)),
     );
     world.quiet = () => travel.quiet;
     world.travelPickupM = () => travel.pickupBonusM;

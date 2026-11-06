@@ -51,8 +51,11 @@ class TravelSession extends ChangeNotifier {
     required this.sparkItem,
     required this.ecosInReach,
     required this.nowUtc,
+    this.highway,
   });
 
+  /// Rodovias e vias expressas: fora da rota a pé e de bicicleta. `null`: sem esse dado.
+  final bool Function(GhostLine)? highway;
   final GameState state;
   final TravelBalance balance;
   final TrafficGraph graph;
@@ -214,7 +217,7 @@ class TravelSession extends ChangeNotifier {
         fromY: _y,
         toX: destX!,
         toY: destY!,
-        rules: RouteRules(motorized: vehicle.motorized),
+        rules: RouteRules(motorized: vehicle.motorized, highway: highway),
         mpc: _mpc,
         snapM: balance.snapM,
         maxNodes: balance.maxNodes,
