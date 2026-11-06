@@ -128,6 +128,7 @@ class SpawnField {
   final int Function(String entryId)? levelCapOf;
 
   final _cells = <(int, int, int, int), List<SpawnItem>>{};
+  int _revision = 0;
   final _levels = <int, int>{};
 
   /// Nível do Eco: `limitar(nível do Conjurador + delta, 1, teto da camada)`, calculado na primeira vez que ele
@@ -137,6 +138,10 @@ class SpawnField {
 
   /// Os itens da célula z20 `(cx, cy)` no instante [tUtc]. Todos, existam ou não.
   List<SpawnItem> cellItems(int cx, int cy, int tUtc) {
+    if (map.pack.revision != _revision) {
+      _revision = map.pack.revision; // chegou bloco ou região: a célula é refeita sem reiniciar o app
+      _cells.clear();
+    }
     final epoch = schedule.select(tUtc).epoch;
     final window = windowIndex(seed, cx, cy, tUtc);
     // O clima só entra nas épocas que o trazem; nas outras a célula não depende dele. É o do COMEÇO da janela de 20 min da

@@ -6,7 +6,9 @@ library;
 import 'dart:io' show gzip;
 import 'dart:typed_data';
 
-class NoWalkPack {
+import 'map_sources.dart';
+
+class NoWalkPack implements NoWalkSource {
   NoWalkPack._(this._byCell);
 
   factory NoWalkPack.parse(Uint8List bytes) {
@@ -56,5 +58,6 @@ class NoWalkPack {
   final Map<(int, int), List<double>> _byCell;
 
   /// Os segmentos `x0, y0, x1, y1, ...` (células z21 fracionárias) perto da célula z20 `(cx, cy)`. Vazio se nenhum.
+  @override
   List<double> near(int cx, int cy) => _byCell[(cx, cy)] ?? const [];
 }

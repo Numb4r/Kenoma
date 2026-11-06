@@ -40,6 +40,7 @@ class TrafficPainter {
   final GhostSprites sprites = GhostSprites();
   TrafficField? _field;
   TrafficGraph? _graph;
+  int _revision = 0;
 
   final ui.Paint _fill = ui.Paint()..isAntiAlias = false;
   final ui.Paint _layer = ui.Paint();
@@ -66,6 +67,11 @@ class TrafficPainter {
   }
 
   TrafficField _fieldFor(int seed) {
+    if (visual.pack.revision != _revision) {
+      _revision = visual.pack.revision; // chegou bloco ou região: o grafo guarda tiles antigos
+      _graph = null;
+      _field = null;
+    }
     final graph = _graph ??= TrafficGraph(loadTile: visual.tile, cellsPerTile: visual.cellsPerTile, extent: visual.pack.extent, cacheTiles: cacheTiles);
     final f = _field;
     if (f != null && f.seed == seed) return f;

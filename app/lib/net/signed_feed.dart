@@ -43,6 +43,16 @@ Future<Map<String, dynamic>?> readVerifiedCache(Directory dir, String name, {Str
   }
 }
 
+/// Grava [data] e a assinatura [sig] em [dir]. Os dois arquivos vão para temporários e só depois trocam de nome, um logo após o
+/// outro: a janela em que o dado e a assinatura não combinam é de microssegundos (e, se a leitura cair nela, a verificação
+/// falha e vale o que o app já tem).
+Future<void> storeVerified(Directory dir, String name, List<int> data, List<int> sig) async {
+  await File('${dir.path}/$name.tmp').writeAsBytes(data, flush: true);
+  await File('${dir.path}/$name.sig.tmp').writeAsBytes(sig, flush: true);
+  await File('${dir.path}/$name.sig.tmp').rename('${dir.path}/$name.sig');
+  await File('${dir.path}/$name.tmp').rename('${dir.path}/$name');
+}
+
 /// O `epochs.json` que o app usa: o embutido fundido com o cache do feed (reverificado agora). Sem cache, é o embutido.
 Future<Map<String, dynamic>> loadEpochsJson({AssetBundle? bundle, Directory? dir, String publicKeyHex = kFeedPublicKeyHex}) async {
   final assets = bundle ?? rootBundle;
@@ -135,12 +145,7 @@ Future<int> refreshSignedFeed({
         final json = jsonDecode(utf8.decode(data)) as Map<String, dynamic>;
         if (name == 'epochs.json') mergeSignedJson(bundled, json); // lança se alterar época publicada
         if (name == 'events.json' && json['events'] is! List) continue;
-        // Os dois arquivos vão para temporários e só depois trocam de nome, um logo após o outro: a janela em que o dado e a
-        // assinatura não combinam é de microssegundos (e, se a leitura cair nela, a verificação falha e vale o embutido).
-        await File('${d.path}/$name.tmp').writeAsBytes(data, flush: true);
-        await File('${d.path}/$name.sig.tmp').writeAsBytes(sig, flush: true);
-        await File('${d.path}/$name.sig.tmp').rename('${d.path}/$name.sig');
-        await File('${d.path}/$name.tmp').rename('${d.path}/$name');
+        await storeVerified(d, name, data, sig);
         accepted++;
       } catch (_) {
         // este arquivo falhou: segue com o que há

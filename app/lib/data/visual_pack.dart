@@ -16,6 +16,8 @@ import 'dart:convert' show utf8;
 import 'dart:io' show gzip;
 import 'dart:typed_data';
 
+import 'map_sources.dart';
+
 const int _headerSize = 13;
 
 /// Classe da rua, do mais largo para o mais estreito.
@@ -59,7 +61,7 @@ class VisualTile {
   bool get isEmpty => lines.isEmpty && areas.isEmpty;
 }
 
-class VisualPack {
+class VisualPack implements VisualSource {
   VisualPack._({
     required this.version,
     required this.tileZoom,
@@ -106,18 +108,26 @@ class VisualPack {
   }
 
   /// Versão do formato (1 ou 2), zoom dos tiles (15) e unidades por tile (4096).
+  @override
   final int version;
+  @override
   final int tileZoom;
+  @override
   final int extent;
   final Uint8List _body;
   final Map<(int, int), (int, int)> _index;
   final List<String> _names;
 
+  @override
+  int get revision => 0;
+
   int get tileCount => _index.length;
 
+  @override
   bool hasTile(int x, int y) => _index.containsKey((x, y));
 
   /// Decodifica o tile `(x, y)`. `null` se o pacote não tem esse tile (não há nada para desenhar ali).
+  @override
   VisualTile? decode(int x, int y) {
     final entry = _index[(x, y)];
     if (entry == null) return null;

@@ -77,7 +77,9 @@ bool ed25519Verify({required List<int> publicKey, required List<int> message, re
     final r = _decode(signature.sublist(0, 32));
     final s = _leInt(signature.sublist(32));
     if (a == null || r == null || s >= _l) return false;
-    final h = _leInt(sha512.convert([...signature.sublist(0, 32), ...publicKey, ...message]).bytes) % _l;
+    // Bytes, não List<int> de objetos: a mensagem pode ser um pacote de dezenas de MB.
+    final input = (BytesBuilder(copy: false)..add(signature.sublist(0, 32))..add(publicKey)..add(message)).takeBytes();
+    final h = _leInt(sha512.convert(input).bytes) % _l;
     return _equal(_mul(s, _base), _add(r, _mul(h, a)));
   } catch (_) {
     return false;

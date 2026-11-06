@@ -4,7 +4,7 @@ library;
 
 import '../core/biomes.dart';
 import '../core/tiles.dart';
-import '../data/region_pack.dart';
+import '../data/map_sources.dart';
 
 /// Id do Vazio em `biomes.json`.
 const int voidBiomeId = 0;
@@ -12,7 +12,7 @@ const int voidBiomeId = 0;
 class RegionMap {
   const RegionMap({required this.pack, required this.biomes});
 
-  final RegionPack pack;
+  final BiomeGrid pack;
   final BiomeSet biomes;
 
   /// Se a célula z21 `(x, y)` está dentro da grade do pacote.
