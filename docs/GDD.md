@@ -293,7 +293,7 @@ Três famílias com Fagulha e Eco, em triângulo de Fogo, Planta e Água. Todo b
 | Família | Bioma | Tipo | Fagulha | Eco | Habilidade de mapa |
 | --- | --- | --- | --- | --- | --- |
 | Soot | Urbano | Fogo | Ember Mote, brasa de bituca e asfalto quente | Sootling, bicho de fuligem com brasa no peito que vive em bueiros | Aura maior, +3, +5 e +8 m por faixa de nível |
-| Frond | Verde | Planta | Seed Mote | Frondling, fronde fractal inspirada na Charnia que anda sobre raízes | coleta Fagulhas de mais longe, +10, +15 e +20 m |
+| Frond | Verde | Planta | Seed Mote | Frondling, fronde fractal inspirada na Charnia que anda sobre raízes | coleta Fagulhas de mais longe, +3, +5 e +8 m |
 | Rill | Água | Água | Drip Mote | Rillet, gota que reflete o céu e faz um som de pingo | rastreador vê Ecos além da visão, 150, 170 e 200 m |
 
 Na fase 0 o Eco vai até o nível 20. O Poder é derivado da espécie e do nível e só ganha uso com o ritual na fase 1. A destilação segue a tabela da fundação.
@@ -1373,7 +1373,7 @@ JSON comprimido com `schema_version`, `app_version`, `epoch`, `seed_global`, UTC
 2. O ID de cada spawn sai do hash de seed, época, célula, janela e índice do item. O mesmo spawn não pode ser capturado duas vezes mesmo depois que o registro de coletas, que guarda só as últimas 48 horas, for limpo.
 3. Cada versão do formato tem uma migração pura para a seguinte, testada com saves de exemplo. Campos desconhecidos são preservados.
 4. A escrita é atômica, num arquivo temporário renomeado depois, com os 3 últimos saves em rodízio e checksum para detectar corrupção.
-5. O backup é por arquivo e Google Drive. Um save com dezenas de criaturas passa dos cerca de 2,9 KB que cabem num QR code, então o QR fica só para compartilhar a seed do grupo entre amigos.
+5. O backup é por arquivo e Google Drive. Um save com dezenas de criaturas passa dos cerca de 2,9 KB que cabem num QR code, então o QR fica só para compartilhar a seed do grupo entre amigos. Qualquer jogador pode recomeçar do zero pelos Ajustes: o progresso é apagado, mas a identidade (\`player\_id\`, log de versões e certificados de fundador e de evento) fica, para ninguém perder o que ganhou no beta.
 
 ### Épocas
 
