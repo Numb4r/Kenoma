@@ -131,6 +131,11 @@ class Index:
                 geoms.append(g)
         self.geoms = np.array(geoms)
         self.tree = shapely.STRtree(self.geoms)
+        self.relations_of: dict[int, list[int]] = {}
+        for rel_id, (_, members) in store["relations"].items():
+            for kind, ref, _ in members:
+                if kind == "w":
+                    self.relations_of.setdefault(ref, []).append(rel_id)
 
     def hits(self, box) -> set[int]:
         found = self.tree.query(shapely.box(*box), predicate="intersects")
@@ -168,8 +173,7 @@ def select(store: dict, index: Index, query_boxes: list) -> list[dict]:
     for box in query_boxes:
         hit |= index.hits(box)
     way_ids = [w for w in sorted(hit) if matches(store["ways"][w][0], area) or matches(store["ways"][w][0], line)]
-    rel_ids = [r for r, (_, members) in sorted(store["relations"].items())
-               if any(kind == "w" and ref in hit for kind, ref, _ in members)]
+    rel_ids = sorted({r for w in hit for r in index.relations_of.get(w, ())})
     return [element_way(w, store) for w in way_ids] + [element_relation(r, store) for r in rel_ids]
 
 
