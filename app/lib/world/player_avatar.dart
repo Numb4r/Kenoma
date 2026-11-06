@@ -33,6 +33,9 @@ class PlayerAvatar {
   /// Velocidade máxima plausível, em m/s. Uma leitura que exigiria mais que isto é descartada.
   final double maxSpeedMps;
 
+  /// A velocidade que o Modo Viagem aceita no lugar de [maxSpeedMps]. `null`: a normal.
+  double? travelMaxMps;
+
   /// Quantas leituras seguidas, todas impossíveis e perto umas das outras, valem como uma mudança real de lugar.
   final int relocateAfter;
   final double relocateRadiusM;
@@ -94,7 +97,7 @@ class PlayerAvatar {
     // Duas leituras no mesmo instante contam como 0,25 s: o GPS não entrega mais rápido que isso.
     final realElapsed = timeMs != null && last.ms != null ? (timeMs - last.ms!) / 1000 : _t - last.t;
     final elapsed = math.max(realElapsed, 0.25);
-    if (meters / elapsed <= maxSpeedMps) {
+    if (meters / elapsed <= (travelMaxMps ?? maxSpeedMps)) {
       _candidates = 0;
       // O tempo do caminho sempre cresce: duas leituras no mesmo quadro ficam 0,25 s uma da outra.
       _path.add(_Point(x, y, math.max(_t, last.t + 0.25), timeMs));

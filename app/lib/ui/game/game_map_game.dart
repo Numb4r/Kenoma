@@ -36,6 +36,7 @@ import 'rain_painter.dart';
 import 'street_label_painter.dart';
 import 'trace_painter.dart';
 import 'traffic_painter.dart';
+import '../travel/travel_layer.dart';
 import 'tracker_painter.dart';
 import 'player_painter.dart';
 
@@ -146,7 +147,24 @@ class GameMapGame extends FlameGame {
   /// Largura da tela em metros no zoom padrão, e a faixa da pinça (do `balance.json`).
   final double defaultWidthM;
   final double minWidthM;
-  final double maxWidthM;
+  double maxWidthM;
+
+  /// O Modo Viagem desenha por aqui: rota, destino e carro da corrida.
+  TravelLayer? travelLayer;
+  double? _travelViewM;
+  late final double _normalMaxWidthM = maxWidthM;
+
+  /// O Modo Viagem pede uma tela mais larga que a da pinça. `null` volta ao normal.
+  void setTravelView(double? m) {
+    if (m == _travelViewM) return;
+    final normal = _normalMaxWidthM;
+    _travelViewM = m;
+    maxWidthM = m ?? normal;
+    widthM = m ?? defaultWidthM;
+  }
+
+  /// A célula z21 sob um ponto da tela.
+  (double, double) cellAt(Offset screen) => follow.camera.screenToCell(screen.dx, screen.dy, size.x, size.y);
 
   /// Altura do Conjurador e dos Ecos, e tamanho das Fagulhas e dos materiais, em metros do mundo.
   final double sparkSizeM;
@@ -372,6 +390,7 @@ class GameMapGame extends FlameGame {
     } else {
       _traffic.lastDrawn = 0;
     }
+    travelLayer?.paintGround(canvas, view, cam, metersPerCell(_lat), utc: _exactUtc(), avatar: avatar);
     if (streetNames()) _labels.paint(canvas, view, cam);
     if (streetLifeEnabled && worldView != null && _hasFix) _fog.paint(canvas, view, cam, worldView!.state.fog);
     if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
@@ -420,10 +439,13 @@ class GameMapGame extends FlameGame {
         dpr: dpr,
       );
     }
-    if (streetLifeEnabled) _paintFamiliar(canvas, cam, view);
-    // Parado, o Conjurador respira: dois quadros, o segundo um pixel de arte mais alto.
-    final breath = avatar.moving || ((_time / 0.7).floor() % 2 == 0) ? 0.0 : -balance.artPixelDp;
-    paintPlayerMarker(canvas, center.translate(0, breath), sprite: _playerFrame, size: playerSize, mirrored: _facingLeft, dpr: dpr);
+    if (travelLayer?.hidesPlayer != true) {
+      if (streetLifeEnabled) _paintFamiliar(canvas, cam, view);
+      // Parado, o Conjurador respira: dois quadros, o segundo um pixel de arte mais alto.
+      final breath = avatar.moving || ((_time / 0.7).floor() % 2 == 0) ? 0.0 : -balance.artPixelDp;
+      paintPlayerMarker(canvas, center.translate(0, breath), sprite: _playerFrame, size: playerSize, mirrored: _facingLeft, dpr: dpr);
+    }
+    travelLayer?.paintCar(canvas, view, cam, metersPerCell(_lat), utc: _exactUtc(), avatar: avatar);
     fx.paint(canvas, view, cam, avatar: center, playerSize: playerSize, sparkSize: sparkSize, dpr: dpr);
     if (w != null) {
       final off = spriteSize / 2;

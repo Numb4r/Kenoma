@@ -55,6 +55,9 @@ import '../menu/profile_screen.dart';
 import '../menu/radar_screen.dart';
 import '../../story/local_notifier.dart';
 import '../../story/notification_plan.dart';
+import '../../travel/travel_session.dart';
+import '../travel/travel_layer.dart';
+import '../travel/travel_overlay.dart';
 import '../settings/settings_screen.dart';
 import 'game_map_game.dart';
 import 'moon_hud.dart';
@@ -65,6 +68,7 @@ import '../settings/connectivity_section.dart' show kPocketSetting, kStepsSettin
 import '../../world/device_sensors.dart';
 import '../../world/pocket_mode.dart';
 import '../../world/steps.dart';
+import '../../world/traffic_graph.dart';
 
 /// O mapa do jogo (M5): o Conjurador anda com o GPS e a câmera o segue, com a Aura no chão. A câmera
 /// nunca sai do Conjurador: arrastar com um dedo gira o mapa e a pinça dá zoom numa faixa de jogo.
@@ -102,7 +106,7 @@ class GameMapScreen extends StatefulWidget {
 }
 
 class _Ready {
-  _Ready(this.assets, this.game, this.tracker, this.sub, this.data, this.session, this.world);
+  _Ready(this.assets, this.game, this.tracker, this.sub, this.data, this.session, this.world, this.travel);
 
   final GameData data;
   final GameSession session;
@@ -111,6 +115,7 @@ class _Ready {
   final GameMapGame game;
   final PlayerTracker tracker;
   final StreamSubscription<PlayerState> sub;
+  final TravelSession travel;
 }
 
 class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserver {
@@ -161,7 +166,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   /// A névoa de guerra: revela em volta do caminho andado (o do simulador vai para o conjunto de debug).
   void _revealFog(PlayerState s, GameState state, GameData data) {
     final p = s.position;
-    if (p == null) return;
+    if (p == null || (_ready?.travel.driver ?? false)) return; // dirigir não revela o mapa
     final (x, y) = latLonToTileFraction(p.lat, p.lon, biomeZoom);
     state.revealFog(x, y, data.street.fogRevealRadiusM, metersPerCell(p.lat), debug: tools.useSimulator);
   }
@@ -173,6 +178,15 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     try {
       state.setSetting('last_biome', assets.map.biomes.spawnKey(assets.map.spawnBiomeAtLatLon(p.lat, p.lon)));
     } catch (_) {}
+  }
+
+  /// A chave do bioma em (lat, lon), ou `null` fora do pacote.
+  String? _biomeKeyAt(MapAssets assets, double lat, double lon) {
+    try {
+      return assets.map.biomes.spawnKey(assets.map.spawnBiomeAtLatLon(lat, lon));
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Um Eco Brilhante apareceu: som curto e aviso.
@@ -203,6 +217,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   /// O relógio do tutorial do mentor e a virada das diárias: um tique por segundo com o mapa aberto e o jogo à vista.
   void _storyTick() {
     final r = _ready;
+    if (r != null) r.travel.tick(speedMps: r.game.avatar.speedMps);
     if (r == null || !mounted || _busy || _inBackground) return;
     final now = tools.clock.nowUtc;
     final st = r.session.state;
@@ -259,6 +274,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   /// A caminhada conta de 10 em 10 metros, para não gravar o save a cada passo.
   void _onWalked(double meters) {
+    if (_ready?.travel.quiet ?? false) return; // de carro não é caminhada
     _walkedM += meters;
     if (_walkedM < 10) return;
     final whole = _walkedM.floor();
@@ -343,7 +359,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   /// Toque longo num Eco dentro da Aura: prende o sinal por alguns minutos. Num Eco já marcado, solta a marcação.
   void _onLongPress(Offset at) {
     final r = _ready;
-    if (r == null || _busy) return;
+    if (r == null || _busy || r.travel.quiet) return;
     final eco = r.game.spawnAt(at);
     if (eco == null || !eco.isEco) return;
     final state = r.session.state;
@@ -366,6 +382,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   Future<void> _onTap(Offset at) async {
     final r = _ready;
     if (r == null || _busy) return;
+    final (cellX, cellY) = r.game.cellAt(at);
+    if (r.travel.tapCell(cellX, cellY) || r.travel.quiet) return; // escolheu o destino, ou o mundo está calado
     final spawn = r.game.spawnAt(at);
     if (spawn == null) return;
     switch (r.world.touch(spawn, tools.clock.nowUtc)) {
@@ -395,7 +413,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   /// Abre o encontro com [spawn]: a folha de selo e a sintonia.
   Future<void> _startEncounter(WorldSpawn spawn) async {
     final r = _ready;
-    if (r == null || _busy) return;
+    if (r == null || _busy || r.travel.driver) return; // a sintonia vibra e pede a mão: nada disso ao volante
     if (isRitualOnlyId(spawn.entryId)) return _startRitual(spawn); // não responde à sintonia
     _busy = true;
     try {
@@ -544,8 +562,26 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       nowUtc: () => tools.clock.nowUtc,
     );
     final tracker = PlayerTracker(source: tools.source);
+    final travel = TravelSession(
+      state: session.state,
+      balance: data.travel,
+      graph: TrafficGraph(loadTile: assets.visual!.tile, cellsPerTile: assets.visual!.cellsPerTile, extent: assets.visual!.pack.extent, cacheTiles: 512),
+      patterns: data.ridePatterns,
+      radioLines: data.mentor.radio,
+      sparkItem: (lat, lon, t) => sparkForBiome(data.schedule.select(t).epoch, _biomeKeyAt(assets, lat, lon)),
+      ecosInReach: () => [for (final s in world.spawns) if (s.isEco && world.distanceM(s) <= data.travel.autoMarkM) s],
+      nowUtc: () => tools.clock.nowUtc,
+    );
+    world.quiet = () => travel.quiet;
+    world.travelPickupM = () => travel.pickupBonusM;
+    game.travelLayer = TravelLayer(travel, carM: assets.balance.ghostCarM);
+    travel.addListener(() {
+      game.setTravelView(travel.viewWidthM);
+      game.avatar.travelMaxMps = travel.avatarMaxMps;
+    });
     final sub = tracker.states.listen((s) {
       game.onPlayerState(s);
+      noteTravelPosition(travel, s, game.avatar);
       _rememberBiome(s, session.state, assets);
       _revealFog(s, session.state, data);
       _rebuild();
@@ -570,7 +606,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       game.rotation.toggleFollowHeading(); // volta ao modo que o jogador deixou ligado
       WidgetsBinding.instance.addPostFrameCallback((_) => _setFollowHeading(true));
     }
-    _ready = _Ready(assets, game, tracker, sub, data, session, world);
+    _ready = _Ready(assets, game, tracker, sub, data, session, world, travel);
     _familiarSchool = session.state.conjurer.school;
     if (_familiarSchool != null) unawaited(_reloadFamiliar(game, session.state));
     session.state.addListener(_onStateForFamiliar);
@@ -669,6 +705,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final r = _ready;
     if (r != null) {
       r.session.state.removeListener(_onStateForFamiliar);
+      r.travel.dispose();
       r.sub.cancel();
       r.tracker.dispose();
       r.assets.dispose();
@@ -847,6 +884,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                     ),
                   ),
                 ),
+              Positioned.fill(child: TravelOverlay(travel: r.travel, state: r.session.state, data: r.data, appVersion: _version, playerLat: () => game.playerLat, playerLon: () => game.playerLon, onMessage: _toast)),
               if (blocked) _AccessPanel(access: _access!, gateway: widget.gateway, onRetry: _ensureAccess, onSimulator: () => _switchSource(true)),
             ],
           ),

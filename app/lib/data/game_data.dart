@@ -11,6 +11,8 @@ import '../crafting/ritual_data.dart';
 import '../net/signed_feed.dart';
 import '../player/progress_balance.dart';
 import '../story/forum_data.dart';
+import '../travel/notification_parser.dart';
+import '../travel/travel_balance.dart';
 import '../core/weather.dart';
 import '../world/steps.dart';
 import '../world/street_life_balance.dart';
@@ -56,10 +58,13 @@ class GameData {
     required this.forum,
     required this.street,
     required this.steps,
+    required this.travel,
+    RidePatterns? ridePatterns,
     this.variants = const {},
     this.phone = const PhoneApps([]),
     RitualBook? ritual,
-  }) : ritual = ritual ?? RitualBook(balance: RitualBalance(const {}));
+  })  : ritual = ritual ?? RitualBook(balance: RitualBalance(const {})),
+        ridePatterns = ridePatterns ?? RidePatterns.none();
 
   static Future<GameData> load([AssetBundle? bundle]) async {
     final b = bundle ?? rootBundle;
@@ -76,6 +81,7 @@ class GameData {
       mentor: await json('mentor'),
       forum: await json('forum'),
       rituals: await json('rituals').catchError((_) => <String, dynamic>{}), // sem o arquivo, o ritual fica sem receitas
+      ridePatterns: await json('ride_patterns').catchError((_) => <String, dynamic>{}), // sem o arquivo, a corrida vai pelos botões
     );
   }
 
@@ -89,6 +95,7 @@ class GameData {
     required Map<String, dynamic> mentor,
     required Map<String, dynamic> forum,
     Map<String, dynamic>? rituals,
+    Map<String, dynamic>? ridePatterns,
   }) =>
       GameData(
         ritual: RitualBook.fromJson(rituals, balance),
@@ -97,6 +104,8 @@ class GameData {
         street: StreetLifeBalance(balance),
         phone: PhoneApps.fromBalance(balance),
         steps: StepsBalance.fromJson(balance),
+        travel: TravelBalance(balance),
+        ridePatterns: ridePatterns == null ? null : RidePatterns.fromJson(ridePatterns),
         variants: {
           for (final e in ((creatures['variants'] as Map<String, dynamic>?) ?? const {}).entries)
             e.key: VariantInfo(
@@ -152,6 +161,10 @@ class GameData {
 
   /// Passos por Fagulha do contador opcional (`balance.json`, bloco `steps`).
   final StepsBalance steps;
+
+  /// O Modo Viagem (`balance.json`, bloco `travel`) e os padrões das notificações de corrida (`ride_patterns.json`).
+  final TravelBalance travel;
+  final RidePatterns ridePatterns;
 
   /// As variantes: `urban`, `green`, `water`, `residential` e `shiny`.
   final Map<String, VariantInfo> variants;

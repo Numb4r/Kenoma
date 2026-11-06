@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -24,7 +25,9 @@ import io.flutter.plugin.common.MethodChannel
  * - `kenoma/steps` (MethodChannel): `hasPermission`, `requestPermission` (ACTIVITY_RECOGNITION, Android 10+) e
  *   `read` (uma leitura do TYPE_STEP_COUNTER: passos acumulados desde o boot, ou null).
  * - `kenoma/proximity` (EventChannel): `true` quando o sensor de proximidade está coberto.
- * - `kenoma/system` (MethodChannel): `openBackupSettings`.
+ * - `kenoma/system` (MethodChannel): `openBackupSettings`, `isInstalled`, `launchPackage`, `openUrl`, `notificationAccess`,
+ *   `openNotificationSettings` e `setRideRelay` (o interruptor das notificações de corrida).
+ * - `kenoma/ride_notifications` (EventChannel): título e texto das notificações do Uber e da 99, só enquanto o Dart ouve.
  */
 class DeviceChannels(private val activity: Activity) {
     private val main = Handler(Looper.getMainLooper())
@@ -40,8 +43,21 @@ class DeviceChannels(private val activity: Activity) {
             }
         }
         EventChannel(messenger, "kenoma/proximity").setStreamHandler(ProximityHandler())
+        EventChannel(messenger, "kenoma/ride_notifications").setStreamHandler(RideNotificationListener.Stream)
         MethodChannel(messenger, "kenoma/system").setMethodCallHandler { call, result ->
-            if (call.method == "openBackupSettings") result.success(openBackupSettings()) else result.notImplemented()
+            when (call.method) {
+                "openBackupSettings" -> result.success(openBackupSettings())
+                "isInstalled" -> result.success(launchIntent(call.arguments as? String) != null)
+                "launchPackage" -> result.success(launchPackage(call.arguments as? String))
+                "openUrl" -> result.success(openUrl(call.arguments as? String))
+                "notificationAccess" -> result.success(hasNotificationAccess())
+                "openNotificationSettings" -> result.success(openNotificationSettings())
+                "setRideRelay" -> {
+                    RideNotificationListener.relayEnabled = call.arguments == true
+                    result.success(true)
+                }
+                else -> result.notImplemented()
+            }
         }
     }
 
@@ -109,6 +125,30 @@ class DeviceChannels(private val activity: Activity) {
                 result.success(null)
             }
         }, 3000)
+    }
+
+    private fun launchIntent(pkg: String?): Intent? =
+        pkg?.let { activity.packageManager.getLaunchIntentForPackage(it) }
+
+    private fun launchPackage(pkg: String?): Boolean = start(launchIntent(pkg))
+
+    private fun openUrl(url: String?): Boolean = url != null && start(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+
+    private fun openNotificationSettings(): Boolean = start(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+
+    private fun start(intent: Intent?): Boolean {
+        if (intent == null) return false
+        return try {
+            activity.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            true
+        } catch (_: RuntimeException) {
+            false // inclui ActivityNotFoundException: ninguém abre este link
+        }
+    }
+
+    private fun hasNotificationAccess(): Boolean {
+        val enabled = Settings.Secure.getString(activity.contentResolver, "enabled_notification_listeners") ?: return false
+        return enabled.split(':').any { it.startsWith("${activity.packageName}/") }
     }
 
     private fun openBackupSettings(): Boolean {

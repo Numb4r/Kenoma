@@ -47,6 +47,7 @@ SpriteRows _car(int w, int h, {required int cabin0, required int cabin1, int bed
 final SpriteRows _hatch = _car(14, 7, cabin0: 3, cabin1: 10);
 final SpriteRows _sedan = _car(16, 7, cabin0: 4, cabin1: 11);
 final SpriteRows _pickup = _car(17, 8, cabin0: 9, cabin1: 14, bed: 7);
+final SpriteRows _suv = _car(16, 8, cabin0: 3, cabin1: 12);
 
 const SpriteRows _moto = [
   '......oo....',
@@ -165,6 +166,29 @@ Map<String, ui.Color> paletteOf(GhostModel m, int p) {
   };
 }
 
+/// As linhas do carro da corrida: `hatch`, `sedan` ou `suv`. Sem logo nem marca.
+SpriteRows rideCarRows(String type) => switch (type) { 'sedan' => _sedan, 'suv' => _suv, _ => _hatch };
+
+/// As cores do carro da corrida, com o corpo em [body].
+Map<String, ui.Color> rideCarPalette(ui.Color body) => {'o': kOutline, 'b': body, 'a': _shade(body, 0.3), 'd': _shade(body, 0.5), 'g': _glass, 'y': _lamp, 'k': _tire};
+
+/// Grava [rows] com [colors], 1 unidade por pixel de arte.
+ui.Picture recordSprite(SpriteRows rows, Map<String, ui.Color> colors) {
+  final rec = ui.PictureRecorder();
+  final canvas = ui.Canvas(rec);
+  final paint = ui.Paint()..isAntiAlias = false;
+  for (var y = 0; y < rows.length; y++) {
+    final row = rows[y];
+    for (var x = 0; x < row.length; x++) {
+      final c = colors[row[x]];
+      if (c == null) continue;
+      paint.color = c;
+      canvas.drawRect(ui.Rect.fromLTWH(x.toDouble(), y.toDouble(), 1, 1), paint);
+    }
+  }
+  return rec.endRecording();
+}
+
 /// Guarda uma `Picture` por (modelo, paleta, quadro), gravada com 1 unidade por pixel de arte.
 class GhostSprites {
   final Map<int, ui.Picture> _pictures = {};
@@ -181,21 +205,5 @@ class GhostSprites {
     return _pictures[key] ??= _record(m, palette, f);
   }
 
-  ui.Picture _record(GhostModel m, int palette, int frame) {
-    final colors = paletteOf(m, palette);
-    final rec = ui.PictureRecorder();
-    final canvas = ui.Canvas(rec);
-    final paint = ui.Paint()..isAntiAlias = false;
-    final rows = spriteRows(m, frame);
-    for (var y = 0; y < rows.length; y++) {
-      final row = rows[y];
-      for (var x = 0; x < row.length; x++) {
-        final c = colors[row[x]];
-        if (c == null) continue;
-        paint.color = c;
-        canvas.drawRect(ui.Rect.fromLTWH(x.toDouble(), y.toDouble(), 1, 1), paint);
-      }
-    }
-    return rec.endRecording();
-  }
+  ui.Picture _record(GhostModel m, int palette, int frame) => recordSprite(spriteRows(m, frame), paletteOf(m, palette));
 }

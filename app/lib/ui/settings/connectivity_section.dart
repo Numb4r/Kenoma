@@ -9,7 +9,9 @@ import '../../player/game_state.dart';
 import '../../world/device_sensors.dart';
 import '../../world/steps.dart';
 import '../colors.dart';
+import '../menu/phone_shell.dart' show phoneRoute;
 import '../menu/screen_frame.dart';
+import 'ride_notifications_screen.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
 
 /// Chaves dos interruptores em `GameState.settings`.
@@ -71,6 +73,15 @@ class ConnectivitySection extends StatelessWidget {
             value: state.setting(kPocketSetting),
             activeThumbColor: kSignal,
             onChanged: (v) => state.setSetting(kPocketSetting, v),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Corrida no mapa', style: TextStyle(fontSize: 8)),
+            subtitle: Text(
+              '${state.setting(kRideNotifySetting) ? 'Ligada' : 'Desligada'}. Lê só as notificações do Uber e da 99, para o seu carro aparecer no mapa',
+              style: const TextStyle(fontSize: 8, color: kDim),
+            ),
+            onTap: () => Navigator.of(context).push(phoneRoute<void>(RideNotificationsScreen(state: state))),
           ),
         ]),
       );

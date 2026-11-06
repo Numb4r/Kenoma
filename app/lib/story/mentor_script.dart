@@ -41,7 +41,7 @@ class MentorMessage {
 }
 
 class MentorScript {
-  const MentorScript({required this.contactName, required this.contactNote, required this.tutorial, this.familiar = const [], this.school = const [], this.events = const [], this.phoneUnlock = const {}});
+  const MentorScript({required this.contactName, required this.contactNote, required this.tutorial, this.familiar = const [], this.school = const [], this.events = const [], this.phoneUnlock = const {}, this.radio = const []});
 
   factory MentorScript.fromJson(Map<String, dynamic> j) => MentorScript(
         contactName: (j['contact'] as Map<String, dynamic>)['name'] as String,
@@ -51,6 +51,7 @@ class MentorScript {
         school: [for (final m in (j['school'] as List<dynamic>?) ?? const []) MentorMessage.fromJson(m as Map<String, dynamic>)],
         events: [for (final m in (j['event_messages'] as List<dynamic>?) ?? const []) MentorMessage.fromJson(m as Map<String, dynamic>)],
         phoneUnlock: {for (final e in ((j['phone_unlock'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as String},
+        radio: [for (final m in (j['radio'] as List<dynamic>?) ?? const []) MentorMessage.fromJson(m as Map<String, dynamic>)],
       );
 
   final String contactName;
@@ -70,6 +71,9 @@ class MentorScript {
 
   /// A fala do Familiar quando um app novo do celular se forma (id do app -> texto). Só os apps de nível 2 em diante.
   final Map<String, String> phoneUnlock;
+
+  /// As falas do Rádio do Véu, em rodízio no Modo Viagem. Não entram no chat.
+  final List<MentorMessage> radio;
 
   MentorMessage? byId(String id) {
     for (final m in [...tutorial, ...familiar, ...school, ...events]) {
