@@ -9,6 +9,9 @@ typedef Tile = (int x, int y);
 const int biomeZoom = 21;
 const int spawnZoom = 20;
 
+/// As células visitadas (`celulas_visitadas` no save) são z17: ~280 m, um bloco de 8 × 8 células de spawn.
+const int visitedZoom = 17;
+
 /// Tile que contém a coordenada, em qualquer zoom.
 Tile latLonToTile(double lat, double lon, int zoom) {
   final n = 1 << zoom;

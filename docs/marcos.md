@@ -240,3 +240,11 @@ Spec na seção 14 de `docs/fase0-spec.md`. **A época 4 muda o mundo** (Espíri
 - **Conectividade leve:** épocas e eventos assinados (Ed25519), backup automático do Android, contador de passos e modo bolso, tudo opcional.
 - **Ficou de fora:** árvores de talento, troca de escola, estabilidade, fase de pressão do ritual, publicação no GitHub Pages (os arquivos assinados estão em `docs/pages/`; nada foi publicado).
 
+
+## Fase 1 · fatia 4 · Clima, passos, Patrulha do Véu e recomeço (0.16.0)
+
+- **Névoa de guerra removida** (foi para as ideias descartadas). Saíram do app o véu do mapa (`ui/game/fog_painter.dart`), a lógica (`world/fog.dart`), o contador de área nos Ajustes e no Perfil, os itens "Revelar névoa" e "Névoa de debug" do menu e o bloco `fog` do `balance.json`. O código continua na história do git (até 162ae36).
+- **Células visitadas.** O jogo continua registrando, sem nada visual, as células z17 (~280 m) por onde o jogador passa de verdade: `GameState.markVisited(x, y)` e `GameState.visitedCells`, gravadas em `celulas_visitadas` (pares z17). O simulador e quem dirige não contam. As expedições da fase 2 vão usar.
+- **Save schema 6**, migração v5 → v6 testada num save gravado pelo código da 0.15.0 (`test/fixtures/save_v5_0150.json`): os blocos z17 não vazios de `fog.cells` viram `celulas_visitadas`, o conjunto `fog.debug` (simulador) não entra e o `fog` sai.
+- **Recomeçar do zero** (Ajustes, no fim): apaga o progresso, o rodízio do save, o diário da Patrulha e os caches da lista em `save/fresh_start.dart`; mantém `player_id`, primeira versão, log de versões (com a linha `recomeço`), certificados, grupo e Ajustes do aparelho. Pede um backup novo ao Android (`BackupManager.dataChanged`). **Falta:** testar a reinstalação com Auto Backup no aparelho.
+- **Criar criatura** no menu de debug (Spawns): nasce na Aura, fora do mundo determinístico, por 20 minutos; marcada como debug no save e na Coleção, não conta para bestiário nem estatísticas.

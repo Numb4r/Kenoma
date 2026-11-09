@@ -20,6 +20,7 @@ import '../colors.dart';
 import '../menu/screen_frame.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
 import 'connectivity_section.dart';
+import 'fresh_start_screen.dart';
 import 'qr_scan_screen.dart';
 import 'regions_section.dart';
 
@@ -35,7 +36,6 @@ class SettingsScreen extends StatefulWidget {
     required this.nowUtc,
     required this.realNowUtc,
     required this.appVersion,
-    required this.cellSideM,
     required this.followHeading,
     required this.onFollowHeading,
     required this.onRestart,
@@ -43,6 +43,7 @@ class SettingsScreen extends StatefulWidget {
     this.io = const DeviceBackupIo(),
     this.scan = scanGroupWithCamera,
     this.regions,
+    this.onFreshStart,
     super.key,
   });
 
@@ -53,9 +54,6 @@ class SettingsScreen extends StatefulWidget {
   final int Function() nowUtc;
   final int Function() realNowUtc;
   final String appVersion;
-
-  /// O lado de uma célula z20 (~35 m) na latitude de agora, para a área revelada em km².
-  final double Function() cellSideM;
 
   /// O "seguir direção" de agora, e como ligar e desligar.
   final bool Function() followHeading;
@@ -71,6 +69,9 @@ class SettingsScreen extends StatefulWidget {
 
   /// Os pacotes baixáveis. `null` fora do mapa do jogo.
   final RegionManager? regions;
+
+  /// Recomeçar do zero: apaga o progresso e reabre o jogo. `null`: o botão não aparece.
+  final Future<void> Function()? onFreshStart;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -288,17 +289,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ]),
             ),
             const SectionTitle('Mapa'),
-            if (streetLifeEnabled)
-            Container(
-              key: const Key('fog-area'),
-              padding: const EdgeInsets.all(12),
-              decoration: panelBox(),
-              child: Text(
-                'ÁREA REVELADA: ${s.fog.areaKm2(widget.cellSideM()).toStringAsFixed(2)} KM² · ${s.fog.revealedCount} CÉLULAS',
-                style: const TextStyle(fontSize: 8, color: kText, height: 1.8),
-              ),
-            ),
-            const SizedBox(height: 8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Nomes de rua', style: TextStyle(fontSize: 8)),
@@ -360,6 +350,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             PixelButton(label: 'Exportar backup', color: kSignal, onTap: _export),
             const SizedBox(height: 8),
             PixelButton(label: 'Importar backup', color: kEssence, onTap: _import),
+            if (widget.onFreshStart != null) ...[
+              const SectionTitle('Recomeçar'),
+              const Text('Apaga o progresso e volta à primeira noite. A identidade e os Ajustes ficam.', style: TextStyle(fontSize: 8, color: kDim, height: 1.8)),
+              const SizedBox(height: 8),
+              PixelButton(
+                key: const Key('fresh-start'),
+                label: 'Recomeçar do zero',
+                color: kEssence,
+                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => FreshStartScreen(onExport: _export, onConfirm: widget.onFreshStart!))),
+              ),
+            ],
           ],
         );
       },

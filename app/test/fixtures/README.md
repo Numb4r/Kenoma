@@ -4,3 +4,9 @@
   gerado na mesma execução do pipeline que gerou `app/assets/regions/campinas_e0.bin`. O `pipeline/out/` não é
   versionado, então esta cópia é a referência para `test/data/region_preview_test.dart`. Só se troca junto
   com o `.bin`, numa época nova.
+- `save_v5_0150.json`: save do schema 5 gravado pelo código real da 0.15.0 (commit 6f352cc, build 0.15.0+23). O
+  `app/` desse commit foi extraído com `git archive 6f352cc app shared` numa pasta temporária, e lá um teste
+  descartável abriu `save_v4_0140.json` num `KsvSaveStore`, escolheu o Xamã (teste com nota 72), revelou a névoa num
+  passeio real e num pedaço do simulador (conjunto `debug`), capturou um Eco com variante, ganhou Ectoplasma, desligou
+  o tráfego e leu de volta o KSV1 gravado em disco. É a base de `test/save/migration_v6_test.dart` (névoa →
+  `celulas_visitadas`).

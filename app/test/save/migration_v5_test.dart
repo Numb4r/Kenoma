@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/player/conjurer_balance.dart';
 import 'package:kenoma/player/game_session.dart';
+import 'package:kenoma/player/game_state.dart' show saveSchemaVersion;
 import 'package:kenoma/save/migrations.dart';
 import 'package:kenoma/save/save_store.dart';
 
@@ -24,13 +25,13 @@ void main() {
 
   test('v4 vira v5: a escola entra vazia, os pontos de talento saem do nível e todo o resto passa intacto', () {
     final out = migrateSave(real);
-    expect(out['schema_version'], 5);
+    expect(out['schema_version'], saveSchemaVersion);
     final c = out['conjurer'] as Map<String, dynamic>;
     expect(c['talent_earned'], 9, reason: 'nível 10: um ponto por nível subido');
     expect(c['talent_spent'], 0);
     expect(c['tests_offered'], false);
     expect(c.containsKey('school'), isFalse);
-    for (final k in real.keys.where((k) => k != 'schema_version')) {
+    for (final k in real.keys.where((k) => k != 'schema_version' && k != 'fog')) { // a névoa sai na v6
       expect(out[k], real[k], reason: 'o campo $k passa sem mudar');
     }
   });
@@ -42,7 +43,7 @@ void main() {
     expect(migrateSave(custom)['conjurer'], custom['conjurer']);
   });
 
-  test('abrir o save da 0.14.0: o jogo é o mesmo, sem escola, com talentos pelo nível, e grava no schema 5', () async {
+  test('abrir o save da 0.14.0: o jogo é o mesmo, sem escola, com talentos pelo nível, e grava no schema atual', () async {
     final store = MemorySaveStore()..json = jsonDecode(jsonEncode(real)) as Map<String, dynamic>;
     final session = await GameSession.open(store: store, startInventory: {}, balance: loadProgressBalance(), nowUtc: () => 1792090000, nextInt: (n) => 0, appVersion: '0.15.0+23');
     await session.flush();
@@ -52,10 +53,10 @@ void main() {
     expect(s.conjurer.school, isNull);
     expect(s.conjurer.talentAvailable, 9);
     expect(s.canChooseSchool, isTrue, reason: 'quem já passou do nível 3 recebe a escolha na próxima abertura');
-    expect(s.fog.revealedCount, greaterThan(0));
+    expect(s.visitedCells, isNotEmpty, reason: 'a névoa da 0.14.0 vira células visitadas');
     expect(s.founder!.chainValid, isTrue);
     expect(s.founder!.versionsSeen.map((e) => e.version).last, '0.15.0+23');
-    expect(store.json!['schema_version'], 5);
+    expect(store.json!['schema_version'], saveSchemaVersion);
     expect(store.json!['conjurer'], isNotNull);
   });
 

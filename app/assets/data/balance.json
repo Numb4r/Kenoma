@@ -12,7 +12,6 @@
     "hidden": { "wander_scale": 0.5 }
   },
   "radar": { "cooldown_s": 120, "radius_m": 60, "trace_range_m": 250, "trace_error_deg": 30, "trace_hide_within_m": 40, "level2_player_level": 5, "hidden_reveal_s": 900 },
-  "fog": { "reveal_radius_m": 40 },
   "familiar": { "pickup_bonus_m": 2, "follow_offset_m": 6 },
   "weather": { "rain_particles": 70 },
   "tuning": {

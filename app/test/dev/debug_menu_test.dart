@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/behavior.dart';
 import 'package:kenoma/core/weather.dart';
-import 'package:kenoma/world/fog.dart';
 import 'package:kenoma/dev/debug_capture.dart';
 import 'package:kenoma/dev/debug_env.dart';
 import 'package:kenoma/dev/debug_items.dart';
@@ -24,7 +23,7 @@ const originalIds = [
   'pos.simulator', 'pos.speed', 'pos.noise', 'pos.joystick', 'pos.teleport', //
   'time.clock', 'time.weather',
   'spawn.behavior', 'spawn.variant', 'spawn.shiny', 'spawn.clear',
-  'map.open_game', 'map.biome_grid', 'map.grid20', 'map.radii', 'map.fog_reveal', 'map.fog_clear', 'map.radar_reset', 'map.free',
+  'map.open_game', 'map.biome_grid', 'map.grid20', 'map.radii', 'map.radar_reset', 'map.free',
   'player.level',
   'cap.species', 'cap.levels', 'cap.seal', 'cap.options', 'cap.start', 'cap.log', 'cap.vibration',
   'sign.identity',
@@ -233,7 +232,7 @@ void main() {
     });
   });
 
-  group('itens de spawn e névoa', () {
+  group('itens de spawn e Radar', () {
     testWidgets('os chips forçam comportamento, variante, Brilhante e clima, e limpar zera os pedidos', (tester) async {
       final tools = DevTools(realSource: FakeGps());
       await pumpMenu(tester, DebugPrefs(defaultOpen: true), env: newEnv(tools: tools));
@@ -251,7 +250,7 @@ void main() {
       expect((tools.force.pendingEco, tools.force.weather), (false, null));
     });
 
-    testWidgets('revelar, limpar e zerar o Radar gravam no save; sem jogo salvo avisa', (tester) async {
+    testWidgets('zerar o Radar grava no save; sem jogo salvo avisa', (tester) async {
       final store = MemorySaveStore()..json = {'schema_version': 3, 'group_code': 'AAAAA-BBBBB', 'inventory': {'item.chalk': 2}};
       await pumpMenu(tester, DebugPrefs(defaultOpen: true), env: newEnv(save: store));
       Future<void> tap(String t) async {
@@ -261,10 +260,6 @@ void main() {
         await tester.pump();
       }
 
-      await tap('REVELAR NÉVOA (600 M)');
-      expect(FogState.fromJson(store.json!['fog'] as Map<String, dynamic>).debugCount, greaterThan(0));
-      await tap('LIMPAR NÉVOA DE DEBUG');
-      expect(FogState.fromJson(store.json!['fog'] as Map<String, dynamic>).debugCount, 0);
       store.json!['radar'] = {'last_utc': 55, 'revealed': {}};
       await tap('ZERAR RECARGA DO RADAR');
       expect((store.json!['radar'] as Map)['last_utc'], 0);
