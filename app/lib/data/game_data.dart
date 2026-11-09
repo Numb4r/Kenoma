@@ -9,6 +9,7 @@ import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 import '../core/epochs.dart';
 import '../crafting/ritual_data.dart';
 import '../net/signed_feed.dart';
+import '../patrol/patrol_balance.dart';
 import '../player/progress_balance.dart';
 import '../story/forum_data.dart';
 import '../travel/notification_parser.dart';
@@ -59,6 +60,7 @@ class GameData {
     required this.street,
     required this.steps,
     required this.travel,
+    required this.patrol,
     RidePatterns? ridePatterns,
     this.variants = const {},
     this.phone = const PhoneApps([]),
@@ -105,6 +107,7 @@ class GameData {
         phone: PhoneApps.fromBalance(balance),
         steps: StepsBalance.fromJson(balance),
         travel: TravelBalance(balance),
+        patrol: PatrolBalance(balance),
         ridePatterns: ridePatterns == null ? null : RidePatterns.fromJson(ridePatterns),
         variants: {
           for (final e in ((creatures['variants'] as Map<String, dynamic>?) ?? const {}).entries)
@@ -164,6 +167,9 @@ class GameData {
 
   /// O Modo Viagem (`balance.json`, bloco `travel`) e os padrões das notificações de corrida (`ride_patterns.json`).
   final TravelBalance travel;
+
+  /// A Patrulha do Véu (`balance.json`, bloco `patrol`).
+  final PatrolBalance patrol;
   final RidePatterns ridePatterns;
 
   /// As variantes: `urban`, `green`, `water`, `residential` e `shiny`.

@@ -149,6 +149,8 @@ class WorldView {
   /// A velocidade média do jogador na janela do Arisco, em m/s: o deslocamento do primeiro ao último ponto dividido pelo
   /// tempo (o caminho inteiro somaria o tremor do GPS). 0 com menos de 3 s de percurso.
   double get playerSpeedMps {
+    final o = speedOverride;
+    if (o != null) return o();
     // A fuga do Arisco usa a velocidade do GPS cru (a que o jogador de fato anda); sem leituras cruas, a do marcador.
     final raw = _gpsTrack.length >= 2;
     final track = raw ? _gpsTrack : _track;
@@ -158,6 +160,10 @@ class WorldView {
     final dx = track.last.x - track.first.x, dy = track.last.y - track.first.y;
     return math.sqrt(dx * dx + dy * dy) * (raw ? _gpsMpc : _mpc) / span;
   }
+
+  /// A Patrulha lê o GPS a cada ~10 s, mais espaçado que a janela do Arisco: ela mede a velocidade entre leituras e a passa
+  /// aqui. `null`: a janela de sempre.
+  double Function()? speedOverride;
 
   /// O percurso do GPS cru, só para a velocidade do Arisco: a coleta e a Aura seguem a posição suavizada do marcador.
   final _gpsTrack = <({int t, double x, double y})>[];

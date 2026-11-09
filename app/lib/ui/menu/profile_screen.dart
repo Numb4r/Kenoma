@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
 import '../../player/profile_stats.dart';
+import '../../player/progression.dart' show localDay;
+import '../../world/steps.dart' show stepsToday;
 import '../sprites/familiar_sprite.dart';
 import '../tema.dart';
 import 'phone_shell.dart';
@@ -174,6 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         StatTile('Capturas', '${s.story.count('capture')}'),
         StatTile('Espécies', '${speciesRegistered(s.bestiary)}'),
         StatTile('Fagulhas', '${s.story.count('spark')}'),
+        if (s.setting('steps_counter')) StatTile('Passos hoje', '${stepsToday(s, localDay(widget.nowUtc?.call() ?? DateTime.now().millisecondsSinceEpoch ~/ 1000))}'),
         StatTile('Fusões', '${s.conjurer.fusions}'),
         StatTile('Dias jogados', '${s.conjurer.daysPlayed.length}'),
       ]),

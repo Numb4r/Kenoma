@@ -104,6 +104,16 @@ Falas curtas, em rodízio, no painel do Modo Viagem em moto, carro e ônibus, pa
 | `radio_09` | Familiar | *O Familiar dorme de um olho só. O outro acompanha um carro que não está ali.* |
 | `radio_10` | mentor | Falta pouco, ou falta tudo. Depende de quem pergunta. Quem está perguntando? |
 
+## Mensagens com números (Patrulha e passos)
+
+Saem pelo código, quantas vezes for preciso (lista `direct` do JSON). O resumo da Patrulha sai quando ela termina (ou quando o app abre e vê que ela acabou), com `{min}` (minutos), `{sparks}` (Fagulhas), `{materials}` (materiais) e `{marks}` (Ecos marcados). Os marcos de passos saem uma vez por dia local, ao passar de 5 mil e de 10 mil passos.
+
+| Id | Quem | Texto |
+| --- | --- | --- |
+| `patrol_summary` | mentor | {min} minutos de Patrulha. {sparks} Fagulhas e {materials} materiais vieram com você, e {marks} Ecos ficaram presos ao seu sinal. A cidade nem percebeu. Ou percebeu e ficou quieta? |
+| `steps_5k` | Familiar | *O Familiar bate no chão cinco vezes com a ponta do contorno e encosta no seu tornozelo. Parece dizer: cinco mil passos hoje, e o chão lembra de cada um.* |
+| `steps_10k` | Familiar | *O Familiar se deita atravessado no caminho e só levanta quando você para também. Dez mil passos. Parece dizer: chega por hoje, ou ainda não?* |
+
 ## Fórum Limen: pedidos diários
 
 Três pedidos por dia, sorteados por `hash(seed, época, data, slot)`. O texto tem `{n}` (a meta), `{tipo}` (Fogo, Planta, Água ou qualquer tipo) e `{item}` (giz, ervas, água pura). Usuários: `vesper`, `static_saint`, `mapmaker`, `null_hypothesis`, `candlewick`, `wren_`.

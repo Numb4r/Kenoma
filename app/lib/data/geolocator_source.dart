@@ -50,7 +50,10 @@ class GeolocatorGateway implements LocationGateway {
 }
 
 class GeolocatorPositionSource implements PositionSource {
-  GeolocatorPositionSource({this.distanceFilterM = 2, this.interval = const Duration(seconds: 1)});
+  GeolocatorPositionSource({this.distanceFilterM = 2, this.interval = const Duration(seconds: 1), this.accuracy = LocationAccuracy.best});
+
+  /// A Patrulha usa a precisão equilibrada (`medium`), para gastar menos bateria.
+  final LocationAccuracy accuracy;
 
   /// Só entrega uma leitura nova depois de andar isto, em metros: "a cada poucos metros".
   final int distanceFilterM;
@@ -76,7 +79,7 @@ class GeolocatorPositionSource implements PositionSource {
     if (_sub != null) return;
     _sub = Geolocator.getPositionStream(
       locationSettings: AndroidSettings(
-        accuracy: LocationAccuracy.best,
+        accuracy: accuracy,
         distanceFilter: distanceFilterM,
         intervalDuration: interval,
       ),

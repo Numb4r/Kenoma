@@ -21,6 +21,7 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         device.register(flutterEngine.dartExecutor.binaryMessenger)
+        PatrolChannels.register(this)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kenoma/sound").setMethodCallHandler { call, result ->
             if (call.method == "chime") {
                 try {
