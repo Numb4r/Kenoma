@@ -98,6 +98,8 @@ Janelas de spawn têm 20 minutos, com deslocamento próprio por célula. Detalhe
 - **Funcionalidade de versão futura fica atrás de `streetLifeEnabled`** (`app/lib/core/features.dart`, `--dart-define=STREET_LIFE=false` na 0.13.1). Épocas com `requires_feature` só existem com ela ligada. O menu de debug nunca fica atrás dessa flag.
 - **O sufixo do id decide a camada da espécie** (`.eco`, `.spirit`, `.ritual`, `core/species_ids.dart`); não renomeie ids. Nunca grave a chave privada de assinatura (`~/.kenoma-signing/publicacao_ed25519.pem`) nem publique no GitHub Pages sem pedido explícito; o feed assinado só acrescenta épocas ou estende a validade (regra 8).
 - **Já há amigos jogando.** Toda versão nova sai assinada com a mesma chave de release (`~/.kenoma-signing/`, ver `docs/assinatura.md`) e com a migração do save testada: quem atualiza instala por cima e não perde nada. Mudou o formato do save? Suba `saveSchemaVersion`, escreva a migração pura e o teste com um save antigo antes do APK. Nada de APK com a chave de debug. Mudança de época continua só por época nova (regra 8), e agora afeta quem já joga.
+- **O clima que muda o mundo mora no bloco `climate` da época** em `epochs.json`; `assets/data/clima.json` é só visual e textos. Climas de outras regiões e místicos só entram por `events.json` assinado ou debug, nunca pelo clima real.
+- **O serviço da Patrulha do Véu nunca grava o save principal.** Ele escreve `patrulha.jsonl` e o app incorpora pelo uid. Recomeçar do zero apaga o progresso e mantém `player_id`, log de versões, certificados e Ajustes do aparelho.
 - Cores fixas: violeta `#9b7bff` é o Véu, ciano `#5fd3c6` é o sinal, laranja `#ff7a45` é Essência. Contorno `#1a1424`, nunca preto puro.
 
 ## Comandos
