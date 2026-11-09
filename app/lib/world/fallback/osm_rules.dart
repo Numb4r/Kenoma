@@ -105,7 +105,9 @@ String overpassQuery({required int tx, required int ty, required String dateIso,
   }
   final out = StringBuffer('[out:json][timeout:60][date:"$dateIso"];\n(\n');
   ways.forEach((tag, values) => out.writeln('  way["$tag"~"${_regex(values.toList()..sort())}"]$box;'));
+  // `out tags` não traz os membros da relation; sem eles não há geometria. Na way, `tags` evita a lista de nós.
+  out.write(');\nout tags geom;\n(\n');
   area.forEach((tag, values) => out.writeln('  rel["$tag"~"${_regex(values)}"]["type"~"^(multipolygon|boundary)\$"]$box;'));
-  out.write(');\nout tags geom;\n');
+  out.write(');\nout body geom;\n');
   return out.toString();
 }

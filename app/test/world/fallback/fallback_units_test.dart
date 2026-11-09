@@ -27,6 +27,8 @@ void main() {
       expect(q, contains('footway'));
       expect(q, contains('rel["landuse"~"^('));
       expect(q, contains('"type"~"^(multipolygon|boundary)\$"'));
+      expect(q, contains('out tags geom;'));
+      expect(q, contains('out body geom;')); // a relation precisa dos membros
     });
 
     test('usa as caixas das fixtures', () {
