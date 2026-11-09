@@ -16,7 +16,7 @@ void main() {
   test('escala em metros: 50 m de largura no padrão, pinça de 40 a 80 m, Fagulhas de 3 m e sprites menores que a rua', () {
     final b = MapBalance(loadJson('assets/data/balance.json'));
     expect((b.defaultWidthM, b.cameraMinWidthM, b.cameraMaxWidthM), (50.0, 40.0, 80.0));
-    expect((b.sparkSizeM, b.trackerMax), (3.0, 3));
+    expect((b.sparkSizeM, b.trackerMax), (3.0, 4));
     expect(b.defaultWidthM, inInclusiveRange(b.cameraMinWidthM, b.cameraMaxWidthM));
     expect((b.playerHeightM, b.familiarHeightM, b.ecoHeightM), (6.0, 6.0, 7.0), reason: 'Conjurador e Familiar 6 m, Ecos 7 m');
     expect((b.ghostPedestrianM, b.ghostCarM), (4.5, 6.0), reason: 'pedestre fantasma 4,5 m, carro fantasma 6 m');

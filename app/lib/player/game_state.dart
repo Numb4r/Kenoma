@@ -257,6 +257,15 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// O jogador chegou às distorções dos Ocultos [uids] em [nowUtc]: ficam à vista até [untilUtc].
+  void revealHidden(Iterable<int> uids, int nowUtc, int untilUtc) {
+    hiddenRevealed.removeWhere((_, until) => until <= nowUtc);
+    for (final u in uids) {
+      hiddenRevealed[uidKey(u)] = untilUtc;
+    }
+    notifyListeners();
+  }
+
   /// Se o Oculto [uid] foi revelado por uma varredura e ainda está à vista em [nowUtc].
   bool isHiddenRevealed(int uid, int nowUtc) => (hiddenRevealed[uidKey(uid)] ?? 0) > nowUtc;
 
