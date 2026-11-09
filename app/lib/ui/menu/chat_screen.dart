@@ -99,7 +99,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     decoration: BoxDecoration(color: kPanel, border: Border.all(color: m.from == 'familiar' ? kSignal : kVeil, width: 2)),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       if (m.from == 'familiar') const Text('FAMILIAR', style: TextStyle(fontSize: 8, color: kSignal)),
-                      Text(m.text, style: const TextStyle(fontSize: 8, color: kText, height: 1.8)),
+                      Text(e.fill(m.text), style: const TextStyle(fontSize: 8, color: kText, height: 1.8)),
                       if (m.action != null) _action(m.action!),
                       const SizedBox(height: 6),
                       Text(_time(e.utc), style: const TextStyle(fontSize: 8, color: kDim)),

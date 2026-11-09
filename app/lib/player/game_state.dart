@@ -331,6 +331,13 @@ class GameState extends ChangeNotifier {
     return m;
   }
 
+  /// Entrega no chat a mensagem [id] (das `direct` do `mentor.json`) em [nowUtc], com os números de [vars]. Pode repetir.
+  void deliverMessage(String id, int nowUtc, {Map<String, Object> vars = const {}}) {
+    story.chat.delivered.add(ChatEntry(id: id, utc: nowUtc, vars: {for (final e in vars.entries) e.key: '${e.value}'}));
+    onNotice?.call(id.startsWith('steps_') ? 'O Familiar tem algo a dizer' : 'Nova mensagem no Chat');
+    notifyListeners();
+  }
+
   /// No nível da escola, na primeira sessão em que os testes ainda não foram oferecidos, o mentor manda o convite. Uma vez só.
   bool _offerSchoolTests(int nowUtc, MentorScript script) {
     final msg = script.byId('school_tests');
