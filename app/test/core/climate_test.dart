@@ -193,6 +193,17 @@ void main() {
       expect(shinies(2), greaterThan(shinies(1)));
     });
 
+    test('na época 6 o clima completo pesa nos spawns por tipo: Chuva traz mais Água; tipo sem espécie não muda nada', () {
+      String? typeOf(String id) => data.species(id)?.type.name;
+      int water(Map<String, double>? mult) => [
+            for (var i = 0; i < 6000; i++)
+              generateCell(seed: seed, epoch: e6, cellX: 387000 + i % 100, cellY: 592000 + i ~/ 100, window: 1491667, biomeKey: 'green', climateMult: mult, typeOf: typeOf).first,
+          ].where((s) => s.entryId == 'rill.eco').length;
+      final clear = water(null);
+      expect(water(model.def('rain')!.spawn), greaterThan(clear * 1.2));
+      expect(water(model.def('fog')!.spawn), clear, reason: 'Espectral ainda não tem espécie: sem efeito');
+    });
+
     test('Neblina e Nevasca cortam a visão; Estática dá ruído, menos ao Tecnomante; Silêncio acalma', () {
       final x21 = cx20 * 2.0, y21 = cy20 * 2.0;
       expect(device(forced: 'fog').modsAt(x21, y21, t0).viewMaxM, 60);

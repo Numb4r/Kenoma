@@ -146,6 +146,9 @@ class GameMapGame extends FlameGame {
 
   /// Quantas partículas de clima e quantas células reveladas (recortes do véu) foram desenhadas no último quadro.
   int get rainCount => _climate.count;
+
+  /// Onde estão as partículas de clima na tela (testes de cobertura).
+  Iterable<Offset> get climatePositions => _climate.positions;
   int get fogCuts => _fog.lastCut;
 
   /// Quantos fantasmas do tráfego foram desenhados no último quadro.

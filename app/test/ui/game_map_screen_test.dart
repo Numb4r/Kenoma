@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:async';
 import 'dart:io';
 
@@ -818,6 +819,39 @@ void main() {
         await tester.pump(const Duration(milliseconds: 250));
       }
       expect(env.game.rainCount, 0);
+    });
+
+    testWidgets('a tempestade cobre a tela inteira, do topo aos cantos, girando o mapa 360° e com zoom de 40 e 80 m', (tester) async {
+      final env = await pumpGame(tester);
+      env.tools.force.set(weather: 'storm');
+      await env.live(12);
+      final g = env.game;
+      for (final widthM in [40.0, 80.0]) {
+        g.widthM = widthM;
+        for (var turn = 0; turn < 8; turn++) {
+          g.dragRotate(math.pi / 4); // oito passos de 45°: uma volta inteira
+          const cols = 6, rows = 10;
+          final hit = <int>{};
+          for (var f = 0; f < 50; f++) {
+            await tester.pump(const Duration(milliseconds: 50));
+            for (final q in g.climatePositions) {
+              if (q.dx < 0 || q.dy < 0 || q.dx >= g.size.x || q.dy >= g.size.y) continue;
+              hit.add((q.dy / g.size.y * rows).floor() * cols + (q.dx / g.size.x * cols).floor());
+            }
+          }
+          expect(hit.length, cols * rows, reason: 'faltou chuva em parte da tela com $widthM m e ${(turn + 1) * 45}°');
+        }
+      }
+    });
+
+    testWidgets('tocar no clima do HUD mostra numa linha o efeito no spawn', (tester) async {
+      final env = await pumpGame(tester);
+      env.tools.force.set(weather: 'storm');
+      await env.live(11);
+      expect(find.text('TEMPESTADE'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('weather-hud')));
+      await tester.pump();
+      expect(find.textContaining('ELÉTRICOS MAIS COMUNS'), findsOneWidget);
     });
 
     testWidgets('o interruptor "chuva no mapa" apaga a chuva mesmo com o clima de chuva', (tester) async {

@@ -213,6 +213,14 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   bool _restarting = false;
 
   Timer? _storyTimer;
+
+  /// Trovões esperando o som chegar (cancelados ao fechar o mapa).
+  final _thunders = <Timer>[];
+
+  /// O trovão chega com o atraso do som pela distância.
+  void _scheduleThunder(double distanceM) => _thunders
+    ..removeWhere((t) => !t.isActive)
+    ..add(Timer(thunderDelay(distanceM), () => unawaited(playThunder(distanceM))));
   bool _inBackground = false;
   double _walkedM = 0;
 
@@ -661,7 +669,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _climate = ClimateDriver(data: data, world: climate, online: () => session.state.setting('weather_online'));
     unawaited(_climate!.loadEvents());
     game.climateFx
-      ..onThunder = playThunder
+      ..onThunder = _scheduleThunder
       ..onEcoBorn = (d) => _toast(data.climates.tags[d.piece.spawn?.tag]?.born ?? 'Algo nasceu ali', seconds: 3);
     session.state.onNotice = _toast;
     session.state.ensureDaily(data.forum, data.schedule.select(tools.clock.nowUtc).epoch.id, localDay(tools.clock.nowUtc));
@@ -779,6 +787,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _toastTimer?.cancel();
     _longTimer?.cancel();
     _storyTimer?.cancel();
+    for (final t in _thunders) {
+      t.cancel();
+    }
     _stopProximity();
     _pocket.dispose();
     super.dispose();

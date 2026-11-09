@@ -14,10 +14,12 @@ Future<void> playChime() async {
   }
 }
 
-/// O trovão de um raio a [distanceM] metros: chega com o atraso do som (343 m/s) e mais fraco de longe. Sai do gerador de
-/// tons do sistema, sem arquivo de áudio (`MainActivity`, método `thunder`).
+/// Quanto o trovão de um raio a [distanceM] metros demora a chegar: a velocidade do som, 343 m/s.
+Duration thunderDelay(double distanceM) => Duration(milliseconds: (distanceM / 343 * 1000).round());
+
+/// O trovão de um raio a [distanceM] metros, mais fraco de longe (quem chama espera [thunderDelay] antes). Sai do gerador
+/// de tons do sistema, sem arquivo de áudio (`MainActivity`, método `thunder`).
 Future<void> playThunder(double distanceM) async {
-  await Future<void>.delayed(Duration(milliseconds: (distanceM / 343 * 1000).round()));
   try {
     await _channel.invokeMethod<void>('thunder', {'volume': (100 - distanceM / 12).clamp(20, 100).round()});
   } catch (_) {
