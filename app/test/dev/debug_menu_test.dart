@@ -11,9 +11,10 @@ import 'package:kenoma/dev/debug_items_save.dart';
 import 'package:kenoma/dev/debug_menu_view.dart';
 import 'package:kenoma/dev/debug_prefs.dart';
 import 'package:kenoma/dev/debug_registry.dart';
-import 'package:kenoma/dev/debug_tag.dart';
 import 'package:kenoma/dev/dev_tools.dart';
 import 'package:kenoma/save/save_store.dart';
+import 'package:kenoma/ui/game/hud_bar.dart';
+import 'package:kenoma/world/layered_world.dart';
 
 import '../support/fake_position_source.dart';
 
@@ -186,10 +187,10 @@ void main() {
     });
   });
 
-  group('etiqueta DEBUG', () {
+  group('etiqueta DEBUG no selo de modo', () {
     Future<DevTools> pumpTag(WidgetTester tester) async {
       final tools = DevTools(realSource: FakeGps());
-      await tester.pumpWidget(MaterialApp(home: Scaffold(body: Stack(children: [Positioned(right: 0, top: 0, child: DebugTag(tools: tools))]))));
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: Center(child: SizedBox(height: 48, child: ModeSeal(tools: tools, source: ValueNotifier(MapSourceKind.pack), onTap: () {}))))));
       return tools;
     }
 

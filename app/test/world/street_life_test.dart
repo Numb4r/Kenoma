@@ -231,22 +231,31 @@ void main() {
       expect(v.touch(eco, t0), TouchResult.encounter, reason: 'a regra do toque não muda; ele só não está na lista');
     });
 
-    test('a varredura revela os Ocultos a até 60 m e só eles; fora disso continuam escondidos', () {
+    test('o pulso acha os Ocultos a até 60 m como distorção; o Eco só aparece quando o jogador anda até ela', () {
       final (eco, la, lo) = anEco(sch);
       final state = newState();
       final v = viewOf(state, sch);
       var (pla, plo) = south(la, lo, 40);
       v.refresh(lat: pla, lon: plo, tUtc: t0);
       final out = v.radar(t0);
-      expect(out.revealed.map((s) => s.uid), contains(eco.uid));
-      expect(v.spawns.any((s) => s.uid == eco.uid), isTrue);
-      expect(state.story.count('hidden_revealed'), greaterThan(0));
+      expect(out.distortions.map((d) => d.eco.uid), contains(eco.uid));
       expect(state.radarLastUtc, t0);
+      v.refresh(lat: pla, lon: plo, tUtc: t0 + 1);
+      expect(v.spawns.any((s) => s.uid == eco.uid), isFalse, reason: 'a 40 m ainda é só distorção');
+      expect(v.sonar().where((e) => e.uid == eco.uid).single.distortion, isTrue);
+      expect(v.tracked(offScreen: (_) => true, trackerM: 120, max: 9).any((t) => t.spawn.uid == eco.uid && t.find!.distortion), isTrue, reason: 'o rastreador mostra o que o Radar achou');
+      expect(state.story.count('hidden_revealed'), 0);
+
+      (pla, plo) = south(la, lo, street.hiddenResolveM - 3);
+      v.refresh(lat: pla, lon: plo, tUtc: t0 + 30);
+      expect(v.spawns.any((s) => s.uid == eco.uid), isTrue, reason: 'chegou à distorção: virou Eco');
+      expect(v.distortions.any((d) => d.eco.uid == eco.uid), isFalse);
+      expect(state.story.count('hidden_revealed'), greaterThan(0));
 
       final far = viewOf(newState(), sch);
       (pla, plo) = south(la, lo, 150);
       far.refresh(lat: pla, lon: plo, tUtc: t0);
-      expect(far.radar(t0).revealed.any((s) => s.uid == eco.uid), isFalse, reason: 'a 150 m está fora dos 60 m');
+      expect(far.radar(t0).distortions.any((d) => d.eco.uid == eco.uid), isFalse, reason: 'a 150 m está fora dos 60 m');
       expect(far.spawns.any((s) => s.uid == eco.uid), isFalse);
     });
 
@@ -267,9 +276,9 @@ void main() {
       }
       final state = newState();
       final v = viewOf(state, sch);
-      final (pla, plo) = south(la, lo, 30);
+      final (pla, plo) = south(la, lo, 5);
       v.refresh(lat: pla, lon: plo, tUtc: tStart);
-      v.radar(tStart);
+      v.radar(tStart); // em cima da distorção: revela na hora
       v.refresh(lat: pla, lon: plo, tUtc: tStart + 600);
       expect(v.spawns.any((s) => s.uid == eco.uid), isTrue, reason: '10 min depois ainda está');
       v.refresh(lat: pla, lon: plo, tUtc: tStart + 901);
@@ -345,8 +354,32 @@ void main() {
       final eco = v2.allEcos.firstWhere((e) => e.uid == t.uid);
       final (px, py) = latLonToTileFraction(lat0, lon0, biomeZoom);
       final straight = math.atan2(eco.y - py, eco.x - px);
-      expect(traceBearing(t, playerX: px, playerY: py, ecoX: eco.x, ecoY: eco.y), closeTo(straight + t.errorRad, 1e-12));
+      final arc = traceArc(t, playerX: px, playerY: py, ecoX: eco.x, ecoY: eco.y, metersPerCell: metersPerCell(lat0), balance: street);
+      expect((arc.angleRad - straight).abs(), lessThanOrEqualTo(arc.widthRad / 2), reason: 'a direção certa fica dentro do arco');
+      expect(arc.typeId, isNotNull, reason: 'nível 2: o arco leva a cor do tipo');
       expect(t.errorRad.abs(), lessThanOrEqualTo(30 * math.pi / 180 + 1e-12));
+      final arc1 = v1.sonar().first;
+      expect(arc1.typeId, isNull, reason: 'nível 1: arco sem cor de tipo');
+    });
+
+    test('o arco é mais estreito quanto mais perto: 24° perto, 90° nos 250 m, e a direção certa sempre dentro', () {
+      double deg(double d) => arcWidthRad(d, street) * 180 / math.pi;
+      expect(deg(10), closeTo(street.arcNearDeg, 1e-9));
+      expect(deg(street.traceHideWithinM), closeTo(street.arcNearDeg, 1e-9));
+      expect(deg(street.traceRangeM), closeTo(street.arcFarDeg, 1e-9));
+      expect(deg(400), closeTo(street.arcFarDeg, 1e-9));
+      for (var d = 50.0; d <= 250; d += 50) {
+        expect(deg(d), greaterThan(deg(d - 50)), reason: '$d m');
+      }
+      // Com o maior erro possível, de perto e de longe, o Eco continua dentro do arco.
+      for (final err in [-1.0, 1.0]) {
+        for (final dm in [45.0, 120.0, 240.0]) {
+          final t = Trace(uid: 1, errorRad: err * street.traceErrorDeg * math.pi / 180, untilUtc: 0, shiny: false);
+          final arc = traceArc(t, playerX: 0, playerY: 0, ecoX: dm, ecoY: 0, metersPerCell: 1, balance: street);
+          expect(arc.distanceM, closeTo(dm, 1e-9));
+          expect(arc.angleRad.abs(), lessThanOrEqualTo(arc.widthRad / 2), reason: 'erro $err a $dm m');
+        }
+      }
     });
 
     test('o rastro fica 5 minutos no mapa e depois some', () {

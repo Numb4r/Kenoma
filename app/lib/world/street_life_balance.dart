@@ -24,6 +24,11 @@ class StreetLifeBalance {
         traceHideWithinM = _d(r['trace_hide_within_m']),
         radarLevel2PlayerLevel = (r['level2_player_level'] as num).toInt(),
         hiddenRevealS = _d(r['hidden_reveal_s']),
+        arcNearDeg = _d(r['arc_near_deg']),
+        arcFarDeg = _d(r['arc_far_deg']),
+        hiddenResolveM = _d(r['hidden_resolve_m']),
+        pulseSpeedMps = _d(r['pulse_speed_mps']),
+        traceShowS = (r['trace_show_s'] as num).toInt(),
         familiarPickupBonusM = _d(fam['pickup_bonus_m']),
         familiarFollowOffsetM = _d(fam['follow_offset_m']),
         rainParticles = (w['rain_particles'] as num).toInt();
@@ -52,6 +57,15 @@ class StreetLifeBalance {
   final double traceHideWithinM;
   final int radarLevel2PlayerLevel;
   final double hiddenRevealS;
+
+  /// Sonar: a largura do arco do rastro perto (no [traceHideWithinM]) e longe (no [traceRangeM]), em graus; a que distância
+  /// (m) o jogador precisa chegar da distorção para o Oculto virar Eco; a velocidade da onda do pulso (m/s); e por quanto
+  /// tempo (s) os rastros ficam no chão.
+  final double arcNearDeg;
+  final double arcFarDeg;
+  final double hiddenResolveM;
+  final double pulseSpeedMps;
+  final int traceShowS;
 
   /// Familiar: bônus de coleta (m) e a distância ao lado do Conjurador (m).
   final double familiarPickupBonusM;

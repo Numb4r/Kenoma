@@ -78,6 +78,9 @@ Future<void> showPhoneMenu(
   required Widget Function() settings,
   required Widget Function() radar,
   required int Function() nowUtc,
+  Widget Function()? routes,
+  Widget Function()? patrol,
+  Widget Function()? sky,
   required int Function() epochId,
   ClimateInfo Function()? weather,
   double Function()? lat,
@@ -101,6 +104,9 @@ Future<void> showPhoneMenu(
         onOpenSettings: () => Navigator.of(context).push(phoneRoute<void>(settings())),
       ),
       PhoneAppId.settings => settings(),
+      PhoneAppId.routes => routes?.call(),
+      PhoneAppId.patrol => patrol?.call(),
+      PhoneAppId.sky => sky?.call(),
       _ => null, // vision
     };
     if (screen == null) {

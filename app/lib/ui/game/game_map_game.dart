@@ -437,7 +437,8 @@ class GameMapGame extends FlameGame {
           return x < -off || y < -off || x > view.width + off || y > view.height + off;
         },
       );
-      paintTracker(canvas, view, tracked, sprites: sprites, typeOf: typeOf, bottomInset: bottomInset, rotation: cam.rotation);
+      final box = trackerRect ?? Rect.fromLTWH(view.width - 56, view.height - bottomInset - 8 - trackerMax * 62, 48, trackerMax * 62.0);
+      paintTracker(canvas, box, tracked, sprites: sprites, typeOf: typeOf, rotation: cam.rotation);
     }
   }
 
@@ -522,8 +523,8 @@ class GameMapGame extends FlameGame {
       canvas.drawCircle(center, auraRadiusPx(auraM: w?.touchRangeM ?? 30, lat: _lat, pixelsPerCell: ppc), ring..color = const Color(0xFF5FD3C6));
     }
     final spriteSize = ecoSizePx, playerSize = playerSizePx, sparkSize = sparkSizePx;
-    if (w != null && w.traces.isNotEmpty) {
-      _trace.paint(canvas, view, cam, traces: w.traces, ecos: w.allEcos, playerX: avatar.x, playerY: avatar.y, metersPerCell: metersPerCell(_lat), nowUtc: nowUtc());
+    if (w != null && (w.traces.isNotEmpty || w.distortions.isNotEmpty || w.pulse != null)) {
+      _trace.paint(canvas, view, cam, world: w, playerX: avatar.x, playerY: avatar.y, metersPerCell: metersPerCell(_lat), exactUtc: _exactUtc());
     }
     if (w != null) {
       paintSpawns(
@@ -604,6 +605,9 @@ class GameMapGame extends FlameGame {
 
   /// Barra de navegação do sistema embaixo, em pixels lógicos: o rastreador fica acima dela.
   double bottomInset = 0;
+
+  /// A zona do rastreador no HUD (`hud_layout.dart`), em pixels lógicos da tela do jogo. `null`: o canto de baixo à direita.
+  Rect? trackerRect;
 
   /// Alturas na tela, em pixels lógicos: os metros do mundo (`balance.json`) convertidos pelo zoom de agora e ajustados
   /// a um múltiplo inteiro de pixels físicos por pixel do sprite (nada de pixel mais gordo que o vizinho).

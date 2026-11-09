@@ -17,6 +17,9 @@ abstract final class PhoneAppId {
   static const chat = 'chat';
   static const forum = 'forum';
   static const profile = 'profile';
+  static const routes = 'routes';
+  static const patrol = 'patrol';
+  static const sky = 'sky';
   static const settings = 'settings';
 }
 
@@ -31,6 +34,9 @@ const Map<String, String> phoneAppLabels = {
   PhoneAppId.chat: 'Chat',
   PhoneAppId.forum: 'Fórum',
   PhoneAppId.profile: 'Perfil',
+  PhoneAppId.routes: 'Rotas',
+  PhoneAppId.patrol: 'Patrulha',
+  PhoneAppId.sky: 'Céu',
   PhoneAppId.settings: 'Ajustes',
 };
 

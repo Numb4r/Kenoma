@@ -18,7 +18,7 @@ import '../support/fixtures.dart';
 void main() {
   final data = loadGameData();
   const t = 1790040000;
-  const order = ['vision', 'radar', 'bestiary', 'circle', 'bag', 'bench', 'chat', 'forum', 'profile', 'settings'];
+  const order = ['vision', 'radar', 'bestiary', 'circle', 'bag', 'bench', 'chat', 'forum', 'profile', 'routes', 'patrol', 'sky', 'settings'];
 
   GameState state(int level) => GameState(groupCode: 'KENOMA-TESTE', balance: data.progress)..levelOverride = level;
 
@@ -38,6 +38,9 @@ void main() {
                 data: data,
                 settings: () => const PhoneScreen(title: 'Ajustes', child: SizedBox()),
                 radar: () => const PhoneScreen(title: 'Radar', child: SizedBox()),
+                routes: () => const PhoneScreen(title: 'Rotas', child: SizedBox()),
+                patrol: () => const PhoneScreen(title: 'Patrulha', child: SizedBox()),
+                sky: () => const PhoneScreen(title: 'Céu', child: SizedBox()),
                 nowUtc: () => t,
                 epochId: () => 1,
                 weather: () => ClimateInfo.legacy(Weather.rain),
@@ -66,7 +69,7 @@ void main() {
 
   test('a tabela vem do balance.json e os ícones são todos de 12 x 12', () {
     expect([for (final a in data.phone.apps) a.id], order);
-    expect({for (final a in data.phone.apps) a.id: a.unlockLevel}, {'vision': 1, 'radar': 2, 'bestiary': 1, 'circle': 1, 'bag': 1, 'bench': 2, 'chat': 2, 'forum': 2, 'profile': 1, 'settings': 1});
+    expect({for (final a in data.phone.apps) a.id: a.unlockLevel}, {'vision': 1, 'radar': 2, 'bestiary': 1, 'circle': 1, 'bag': 1, 'bench': 2, 'chat': 2, 'forum': 2, 'profile': 1, 'routes': 1, 'patrol': 1, 'sky': 1, 'settings': 1});
     for (final id in order) {
       final art = phoneIconArt[id]!;
       expect(art.length, 12, reason: id);
@@ -79,7 +82,7 @@ void main() {
     }
   });
 
-  testWidgets('a grade lista os 10 apps na ordem e todos têm toque de pelo menos 48 dp', (tester) async {
+  testWidgets('a grade lista os 13 apps na ordem e todos têm toque de pelo menos 48 dp', (tester) async {
     await openPhone(tester, state(2)..setSetting('phone_seen_radar', true));
     final pos = <double>[];
     for (final id in order) {
@@ -111,7 +114,9 @@ void main() {
   testWidgets('no nível 2 os apps abrem e o botão voltar de cada tela devolve ao celular', (tester) async {
     final s = state(2)..setSetting('phone_seen_radar', true);
     await openPhone(tester, s);
-    for (final id in ['chat', 'forum', 'radar', 'settings', 'profile']) {
+    for (final id in ['chat', 'forum', 'radar', 'routes', 'patrol', 'sky', 'settings', 'profile']) {
+      await tester.ensureVisible(find.byKey(Key('app-$id'))); // com o balão do Familiar a grade rola
+      await tester.pump();
       await tester.tap(find.byKey(Key('app-$id')));
       await settle(tester);
       expect(find.byKey(const Key('phone-back')), findsOneWidget, reason: id);
