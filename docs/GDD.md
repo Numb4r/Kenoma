@@ -222,6 +222,43 @@ Cada clima interage com o mapa por cinco mecânicas genéricas, combinadas em da
 | Sol Negro | dia escuro, sombras invertidas | Sombra +++, Luz − | sombras viram zonas onde Sombra nasce em dobro |
 | Garoa Prismática | gotas que refratam em cores | Brilhante ×2 | chance de Brilhante dobrada enquanto durar |
 
+| Clima novo | Categoria | Visual | Spawn | Interação com o mapa |
+| --- | --- | --- | --- | --- |
+| Geada forte | nativo, inverno | chão branco nas áreas verdes, poças congeladas | Espectral +, Água − | poças viram gelo e guardam um cristal coletável; tráfego de pedestres mais lento |
+| Trovoada seca | nativo, fim do inverno | raios sem chuva, céu alaranjado | Elétrico ++, Fogo + | raios deixam brasas que viram Fagulhas de Fogo por alguns minutos |
+| Smog | nativo, inverno seco | céu marrom, prédios distantes apagados | Metal +, Digital + | avenidas viram zonas de fuligem com sucata extra |
+| Chuva congelante | outra região | ruas brilhando de gelo, galhos quebrados | Água +, Metal + | carros fantasmas derrapam e andam devagar; galhos caídos são coletáveis (madeira) |
+| Furacão | outra região, evento | bandas de chuva girando, olho calmo passando | Feérico ++, Água ++ | o olho atravessa o mapa: dentro dele tudo para e nasce um Eco raro |
+| Chuva de Runas | místico | glifos violeta caindo devagar | Espectral +, Sombra + | runas no chão: tocar uma dá bônus no próximo ritual |
+| Lua Dupla | místico, evento | segunda lua no céu, sombras duplas | variantes + | Ecos podem nascer em pares idênticos, um deles só de sombra |
+| Vigília | místico, evento de Os Que Escutam | olhos piscando entre as nuvens, satélites cruzando | Digital ++, Espectral + | onde um olhar pousa, a Exposição sobe e nasce um Eco raro; ficar fora dos olhares é escolha do jogador |
+
+Todo clima tem duas camadas. A camada de tela só tem o que cai do céu ou cobre a vista: chuva, flocos, partículas, tom de cor e clarão. Tudo que acontece no chão pertence ao mapa: gira, move e dá zoom junto com ele, e fica no mesmo lugar para amigos juntos. Isso inclui poças, crateras, dunas, sombras de nuvem, figuras da procissão, prédios da Maré do Véu, as sombras do Sol Negro, olhos e olhares projetados no chão, marcas de raio e neve acumulada.
+
+Nenhum clima existe só como enfeite. Cada um deixa ao menos uma marca cosmética no mapa e uma interação de jogo. Exemplos que valem para todos:
+
+- A chuva forma poças nas partes baixas das ruas, que duram até uma hora depois da chuva. Elas refletem o céu, dão água pura e servem de ponto de nascimento para Ecos de Água.
+- Um meteoro abre uma cratera com brilho que dura algumas horas. Dentro dela há material raro e chance de Dracônico, e depois ela vira uma marca que some aos poucos.
+- No dilúvio, os carros fantasmas das ruas alagadas viram barcos e canoas fantasmas, e os pedestres passam a andar só nas calçadas altas.
+- A neve acumula nas ruas pouco usadas antes das avenidas, e o tráfego abre trilhas nela.
+- Na tempestade de areia, as dunas cobrem parte das ruas e mudam a rota dos fantasmas.
+- O tornado deixa um rastro de destroços coletáveis por onde passou.
+
+Alguns climas são presos a eventos do jogo:
+
+| Evento | Clima |
+| --- | --- |
+| Lua Carmim | Chuva Carmim |
+| Eclipse real | Sol Negro |
+| Fenda crescendo | Vento das Fendas e, perto do colapso, Tempestade de Ecos |
+| Chuva de meteoros do calendário | Chuva de meteoros |
+| Tempestade geomagnética real (NOAA) | Aurora e Estática |
+| Finados | Procissão na névoa |
+| Festa Junina | Chuva de Fagulhas, como fogos |
+| Temporada de panteão | clima próprio do panteão, definido na temporada |
+| Evento de Os Que Escutam | Silêncio ou Vigília |
+| Lua cheia muito perto da Terra | Lua Dupla, rara |
+
 ### Eventos
 
 - Lua Carmim, com céu vermelho e criaturas noturnas raras durante o dia inteiro. Principal fonte de variantes Carmesim.
@@ -559,7 +596,7 @@ O Conjurador tem progressão própria, separada das criaturas. Ganha experiênci
 
 ### Celular mágico
 
-A interface do jogo é o celular do personagem. Novas funções chegam como apps que o aparelho ganha com a exposição às Fendas, e cada desbloqueio funciona como tutorial da mecânica.
+A interface do jogo é o celular do personagem. Toda função nova nasce como app dele; o HUD do mapa só tem atalhos para os apps e informação que precisa ser vista andando. Novas funções chegam como apps que o aparelho ganha com a exposição às Fendas, e cada desbloqueio funciona como tutorial da mecânica.
 
 | App | Função |
 | --- | --- |
@@ -574,10 +611,13 @@ A interface do jogo é o celular do personagem. Novas funções chegam como apps
 | Círculo | time ativo, Constelações e criaturas guardadas |
 | Bancada | crafting, destilação e grandes obras em andamento |
 | Perfil | nível, escola, Familiar, pontos de talento, estatísticas da caminhada e certificados; abre também tocando no retrato do HUD |
+| Rotas | Modo Viagem: destino, veículo, rota pelas ruas, atalhos para apps de corrida |
+| Patrulha | Patrulha do Véu e modo bolso, com o resumo das patrulhas anteriores |
+| Céu | clima atual e das próximas janelas, lua, eventos ativos e o que cada um muda no spawn |
 
 ### Rastros e scanner
 
-Criaturas raras deixam rastros que apontam direção aproximada. O scanner tem níveis. No primeiro mostra só pegada e direção, depois tipo elemental, depois Poder e variante, e no topo localização exata e traços passivos antes da sintonia. Encantamentos amplificam temporariamente e gadgets aumentam permanentemente.
+Criaturas raras deixam rastros que apontam direção aproximada. O scanner tem níveis. No primeiro mostra só pegada e direção, depois tipo elemental, depois Poder e variante, e no topo localização exata e traços passivos antes da sintonia. Encantamentos amplificam temporariamente e gadgets aumentam permanentemente. O Radar é um app do celular com tela de sonar: um pulso parte do Conjurador e volta com ecos. Rastros aparecem como arcos difusos na direção provável, mais estreitos quanto mais perto, e Ocultos a até 60 m como uma distorção que só vira Eco quando o jogador anda até ela. O pulso também corre pelo mapa como uma onda ciano e deixa os rastros marcados por alguns minutos. O rastreador da borda da tela mostra o que o Radar já achou, em vez de ser uma lista separada.
 
 ### Escolas de Conjuração
 
@@ -1032,7 +1072,7 @@ O jogador escolhe um destino, pela busca ou tocando no mapa, e o veículo. A rot
 
 No carro e no ônibus o jogo vira áudio, o Rádio do Véu, com sons do Véu e falas do mentor e do Familiar. Na chegada abre um baú com o que foi coletado e marcado, proporcional à distância e com teto diário. Os Ecos marcados na viagem ficam guardados por algumas horas para sintonizar depois. Carro, moto e bicicleta têm skins cosméticas, inclusive de temporadas de panteão.
 
-O jogo nunca recompensa dirigir. Em carro ou moto ele pergunta uma vez se o jogador é passageiro, e quem está dirigindo só tem a viagem gravada, com tudo entregue na chegada.
+O jogo nunca recompensa dirigir. Em carro ou moto ele pergunta uma vez se o jogador é passageiro, e quem está dirigindo não recebe nada da viagem, nem na chegada: ela só fica registrada no histórico e no Perfil.
 
 ### Tráfego do Véu
 
