@@ -123,6 +123,9 @@ class ClimateCatalog {
           },
         );
 
+  /// O último catálogo lido do app (o menu de debug lista os climas daqui).
+  static ClimateCatalog? lastLoaded;
+
   final Map<String, ClimateInfo> climates;
   final Map<String, PieceVisual> pieces;
   final Map<String, ClimateTag> tags;

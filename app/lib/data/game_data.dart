@@ -86,7 +86,7 @@ class GameData {
       rituals: await json('rituals').catchError((_) => <String, dynamic>{}), // sem o arquivo, o ritual fica sem receitas
       ridePatterns: await json('ride_patterns').catchError((_) => <String, dynamic>{}), // sem o arquivo, a corrida vai pelos botões
       climates: await json('clima').then<Map<String, dynamic>?>((j) => j).catchError((_) => null), // sem o arquivo, os quatro climas antigos
-    );
+    )..remember();
   }
 
   factory GameData.fromJson({
@@ -194,6 +194,11 @@ class GameData {
   final ClimateBalance climateBalance;
 
   String itemName(String id) => itemNames[id] ?? id;
+
+  /// Guarda o catálogo do clima para o menu de debug.
+  void remember() {
+    if (climates.climates.isNotEmpty) ClimateCatalog.lastLoaded = climates;
+  }
 
   /// Uma espécie de Eco (só a camada Eco) do tipo [type] (`any`: qualquer uma), escolhida por [pick] em `[0, 1)`. `null` se
   /// o jogo não tem espécie desse tipo (Elétrico, Espectral...): as peças do clima caem no fallback do dado.

@@ -180,12 +180,12 @@ class _WeatherItem extends StatefulWidget {
 }
 
 class _WeatherItemState extends State<_WeatherItem> {
-  ClimateCatalog? _catalog;
+  ClimateCatalog? _catalog = ClimateCatalog.lastLoaded;
 
-  @override
-  void initState() {
-    super.initState();
-    rootBundle.loadString('assets/data/clima.json').then((s) {
+  /// Só lê o arquivo quando pedem (o mapa já deixa o catálogo carregado): ler ao montar o item travava a leitura dos
+  /// assets nos testes de widget.
+  void _load() {
+    rootBundle.loadString('assets/data/clima.json', cache: false).then((s) {
       if (mounted) setState(() => _catalog = ClimateCatalog.fromJson(jsonDecode(s) as Map<String, dynamic>));
     }).catchError((_) {});
   }
@@ -204,6 +204,7 @@ class _WeatherItemState extends State<_WeatherItem> {
           for (final w in Weather.values) chip(w.id, w.label),
           for (final c in _catalog?.climates.values ?? const <ClimateInfo>[])
             if (!legacy.contains(c.id)) chip(c.id, c.name),
+          if (_catalog == null) DebugButton(label: 'Todos os climas', color: KCores.textoMudo, onTap: _load),
         ]),
       ]),
     );
