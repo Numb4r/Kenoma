@@ -629,7 +629,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final travel = TravelSession(
       state: session.state,
       balance: data.travel,
-      graph: TrafficGraph(loadTile: assets.visual!.tile, cellsPerTile: assets.visual!.cellsPerTile, extent: assets.visual!.pack.extent, cacheTiles: 512),
+      graph: TrafficGraph(loadTile: assets.visual!.tile, cellsPerTile: assets.visual!.cellsPerTile, extent: assets.visual!.pack.extent, cacheTiles: 512, stitch: true),
       patterns: data.ridePatterns,
       radioLines: data.mentor.radio,
       sparkItem: (lat, lon, t) => sparkForBiome(data.schedule.select(t).epoch, _biomeKeyAt(assets, lat, lon)),
