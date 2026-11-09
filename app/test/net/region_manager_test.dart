@@ -45,6 +45,9 @@ LayeredWorld _world() => LayeredWorld(regions: [
 
 /// O servidor falso: serve os arquivos da fixture e conta os pedidos.
 class _Server {
+  _Server(this.fx);
+
+  final String fx;
   final gets = <(String, int)>[];
   final overrides = <String, Uint8List>{};
   bool down = false;
@@ -56,7 +59,7 @@ class _Server {
   Future<Uint8List?> fetch(Uri url) async {
     if (down) return null;
     if (catalog != null && url.path.endsWith('regions.json')) return catalog;
-    final f = File('$_fx/${url.pathSegments.last}');
+    final f = File('$fx/${url.pathSegments.last}');
     return f.existsSync() ? f.readAsBytesSync() : null;
   }
 
@@ -64,17 +67,18 @@ class _Server {
     if (down) throw const SocketException('sem rede');
     final name = url.pathSegments.last;
     gets.add((name, from));
-    final all = overrides[name] ?? File('$_fx/$name').readAsBytesSync();
+    final all = overrides[name] ?? File('$fx/$name').readAsBytesSync();
     final resume = from > 0 && !noRange;
     return RangeReply(resume ? 206 : 200, Stream.value(resume ? all.sublist(from) : all));
   }
 }
 
 class _Rig {
-  _Rig({EpochSchedule? schedule}) : schedule = schedule ?? _schedule();
+  _Rig({EpochSchedule? schedule, this.fx = _fx}) : schedule = schedule ?? _schedule();
 
   final EpochSchedule schedule;
-  final server = _Server();
+  final String fx;
+  late final server = _Server(fx);
   final dir = Directory.systemTemp.createTempSync('regions');
   final notices = <String>[];
   late int now = schedule.epochs.last.startsUtc + 3600;
@@ -93,7 +97,7 @@ class _Rig {
       baseUrl: () => _base,
       fetch: server.fetch,
       get: server.get,
-      publicKeyHex: _pub,
+      publicKeyHex: fx == _fx ? _pub : File('$fx/region_pub.hex').readAsStringSync().trim(),
       onNotice: notices.add,
       confirm: confirm,
     );
@@ -283,6 +287,40 @@ void main() {
       final e = (json['epochs'] as List).last as Map<String, dynamic>;
       expect(epochPackFiles(e), isNot(contains('test_e5.bin')));
       expect(epochPackFiles(e), containsAll(['campinas_e0.bin', 'campinas_e0_vis.bin', 'campinas_e2_nowalk.bin']));
+    });
+  });
+
+  group('arquivo de rota (route_files)', () {
+    const fx = 'test/net/fixtures/region_route';
+
+    test('fica fora de files: a região continua batendo com a época, e o arquivo entra depois dela', () async {
+      final r = _Rig(fx: fx);
+      final m = r.open();
+      final entry = await _entryOf(m);
+      expect(entry.routeFiles.keys, [kKindAccess]);
+      expect(entry.files.keys, isNot(contains(kKindAccess)));
+      expect(catalogMatchesEpoch(entry, r.schedule.epochs.last), isTrue, reason: 'a 0.16 também aceita: ela ignora route_files');
+      expect(await m.download(entry), isTrue);
+      expect(r.world.hasAccess('test_city'), isTrue);
+      expect(r.names, contains('test_e5_noaccess.bin'));
+      expect(r.world.accessNear(776936 ~/ 2 + 1, 1189799 ~/ 2), isNotEmpty);
+    });
+
+    test('ao abrir o app, o arquivo de rota volta do disco sem rede; adulterado, sai e a região fica', () async {
+      final r = _Rig(fx: fx);
+      await r.open().download(await _entryOf(r.open()));
+      r.server.down = true;
+      final again = r.open();
+      await again.loadInstalled();
+      expect(r.world.hasRegion('test_city'), isTrue);
+      expect(r.world.hasAccess('test_city'), isTrue);
+
+      File('${r.dir.path}/test_e5_noaccess.bin').writeAsBytesSync([1, 2, 3]);
+      final bad = r.open();
+      await bad.loadInstalled();
+      expect(r.world.hasRegion('test_city'), isTrue);
+      expect(r.world.hasAccess('test_city'), isFalse);
+      expect(r.names, isNot(contains('test_e5_noaccess.bin')));
     });
   });
 }

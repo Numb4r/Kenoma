@@ -53,6 +53,17 @@ class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccess
 
   bool hasRegion(String id) => _regions.any((r) => r.id == id);
 
+  /// A região [id] já tem o arquivo de rota.
+  bool hasAccess(String id) => _regions.any((r) => r.id == id && r.access != null);
+
+  /// O arquivo de rota de uma região que já está no mundo (baixado depois dela). Só a rota lê: o desenho não muda.
+  void setAccess(String id, AccessPack access) {
+    final i = _regions.indexWhere((r) => r.id == id);
+    if (i < 0) return;
+    final r = _regions[i];
+    _regions[i] = LoadedRegion(id: r.id, grid: r.grid, visual: r.visual, noWalk: r.noWalk, access: access);
+  }
+
   void addRegion(LoadedRegion region) {
     if (hasRegion(region.id)) return;
     _regions.add(region);

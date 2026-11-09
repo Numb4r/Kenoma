@@ -65,3 +65,5 @@ Total de 11,99 MB. O oráculo do fallback (`app/test/world/fallback/`, fixtures 
 | `app/assets/regions/campinas_e0_noaccess.bin` | 11.975 (a pé 7.676, bicicleta 10.870, motorizado 7.724, viaduto 1.010) | 184.014 | `84b0f5cd59eeddc986cc1f9bb95cbe60cacdb7acd99bfffb27c4c2aa6c25e06a` |
 | `out/regions/sao_paulo_e5_noaccess.bin` (`--epoch 5 --out-dir out/regions`, não embarcado) | 54.324 (a pé 10.696, bicicleta 48.581, motorizado 9.321, viaduto 4.525) | 672.482 | `feaecc1c025a0deb77b82598de69c4f5df397dbf251f59f9bf429a45ccd97165` |
 
+No `regions.json` assinado, o de São Paulo entra em `route_files.access` da região (`file`, `url`, `sha256`, `bytes`, `sig`, como os de `files`), **nunca em `files`**: a 0.16 exige que todo arquivo de `files` esteja em `epochs.json` e recusaria a região inteira. A 0.17 baixa o arquivo de rota depois da região (também para quem já tem São Paulo), confere o SHA-256 do catálogo e a assinatura; sem ele, a rota funciona sem os bits de acesso.
+
