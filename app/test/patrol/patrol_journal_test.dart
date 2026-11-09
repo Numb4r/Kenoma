@@ -168,7 +168,7 @@ void main() {
       await incorporateJournal(s, file, running: false, nowUtc: t0 + 34 * 60);
       final entry = GameState.fromJson(jsonDecode(jsonEncode(s.toJson(t0))) as Map<String, dynamic>, loadProgressBalance()).story.chat.delivered.single;
       final text = entry.fill(loadGameData().mentor.byId(entry.id)!.text);
-      expect(text, startsWith('34 minutos de Patrulha. 12 Fagulhas e 0 materiais'));
+      expect(text, startsWith('Patrulha encerrada. Tempo: 34 min. Fagulhas: 12. Materiais: 0.'));
       expect(text, isNot(contains('{')));
     });
 

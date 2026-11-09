@@ -110,7 +110,7 @@ Saem pelo código, quantas vezes for preciso (lista `direct` do JSON). O resumo 
 
 | Id | Quem | Texto |
 | --- | --- | --- |
-| `patrol_summary` | mentor | {min} minutos de Patrulha. {sparks} Fagulhas e {materials} materiais vieram com você, e {marks} Ecos ficaram presos ao seu sinal. A cidade nem percebeu. Ou percebeu e ficou quieta? |
+| `patrol_summary` | mentor | Patrulha encerrada. Tempo: {min} min. Fagulhas: {sparks}. Materiais: {materials}. Ecos presos ao seu sinal: {marks}. A cidade nem percebeu. Ou percebeu e ficou quieta? |
 | `steps_5k` | Familiar | *O Familiar bate no chão cinco vezes com a ponta do contorno e encosta no seu tornozelo. Parece dizer: cinco mil passos hoje, e o chão lembra de cada um.* |
 | `steps_10k` | Familiar | *O Familiar se deita atravessado no caminho e só levanta quando você para também. Dez mil passos. Parece dizer: chega por hoje, ou ainda não?* |
 
