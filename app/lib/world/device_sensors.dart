@@ -32,6 +32,16 @@ class DeviceSensors {
   /// `true` enquanto o sensor de proximidade está coberto. Sem sensor, o fluxo nunca emite.
   Stream<bool> proximity() => _proximity.receiveBroadcastStream().where((e) => e is bool).cast<bool>().handleError((_) {});
 
+  /// Avisa o Android que os dados mudaram (`BackupManager.dataChanged`): o próximo Auto Backup leva o save novo. Depois do
+  /// recomeço, é o que impede uma reinstalação de trazer o jogo antigo de volta. Sem plugin, não faz nada.
+  Future<void> requestBackup() async {
+    try {
+      await _system.invokeMethod<bool>('requestBackup');
+    } catch (_) {
+      // sem canal (testes, outras plataformas): nada a pedir
+    }
+  }
+
   /// Abre a tela de ajustes do Android onde fica o backup. `false` se não conseguiu.
   Future<bool> openBackupSettings() async {
     try {

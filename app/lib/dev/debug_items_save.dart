@@ -2,13 +2,11 @@
 /// e as operações sobre o save (exportar, importar, migrar, apagar).
 library;
 
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 
 import '../save/backup.dart';
 import '../save/ksv1.dart' show SaveCorrupt;
-import '../save/ksv_save_store.dart';
 import '../save/migrations.dart';
 import '../save/save_store.dart';
 import '../ui/tema.dart';
@@ -23,17 +21,7 @@ import 'tap_latency.dart';
 const String kDeleteWord = 'APAGAR';
 
 /// Apaga o save de [store]: as três cópias, o legado e as sobras. Na memória (testes), zera o JSON.
-Future<void> deleteSave(SaveStore store) async {
-  if (store is MemorySaveStore) {
-    store.json = null;
-    return;
-  }
-  if (store is KsvSaveStore) {
-    for (final f in [...store.copies, store.legacy, File('${store.current.path}.bad'), File('${store.current.path}.tmp')]) {
-      if (await f.exists()) await f.delete();
-    }
-  }
-}
+Future<void> deleteSave(SaveStore store) => store.wipe();
 
 List<DebugItem> signatureItems(DebugEnv env) => [
       DebugItem(
