@@ -31,12 +31,17 @@ BIOMES = json.loads((ROOT / "shared/biomes.json").read_text())
 EXTRA_TAGS = {"type", "area", "tunnel", "service", "indoor", "access", "oneway", "junction", "name"}
 
 MARGIN_M = 30.0        # margem da caixa além do maior buffer
-RAY_DEG = 0.0          # comprimento da faixa para oeste; ver _boxes
-RAY_THICK_DEG = 0.00002
 
-
-# Os blocos: (tx, ty, motivo). Ver main para a escolha.
-TILES: list[tuple[int, int, str]] = []
+TILES: list[tuple[int, int, str]] = [
+    (12100, 18526, "centro de Campinas, denso"),
+    (12099, 18518, "Barão Geraldo e Unicamp"),
+    (12095, 18532, "residencial, DIC"),
+    (12102, 18520, "rodovia Dom Pedro"),
+    (12095, 18525, "rodovia Anhanguera"),
+    (12101, 18523, "Lagoa do Taquaral, relation de água"),
+    (12100, 18523, "Parque Portugal, relation com buracos"),
+    (12109, 18520, "mata com 21 buracos"),
+]
 
 
 def tile_bounds(tx: int, ty: int) -> tuple[float, float, float, float]:
