@@ -52,10 +52,14 @@ class TravelSession extends ChangeNotifier {
     required this.ecosInReach,
     required this.nowUtc,
     this.highway,
+    this.access,
   });
 
   /// Rodovias e vias expressas: fora da rota a pé e de bicicleta. `null`: sem esse dado.
   final bool Function(GhostLine)? highway;
+
+  /// Os bits de acesso de cada trecho (`accessTest`), do arquivo de rota. `null`: sem ele.
+  final int Function(GhostLine, int)? access;
   final GameState state;
   final TravelBalance balance;
   final TrafficGraph graph;
@@ -84,6 +88,30 @@ class TravelSession extends ChangeNotifier {
   TravelPath? route;
   bool routing = false;
 
+  /// Quanto falta pela rota, em metros, do ponto dela mais perto do jogador. `null` sem rota.
+  double? get routeLeftM {
+    final r = route;
+    if (r == null || !_hasFix) return r?.lengthM;
+    return math.max(0, r.lengthM - r.locate(_x, _y).alongM);
+  }
+
+  /// A linha da rota na tela: o que falta e o tempo estimado, ou por que não há rota. Fora dos dados, o aviso.
+  String get routeStatus {
+    if (destX == null) return 'SEM DESTINO';
+    if (routing) return 'CALCULANDO ROTA';
+    final left = routeLeftM, eta = routeEtaS, r = route;
+    if (left == null || eta == null || r == null) return 'SEM ROTA, SÓ A DIREÇÃO';
+    final km = (left / 1000).toStringAsFixed(1).replaceFirst('.', ',');
+    final min = math.max(1, (eta / 60).round());
+    return 'FALTAM $km KM · ~$min MIN${r.offData ? ' · O DESTINO ESTÁ FORA DO MAPA: O FIM É EM LINHA RETA' : ''}';
+  }
+
+  /// O tempo estimado do que falta, na velocidade média do veículo (`route_kmh`). `null` sem rota.
+  int? get routeEtaS {
+    final left = routeLeftM;
+    return left == null ? null : (left / balance.vehicles[vehicle]!.routeMps).round();
+  }
+
   /// A corrida de Uber ou 99, se a viagem veio por um desses botões.
   Ride? ride;
   String? _ridePackage;
@@ -103,6 +131,7 @@ class TravelSession extends ChangeNotifier {
   bool _hasFix = false;
   double _pickupBonusM = 0;
   double _boardEnd = 0;
+  int _routedUtc = -1 << 40;
   TravelPath? _leave;
   double _leaveT = 0;
   bool _approachBusy = false;
@@ -209,7 +238,8 @@ class TravelSession extends ChangeNotifier {
   }
 
   Future<void> _findRoute(int token) async {
-    if (!_hasFix) return;
+    if (!_hasFix || destX == null) return;
+    _routedUtc = nowUtc();
     routing = true;
     notifyListeners();
     final r = await findRouteAsync(graph,
@@ -217,7 +247,7 @@ class TravelSession extends ChangeNotifier {
         fromY: _y,
         toX: destX!,
         toY: destY!,
-        rules: RouteRules(motorized: vehicle.motorized, highway: highway),
+        rules: RouteRules(vehicle.profile, highway: highway, access: access),
         mpc: _mpc,
         snapM: balance.snapM,
         maxNodes: balance.maxNodes,
@@ -241,6 +271,10 @@ class TravelSession extends ChangeNotifier {
     if (_recording) _trip?.add(x, y, mpc, nowUtc());
     final vb = balance.vehicles[vehicle]!;
     final r = route;
+    // Saiu da rota: refaz de onde está, sem repetir a conta a cada leitura.
+    if (r != null && !routing && nowUtc() - _routedUtc >= balance.rerouteMinS && r.distanceToM(x, y) > balance.offRouteM) {
+      unawaited(_findRoute(++_token));
+    }
     _pickupBonusM = vb.bandM > 0 && speedMps <= vb.maxMps && r != null && r.distanceToM(x, y) <= vb.bandM ? vb.bandM : 0;
   }
 

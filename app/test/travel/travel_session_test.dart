@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/seed.dart';
 import 'package:kenoma/core/tiles.dart';
+import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/player/progression.dart' show localDay;
 import 'package:kenoma/story/mentor_script.dart';
@@ -27,12 +29,12 @@ const String spark = 'item.dust.fire';
 WorldSpawn eco(int uid, {String species = 'soot.eco'}) => WorldSpawn(uid: uid, kind: 'eco', entryId: species, quantity: 1, x: x0, y: y0, cellX: 0, cellY: 0, window: 1, level: 2);
 
 class Rig {
-  Rig({this.now = 1800000000}) {
+  Rig({this.now = 1800000000, TrafficGraph? graph}) {
     state = GameState(groupCode: 'KENOMA-TESTE', balance: loadProgressBalance());
     travel = TravelSession(
       state: state,
       balance: TravelBalance(loadJson('assets/data/balance.json')),
-      graph: TrafficGraph(loadTile: (_, _) => null, cellsPerTile: 64, extent: 4096),
+      graph: graph ?? TrafficGraph(loadTile: (_, _) => null, cellsPerTile: 64, extent: 4096),
       patterns: RidePatterns.fromJson(loadJson('assets/data/ride_patterns.json')),
       radioLines: const [MentorMessage(id: 'a', afterS: 0, text: 'A'), MentorMessage(id: 'b', afterS: 0, text: 'B')],
       sparkItem: (_, _, _) => spark,
@@ -407,6 +409,48 @@ void main() {
       final state = GameState(groupCode: 'KENOMA-TESTE', balance: loadProgressBalance());
       recordChest(state, 100, 5, 30);
       expect(state.toJson(0)['settings'], containsPair(kChestGivenSetting, 5));
+    });
+  });
+
+  group('rota', () {
+    // Uma rua reta de leste a oeste sobre y0, de x0 a x0 + 60 células (600 m), num tile só.
+    TrafficGraph street() => TrafficGraph(
+        loadTile: (x, y) => x == 15625 && y == 31250 ? VisualTile(lines: [VisualLine(RoadClass.local, Int32List.fromList([0, 0, 3840, 0]))], areas: const []) : null,
+        cellsPerTile: 64,
+        extent: 4096,
+        stitch: true);
+
+    test('a rota sai com o que falta e o tempo estimado; longe dela mais de 30 m, é refeita de onde o jogador está', () async {
+      final r = Rig(graph: street())..choose(Vehicle.car, km: 0.5);
+      r.travel.answerPassenger(true);
+      await pumpEventQueue();
+      final first = r.travel.route!;
+      expect(first.lengthM, closeTo(500, 1e-6));
+      expect(r.travel.routeStatus, 'FALTAM 0,5 KM · ~1 MIN', reason: '500 m a 24 km/h');
+      // 20 m da rota: segue a mesma.
+      r.now += 60;
+      r.travel.onPosition(x: x0 + 10, y: y0 + 2, mpc: mpc, speedMps: 5);
+      await pumpEventQueue();
+      expect(identical(r.travel.route, first), isTrue);
+      expect(r.travel.routeLeftM, closeTo(400, 1e-6));
+      // 50 m: refaz, começando de onde está.
+      r.travel.onPosition(x: x0 + 20, y: y0 + 5, mpc: mpc, speedMps: 5);
+      await pumpEventQueue();
+      final second = r.travel.route!;
+      expect(identical(second, first), isFalse);
+      expect((second.xy[0], second.xy[1]), (x0 + 20, y0 + 5));
+      expect(second.lengthM, closeTo(50 + 300, 1e-6));
+      // Ainda longe, mas dentro da espera: não refaz a cada leitura.
+      r.travel.onPosition(x: x0 + 21, y: y0 + 5, mpc: mpc, speedMps: 5);
+      await pumpEventQueue();
+      expect(identical(r.travel.route, second), isTrue);
+    });
+
+    test('destino fora dos dados: o aviso da reta no fim', () async {
+      final r = Rig(graph: street())..choose(Vehicle.foot, km: 2);
+      await pumpEventQueue();
+      expect(r.travel.route!.offData, isTrue);
+      expect(r.travel.routeStatus, endsWith('O DESTINO ESTÁ FORA DO MAPA: O FIM É EM LINHA RETA'));
     });
   });
 }

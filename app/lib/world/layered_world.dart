@@ -8,6 +8,7 @@ library;
 import 'dart:collection';
 
 import '../core/tiles.dart';
+import '../data/access_pack.dart';
 import '../data/map_sources.dart';
 import '../data/nowalk_pack.dart';
 import '../data/region_pack.dart';
@@ -20,17 +21,20 @@ enum MapSourceKind { pack, overpass, floor }
 
 /// Um pacote de região já lido e conferido.
 class LoadedRegion {
-  const LoadedRegion({required this.id, required this.grid, required this.visual, this.noWalk});
+  const LoadedRegion({required this.id, required this.grid, required this.visual, this.noWalk, this.access});
 
   final String id;
   final RegionPack grid;
   final VisualPack visual;
   final NoWalkPack? noWalk;
 
+  /// O arquivo de rota (`_noaccess.bin`). `null`: a rota segue sem ele.
+  final AccessPack? access;
+
   bool contains(int x, int y) => x >= grid.x0 && y >= grid.y0 && x < grid.x0 + grid.width && y < grid.y0 + grid.height;
 }
 
-class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource {
+class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccessSource {
   LayeredWorld({required List<LoadedRegion> regions, this.maxBlocks = 32}) : _regions = [...regions] {
     assert(regions.isNotEmpty, 'o mundo começa com a região embutida');
   }
@@ -61,8 +65,10 @@ class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource {
   /// Chegou um bloco (da rede ou do disco): substitui o que havia.
   void putBlock(FallbackBlock b) {
     _blocks.remove((b.tx, b.ty));
+    _blockAccess.remove((b.tx, b.ty));
     _blocks[(b.tx, b.ty)] = b;
     while (_blocks.length > maxBlocks) {
+      _blockAccess.remove(_blocks.keys.first);
       _blocks.remove(_blocks.keys.first);
     }
     _revision++;
@@ -150,5 +156,26 @@ class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource {
     // ponytail: devolve o bloco inteiro, não só a vizinhança; a conta dá igual e a célula fica em cache. Indexar por célula
     // como o NoWalkPack só se um bloco de trevo de rodovia pesar.
     return _blocks[(tx, ty)]?.noWalk ?? const [];
+  }
+
+  /// O índice por célula z20 do acesso de cada bloco, montado na primeira consulta.
+  final Map<(int, int), Map<(int, int), List<double>>> _blockAccess = {};
+
+  /// Segue quem desenha o tile da célula z20 `(cx, cy)`, como [near].
+  @override
+  List<double> accessNear(int cx, int cy) {
+    final tx = cx >>> 5, ty = cy >>> 5;
+    final r = _regionWithTile(tx, ty);
+    if (r != null) return r.access?.accessNear(cx, cy) ?? const [];
+    final b = _blocks[(tx, ty)];
+    if (b == null || b.access.isEmpty) return const [];
+    final index = _blockAccess[(tx, ty)] ??= () {
+      final m = <(int, int), List<double>>{};
+      for (var i = 0; i + 4 < b.access.length; i += 5) {
+        addAccessSegment(m, b.access[i], b.access[i + 1], b.access[i + 2], b.access[i + 3], b.access[i + 4]);
+      }
+      return m;
+    }();
+    return index[(cx, cy)] ?? const [];
   }
 }

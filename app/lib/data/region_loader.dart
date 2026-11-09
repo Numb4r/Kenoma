@@ -10,6 +10,7 @@ import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../core/epochs.dart';
 import '../net/signed_feed.dart';
+import 'access_pack.dart';
 import 'nowalk_pack.dart';
 import 'region_pack.dart';
 import 'visual_pack.dart';
@@ -163,5 +164,16 @@ Future<Object?> loadNoWalkPack({required Epoch epoch, AssetBundle? bundle}) asyn
     return NoWalkPack.parse(bytes);
   } catch (e) {
     return 'O mapa de vias ${ref.file} está corrompido: $e.';
+  }
+}
+
+/// O arquivo de rota da região embutida (`build_noaccess.py`). Só a rota lê e ele não entra em época, então não há SHA a
+/// conferir: falta ou defeito deixam a rota sem os bits (`null`), sem aviso. Nunca lança.
+Future<AccessPack?> loadAccessPack({required String region, AssetBundle? bundle}) async {
+  try {
+    final data = await (bundle ?? rootBundle).load('assets/regions/${region}_e0_noaccess.bin');
+    return AccessPack.parse(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
+  } catch (_) {
+    return null;
   }
 }

@@ -56,3 +56,12 @@ Mesmo extrato da época 0 (MD5 acima), mesmas regras de bioma. Município inteir
 
 Total de 11,99 MB. O oráculo do fallback (`app/test/world/fallback/`, fixtures de `export_fixture.py`) compara a grade do Dart com os pacotes de Campinas e de São Paulo.
 
+## Arquivo de rota (0.17.0, fora das épocas)
+
+`build_noaccess.py --region <região>` lê do mesmo extrato da época 0 (MD5 `d4778499e2017add7ee7879dd3b64b3c`, conferido em 2026-11-09) as vias do pacote visual (as mesmas de `highway_class`) com `access`, `foot`, `bicycle`, `vehicle` ou `motor_vehicle` em `no` ou `private`, as escadas e calçadas sem `bicycle=yes|designated|permissive`, e os viadutos (`bridge`). Só a rota do Modo Viagem lê: é individual, não muda o mundo, não entra em época e pode ser regerado sem época nova. O pacote visual continua o mesmo (o SHA dele é mundo desde a época 2). Regras e formato no cabeçalho do script; o fallback tira os mesmos bits das tags da Overpass (`accessMask` em `osm_rules.dart`).
+
+| Arquivo | Linhas | Bytes | SHA-256 |
+| --- | --- | --- | --- |
+| `app/assets/regions/campinas_e0_noaccess.bin` | 11.975 (a pé 7.676, bicicleta 10.870, motorizado 7.724, viaduto 1.010) | 184.014 | `84b0f5cd59eeddc986cc1f9bb95cbe60cacdb7acd99bfffb27c4c2aa6c25e06a` |
+| `out/regions/sao_paulo_e5_noaccess.bin` (`--epoch 5 --out-dir out/regions`, não embarcado) | 54.324 (a pé 10.696, bicicleta 48.581, motorizado 9.321, viaduto 4.525) | 672.482 | `feaecc1c025a0deb77b82598de69c4f5df397dbf251f59f9bf429a45ccd97165` |
+

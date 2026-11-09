@@ -60,7 +60,7 @@ import '../menu/radar_screen.dart';
 import '../../story/local_notifier.dart';
 import '../../story/notification_plan.dart';
 import '../settings/regions_section.dart' show regionSizeLabel;
-import '../../travel/travel_path.dart' show highwayTest;
+import '../../travel/travel_path.dart' show accessTest, bridgeTest, highwayTest;
 import '../../travel/travel_session.dart';
 import '../travel/travel_layer.dart';
 import '../travel/travel_overlay.dart';
@@ -626,16 +626,24 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       confirm: _confirmRegion,
     );
     final tracker = PlayerTracker(source: tools.source);
+    final accessTol = data.travel.accessTolM / metersPerCell(game.playerLat);
     final travel = TravelSession(
       state: session.state,
       balance: data.travel,
-      graph: TrafficGraph(loadTile: assets.visual!.tile, cellsPerTile: assets.visual!.cellsPerTile, extent: assets.visual!.pack.extent, cacheTiles: 512, stitch: true),
+      graph: TrafficGraph(
+          loadTile: assets.visual!.tile,
+          cellsPerTile: assets.visual!.cellsPerTile,
+          extent: assets.visual!.pack.extent,
+          cacheTiles: 512,
+          stitch: true,
+          noCrossingAt: assets.world == null ? null : bridgeTest(assets.world!, accessTol)),
       patterns: data.ridePatterns,
       radioLines: data.mentor.radio,
       sparkItem: (lat, lon, t) => sparkForBiome(data.schedule.select(t).epoch, _biomeKeyAt(assets, lat, lon)),
       ecosInReach: () => [for (final s in world.spawns) if (s.isEco && world.distanceM(s) <= data.travel.autoMarkM) s],
       nowUtc: () => tools.clock.nowUtc,
       highway: assets.noWalk == null ? null : highwayTest(assets.noWalk!, data.travel.highwayTolM / metersPerCell(game.playerLat)),
+      access: assets.world == null ? null : accessTest(assets.world!, accessTol),
     );
     // Com a Patrulha ligada quem coleta é o serviço; o mapa mostra e lê o diário (patrol_controller.dart).
     world.quiet = () => travel.quiet || PatrolController.instance.running;

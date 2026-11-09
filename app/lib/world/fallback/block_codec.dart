@@ -1,7 +1,8 @@
 /// Cache em disco do bloco do fallback. Cabeçalho de 18 bytes, little-endian: magic `FBK1`, version u16, tx u32, ty u32,
 /// epochId u32. Depois, gzip de: `blockCells^2` bytes de bioma; varint linhas, cada uma `classe u8, sentido u8, varint
 /// tamanho do nome, nome UTF-8, pontos`; varint áreas, cada uma `tipo u8, varint anéis, pontos`; varint n e `n` doubles
-/// do noWalk. Pontos: varint n e pares em deltas com zigzag, como no pacote visual.
+/// do noWalk. Pontos: varint n e pares em deltas com zigzag, como no pacote visual. A versão 2 acrescenta, no fim, varint n
+/// e `n` doubles do acesso da rota (`x0, y0, x1, y1, bits`); a 1 continua legível, sem acesso.
 library;
 
 import 'dart:convert' show utf8;
@@ -11,7 +12,7 @@ import 'dart:typed_data';
 import '../../data/visual_pack.dart';
 import 'block.dart';
 
-const int _version = 1;
+const int _version = 2;
 const int _headerSize = 18;
 
 void _varint(BytesBuilder out, int n) {
@@ -57,6 +58,8 @@ Uint8List encodeBlock(FallbackBlock b) {
   _varint(body, b.noWalk.length);
   final noWalk = Float64List.fromList(b.noWalk);
   body.add(noWalk.buffer.asUint8List());
+  _varint(body, b.access.length);
+  body.add(Float64List.fromList(b.access).buffer.asUint8List());
 
   final header = ByteData(_headerSize);
   for (var i = 0; i < 4; i++) {
@@ -79,7 +82,7 @@ FallbackBlock decodeBlock(Uint8List bytes) {
   }
   final header = ByteData.sublistView(bytes, 0, _headerSize);
   final version = header.getUint16(4, Endian.little);
-  if (version != _version) throw FormatException('Versão $version do bloco do fallback não é suportada');
+  if (version != 1 && version != _version) throw FormatException('Versão $version do bloco do fallback não é suportada');
   final body = Uint8List.fromList(gzip.decode(Uint8List.sublistView(bytes, _headerSize)));
   const cellCount = blockCells * blockCells;
   var pos = cellCount;
@@ -120,9 +123,15 @@ FallbackBlock decodeBlock(Uint8List bytes) {
     final kind = AreaKind.values[body[pos++]];
     areas.add(VisualArea(kind, [for (var k = varint(); k > 0; k--) points()]));
   }
-  final count = varint();
-  final view = ByteData.sublistView(body, pos);
-  final noWalk = [for (var i = 0; i < count; i++) view.getFloat64(i * 8, Endian.host)];
+  List<double> doubles() {
+    final count = varint();
+    final view = ByteData.sublistView(body, pos);
+    pos += count * 8;
+    return [for (var i = 0; i < count; i++) view.getFloat64(i * 8, Endian.host)];
+  }
+
+  final noWalk = doubles();
+  final access = version >= 2 ? doubles() : const <double>[];
   return FallbackBlock(
     tx: header.getUint32(6, Endian.little),
     ty: header.getUint32(10, Endian.little),
@@ -130,5 +139,6 @@ FallbackBlock decodeBlock(Uint8List bytes) {
     cells: Uint8List.sublistView(body, 0, cellCount),
     visual: VisualTile(lines: lines, areas: areas),
     noWalk: noWalk,
+    access: access,
   );
 }

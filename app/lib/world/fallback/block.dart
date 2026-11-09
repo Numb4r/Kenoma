@@ -20,6 +20,7 @@ class FallbackBlock {
     required this.cells,
     required this.visual,
     required this.noWalk,
+    this.access = const [],
   });
 
   /// O tile z15.
@@ -36,6 +37,10 @@ class FallbackBlock {
 
   /// Rodovias e vias expressas: `x0, y0, x1, y1, ...` em células z21 fracionárias.
   final List<double> noWalk;
+
+  /// O que só a rota lê (`accessMask`): `x0, y0, x1, y1, bits`, em células z21 fracionárias. Vazio nos blocos gravados antes
+  /// da 0.17.0.
+  final List<double> access;
 
   /// Bioma da célula z21 `(x, y)`, que tem de estar dentro do bloco.
   int biomeAt(int x, int y) => cells[(y - ty * blockCells) * blockCells + (x - tx * blockCells)];

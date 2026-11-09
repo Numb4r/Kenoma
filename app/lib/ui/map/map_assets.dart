@@ -229,7 +229,8 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
         if (nw is String) return nw;
         noWalk = nw as NoWalkPack?;
       }
-      world = LayeredWorld(regions: [LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk)], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
+      final access = await loadAccessPack(region: kRegion, bundle: assets);
+      world = LayeredWorld(regions: [LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk, access: access)], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
       visual = VisualMap(world);
     }
     final atlas = withAtlas ? await buildBiomeAtlas(biomes) : null;

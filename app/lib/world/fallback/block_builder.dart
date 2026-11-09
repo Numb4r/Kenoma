@@ -89,6 +89,7 @@ class _Builder {
   final List<VisualLine> lines = [];
   final List<VisualArea> areas = [];
   final List<double> noWalk = [];
+  final List<double> access = [];
 
   double get cellM => tileM / blockCells;
 
@@ -114,6 +115,7 @@ class _Builder {
       _addLine(tags, unique);
       _addRoad(tags, unique);
       _addNoWalk(tags, unique);
+      _addAccess(tags, unique);
     }
     // `after_way` do MultipolygonManager: mais de 3 nós, pontas na mesma posição, sem `area=no`.
     final n = xy.length;
@@ -310,6 +312,19 @@ class _Builder {
     }
   }
 
+  /// `build_noaccess.py`: as vias do desenho com algum bit de rota, na mesma geometria do noWalk.
+  void _addAccess(Map<String, dynamic> tags, List<int> xy) {
+    if (!tags.containsKey('highway') || highwayClass(tags) == null) return;
+    final mask = accessMask(tags);
+    if (mask == 0) return;
+    final pts = [for (var i = 0; i + 1 < xy.length; i += 2) Pt(cellX(xy[i] / 1e7), cellY(xy[i + 1] / 1e7))];
+    for (final piece in _clip(_douglasPeucker(pts, _lineTolM / cellM), -_noWalkMarginCells, blockCells + _noWalkMarginCells)) {
+      for (var i = 0; i + 1 < piece.length; i++) {
+        access.addAll([piece[i].x + originX, piece[i].y + originY, piece[i + 1].x + originX, piece[i + 1].y + originY, mask.toDouble()]);
+      }
+    }
+  }
+
   Int32List _quantize(List<Pt> pts, {required bool closed}) {
     final n = closed ? pts.length - 1 : pts.length; // o anel do pacote não repete o primeiro ponto
     final out = <int>[];
@@ -449,5 +464,6 @@ FallbackBlock buildBlock({required String overpassJson, required int tx, require
     cells: builder.cells(),
     visual: VisualTile(lines: builder.lines, areas: builder.areas),
     noWalk: builder.noWalk,
+    access: builder.access,
   );
 }
