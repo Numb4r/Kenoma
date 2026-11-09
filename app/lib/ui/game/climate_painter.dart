@@ -1,6 +1,7 @@
-/// O clima no espaço da tela: as camadas do `clima.json` (partículas, tinta, véu nas bordas, sombras de nuvem, arco-íris,
-/// aurora, glitch...) desenhadas por cima do mapa e por baixo do HUD, cobrindo a tela inteira em qualquer rotação, zoom e
-/// proporção (não dependem da câmera). Cada camada sobe e desce devagar quando o clima muda. Só visual.
+/// O clima no espaço da tela: as camadas do `clima.json` (partículas, tinta, véu nas bordas, arco-íris, aurora, glitch...)
+/// desenhadas por cima do mapa e por baixo do HUD, cobrindo a tela inteira em qualquer rotação, zoom e proporção (não
+/// dependem da câmera). Só o que cai do céu ou cobre a vista: o que está no chão é do mapa (`climate_ground.dart`). Cada
+/// camada sobe e desce devagar quando o clima muda. Só visual.
 ///
 /// As partículas nascem do lado de onde vêm: pela borda de cima se caem, pela de baixo se sobem, e pela lateral contra o
 /// vento, na proporção do fluxo por cada borda. Assim toda inclinação cobre a tela toda, inclusive os cantos.
@@ -175,13 +176,24 @@ class ClimatePainter {
     final l = p.layer;
     final shape = l.str('shape') ?? 'streak';
     final size = l.val('size', 2), len = l.val('len', 9);
+    final halo = l.flag('halo');
     for (final q in p.parts) {
       final alpha = q.bounced ? a * (1 - q.life / 0.35).clamp(0.0, 1.0) : a;
+      if (halo) {
+        // Um halo claro em volta do floco: aparece sobre o mapa escuro (Neve do Véu).
+        canvas.drawRect(ui.Rect.fromLTWH(q.x.roundToDouble() - 1, q.y.roundToDouble() - 1, size + 2, size + 2), _paint..color = ui.Color(q.color).withValues(alpha: alpha * 0.35));
+      }
       _paint
         ..color = ui.Color(q.color).withValues(alpha: alpha)
         ..strokeWidth = 2
         ..style = ui.PaintingStyle.fill;
       switch (shape) {
+        case 'glyph':
+          // Runa: um traço em pé e dois pixels tortos, como um glifo.
+          final x = q.x.roundToDouble(), y = q.y.roundToDouble(), u = math.max(1.0, size / 4);
+          canvas.drawRect(ui.Rect.fromLTWH(x, y, u, size), _paint);
+          canvas.drawRect(ui.Rect.fromLTWH(x + u, y + u, u, u), _paint);
+          canvas.drawRect(ui.Rect.fromLTWH(x - u, y + size - 2 * u, u, u), _paint);
         case 'streak' || 'wisp':
           final sp = math.sqrt(q.vx * q.vx + q.vy * q.vy) + 1e-6;
           canvas.drawLine(ui.Offset(q.x, q.y), ui.Offset(q.x + q.vx / sp * len, q.y + q.vy / sp * len), _paint);

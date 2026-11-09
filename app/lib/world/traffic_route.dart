@@ -35,6 +35,18 @@ class TrafficPath {
   /// Quanto tempo o fantasma leva do começo ao fim.
   final double duration;
 
+  /// As ruas do caminho, em ordem, e onde cada uma acaba (metros do caminho, aproximado: antes das quinas arredondadas).
+  List<GhostLine> legLines = const [];
+  List<double> legEndM = const [];
+
+  /// A rua em que o fantasma está a [s] metros do começo (o clima: rua alagada vira rio).
+  GhostLine? lineAt(double s) {
+    for (var i = 0; i < legEndM.length; i++) {
+      if (s <= legEndM[i]) return legLines[i];
+    }
+    return legLines.isEmpty ? null : legLines.last;
+  }
+
   /// Distância andada após [tau] segundos de viagem.
   double sAt(double tau) {
     if (tau <= 0) return 0;
@@ -106,11 +118,13 @@ TrafficPath? buildTrafficPath(
   required double mpc,
   required double Function(RoadClass) widthM,
   required double maxLifeS,
+  bool Function(GhostLine line)? avoid,
 }) {
   // 1. As ruas, em ordem de viagem: vértices e o deslocamento (m, + à direita) de cada trecho.
   final vx = <double>[], vy = <double>[];
   final off = <double>[];
   final legs = <_Leg>[];
+  final legEnds = <double>[];
   var line = start, fwd = fromFirst, from = fromFirst ? 0 : start.vertexCount - 1;
   var accM = 0.0;
   while (true) {
@@ -129,8 +143,9 @@ TrafficPath? buildTrafficPath(
       off.add(o);
     }
     accM += (line.cum[end] - line.cum[from]).abs() * mpc;
+    legEnds.add(accM);
     if (accM >= targetM || legs.length >= _maxLegs) break;
-    final next = _nextLeg(graph, line, end, kind, pick, legs.length);
+    final next = _nextLeg(graph, line, end, kind, pick, legs.length, avoid);
     if (next == null) break;
     line = next.line;
     fwd = next.fwd;
@@ -150,7 +165,11 @@ TrafficPath? buildTrafficPath(
     cum[i] = cum[i - 1] + math.sqrt(math.pow(xs[i] - xs[i - 1], 2) + math.pow(ys[i] - ys[i - 1], 2)) * mpc;
   }
   if (cum.last < 1) return null;
-  return _withSpeed(xs, ys, cum, kind == RiderKind.walker ? const [] : [for (final c in corners) (cum[c.$1], c.$2)], speed, maxLifeS);
+  final path = _withSpeed(xs, ys, cum, kind == RiderKind.walker ? const [] : [for (final c in corners) (cum[c.$1], c.$2)], speed, maxLifeS);
+  final k = accM > 0 ? cum.last / accM : 1.0;
+  return path
+    ..legLines = [for (final l in legs) l.line]
+    ..legEndM = [for (final e in legEnds) e * k];
 }
 
 double _legOffset(GhostLine l, RiderKind kind, int side, double jitter, double Function(RoadClass) widthM) {
@@ -164,7 +183,7 @@ double _legOffset(GhostLine l, RiderKind kind, int side, double jitter, double F
   }
 }
 
-({GhostLine line, bool fwd, int from})? _nextLeg(TrafficGraph graph, GhostLine cur, int endIdx, RiderKind kind, int pick, int step) {
+({GhostLine line, bool fwd, int from})? _nextLeg(TrafficGraph graph, GhostLine cur, int endIdx, RiderKind kind, int pick, int step, bool Function(GhostLine)? avoid) {
   final px = cur.xy[2 * endIdx], py = cur.xy[2 * endIdx + 1];
   final prev = endIdx == 0 ? 1 : endIdx - 1;
   var hx = px - cur.xy[2 * prev], hy = py - cur.xy[2 * prev + 1];
@@ -178,6 +197,7 @@ double _legOffset(GhostLine l, RiderKind kind, int side, double jitter, double F
   for (final (l, v) in graph.joinsAt(px, py, exclude: cur)) {
     if (kind == RiderKind.car && l.isPedestrian) continue;
     if (kind == RiderKind.bike && !l.isPedestrian) continue;
+    if (avoid != null && avoid(l)) continue; // o clima fechou a rua (duna) ou a alagou para quem anda a pé
     for (final fwd in const [true, false]) {
       if (fwd ? v >= l.vertexCount - 1 : v <= 0) continue;
       if (kind == RiderKind.car && (fwd ? l.oneway == OneWay.reverse : l.oneway == OneWay.forward)) continue;

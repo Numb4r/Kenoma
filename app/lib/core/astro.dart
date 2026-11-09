@@ -1,6 +1,6 @@
 /// Astronomia offline (docs/GDD.md, "Tempo, astronomia e clima"): a altura do sol pela data e pela posição, a luz
-/// do mapa que sai dela e a fase da lua. Dart puro, sem rede. Só desenho e HUD: nada aqui decide o que existe no
-/// mundo (o mundo vem do hash), então o relógio e a posição do aparelho podem entrar sem quebrar o determinismo.
+/// do mapa que sai dela e a fase da lua. Dart puro, sem rede. O sol é só desenho e HUD. A lua cheia no perigeu força a
+/// Lua Dupla da época 7 em diante (`climate.dart`, `AstroRule`): só a partir do instante UTC, igual em todo aparelho.
 library;
 
 import 'dart:math' as math;
@@ -74,6 +74,16 @@ double moonCycle(int utcSeconds) => moonAgeDays(utcSeconds) / synodicMonthDays;
 
 /// A fração iluminada do disco, de 0 a 1.
 double moonIllumination(int utcSeconds) => (1 - math.cos(2 * math.pi * moonCycle(utcSeconds))) / 2;
+
+/// A distância da Terra à Lua, em km: os quatro maiores termos da série de Meeus (cap. 47), erro de algumas centenas de km,
+/// o bastante para separar a lua cheia no perigeu (~357 mil km) das outras. Da época 7 em diante decide a Lua Dupla (um
+/// limite de dado, longe de empates).
+double moonDistanceKm(int utcSeconds) {
+  final d = julianDay(utcSeconds) - 2451545.0;
+  final mp = (134.963 + 13.064993 * d) * _deg; // anomalia média da Lua
+  final dd = (297.850 + 12.190749 * d) * _deg; // elongação média
+  return 385001 - 20905 * math.cos(mp) - 3699 * math.cos(2 * dd - mp) - 2956 * math.cos(2 * dd) - 570 * math.cos(2 * mp);
+}
 
 enum MoonPhase { newMoon, waxingCrescent, firstQuarter, waxingGibbous, fullMoon, waningGibbous, lastQuarter, waningCrescent }
 

@@ -8,6 +8,7 @@ import 'dart:ui' as ui;
 
 import '../../core/astro.dart' show DayLight;
 import '../../world/map_camera.dart';
+import '../../world/street_cover.dart' show StreetState;
 import '../../world/veil_traffic.dart';
 import '../../world/visual_map.dart';
 import '../colors.dart';
@@ -66,7 +67,12 @@ class TrafficPainter {
     return _t;
   }
 
-  TrafficField _fieldFor(int seed) {
+  Object? _coverKey;
+
+  /// Quantos carros viraram barco no último quadro (testes do Dilúvio).
+  int lastBoats = 0;
+
+  TrafficField _fieldFor(int seed, Object? coverKey, StreetState Function(GhostLine, double)? streetState) {
     if (visual.pack.revision != _revision) {
       _revision = visual.pack.revision; // chegou bloco ou região: o grafo guarda tiles antigos
       _graph = null;
@@ -74,9 +80,10 @@ class TrafficPainter {
     }
     final graph = _graph ??= TrafficGraph(loadTile: visual.tile, cellsPerTile: visual.cellsPerTile, extent: visual.pack.extent, cacheTiles: cacheTiles);
     final f = _field;
-    if (f != null && f.seed == seed) return f;
+    if (f != null && f.seed == seed && coverKey == _coverKey) return f;
+    _coverKey = coverKey; // o clima das ruas mudou: os caminhos guardados desviavam de outras ruas
     final roadWidths = roadWidthM;
-    return _field = roadWidths == null ? TrafficField(graph: graph, seed: seed) : TrafficField(graph: graph, seed: seed, roadWidthM: roadWidths);
+    return _field = (roadWidths == null ? TrafficField(graph: graph, seed: seed) : TrafficField(graph: graph, seed: seed, roadWidthM: roadWidths))..streetState = streetState;
   }
 
   /// Desenha o tráfego. A cada quadro: passe `tUtc` (segundos inteiros) e, se tiver, `tUtcExact` (UTC fracionário, de
@@ -93,13 +100,18 @@ class TrafficPainter {
     required double metersPerCell,
     required DayLight light,
     double? tUtcExact,
+    double? tWalkExact,
+    StreetState Function(GhostLine line, double tUtc)? streetState,
+    Object? coverKey,
+    bool skid = false,
   }) {
     lastDrawn = 0;
+    lastBoats = 0;
     if (visual.pack.version < 2) return; // o pacote antigo não tem a mão única
     final t = tUtcExact ?? _timeFor(tUtc);
     final (l, top, r, b) = cam.visibleBounds(view.width, view.height);
     final m = trafficMarginM / metersPerCell;
-    final ghosts = _fieldFor(seed).ghostsIn(t, l - m, top - m, r + m, b + m, maxGhosts: maxGhosts);
+    final ghosts = _fieldFor(seed, coverKey, streetState).ghostsIn(t, l - m, top - m, r + m, b + m, maxGhosts: maxGhosts, tWalk: tWalkExact);
     final pxPerM = cam.pixelsPerCell / metersPerCell;
     final night = light.night;
     final onScreen = <(Ghost, double, double)>[];
@@ -114,9 +126,37 @@ class TrafficPainter {
       return k != 0 ? k : a.$3.compareTo(b.$3);
     });
     for (final (g, sx, sy) in onScreen) {
-      drawGhost(canvas, g, sx, sy, cam.rotation, pxPerM, night);
+      final line = g.line;
+      if (streetState != null && g.kind == GhostKind.car && line != null && streetState(line, t) == StreetState.flooded) {
+        drawBoat(canvas, g, sx, sy, cam.rotation, pxPerM, t);
+        lastBoats++;
+      } else {
+        // Gelo (Chuva congelante): o carro derrapa, balançando a frente.
+        final wobble = skid && g.kind == GhostKind.car ? math.sin(t * 2.3 + (g.id & 0xff)) * 0.35 : 0.0;
+        drawGhost(canvas, g, sx, sy, cam.rotation + wobble, pxPerM, night);
+      }
       lastDrawn++;
     }
+  }
+
+  /// O barco (ou canoa) fantasma na rua alagada, com a esteira atrás.
+  void drawBoat(ui.Canvas canvas, Ghost g, double sx, double sy, double rotation, double pxPerM, double t) {
+    final rows = boatRowsOf(g.model);
+    final unit = carM * pxPerM / carRefPx;
+    final w = rows.first.length * unit, h = rows.length * unit;
+    final a = g.heading + rotation;
+    _fill.color = const ui.Color(0xFFE8E4F4).withValues(alpha: 0.35 * g.alpha);
+    for (var i = 1; i <= 3; i++) {
+      final back = w / 2 + i * unit * 2, side = (i.isEven ? 1 : -1) * unit * (1 + math.sin(t * 4 + i));
+      canvas.drawRect(ui.Rect.fromCenter(center: ui.Offset(sx - math.cos(a) * back - math.sin(a) * side, sy - math.sin(a) * back + math.cos(a) * side), width: unit, height: unit), _fill);
+    }
+    canvas.save();
+    canvas.translate(sx, sy);
+    canvas.rotate(a + math.sin(t * 1.7 + (g.id & 0xff)) * 0.06); // balança na água
+    canvas.translate(-w / 2, -h / 2);
+    canvas.scale(unit);
+    canvas.drawPicture(sprites.boat(g.model, g.palette));
+    canvas.restore();
   }
 
   /// Desenha um fantasma na tela em ([sx], [sy]). Os de pé ficam em pé (os pés na posição) e alternam dois quadros

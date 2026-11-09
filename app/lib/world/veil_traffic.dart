@@ -16,6 +16,7 @@ import '../core/fnv.dart';
 import '../core/pcg32.dart';
 import '../core/tiles.dart';
 import '../data/visual_pack.dart';
+import 'street_cover.dart' show StreetState;
 import 'traffic_graph.dart';
 import 'traffic_route.dart';
 
@@ -66,6 +67,7 @@ class Ghost {
     required this.phase,
     required this.phaseT,
     required this.travelledM,
+    this.line,
   });
 
   /// Identidade estável: a mesma nos dois aparelhos e em todos os quadros.
@@ -87,6 +89,9 @@ class Ghost {
 
   /// Distância andada desde o nascimento, em metros (para o passo do pedestre).
   final double travelledM;
+
+  /// A rua em que está agora (o clima: carro em rua alagada vira barco).
+  final GhostLine? line;
 
   GhostKind get kind => model.kind;
 
@@ -170,6 +175,16 @@ class TrafficField {
   final int cacheSlots;
 
   final LinkedHashMap<(int, int, int), List<_Seed>> _seeds = LinkedHashMap();
+
+  /// O clima nas ruas (Dilúvio, Tempestade de areia): o estado de cada rua no instante em que o fantasma nasce. Quem nasce
+  /// em rua fechada (ou a pé em rua alagada) não nasce, e o caminho desvia delas. Pelo instante do nascimento, e não do
+  /// quadro, o caminho é o mesmo em dois aparelhos. Trocar a função pede um campo novo (os caminhos ficam guardados).
+  StreetState Function(GhostLine line, double tUtc)? streetState;
+
+  bool _avoids(_Seed s, GhostLine l) {
+    final st = streetState?.call(l, s.tBirth) ?? StreetState.normal;
+    return st == StreetState.blocked || (st == StreetState.flooded && s.model.rider != RiderKind.car);
+  }
 
   double _width(RoadClass c) => roadWidthM[c.name] ?? 6;
 
@@ -275,39 +290,47 @@ class TrafficField {
       mpc: s.mpc,
       widthM: _width,
       maxLifeS: _maxLifeS,
+      avoid: streetState == null ? null : (l) => _avoids(s, l),
     );
   }
 
   /// Os fantasmas vivos em [tUtc] (segundos UTC, fracionário) cuja posição cai no retângulo
   /// `[left, right] × [top, bottom]` em células z21. No máximo [maxGhosts]; se passar, ficam os de menor `id`
   /// (um corte que não depende da câmera, então ninguém pisca ao sair do teto).
-  List<Ghost> ghostsIn(double tUtc, double left, double top, double right, double bottom, {int maxGhosts = 160}) {
+  ///
+  /// [tWalk] é o tempo dos passantes e ciclistas, quando eles andam mais devagar que os carros (Geada forte).
+  List<Ghost> ghostsIn(double tUtc, double left, double top, double right, double bottom, {int maxGhosts = 160, double? tWalk}) {
     final n = graph.cellsPerTile.toDouble();
     final (lat, _) = tileFractionToLatLon((left + right) / 2, (top + bottom) / 2, biomeZoom);
     final reach = 800 / metersPerCell(lat) * 1.1; // a viagem mais longa, em células
-    final slot0 = (tUtc / trafficSlotS).floor();
     final out = <Ghost>[];
-    for (var ty = ((top - reach) / n).floor(); ty <= ((bottom + reach) / n).floor(); ty++) {
-      for (var tx = ((left - reach) / n).floor(); tx <= ((right + reach) / n).floor(); tx++) {
-        for (var slot = slot0 - _backSlots; slot <= slot0; slot++) {
-          for (final s in _seedsOf(tx, ty, slot)) {
-            final tau = tUtc - s.tBirth;
-            if (tau < 0 || tau > _maxLifeS) continue;
-            final r = math.min(s.targetM, s.speed * tau) / s.mpc * 1.1 + 2; // não anda mais que a velocidade de cruzeiro
-            final l = s.line;
-            if (l.maxX + r < left || l.minX - r > right || l.maxY + r < top || l.minY - r > bottom) continue;
-            final path = _pathOf(s);
-            if (path == null || tau > path.duration) continue;
-            final dist = path.sAt(tau);
-            final p = path.at(dist);
-            if (p.x < left || p.x > right || p.y < top || p.y > bottom) continue;
-            final left_ = path.duration - tau;
-            final (phase, t) = tau < veilFadeS
-                ? (GhostPhase.fadeIn, tau / veilFadeS)
-                : left_ < veilFadeS
-                    ? (GhostPhase.fadeOut, 1 - left_ / veilFadeS)
-                    : (GhostPhase.alive, 1.0);
-            out.add(Ghost(id: s.id, model: s.model, palette: s.palette, x: p.x, y: p.y, heading: p.heading, speedMps: path.vAt(tau), phase: phase, phaseT: t, travelledM: dist));
+    // Com [tWalk], duas passadas: os carros no tempo deles e quem anda a pé no seu.
+    for (final (time, cars) in tWalk == null ? [(tUtc, null)] : [(tUtc, true), (tWalk, false)]) {
+      final slot0 = (time / trafficSlotS).floor();
+      for (var ty = ((top - reach) / n).floor(); ty <= ((bottom + reach) / n).floor(); ty++) {
+        for (var tx = ((left - reach) / n).floor(); tx <= ((right + reach) / n).floor(); tx++) {
+          for (var slot = slot0 - _backSlots; slot <= slot0; slot++) {
+            for (final s in _seedsOf(tx, ty, slot)) {
+              if (cars != null && (s.model.rider == RiderKind.car) != cars) continue;
+              final tau = time - s.tBirth;
+              if (tau < 0 || tau > _maxLifeS) continue;
+              if (streetState != null && _avoids(s, s.line)) continue;
+              final r = math.min(s.targetM, s.speed * tau) / s.mpc * 1.1 + 2; // não anda mais que a velocidade de cruzeiro
+              final l = s.line;
+              if (l.maxX + r < left || l.minX - r > right || l.maxY + r < top || l.minY - r > bottom) continue;
+              final path = _pathOf(s);
+              if (path == null || tau > path.duration) continue;
+              final dist = path.sAt(tau);
+              final p = path.at(dist);
+              if (p.x < left || p.x > right || p.y < top || p.y > bottom) continue;
+              final left_ = path.duration - tau;
+              final (phase, t) = tau < veilFadeS
+                  ? (GhostPhase.fadeIn, tau / veilFadeS)
+                  : left_ < veilFadeS
+                      ? (GhostPhase.fadeOut, 1 - left_ / veilFadeS)
+                      : (GhostPhase.alive, 1.0);
+              out.add(Ghost(id: s.id, model: s.model, palette: s.palette, x: p.x, y: p.y, heading: p.heading, speedMps: path.vAt(tau), phase: phase, phaseT: t, travelledM: dist, line: path.lineAt(dist)));
+            }
           }
         }
       }

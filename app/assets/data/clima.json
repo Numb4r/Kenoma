@@ -4,11 +4,25 @@
     "clear": {
       "name": "Limpo",
       "base": "clear",
-      "hud": "Limpo: nada muda nos spawns",
+      "hud": "Limpo: céu aberto, os rastros do Radar duram mais",
       "icon": [
         "sun"
       ],
-      "layers": []
+      "layers": [],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "glint",
+          "color": "#fff0b0",
+          "alpha": 0.5,
+          "per_cell": 3,
+          "twinkle": true,
+          "local_hours": [
+            8,
+            17
+          ]
+        }
+      ]
     },
     "strong_sun": {
       "name": "Sol forte",
@@ -23,12 +37,15 @@
           "layer": "tint",
           "color": "#fff6d8",
           "alpha": 0.1
-        },
+        }
+      ],
+      "ground": [
         {
-          "layer": "shimmer",
-          "color": "#fff6d8",
-          "alpha": 0.1,
-          "bands": 7
+          "kind": "bands",
+          "color": "#fff0b0",
+          "alpha": 0.12,
+          "bands": 9,
+          "speed": 0.15
         }
       ]
     },
@@ -44,20 +61,14 @@
           "layer": "tint",
           "color": "#8a8fa3",
           "alpha": 0.06
-        },
-        {
-          "layer": "shadows",
-          "color": "#1a1424",
-          "alpha": 0.16,
-          "count": 3,
-          "speed": 10
         }
-      ]
+      ],
+      "ground": []
     },
     "drizzle": {
       "name": "Garoa",
       "base": "rain",
-      "hud": "Garoa: Água um pouco mais comum",
+      "hud": "Garoa: Água mais comum; poças pequenas com água pura",
       "icon": [
         "cloud",
         "drops_fine"
@@ -75,6 +86,16 @@
           "slant": 0.15,
           "alpha": 0.25,
           "len": 5
+        }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "glint",
+          "color": "#e8e4f4",
+          "alpha": 0.25,
+          "per_cell": 3,
+          "twinkle": true
         }
       ]
     },
@@ -104,12 +125,16 @@
           "slant": 0.28,
           "alpha": 0.34,
           "len": 9
-        },
+        }
+      ],
+      "ground": [
         {
-          "layer": "sheen",
+          "kind": "scatter",
+          "shape": "glint",
           "color": "#e8e4f4",
-          "alpha": 0.25,
-          "count": 14
+          "alpha": 0.35,
+          "per_cell": 6,
+          "twinkle": true
         }
       ]
     },
@@ -139,6 +164,16 @@
           "slant": 0.5,
           "alpha": 0.38,
           "len": 13
+        }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "glint",
+          "color": "#e8e4f4",
+          "alpha": 0.3,
+          "per_cell": 4,
+          "twinkle": true
         }
       ]
     },
@@ -170,6 +205,15 @@
           "size": 3,
           "bounce": true
         }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "hailstone",
+          "color": "#e8e4f4",
+          "alpha": 0.8,
+          "per_cell": 10
+        }
       ]
     },
     "rainbow": {
@@ -190,6 +234,16 @@
           "color": "#fff6d8",
           "alpha": 0.04
         }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "glint",
+          "color": "#ffe9a8",
+          "alpha": 0.35,
+          "per_cell": 3,
+          "twinkle": true
+        }
       ]
     },
     "fog": {
@@ -209,12 +263,16 @@
           "layer": "vignette",
           "color": "#e8e4f4",
           "alpha": 0.55
-        },
+        }
+      ],
+      "ground": [
         {
-          "layer": "figures",
+          "kind": "scatter",
+          "shape": "figure",
           "color": "#3a3350",
-          "alpha": 0.25,
-          "count": 3
+          "alpha": 0.3,
+          "per_cell": 0.25,
+          "near_m": 60
         }
       ]
     },
@@ -240,6 +298,19 @@
           "layer": "vignette",
           "color": "#d8f0ff",
           "alpha": 0.22,
+          "local_hours": [
+            5,
+            10
+          ]
+        }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "frost",
+          "color": "#e8e4f4",
+          "alpha": 0.5,
+          "per_cell": 8,
           "local_hours": [
             5,
             10
@@ -273,6 +344,15 @@
             "#c9a46b",
             "#e8e4f4"
           ]
+        }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "leaf",
+          "color": "#8a8fa3",
+          "alpha": 0.6,
+          "per_cell": 5
         }
       ]
     },
@@ -310,6 +390,22 @@
             "#8a8fa3"
           ]
         }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "branch",
+          "color": "#6b4a2f",
+          "alpha": 0.7,
+          "per_cell": 3
+        },
+        {
+          "kind": "scatter",
+          "shape": "leaf",
+          "color": "#e8e4f4",
+          "alpha": 0.6,
+          "per_cell": 4
+        }
       ]
     },
     "dry_dust": {
@@ -340,6 +436,15 @@
           "wind": true,
           "size": 2
         }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "dust",
+          "color": "#e0c27a",
+          "alpha": 0.45,
+          "per_cell": 8
+        }
       ]
     },
     "smoke": {
@@ -368,6 +473,15 @@
           "alpha": 0.55,
           "size": 2,
           "sway": true
+        }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "ash",
+          "color": "#8a8fa3",
+          "alpha": 0.5,
+          "per_cell": 8
         }
       ]
     },
@@ -404,6 +518,23 @@
           "color": "#ffffff",
           "alpha": 0.25
         }
+      ],
+      "ground": [
+        {
+          "kind": "streets",
+          "cover": "snow",
+          "color": "#f4f2fa",
+          "alpha": 0.85,
+          "grow_s": 3600,
+          "tracks": true
+        },
+        {
+          "kind": "scatter",
+          "shape": "frost",
+          "color": "#ffffff",
+          "alpha": 0.7,
+          "per_cell": 10
+        }
       ]
     },
     "blizzard": {
@@ -439,12 +570,29 @@
           "color": "#ffffff",
           "alpha": 0.5
         }
+      ],
+      "ground": [
+        {
+          "kind": "streets",
+          "cover": "snow",
+          "color": "#f4f2fa",
+          "alpha": 0.9,
+          "grow_s": 1800,
+          "tracks": true
+        },
+        {
+          "kind": "scatter",
+          "shape": "frost",
+          "color": "#ffffff",
+          "alpha": 0.7,
+          "per_cell": 14
+        }
       ]
     },
     "sandstorm": {
       "name": "Tempestade de areia",
       "base": "storm",
-      "hud": "Tempestade de areia: Terra bem mais comum; dunas tomam as ruas",
+      "hud": "Tempestade de areia: Terra muito mais comum; dunas nas ruas escondem material (chegue perto)",
       "icon": [
         "dust",
         "wind"
@@ -473,6 +621,21 @@
           "layer": "vignette",
           "color": "#c9973f",
           "alpha": 0.5
+        }
+      ],
+      "ground": [
+        {
+          "kind": "streets",
+          "cover": "sand",
+          "color": "#e0c27a",
+          "alpha": 0.85,
+          "per_window": true,
+          "share": {
+            "pedestrian": 0.3,
+            "local": 0.25,
+            "secondary": 0.15,
+            "principal": 0.1
+          }
         }
       ]
     },
@@ -504,6 +667,21 @@
           "alpha": 0.42,
           "len": 14
         }
+      ],
+      "ground": [
+        {
+          "kind": "streets",
+          "cover": "flood",
+          "color": "#4aa8ff",
+          "alpha": 0.55,
+          "grow_s": 1200,
+          "share": {
+            "pedestrian": 0.0,
+            "local": 0.4,
+            "secondary": 0.25,
+            "principal": 0.15
+          }
+        }
       ]
     },
     "heat_wave": {
@@ -519,19 +697,22 @@
           "layer": "tint",
           "color": "#fff0b0",
           "alpha": 0.14
-        },
+        }
+      ],
+      "ground": [
         {
-          "layer": "shimmer",
-          "color": "#fff0b0",
+          "kind": "bands",
+          "color": "#ffe9a8",
           "alpha": 0.16,
-          "bands": 10
+          "bands": 11,
+          "speed": 0.2
         }
       ]
     },
     "tornado": {
       "name": "Tornado",
       "base": "storm",
-      "hud": "Tornado: Feéricos mais comuns; um funil cruza o mapa",
+      "hud": "Tornado: Feéricos mais comuns; o funil deixa uma trilha de destroços coletáveis",
       "icon": [
         "spiral"
       ],
@@ -540,11 +721,6 @@
           "layer": "tint",
           "color": "#3a3350",
           "alpha": 0.14
-        },
-        {
-          "layer": "funnel",
-          "color": "#3a3350",
-          "alpha": 0.45
         },
         {
           "layer": "particles",
@@ -559,6 +735,15 @@
           "alpha": 0.7,
           "wind": true,
           "size": 3
+        }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "branch",
+          "color": "#6b4a2f",
+          "alpha": 0.6,
+          "per_cell": 2
         }
       ]
     },
@@ -583,6 +768,19 @@
             "#5fd3c6"
           ],
           "alpha": 0.28
+        }
+      ],
+      "ground": [
+        {
+          "kind": "bands",
+          "color": "#6bd36a",
+          "colors": [
+            "#6bd36a",
+            "#9b7bff"
+          ],
+          "alpha": 0.1,
+          "bands": 5,
+          "speed": 0.05
         }
       ]
     },
@@ -613,12 +811,21 @@
           "alpha": 0.4,
           "len": 8
         }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "pixel",
+          "color": "#a8c84a",
+          "alpha": 0.5,
+          "per_cell": 4
+        }
       ]
     },
     "meteor_shower": {
       "name": "Chuva de meteoros",
       "base": "clear",
-      "hud": "Chuva de meteoros: Luz mais comum; meteoros deixam Fagulhas raras",
+      "hud": "Chuva de meteoros: Luz mais comum; meteoros deixam Fagulhas raras e crateras com material raro",
       "icon": [
         "stars"
       ],
@@ -652,24 +859,40 @@
         {
           "layer": "particles",
           "shape": "flake",
-          "color": "#b8a8d8",
-          "count": 80,
+          "color": "#e6dcff",
+          "count": 170,
           "speed": [
-            30,
-            55
+            35,
+            65
           ],
           "slant": 0.05,
-          "alpha": 0.8,
-          "size": 2,
-          "sway": true
+          "alpha": 0.95,
+          "size": 4,
+          "sway": true,
+          "colors": [
+            "#e6dcff",
+            "#c9b8ff",
+            "#ffffff"
+          ],
+          "halo": true
         }
       ],
-      "notice": "O Familiar avisa: isso não é neve. É o Véu caindo em flocos."
+      "notice": "O Familiar avisa: isso não é neve. É o Véu caindo em flocos.",
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "glint",
+          "color": "#e6dcff",
+          "alpha": 0.6,
+          "per_cell": 6,
+          "twinkle": true
+        }
+      ]
     },
     "crimson_rain": {
       "name": "Chuva Carmim",
       "base": "rain",
-      "hud": "Chuva Carmim: Carmesins mais comuns; poças vermelhas",
+      "hud": "Chuva Carmim: poças vermelhas com Pó de Essência de Fogo",
       "icon": [
         "cloud_dark",
         "drops_red"
@@ -692,6 +915,16 @@
           "slant": 0.28,
           "alpha": 0.5,
           "len": 9
+        }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "glint",
+          "color": "#d0344a",
+          "alpha": 0.35,
+          "per_cell": 4,
+          "twinkle": true
         }
       ]
     },
@@ -728,7 +961,17 @@
           ]
         }
       ],
-      "notice": "O céu está soltando Fagulhas. Ande e a Aura pega."
+      "notice": "O céu está soltando Fagulhas. Ande e a Aura pega.",
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "ember",
+          "color": "#ff7a45",
+          "alpha": 0.6,
+          "per_cell": 3,
+          "twinkle": true
+        }
+      ]
     },
     "echo_storm": {
       "name": "Tempestade de Ecos",
@@ -761,6 +1004,16 @@
           "slant": 0.45,
           "alpha": 0.4,
           "len": 12
+        }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "pixel",
+          "color": "#9b7bff",
+          "alpha": 0.5,
+          "per_cell": 3,
+          "twinkle": true
         }
       ]
     },
@@ -799,12 +1052,22 @@
             "#9b7bff"
           ]
         }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "pixel",
+          "color": "#5fd3c6",
+          "alpha": 0.6,
+          "per_cell": 6,
+          "twinkle": true
+        }
       ]
     },
     "silence": {
       "name": "Silêncio",
       "base": "clear",
-      "hud": "Silêncio: os Ecos não fogem nem atacam",
+      "hud": "Silêncio: Espectrais mais comuns; os Ecos não fogem e o tráfego do Véu para",
       "icon": [
         "silence"
       ],
@@ -814,12 +1077,21 @@
           "alpha": 0.7
         }
       ],
-      "notice": "Tudo ficou quieto. O Familiar sussurra: eles estão ouvindo."
+      "notice": "Tudo ficou quieto. O Familiar sussurra: eles estão ouvindo.",
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "pixel",
+          "color": "#8a8fa3",
+          "alpha": 0.25,
+          "per_cell": 2
+        }
+      ]
     },
     "veil_ash": {
       "name": "Cinzas do Véu",
       "base": "cloudy",
-      "hud": "Cinzas do Véu: Corrompidas mais comuns",
+      "hud": "Cinzas do Véu: nas manchas de cinza nascem Ecos mais fortes",
       "icon": [
         "ash_veil"
       ],
@@ -843,12 +1115,21 @@
           "size": 2,
           "sway": true
         }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "ash",
+          "color": "#9b7bff",
+          "alpha": 0.5,
+          "per_cell": 8
+        }
       ]
     },
     "fog_procession": {
       "name": "Procissão na névoa",
       "base": "cloudy",
-      "hud": "Procissão na névoa: Espectrais muito mais comuns; figuras andam em fila",
+      "hud": "Procissão na névoa: Espectrais muito mais comuns; no fim do rastro das figuras há um Eco forte",
       "icon": [
         "fog",
         "figure"
@@ -863,13 +1144,16 @@
           "layer": "vignette",
           "color": "#e8e4f4",
           "alpha": 0.55
-        },
+        }
+      ],
+      "ground": [
         {
-          "layer": "figures",
+          "kind": "scatter",
+          "shape": "figure",
           "color": "#3a3350",
-          "alpha": 0.35,
-          "count": 6,
-          "line": true
+          "alpha": 0.25,
+          "per_cell": 0.15,
+          "near_m": 60
         }
       ]
     },
@@ -896,6 +1180,16 @@
           "size": 2,
           "len": 10
         }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "streak",
+          "color": "#9b7bff",
+          "alpha": 0.45,
+          "per_cell": 5,
+          "wind": true
+        }
       ]
     },
     "inverted_sky": {
@@ -920,28 +1214,45 @@
           "len": 8,
           "up": true
         }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "float",
+          "color": "#1a1424",
+          "alpha": 0.35,
+          "per_cell": 3
+        }
       ]
     },
     "veil_tide": {
       "name": "Maré do Véu",
       "base": "cloudy",
-      "hud": "Maré do Véu: construções de outra era aparecem no mapa",
+      "hud": "Maré do Véu: construções de outra era aparecem no mapa e guardam Ectoplasma",
       "icon": [
         "wave_veil"
       ],
       "layers": [
         {
-          "layer": "ripple",
+          "layer": "tint",
           "color": "#9b7bff",
-          "alpha": 0.12,
-          "bands": 6
+          "alpha": 0.05
+        }
+      ],
+      "ground": [
+        {
+          "kind": "bands",
+          "color": "#9b7bff",
+          "alpha": 0.14,
+          "bands": 6,
+          "speed": 0.1
         }
       ]
     },
     "black_sun": {
       "name": "Sol Negro",
       "base": "cloudy",
-      "hud": "Sol Negro: Sombra muito mais comum, Luz menos",
+      "hud": "Sol Negro: Sombra muito mais comum, Luz menos; as sombras guardam Ectoplasma",
       "icon": [
         "sun_black"
       ],
@@ -951,13 +1262,15 @@
           "color": "#1a1424",
           "alpha": 0.5,
           "blend": "multiply"
-        },
+        }
+      ],
+      "ground": [
         {
-          "layer": "shadows",
+          "kind": "scatter",
+          "shape": "glint",
           "color": "#e8e4f4",
-          "alpha": 0.1,
-          "count": 3,
-          "speed": 6
+          "alpha": 0.25,
+          "per_cell": 3
         }
       ]
     },
@@ -990,6 +1303,332 @@
             "#9b7bff"
           ]
         }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "glint",
+          "color": "#ffe9a8",
+          "alpha": 0.4,
+          "per_cell": 5,
+          "twinkle": true,
+          "colors": [
+            "#ff5a36",
+            "#ffe9a8",
+            "#6bd36a",
+            "#4aa8ff",
+            "#9b7bff"
+          ]
+        }
+      ]
+    },
+    "hard_frost": {
+      "name": "Geada forte",
+      "base": "clear",
+      "hud": "Geada forte: Espectrais mais comuns, Água menos; poças congeladas guardam cristais",
+      "icon": [
+        "snowflake"
+      ],
+      "layers": [
+        {
+          "layer": "tint",
+          "color": "#bfe9f0",
+          "alpha": 0.08
+        },
+        {
+          "layer": "breath",
+          "color": "#e8e4f4",
+          "alpha": 0.6
+        },
+        {
+          "layer": "vignette",
+          "color": "#e8e4f4",
+          "alpha": 0.3
+        }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "frost",
+          "color": "#ffffff",
+          "alpha": 0.75,
+          "per_cell": 16
+        }
+      ]
+    },
+    "dry_thunder": {
+      "name": "Trovoada seca",
+      "base": "storm",
+      "hud": "Trovoada seca: Elétricos mais comuns, Fogo também; raios sem chuva deixam brasas com Fagulhas de Fogo",
+      "icon": [
+        "dust",
+        "bolt"
+      ],
+      "layers": [
+        {
+          "layer": "tint",
+          "color": "#ff7a45",
+          "alpha": 0.12
+        },
+        {
+          "layer": "particles",
+          "shape": "dust",
+          "color": "#e0c27a",
+          "count": 40,
+          "speed": [
+            60,
+            120
+          ],
+          "slant": 0,
+          "alpha": 0.4,
+          "wind": true,
+          "size": 2
+        }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "dust",
+          "color": "#e0c27a",
+          "alpha": 0.35,
+          "per_cell": 4
+        }
+      ]
+    },
+    "smog": {
+      "name": "Smog",
+      "base": "cloudy",
+      "hud": "Smog: Metal e Digital mais comuns; fuligem nas avenidas com sucata",
+      "icon": [
+        "smoke"
+      ],
+      "layers": [
+        {
+          "layer": "tint",
+          "color": "#6b4a2f",
+          "alpha": 0.18
+        },
+        {
+          "layer": "vignette",
+          "color": "#6b4a2f",
+          "alpha": 0.5
+        }
+      ],
+      "ground": [
+        {
+          "kind": "streets",
+          "cover": "soot",
+          "color": "#2a2236",
+          "alpha": 0.55,
+          "share": {
+            "principal": 1.0,
+            "secondary": 1.0,
+            "local": 0.0,
+            "pedestrian": 0.0
+          }
+        }
+      ]
+    },
+    "freezing_rain": {
+      "name": "Chuva congelante",
+      "base": "rain",
+      "hud": "Chuva congelante: Água e Metal mais comuns; ruas de gelo, galhos caídos e carros derrapando",
+      "icon": [
+        "cloud_dark",
+        "hail"
+      ],
+      "layers": [
+        {
+          "layer": "tint",
+          "color": "#bfe9f0",
+          "alpha": 0.1
+        },
+        {
+          "layer": "particles",
+          "shape": "streak",
+          "color": "#e8e4f4",
+          "count": 90,
+          "speed": [
+            420,
+            620
+          ],
+          "slant": 0.2,
+          "alpha": 0.4,
+          "len": 6
+        }
+      ],
+      "ground": [
+        {
+          "kind": "streets",
+          "cover": "ice",
+          "color": "#bfe9f0",
+          "alpha": 0.4,
+          "skid": true
+        },
+        {
+          "kind": "scatter",
+          "shape": "glint",
+          "color": "#ffffff",
+          "alpha": 0.6,
+          "per_cell": 8,
+          "twinkle": true
+        },
+        {
+          "kind": "scatter",
+          "shape": "branch",
+          "color": "#6b4a2f",
+          "alpha": 0.7,
+          "per_cell": 2
+        }
+      ]
+    },
+    "hurricane": {
+      "name": "Furacão",
+      "base": "storm",
+      "hud": "Furacão: Feéricos e Água muito mais comuns; no olho que cruza o mapa nasce um Eco raro",
+      "icon": [
+        "spiral",
+        "drops"
+      ],
+      "layers": [
+        {
+          "layer": "tint",
+          "color": "#1a1424",
+          "alpha": 0.3
+        },
+        {
+          "layer": "particles",
+          "shape": "streak",
+          "color": "#e8e4f4",
+          "count": 180,
+          "speed": [
+            600,
+            900
+          ],
+          "slant": 0.9,
+          "alpha": 0.4,
+          "len": 14,
+          "wind": true
+        }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "branch",
+          "color": "#6b4a2f",
+          "alpha": 0.6,
+          "per_cell": 3
+        },
+        {
+          "kind": "scatter",
+          "shape": "leaf",
+          "color": "#8a8fa3",
+          "alpha": 0.6,
+          "per_cell": 5
+        }
+      ]
+    },
+    "rune_rain": {
+      "name": "Chuva de Runas",
+      "base": "cloudy",
+      "hud": "Chuva de Runas: Espectrais e Sombra mais comuns; runas no chão viram Giz",
+      "icon": [
+        "ash_veil",
+        "bolt_veil"
+      ],
+      "layers": [
+        {
+          "layer": "tint",
+          "color": "#9b7bff",
+          "alpha": 0.06
+        },
+        {
+          "layer": "particles",
+          "shape": "glyph",
+          "color": "#b8a8d8",
+          "colors": [
+            "#b8a8d8",
+            "#9b7bff"
+          ],
+          "count": 45,
+          "speed": [
+            25,
+            45
+          ],
+          "slant": 0.05,
+          "alpha": 0.85,
+          "size": 5,
+          "sway": true
+        }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "glyph",
+          "color": "#9b7bff",
+          "alpha": 0.25,
+          "per_cell": 2
+        }
+      ]
+    },
+    "double_moon": {
+      "name": "Lua Dupla",
+      "base": "clear",
+      "hud": "Lua Dupla: variantes mais comuns; cada Eco pode ter um par de sombra",
+      "icon": [
+        "stars"
+      ],
+      "layers": [
+        {
+          "layer": "tint",
+          "color": "#1a1424",
+          "alpha": 0.12
+        },
+        {
+          "layer": "moons",
+          "color": "#e8e4f4",
+          "alpha": 0.85
+        }
+      ],
+      "ground": [
+        {
+          "kind": "twins",
+          "chance": 0.5,
+          "color": "#1a1424",
+          "alpha": 0.45
+        }
+      ]
+    },
+    "vigil": {
+      "name": "Vigília",
+      "base": "cloudy",
+      "hud": "Vigília: Digital e Espectrais mais comuns; onde um olhar pousa nasce um Eco raro",
+      "icon": [
+        "cloud",
+        "figure"
+      ],
+      "layers": [
+        {
+          "layer": "tint",
+          "color": "#1a1424",
+          "alpha": 0.18
+        },
+        {
+          "layer": "eyes",
+          "color": "#ff5a36",
+          "alpha": 0.8,
+          "count": 5
+        }
+      ],
+      "ground": [
+        {
+          "kind": "scatter",
+          "shape": "pixel",
+          "color": "#ff5a36",
+          "alpha": 0.3,
+          "per_cell": 1,
+          "twinkle": true
+        }
       ]
     }
   },
@@ -998,19 +1637,27 @@
       "style": "bolt",
       "color": "#e8e4f4",
       "glow": "#9b7bff",
-      "flash": true
+      "flash": true,
+      "mark": "burn",
+      "mark_s": 1800
     },
     "violet_bolt": {
       "style": "bolt",
       "color": "#b8a8d8",
       "glow": "#9b7bff",
-      "flash": true
+      "flash": true,
+      "mark": "burn_violet",
+      "mark_s": 1800
     },
     "meteor": {
       "style": "meteor",
       "color": "#ffe9a8",
       "glow": "#ff7a45",
-      "flash": false
+      "flash": false,
+      "mark": "crater",
+      "mark_s": 10800,
+      "glow_s": 7200,
+      "shake": true
     },
     "hail": {
       "style": "fall",
@@ -1045,7 +1692,8 @@
     "puddle": {
       "style": "puddle",
       "color": "#4aa8ff",
-      "alpha": 0.35
+      "alpha": 0.35,
+      "reflect": true
     },
     "rainbow_foot": {
       "style": "glow",
@@ -1055,7 +1703,8 @@
     "dust_devil": {
       "style": "whirl",
       "color": "#e0c27a",
-      "alpha": 0.5
+      "alpha": 0.5,
+      "trail": true
     },
     "ash_zone": {
       "style": "zone",
@@ -1075,17 +1724,20 @@
     "funnel": {
       "style": "whirl",
       "color": "#3a3350",
-      "alpha": 0.6
+      "alpha": 0.6,
+      "trail": true
     },
     "crimson_puddle": {
       "style": "puddle",
       "color": "#d0344a",
-      "alpha": 0.4
+      "alpha": 0.4,
+      "reflect": true
     },
     "procession": {
       "style": "figures",
       "color": "#3a3350",
-      "alpha": 0.5
+      "alpha": 0.5,
+      "trail": true
     },
     "ghost_building": {
       "style": "ghost",
@@ -1096,6 +1748,72 @@
       "style": "zone",
       "color": "#1a1424",
       "alpha": 0.3
+    },
+    "dry_bolt": {
+      "style": "bolt",
+      "color": "#ffe9a8",
+      "glow": "#ff7a45",
+      "flash": true,
+      "mark": "ember",
+      "mark_s": 1800,
+      "glow_s": 300
+    },
+    "puddle_small": {
+      "style": "puddle",
+      "color": "#4aa8ff",
+      "alpha": 0.3,
+      "reflect": true
+    },
+    "acid_puddle": {
+      "style": "puddle",
+      "color": "#a8c84a",
+      "alpha": 0.35,
+      "reflect": true
+    },
+    "prism_puddle": {
+      "style": "puddle",
+      "color": "#9b7bff",
+      "alpha": 0.35,
+      "reflect": true,
+      "prism": true
+    },
+    "ice_puddle": {
+      "style": "ice",
+      "color": "#bfe9f0",
+      "glow": "#ffffff",
+      "alpha": 0.6
+    },
+    "soot_zone": {
+      "style": "zone",
+      "color": "#2a2236",
+      "alpha": 0.3
+    },
+    "veil_ash_zone": {
+      "style": "zone",
+      "color": "#9b7bff",
+      "alpha": 0.18
+    },
+    "rune": {
+      "style": "rune",
+      "color": "#9b7bff",
+      "glow": "#e6dcff",
+      "alpha": 0.8
+    },
+    "hurricane_eye": {
+      "style": "eye",
+      "color": "#1a1424",
+      "glow": "#e8e4f4",
+      "alpha": 0.35
+    },
+    "gaze": {
+      "style": "gaze",
+      "color": "#ff5a36",
+      "glow": "#ffe9a8",
+      "alpha": 0.22
+    },
+    "branch": {
+      "style": "fall",
+      "color": "#6b4a2f"
     }
   },
   "tags": {
@@ -1103,6 +1821,69 @@
       "name": "Eco carregado",
       "tint": "#5fd3c6",
       "born": "Um Eco carregado nasceu do raio"
+    }
+  },
+  "reasons": {
+    "season": "O clima da estação, sorteado para a região.",
+    "debug": "Forçado pelo menu de debug, só neste aparelho.",
+    "feed": "Evento anunciado no feed do jogo."
+  },
+  "events": {
+    "finados": {
+      "name": "Finados",
+      "reason": "É Finados: a Procissão anda na névoa."
+    },
+    "sao_joao": {
+      "name": "São João",
+      "reason": "Noite de São João: Fagulhas caem como fogos."
+    },
+    "festa_junina": {
+      "name": "Festa Junina",
+      "reason": "Festa Junina: às vezes as Fagulhas caem como fogos."
+    },
+    "quadrantids": {
+      "name": "Quadrântidas",
+      "reason": "Chuva de meteoros das Quadrântidas."
+    },
+    "lyrids": {
+      "name": "Líridas",
+      "reason": "Chuva de meteoros das Líridas."
+    },
+    "eta_aquariids": {
+      "name": "Eta Aquáridas",
+      "reason": "Chuva de meteoros das Eta Aquáridas."
+    },
+    "perseids": {
+      "name": "Perseidas",
+      "reason": "Chuva de meteoros das Perseidas."
+    },
+    "orionids": {
+      "name": "Oriônidas",
+      "reason": "Chuva de meteoros das Oriônidas."
+    },
+    "geminids": {
+      "name": "Geminídeas",
+      "reason": "Chuva de meteoros das Geminídeas."
+    },
+    "solar_eclipse": {
+      "name": "Eclipse do sol",
+      "reason": "Eclipse do sol: o Sol Negro inverte as sombras."
+    },
+    "crimson_moon": {
+      "name": "Lua Carmim",
+      "reason": "Lua Carmim: a lua escurece e a chuva cai vermelha."
+    },
+    "super_full_moon": {
+      "name": "Lua cheia no perigeu",
+      "reason": "A lua cheia está muito perto da Terra: às vezes surge uma segunda."
+    },
+    "listeners": {
+      "name": "Os Que Escutam",
+      "reason": "Os Que Escutam estão ouvindo."
+    },
+    "geomagnetic_storm": {
+      "name": "Tempestade geomagnética",
+      "reason": "Tempestade geomagnética: o céu ondula."
     }
   }
 }
