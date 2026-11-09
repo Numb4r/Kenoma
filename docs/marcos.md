@@ -240,3 +240,16 @@ Spec na seção 14 de `docs/fase0-spec.md`. **A época 4 muda o mundo** (Espíri
 - **Conectividade leve:** épocas e eventos assinados (Ed25519), backup automático do Android, contador de passos e modo bolso, tudo opcional.
 - **Ficou de fora:** árvores de talento, troca de escola, estabilidade, fase de pressão do ritual, publicação no GitHub Pages (os arquivos assinados estão em `docs/pages/`; nada foi publicado).
 
+## Fase 1 · fatia 3a · Mapa fora de Campinas e atalho para Uber e 99 (0.15.1)
+
+**A época 5 muda o mundo** (início 2026-11-09T16:20:00Z): acrescenta os pacotes de São Paulo com SHA fixado. Campinas usa os mesmos pacotes, mas o número da época entra no hash, então os spawns mudam para quem atualiza.
+
+- **Três camadas por bloco de 1 km** (`world/layered_world.dart`): pacote de região, fallback Overpass, piso sem dados. O jogador nunca vê tela vazia. Teste de que Campinas fica idêntica com o mundo em camadas.
+- **Pacote de São Paulo** (município inteiro, 11,99 MB, fora do APK): lista assinada em `docs/pages/regions.json`, baixa ao entrar na bbox ou pelo botão "Baixar região" nos Ajustes, aviso de tamanho acima de 10 MB, confere assinatura e SHA. **Não publicado:** comando em `docs/assinatura.md`.
+- **Fallback Overpass** (`world/fallback/`, `world/fallback_service.dart`): consulta só o bloco e os vizinhos na direção do movimento, `date` fixado no início da época, uma consulta por bloco, espera entre consultas, servidores alternativos, nada acima de 30 km/h, cache por bloco. Selo "Véu instável" no HUD. **Oráculo:** diferença zero na grade lógica em 10 blocos commitados (8 de Campinas, 2 de São Paulo). Fora do repositório, zero em todos os 1.295 blocos inteiros de Campinas e 2.730 de São Paulo, e zero numa consulta real à Overpass. Limite conhecido: polígono cuja borda fique a mais de 0,25° ao norte do bloco é invisível para ele.
+- **Piso sem dados:** tom da cidade, grade fraca, spawns pelo sorteio geral, fala do Familiar na primeira vez, refeito sem reiniciar quando a internet volta.
+- **Modo Viagem mínimo** (`lib/travel/`), que não existia: destino por toque ou busca (Nominatim), veículo, rota A* sobre o grafo de ruas, a pé e de bicicleta fora de rodovia, Rádio do Véu em texto, baú na chegada com teto diário. Passageiro é perguntado por viagem. **Motorista: viagem só gravada, sem baú.** O GDD diz "com tudo entregue na chegada" e o pedido diz "nunca recompensa dirigir"; ficou a segunda leitura.
+- **Atalhos:** "Chamar Uber" pelo deep link oficial com destino, "Chamar 99" pelo pacote com o destino copiado, só para apps instalados. Viagem por esses botões já é passageiro, sem recompensa extra.
+- **Corrida no mapa:** carro do Véu chegando pela rota com o tempo estimado, embarque, GPS em viagem, desembarque e baú. Leitura opcional de notificações só do Uber e do 99, com interruptor próprio; padrões em `assets/data/ride_patterns.json`. **Os padrões ainda são sintéticos**, sem amostra de corrida real; sem reconhecer, cai para os botões.
+- Sem mudança no schema do save (fica em 5). Rádio do Véu sem áudio novo.
+

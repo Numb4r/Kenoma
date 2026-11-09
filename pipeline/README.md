@@ -43,3 +43,16 @@ Reavaliar numa época futura se o teste de rua mostrar que o centro parece vazio
 ## Vias onde não se anda (época 2)
 
 `build_nowalk.py --region campinas` lê do mesmo extrato da época 0 (MD5 acima) as vias `motorway`, `trunk` e os links delas e grava `app/assets/regions/campinas_e2_nowalk.bin` (1.966 vias, 40.913 bytes, SHA-256 `05c64cf5a9c29511bc0e32ec06863d5cd9a4a9de0e0e909d9c0c19a1acdaf625`). A época 2 fixa esse SHA-256: Fagulhas, materiais e Ecos não nascem sobre essas vias.
+
+## São Paulo (época 5)
+
+Mesmo extrato da época 0 (MD5 acima), mesmas regras de bioma. Município inteiro, bbox `[-46.83, -24.01, -46.36, -23.35]`. Gerado com `--epoch 5 --out-dir out/regions` nos três scripts, fora de `app/assets/`: **não entra no APK**, é baixado pelo app (`docs/assinatura.md`, "Regiões baixáveis").
+
+| Arquivo | Bytes | SHA-256 |
+| --- | --- | --- |
+| `sao_paulo_e5.bin` | 807.677 | `75fc763478409e6b6853ca859165b8b96fc7868b1c99014d71c068657b6cbd47` |
+| `sao_paulo_e5_vis.bin` | 11.043.360 | `9204f9ce5c6154878a8ac0c4f6b7e8e6aa7a598662bb2d0b2363d916b03e76b7` |
+| `sao_paulo_e5_nowalk.bin` | 139.188 | `74bcb43321a838cfec1c8cd927e65cd64daf8bb0f33d17fcb21654085376f582` |
+
+Total de 11,99 MB. O oráculo do fallback (`app/test/world/fallback/`, fixtures de `export_fixture.py`) compara a grade do Dart com os pacotes de Campinas e de São Paulo.
+
