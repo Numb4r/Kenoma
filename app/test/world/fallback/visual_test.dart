@@ -65,6 +65,7 @@ void main() {
     final name = file.uri.pathSegments.last.replaceAll('.json.gz', '');
     final parts = name.split('_');
     final tx = int.parse(parts[0]), ty = int.parse(parts[1]);
+    if (!pack.hasTile(tx, ty)) continue; // os blocos de São Paulo só valem para a grade
     final block = buildBlock(overpassJson: utf8.decode(gzip.decode(file.readAsBytesSync())), tx: tx, ty: ty, epochId: 0, rules: rules);
     final want = pack.decode(tx, ty)!;
 

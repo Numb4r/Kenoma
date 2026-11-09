@@ -1,12 +1,14 @@
 """Gera as fixtures do oráculo do fallback sob demanda (app/test/fixtures/fallback/).
 
 Para cada tile z15 grava `<tx>_<ty>.json.gz`, no formato da resposta da Overpass, só com o que `overpassQuery` pediria
-(mesmas tags, mesmas caixas), e `<tx>_<ty>.grid`, o recorte de 64x64 células de `campinas_e0.bin`. A seleção imita a da
-Overpass: uma way entra se tem nó ou segmento na caixa; uma relation entra se tem way membro assim. A geometria vem
-inteira. O teste em Dart confere que as caixas gravadas aqui aparecem na consulta.
+(mesmas tags, mesmas caixas), e `<tx>_<ty>.grid`, o recorte de 64x64 células do pacote (`campinas_e0.bin` por padrão). A
+seleção imita a da Overpass: uma way entra se tem nó ou segmento na caixa; uma relation entra se tem way membro assim. A
+geometria vem inteira. O teste em Dart confere que as caixas gravadas aqui aparecem na consulta.
 
 Uso (a leitura do extrato leva alguns minutos, por isso o recorte fica em `--store`):
-  .venv/bin/python export_fixture.py --pbf /caminho/sudeste-latest.osm.pbf --store /tmp/loja.pkl [--tiles 12134:18552 ...]
+  .venv/bin/python export_fixture.py --pbf /caminho/sudeste-latest.osm.pbf --store /tmp/loja.pkl
+Os dois blocos de São Paulo, engolidos por polígonos maiores que a caixa, vêm do pacote gerado do mesmo extrato:
+  ... --pack out/regions/sao_paulo_e5.bin --tiles 12140:18614 12134:18574
 """
 
 import argparse
@@ -31,6 +33,9 @@ BIOMES = json.loads((ROOT / "shared/biomes.json").read_text())
 EXTRA_TAGS = {"type", "area", "tunnel", "service", "indoor", "access", "oneway", "junction", "name"}
 
 MARGIN_M = 30.0        # margem da caixa além do maior buffer
+RAY_DEG = 0.25         # a faixa para o norte, ver `_rayDeg` em osm_rules.dart
+RAY_HALF_WIDTH_DEG = 0.00002
+RAY_EXCLUDED_TAGS = {"building"}
 
 TILES: list[tuple[int, int, str]] = [
     (12100, 18526, "centro de Campinas, denso"),
@@ -55,13 +60,15 @@ def tile_bounds(tx: int, ty: int) -> tuple[float, float, float, float]:
 
 
 def boxes(tx: int, ty: int, biomes: dict) -> list[tuple[float, float, float, float]]:
-    """As caixas da consulta (oeste, sul, leste, norte) em graus, arredondadas como em `overpassQuery`."""
+    """As caixas da consulta (oeste, sul, leste, norte) em graus, arredondadas como em `overpassQuery`: o bloco e a faixa."""
     w, s, e, n = tile_bounds(tx, ty)
     max_buffer = max(float(r.get("buffer_m", 0)) for b in biomes["biomes"] for r in b["osm"])
     d = max_buffer + MARGIN_M
     dlat = d / 110540.0
     dlon = d / (111320.0 * math.cos(math.radians(max(abs(s), abs(n)))))
-    return [(round(w - dlon, 7), round(s - dlat, 7), round(e + dlon, 7), round(n + dlat, 7))]
+    cx = (w + e) / 2
+    return [(round(w - dlon, 7), round(s - dlat, 7), round(e + dlon, 7), round(n + dlat, 7)),
+            (round(cx - RAY_HALF_WIDTH_DEG, 7), round(n + dlat, 7), round(cx + RAY_HALF_WIDTH_DEG, 7), round(n + dlat + RAY_DEG, 7))]
 
 
 def query_tags() -> tuple[dict[str, set[str]], dict[str, set[str]]]:
@@ -172,13 +179,16 @@ def element_relation(rel_id: int, store: dict) -> dict:
 
 
 def select(store: dict, index: Index, query_boxes: list) -> list[dict]:
-    """O que a Overpass devolveria para as caixas: ways por tag, relations por tag e por membro."""
+    """O que a Overpass devolveria para as caixas: ways por tag, relations por tag e por membro. Na faixa, só áreas."""
     area, line = query_tags()
-    hit: set[int] = set()
-    for box in query_boxes:
-        hit |= index.hits(box)
-    way_ids = [w for w in sorted(hit) if matches(store["ways"][w][0], area) or matches(store["ways"][w][0], line)]
-    rel_ids = sorted({r for w in hit for r in index.relations_of.get(w, ())})
+    ray_area = {k: v for k, v in area.items() if k not in RAY_EXCLUDED_TAGS}
+    block, ray = query_boxes
+    hit, ray_hit = index.hits(block), index.hits(ray)
+    ways = store["ways"]
+    way_ids = sorted({w for w in hit if matches(ways[w][0], area) or matches(ways[w][0], line)}
+                     | {w for w in ray_hit if matches(ways[w][0], ray_area)})
+    rel_ids = sorted({r for w in hit for r in index.relations_of.get(w, ())}
+                     | {r for w in ray_hit for r in index.relations_of.get(w, ()) if matches(store["relations"][r][0], ray_area)})
     return [element_way(w, store) for w in way_ids] + [element_relation(r, store) for r in rel_ids]
 
 
@@ -202,6 +212,7 @@ def main() -> None:
     parser.add_argument("--store", type=Path, required=True, help="pickle com o recorte do extrato")
     parser.add_argument("--out-dir", type=Path, default=OUT_DIR)
     parser.add_argument("--tiles", nargs="*", default=None, help="tx:ty; padrão: os blocos de TILES")
+    parser.add_argument("--pack", type=Path, default=ROOT / "app/assets/regions/campinas_e0.bin")
     args = parser.parse_args()
 
     if args.store.exists():
@@ -210,7 +221,7 @@ def main() -> None:
         store = build_store(args.pbf)
         args.store.write_bytes(pickle.dumps(store, protocol=pickle.HIGHEST_PROTOCOL))
     index = Index(store)
-    grid, _, x0, y0 = decode((ROOT / "app/assets/regions/campinas_e0.bin").read_bytes())
+    grid, _, x0, y0 = decode(args.pack.read_bytes())
     tiles = [tuple(map(int, t.split(":"))) for t in args.tiles] if args.tiles is not None else [t[:2] for t in TILES]
     total = 0
     for tx, ty in tiles:

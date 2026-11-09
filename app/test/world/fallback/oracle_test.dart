@@ -1,4 +1,5 @@
-// Oráculo do fallback: `buildBlock` contra o recorte de `campinas_e0.bin` gerado em Python (pipeline/export_fixture.py).
+// Oráculo do fallback: `buildBlock` contra o recorte dos pacotes gerados em Python (pipeline/export_fixture.py): oito blocos de Campinas e dois de São Paulo
+// engolidos por polígonos maiores que a caixa da consulta.
 // A diferença tem de ser zero, célula a célula.
 import 'dart:convert';
 import 'dart:io';
@@ -34,7 +35,7 @@ void main() {
     final name = file.uri.pathSegments.last.replaceAll('.json.gz', '');
     final parts = name.split('_');
     final tx = int.parse(parts[0]), ty = int.parse(parts[1]);
-    test('bloco $name igual ao pacote de Campinas', () {
+    test('bloco $name igual ao pacote', () {
       final json = utf8.decode(gzip.decode(file.readAsBytesSync()));
       final want = File(file.path.replaceAll('.json.gz', '.grid')).readAsBytesSync();
       final watch = Stopwatch()..start();
