@@ -223,8 +223,9 @@ class ClimateWorld {
   }
 
   void _trim() {
-    if (_dropCache.length > 96) _dropCache.clear();
-    if (_zoneCache.length > 96) _zoneCache.clear();
+    // A camada do mapa lê até 1,5 km e 3 h para trás (crateras): cabe com folga, sem esvaziar a cada leitura.
+    if (_dropCache.length > 320) _dropCache.clear();
+    if (_zoneCache.length > 320) _zoneCache.clear();
   }
 
   /// Os acontecimentos das quedas (raio, granizo, meteoro...) perto de (x21, y21) com tempo em `[tFrom, tTo]`, das janelas

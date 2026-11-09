@@ -212,7 +212,7 @@
           "shape": "hailstone",
           "color": "#e8e4f4",
           "alpha": 0.8,
-          "per_cell": 10
+          "per_cell": 5
         }
       ]
     },
@@ -310,7 +310,7 @@
           "shape": "frost",
           "color": "#e8e4f4",
           "alpha": 0.5,
-          "per_cell": 8,
+          "per_cell": 5,
           "local_hours": [
             5,
             10
@@ -443,7 +443,7 @@
           "shape": "dust",
           "color": "#e0c27a",
           "alpha": 0.45,
-          "per_cell": 8
+          "per_cell": 5
         }
       ]
     },
@@ -481,7 +481,7 @@
           "shape": "ash",
           "color": "#8a8fa3",
           "alpha": 0.5,
-          "per_cell": 8
+          "per_cell": 5
         }
       ]
     },
@@ -533,7 +533,7 @@
           "shape": "frost",
           "color": "#ffffff",
           "alpha": 0.7,
-          "per_cell": 10
+          "per_cell": 5
         }
       ]
     },
@@ -585,7 +585,7 @@
           "shape": "frost",
           "color": "#ffffff",
           "alpha": 0.7,
-          "per_cell": 14
+          "per_cell": 7
         }
       ]
     },
@@ -1122,7 +1122,7 @@
           "shape": "ash",
           "color": "#9b7bff",
           "alpha": 0.5,
-          "per_cell": 8
+          "per_cell": 5
         }
       ]
     },
@@ -1352,7 +1352,7 @@
           "shape": "frost",
           "color": "#ffffff",
           "alpha": 0.75,
-          "per_cell": 16
+          "per_cell": 8
         }
       ]
     },
@@ -1470,7 +1470,7 @@
           "shape": "glint",
           "color": "#ffffff",
           "alpha": 0.6,
-          "per_cell": 8,
+          "per_cell": 5,
           "twinkle": true
         },
         {
@@ -1639,7 +1639,7 @@
       "glow": "#9b7bff",
       "flash": true,
       "mark": "burn",
-      "mark_s": 1800
+      "mark_s": 600
     },
     "violet_bolt": {
       "style": "bolt",
@@ -1647,7 +1647,7 @@
       "glow": "#9b7bff",
       "flash": true,
       "mark": "burn_violet",
-      "mark_s": 1800
+      "mark_s": 600
     },
     "meteor": {
       "style": "meteor",
@@ -1755,7 +1755,7 @@
       "glow": "#ff7a45",
       "flash": true,
       "mark": "ember",
-      "mark_s": 1800,
+      "mark_s": 900,
       "glow_s": 300
     },
     "puddle_small": {

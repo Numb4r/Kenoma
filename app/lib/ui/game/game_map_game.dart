@@ -487,6 +487,7 @@ class GameMapGame extends FlameGame {
         localHour: _climate.localHour,
         sprites: sprites,
         ecoSizePx: ecoSizePx,
+        decor: rainFx(),
       );
 
   /// O tráfego do Véu mais lento com o clima (Dilúvio): o tempo anda [PlayerClimate.trafficMult] vezes desde o começo da

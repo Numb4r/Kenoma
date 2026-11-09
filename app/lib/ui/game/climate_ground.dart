@@ -57,18 +57,25 @@ class ClimateGround {
     ..strokeCap = ui.StrokeCap.round
     ..strokeJoin = ui.StrokeJoin.round;
 
-  late final double _maxMarkS = catalog.pieces.values.fold(0.0, (a, v) => math.max(a, v.markS));
-
   /// Lê do mundo as zonas, as poças e os impactos que ainda deixam marca, em volta de (px, py) (células z21).
   void observe(ClimateWorld w, {required double px, required double py, required double radius21, required double mpc, required int t}) {
     zones = w.zonesNear(px, py, radius21, t);
     final near = math.min(radius21, groundReadMaxM / mpc);
     puddles = w.puddlesNear(px, py, near, t);
-    marks = _maxMarkS <= 0
+    // Só olha para trás o tempo da marca mais longa dos climas daqui (agora e na janela anterior): a do raio é curta, a da
+    // cratera dura horas.
+    final cx20 = px.floor() >>> 1, cy20 = py.floor() >>> 1;
+    var markS = 0.0;
+    for (final def in [w.defAt(cx20, cy20, t), w.defAt(cx20, cy20, t - 10800)]) {
+      for (final p in def?.pieces ?? const <ClimatePiece>[]) {
+        if (p is DropPiece && p.impact) markS = math.max(markS, catalog.piece(p.name).markS);
+      }
+    }
+    marks = markS <= 0
         ? const []
         : [
-            for (final d in w.dropsNear(px, py, near, t - _maxMarkS.ceil(), t))
-              if (d.piece.impact && catalog.piece(d.piece.name).mark != null && t - d.tUtc < catalog.piece(d.piece.name).markS) d,
+            for (final d in w.dropsNear(px, py, near, t - markS.ceil(), t))
+              if (d.piece.impact && t - d.tUtc < catalog.piece(d.piece.name).markS) d,
           ];
   }
 
@@ -103,6 +110,7 @@ class ClimateGround {
     int localHour = 12,
     Map<String, ui.Image> sprites = const {},
     double ecoSizePx = 24,
+    bool decor = true,
   }) {
     placed.clear();
     final ppc = cam.pixelsPerCell, px = 1 / ppc;
@@ -113,7 +121,8 @@ class ClimateGround {
     canvas.rotate(cam.rotation);
     canvas.scale(ppc);
     final upright = <void Function()>[];
-    for (final (i, g) in shown.ground.indexed) {
+    // [decor] falso (o clima no mapa desligado nos Ajustes): só o que é do mundo (poças, zonas, marcas) continua.
+    for (final (i, g) in decor ? shown.ground.indexed : const <(int, ClimateLayer)>[]) {
       if (!g.showsAtHour(localHour)) continue;
       switch (g.kind) {
         case 'streets' when ppc >= 2:
@@ -130,8 +139,10 @@ class ClimateGround {
           upright.add(() => _twins(canvas, view, cam, g, ecos, sprites, ecoSizePx, mpc));
       }
     }
+    // Só o que cai na tela (com folga): o mundo é lido num raio maior, para o pan não mostrar buraco.
+    bool inView(double x, double y, double m) => x >= l - m && x <= r + m && y >= top - m && y <= b + m;
     for (final p in puddles) {
-      _puddle(canvas, p, catalog.piece(p.piece.name), mpc, px, night, exactUtc, at);
+      if (inView(p.x, p.y, 2)) _puddle(canvas, p, catalog.piece(p.piece.name), mpc, px, night, exactUtc, at);
     }
     for (final z in zones) {
       final v = catalog.piece(z.piece.name);
@@ -142,7 +153,7 @@ class ClimateGround {
       }
     }
     for (final d in marks) {
-      _mark(canvas, d, catalog.piece(d.piece.name), exactUtc, mpc, px, at);
+      if (inView(d.x, d.y, 2)) _mark(canvas, d, catalog.piece(d.piece.name), exactUtc, mpc, px, at);
     }
     if (c.playerTrails) {
       for (final (x, y) in steps) {
@@ -177,9 +188,19 @@ class ClimateGround {
     for (final (tx, ty) in vm.tilesIn(l, top, r, b, marginCells: 4)) {
       final tile = vm.tile(tx, ty);
       if (tile == null) continue;
+      final x0 = tx * vm.cellsPerTile.toDouble(), y0 = ty * vm.cellsPerTile.toDouble();
+      bool near(List<int> xy, int k) {
+        final x = x0 + xy[2 * k] * unit, y = y0 + xy[2 * k + 1] * unit;
+        return x >= l - 8 && x <= r + 8 && y >= top - 8 && y <= b + 8;
+      }
+
       for (final (i, line) in tile.lines.indexed) {
+        if (line.xy.length < 4) continue;
+        // Corte rápido: a ponta, o meio ou a outra ponta perto da tela (os trechos do OSM são curtos).
+        final n = line.xy.length ~/ 2;
+        if (!near(line.xy, 0) && !near(line.xy, n - 1) && !near(line.xy, n ~/ 2)) continue;
         final lv = cover.level(seed, (tx, ty, i), line.roadClass, window, since);
-        if (lv <= 0 || line.xy.length < 4) continue;
+        if (lv <= 0) continue;
         final w = (roadWidthM[line.roadClass.name] ?? 6) / mpc;
         var pts = [for (var k = 0; k + 1 < line.xy.length; k += 2) at(tx * vm.cellsPerTile + line.xy[k] * unit, ty * vm.cellsPerTile + line.xy[k + 1] * unit)];
         if (cover.kind == StreetCoverKind.sand) pts = _span(pts, cover.duneSpan(seed, (tx, ty, i), window));
@@ -247,15 +268,17 @@ class ClimateGround {
   }
 
   Iterable<(double, double, double)> _spots(ClimateLayer g, int layer, int seed, double l, double top, double r, double b) sync* {
-    final per = g.val('per_cell', 3);
+    final cells = ((b / 4).floor() - (top / 4).floor() + 1) * ((r / 4).floor() - (l / 4).floor() + 1);
+    // Teto de enfeites por camada e quadro (fps no celular): longe, a densidade cai por igual, e os pontos que ficam são
+    // os mesmos de perto (os primeiros de cada célula).
+    final per = math.min(g.val('per_cell', 3), 700 / math.max(1, cells));
     if (per <= 0) return;
     final n = per.floor(), frac = per - n;
-    var budget = 1500;
     for (var cy = (top / 4).floor(); cy <= (b / 4).floor(); cy++) {
       for (var cx = (l / 4).floor(); cx <= (r / 4).floor(); cx++) {
         final base = fnv1a64Of3(cx ^ seed, cy, layer * 7919);
         final count = n + (((base >>> 8) & 0xffff) / 65536 < frac ? 1 : 0);
-        for (var k = 0; k < count && budget-- > 0; k++) {
+        for (var k = 0; k < count; k++) {
           final h = fnv1a64Of3(base, k, layer);
           yield ((cx + ((h >>> 40) & 0xffff) / 65536) * 4, (cy + ((h >>> 24) & 0xffff) / 65536) * 4, ((h >>> 8) & 0xffff) / 65536);
         }
