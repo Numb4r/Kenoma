@@ -36,6 +36,7 @@ import '../../player/progression.dart' show localDay;
 import '../../dev/debug_tag.dart';
 import '../../dev/dev_tools.dart';
 import '../../player/game_session.dart';
+import '../../save/fresh_start.dart';
 import '../../save/save_store.dart';
 import '../../world/spawn_field.dart';
 import '../../world/touch_gesture.dart';
@@ -170,12 +171,12 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     if (next != _shownWeather) setState(() => _shownWeather = next);
   }
 
-  /// A névoa de guerra: revela em volta do caminho andado (o do simulador vai para o conjunto de debug).
-  void _revealFog(PlayerState s, GameState state, GameData data) {
+  /// As células z17 visitadas: só o caminho real, sem o simulador e sem dirigir.
+  void _markVisited(PlayerState s, GameState state) {
     final p = s.position;
-    if (p == null || (_ready?.travel.driver ?? false)) return; // dirigir não revela o mapa
-    final (x, y) = latLonToTileFraction(p.lat, p.lon, biomeZoom);
-    state.revealFog(x, y, data.street.fogRevealRadiusM, metersPerCell(p.lat), debug: tools.useSimulator);
+    if (p == null || tools.useSimulator || (_ready?.travel.driver ?? false)) return;
+    final (x, y) = latLonToTile(p.lat, p.lon, visitedZoom);
+    state.markVisited(x, y);
   }
 
   /// O bioma da última posição conhecida, para o contador de passos (só com ele ligado).
@@ -324,6 +325,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   Future<void> _restart() async {
     if (!mounted) return;
     _restarting = true;
+    final own = ModalRoute.of(context);
+    Navigator.of(context).popUntil((r) => r == own || r.isFirst); // os Ajustes e o que estiver por cima saem: o mapa novo entra no lugar deste
     await Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
       builder: (_) => GameMapScreen(
         tools: widget.tools,
@@ -338,18 +341,27 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     ));
   }
 
+  /// Recomeçar do zero (Ajustes): apaga o progresso, mantém a identidade e reabre o mapa como numa instalação nova.
+  Future<void> _freshStart(_Ready r) async {
+    await (await FreshStart.onDevice(r.session.store, stopPatrol: _stopPatrol)).run(r.session, tools.clock.realNowUtc);
+    await _restart();
+  }
+
+  /// Gancho da Patrulha do Véu: encerra o serviço antes de o recomeço apagar o diário.
+  Future<void> _stopPatrol() async {}
+
   SettingsScreen _settings(_Ready r) => SettingsScreen(
         session: r.session,
         data: r.data,
         nowUtc: () => tools.clock.nowUtc,
         realNowUtc: () => tools.clock.realNowUtc,
         appVersion: _version,
-        cellSideM: () => 2 * metersPerCell(r.game.playerLat),
         followHeading: () => r.game.rotation.followHeading,
         onFollowHeading: (on) {
           if (r.game.rotation.followHeading != on) r.game.toggleFollowHeading();
         },
         onRestart: _restart,
+        onFreshStart: () => _freshStart(r),
         notifier: _notifier,
         regions: r.layers.regions,
       );
@@ -635,7 +647,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       layers.noteFix(s.lastRaw);
       noteTravelPosition(travel, s, game.avatar);
       _rememberBiome(s, session.state, assets);
-      _revealFog(s, session.state, data);
+      _markVisited(s, session.state);
       _rebuild();
     });
     game.onFollowHeading = _setFollowHeading;
@@ -883,7 +895,6 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                   state: r.session.state,
                   data: r.data,
                   nowUtc: () => tools.clock.nowUtc,
-                  cellSideM: () => 2 * metersPerCell(r.game.playerLat),
                   onOpenSettings: () => Navigator.of(context).push(phoneRoute<void>(_settings(r))),
                 ))),
               )),

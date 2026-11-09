@@ -2,6 +2,7 @@ package com.numb4r.kenoma
 
 import android.Manifest
 import android.app.Activity
+import android.app.backup.BackupManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -25,7 +26,7 @@ import io.flutter.plugin.common.MethodChannel
  * - `kenoma/steps` (MethodChannel): `hasPermission`, `requestPermission` (ACTIVITY_RECOGNITION, Android 10+) e
  *   `read` (uma leitura do TYPE_STEP_COUNTER: passos acumulados desde o boot, ou null).
  * - `kenoma/proximity` (EventChannel): `true` quando o sensor de proximidade está coberto.
- * - `kenoma/system` (MethodChannel): `openBackupSettings`, `isInstalled`, `launchPackage`, `openUrl`, `notificationAccess`,
+ * - `kenoma/system` (MethodChannel): `openBackupSettings`, `requestBackup` (BackupManager.dataChanged), `isInstalled`, `launchPackage`, `openUrl`, `notificationAccess`,
  *   `openNotificationSettings` e `setRideRelay` (o interruptor das notificações de corrida).
  * - `kenoma/ride_notifications` (EventChannel): título e texto das notificações do Uber e da 99, só enquanto o Dart ouve.
  */
@@ -47,6 +48,10 @@ class DeviceChannels(private val activity: Activity) {
         MethodChannel(messenger, "kenoma/system").setMethodCallHandler { call, result ->
             when (call.method) {
                 "openBackupSettings" -> result.success(openBackupSettings())
+                "requestBackup" -> {
+                    BackupManager(activity).dataChanged()
+                    result.success(true)
+                }
                 "isInstalled" -> result.success(launchIntent(call.arguments as? String) != null)
                 "launchPackage" -> result.success(launchPackage(call.arguments as? String))
                 "openUrl" -> result.success(openUrl(call.arguments as? String))

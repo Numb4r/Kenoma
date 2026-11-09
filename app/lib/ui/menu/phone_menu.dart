@@ -4,7 +4,6 @@ library;
 
 import 'package:flutter/material.dart';
 
-import '../../core/tiles.dart';
 import '../../core/weather.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
@@ -99,7 +98,6 @@ Future<void> showPhoneMenu(
         state: state,
         data: data,
         nowUtc: nowUtc,
-        cellSideM: lat == null ? null : () => 2 * metersPerCell(lat()),
         onOpenSettings: () => Navigator.of(context).push(phoneRoute<void>(settings())),
       ),
       PhoneAppId.settings => settings(),

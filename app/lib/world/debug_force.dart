@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 import '../core/behavior.dart';
 import '../core/weather.dart';
+import 'debug_creatures.dart';
 
 class DebugForce extends ChangeNotifier {
   /// Pedidos para o **próximo Eco novo** que aparecer à vista. Cada um é gasto quando o Eco aparece.
@@ -21,6 +22,9 @@ class DebugForce extends ChangeNotifier {
 
   /// Clima forçado: vale para o HUD, a chuva e os pesos de spawn enquanto estiver ligado. `null`: o de verdade.
   Weather? weather;
+
+  /// As criaturas do "Criar criatura": nascem na Aura fora do mundo determinístico (`debug_creatures.dart`).
+  final DebugCreatures creatures = DebugCreatures();
 
   bool get pendingEco => nextBehavior != null || nextVariant || nextShiny || nextSpirit || nextRitual;
 

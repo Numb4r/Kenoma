@@ -66,7 +66,6 @@ void main() {
         nowUtc: () => now ?? t,
         realNowUtc: () => now ?? t,
         appVersion: '0.12.0+18',
-        cellSideM: () => 35.2,
         followHeading: () => follow,
         onFollowHeading: (on) => follow = on,
         onRestart: () async => restarts++,

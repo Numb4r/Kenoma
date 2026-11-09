@@ -108,10 +108,13 @@ CreatureInstance? fuse(GameState s, GameData data, String family, List<String> u
     s.circle.remove(c.uid);
     s.removeCreature(c.uid);
   }
-  final spirit = CreatureInstance(uid: 'fusion-$nowUtc-${s.conjurer.fusions}', speciesId: plan.spiritId, level: plan.level, capturedUtc: nowUtc, traits: plan.traits);
-  s.conjurer.fusions++;
+  // Um Eco de debug na fusão faz um Espírito de debug, que não conta para o Perfil, o bestiário nem as diárias.
+  final debug = plan.ecos.any((c) => c.debug);
+  final spirit = CreatureInstance(
+      uid: 'fusion-$nowUtc-${s.conjurer.fusions}${debug ? '-debug-${plan.ecos.first.uid}' : ''}', speciesId: plan.spiritId, level: plan.level, capturedUtc: nowUtc, traits: plan.traits, debug: debug);
+  if (!debug) s.conjurer.fusions++;
   s.addCreature(spirit);
-  s.recordEvent('fusion', family, 1);
+  if (!debug) s.recordEvent('fusion', family, 1);
   return spirit;
 }
 

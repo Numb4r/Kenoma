@@ -2,11 +2,11 @@
 /// Campos desconhecidos passam intactos.
 library;
 
-import '../player/game_state.dart' show saveSchemaVersion;
+import '../player/game_state.dart' show kVisitedCellsKey, saveSchemaVersion;
 
 typedef _Step = Map<String, dynamic> Function(Map<String, dynamic>);
 
-final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5};
+final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6};
 
 /// Leva [json] ao schema atual. Um save de versão futura passa sem mudar.
 Map<String, dynamic> migrateSave(Map<String, dynamic> json) {
@@ -72,5 +72,25 @@ Map<String, dynamic> _v4ToV5(Map<String, dynamic> j) {
     'days_played': <dynamic>[],
     'fusions': 0,
   };
+  return out;
+}
+
+/// v5 tinha a névoa de guerra (`fog`), que saiu do jogo. Antes de apagá-la, as células por onde o jogador passou viram
+/// `celulas_visitadas`, uma lista de pares z17: cada chave `"x,y"` de `fog.cells` já é o tile z17 (um bloco de 8 × 8
+/// células z20), e só os blocos com alguma célula marcada contam. O conjunto `fog.debug` (o caminho do simulador) não
+/// entra. Todo o resto passa intacto.
+Map<String, dynamic> _v5ToV6(Map<String, dynamic> j) {
+  final out = {...j};
+  final fog = out.remove('fog') as Map<String, dynamic>?;
+  if (out[kVisitedCellsKey] != null) return out;
+  final cells = <List<int>>[];
+  for (final e in ((fog?['cells'] as Map<String, dynamic>?) ?? const {}).entries) {
+    final parts = e.key.split(',');
+    final x = parts.length == 2 ? int.tryParse(parts[0]) : null, y = parts.length == 2 ? int.tryParse(parts[1]) : null;
+    if (x == null || y == null || (e.value as num).toInt() == 0) continue;
+    cells.add([x, y]);
+  }
+  cells.sort((a, b) => a[0] != b[0] ? a[0] - b[0] : a[1] - b[1]);
+  out[kVisitedCellsKey] = cells;
   return out;
 }

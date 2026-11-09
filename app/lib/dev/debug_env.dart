@@ -9,6 +9,7 @@ import '../save/ksv_save_store.dart';
 import '../save/save_store.dart';
 import '../world/places.dart';
 import 'debug_capture.dart';
+import 'debug_prefs.dart';
 import 'dev_tools.dart';
 
 class DebugEnv {
@@ -18,6 +19,9 @@ class DebugEnv {
   final CaptureDebug capture;
   final BackupIo io;
   final SaveStore? saveStore;
+
+  /// As preferências do menu (o último "Criar criatura"). O menu põe aqui quando termina de carregar; `null` antes disso.
+  DebugPrefs? prefs;
 
   /// Centro do mapa livre e da névoa revelada. O padrão é a Unicamp.
   final lat = TextEditingController(text: kUnicamp.$1.toString());

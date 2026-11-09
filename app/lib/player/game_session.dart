@@ -8,6 +8,7 @@ import 'dart:math' as math;
 
 import '../core/seed.dart';
 import '../save/founder.dart';
+import '../save/fresh_start.dart' show kFreshStartGroupKey;
 import '../save/migrations.dart';
 import '../save/save_store.dart';
 import 'game_state.dart';
@@ -45,12 +46,16 @@ class GameSession {
   }) async {
     final raw = await store.read();
     final json = raw == null ? null : migrateSave(raw);
-    // O menu de debug pode ter gravado só o override de nível antes de existir um jogo: aí o jogo nasce com ele.
+    // O menu de debug pode ter gravado só o override de nível antes de existir um jogo: aí o jogo nasce com ele. O
+    // Recomeçar do zero deixa só a semente dele (`fresh_start.dart`): a identidade, os Ajustes e o grupo.
     final hasGame = json?['group_code'] != null;
+    final keep = json ?? const <String, dynamic>{};
     final state = hasGame
         ? GameState.fromJson(json!, balance)
-        : (GameState.fresh(groupCode: generateGroupCode(nextInt), startInventory: startInventory, balance: balance)
-          ..levelOverride = json?['level_override'] as int?);
+        : (GameState.fresh(groupCode: (keep[kFreshStartGroupKey] as String?) ?? generateGroupCode(nextInt), startInventory: startInventory, balance: balance)
+          ..levelOverride = keep['level_override'] as int?
+          ..founder = keep['founder'] == null ? null : Founder.fromJson(keep['founder'] as Map<String, dynamic>)
+          ..settings.addAll({...?(keep['settings'] as Map<String, dynamic>?)}));
     final now = nowUtc();
     final seen = (seenUtc ?? nowUtc)();
     state

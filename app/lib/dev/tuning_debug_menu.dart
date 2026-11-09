@@ -59,6 +59,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   Future<void> _init() async {
     final prefs = widget.prefs ?? await DebugPrefs.inDocuments();
     await prefs.load();
+    _env.prefs = prefs;
     if (mounted) setState(() => _prefs = prefs);
     _env.loadLevelOverride();
     try {

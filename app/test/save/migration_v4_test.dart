@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/player/game_session.dart';
+import 'package:kenoma/player/game_state.dart' show kVisitedCellsKey, saveSchemaVersion;
 import 'package:kenoma/save/migrations.dart';
 import 'package:kenoma/save/save_store.dart';
 
@@ -20,20 +21,21 @@ void main() {
     expect((real['collection'] as List).length, 4);
   });
 
-  test('v3 vira v4: névoa e Radar entram vazios e todo o resto passa intacto', () {
+  test('v3 vira o schema atual: Radar vazio, a névoa da v4 sai na v6 sem células visitadas, e todo o resto passa intacto', () {
     final out = migrateSave(real);
-    expect(out['schema_version'], 5);
-    expect(out['fog'], {'cells': <String, dynamic>{}, 'debug': <String, dynamic>{}});
+    expect(out['schema_version'], saveSchemaVersion);
+    expect(out.containsKey('fog'), isFalse);
+    expect(out[kVisitedCellsKey], isEmpty);
     expect(out['radar'], {'last_utc': 0, 'revealed': <String, dynamic>{}});
     for (final k in real.keys.where((k) => k != 'schema_version')) {
       expect(out[k], real[k], reason: 'o campo $k passa sem mudar');
     }
   });
 
-  test('um save v4 que já tem névoa não é sobrescrito, e migrar duas vezes dá o mesmo', () {
+  test('um save v4 que já tem névoa leva as células para a v6, e migrar duas vezes dá o mesmo', () {
     final once = migrateSave(real);
-    final withFog = {...once, 'fog': {'cells': {'1,2': 5}, 'debug': <String, dynamic>{}}};
-    expect(migrateSave(withFog)['fog'], withFog['fog']);
+    final v4 = {...real, 'schema_version': 4, 'fog': {'cells': {'1,2': 5}, 'debug': <String, dynamic>{}}};
+    expect(migrateSave(v4)[kVisitedCellsKey], [[1, 2]]);
     expect(migrateSave(once), once);
   });
 
@@ -56,19 +58,18 @@ void main() {
     expect(s.founder!.playerId, (before['founder'] as Map)['player_id']);
     expect(s.founder!.chainValid, isTrue);
     expect(s.founder!.versionsSeen.map((e) => e.version), ['0.13.0+20', '0.14.0+21'], reason: 'a versão nova entra no log');
-    expect(s.fog.revealedCount, 0);
+    expect(s.visitedCells, isEmpty);
     expect(s.radarLastUtc, 0);
-    expect(store.json!['schema_version'], 5);
-    expect(store.json!['fog'], isNotNull);
+    expect(store.json!['schema_version'], saveSchemaVersion);
+    expect(store.json!.containsKey('fog'), isFalse);
   });
 
-  test('ida e volta: o save gravado em v4 abre igual', () async {
+  test('ida e volta: as células visitadas gravadas abrem iguais', () async {
     final store = MemorySaveStore()..json = jsonDecode(jsonEncode(real)) as Map<String, dynamic>;
     final a = await GameSession.open(store: store, startInventory: {}, balance: loadProgressBalance(), nowUtc: () => 1792083600, nextInt: (n) => 0, appVersion: '0.14.0+21');
-    a.state.revealFog(774426.4, 1185714.7, 40, 17.6);
+    a.state.markVisited(48401, 74107);
     await a.flush();
     final b = await GameSession.open(store: store, startInventory: {}, balance: loadProgressBalance(), nowUtc: () => 1792083700, nextInt: (n) => 0, appVersion: '0.14.0+21');
-    expect(b.state.fog.revealedCount, a.state.fog.revealedCount);
-    expect(b.state.fog.revealedCount, greaterThan(0));
+    expect(b.state.visitedCells, {(48401, 74107)});
   });
 }

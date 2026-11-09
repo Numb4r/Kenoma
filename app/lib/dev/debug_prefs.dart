@@ -1,4 +1,4 @@
-/// Preferências do menu de debug: favoritos e seções abertas ou fechadas. Um JSON pequeno (`debug_menu.json`) nos
+/// Preferências do menu de debug: favoritos, seções abertas ou fechadas e o último "Criar criatura". Um JSON pequeno (`debug_menu.json`) nos
 /// documentos do app. Toda leitura e escrita tem try/catch: sem disco, o menu funciona e só não lembra.
 library;
 
@@ -28,6 +28,16 @@ class DebugPrefs extends ChangeNotifier {
   final bool defaultOpen;
   final List<String> _favorites = [];
   final Map<String, bool> _open = {};
+  Map<String, dynamic>? _creatureForm;
+
+  /// O último formulário do "Criar criatura" (`DebugCreatureSpec.toJson`), para o botão "repetir". `null`: nenhum ainda.
+  Map<String, dynamic>? get creatureForm => _creatureForm;
+
+  Future<void> setCreatureForm(Map<String, dynamic> form) {
+    _creatureForm = form;
+    notifyListeners();
+    return _save();
+  }
 
   List<String> get favorites => List.unmodifiable(_favorites);
   bool isFavorite(String id) => _favorites.contains(id);
@@ -45,6 +55,7 @@ class DebugPrefs extends ChangeNotifier {
       _open
         ..clear()
         ..addAll({for (final e in (j['open'] as Map? ?? const {}).entries) if (e.value is bool) e.key as String: e.value as bool});
+      _creatureForm = j['creature_form'] is Map<String, dynamic> ? j['creature_form'] as Map<String, dynamic> : null;
       notifyListeners();
     } catch (_) {
       // arquivo ilegível ou sem disco: segue com os padrões
@@ -68,7 +79,7 @@ class DebugPrefs extends ChangeNotifier {
   /// Grava em fila: duas gravações juntas no mesmo arquivo poderiam terminar fora de ordem.
   Future<void> _save() => _queue = _queue.then((_) async {
         try {
-          await file?.writeAsString(jsonEncode({'favorites': _favorites, 'open': _open}), flush: true);
+          await file?.writeAsString(jsonEncode({'favorites': _favorites, 'open': _open, if (_creatureForm != null) 'creature_form': _creatureForm}), flush: true);
         } catch (_) {
           // sem disco: vale só nesta sessão
         }

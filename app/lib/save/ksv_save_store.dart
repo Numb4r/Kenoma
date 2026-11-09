@@ -88,6 +88,25 @@ class KsvSaveStore implements SaveStore {
     if (await legacy.exists()) await legacy.rename('${legacy.path}.migrated');
   }
 
+  /// Tudo o que este store já gravou nesta pasta: as três cópias, o temporário, as corrompidas e o `save.json` antigo
+  /// com as sobras dele.
+  List<File> get allFiles => [
+        ...copies,
+        _file('save.ksv.tmp'),
+        _file('save.ksv.bad'),
+        legacy,
+        _file('save.json.migrated'),
+        _file('save.json.bad'),
+      ];
+
+  @override
+  Future<void> wipe({bool keepCurrent = false}) async {
+    for (final f in allFiles) {
+      if (keepCurrent && f.path == current.path) continue;
+      if (await f.exists()) await f.delete();
+    }
+  }
+
   Future<bool> _valid(File f) async {
     try {
       decodeKsv(await f.readAsBytes());

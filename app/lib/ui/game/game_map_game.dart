@@ -31,7 +31,6 @@ import '../sprites/sprite_image.dart' show mapEcoPx, mapPlayerPx, mapSpiritPx;
 import 'art_renderer.dart';
 import 'art_style.dart';
 import 'spawn_painter.dart';
-import 'fog_painter.dart';
 import 'rain_painter.dart';
 import 'street_label_painter.dart';
 import 'trace_painter.dart';
@@ -105,7 +104,6 @@ class GameMapGame extends FlameGame {
   late final ArtRenderer _art = ArtRenderer(visual: visual, style: style, balance: balance, floorTile: floorTile, floorGridCells: floorGridCells);
   late final StreetLabelPainter _labels = StreetLabelPainter(visual);
   late final TrafficPainter _traffic = TrafficPainter(visual, carM: balance.ghostCarM, pedestrianM: balance.ghostPedestrianM, roadWidthM: balance.roadWidthM);
-  final FogPainter _fog = FogPainter();
   final TracePainter _trace = TracePainter();
   late final RainPainter _rain = RainPainter(maxDrops: rainDrops);
 
@@ -127,9 +125,8 @@ class GameMapGame extends FlameGame {
   final int rainDrops;
   final double familiarOffsetM;
 
-  /// Quantas gotas de chuva e quantas células reveladas (recortes do véu) foram desenhadas no último quadro.
+  /// Quantas gotas de chuva foram desenhadas no último quadro.
   int get rainCount => _rain.count;
-  int get fogCuts => _fog.lastCut;
 
   /// Quantos fantasmas do tráfego foram desenhados no último quadro.
   int get ghostsDrawn => _traffic.lastDrawn;
@@ -398,7 +395,6 @@ class GameMapGame extends FlameGame {
     }
     travelLayer?.paintGround(canvas, view, cam, metersPerCell(_lat), utc: _exactUtc(), avatar: avatar);
     if (streetNames()) _labels.paint(canvas, view, cam);
-    if (streetLifeEnabled && worldView != null && _hasFix) _fog.paint(canvas, view, cam, worldView!.state.fog);
     if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
     if (!avatar.hasPosition) return;
     final (sx, sy) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
