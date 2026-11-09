@@ -211,7 +211,7 @@ class _TravelOverlayState extends State<TravelOverlay> {
       else if (ride != null && ride.state != RideState.inTrip)
         ..._rideStatus(ride)
       else
-        Text('${travel.destName.toUpperCase()} · ${travel.routeStatus}', style: _dim, maxLines: 3, overflow: TextOverflow.ellipsis),
+        Text('${(travel.destName.isEmpty ? 'Corrida do ${ride?.appName ?? ''}' : travel.destName).toUpperCase()} · ${travel.routeStatus}', style: _dim, maxLines: 3, overflow: TextOverflow.ellipsis),
       if (line != null) ...[
         const SizedBox(height: 4),
         Text('RÁDIO DO VÉU', style: _dim.copyWith(color: kVeil)),

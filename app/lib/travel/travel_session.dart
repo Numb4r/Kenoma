@@ -293,7 +293,7 @@ class TravelSession extends ChangeNotifier {
         return;
       }
     }
-    if (_recording && _hasFix) {
+    if (_recording && _hasFix && destX != null) {
       final d = math.sqrt(math.pow(_x - destX!, 2) + math.pow(_y - destY!, 2)) * _mpc;
       if (_arrival!.feed(distanceM: d, speed: speedMps, tUtc: now)) {
         if (r != null) {
@@ -332,7 +332,9 @@ class TravelSession extends ChangeNotifier {
       final left = chestCapLeft(state, today, balance.chestDailyCap);
       final rewardM = trip?.rewardM ?? 0;
       final n = chestSparks(rewardM: rewardM, perKm: perKm, capLeft: left);
-      final item = n > 0 ? sparkItem(destLat!, destLon!, now) : null;
+      // Sem destino (corrida retomada), o baú abre onde o jogador desceu.
+      final (lat, lon) = destLat != null ? (destLat!, destLon!) : tileFractionToLatLon(_x, _y, biomeZoom);
+      final item = n > 0 ? sparkItem(lat, lon, now) : null;
       if (item != null) {
         state.add(item, n);
         recordChest(state, today, n, balance.chestDailyCap);
@@ -365,6 +367,7 @@ class TravelSession extends ChangeNotifier {
     route = null;
     routing = false;
     ride = null;
+    resumed = false;
     _ridePackage = null;
     approach = null;
     _approachBusy = false;
@@ -378,6 +381,53 @@ class TravelSession extends ChangeNotifier {
   }
 
   // Corrida.
+
+  /// As notificações de corrida que já estavam na barra ao abrir o app ou ao voltar para ele. Sem viagem no jogo, a corrida
+  /// em andamento mais nova (pedida fora do jogo) vira viagem de carona, no estado que a notificação diz: carro a caminho
+  /// com o tempo estimado, embarcado ou chegando. Sem destino ela segue sem rota até a notificação de fim. Com corrida em
+  /// curso, as do mesmo app atualizam o estado. O texto é lido aqui e descartado.
+  void onActiveNotifications(List<RideNotice> active) {
+    final sorted = [...active]..sort((a, b) => a.postMs.compareTo(b.postMs));
+    if (ride != null) {
+      for (final n in sorted) {
+        onNotification(n.package, n.title, n.text);
+      }
+      return;
+    }
+    if (stage != TravelStage.idle) return; // escolhendo destino: o jogador está no meio de outra coisa
+    for (final n in sorted.reversed) {
+      final app = patterns.appName(n.package);
+      if (app == null) continue;
+      final s = patterns.parse(n.package, n.title, n.text);
+      if (s.state == null && s.etaMin == null) continue; // texto que não diz o estado
+      if (s.state == RideState.finished) return; // a mais nova já é o fim
+      _resumeRide(app, n.package, s);
+      return;
+    }
+  }
+
+  /// A corrida retomada já é carona: carro, passageiro, e só conta depois do embarque.
+  bool resumed = false;
+
+  void _resumeRide(String appName, String package, RideSignal s) {
+    final now = nowUtc();
+    vehicle = Vehicle.car;
+    passenger = true;
+    resumed = true;
+    destName = '';
+    ride = Ride(appName: appName)..onSignal(s, now);
+    _ridePackage = package;
+    _rideUtc = now;
+    _begin();
+    final r = ride!;
+    if (r.state == RideState.inTrip) {
+      _trip = _newTrip();
+      _boardEnd = now.toDouble(); // ele já estava dentro: sem a costura
+    } else if (r.etaDueUtc != null) {
+      _carToEta(now);
+    }
+    notifyListeners();
+  }
 
   /// Uma notificação de corrida. O texto é lido aqui e descartado.
   void onNotification(String package, String title, String text) {

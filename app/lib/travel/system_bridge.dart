@@ -4,6 +4,8 @@ library;
 
 import 'package:flutter/services.dart';
 
+import 'ride.dart' show RideNotice;
+
 class SystemBridge {
   const SystemBridge();
 
@@ -32,6 +34,20 @@ class SystemBridge {
 
   /// O interruptor dos Ajustes: desligado, o serviço não repassa nada.
   Future<void> setRideRelay(bool on) => _call('setRideRelay', on);
+
+  /// As notificações do Uber e da 99 que já estão na barra (`getActiveNotifications`). Vazio sem permissão ou sem plugin.
+  /// Quem chama confere antes o interruptor dos Ajustes. Nada é guardado.
+  Future<List<RideNotice>> activeRides() async {
+    try {
+      final list = await _system.invokeMethod<List<Object?>>('activeRides') ?? const [];
+      return [
+        for (final e in list)
+          if (e is Map) (package: '${e['package']}', title: '${e['title']}', text: '${e['text']}', postMs: (e['postMs'] as num?)?.toInt() ?? 0),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
 
   /// Título e texto das notificações do Uber e da 99, só enquanto alguém ouve. Nada é guardado.
   Stream<({String package, String title, String text})> rideNotifications() => _rides.receiveBroadcastStream().where((e) => e is Map).map((e) {

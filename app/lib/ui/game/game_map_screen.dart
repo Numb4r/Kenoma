@@ -61,7 +61,9 @@ import '../../story/local_notifier.dart';
 import '../../story/notification_plan.dart';
 import '../settings/regions_section.dart' show regionSizeLabel;
 import '../../travel/travel_path.dart' show accessTest, bridgeTest, highwayTest;
+import '../../travel/system_bridge.dart';
 import '../../travel/travel_session.dart';
+import '../settings/ride_notifications_screen.dart' show kRideNotifySetting;
 import '../travel/travel_layer.dart';
 import '../travel/travel_overlay.dart';
 import '../settings/settings_screen.dart';
@@ -693,9 +695,21 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       final note = session.loadNote;
       if (note != null) _toast(note, seconds: 8);
       unawaited(_patrol?.sync());
+      unawaited(_checkActiveRides());
       _ensureAccess();
     });
     return _ready!;
+  }
+
+  /// Uma corrida do Uber ou da 99 pedida fora do jogo: com a permissão e o interruptor dos Ajustes, as notificações que
+  /// já estão na barra retomam a viagem no estado certo.
+  Future<void> _checkActiveRides() async {
+    final r = _ready;
+    if (r == null || !r.session.state.setting(kRideNotifySetting)) return;
+    const bridge = SystemBridge();
+    if (!await bridge.notificationAccess()) return;
+    final active = await bridge.activeRides();
+    if (active.isNotEmpty && mounted) r.travel.onActiveNotifications(active);
   }
 
   School? _familiarSchool;
@@ -772,6 +786,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     } else if (state == AppLifecycleState.resumed) {
       _ensureAccess(); // o jogador pode ter mexido nos ajustes
       unawaited(_patrol?.sync()); // o que a Patrulha juntou com o app fechado
+      unawaited(_checkActiveRides());
       if (ready.game.rotation.followHeading) _setFollowHeading(true);
     }
   }

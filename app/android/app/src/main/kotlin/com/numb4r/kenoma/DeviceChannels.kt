@@ -25,7 +25,8 @@ import io.flutter.plugin.common.MethodChannel
  * - `kenoma/battery` (MethodChannel): a carga da bateria em %, ou null.
  * - `kenoma/proximity` (EventChannel): `true` quando o sensor de proximidade está coberto.
  * - `kenoma/system` (MethodChannel): `openBackupSettings`, `requestBackup` (BackupManager.dataChanged), `isInstalled`, `launchPackage`, `openUrl`, `notificationAccess`,
- *   `openNotificationSettings` e `setRideRelay` (o interruptor das notificações de corrida).
+ *   `openNotificationSettings`, `setRideRelay` (o interruptor das notificações de corrida) e `activeRides` (as notificações de
+ *   corrida que já estão na barra).
  * - `kenoma/ride_notifications` (EventChannel): título e texto das notificações do Uber e da 99, só enquanto o Dart ouve.
  */
 class DeviceChannels(private val activity: Activity) {
@@ -55,6 +56,7 @@ class DeviceChannels(private val activity: Activity) {
                 "openUrl" -> result.success(openUrl(call.arguments as? String))
                 "notificationAccess" -> result.success(hasNotificationAccess())
                 "openNotificationSettings" -> result.success(openNotificationSettings())
+                "activeRides" -> result.success(RideNotificationListener.activeRides())
                 "setRideRelay" -> {
                     RideNotificationListener.relayEnabled = call.arguments == true
                     result.success(true)

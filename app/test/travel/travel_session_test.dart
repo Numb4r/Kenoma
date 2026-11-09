@@ -453,4 +453,91 @@ void main() {
       expect(r.travel.routeStatus, endsWith('O DESTINO ESTÁ FORA DO MAPA: O FIM É EM LINHA RETA'));
     });
   });
+
+  group('corrida já em andamento (notificações da barra)', () {
+    // SINTÉTICAS: ainda não temos o texto de notificações reais do Uber e da 99. Quando chegarem, os padrões mudam em
+    // assets/data/ride_patterns.json e estas frases trocam pelas de verdade.
+    RideNotice synthetic(String title, String text, {String package = kUberPackage, int postMs = 1}) =>
+        (package: package, title: title, text: text, postMs: postMs);
+
+    Rig idleWithFix() => Rig()..at(0);
+
+    test('carro a caminho, com o tempo: vira viagem de carona sem destino e sem rota, e o carro nasce', () async {
+      final r = idleWithFix();
+      r.travel.onActiveNotifications([synthetic('Uber', 'Seu motorista está a caminho e chega em 4 min. Onix prata')]);
+      expect(r.travel.stage, TravelStage.traveling);
+      expect(r.travel.resumed, isTrue);
+      final ride = r.travel.ride!;
+      expect(ride.appName, 'Uber');
+      expect(ride.state, RideState.driverComing);
+      expect(ride.etaDueUtc, r.now + 240);
+      expect(ride.carType, 'hatch');
+      expect(r.travel.vehicle, Vehicle.car);
+      expect(r.travel.passenger, isTrue);
+      expect(r.travel.destX, isNull);
+      expect(r.travel.quiet, isFalse, reason: 'só conta depois do embarque');
+      await pumpEventQueue();
+      expect(r.travel.route, isNull);
+      expect(r.travel.routeStatus, 'SEM DESTINO');
+      expect(r.travel.approach, isNotNull, reason: 'o carro vem buscar');
+    });
+
+    test('já embarcado: grava desde agora, sem costura, e acaba na notificação de fim com o baú onde desceu', () async {
+      final r = idleWithFix();
+      r.travel.onActiveNotifications([synthetic('99', 'Corrida em andamento', package: k99Package)]);
+      expect(r.travel.ride!.state, RideState.inTrip);
+      expect(r.travel.quiet, isTrue);
+      expect(r.travel.radioOn, isTrue);
+      expect(r.travel.boardingAt(r.now.toDouble()), isNull, reason: 'ele já estava dentro');
+      for (var m = 0.0; m < 2000; m += 100) {
+        r.now += 10;
+        r.at(m);
+        r.travel.tick(speedMps: 10);
+      }
+      expect(r.travel.stage, TravelStage.traveling, reason: 'sem destino não há chegada pelo GPS');
+      r.travel.onNotification(k99Package, '99', 'Corrida finalizada. Avalie sua corrida');
+      expect(r.travel.ride!.state, RideState.finished);
+      r.now += 60;
+      r.travel.tick(speedMps: 0);
+      final o = r.travel.outcome!;
+      expect(r.travel.stage, TravelStage.done);
+      expect(o.driver, isFalse);
+      expect(o.distanceM, closeTo(1900, 150));
+      expect(o.sparks, greaterThan(0));
+    });
+
+    test('chegando: o carro já está no ponto', () {
+      final r = idleWithFix();
+      r.travel.onActiveNotifications([synthetic('Uber', 'Seu motorista chegou ao local de embarque')]);
+      expect(r.travel.ride!.state, RideState.arrived);
+    });
+
+    test('vale a mais nova reconhecida; se ela é o fim, nada volta', () {
+      final r = idleWithFix();
+      r.travel.onActiveNotifications([
+        synthetic('Uber', 'Seu motorista está a caminho', postMs: 1),
+        synthetic('Uber', 'Viagem finalizada', postMs: 2),
+        synthetic('Uber', 'Promoção de fim de semana', postMs: 3),
+      ]);
+      expect(r.travel.stage, TravelStage.idle);
+      expect(r.travel.ride, isNull);
+    });
+
+    test('outro app, texto sem estado, ou o jogador escolhendo destino: nada muda', () {
+      final r = idleWithFix();
+      r.travel.onActiveNotifications([synthetic('Mensagem', 'motorista a caminho', package: 'com.whatsapp'), synthetic('Uber', 'Ganhe 10% na próxima')]);
+      expect(r.travel.stage, TravelStage.idle);
+      r.travel.open();
+      r.travel.onActiveNotifications([synthetic('Uber', 'Seu motorista está a caminho')]);
+      expect(r.travel.stage, TravelStage.pickDestination);
+    });
+
+    test('com a corrida do jogo em curso, as da barra atualizam o estado', () {
+      final r = Rig()..choose(Vehicle.car);
+      r.travel.startRide('Uber', kUberPackage);
+      r.travel.onActiveNotifications([synthetic('Uber', 'Viagem iniciada'), synthetic('99', 'Corrida finalizada', package: k99Package)]);
+      expect(r.travel.ride!.state, RideState.inTrip, reason: 'a do 99 não é desta corrida');
+      expect(r.travel.resumed, isFalse);
+    });
+  });
 }
