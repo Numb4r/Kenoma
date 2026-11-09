@@ -119,7 +119,7 @@ String overpassQuery({required int tx, required int ty, required String dateIso,
   for (final table in [line, area]) {
     table.forEach((tag, values) => (ways[tag] ??= {}).addAll(values));
   }
-  final out = StringBuffer('[out:json][timeout:60][date:"$dateIso"];\n(\n');
+  final out = StringBuffer('[out:json][timeout:120][date:"$dateIso"];\n(\n');
   ways.forEach((tag, values) => out.writeln('  way["$tag"~"${_regex(values.toList()..sort())}"]$box;'));
   area.forEach((tag, values) {
     if (!_rayExcludedTags.contains(tag)) out.writeln('  way["$tag"~"${_regex(values)}"]$ray;');

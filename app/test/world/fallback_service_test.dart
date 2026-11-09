@@ -254,7 +254,7 @@ void main() {
   test('o balance.json traz os servidores e os limites pedidos', () {
     final b = MapFallbackBalance(loadJson('assets/data/balance.json'));
     expect(b.servers.map((u) => u.host), ['overpass-api.de', 'overpass.kumi.systems', 'overpass.private.coffee']);
-    expect(b.timeoutS, 90);
+    expect(b.timeoutS, 150);
     expect(b.maxQuerySpeedKmh, 30);
     expect(b.regionConfirmBytes, 10 << 20);
   });

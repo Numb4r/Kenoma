@@ -27,8 +27,8 @@ void _points(BytesBuilder out, Int32List xy) {
   var px = 0, py = 0;
   for (var i = 0; i + 1 < xy.length; i += 2) {
     final dx = xy[i] - px, dy = xy[i + 1] - py;
-    _varint(out, (dx << 1) ^ (dx >> 63));
-    _varint(out, (dy << 1) ^ (dy >> 63));
+    _varint(out, (dx << 1) ^ (dx < 0 ? -1 : 0));
+    _varint(out, (dy << 1) ^ (dy < 0 ? -1 : 0));
     px = xy[i];
     py = xy[i + 1];
   }

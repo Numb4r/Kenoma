@@ -2780,8 +2780,8 @@
     },
     {
       "id": 5,
-      "starts_utc": "2026-11-06T06:00:00Z",
-      "valid_until_utc": "2027-02-04T06:00:00Z",
+      "starts_utc": "2026-11-09T16:20:00Z",
+      "valid_until_utc": "2027-02-07T16:20:00Z",
       "region_packs": {
         "campinas": {
           "file": "campinas_e0.bin",

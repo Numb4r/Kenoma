@@ -19,7 +19,7 @@ void main() {
     final q = overpassQuery(tx: 12100, ty: 18526, dateIso: '2026-10-16T19:40:00Z', rules: rules);
 
     test('fixa a data e o formato', () {
-      expect(q, startsWith('[out:json][timeout:60][date:"2026-10-16T19:40:00Z"];'));
+      expect(q, startsWith('[out:json][timeout:120][date:"2026-10-16T19:40:00Z"];'));
     });
 
     test('pede as tags das regras e as ruas', () {

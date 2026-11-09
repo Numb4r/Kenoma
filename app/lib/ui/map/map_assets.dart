@@ -24,6 +24,8 @@ import '../../net/map_http.dart';
 import '../../net/region_manager.dart';
 import '../../world/fallback_service.dart';
 import '../../world/layered_world.dart';
+import '../../world/fallback/block_builder.dart';
+import '../../world/fallback/block_codec.dart';
 import '../../world/map_balance.dart';
 import '../../world/map_fallback_balance.dart';
 import '../../world/map_layers.dart';
@@ -68,19 +70,16 @@ class MapAssets {
 }
 
 /// As funções do bloco com as regras do OSM ligadas.
-FallbackCodec? fallbackCodec(Map<String, dynamic> biomesJson) {
-  // MERGE-A: ligar às funções reais de `world/fallback/` (agente A), trocando o `return null` por:
-  //
-  //   final rules = OsmRules.fromJson(biomesJson);
-  //   return FallbackCodec(
-  //     query: ({required tx, required ty, required dateIso}) => overpassQuery(tx: tx, ty: ty, dateIso: dateIso, rules: rules),
-  //     build: ({required overpassJson, required tx, required ty, required epochId}) => buildBlock(overpassJson: overpassJson, tx: tx, ty: ty, epochId: epochId, rules: rules),
-  //     encode: encodeBlock,
-  //     decode: decodeBlock,
-  //   );
-  //
-  // `build`, `encode` e `decode` rodam em Isolate: `OsmRules` tem de ser só dados.
-  return null;
+FallbackCodec fallbackCodec(Map<String, dynamic> biomesJson) {
+  // `build`, `encode` e `decode` rodam em Isolate: `OsmRules` é só dados.
+  final rules = OsmRules.fromJson(biomesJson);
+  return FallbackCodec(
+    query: ({required tx, required ty, required dateIso}) => overpassQuery(tx: tx, ty: ty, dateIso: dateIso, rules: rules),
+    build: ({required overpassJson, required tx, required ty, required epochId}) =>
+        buildBlock(overpassJson: overpassJson, tx: tx, ty: ty, epochId: epochId, rules: rules),
+    encode: encodeBlock,
+    decode: decodeBlock,
+  );
 }
 
 /// Liga o fallback e os pacotes baixáveis ao mundo de [assets] e recarrega o que está no disco, em segundo plano. Sem pasta de
