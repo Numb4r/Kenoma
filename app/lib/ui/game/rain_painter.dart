@@ -20,6 +20,7 @@ class RainPainter {
   /// Quantas gotas há com chuva normal; a tempestade pede 1,6 vezes mais.
   final int maxDrops;
 
+  static const double _slant = 0.28;
   final _drops = <_Drop>[];
   double _level = 0;
   int _seed = 12345;
@@ -27,6 +28,9 @@ class RainPainter {
 
   /// Gotas na tela agora.
   int get count => _drops.length;
+
+  /// Onde estão as gotas (testes de cobertura da tela).
+  Iterable<ui.Offset> get positions => _drops.map((d) => ui.Offset(d.x, d.y));
 
   double _next() {
     _seed = (_seed * 1103515245 + 12345) & 0x7fffffff; // só a posição das gotas na tela, nada do mundo
@@ -41,16 +45,20 @@ class RainPainter {
       return;
     }
     final want = (maxDrops * _level).round();
+    // A gota anda para a esquerda 0,28 px por px que cai: para chegar ao canto de baixo à direita ela tem de nascer até
+    // 0,28 × altura à direita da tela. Nascer só até largura + 60 deixava sem chuva uma faixa à direita, que alargava para
+    // baixo (quase metade da tela num celular em pé).
+    final spanX = view.width + _slant * view.height + 10;
     while (_drops.length < want) {
-      _drops.add(_Drop(_next() * view.width, -_next() * view.height * 0.3, 380 + _next() * 220));
+      _drops.add(_Drop(_next() * spanX, -_next() * view.height * 0.3, 380 + _next() * 220));
     }
     if (_drops.length > want + 6) _drops.removeRange(want, _drops.length);
     for (final d in _drops) {
       d.y += d.speed * dt;
-      d.x -= d.speed * 0.28 * dt;
+      d.x -= d.speed * _slant * dt;
       if (d.y > view.height || d.x < -10) {
         d.y = -_next() * 40;
-        d.x = _next() * (view.width + 60);
+        d.x = _next() * spanX;
       }
     }
   }
