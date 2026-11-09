@@ -4,27 +4,26 @@ import '../../dev/dev_tools.dart';
 import '../../dev/gps_simulator.dart';
 import '../../world/places.dart';
 import '../colors.dart';
-import 'joystick.dart';
 
-/// Controles do simulador de GPS por cima do mapa do jogo: joystick, velocidade e teleporte. Só aparece
-/// com o simulador ligado: dá para testar tudo sentado, sem sair do mapa.
-class SimOverlay extends StatefulWidget {
-  const SimOverlay({required this.tools, super.key});
+/// As fichas do simulador de GPS: velocidade e teleporte. Moram na folha do selo de modo (barra do topo), para não cobrir
+/// o mapa; o joystick fica na zona dele no HUD.
+class SimChips extends StatefulWidget {
+  const SimChips({required this.tools, super.key});
 
   final DevTools tools;
 
   @override
-  State<SimOverlay> createState() => _SimOverlayState();
+  State<SimChips> createState() => _SimChipsState();
 }
 
-class _SimOverlayState extends State<SimOverlay> {
+class _SimChipsState extends State<SimChips> {
   SimulatedPositionSource get sim => widget.tools.simulator;
 
   Widget _chip(String label, bool selected, VoidCallback onTap, {Color color = kSignal}) => GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
         child: Container(
-          margin: const EdgeInsets.only(bottom: 6),
+          constraints: const BoxConstraints(minHeight: 40),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: selected ? color.withValues(alpha: 0.25) : kOutline.withValues(alpha: 0.85),
@@ -35,34 +34,14 @@ class _SimOverlayState extends State<SimOverlay> {
       );
 
   @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned(
-          left: 12,
-          bottom: 132,
-          child: Joystick(onChanged: sim.setJoystick),
-        ),
-        // No alto à esquerda, longe da Aura: o canto inferior direito é do rastreador de Ecos.
-        Positioned(
-          left: 12,
-          top: 64,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (final s in SimSpeed.values.reversed)
-                _chip('${s.label} ${s.mps.toStringAsFixed(1)} m/s', sim.speedMps == s.mps, () => setState(() => sim.speedMps = s.mps)),
-              _chip('Teleporte: Unicamp', false, () => sim.teleport(kUnicamp.$1, kUnicamp.$2), color: kVeil),
-              _chip('Teleporte: Centro', false, () => sim.teleport(kCentroCampinas.$1, kCentroCampinas.$2), color: kVeil),
-              _chip('Teleporte: Taquaral', false, () => sim.teleport(kTaquaral.$1, kTaquaral.$2), color: kVeil),
-              _chip('Ir: Paulista', false, () => sim.teleport(kPaulista.$1, kPaulista.$2), color: kVeil),
-              _chip('Ir: Bandeirantes', false, () => sim.teleport(kBandeirantes.$1, kBandeirantes.$2), color: kVeil),
-              _chip('Ir: Jundiaí', false, () => sim.teleport(kJundiai.$1, kJundiai.$2), color: kVeil),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Wrap(spacing: 6, runSpacing: 6, children: [
+        for (final s in SimSpeed.values.reversed)
+          _chip('${s.label} ${s.mps.toStringAsFixed(1)} m/s', sim.speedMps == s.mps, () => setState(() => sim.speedMps = s.mps)),
+        _chip('Teleporte: Unicamp', false, () => sim.teleport(kUnicamp.$1, kUnicamp.$2), color: kVeil),
+        _chip('Teleporte: Centro', false, () => sim.teleport(kCentroCampinas.$1, kCentroCampinas.$2), color: kVeil),
+        _chip('Teleporte: Taquaral', false, () => sim.teleport(kTaquaral.$1, kTaquaral.$2), color: kVeil),
+        _chip('Ir: Paulista', false, () => sim.teleport(kPaulista.$1, kPaulista.$2), color: kVeil),
+        _chip('Ir: Bandeirantes', false, () => sim.teleport(kBandeirantes.$1, kBandeirantes.$2), color: kVeil),
+        _chip('Ir: Jundiaí', false, () => sim.teleport(kJundiai.$1, kJundiai.$2), color: kVeil),
+      ]);
 }

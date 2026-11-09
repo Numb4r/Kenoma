@@ -2,11 +2,17 @@
 /// Sem o canal (testes, outras plataformas) não faz nada.
 library;
 
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/services.dart';
 
 const MethodChannel _channel = MethodChannel('kenoma/sound');
 
+/// "Sons" (Ajustes): desligado, o jogo não toca nada. O mapa copia o ajuste do save para cá.
+const String kSoundSetting = 'sound';
+final ValueNotifier<bool> soundOn = ValueNotifier<bool>(true);
+
 Future<void> playChime() async {
+  if (!soundOn.value) return;
   try {
     await _channel.invokeMethod<void>('chime');
   } catch (_) {
@@ -20,6 +26,7 @@ Duration thunderDelay(double distanceM) => Duration(milliseconds: (distanceM / 3
 /// O trovão de um raio a [distanceM] metros, mais fraco de longe (quem chama espera [thunderDelay] antes). Sai do gerador
 /// de tons do sistema, sem arquivo de áudio (`MainActivity`, método `thunder`).
 Future<void> playThunder(double distanceM) async {
+  if (!soundOn.value) return;
   try {
     await _channel.invokeMethod<void>('thunder', {'volume': (100 - distanceM / 12).clamp(20, 100).round()});
   } catch (_) {

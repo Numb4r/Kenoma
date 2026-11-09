@@ -1,13 +1,11 @@
-/// A fase da lua no canto do mapa: um disco pequeno com a parte iluminada e o nome da fase. No hemisfério sul a lua
-/// aparece espelhada em relação ao norte, e o disco acompanha isso.
+/// Os desenhos da lua e do clima da barra do HUD, do celular e do Céu: o disco com a parte iluminada (no hemisfério sul a
+/// lua aparece espelhada em relação ao norte, e o disco acompanha isso) e o glifo de pixels do clima.
 library;
 
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../core/astro.dart';
 import '../../data/climate_catalog.dart';
 import '../colors.dart';
 
@@ -28,71 +26,6 @@ List<Offset> moonLitPolygon(double cycle, double r, {bool southern = false, int 
     pts.add(Offset(k * r * math.cos(a), r * math.sin(a)));
   }
   return mirror ? [for (final p in pts) Offset(-p.dx, p.dy)] : pts;
-}
-
-class MoonHud extends StatefulWidget {
-  const MoonHud({required this.nowUtc, required this.lat, this.weather, this.onWeatherTap, super.key});
-
-  final int Function() nowUtc;
-
-  /// O clima que se vê agora, ao lado da lua. Sem ele, só a lua.
-  final ClimateInfo Function()? weather;
-
-  /// Toque no ícone do clima: quem chama mostra a linha do efeito no spawn.
-  final void Function(ClimateInfo info)? onWeatherTap;
-
-  /// A latitude do jogador (o sinal decide o espelhamento).
-  final double Function() lat;
-
-  @override
-  State<MoonHud> createState() => _MoonHudState();
-}
-
-class _MoonHudState extends State<MoonHud> {
-  Timer? _tick;
-
-  @override
-  void initState() {
-    super.initState();
-    _tick = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _tick?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = widget.nowUtc();
-    final phase = moonPhase(t);
-    return Container(
-      key: const Key('moon-hud'),
-      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-      decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.85), border: Border.all(color: kPanelLine, width: 2)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        CustomPaint(size: const Size(24, 24), painter: MoonPainter(moonCycle(t), widget.lat() < 0)),
-        const SizedBox(width: 8),
-        Text(moonPhaseNames[phase]!.toUpperCase(), style: const TextStyle(fontSize: 8, color: kText)),
-        if (widget.weather != null) ...[
-          const SizedBox(width: 10),
-          GestureDetector(
-            key: const Key('weather-hud'),
-            behavior: HitTestBehavior.opaque,
-            onTap: () => widget.onWeatherTap?.call(widget.weather!()),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              CustomPaint(key: const Key('weather-glyph'), size: const Size(18, 18), painter: WeatherGlyphPainter(widget.weather!())),
-              const SizedBox(width: 6),
-              Text(widget.weather!().name.toUpperCase(), key: const Key('weather-label'), style: const TextStyle(fontSize: 8, color: kText)),
-            ]),
-          ),
-        ],
-      ]),
-    );
-  }
 }
 
 class MoonPainter extends CustomPainter {

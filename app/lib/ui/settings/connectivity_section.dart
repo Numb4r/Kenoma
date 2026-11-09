@@ -1,5 +1,6 @@
-/// Seção dos Ajustes para o que é opcional e depende do aparelho: backup automático do Android, contador de passos
-/// e modo bolso. Tudo desligado por padrão e silencioso quando o sensor ou a permissão faltam.
+/// Seção dos Ajustes para as permissões opcionais do aparelho: contador de passos e leitura das notificações da corrida,
+/// mais o backup automático do Android. Tudo desligado por padrão e silencioso quando o sensor ou a permissão faltam. O modo
+/// bolso e a Patrulha moram no app Patrulha.
 library;
 
 import 'package:flutter/material.dart';
@@ -12,8 +13,6 @@ import '../colors.dart';
 import '../menu/phone_shell.dart' show phoneRoute;
 import '../menu/screen_frame.dart';
 import 'ride_notifications_screen.dart';
-import '../../patrol/patrol_controller.dart';
-import '../patrol/patrol_screen.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
 
 /// Chaves dos interruptores em `GameState.settings`.
@@ -45,15 +44,6 @@ class ConnectivitySection extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
         listenable: state,
         builder: (context, _) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const SectionTitle('Backup automático'),
-          const Text(
-            'O Android pode guardar o seu save no Google Drive da conta do aparelho. Ele liga nas configurações do Android, '
-            'em Sistema > Backup. Vale só com o Kenoma instalado de novo na mesma conta. O app não envia nada por conta própria.',
-            style: TextStyle(fontSize: 8, color: kDim, height: 1.8),
-          ),
-          const SizedBox(height: 8),
-          PixelButton(label: 'Abrir ajustes do Android', color: kVeil, onTap: () => sensors.openBackupSettings()),
-          const SectionTitle('Sensores'),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Contador de passos', style: TextStyle(fontSize: 8)),
@@ -65,31 +55,6 @@ class ConnectivitySection extends StatelessWidget {
             activeThumbColor: kSignal,
             onChanged: _setSteps,
           ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Modo bolso', style: TextStyle(fontSize: 8)),
-            subtitle: const Text(
-              'Com o celular no bolso (sensor de proximidade coberto) o mapa escurece e o celular vibra quando um Eco chega ao alcance de toque. A coleta continua. Com a Patrulha ligada, vale sempre',
-              style: TextStyle(fontSize: 8, color: kDim),
-            ),
-            value: state.setting(kPocketSetting),
-            activeThumbColor: kSignal,
-            onChanged: (v) => state.setSetting(kPocketSetting, v),
-          ),
-          ListenableBuilder(
-            listenable: PatrolController.instance,
-            builder: (context, _) => ListTile(
-              key: const Key('settings-patrol'),
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Patrulha do Véu', style: TextStyle(fontSize: 8)),
-              subtitle: Text(
-                '${PatrolController.instance.running ? 'Ligada' : 'Desligada'}. O jogo continua com o app fechado: coleta na Aura e marca os Ecos por perto. '
-                'Desliga sozinha depois de ${patrolMaxHours(state, data.patrol)} h',
-                style: const TextStyle(fontSize: 8, color: kDim),
-              ),
-              onTap: () => Navigator.of(context).push(phoneRoute<void>(PatrolScreen(state: state, balance: data.patrol))),
-            ),
-          ),
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Corrida no mapa', style: TextStyle(fontSize: 8)),
@@ -99,6 +64,14 @@ class ConnectivitySection extends StatelessWidget {
             ),
             onTap: () => Navigator.of(context).push(phoneRoute<void>(RideNotificationsScreen(state: state))),
           ),
+          const SectionTitle('Backup automático'),
+          const Text(
+            'O Android pode guardar o seu save no Google Drive da conta do aparelho. Ele liga nas configurações do Android, '
+            'em Sistema > Backup. Vale só com o Kenoma instalado de novo na mesma conta. O app não envia nada por conta própria.',
+            style: TextStyle(fontSize: 8, color: kDim, height: 1.8),
+          ),
+          const SizedBox(height: 8),
+          PixelButton(label: 'Abrir ajustes do Android', color: kVeil, onTap: () => sensors.openBackupSettings()),
         ]),
       );
 }

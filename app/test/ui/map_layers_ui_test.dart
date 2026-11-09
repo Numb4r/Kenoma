@@ -9,7 +9,7 @@ import 'package:kenoma/dev/dev_tools.dart';
 import 'package:kenoma/net/feed_config.dart';
 import 'package:kenoma/ui/game/art_renderer.dart';
 import 'package:kenoma/ui/game/art_style.dart';
-import 'package:kenoma/ui/game/veil_badge.dart';
+import 'package:kenoma/ui/game/hud_bar.dart';
 import 'package:kenoma/world/layered_world.dart';
 import 'package:kenoma/world/map_balance.dart';
 import 'package:kenoma/world/map_camera.dart';
@@ -28,10 +28,10 @@ void main() {
     expect(line.text, contains('fino demais para ler as ruas'));
   });
 
-  testWidgets('selo Véu instável: só em bloco overpass, e o toque explica', (tester) async {
+  testWidgets('selo Véu instável: só em bloco overpass, e o toque abre a folha que explica', (tester) async {
     final source = ValueNotifier(MapSourceKind.pack);
     var explained = 0;
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: VeilBadge(source: source, onExplain: () => explained++))));
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Center(child: SizedBox(height: 48, child: ModeSeal(tools: DevTools(realSource: FakeGps()), source: source, onTap: () => explained++))))));
     expect(find.text('VÉU INSTÁVEL'), findsNothing);
     source.value = MapSourceKind.floor;
     await tester.pump();

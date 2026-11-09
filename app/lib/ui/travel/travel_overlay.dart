@@ -1,5 +1,7 @@
-/// O Modo Viagem na tela: o botão do HUD, a escolha de destino e de veículo, os atalhos do Uber e da 99, o painel da
-/// corrida, o Rádio do Véu e o baú. Só desenha e repassa toques: a lógica é de `travel/travel_session.dart`.
+/// O Modo Viagem na tela: a escolha de destino e de veículo, os atalhos do Uber e da 99, o painel da corrida, o Rádio do
+/// Véu e o baú, dentro do app Rotas ([embedded]). No mapa fica uma instância sem nada visível, que mantém a leitura das
+/// notificações da corrida viva enquanto o app Rotas está fechado. Só desenha e repassa toques: a lógica é de
+/// `travel/travel_session.dart`.
 library;
 
 import 'dart:async';
@@ -33,8 +35,16 @@ class TravelOverlay extends StatefulWidget {
     required this.playerLon,
     required this.onMessage,
     this.bridge = const SystemBridge(),
+    this.embedded = false,
+    this.onPickOnMap,
     super.key,
   });
+
+  /// Dentro do app Rotas: desenha os painéis. Fora (no mapa): não desenha nada e cuida das notificações da corrida.
+  final bool embedded;
+
+  /// Escolher o destino tocando no mapa: quem chama fecha o celular e volta ao mapa.
+  final VoidCallback? onPickOnMap;
 
   final TravelSession travel;
   final GameState state;
@@ -78,7 +88,7 @@ class _TravelOverlayState extends State<TravelOverlay> {
       _installed = null; // o jogador pode ter instalado o app entre uma viagem e outra
       _etaMin = b.etaDefaultMin;
     }
-    final want = travel.ride != null && widget.state.setting(kRideNotifySetting);
+    final want = !widget.embedded && travel.ride != null && widget.state.setting(kRideNotifySetting);
     if (want && _rideSub == null) {
       unawaited(widget.bridge.setRideRelay(true));
       _rideSub = widget.bridge.rideNotifications().listen((n) => travel.onNotification(n.package, n.title, n.text));
@@ -138,32 +148,22 @@ class _TravelOverlayState extends State<TravelOverlay> {
       TravelStage.traveling => _traveling(),
       TravelStage.done => _outcome(),
     };
-    return Stack(children: [
-      if (travel.stage == TravelStage.idle)
-        Positioned(
-          right: 8,
-          bottom: 8,
-          child: Pressable(
-            key: const Key('travel-hud'),
-            onTap: travel.open,
-            child: Container(
-              height: 48,
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.85), border: Border.all(color: kSignal, width: 2)),
-              child: const Text('VIAGEM', style: TextStyle(fontSize: 8, color: kSignal)),
-            ),
-          ),
-        ),
-      if (panel != null) Positioned(left: 8, right: 8, bottom: 72, child: _Panel(child: panel)),
-    ]);
+    if (!widget.embedded) return const SizedBox.shrink();
+    return _Panel(child: panel ?? _idle());
   }
+
+  Widget _idle() => Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        const Text('ESCOLHA O DESTINO E O VEÍCULO. A PÉ E DE BICICLETA O MUNDO CONTINUA; DE CARRO, MOTO OU ÔNIBUS ELE FICA CALADO E O BAÚ DA CHEGADA PAGA O CAMINHO.', style: _body),
+        const SizedBox(height: 8),
+        PixelButton(key: const Key('travel-hud'), label: 'Nova viagem', color: kSignal, onTap: travel.open),
+      ]);
 
   Widget _pickDestination() => Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const Text('TOQUE NO MAPA PARA ESCOLHER O DESTINO, OU BUSQUE UM LUGAR.', style: _body),
         const SizedBox(height: 8),
         Wrap(spacing: 8, runSpacing: 8, children: [
           PixelButton(label: 'Buscar', color: kSignal, onTap: _openSearch),
+          if (widget.onPickOnMap != null) PixelButton(key: const Key('travel-pick-map'), label: 'No mapa', color: kVeil, onTap: widget.onPickOnMap!),
           PixelButton(label: 'Cancelar', color: kDim, onTap: travel.cancel),
         ]),
       ]);
