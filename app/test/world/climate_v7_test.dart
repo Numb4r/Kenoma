@@ -290,6 +290,18 @@ void main() {
       expect(debris.intersection({'item.scrap', 'item.herbs'}), isNotEmpty);
     });
 
+    test('no debug, os climas e efeitos da época 7 já funcionam antes dela começar, só neste aparelho', () {
+      final t6 = loadEpochs().epochs.firstWhere((e) => e.id == 6).startsUtc + 86400 + 5400;
+      final w = device(forced: 'vigil');
+      expect(w.modsAt(x21, y21, t6).id, 'vigil');
+      expect(w.zonesNear(x21, y21, 200, t6).where((z) => z.piece.name == 'gaze'), isNotEmpty);
+      final d = device();
+      for (final name in ['dry_bolt', 'gaze', 'rune', 'puddle', 'hurricane_eye', 'branch', 'lightning']) {
+        expect(d.debugTrigger(name, x21, y21, t6), isTrue, reason: name);
+      }
+      expect(device().idAt(cx20, cy20, t6), isNot('vigil'), reason: 'o mundo dos outros não muda');
+    });
+
     test('Trovoada seca: o raio deixa brasa com Fagulhas de Fogo por 5 min', () {
       final w = device(forced: 'dry_thunder');
       final d = w.dropsNear(x21, y21, 20, t, t + 3600).first;

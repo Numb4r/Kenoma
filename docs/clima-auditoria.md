@@ -53,7 +53,7 @@ O que muda o mundo (onde algo nasce, o que nasce, quanto dura a coleta) fica na 
 | Sol Negro (`black_sun`) | dia escuro | sombras invertidas (antes na tela) | sombras claras no chão | sombras dão Ectoplasma (proposta); Sombra em dobro: sem alvo | eclipse solar (datas a conferir) |
 | Garoa Prismática (`prismatic_drizzle`) | gotas coloridas | poças com reflexo em cores | poças prismáticas (proposta) | chance de Brilhante 2× | — |
 | Chuva congelante (`freezing_rain`, novo) | gotas brancas | ruas brilhando de gelo; galhos caídos | gelo nas ruas | galhos coletáveis (madeira; sem o item: ervas); carros fantasmas derrapam e andam devagar | events.json / debug |
-| Furacão (`hurricane`, novo) | chuva forte | bandas girando em volta do olho; o olho atravessa o mapa | olho e bandas | dentro do olho nasce um Eco raro; o tráfego para no olho (proposta) | events.json |
+| Furacão (`hurricane`, novo) | chuva forte | bandas girando em volta do olho; o olho atravessa o mapa | olho e bandas | dentro do olho nasce um Eco raro; tráfego do Véu mais lento (proposta) | events.json |
 | Chuva de Runas (`rune_rain`, novo) | glifos violeta caindo | runas no chão | runas | a runa vira Giz (proposta); bônus no próximo ritual: sem alvo (pede campo no save) | — |
 | Lua Dupla (`double_moon`, novo) | segunda lua no céu | sombras duplas: cada Eco pode ter um par só de sombra | par de sombra | chance de variante 2× | lua cheia muito perto da Terra |
 | Vigília (`vigil`, novo) | olhos entre as nuvens, satélites | olhares andando pelo chão | olhar no chão | no olhar nasce um Eco de nível alto; Exposição: sem alvo | Os Que Escutam (events.json) |

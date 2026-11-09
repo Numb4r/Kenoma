@@ -119,14 +119,16 @@ class ClimateWorld {
 
   /// O modelo e a época que valem em [t]: os da época; com o clima forçado pelo debug numa época sem modelo, o da época mais
   /// nova que tem (só neste aparelho, para dar para testar antes da época 6 começar).
+  /// Também quando o clima forçado só existe numa época mais nova (os climas da época 7 antes dela começar).
   (Epoch, ClimateModel)? modelAt(int t) {
     final e = schedule.select(t).epoch;
-    if (e.climate != null) return (e, e.climate!);
-    if (forced() == null) return null;
+    final f = forced();
+    if (e.climate != null && (f == null || e.climate!.defs.containsKey(f))) return (e, e.climate!);
+    if (f == null) return null;
     for (final o in schedule.epochs.reversed) {
-      if (o.climate != null) return (e, o.climate!);
+      if (o.climate != null && o.climate!.defs.containsKey(f)) return (e, o.climate!);
     }
-    return null;
+    return e.climate == null ? null : (e, e.climate!);
   }
 
   /// O id do clima na célula z20 em [t]: o forçado, o do modelo completo (épocas 6+) ou o de quatro estados (épocas 3 a 5).
@@ -451,12 +453,15 @@ class ClimateWorld {
   /// Debug: dispara a peça [pieceName] (de qualquer clima) no ponto (x21, y21) em [t], só neste aparelho. Com criatura ou
   /// item, eles nascem com certeza. Devolve `false` se nenhum clima tem a peça.
   bool debugTrigger(String pieceName, double x21, double y21, int t) {
-    final m = modelAt(t)?.$2 ?? _latestModel;
-    if (m == null) return false;
-    for (final def in m.defs.values) {
-      for (final p in def.pieces) {
+    // O modelo de agora primeiro; depois os das outras épocas, do mais novo (as peças da época 7 antes dela começar).
+    final models = {?modelAt(t)?.$2, for (final e in schedule.epochs.reversed) ?e.climate};
+    for (final def in models.expand((m) => m.defs.values)) {
+      for (var p in def.pieces) {
         if (p.name != pieceName) continue;
         final uid = fnv1a64([seed, t, (x21 * 1000).round(), (y21 * 1000).round(), salt('DBGFX')]);
+        if (p is PuddlePiece) {
+          p = ZonePiece(p.name, ghost: false, perCell: 1, radiusM: p.radiusM.$2.toDouble(), durationS: 1800, speedMps: 0, spawn: p.spawn, item: p.item);
+        }
         if (p is DropPiece) {
           debugDrops.add(ClimateDrop(piece: p, pieceIndex: -1, index: debugDrops.length, tUtc: t, x: x21, y: y21, spawnRoll: 0, itemRoll: 0, pick: (uid >>> 40) / (1 << 24), uid: uid));
           return true;
@@ -472,13 +477,6 @@ class ClimateWorld {
       }
     }
     return false;
-  }
-
-  ClimateModel? get _latestModel {
-    for (final e in schedule.epochs.reversed) {
-      if (e.climate != null) return e.climate;
-    }
-    return null;
   }
 }
 
