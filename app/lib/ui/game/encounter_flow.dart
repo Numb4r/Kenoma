@@ -75,14 +75,15 @@ Future<void> runEncounter(
           seal: prep.seal,
           tonic: tonic,
           circleStrong: strongInCircle(state, data, species.type),
-          toleranceMult: state.cb.toleranceMultFor(state.conjurer.school),
+          toleranceMult: state.cb.toleranceMultFor(state.conjurer.school) * world.climate.toleranceMult, // Aurora
           progressUpMult: state.cb.progressUpMultFor(state.conjurer.school),
           intensityAdd: (eco.behavior == EcoBehavior.aggressive ? data.street.aggressiveIntensityAdd : 0) + (species.isSpirit ? state.cb.spiritResistanceAdd : 0), // Espírito: resistência forte do tipo
           wanderScale: switch (eco.behavior) {
-            EcoBehavior.skittish => data.street.skittishWanderScale,
-            EcoBehavior.hidden => data.street.hiddenWanderScale,
-            _ => 1.0,
-          },
+                EcoBehavior.skittish => data.street.skittishWanderScale,
+                EcoBehavior.hidden => data.street.hiddenWanderScale,
+                _ => 1.0,
+              } *
+              world.climate.wanderFor(state.conjurer.school?.id), // Estática: ruído, menos para o Tecnomante
         ),
         balance: data.tuning.balance,
         balanceVersion: data.tuning.balanceVersion,

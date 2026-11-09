@@ -54,7 +54,7 @@ void main() {
   var follow = false;
 
   Future<void> pump(WidgetTester tester, GameSession s, {_FakeIo? io, String? scanned, int? now, _FakeNotifier? notifier}) async {
-    tester.view.physicalSize = const Size(1080, 4800);
+    tester.view.physicalSize = const Size(1080, 5400);
     tester.view.devicePixelRatio = 2.625;
     addTearDown(tester.view.reset);
     restarts = 0;

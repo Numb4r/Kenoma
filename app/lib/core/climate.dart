@@ -329,8 +329,9 @@ class ClimateZone {
   final double headingRad;
   final int startUtc, endUtc;
 
-  /// Para cada vaga: deslocamento em fração do raio (dx, dy), o sorteio de existir e o de escolha.
-  final List<({double dx, double dy, double roll, double pick})> slots;
+  /// Para cada vaga: deslocamento em fração do raio (dx, dy), o sorteio de nascer a criatura ([roll]), o de nascer o item
+  /// ([roll2]) e o de escolha (espécie, item, quantidade, nível).
+  final List<({double dx, double dy, double roll, double roll2, double pick})> slots;
   final int uidBase;
 
   bool activeAt(int t) => t >= startUtc && t < endUtc;
@@ -385,30 +386,33 @@ class ClimateModel {
     return (d.month, d.hour);
   }
 
-  /// O clima sorteado da janela [window] na região z12 `(rx, ry)`: só nativos, pela estação e hora local.
-  String drawn(int seed, int window, int rx, int ry) => _draw(seed, window, rx, ry, true);
+  /// O clima sorteado da janela [window] na região z12 `(rx, ry)`: só nativos, pela estação e hora local. Um clima com
+  /// regra `after` (o arco-íris) só fica se a janela anterior foi um dos da lista; senão o mesmo sorteio cai entre os
+  /// outros. A janela anterior só é olhada quando o sorteio dá um desses climas.
+  String drawn(int seed, int window, int rx, int ry) => _draw(seed, window, rx, ry, 0);
 
-  String _draw(int seed, int window, int rx, int ry, bool checkAfter) {
+  String _draw(int seed, int window, int rx, int ry, int depth) {
     final (month, hour) = localMonthHour(window);
     final rule = seasons.firstWhere((r) => r.matches(month, hour), orElse: () => const SeasonRule(months: {}, weights: {'clear': 1}));
     final u = Pcg32(fnv1a64([seed, window, rx, ry, saltClimate]), saltKenoma).nextFloat();
-    String? prev;
-    bool ok(String id) {
-      final need = after[id];
-      if (need == null) return true;
-      if (!checkAfter) return false;
-      return need.contains(prev ??= _draw(seed, window - 1, rx, ry, false));
+    String pick(List<MapEntry<String, int>> pool) {
+      final total = pool.fold(0, (a, e) => a + e.value);
+      if (total == 0) return 'clear';
+      var target = u * total;
+      for (final e in pool) {
+        if (target < e.value) return e.key;
+        target -= e.value;
+      }
+      return pool.last.key;
     }
 
-    final pool = [for (final e in rule.weights.entries) if (e.value > 0 && ok(e.key)) e];
-    final total = pool.fold(0, (a, e) => a + e.value);
-    if (total == 0) return 'clear';
-    var target = u * total;
-    for (final e in pool) {
-      if (target < e.value) return e.key;
-      target -= e.value;
-    }
-    return pool.last.key;
+    final full = [for (final e in rule.weights.entries) if (e.value > 0) e];
+    final first = pick(full);
+    final need = after[first];
+    if (need == null) return first;
+    // Teto de profundidade: só uma sequência de 8 sorteios seguidos desse clima chegaria nele.
+    if (depth < 8 && need.contains(_draw(seed, window - 1, rx, ry, depth + 1))) return first;
+    return pick([for (final e in full) if (!after.containsKey(e.key)) e]);
   }
 
   /// O clima da janela de [tUtc] na região: o de um evento ativo (o primeiro da lista), senão o sorteado.
@@ -478,7 +482,7 @@ class ClimateModel {
               for (var j = 0; j < slots; j++)
                 () {
                   final a = rng.nextFloat() * 2 * math.pi, r = math.sqrt(rng.nextFloat());
-                  return (dx: math.cos(a) * r, dy: math.sin(a) * r, roll: rng.nextFloat(), pick: rng.nextFloat());
+                  return (dx: math.cos(a) * r, dy: math.sin(a) * r, roll: rng.nextFloat(), roll2: rng.nextFloat(), pick: rng.nextFloat());
                 }(),
             ],
             uidBase: fnv1a64([seed, epochId, cx, cy, window, pieceIndex, k, saltClimateUid]),

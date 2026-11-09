@@ -5,7 +5,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../../core/tiles.dart';
-import '../../core/weather.dart';
+import '../../data/climate_catalog.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
 import '../collection/collection_screen.dart';
@@ -80,7 +80,7 @@ Future<void> showPhoneMenu(
   required Widget Function() radar,
   required int Function() nowUtc,
   required int Function() epochId,
-  Weather Function()? weather,
+  ClimateInfo Function()? weather,
   double Function()? lat,
 }) {
   final status = PhoneStatusSource(nowUtc: nowUtc, lat: lat ?? () => 0, weather: weather);

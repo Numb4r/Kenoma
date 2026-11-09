@@ -1,6 +1,7 @@
 /// Desenho da tela de sintonia. Só lê o estado e pinta: nenhuma regra do jogo mora aqui.
 library;
 
+import '../flashes.dart';
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -129,7 +130,8 @@ void _creature(Canvas canvas, TuningLayout l, TuningView v, EcoSprite? sprite) {
     ..isAntiAlias = false;
   canvas.drawImageRect(sprite.normal, src, dst, paint);
   // As costuras violeta pulsam: a versão acesa entra e sai por cima.
-  final pulse = 0.5 + 0.5 * math.sin(v.clock * 3.0);
+  // Reduzir clarões: a costura acesa respira devagar e pouco, sem piscar.
+  final pulse = reduceFlashes.value ? 0.35 + 0.15 * math.sin(v.clock * 1.0) : 0.5 + 0.5 * math.sin(v.clock * 3.0);
   canvas.drawImageRect(sprite.bright, src, dst, paint..color = Color.fromRGBO(255, 255, 255, pulse));
 }
 

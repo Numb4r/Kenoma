@@ -8,7 +8,7 @@ import 'package:flutter/widgets.dart';
 
 import '../../core/astro.dart';
 import '../../core/features.dart';
-import '../../core/weather.dart';
+import '../../data/climate_catalog.dart';
 import '../game/moon_hud.dart';
 import '../tema.dart';
 
@@ -18,7 +18,7 @@ class PhoneStatusSource {
 
   final int Function() nowUtc;
   final double Function() lat;
-  final Weather Function()? weather;
+  final ClimateInfo Function()? weather;
 }
 
 /// Definido por `showPhoneMenu`. ponytail: global porque as telas dos apps ficam em rotas fora do celular; troque por
@@ -87,7 +87,7 @@ class _PhoneStatusBarState extends State<PhoneStatusBar> {
           const SizedBox(width: KEspaco.s2),
           SizedBox(width: ico, height: ico, child: FittedBox(child: CustomPaint(key: const Key('status-weather'), size: const Size(18, 18), painter: WeatherGlyphPainter(w)))),
           const SizedBox(width: KEspaco.s1),
-          Text(w.label.toUpperCase(), key: const Key('status-weather-label'), style: style.copyWith(color: KCores.textoMudo)),
+          Text(w.name.toUpperCase(), key: const Key('status-weather-label'), style: style.copyWith(color: KCores.textoMudo)),
         ],
             ]),
           ),

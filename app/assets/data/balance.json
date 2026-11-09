@@ -15,6 +15,7 @@
   "fog": { "reveal_radius_m": 40 },
   "familiar": { "pickup_bonus_m": 2, "follow_offset_m": 6 },
   "weather": { "rain_particles": 70 },
+  "climate": { "particle_cap": 260, "pocket_rate": 0.2, "flash_ms": 120, "flash_alpha": 0.55, "dim_alpha": 0.18, "bolt_ms": 350, "burn_mark_s": 60, "strike_min_player_m": 15, "flash_max_m": 400, "thunder_max_m": 1000, "fall_ms": 600, "footprint_every_m": 3, "footprint_max": 40 },
   "tuning": {
     "progress_up_per_s": 0.2,
     "progress_down_per_s": 0.1,

@@ -8,7 +8,6 @@ import 'package:kenoma/story/chat_state.dart';
 import 'package:kenoma/ui/collection/collection_screen.dart';
 import 'package:kenoma/ui/game/encounter_flow.dart';
 import 'package:kenoma/ui/game/fog_painter.dart';
-import 'package:kenoma/ui/game/rain_painter.dart';
 import 'package:kenoma/ui/menu/bestiary_screen.dart';
 import 'package:kenoma/ui/menu/chat_screen.dart';
 import 'package:kenoma/ui/menu/radar_screen.dart';
@@ -205,43 +204,6 @@ void main() {
   });
 
   group('chuva e névoa', () {
-    test('a chuva sobe devagar com o clima, a tempestade pesa mais e sem chuva as gotas somem', () {
-      final rain = RainPainter(maxDrops: 70);
-      const size = ui.Size(411, 914);
-      for (var i = 0; i < 300; i++) {
-        rain.update(1 / 30, size, 1.0);
-      }
-      final light = rain.count;
-      expect(light, inInclusiveRange(55, 76));
-      for (var i = 0; i < 300; i++) {
-        rain.update(1 / 30, size, 1.6);
-      }
-      expect(rain.count, greaterThan(light));
-      expect(rain.count, lessThanOrEqualTo(120));
-      rain.update(1 / 30, size, 0);
-      expect(rain.count, greaterThan(0), reason: 'não corta de uma vez');
-      for (var i = 0; i < 600; i++) {
-        rain.update(1 / 30, size, 0);
-      }
-      expect(rain.count, 0);
-    });
-
-    test('a chuva cobre a tela inteira, do topo ao canto de baixo à direita, em qualquer proporção', () {
-      for (final size in const [ui.Size(411, 914), ui.Size(914, 411), ui.Size(360, 360), ui.Size(320, 1200)]) {
-        final rain = RainPainter(maxDrops: 70);
-        const cols = 6, rows = 10;
-        final hit = <int>{};
-        for (var i = 0; i < 1800; i++) {
-          rain.update(1 / 30, size, 1.6);
-          for (final p in rain.positions) {
-            if (p.dx < 0 || p.dy < 0 || p.dx >= size.width || p.dy >= size.height) continue;
-            hit.add((p.dy / size.height * rows).floor() * cols + (p.dx / size.width * cols).floor());
-          }
-        }
-        expect(hit.length, cols * rows, reason: 'faltou gota em alguma parte de $size');
-      }
-    });
-
     test('o véu recorta uma célula por célula revelada à vista, e nada sem névoa revelada', () {
       const size = ui.Size(411, 914);
       final cam = MapCamera.atLatLon(-22.8174, -47.0697, pixelsPerCell: 80);

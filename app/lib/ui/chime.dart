@@ -13,3 +13,14 @@ Future<void> playChime() async {
     // sem som: o aviso na tela basta
   }
 }
+
+/// O trovão de um raio a [distanceM] metros: chega com o atraso do som (343 m/s) e mais fraco de longe. Sai do gerador de
+/// tons do sistema, sem arquivo de áudio (`MainActivity`, método `thunder`).
+Future<void> playThunder(double distanceM) async {
+  await Future<void>.delayed(Duration(milliseconds: (distanceM / 343 * 1000).round()));
+  try {
+    await _channel.invokeMethod<void>('thunder', {'volume': (100 - distanceM / 12).clamp(20, 100).round()});
+  } catch (_) {
+    // sem som: o clarão basta
+  }
+}

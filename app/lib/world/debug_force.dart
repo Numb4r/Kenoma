@@ -5,7 +5,6 @@ library;
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 import '../core/behavior.dart';
-import '../core/weather.dart';
 
 class DebugForce extends ChangeNotifier {
   /// Pedidos para o **próximo Eco novo** que aparecer à vista. Cada um é gasto quando o Eco aparece.
@@ -19,12 +18,27 @@ class DebugForce extends ChangeNotifier {
   /// O próximo Eco novo vira o Eco de ritual da família dele.
   bool nextRitual = false;
 
-  /// Clima forçado: vale para o HUD, a chuva e os pesos de spawn enquanto estiver ligado. `null`: o de verdade.
-  Weather? weather;
+  /// Clima forçado (qualquer id do `clima.json`, inclusive os de evento): vale para o HUD, o desenho, as peças e os pesos
+  /// de spawn enquanto estiver ligado. `null`: o de verdade.
+  String? weather;
+
+  /// A peça (`lightning`, `hail`, `dust_devil`, `meteor`...) que o próximo toque no mapa dispara ali. `null`: nenhuma.
+  String? tapEffect;
+
+  /// Gasta o pedido de efeito no toque.
+  String? takeTapEffect() {
+    final e = tapEffect;
+    if (e != null) {
+      tapEffect = null;
+      notifyListeners();
+    }
+    return e;
+  }
 
   bool get pendingEco => nextBehavior != null || nextVariant || nextShiny || nextSpirit || nextRitual;
 
-  void set({EcoBehavior? behavior, bool? variant, bool? shiny, bool? spirit, bool? ritual, Weather? weather, bool clearWeather = false}) {
+  void set({EcoBehavior? behavior, bool? variant, bool? shiny, bool? spirit, bool? ritual, String? weather, bool clearWeather = false, String? tapEffect}) {
+    if (tapEffect != null) this.tapEffect = tapEffect;
     if (ritual != null) nextRitual = ritual;
     if (behavior != null) nextBehavior = behavior;
     if (variant != null) nextVariant = variant;
@@ -54,6 +68,7 @@ class DebugForce extends ChangeNotifier {
     nextSpirit = false;
     nextRitual = false;
     weather = null;
+    tapEffect = null;
     notifyListeners();
   }
 }

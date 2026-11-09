@@ -433,7 +433,7 @@ void main() {
     testWidgets('o relógio sobreposto vale também no mapa livre: depois do fim da época o mundo está desatualizado', (tester) async {
       final tools = newTools();
       await pumpMenu(tester, tools: tools);
-      tools.clock.setUtc(DateTime.utc(2027, 3, 1).millisecondsSinceEpoch ~/ 1000);
+      tools.clock.setUtc(DateTime.utc(2030, 5, 1).millisecondsSinceEpoch ~/ 1000); // depois do fim da última época
       await tester.pump();
       await tester.ensureVisible(find.text('ABRIR MAPA'));
       await tapVisible(tester, find.text('ABRIR MAPA'));

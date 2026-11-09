@@ -1097,5 +1097,12 @@
       "color": "#1a1424",
       "alpha": 0.3
     }
+  },
+  "tags": {
+    "charged": {
+      "name": "Eco carregado",
+      "tint": "#5fd3c6",
+      "born": "Um Eco carregado nasceu do raio"
+    }
   }
 }

@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/behavior.dart';
-import 'package:kenoma/core/weather.dart';
 import 'package:kenoma/world/fog.dart';
 import 'package:kenoma/dev/debug_capture.dart';
 import 'package:kenoma/dev/debug_env.dart';
@@ -22,7 +21,7 @@ import '../support/fake_position_source.dart';
 /// sumir do registro, o menu perdeu uma função: este teste falha.
 const originalIds = [
   'pos.simulator', 'pos.speed', 'pos.noise', 'pos.joystick', 'pos.teleport', //
-  'time.clock', 'time.weather',
+  'time.clock', 'time.weather', 'time.weather_tap',
   'spawn.behavior', 'spawn.variant', 'spawn.shiny', 'spawn.clear',
   'map.open_game', 'map.biome_grid', 'map.grid20', 'map.radii', 'map.fog_reveal', 'map.fog_clear', 'map.radar_reset', 'map.free',
   'player.level',
@@ -242,7 +241,7 @@ void main() {
         await tester.tap(find.text(t));
       }
       await tester.pump();
-      expect((tools.force.nextBehavior, tools.force.nextVariant, tools.force.nextShiny, tools.force.weather), (EcoBehavior.skittish, true, true, Weather.rain));
+      expect((tools.force.nextBehavior, tools.force.nextVariant, tools.force.nextShiny, tools.force.weather), (EcoBehavior.skittish, true, true, 'rain'));
       await tester.ensureVisible(find.text('LIMPAR PEDIDOS'));
       await tester.tap(find.text('LIMPAR PEDIDOS'));
       await tester.ensureVisible(find.text('REAL'));

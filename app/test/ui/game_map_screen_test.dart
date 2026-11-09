@@ -14,7 +14,6 @@ import 'package:kenoma/world/spawn_field.dart';
 import 'package:kenoma/dev/dev_tools.dart';
 import 'package:kenoma/dev/gps_simulator.dart';
 import 'package:kenoma/ui/game/game_map_game.dart';
-import 'package:kenoma/core/weather.dart';
 import 'package:kenoma/core/behavior.dart';
 import 'package:kenoma/ui/game/player_hud.dart';
 import 'package:kenoma/ui/menu/circle_screen.dart';
@@ -42,7 +41,7 @@ class _Bundle extends CachingAssetBundle {
 }
 
 Map<String, List<int>> realAssets() => {
-      for (final f in ['epochs', 'biomes', 'balance', 'creatures', 'items', 'recipes', 'mentor', 'forum', 'rituals']) 'assets/data/$f.json': File('assets/data/$f.json').readAsBytesSync(),
+      for (final f in ['epochs', 'biomes', 'balance', 'creatures', 'items', 'recipes', 'mentor', 'forum', 'rituals', 'clima']) 'assets/data/$f.json': File('assets/data/$f.json').readAsBytesSync(),
       'assets/regions/campinas_e0.bin': File('assets/regions/campinas_e0.bin').readAsBytesSync(),
       'assets/regions/campinas_e0_vis.bin': File('assets/regions/campinas_e0_vis.bin').readAsBytesSync(),
       'assets/regions/campinas_e2_nowalk.bin': File('assets/regions/campinas_e2_nowalk.bin').readAsBytesSync(),
@@ -808,11 +807,11 @@ void main() {
     testWidgets('o clima forçado pelo debug aparece no HUD junto da lua e faz chover no mapa; sem chuva, nada cai', (tester) async {
       final env = await pumpGame(tester);
       expect(find.byKey(const Key('weather-label')), findsOneWidget);
-      env.tools.force.set(weather: Weather.rain);
+      env.tools.force.set(weather: 'rain');
       await env.live(12); // o clima que se vê é atualizado a cada 10 s
       expect(find.text('CHUVA'), findsOneWidget);
       expect(env.game.rainCount, greaterThan(20));
-      env.tools.force.set(weather: Weather.clear);
+      env.tools.force.set(weather: 'clear');
       await env.live(12);
       expect(find.text('CHUVA'), findsNothing);
       for (var i = 0; i < 40; i++) {
@@ -823,7 +822,7 @@ void main() {
 
     testWidgets('o interruptor "chuva no mapa" apaga a chuva mesmo com o clima de chuva', (tester) async {
       final env = await pumpGame(tester);
-      env.tools.force.set(weather: Weather.storm);
+      env.tools.force.set(weather: 'storm');
       await env.live(12);
       expect(env.game.rainCount, greaterThan(40));
       env.game.worldView!.state.setSetting('rain_fx', false);
