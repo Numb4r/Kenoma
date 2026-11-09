@@ -43,17 +43,24 @@ String isoUtc(int seconds) => DateTime.fromMillisecondsSinceEpoch(seconds * 1000
 
 /// Roda fora da tela: nada da resposta é conferido na thread do jogo. A Overpass pode responder 200 com `remark` quando estoura
 /// o tempo no meio: esse bloco viria cortado e ficaria no cache para sempre.
-(FallbackBlock, Uint8List) _buildBlock(FallbackCodec codec, Uint8List body, int tx, int ty, int epochId) {
+(FallbackBlock, Uint8List) _buildBlock(FallbackCodec codec, Uint8List body, int tx, int ty, int epochId, String dateIso) {
   final text = utf8.decode(body);
-  final remark = (jsonDecode(text) as Map<String, dynamic>)['remark'];
+  final json = jsonDecode(text) as Map<String, dynamic>;
+  final remark = json['remark'];
   if (remark != null) throw FormatException('Overpass: $remark');
+  // Um espelho com a base atrasada responde à consulta com data usando o que tem: o mundo sairia diferente do dos amigos.
+  // Visto em 2026-11-09: overpass.private.coffee com base de 2026-05-31. A base tem de cobrir a data pedida.
+  final base = (json['osm3s'] as Map<String, dynamic>?)?['timestamp_osm_base'] as String?;
+  if (base != null && DateTime.parse(base).isBefore(DateTime.parse(dateIso))) {
+    throw FormatException('Overpass com base de $base, anterior a $dateIso');
+  }
   final block = codec.build(overpassJson: text, tx: tx, ty: ty, epochId: epochId);
   return (block, codec.encode(block));
 }
 
 // Funções soltas: um closure dentro da classe levaria o serviço inteiro para o Isolate.
-Future<(FallbackBlock, Uint8List)> _buildInIsolate(FallbackCodec codec, Uint8List body, int tx, int ty, int epochId) =>
-    Isolate.run(() => _buildBlock(codec, body, tx, ty, epochId));
+Future<(FallbackBlock, Uint8List)> _buildInIsolate(FallbackCodec codec, Uint8List body, int tx, int ty, int epochId, String dateIso) =>
+    Isolate.run(() => _buildBlock(codec, body, tx, ty, epochId, dateIso));
 
 Future<FallbackBlock> _decodeInIsolate(FallbackCodec codec, Uint8List bytes) => Isolate.run(() => codec.decode(bytes));
 
@@ -177,7 +184,7 @@ class FallbackService {
         maxBytes: balance.maxReplyBytes,
       );
       if (reply.status != 200) throw HttpException('Overpass ${reply.status}');
-      final (block, bytes) = await _buildInIsolate(codec, reply.body, tx, ty, epoch.id);
+      final (block, bytes) = await _buildInIsolate(codec, reply.body, tx, ty, epoch.id, isoUtc(epoch.startsUtc));
       _done.add((epoch.id, tx, ty));
       world.putBlock(block);
       _fails = 0;
