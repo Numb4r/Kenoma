@@ -1,5 +1,4 @@
 import '../../dev/tap_latency.dart';
-import '../pressable.dart';
 import '../../core/features.dart';
 import 'dart:async';
 
@@ -33,7 +32,6 @@ import '../../player/game_state.dart' show GameState;
 import '../../player/conjurer_balance.dart' show School;
 import '../../player/mark.dart';
 import '../../player/progression.dart' show localDay;
-import '../../dev/debug_tag.dart';
 import '../../dev/dev_tools.dart';
 import '../../player/game_session.dart';
 import '../../save/fresh_start.dart';
@@ -56,7 +54,13 @@ import '../tuning/tuning_screen.dart' show PixelButton;
 import '../menu/phone_menu.dart';
 import '../menu/phone_shell.dart';
 import '../menu/profile_screen.dart';
+import '../menu/phone_apps.dart';
 import '../menu/radar_screen.dart';
+import '../menu/sky_screen.dart';
+import '../patrol/patrol_screen.dart';
+import '../travel/routes_screen.dart';
+import '../../travel/ride.dart' show RideState;
+import '../../world/sky_outlook.dart';
 import '../../story/local_notifier.dart';
 import '../../story/notification_plan.dart';
 import '../settings/regions_section.dart' show regionSizeLabel;
@@ -66,8 +70,9 @@ import '../travel/travel_layer.dart';
 import '../travel/travel_overlay.dart';
 import '../settings/settings_screen.dart';
 import 'game_map_game.dart';
-import 'moon_hud.dart';
-import 'veil_badge.dart';
+import 'hud_bar.dart';
+import 'hud_layout.dart';
+import 'joystick.dart';
 import 'player_hud.dart';
 import 'pocket_overlay.dart';
 import 'sim_overlay.dart';
@@ -161,6 +166,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final r = _ready, c = _climate;
     if (r == null || c == null) return;
     reduceFlashes.value = r.session.state.setting(kReduceFlashesSetting);
+    soundOn.value = r.session.state.settingOr(kSoundSetting, true);
     final u = c.update(r.game.playerLat, r.game.playerLon, tools.clock.nowUtc);
     if (u.changed) setState(() {});
     if (u.notice != null) _toast(u.notice!, seconds: 5);
@@ -227,10 +233,21 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _tickLayers(r, st);
     _optionalSensors(r, st, now);
     _patrol?.tick();
+    _radioTick(r, now);
     if (_weatherIn-- <= 0) {
       _weatherIn = 10;
       _updateWeather();
     }
+  }
+
+  String? _radioSaid;
+
+  /// O Rádio do Véu mora no app Rotas; no mapa, cada fala nova sai uma vez no aviso.
+  void _radioTick(_Ready r, int now) {
+    final line = r.travel.radioLine(now)?.text;
+    if (line == null || line == _radioSaid) return;
+    _radioSaid = line;
+    _toast('Rádio do Véu: $line', seconds: 6);
   }
 
   /// Um passo das camadas do mapa. Na primeira vez no piso, o Familiar comenta (o `setting` não deixa repetir).
@@ -677,6 +694,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       WidgetsBinding.instance.addPostFrameCallback((_) => _setFollowHeading(true));
     }
     _ready = _Ready(assets, game, tracker, sub, data, session, world, layers, travel);
+    travel.addListener(() => _onTravel(_ready!));
+    PatrolController.instance.addListener(_rebuild); // o atalho da Patrulha entra e sai da faixa
     _familiarSchool = session.state.conjurer.school;
     if (_familiarSchool != null) unawaited(_reloadFamiliar(game, session.state));
     session.state.addListener(_onStateForFamiliar);
@@ -793,6 +812,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _stopProximity();
     _patrol?.dispose();
     PatrolController.instance.removeListener(_pocketFps);
+    PatrolController.instance.removeListener(_rebuild);
     _pocket.dispose();
     super.dispose();
   }
@@ -814,10 +834,151 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     );
   }
 
+  /// Abre um app do celular direto do mapa (atalhos do HUD), por cima do mapa: voltar devolve ao mapa.
+  void _openApp(_Ready r, String id) {
+    final screen = _appScreen(r, id);
+    if (screen != null && mounted) unawaited(Navigator.of(context).push(phoneRoute<void>(screen)));
+  }
+
+  /// As telas dos apps que dependem do mapa (os outros o celular monta sozinho).
+  Widget? _appScreen(_Ready r, String id) => switch (id) {
+        PhoneAppId.radar => RadarScreen(
+            state: r.session.state,
+            street: r.data.street,
+            nowUtc: () => tools.clock.nowUtc,
+            onSweep: () => r.world.radar(tools.clock.nowUtc),
+            echoes: r.world.sonar,
+            rotation: () => r.game.follow.rotation,
+          ),
+        PhoneAppId.routes => RoutesScreen(
+            travel: r.travel,
+            state: r.session.state,
+            data: r.data,
+            appVersion: _version,
+            playerLat: () => r.game.playerLat,
+            playerLon: () => r.game.playerLon,
+            onMessage: _toast,
+            onPickOnMap: _backToMap,
+          ),
+        PhoneAppId.patrol => PatrolScreen(state: r.session.state, balance: r.data.patrol, onMessage: _toast),
+        PhoneAppId.sky => SkyScreen(
+            nowUtc: () => tools.clock.nowUtc,
+            lat: () => r.game.playerLat,
+            catalog: r.data.climates,
+            shown: streetLifeEnabled ? () => _climate!.info : null,
+            outlook: streetLifeEnabled ? cellSkyOutlook(_climate!.world, lat: () => r.game.playerLat, lon: () => r.game.playerLon) : null,
+          ),
+        PhoneAppId.settings => _settings(r),
+        _ => null,
+      };
+
+  /// Fecha o celular e os apps: o mapa volta à vista (escolher o destino da viagem tocando nele).
+  void _backToMap() {
+    if (!mounted) return;
+    final own = ModalRoute.of(context);
+    Navigator.of(context).popUntil((route) => route == own || route.isFirst);
+  }
+
+  TravelStage _travelStage = TravelStage.idle;
+
+  /// O destino foi tocado no mapa: o app Rotas volta para escolher o veículo.
+  void _onTravel(_Ready r) {
+    final was = _travelStage;
+    _travelStage = r.travel.stage;
+    if (was == TravelStage.pickDestination && _travelStage == TravelStage.pickVehicle && mounted && ModalRoute.of(context)?.isCurrent == true) {
+      _openApp(r, PhoneAppId.routes);
+    }
+    _rebuild();
+  }
+
+  /// O Radar já está liberado no nível do Conjurador (e na versão com a Rua viva).
+  bool _radarUnlocked(_Ready r) =>
+      streetLifeEnabled && r.data.phone.apps.any((a) => a.id == PhoneAppId.radar && a.unlockedAt(r.session.state.playerLevel));
+
+  /// O atalho do Radar no HUD: o pulso sai sem abrir o app.
+  void _pulse(_Ready r) {
+    final out = r.world.radar(tools.clock.nowUtc);
+    HapticFeedback.lightImpact();
+    _toast(radarSummary(out), seconds: 3);
+  }
+
+  /// O atalho da viagem na faixa acima do celular: o que está acontecendo, em poucas letras. `null`: nenhuma viagem.
+  String? _travelChip(TravelSession t) => switch (t.stage) {
+        TravelStage.idle => null,
+        TravelStage.pickDestination => 'TOQUE NO MAPA: DESTINO',
+        TravelStage.pickVehicle || TravelStage.askPassenger => 'VIAGEM: ESCOLHA',
+        TravelStage.traveling => t.ride != null && t.ride!.state != RideState.inTrip ? 'CORRIDA · ${t.ride!.appName.toUpperCase()}' : 'VIAGEM · ${(t.recordedM / 1000).toStringAsFixed(1)} KM',
+        TravelStage.done => 'BAÚ DA VIAGEM',
+      };
+
+  /// O estado do GPS, do relógio e do mundo quando há algo a avisar (seguindo bem, nada).
+  List<String> _warnings(_Ready r) {
+    final s = r.tracker.state;
+    return [
+      if (r.assets.stale) 'MUNDO DESATUALIZADO',
+      if (tools.clock.overridden) 'RELÓGIO UTC ${_StatusLines.utc(tools.clock.now)} (OVERRIDE)',
+      if (s.status != TrackingStatus.tracking) _StatusLines.line(s, tools),
+    ];
+  }
+
+  /// A folha do selo de modo: o estado do GPS, a troca de fonte, os controles do simulador e o menu de debug (que nunca
+  /// sai do jogo, CLAUDE.md).
+  Future<void> _openModeSheet(_Ready r) => showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: kPanel,
+        isScrollControlled: true,
+        builder: (sheet) => SafeArea(
+          child: ListenableBuilder(
+            listenable: Listenable.merge([tools, r.layers.source]),
+            builder: (sheet, _) => SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                _StatusLines(state: r.tracker.state, tools: tools, stale: r.assets.stale),
+                if (r.layers.source.value == MapSourceKind.overpass) ...[
+                  const SizedBox(height: 8),
+                  const Text(kVeilBadgeHelp, style: TextStyle(fontSize: 8, color: kVeil, height: 1.8)),
+                ],
+                const SizedBox(height: 12),
+                PixelButton(
+                  label: tools.useSimulator ? 'Usar GPS real' : 'Usar simulador',
+                  color: kSignal,
+                  onTap: () {
+                    Navigator.of(sheet).pop();
+                    unawaited(_switchSource(!tools.useSimulator));
+                  },
+                ),
+                if (tools.useSimulator) ...[const SizedBox(height: 12), SimChips(tools: tools)],
+                const SizedBox(height: 12),
+                PixelButton(key: const Key('open-debug-menu'), label: 'Menu de debug', color: kEssence, onTap: () => Navigator.of(context).popUntil((route) => route.isFirst)),
+              ]),
+            ),
+          ),
+        ),
+      );
+
   Widget _view(_Ready r) {
     final game = r.game;
-    game.bottomInset = MediaQuery.paddingOf(context).bottom;
+    final pad = MediaQuery.paddingOf(context);
+    final screen = MediaQuery.sizeOf(context);
+    game.bottomInset = pad.bottom;
     final blocked = _access != null && _access != LocationAccess.granted && !tools.useSimulator;
+    final st = r.session.state;
+    final now = tools.clock.nowUtc;
+    final patrolOn = _patrol != null && PatrolController.instance.running;
+    final travelChip = _travelChip(r.travel);
+    final hud = hudLayout(
+      screen,
+      top: pad.top,
+      bottom: pad.bottom,
+      trackerMax: r.assets.balance.trackerMax,
+      marks: st.activeMarks(now).length,
+      shortcuts: patrolOn || travelChip != null,
+      compass: true, // a vaga da bússola fica reservada: ela aparece e some sem empurrar nada
+      radar: _radarUnlocked(r),
+      simulator: tools.useSimulator,
+    );
+    game.trackerRect = hud.tracker;
+    final warnings = _warnings(r);
     return Stack(
       children: [
         Listener(
@@ -853,126 +1014,119 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             child: GameWidget(game: game),
           ),
         ),
-        SafeArea(
-          child: Stack(
-            children: [
-              Padding(padding: const EdgeInsets.only(bottom: 90), child: _StatusHud(state: r.tracker.state, tools: tools, stale: r.assets.stale)),
-              if (tools.useSimulator) SimOverlay(tools: tools),
-              Positioned(right: 120, top: 8, child: DebugTag(tools: tools)), // etiqueta enquanto algo estiver forçado
-              Positioned(
-                left: 0,
-                top: 0,
-                width: 48,
-                height: 48,
-                child: Pressable(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: const Center(child: Text('<', style: TextStyle(fontSize: 24, color: kText))),
-                ),
-              ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Pressable(
-                  onTap: () => _switchSource(!tools.useSimulator),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.85), border: Border.all(color: kSignal, width: 2)),
-                    child: Text(tools.useSimulator ? 'SIMULADOR' : 'GPS REAL', style: const TextStyle(fontSize: 8, color: kSignal)),
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 8,
-                top: 56,
-                child: MoonHud(nowUtc: () => tools.clock.nowUtc, lat: () => game.playerLat, weather: streetLifeEnabled ? () => _climate!.info : null, onWeatherTap: (i) => _toast(i.hud, seconds: 4)),
-              ),
-              Positioned(
-                right: 8,
-                top: 112,
-                child: VeilBadge(source: r.layers.source, onExplain: () => _toast(kVeilBadgeHelp, seconds: 6)),
-              ),
-              if (_patrol != null) Positioned(right: 8, top: 168, child: PatrolHudButton(hooks: _patrol!)),
-              Positioned(
-                left: 8,
-                top: 56,
-                child: MarkChips(
-                  state: r.session.state,
-                  nowUtc: () => tools.clock.nowUtc,
-                  sprites: game.sprites,
-                  onTap: (m) => _startEncounter(m.toSpawn()),
-                ),
-              ),
-              Positioned(left: 8, bottom: 8, child: PortraitHud(
-                state: r.session.state,
-                frame: game.playerFrames.isEmpty ? null : game.playerFrames.first,
-                onTap: () => Navigator.of(context).push(phoneRoute<void>(ProfileScreen(
-                  state: r.session.state,
-                  data: r.data,
-                  nowUtc: () => tools.clock.nowUtc,
-                  onOpenSettings: () => Navigator.of(context).push(phoneRoute<void>(_settings(r))),
-                ))),
-              )),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 8,
-                child: Center(
-                  child: ListenableBuilder(
-                    listenable: r.session.state,
-                    builder: (context, _) => PhoneButton(
-                      alert: phoneHasAlert(r.session.state, r.data.phone),
-                      onTap: () => showPhoneMenu(
-                        context,
-                        state: r.session.state,
-                        data: r.data,
-                        settings: () => _settings(r),
-                        radar: () => RadarScreen(
-                          state: r.session.state,
-                          street: r.data.street,
-                          nowUtc: () => tools.clock.nowUtc,
-                          onSweep: () => r.world.radar(tools.clock.nowUtc),
-                        ),
-                        nowUtc: () => tools.clock.nowUtc,
-                        weather: () => _climate!.info,
-                        lat: () => game.playerLat,
-                        epochId: () => r.data.schedule.select(tools.clock.nowUtc).epoch.id,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 56,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: ValueListenableBuilder(
-                    valueListenable: game.compass,
-                    builder: (context, c, _) => c.visible
-                        ? CompassButton(angle: c.angle, follow: c.follow, onNorth: game.goNorth, onToggleFollow: game.toggleFollowHeading)
-                        : const SizedBox.shrink(),
-                  ),
-                ),
-              ),
-              if (_toastText != null)
-                Positioned(
-                  left: 56,
-                  right: 120,
-                  top: 12,
-                  child: IgnorePointer(
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.9), border: Border.all(color: kEssence, width: 2)),
-                      child: Text(_toastText!.toUpperCase(), style: const TextStyle(fontSize: 8, color: kText, height: 1.6)),
-                    ),
-                  ),
-                ),
-              Positioned.fill(child: TravelOverlay(travel: r.travel, state: r.session.state, data: r.data, appVersion: _version, playerLat: () => game.playerLat, playerLon: () => game.playerLon, onMessage: _toast)),
-              if (blocked) _AccessPanel(access: _access!, gateway: widget.gateway, onRetry: _ensureAccess, onSimulator: () => _switchSource(true)),
-            ],
+        // As zonas fixas do HUD (`hud_layout.dart`): nada aqui cobre outra peça em nenhum tamanho de tela comum.
+        Positioned.fromRect(
+          rect: hud.bar,
+          child: HudBar(
+            nowUtc: () => tools.clock.nowUtc,
+            lat: () => game.playerLat,
+            weather: streetLifeEnabled ? () => _climate!.info : null,
+            onSky: () => _openApp(r, PhoneAppId.sky),
+            seal: ModeSeal(tools: tools, source: r.layers.source, onTap: () => _openModeSheet(r)),
           ),
         ),
-        PocketOverlay(mode: _pocket, enabled: () => r.session.state.setting(kPocketSetting) || PatrolController.instance.running),
+        Positioned.fromRect(
+          rect: hud.compass!,
+          child: ValueListenableBuilder(
+            valueListenable: game.compass,
+            builder: (context, c, _) =>
+                c.visible ? CompassButton(angle: c.angle, follow: c.follow, onNorth: game.goNorth, onToggleFollow: game.toggleFollowHeading) : const SizedBox.shrink(),
+          ),
+        ),
+        if (_toastText != null || warnings.isNotEmpty)
+          Positioned(
+            left: hud.notice.left,
+            top: hud.notice.top,
+            width: hud.notice.width,
+            child: IgnorePointer(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: hud.notice.height),
+                child: SingleChildScrollView(
+                  physics: const NeverScrollableScrollPhysics(), // corta o que passar da zona, sem rolar
+                  child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    if (warnings.isNotEmpty)
+                      Container(
+                        key: const Key('hud-warning'),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.88), border: Border.all(color: kPanelLine, width: 2)),
+                        child: Text(warnings.join(' · '), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 8, color: kEssence, height: 1.4)),
+                      ),
+                    if (_toastText != null)
+                      Container(
+                        key: const Key('hud-toast'),
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.9), border: Border.all(color: kEssence, width: 2)),
+                        child: Text(_toastText!.toUpperCase(), maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 8, color: kText, height: 1.4)),
+                      ),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+        Positioned(
+          left: hud.marks.left,
+          top: hud.marks.top,
+          width: hud.marks.width,
+          child: MarkChips(state: st, nowUtc: () => tools.clock.nowUtc, sprites: game.sprites, max: hud.marksFit, onTap: (m) => _startEncounter(m.toSpawn())),
+        ),
+        if (hud.joystick != null) Positioned.fromRect(rect: hud.joystick!, child: Joystick(size: HudSize.joystick, onChanged: tools.simulator.setJoystick)),
+        Positioned(
+          left: hud.portrait.left,
+          bottom: screen.height - hud.portrait.bottom,
+          width: hud.portrait.width,
+          child: PortraitHud(
+            state: st,
+            frame: game.playerFrames.isEmpty ? null : game.playerFrames.first,
+            onTap: () => Navigator.of(context).push(phoneRoute<void>(ProfileScreen(
+              state: st,
+              data: r.data,
+              nowUtc: () => tools.clock.nowUtc,
+              onOpenSettings: () => Navigator.of(context).push(phoneRoute<void>(_settings(r))),
+            ))),
+          ),
+        ),
+        Positioned.fromRect(
+          rect: hud.phone,
+          child: ListenableBuilder(
+            listenable: st,
+            builder: (context, _) => PhoneButton(
+              alert: phoneHasAlert(st, r.data.phone),
+              onTap: () => showPhoneMenu(
+                context,
+                state: st,
+                data: r.data,
+                settings: () => _settings(r),
+                radar: () => _appScreen(r, PhoneAppId.radar)!,
+                routes: () => _appScreen(r, PhoneAppId.routes)!,
+                patrol: () => _appScreen(r, PhoneAppId.patrol)!,
+                sky: () => _appScreen(r, PhoneAppId.sky)!,
+                nowUtc: () => tools.clock.nowUtc,
+                weather: () => _climate!.info,
+                lat: () => game.playerLat,
+                epochId: () => r.data.schedule.select(tools.clock.nowUtc).epoch.id,
+              ),
+            ),
+          ),
+        ),
+        if (hud.strip != null)
+          Positioned.fromRect(
+            key: const Key('hud-strip'),
+            rect: hud.strip!,
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              if (patrolOn) Flexible(child: PatrolShortcut(hooks: _patrol!, onOpen: () => _openApp(r, PhoneAppId.patrol))),
+              if (patrolOn && travelChip != null) const SizedBox(width: 6),
+              if (travelChip != null) Flexible(child: ShortcutChip(key: const Key('travel-chip'), label: travelChip, color: kVeil, onTap: () => _openApp(r, PhoneAppId.routes))),
+            ]),
+          ),
+        if (hud.radar != null)
+          Positioned.fromRect(
+            rect: hud.radar!,
+            child: RadarShortcut(state: st, street: r.data.street, nowUtc: () => tools.clock.nowUtc, onPulse: () => _pulse(r)),
+          ),
+        // Sem nada à vista: mantém a leitura das notificações da corrida com o app Rotas fechado.
+        TravelOverlay(travel: r.travel, state: st, data: r.data, appVersion: _version, playerLat: () => game.playerLat, playerLon: () => game.playerLon, onMessage: _toast),
+        if (blocked) SafeArea(child: _AccessPanel(access: _access!, gateway: widget.gateway, onRetry: _ensureAccess, onSimulator: () => _switchSource(true))),
+        PocketOverlay(mode: _pocket, enabled: () => st.setting(kPocketSetting) || PatrolController.instance.running),
       ],
     );
   }
@@ -1041,15 +1195,15 @@ class _AccessPanel extends StatelessWidget {
   }
 }
 
-/// O que o jogador vê embaixo: de onde vem a posição, como está o sinal e as coordenadas.
-class _StatusHud extends StatelessWidget {
-  const _StatusHud({required this.state, required this.tools, required this.stale});
+/// O estado do GPS na folha do selo: de onde vem a posição, como está o sinal, as coordenadas, o relógio e o mundo.
+class _StatusLines extends StatelessWidget {
+  const _StatusLines({required this.state, required this.tools, required this.stale});
 
   final PlayerState state;
   final DevTools tools;
   final bool stale;
 
-  String _line() {
+  static String line(PlayerState state, DevTools tools) {
     final p = state.position;
     switch (state.status) {
       case TrackingStatus.searching:
@@ -1066,28 +1220,19 @@ class _StatusHud extends StatelessWidget {
   Widget build(BuildContext context) {
     const style = TextStyle(fontSize: 8, color: kText, height: 1.6);
     final p = state.position;
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Container(
-        margin: const EdgeInsets.all(8),
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-        decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.88), border: Border.all(color: kPanelLine, width: 2)),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (stale) const Text('MUNDO DESATUALIZADO', style: TextStyle(fontSize: 8, color: kEssence, height: 1.6)),
-            if (tools.clock.overridden)
-              Text('RELÓGIO UTC ${_utc(tools.clock.now)} (OVERRIDE)', style: const TextStyle(fontSize: 8, color: kEssence, height: 1.6)),
-            Text(_line(), style: style.copyWith(color: state.status == TrackingStatus.tracking ? kSignal : kDim)),
-            if (p != null) Text('${p.lat.toStringAsFixed(5)}, ${p.lon.toStringAsFixed(5)}', style: style),
-          ],
-        ),
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (stale) const Text('MUNDO DESATUALIZADO', style: TextStyle(fontSize: 8, color: kEssence, height: 1.6)),
+        if (tools.clock.overridden) Text('RELÓGIO UTC ${utc(tools.clock.now)} (OVERRIDE)', style: const TextStyle(fontSize: 8, color: kEssence, height: 1.6)),
+        Text(line(state, tools), style: style.copyWith(color: state.status == TrackingStatus.tracking ? kSignal : kDim)),
+        if (p != null) Text('${p.lat.toStringAsFixed(5)}, ${p.lon.toStringAsFixed(5)}', style: style),
+      ],
     );
   }
 
-  static String _utc(DateTime t) =>
+  static String utc(DateTime t) =>
       '${t.year}-${t.month.toString().padLeft(2, '0')}-${t.day.toString().padLeft(2, '0')} '
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 }

@@ -70,12 +70,15 @@ class PortraitHud extends StatelessWidget {
 
 /// As marcações ativas: um sprite pequeno com o tempo que falta. Tocar numa abre o encontro.
 class MarkChips extends StatefulWidget {
-  const MarkChips({required this.state, required this.nowUtc, required this.sprites, required this.onTap, super.key});
+  const MarkChips({required this.state, required this.nowUtc, required this.sprites, required this.onTap, this.max = 99, super.key});
 
   final GameState state;
   final int Function() nowUtc;
   final Map<String, ui.Image> sprites;
   final void Function(Mark mark) onTap;
+
+  /// Quantas cabem na zona do HUD (`hud_layout.dart`): as outras esperam.
+  final int max;
 
   @override
   State<MarkChips> createState() => _MarkChipsState();
@@ -106,7 +109,7 @@ class _MarkChipsState extends State<MarkChips> {
       listenable: widget.state,
       builder: (context, _) {
         final now = widget.nowUtc();
-        final marks = widget.state.activeMarks(now);
+        final marks = widget.state.activeMarks(now).take(widget.max).toList();
         if (marks.isEmpty) return const SizedBox.shrink();
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -117,11 +120,12 @@ class _MarkChipsState extends State<MarkChips> {
                 child: Container(
                   key: Key('mark-${m.uid}'),
                   width: 56,
+                  height: 52,
                   margin: const EdgeInsets.only(bottom: 4),
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.9), border: Border.all(color: kVeil, width: 2)),
                   child: Column(children: [
-                    SizedBox(height: 32, child: widget.sprites[m.speciesId] == null ? null : RawImage(image: widget.sprites[m.speciesId], filterQuality: FilterQuality.none)),
+                    SizedBox(height: 30, child: widget.sprites[m.speciesId] == null ? null : RawImage(image: widget.sprites[m.speciesId], filterQuality: FilterQuality.none)),
                     Text(_clock(m.secondsLeft(now)), style: const TextStyle(fontSize: 8, color: kSignal)),
                   ]),
                 ),

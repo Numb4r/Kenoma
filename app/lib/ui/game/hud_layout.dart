@@ -27,7 +27,7 @@ abstract final class HudSize {
   static const double joystick = 120;
   static const double markH = 52;
   static const double markGap = 4;
-  static const double noticeH = 56;
+  static const double noticeH = 72;
 }
 
 class HudLayout {
@@ -71,10 +71,10 @@ class HudLayout {
         'portrait': portrait,
         'phone': phone,
         'tracker': tracker,
-        if (compass != null) 'compass': compass!,
-        if (strip != null) 'strip': strip!,
-        if (radar != null) 'radar': radar!,
-        if (joystick != null) 'joystick': joystick!,
+        'compass': ?compass,
+        'strip': ?strip,
+        'radar': ?radar,
+        'joystick': ?joystick,
       };
 }
 
