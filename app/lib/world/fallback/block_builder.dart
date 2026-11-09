@@ -428,6 +428,8 @@ List<List<Pt>> _clip(List<Pt> pts, double lo, double hi) {
 /// O bloco `(tx, ty)` a partir do JSON de `overpassQuery`. [epochId] é a época cuja data fixou a consulta.
 FallbackBlock buildBlock({required String overpassJson, required int tx, required int ty, required int epochId, required OsmRules rules}) {
   final doc = jsonDecode(overpassJson) as Map<String, dynamic>;
+  // Timeout e falta de memória chegam com HTTP 200, `remark` e a lista cortada: um bloco assim não pode ir para o cache.
+  if (doc['remark'] != null) throw FormatException('Overpass: ${doc['remark']}');
   final builder = _Builder(tx, ty, rules);
   final seen = <(String, int)>{};
   for (final raw in doc['elements'] as List) {
