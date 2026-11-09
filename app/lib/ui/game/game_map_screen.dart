@@ -23,12 +23,10 @@ import '../ritual/ritual_screen.dart';
 import '../../net/region_catalog.dart' show RegionEntry;
 import '../../world/layered_world.dart';
 import '../../world/map_layers.dart';
-import '../../world/walk_paths.dart';
 import '../../world/weather_source.dart';
 import '../chime.dart';
 import '../sprites/familiar_sprite.dart';
 import '../../data/game_data.dart';
-import '../../player/circle.dart';
 import '../../player/game_state.dart' show GameState;
 import '../../player/conjurer_balance.dart' show School;
 import '../../player/mark.dart';
@@ -204,13 +202,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   /// O clima determinístico de uma célula (o que pesa nos spawns). O debug pode forçá-lo.
   Weather _weatherOfCell(int seed, GameData data, int cx, int cy, int t) {
-    final forced = tools.force.weather;
-    if (forced != null) return forced;
-    // O modelo é o da época ATIVA naquele instante (nunca o da mais nova): o mundo de cada época é só dela.
-    final model = data.schedule.select(t).epoch.ecoV2?.weather;
-    if (model == null) return Weather.clear;
-    final (rx, ry) = weatherRegionOfCell(cx, cy);
-    return model.at(seed: seed, tUtc: t, regionX: rx, regionY: ry);
+    return tools.force.weather ?? seedWeatherOfCell(data.schedule, seed, cx, cy, t);
   }
   late final Notifier _notifier = widget.notifier ?? LocalNotifier();
 
@@ -545,27 +537,12 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     }
     tools.clock.raiseFloor(session.state.lastSeenUtc);
     session.onSeen = tools.clock.raiseFloor;
-    final world = WorldView(
-      field: SpawnField(
-        seed: session.state.seed,
-        schedule: data.schedule,
-        map: assets.map,
-        typeOf: (id) => data.species(id)?.type.name,
-        snapper: WalkPaths(assets.visual!, blocked: assets.noWalk),
-        weatherAt: (cx, cy, t) => _weatherOfCell(session.state.seed, data, cx, cy, t),
-        levelCapOf: data.progress.levelCapFor,
-      ),
+    final world = worldViewFor(
       state: session.state,
-      street: data.street,
+      data: data,
+      assets: assets,
+      weatherAt: (cx, cy, t) => _weatherOfCell(session.state.seed, data, cx, cy, t),
       force: tools.force,
-      typeOf: (id) => data.species(id)?.type.name,
-      auraM: assets.balance.auraM,
-      touchRangeM: assets.balance.touchRangeM,
-      viewM: assets.balance.viewM,
-      trackerM: assets.balance.trackerM,
-      abilities: () => abilitiesOf(session.state, data),
-      ritual: data.ritual,
-      itemName: data.itemName,
       onMessage: _toast,
     );
     final game = GameMapGame(

@@ -11,6 +11,10 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- Contador de passos opcional (Ajustes): o app só pede a permissão quando o jogador liga o interruptor. -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
+    <!-- Patrulha do Véu, opcional: serviço em primeiro plano do tipo localização, ligado com o app à vista. Sem ACCESS_BACKGROUND_LOCATION:
+         a localização "durante o uso" vale para o serviço que começou com o app aberto. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
     <application
         android:label="kenoma"
         android:name="${applicationName}"
@@ -50,6 +54,12 @@
                 <action android:name="android.service.notification.NotificationListenerService"/>
             </intent-filter>
         </service>
+        <!-- Patrulha do Véu (flutter_foreground_task). O nome não pode mudar. Ver lib/patrol/patrol_service.dart. -->
+        <service
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
+            android:foregroundServiceType="location"
+            android:stopWithTask="false"
+            android:exported="false"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

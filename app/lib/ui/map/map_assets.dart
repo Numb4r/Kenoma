@@ -13,6 +13,14 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../core/biomes.dart';
 import '../../core/epochs.dart';
+import '../../core/weather.dart';
+import '../../data/game_data.dart';
+import '../../player/circle.dart' show abilitiesOf;
+import '../../player/game_state.dart';
+import '../../world/debug_force.dart';
+import '../../world/spawn_field.dart';
+import '../../world/walk_paths.dart';
+import '../../world/world_view.dart';
 import '../../net/signed_feed.dart';
 import '../../data/block_cache.dart';
 import '../../data/map_sources.dart';
@@ -41,8 +49,8 @@ class MapAssets {
 
   final RegionMap map;
 
-  /// O atlas de texturas. Quem carrega é quem descarta ([dispose]).
-  final ui.Image atlas;
+  /// O atlas de texturas. Quem carrega é quem descarta ([dispose]). `null` no serviço da Patrulha, que não desenha.
+  final ui.Image? atlas;
   final MapBalance balance;
 
   /// O relógio está fora das épocas: o mapa funciona, mas o mundo está desatualizado.
@@ -64,10 +72,54 @@ class MapAssets {
 
   BiomeSet get biomes => map.biomes;
 
-  MapRenderer makeRenderer() => MapRenderer(map: map, atlas: atlas);
+  MapRenderer makeRenderer() => MapRenderer(map: map, atlas: atlas!);
 
-  void dispose() => atlas.dispose();
+  void dispose() => atlas?.dispose();
 }
+
+/// O clima determinístico (o da seed) da célula z20 `(cx, cy)` em [t]: o que pesa nos spawns e o que se vê sem a rede. O
+/// modelo é o da época ATIVA naquele instante (nunca o da mais nova): o mundo de cada época é só dela. O app e a Patrulha
+/// usam esta mesma função. MERGE-B: o clima novo (época 6) entra aqui, não em cópias.
+Weather seedWeatherOfCell(EpochSchedule schedule, int seed, int cx, int cy, int t) {
+  final model = schedule.select(t).epoch.ecoV2?.weather;
+  if (model == null) return Weather.clear;
+  final (rx, ry) = weatherRegionOfCell(cx, cy);
+  return model.at(seed: seed, tUtc: t, regionX: rx, regionY: ry);
+}
+
+/// O mundo que o jogador vê e alcança, montado do mesmo jeito no mapa do jogo e no serviço da Patrulha (o mesmo código de
+/// geração nos dois: Fagulhas, materiais e Ecos iguais). [weatherAt] é o clima de cada célula (o debug pode forçar no app).
+WorldView worldViewFor({
+  required GameState state,
+  required GameData data,
+  required MapAssets assets,
+  required Weather Function(int cx, int cy, int t) weatherAt,
+  DebugForce? force,
+  void Function(String message)? onMessage,
+}) =>
+    WorldView(
+      field: SpawnField(
+        seed: state.seed,
+        schedule: data.schedule,
+        map: assets.map,
+        typeOf: (id) => data.species(id)?.type.name,
+        snapper: WalkPaths(assets.visual!, blocked: assets.noWalk),
+        weatherAt: weatherAt,
+        levelCapOf: data.progress.levelCapFor,
+      ),
+      state: state,
+      street: data.street,
+      force: force,
+      typeOf: (id) => data.species(id)?.type.name,
+      auraM: assets.balance.auraM,
+      touchRangeM: assets.balance.touchRangeM,
+      viewM: assets.balance.viewM,
+      trackerM: assets.balance.trackerM,
+      abilities: () => abilitiesOf(state, data),
+      ritual: data.ritual,
+      itemName: data.itemName,
+      onMessage: onMessage,
+    );
 
 /// As funções do bloco com as regras do OSM ligadas.
 FallbackCodec fallbackCodec(Map<String, dynamic> biomesJson) {
@@ -93,6 +145,7 @@ Future<MapLayers> openMapLayers({
   required String Function() baseUrl,
   void Function(String message)? onNotice,
   RegionConfirm? confirm,
+  PostForm post = httpPostForm,
 }) async {
   final world = assets.world!, balance = assets.fallback!;
   final Directory support;
@@ -125,7 +178,7 @@ Future<MapLayers> openMapLayers({
             schedule: schedule,
             codec: codec,
             balance: balance,
-            post: httpPostForm,
+            post: post,
             cache: BlockCache(Directory('${support.path}/blocks'), limitBytes: balance.diskLimitBytes),
             appVersion: appVersion,
             nowUtc: nowUtc,
@@ -136,7 +189,7 @@ Future<MapLayers> openMapLayers({
 
 /// Carrega os assets do mapa em [nowUtc] (segundos UTC). Devolve [MapAssets] ou, se o pacote não bate
 /// com a época vigente (ou falta algo), a mensagem de erro em português: nunca lança.
-Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool withVisual = false}) async {
+Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool withVisual = false, bool withAtlas = true}) async {
   final assets = bundle ?? rootBundle;
   final region = await loadRegion(region: kRegion, nowUtc: nowUtc, bundle: assets);
   if (region is RegionLoadError) return region.message;
@@ -163,7 +216,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       world = LayeredWorld(regions: [LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk)], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
       visual = VisualMap(world);
     }
-    final atlas = await buildBiomeAtlas(biomes);
+    final atlas = withAtlas ? await buildBiomeAtlas(biomes) : null;
     return MapAssets(
       map: RegionMap(pack: world ?? loaded.pack, biomes: biomes),
       atlas: atlas,

@@ -5,6 +5,7 @@ library;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import '../patrol/patrol_launch.dart' show onNotificationResponse;
 import 'notification_plan.dart';
 
 abstract class Notifier {
@@ -31,7 +32,11 @@ class LocalNotifier implements Notifier {
 
   Future<void> _init() async {
     if (_ready) return;
-    await _plugin.initialize(settings: const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')));
+    // O mesmo callback de toque da Patrulha: um só por isolate, e o último initialize vale.
+    await _plugin.initialize(
+      settings: const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')),
+      onDidReceiveNotificationResponse: onNotificationResponse,
+    );
     _ready = true;
   }
 
