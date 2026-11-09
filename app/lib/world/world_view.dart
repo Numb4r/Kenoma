@@ -15,6 +15,7 @@ import '../core/tiles.dart';
 import '../player/conjurer_balance.dart' show School;
 import '../player/circle.dart' show MapAbilities;
 import '../player/game_state.dart';
+import 'debug_creatures.dart';
 import 'debug_force.dart';
 import 'radar.dart';
 import 'spawn_field.dart';
@@ -245,6 +246,8 @@ class WorldView {
     final all = [
       for (final s in field.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel))
         if (visibleTier(s)) _withForce(s),
+      // As do "Criar criatura": fora do mundo, valem em qualquer nível.
+      ...?force?.creatures.around(px: px, py: py, metersPerCell21: _mpc, radiusM: auraRadiusM, tUtc: tUtc, biomeAt: _biomeKeyAt),
     ];
     allEcos = [for (final s in all) if (s.isEco && !state.isDone(s.uid)) s];
     final collected = <WorldSpawn>[];
@@ -260,7 +263,7 @@ class WorldView {
         continue;
       }
       if (s.isEco && distanceM(s) <= viewM) {
-        state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny);
+        if (!isDebugUid(s.uid)) state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny); // a de debug não entra no bestiário
         if (ritual != null && isRitualOnlyId(s.entryId)) noteRitualSighting(state, ritual!, s.uid, s.entryId, _ritualSeen);
         if (s.shiny && _announced.add(s.uid)) onShiny?.call(s);
       }
@@ -330,7 +333,7 @@ class WorldView {
       balance: street,
     );
     state.recordSweep(tUtc, [for (final s in out.revealed) s.uid], tUtc + street.hiddenRevealS.round());
-    if (out.revealed.isNotEmpty) state.recordEvent('hidden_revealed', '', out.revealed.length);
+    state.recordEvent('hidden_revealed', '', out.revealed.where((s) => !isDebugUid(s.uid)).length); // as de debug não contam
     traces = out.traces;
     spawns = [...spawns, for (final s in out.revealed) if (!spawns.any((o) => o.uid == s.uid)) s];
     return out;
@@ -356,6 +359,9 @@ class WorldView {
     onCollected?.call(s);
     return TouchResult.collected;
   }
+
+  /// A chave de bioma (variante) de uma célula z20, para a criatura de debug com variante de bioma.
+  String _biomeKeyAt(int cx, int cy) => field.map.biomes.spawnKey(field.map.spawnBiomeAtCell(cx, cy));
 
   /// Tira o spawn da vista (o Eco foi capturado ou fugiu).
   void remove(WorldSpawn s) {

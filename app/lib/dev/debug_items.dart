@@ -3,6 +3,7 @@ library;
 
 import 'debug_capture.dart';
 import 'debug_env.dart';
+import 'debug_items_creature.dart';
 import 'debug_items_position.dart';
 import 'debug_items_profile.dart';
 import 'debug_items_school.dart';
@@ -15,6 +16,7 @@ DebugRegistry buildDefaultRegistry(DebugEnv env) => DebugRegistry()
   ..addAll(positionItems(env))
   ..addAll(timeItems(env))
   ..addAll(spawnItems(env))
+  ..addAll(creatureItems(env))
   ..addAll(mapItems(env))
   // Tráfego: a Rua viva ainda não tem controles de debug. Itens novos entram aqui com DebugSection.traffic.
   ..addAll(playerItems(env))

@@ -121,6 +121,7 @@ class _CreatureTile extends StatelessWidget {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(species?.name ?? creature.speciesId, style: const TextStyle(fontSize: 16, color: kText)),
+            if (creature.debug) Text('DEBUG · NÃO CONTA PARA O PROGRESSO', key: Key('debug-${creature.uid}'), style: const TextStyle(fontSize: 8, color: kEssence, height: 1.8)),
             const SizedBox(height: 4),
             Text(
               'NV ${creature.level}${species == null ? '' : ' · ${typeLabel(species.type).toUpperCase()}'}',

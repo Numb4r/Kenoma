@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/behavior.dart';
 import 'package:kenoma/core/weather.dart';
@@ -271,5 +272,40 @@ void main() {
       expect(store.json, isNull);
       expect(find.textContaining('Ainda não há jogo salvo'), findsOneWidget);
     });
+  });
+
+  testWidgets('criar criatura: o formulário entra na fila da Aura, fica nas preferências e o repetir pede de novo', (tester) async {
+    rootBundle.clear(); // uma leitura de asset deixada pendente por outro teste prenderia o formulário em "Carregando"
+    final tools = DevTools(realSource: FakeGps());
+    final env = newEnv(tools: tools);
+    final dir = Directory.systemTemp.createTempSync('kenoma-prefs');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final prefs = DebugPrefs(file: File('${dir.path}/debug_menu.json'), defaultOpen: true);
+    env.prefs = prefs;
+    await pumpMenu(tester, prefs, env: env);
+    for (var i = 0; i < 20 && find.text('CRIAR NA AURA').evaluate().isEmpty; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump();
+    }
+    // ignore: avoid_print
+    Future<void> tap(String t) async {
+      final f = find.descendant(of: find.byKey(const Key('item-spawn.create')), matching: find.text(t));
+      await tester.ensureVisible(f);
+      await tester.tap(f);
+      await tester.pump();
+    }
+
+    await tap('PLANTA');
+    await tap('ESPÍRITO');
+    await tap('CARMESIM');
+    await tap('CRIAR NA AURA');
+    expect(tools.force.creatures.pending, 1);
+    expect(prefs.creatureForm, {'type': 'plant', 'spirit': true, 'level': 5, 'shiny': false, 'variant': 'crimson', 'behavior': 'passive', 'count': 1});
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    final restored = DebugPrefs(file: prefs.file);
+    await tester.runAsync(restored.load);
+    expect(restored.creatureForm, prefs.creatureForm, reason: 'o último formulário fica em disco');
+    await tap('REPETIR');
+    expect(tools.force.creatures.pending, 2);
   });
 }

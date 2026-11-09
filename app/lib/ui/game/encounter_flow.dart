@@ -14,6 +14,7 @@ import '../../data/tuning_data.dart';
 import '../../player/circle.dart';
 import '../../player/game_state.dart';
 import '../../player/progression.dart' show tuningXp;
+import '../../world/debug_creatures.dart' show isDebugUid;
 import '../../world/spawn_field.dart';
 import '../../world/world_view.dart';
 import '../colors.dart';
@@ -93,6 +94,13 @@ Future<void> runEncounter(
     ));
     if (run == null) return; // saiu no meio: o selo já foi gasto
     final o = run.outcome;
+    if (o.success && isDebugUid(eco.uid)) {
+      // Criatura do "Criar criatura": vai para a coleção marcada, sem bestiário, XP, Ectoplasma nem estatística.
+      state.capture(uid: eco.uid, speciesId: species.id, level: level, nowUtc: nowUtc(), variant: eco.variant, shiny: eco.shiny, debug: true);
+      onMessage?.call('${species.name} de debug na coleção: não conta para o progresso');
+      world.remove(eco);
+      return;
+    }
     if (o.success) {
       final first = !state.hasCaptured(species.id);
       state.capture(uid: eco.uid, speciesId: species.id, level: level, nowUtc: nowUtc(), variant: eco.variant, shiny: eco.shiny);
