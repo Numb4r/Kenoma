@@ -68,12 +68,14 @@ List<SpawnItem> generateCell({
   required int window,
   required String biomeKey,
   Weather weather = Weather.clear,
+  Map<String, double>? climateMult,
+  double shinyMult = 1,
   String? Function(String entryId)? typeOf,
   PathSnapper? snapper,
 }) =>
     [
       for (final def in epoch.items)
-        _generateItem(seed, epoch, cellX, cellY, window, biomeKey, def, weather, typeOf, snapper),
+        _generateItem(seed, epoch, cellX, cellY, window, biomeKey, def, climateMult ?? (weather == Weather.clear ? null : epoch.ecoV2?.weather.spawnMultipliers[weather.id]), shinyMult, typeOf, snapper),
     ];
 
 SpawnItem _generateItem(
@@ -84,7 +86,8 @@ SpawnItem _generateItem(
   int window,
   String biomeKey,
   SpawnItemDef def,
-  Weather weather,
+  Map<String, double>? weatherMult,
+  double shinyMult,
   String? Function(String entryId)? typeOf,
   PathSnapper? snapper,
 ) {
@@ -145,11 +148,13 @@ SpawnItem _generateItem(
       bp -= weights[i];
     }
     if (r2.nextFloat() < v2.variantChance) variantBiome = biomeKey;
-    shiny = r2.nextFloat() < v2.shinyChance;
+    shiny = r2.nextFloat() < v2.shinyChance * shinyMult; // shinyMult é 1 fora do clima da época 6 (x * 1.0 == x)
     final speciesRoll = r2.nextFloat();
     // O clima mexe nos pesos por tipo. Com tempo limpo, ou sem regra para nenhuma espécie da tabela, a espécie é a original.
-    if (typeOf != null && weather != Weather.clear) {
-      final mult = [for (final e in table) v2.weather.multiplier(weather, typeOf(e.id) ?? '')];
+    // Até a época 5 os multiplicadores são os do clima de quatro estados (`eco_v2.weather`); da 6 em diante, os do clima
+    // completo (`climate`), passados por quem chama.
+    if (typeOf != null && weatherMult != null) {
+      final mult = [for (final e in table) weatherMult[typeOf(e.id) ?? ''] ?? 1.0];
       if (mult.any((m) => m != 1.0)) {
         final adj = [for (var i = 0; i < table.length; i++) table[i].weight * mult[i]];
         var target = speciesRoll * adj.fold(0.0, (a, b) => a + b);

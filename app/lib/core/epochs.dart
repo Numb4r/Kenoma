@@ -1,6 +1,7 @@
 /// Épocas (epochs.json): pacote de região e tabelas de spawn de cada uma (docs/fase0-spec.md, seção 3).
 library;
 
+import 'climate.dart';
 import 'features.dart';
 import 'weather.dart';
 
@@ -139,6 +140,7 @@ class Epoch {
     this.ecoV2,
     this.walkable,
     this.requiresFeature,
+    this.climate,
   });
 
   factory Epoch.fromJson(Map<String, dynamic> json) => Epoch(
@@ -162,6 +164,7 @@ class Epoch {
         walkable: json['walkable'] == null ? null : Walkable.fromJson(json['walkable'] as Map<String, dynamic>),
         requiresFeature: json['requires_feature'] as String?,
         ecoV2: json['eco_v2'] == null ? null : EcoV2.fromJson(json['eco_v2'] as Map<String, dynamic>),
+        climate: json['climate'] == null ? null : ClimateModel.fromJson(json['climate'] as Map<String, dynamic>),
         items: [
           for (final i in (json['spawn'] as Map<String, dynamic>)['items'] as List<dynamic>)
             SpawnItemDef.fromJson(i as Map<String, dynamic>),
@@ -190,6 +193,10 @@ class Epoch {
 
   /// Comportamento, variantes, Brilhante e clima dos Ecos. `null` nas épocas 0, 1 e 2.
   final EcoV2? ecoV2;
+
+  /// O clima completo (36 climas e as peças de interação), da época 6 em diante. Com ele, o `eco_v2.weather` de quatro
+  /// estados (copiado da época 5) não é usado. `null` nas épocas 0 a 5.
+  final ClimateModel? climate;
 }
 
 class EpochSchedule {
