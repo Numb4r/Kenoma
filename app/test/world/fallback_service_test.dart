@@ -178,6 +178,24 @@ void main() {
     expect(r.dir.listSync(recursive: true).whereType<File>(), isEmpty);
   });
 
+  test('servidor com a base atrasada em relação à data da época é recusado e o próximo responde', () async {
+    final r = _Rig();
+    final s = r.open();
+    final hosts = <String>[];
+    r.reply = (url) {
+      hosts.add(url.host);
+      final base = url.host == 'overpass-api.de' ? '2026-05-31T22:37:44Z' : '2099-01-01T00:00:00Z';
+      return HttpReply(200, Uint8List.fromList(utf8.encode('{"osm3s":{"timestamp_osm_base":"$base"},"elements":[]}')));
+    };
+    await s.tick(lat, lon);
+    expect(r.world.block(tx, ty), isNull, reason: 'base de maio, época depois: dados de outro mundo');
+    expect(r.dir.listSync(recursive: true).whereType<File>(), isEmpty);
+    r.now += r.balance.minGapS;
+    await s.tick(lat, lon);
+    expect(hosts, ['overpass-api.de', 'overpass.kumi.systems']);
+    expect(r.world.block(tx, ty), isNotNull);
+  });
+
   test('cache offline: a segunda abertura lê do disco, sem rede', () async {
     final r = _Rig();
     await r.open().tick(lat, lon);
