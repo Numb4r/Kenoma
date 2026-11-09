@@ -287,15 +287,14 @@ class ClimateWorld {
     return ClimateZone(piece: z.piece, pieceIndex: z.pieceIndex, index: z.index, x0: p.$1, y0: p.$2, headingRad: z.headingRad, startUtc: z.startUtc, endUtc: z.endUtc, slots: z.slots, uidBase: z.uidBase);
   }
 
-  /// O ponto (células z21) levado ao caminho andável mais próximo da célula z20 dele. Sem o mapa, fica onde está; `null`: só
-  /// rodovia, ou nada a menos de 35 m.
+  /// O ponto (células z21) levado ao caminho andável mais próximo da célula z20 dele. Sem caminhos ligados (testes), fica onde
+  /// está; `null`: a célula não tem rua, só tem rodovia, ou nada a menos de 35 m (poça e duna só existem na rua).
   (double, double)? _toStreet(double x21, double y21) {
     final s = snapper;
     if (s == null) return (x21, y21);
     final cx20 = x21.floor() >>> 1, cy20 = y21.floor() >>> 1;
     final snap = s.snap(cx20, cy20, x21 / 2 - cx20, y21 / 2 - cy20);
-    if (snap == null) return (x21, y21);
-    if (!snap.keep) return null;
+    if (snap == null || !snap.keep) return null;
     return ((cx20 + snap.px) * 2, (cy20 + snap.py) * 2);
   }
 
