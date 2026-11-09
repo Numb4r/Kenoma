@@ -2,6 +2,7 @@ package com.numb4r.kenoma
 
 import android.Manifest
 import android.app.Activity
+import android.app.backup.BackupManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -10,9 +11,6 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
@@ -23,14 +21,14 @@ import io.flutter.plugin.common.MethodChannel
  * Tudo é falha silenciosa: sem sensor, sem permissão ou sem tela de ajustes, o Dart recebe `null`/`false`.
  *
  * - `kenoma/steps` (MethodChannel): `hasPermission`, `requestPermission` (ACTIVITY_RECOGNITION, Android 10+) e
- *   `read` (uma leitura do TYPE_STEP_COUNTER: passos acumulados desde o boot, ou null).
+ *   `read` (ver [StepReader]).
+ * - `kenoma/battery` (MethodChannel): a carga da bateria em %, ou null.
  * - `kenoma/proximity` (EventChannel): `true` quando o sensor de proximidade está coberto.
- * - `kenoma/system` (MethodChannel): `openBackupSettings`, `isInstalled`, `launchPackage`, `openUrl`, `notificationAccess`,
+ * - `kenoma/system` (MethodChannel): `openBackupSettings`, `requestBackup` (BackupManager.dataChanged), `isInstalled`, `launchPackage`, `openUrl`, `notificationAccess`,
  *   `openNotificationSettings` e `setRideRelay` (o interruptor das notificações de corrida).
  * - `kenoma/ride_notifications` (EventChannel): título e texto das notificações do Uber e da 99, só enquanto o Dart ouve.
  */
 class DeviceChannels(private val activity: Activity) {
-    private val main = Handler(Looper.getMainLooper())
     private var pendingPermission: MethodChannel.Result? = null
 
     fun register(messenger: BinaryMessenger) {
@@ -38,15 +36,20 @@ class DeviceChannels(private val activity: Activity) {
             when (call.method) {
                 "hasPermission" -> result.success(hasActivityPermission())
                 "requestPermission" -> requestActivityPermission(result)
-                "read" -> readSteps(result)
+                "read" -> StepReader.read(activity, result)
                 else -> result.notImplemented()
             }
         }
         EventChannel(messenger, "kenoma/proximity").setStreamHandler(ProximityHandler())
+        MethodChannel(messenger, "kenoma/battery").setMethodCallHandler { _, result -> result.success(StepReader.battery(activity)) }
         EventChannel(messenger, "kenoma/ride_notifications").setStreamHandler(RideNotificationListener.Stream)
         MethodChannel(messenger, "kenoma/system").setMethodCallHandler { call, result ->
             when (call.method) {
                 "openBackupSettings" -> result.success(openBackupSettings())
+                "requestBackup" -> {
+                    BackupManager(activity).dataChanged()
+                    result.success(true)
+                }
                 "isInstalled" -> result.success(launchIntent(call.arguments as? String) != null)
                 "launchPackage" -> result.success(launchPackage(call.arguments as? String))
                 "openUrl" -> result.success(openUrl(call.arguments as? String))
@@ -61,9 +64,7 @@ class DeviceChannels(private val activity: Activity) {
         }
     }
 
-    private fun hasActivityPermission(): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
-            activity.checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED
+    private fun hasActivityPermission(): Boolean = StepReader.hasPermission(activity)
 
     private fun requestActivityPermission(result: MethodChannel.Result) {
         if (hasActivityPermission()) {
@@ -88,43 +89,6 @@ class DeviceChannels(private val activity: Activity) {
         val ok = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
         pendingPermission?.success(ok)
         pendingPermission = null
-    }
-
-    /** Uma leitura do contador de passos; null se não há sensor, não há permissão ou ele não responde em 3 s. */
-    private fun readSteps(result: MethodChannel.Result) {
-        val sm = activity.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
-        val sensor = sm?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
-        if (sm == null || sensor == null || !hasActivityPermission()) {
-            result.success(null)
-            return
-        }
-        var done = false
-        val listener = object : SensorEventListener {
-            override fun onSensorChanged(event: SensorEvent) {
-                if (done) return
-                done = true
-                sm.unregisterListener(this)
-                result.success(event.values[0].toLong())
-            }
-
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-        }
-        try {
-            if (!sm.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_NORMAL)) {
-                result.success(null)
-                return
-            }
-        } catch (_: RuntimeException) {
-            result.success(null)
-            return
-        }
-        main.postDelayed({
-            if (!done) {
-                done = true
-                sm.unregisterListener(listener)
-                result.success(null)
-            }
-        }, 3000)
     }
 
     private fun launchIntent(pkg: String?): Intent? =

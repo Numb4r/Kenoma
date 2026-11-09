@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/behavior.dart';
-import 'package:kenoma/world/fog.dart';
 import 'package:kenoma/dev/debug_capture.dart';
 import 'package:kenoma/dev/debug_env.dart';
 import 'package:kenoma/dev/debug_items.dart';
@@ -23,7 +23,7 @@ const originalIds = [
   'pos.simulator', 'pos.speed', 'pos.noise', 'pos.joystick', 'pos.teleport', //
   'time.clock', 'time.weather', 'time.weather_tap',
   'spawn.behavior', 'spawn.variant', 'spawn.shiny', 'spawn.clear',
-  'map.open_game', 'map.biome_grid', 'map.grid20', 'map.radii', 'map.fog_reveal', 'map.fog_clear', 'map.radar_reset', 'map.free',
+  'map.open_game', 'map.biome_grid', 'map.grid20', 'map.radii', 'map.radar_reset', 'map.free',
   'player.level',
   'cap.species', 'cap.levels', 'cap.seal', 'cap.options', 'cap.start', 'cap.log', 'cap.vibration',
   'sign.identity',
@@ -117,6 +117,8 @@ void main() {
     final prefs = DebugPrefs(file: file, defaultOpen: true);
     final reg = await pumpMenu(tester, prefs);
     expect(find.textContaining('Nenhum favorito'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('star-time.clock'))); // a seção Posição cresceu
+    await tester.pump();
     await tester.tap(find.byKey(const Key('star-time.clock')));
     await tester.pump();
     expect(prefs.favorites, ['time.clock']);
@@ -232,7 +234,7 @@ void main() {
     });
   });
 
-  group('itens de spawn e névoa', () {
+  group('itens de spawn e Radar', () {
     testWidgets('os chips forçam comportamento, variante, Brilhante e clima, e limpar zera os pedidos', (tester) async {
       final tools = DevTools(realSource: FakeGps());
       await pumpMenu(tester, DebugPrefs(defaultOpen: true), env: newEnv(tools: tools));
@@ -250,7 +252,7 @@ void main() {
       expect((tools.force.pendingEco, tools.force.weather), (false, null));
     });
 
-    testWidgets('revelar, limpar e zerar o Radar gravam no save; sem jogo salvo avisa', (tester) async {
+    testWidgets('zerar o Radar grava no save; sem jogo salvo avisa', (tester) async {
       final store = MemorySaveStore()..json = {'schema_version': 3, 'group_code': 'AAAAA-BBBBB', 'inventory': {'item.chalk': 2}};
       await pumpMenu(tester, DebugPrefs(defaultOpen: true), env: newEnv(save: store));
       Future<void> tap(String t) async {
@@ -260,10 +262,6 @@ void main() {
         await tester.pump();
       }
 
-      await tap('REVELAR NÉVOA (600 M)');
-      expect(FogState.fromJson(store.json!['fog'] as Map<String, dynamic>).debugCount, greaterThan(0));
-      await tap('LIMPAR NÉVOA DE DEBUG');
-      expect(FogState.fromJson(store.json!['fog'] as Map<String, dynamic>).debugCount, 0);
       store.json!['radar'] = {'last_utc': 55, 'revealed': {}};
       await tap('ZERAR RECARGA DO RADAR');
       expect((store.json!['radar'] as Map)['last_utc'], 0);
@@ -275,5 +273,40 @@ void main() {
       expect(store.json, isNull);
       expect(find.textContaining('Ainda não há jogo salvo'), findsOneWidget);
     });
+  });
+
+  testWidgets('criar criatura: o formulário entra na fila da Aura, fica nas preferências e o repetir pede de novo', (tester) async {
+    rootBundle.clear(); // uma leitura de asset deixada pendente por outro teste prenderia o formulário em "Carregando"
+    final tools = DevTools(realSource: FakeGps());
+    final env = newEnv(tools: tools);
+    final dir = Directory.systemTemp.createTempSync('kenoma-prefs');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final prefs = DebugPrefs(file: File('${dir.path}/debug_menu.json'), defaultOpen: true);
+    env.prefs = prefs;
+    await pumpMenu(tester, prefs, env: env);
+    for (var i = 0; i < 20 && find.text('CRIAR NA AURA').evaluate().isEmpty; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump();
+    }
+    // ignore: avoid_print
+    Future<void> tap(String t) async {
+      final f = find.descendant(of: find.byKey(const Key('item-spawn.create')), matching: find.text(t));
+      await tester.ensureVisible(f);
+      await tester.tap(f);
+      await tester.pump();
+    }
+
+    await tap('PLANTA');
+    await tap('ESPÍRITO');
+    await tap('CARMESIM');
+    await tap('CRIAR NA AURA');
+    expect(tools.force.creatures.pending, 1);
+    expect(prefs.creatureForm, {'type': 'plant', 'spirit': true, 'level': 5, 'shiny': false, 'variant': 'crimson', 'behavior': 'passive', 'count': 1});
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    final restored = DebugPrefs(file: prefs.file);
+    await tester.runAsync(restored.load);
+    expect(restored.creatureForm, prefs.creatureForm, reason: 'o último formulário fica em disco');
+    await tap('REPETIR');
+    expect(tools.force.creatures.pending, 2);
   });
 }

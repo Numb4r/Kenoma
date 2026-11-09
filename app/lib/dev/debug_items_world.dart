@@ -1,6 +1,6 @@
-/// Itens das seções Spawns, Mapa e câmera e Jogador: forçar o próximo Eco, sobreposições do mapa, névoa, Radar,
-/// mapa livre, mapa do jogo e o nível do Conjurador. Forçar vale para o próximo Eco novo desta sessão; a névoa, o
-/// Radar e o nível mexem no save (valem na próxima vez que o mapa abrir).
+/// Itens das seções Spawns, Mapa e câmera e Jogador: forçar o próximo Eco, criar criaturas, sobreposições do mapa, Radar,
+/// mapa livre, mapa do jogo e o nível do Conjurador. Forçar vale para o próximo Eco novo desta sessão; o Radar e o nível
+/// mexem no save (valem na próxima vez que o mapa abrir).
 library;
 
 import 'package:flutter/material.dart';
@@ -114,35 +114,6 @@ List<DebugItem> mapItems(DebugEnv env) {
       section: DebugSection.map,
       keywords: const ['alcance', '30 m', 'toque', 'coleta', 'aura', 'sobreposição', 'overlay'],
       builder: (_) => overlay('Raios lógicos: coleta (laranja) e toque 30 m (ciano)', null, () => tools.showRadii, (v) => tools.setOverlays(radii: v)),
-    ),
-    DebugItem(
-      id: 'map.fog_reveal',
-      title: 'Revelar névoa',
-      section: DebugSection.map,
-      keywords: const ['névoa', 'fog', 'explorar', '600 m'],
-      builder: (_) => Builder(
-        builder: (context) => DebugButton(
-          label: 'Revelar névoa (600 m)',
-          color: KCores.sinalCiano,
-          onTap: () {
-            final (lat, lon) = env.center();
-            _editSave(context, env, (j) => revealDebugFog(j, lat, lon, 600), 'Névoa revelada em 600 m (debug).');
-          },
-        ),
-      ),
-    ),
-    DebugItem(
-      id: 'map.fog_clear',
-      title: 'Névoa de debug',
-      section: DebugSection.map,
-      keywords: const ['névoa', 'fog', 'apagar'],
-      builder: (_) => Builder(
-        builder: (context) => DebugButton(
-          label: 'Limpar névoa de debug',
-          color: KCores.textoMudo,
-          onTap: () => _editSave(context, env, clearDebugFog, 'Névoa de debug apagada; o caminho real ficou.'),
-        ),
-      ),
     ),
     DebugItem(
       id: 'map.radar_reset',

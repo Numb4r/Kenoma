@@ -101,15 +101,7 @@ class ClimateWorld {
 
   /// O id do clima na célula z20 em [t]: o forçado, o do modelo completo (épocas 6+) ou o de quatro estados (épocas 3 a 5).
   /// É o que pesa nos spawns.
-  String idAt(int cx20, int cy20, int t) {
-    final f = forced();
-    if (f != null) return f;
-    final e = schedule.select(t).epoch;
-    final (rx, ry) = weatherRegionOfCell(cx20, cy20);
-    final m = e.climate;
-    if (m != null) return m.at(seed: seed, tUtc: t, rx: rx, ry: ry, events: events);
-    return e.ecoV2?.weather.at(seed: seed, tUtc: t, regionX: rx, regionY: ry).id ?? 'clear';
-  }
+  String idAt(int cx20, int cy20, int t) => forced() ?? climateIdOfCell(schedule, seed, cx20, cy20, t, events: events);
 
   /// A definição do clima da célula z17 em [t], com o modelo e a época. `null` sem modelo.
   ({Epoch epoch, ClimateModel model, ClimateDef def, int window})? _defAt17(int cx17, int cy17, int t) {
@@ -364,6 +356,17 @@ class ClimateWorld {
 }
 
 String? _none() => null;
+
+/// O clima determinístico (id) da célula z20 em [t], sem o debug: o do modelo completo da época ativa (6 em diante, com os
+/// eventos do feed) ou o de quatro estados (épocas 3 a 5). O modelo é o da época ATIVA naquele instante, nunca o da mais
+/// nova. O app e a Patrulha chegam aqui por `seedWeatherOfCell` (`ui/map/map_assets.dart`).
+String climateIdOfCell(EpochSchedule schedule, int seed, int cx20, int cy20, int t, {List<ClimateEvent> events = const []}) {
+  final e = schedule.select(t).epoch;
+  final (rx, ry) = weatherRegionOfCell(cx20, cy20);
+  final m = e.climate;
+  if (m != null) return m.at(seed: seed, tUtc: t, rx: rx, ry: ry, events: events);
+  return e.ecoV2?.weather.at(seed: seed, tUtc: t, regionX: rx, regionY: ry).id ?? 'clear';
+}
 
 extension on String {
   /// Chave estável do id do clima para os caches (FNV dos bytes, estável entre execuções).

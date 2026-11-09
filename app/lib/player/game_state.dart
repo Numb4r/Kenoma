@@ -1,5 +1,5 @@
 /// O que o jogador tem e fez: nível e XP, inventário, coleção, Círculo, bestiário, marcações e o registro do
-/// que já foi coletado, capturado ou fugiu. Dart puro. Tudo vai para o `save.json` (schema 2).
+/// que já foi coletado, capturado ou fugiu. Dart puro. Tudo vai para o save (schema em [saveSchemaVersion]).
 library;
 
 import 'package:flutter/foundation.dart' show ChangeNotifier;
@@ -10,7 +10,6 @@ import '../story/chat_state.dart' show ChatEntry;
 import '../story/forum_data.dart';
 import '../story/mentor_script.dart';
 import '../story/story_state.dart';
-import '../world/fog.dart';
 import 'bestiary.dart';
 import 'conjurer.dart';
 import 'conjurer_balance.dart';
@@ -21,7 +20,10 @@ import 'progression.dart';
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 5;
+const int saveSchemaVersion = 6;
+
+/// A chave das células z17 visitadas no save (schema 6).
+const String kVisitedCellsKey = 'celulas_visitadas';
 
 /// Uma criatura capturada. O uid é o do spawn de onde ela veio.
 class CreatureInstance {
@@ -34,11 +36,12 @@ class CreatureInstance {
     this.variant,
     this.shiny = false,
     this.traits = const [],
+    this.debug = false,
   });
 
   /// Cópia com [level] e [xp] novos.
   CreatureInstance advanced({required int level, required int xp}) =>
-      CreatureInstance(uid: uid, speciesId: speciesId, level: level, capturedUtc: capturedUtc, xp: xp, variant: variant, shiny: shiny, traits: traits);
+      CreatureInstance(uid: uid, speciesId: speciesId, level: level, capturedUtc: capturedUtc, xp: xp, variant: variant, shiny: shiny, traits: traits, debug: debug);
 
   factory CreatureInstance.fromJson(Map<String, dynamic> j) => CreatureInstance(
         uid: j['uid'] as String,
@@ -49,6 +52,7 @@ class CreatureInstance {
         variant: j['variant'] as String?,
         shiny: (j['shiny'] as bool?) ?? false,
         traits: [for (final t in (j['traits'] as List<dynamic>?) ?? const []) t as String],
+        debug: (j['debug'] as bool?) ?? false,
       );
 
   /// Uid do spawn, em texto (o inteiro de 64 bits com sinal, em decimal).
@@ -65,6 +69,9 @@ class CreatureInstance {
   /// Traços herdados (só os Espíritos, vindos dos Ecos da fusão): chaves de variante (`urban`...) ou `shiny`.
   final List<String> traits;
 
+  /// Nasceu pelo "Criar criatura" do menu de debug: não conta para o bestiário nem para as estatísticas.
+  final bool debug;
+
   Map<String, dynamic> toJson() => {
         'uid': uid,
         'species': speciesId,
@@ -74,6 +81,7 @@ class CreatureInstance {
         if (variant != null) 'variant': variant,
         if (shiny) 'shiny': true,
         if (traits.isNotEmpty) 'traits': traits,
+        if (debug) 'debug': true,
       };
 }
 
@@ -92,7 +100,7 @@ class GameState extends ChangeNotifier {
     this.founder,
     this.createdUtc,
     StoryState? story,
-    FogState? fog,
+    Iterable<(int, int)>? visitedCells,
     ConjurerState? conjurer,
     this.radarLastUtc = 0,
     Map<String, int>? hiddenRevealed,
@@ -108,7 +116,7 @@ class GameState extends ChangeNotifier {
         marks = [...?marks],
         settings = {...?settings},
         story = story ?? StoryState(),
-        fog = fog ?? FogState(),
+        _visited = {...?visitedCells},
         conjurer = conjurer ?? ConjurerState(),
         hiddenRevealed = {...?hiddenRevealed},
         _extra = {...?extra};
@@ -120,7 +128,7 @@ class GameState extends ChangeNotifier {
   factory GameState.fromJson(Map<String, dynamic> j, ProgressBalance balance) {
     const known = {
       'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'marks', 'saved_utc',
-      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', 'fog', 'radar', 'conjurer',
+      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', kVisitedCellsKey, 'radar', 'conjurer',
     };
     final progress = PlayerProgress.fromJson(j['player'] as Map<String, dynamic>?, balance)..settleBanked();
     final state = GameState(
@@ -139,7 +147,7 @@ class GameState extends ChangeNotifier {
       founder: j['founder'] == null ? null : Founder.fromJson(j['founder'] as Map<String, dynamic>),
       createdUtc: j['created_utc'] as int?,
       story: StoryState.fromJson(j['story'] as Map<String, dynamic>?),
-      fog: FogState.fromJson(j['fog'] as Map<String, dynamic>?),
+      visitedCells: [for (final c in (j[kVisitedCellsKey] as List<dynamic>?) ?? const []) ((c as List<dynamic>)[0] as int, c[1] as int)],
       conjurer: ConjurerState.fromJson(j['conjurer'] as Map<String, dynamic>?),
       radarLastUtc: ((j['radar'] as Map<String, dynamic>?)?['last_utc'] as int?) ?? 0,
       hiddenRevealed: {
@@ -216,8 +224,18 @@ class GameState extends ChangeNotifier {
   /// Eventos de jogo, o chat com o mentor e as diárias do fórum.
   final StoryState story;
 
-  /// A névoa de guerra: as células z20 reveladas pelo caminho andado.
-  final FogState fog;
+  /// As células z17 (~280 m) por onde o jogador passou de verdade (o simulador não conta). Sem nada visual: as expedições
+  /// da fase 2 vão usar.
+  final Set<(int, int)> _visited;
+
+  Set<(int, int)> get visitedCells => Set.unmodifiable(_visited);
+
+  /// Registra a célula z17 ([x], [y]) como visitada. `true` se era nova. Quem chama não passa o caminho do simulador.
+  bool markVisited(int x, int y) {
+    if (!_visited.add((x, y))) return false;
+    notifyListeners();
+    return true;
+  }
 
   /// Escola, testes, talentos, pesquisa de rituais e contagens do Perfil.
   final ConjurerState conjurer;
@@ -228,11 +246,6 @@ class GameState extends ChangeNotifier {
   /// A última varredura do Radar (segundos UTC) e os Ocultos que ela revelou, `uid -> até quando`.
   int radarLastUtc;
   final Map<String, int> hiddenRevealed;
-
-  /// Revela a névoa em volta de ([x21], [y21]) (células z21). Com [debug], vai para o conjunto do simulador.
-  void revealFog(double x21, double y21, double radiusM, double metersPerCell21, {bool debug = false}) {
-    if (fog.reveal(x21, y21, radiusM, metersPerCell21, debug: debug) > 0) notifyListeners();
-  }
 
   /// O Radar varreu em [nowUtc] e revelou os Ocultos [uids] até [untilUtc].
   void recordSweep(int nowUtc, Iterable<int> uids, int untilUtc) {
@@ -329,6 +342,13 @@ class GameState extends ChangeNotifier {
     if (fam.isNotEmpty || ev.any((e) => e.from == 'familiar')) onNotice?.call('O Familiar tem algo a dizer');
     if (m != null || fam.isNotEmpty || offered || ev.isNotEmpty) notifyListeners();
     return m;
+  }
+
+  /// Entrega no chat a mensagem [id] (das `direct` do `mentor.json`) em [nowUtc], com os números de [vars]. Pode repetir.
+  void deliverMessage(String id, int nowUtc, {Map<String, Object> vars = const {}}) {
+    story.chat.delivered.add(ChatEntry(id: id, utc: nowUtc, vars: {for (final e in vars.entries) e.key: '${e.value}'}));
+    onNotice?.call(id.startsWith('steps_') ? 'O Familiar tem algo a dizer' : 'Nova mensagem no Chat');
+    notifyListeners();
   }
 
   /// No nível da escola, na primeira sessão em que os testes ainda não foram oferecidos, o mentor manda o convite. Uma vez só.
@@ -441,20 +461,21 @@ class GameState extends ChangeNotifier {
   }
 
   /// A criatura entra na coleção e no bestiário, e o spawn some do registro de vivos.
-  CreatureInstance capture({required int uid, required String speciesId, required int level, required int nowUtc, String? variant, bool shiny = false}) {
-    final c = CreatureInstance(uid: uidKey(uid), speciesId: speciesId, level: level, capturedUtc: nowUtc, variant: variant, shiny: shiny);
+  /// Com [debug] (criatura do "Criar criatura"), entra na coleção marcada e não toca no bestiário.
+  CreatureInstance capture({required int uid, required String speciesId, required int level, required int nowUtc, String? variant, bool shiny = false, bool debug = false}) {
+    final c = CreatureInstance(uid: uidKey(uid), speciesId: speciesId, level: level, capturedUtc: nowUtc, variant: variant, shiny: shiny, debug: debug);
     collection.add(c);
-    for (final k in bestiaryKeys(speciesId, variant: variant, shiny: shiny)) {
+    for (final k in debug ? const <String>[] : bestiaryKeys(speciesId, variant: variant, shiny: shiny)) {
       bestiary[k] = (bestiary[k] ?? const BestiaryEntry()).copyWith(captured: true);
     }
     markDone(uid, nowUtc);
     return c;
   }
 
-  /// Põe uma criatura que não veio de um spawn (a fusão) na coleção e no bestiário como capturada.
+  /// Põe uma criatura que não veio de um spawn (a fusão) na coleção e no bestiário como capturada. A de debug fica fora do bestiário.
   void addCreature(CreatureInstance c) {
     collection.add(c);
-    for (final k in bestiaryKeys(c.speciesId, variant: c.variant, shiny: c.shiny)) {
+    for (final k in c.debug ? const <String>[] : bestiaryKeys(c.speciesId, variant: c.variant, shiny: c.shiny)) {
       bestiary[k] = (bestiary[k] ?? const BestiaryEntry()).copyWith(captured: true);
     }
     notifyListeners();
@@ -540,7 +561,7 @@ class GameState extends ChangeNotifier {
         if (founder != null) 'founder': founder!.toJson(),
         'settings': settings,
         'story': story.toJson(),
-        'fog': fog.toJson(),
+        kVisitedCellsKey: [for (final c in _visited) [c.$1, c.$2]],
         'conjurer': conjurer.toJson(),
         'radar': {'last_utc': radarLastUtc, 'revealed': hiddenRevealed},
         'inventory': inventory,

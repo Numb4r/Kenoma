@@ -12,7 +12,6 @@
     "hidden": { "wander_scale": 0.5 }
   },
   "radar": { "cooldown_s": 120, "radius_m": 60, "trace_range_m": 250, "trace_error_deg": 30, "trace_hide_within_m": 40, "level2_player_level": 5, "hidden_reveal_s": 900 },
-  "fog": { "reveal_radius_m": 40 },
   "familiar": { "pickup_bonus_m": 2, "follow_offset_m": 6 },
   "weather": { "rain_particles": 70 },
   "climate": { "particle_cap": 260, "pocket_rate": 0.2, "flash_ms": 120, "flash_alpha": 0.55, "dim_alpha": 0.18, "bolt_ms": 350, "burn_mark_s": 60, "strike_min_player_m": 15, "flash_max_m": 400, "thunder_max_m": 1000, "fall_ms": 600, "footprint_every_m": 3, "footprint_max": 40 },
@@ -76,7 +75,12 @@
   "talent": { "points_per_level": 1 },
   "distill": { "eco_yield": [ { "from": 1, "to": 7, "value": 3 }, { "from": 8, "to": 14, "value": 4 }, { "from": 15, "to": 20, "value": 5 } ] },
   "phone": { "apps": [ { "id": "vision", "unlock_level": 1 }, { "id": "radar", "unlock_level": 2 }, { "id": "bestiary", "unlock_level": 1 }, { "id": "circle", "unlock_level": 1 }, { "id": "bag", "unlock_level": 1 }, { "id": "bench", "unlock_level": 2 }, { "id": "chat", "unlock_level": 2 }, { "id": "forum", "unlock_level": 2 }, { "id": "profile", "unlock_level": 1 }, { "id": "settings", "unlock_level": 1 } ] },
-  "steps": { "per_spark": 1000, "max_jump": 20000 },
+  "steps": { "per_spark": 1000, "max_jump": 20000, "daily_cap": 12000, "milestones": [5000, 10000], "boot_tolerance_s": 120 },
+  "patrol": {
+    "gps_interval_s": 10, "gps_distance_m": 15, "max_hours_default": 2, "max_hours_limit": 4, "battery_min_pct": 20, "gps_timeout_s": 600,
+    "tick_s": 30, "mark_m": 30, "mark_duration_s": 7200, "street_m": 40, "vibrate_ms": [0, 120], "vibrate_rare_ms": [0, 90, 110, 90, 110, 280],
+    "vehicle_kmh": 25, "vehicle_confirm_fixes": 2, "vehicle_exit_s": 120, "walk_line_m": 50, "max_jump_m": 400, "journal_read_s": 5
+  },
   "school_tests": {
     "techno": { "duration_s": 15, "band": 0.12, "wander_amp": 0.22, "wander_period_s": 6, "noise_amp": 0.3, "noise_period_s": 0.9, "stabilize_s": 2, "stabilize_cooldown_s": 4, "stabilize_charges": 3 },
     "shaman": { "start_m": 14, "stop_m": 1.5, "max_speed_mps": 3, "calm_speed_mps": 0.8, "spook_jump_m": 3, "spook_cooldown_s": 1, "par_s": 16, "timeout_s": 40, "spook_penalty": 12, "time_penalty_per_s": 1.5, "timeout_cap": 40 },

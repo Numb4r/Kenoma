@@ -142,3 +142,23 @@ recebe sem atualização, desde que tenha os pacotes dela. Reassine sempre depoi
 Quem tiver a chave privada pode publicar épocas novas e estender validades, **não** pode alterar uma época já
 publicada nem executar código (o app só lê JSON e a regra 8 vale). Mesmo assim: faça a rotação acima, tire o conteúdo
 suspeito do Pages e confira `docs/pages/` no histórico. Nunca cole a chave privada em issue, chat ou commit.
+
+## Regiões baixáveis (pacotes fora do APK)
+
+Pacotes de região não entram no APK. `scripts/assinar_regioes.py <região> <época>` lê `pipeline/out/regions/`, assina cada arquivo e grava `docs/pages/regions.json` (nome, bbox, época, URL, SHA-256, tamanho e assinatura de cada arquivo) com o `.sig` ao lado. **Nada é publicado.** O app confere a assinatura de `regions.json`, a assinatura e o SHA-256 de cada arquivo e o SHA contra `region_packs`, `visual_packs` e `walkable.exclude_packs` da época vigente.
+
+Publicar São Paulo (época 5), só quando decidir. Precisa de `gh` (não instalado nesta máquina) ou da tela de Releases do GitHub, e a ordem importa: primeiro os arquivos, depois o `regions.json`.
+
+```
+gh release create regions-e5 --title "Regiões, época 5" \
+  pipeline/out/regions/sao_paulo_e5.bin \
+  pipeline/out/regions/sao_paulo_e5_vis.bin \
+  pipeline/out/regions/sao_paulo_e5_nowalk.bin
+git subtree push --prefix docs/pages origin gh-pages   # e, em Settings > Pages, Deploy from branch > gh-pages > / (root)
+curl -sI https://numb4r.github.io/Kenoma/regions.json | head -1
+```
+
+O GitHub Pages só serve a raiz ou `/docs` de uma branch, por isso a branch `gh-pages` com o conteúdo de `docs/pages/`. Os pacotes ficam em `pipeline/out/regions/`, fora do git: se forem apagados, o mesmo extrato (MD5 em `pipeline/README.md`) os regera byte a byte.
+
+Para testar sem publicar: gere um `regions.json` com `url` relativa, assine, sirva a pasta com `python3 -m http.server`, rode `adb reverse tcp:<porta> tcp:<porta>` e use o item "URL do feed de regiões" em Assinaturas no menu de debug. A assinatura continua obrigatória.
+

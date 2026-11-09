@@ -12,6 +12,8 @@ import '../colors.dart';
 import '../menu/phone_shell.dart' show phoneRoute;
 import '../menu/screen_frame.dart';
 import 'ride_notifications_screen.dart';
+import '../../patrol/patrol_controller.dart';
+import '../patrol/patrol_screen.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
 
 /// Chaves dos interruptores em `GameState.settings`.
@@ -56,7 +58,7 @@ class ConnectivitySection extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             title: const Text('Contador de passos', style: TextStyle(fontSize: 8)),
             subtitle: Text(
-              'A cada ${data.steps.perSpark} passos, uma Fagulha do bioma onde você esteve por último. Funciona sem GPS. Pede a permissão de atividade física só ao ligar',
+              'A cada ${data.steps.perSpark} passos, uma Fagulha do bioma onde você esteve por último, até ${data.steps.dailyCap} passos por dia. Funciona sem GPS e com o app fechado; os passos da Patrulha não contam duas vezes. Pede a permissão de atividade física só ao ligar',
               style: const TextStyle(fontSize: 8, color: kDim),
             ),
             value: state.setting(kStepsSetting),
@@ -67,12 +69,26 @@ class ConnectivitySection extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             title: const Text('Modo bolso', style: TextStyle(fontSize: 8)),
             subtitle: const Text(
-              'Com o celular no bolso (sensor de proximidade coberto) o mapa escurece e o celular vibra quando um Eco chega ao alcance de toque. A coleta continua',
+              'Com o celular no bolso (sensor de proximidade coberto) o mapa escurece e o celular vibra quando um Eco chega ao alcance de toque. A coleta continua. Com a Patrulha ligada, vale sempre',
               style: TextStyle(fontSize: 8, color: kDim),
             ),
             value: state.setting(kPocketSetting),
             activeThumbColor: kSignal,
             onChanged: (v) => state.setSetting(kPocketSetting, v),
+          ),
+          ListenableBuilder(
+            listenable: PatrolController.instance,
+            builder: (context, _) => ListTile(
+              key: const Key('settings-patrol'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Patrulha do Véu', style: TextStyle(fontSize: 8)),
+              subtitle: Text(
+                '${PatrolController.instance.running ? 'Ligada' : 'Desligada'}. O jogo continua com o app fechado: coleta na Aura e marca os Ecos por perto. '
+                'Desliga sozinha depois de ${patrolMaxHours(state, data.patrol)} h',
+                style: const TextStyle(fontSize: 8, color: kDim),
+              ),
+              onTap: () => Navigator.of(context).push(phoneRoute<void>(PatrolScreen(state: state, balance: data.patrol))),
+            ),
           ),
           ListTile(
             contentPadding: EdgeInsets.zero,

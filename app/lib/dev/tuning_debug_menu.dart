@@ -3,10 +3,15 @@
 /// (`debug_registry.dart`, `debug_items.dart`). Fica em todas as builds de teste, inclusive as de release (CLAUDE.md).
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../data/geolocator_source.dart';
 import '../data/session_log_store.dart';
+import '../patrol/patrol_launch.dart';
+import '../save/ksv_save_store.dart';
+import '../ui/game/game_map_screen.dart';
 import '../save/backup_io.dart';
 import '../save/save_store.dart';
 import '../ui/tuning/log_exporter.dart';
@@ -59,8 +64,13 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   Future<void> _init() async {
     final prefs = widget.prefs ?? await DebugPrefs.inDocuments();
     await prefs.load();
+    _env.prefs = prefs;
     if (mounted) setState(() => _prefs = prefs);
     _env.loadLevelOverride();
+    // Aberto pelo aviso de um Eco raro da Patrulha: vai direto ao mapa, que abre o Eco.
+    if (await initPatrolLaunch() && mounted) {
+      unawaited(Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => GameMapScreen(tools: _tools, openStore: KsvSaveStore.inDocuments))));
+    }
     try {
       await _env.capture.load();
     } catch (_) {

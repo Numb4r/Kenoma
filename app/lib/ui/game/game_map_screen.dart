@@ -23,15 +23,12 @@ import '../ritual/ritual_screen.dart';
 import '../../net/region_catalog.dart' show RegionEntry;
 import '../../world/layered_world.dart';
 import '../../world/map_layers.dart';
-import '../../world/walk_paths.dart';
 import '../../data/climate_catalog.dart';
-import '../../world/climate_world.dart';
 import '../flashes.dart';
 import 'climate_driver.dart';
 import '../chime.dart';
 import '../sprites/familiar_sprite.dart';
 import '../../data/game_data.dart';
-import '../../player/circle.dart';
 import '../../player/game_state.dart' show GameState;
 import '../../player/conjurer_balance.dart' show School;
 import '../../player/mark.dart';
@@ -39,6 +36,7 @@ import '../../player/progression.dart' show localDay;
 import '../../dev/debug_tag.dart';
 import '../../dev/dev_tools.dart';
 import '../../player/game_session.dart';
+import '../../save/fresh_start.dart';
 import '../../save/save_store.dart';
 import '../../world/spawn_field.dart';
 import '../../world/touch_gesture.dart';
@@ -78,6 +76,8 @@ import '../../world/device_sensors.dart';
 import '../../world/pocket_mode.dart';
 import '../../world/steps.dart';
 import '../../world/traffic_graph.dart';
+import '../../patrol/patrol_controller.dart';
+import '../patrol/patrol_hooks.dart';
 
 /// O mapa do jogo (M5): o Conjurador anda com o GPS e a câmera o segue, com a Aura no chão. A câmera
 /// nunca sai do Conjurador: arrastar com um dedo gira o mapa e a pinça dá zoom numa faixa de jogo.
@@ -166,12 +166,12 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     if (u.notice != null) _toast(u.notice!, seconds: 5);
   }
 
-  /// A névoa de guerra: revela em volta do caminho andado (o do simulador vai para o conjunto de debug).
-  void _revealFog(PlayerState s, GameState state, GameData data) {
+  /// As células z17 visitadas: só o caminho real, sem o simulador e sem dirigir.
+  void _markVisited(PlayerState s, GameState state) {
     final p = s.position;
-    if (p == null || (_ready?.travel.driver ?? false)) return; // dirigir não revela o mapa
-    final (x, y) = latLonToTileFraction(p.lat, p.lon, biomeZoom);
-    state.revealFog(x, y, data.street.fogRevealRadiusM, metersPerCell(p.lat), debug: tools.useSimulator);
+    if (p == null || tools.useSimulator || (_ready?.travel.driver ?? false)) return;
+    final (x, y) = latLonToTile(p.lat, p.lon, visitedZoom);
+    state.markVisited(x, y);
   }
 
   /// O bioma da última posição conhecida, para o contador de passos (só com ele ligado).
@@ -181,15 +181,6 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     try {
       state.setSetting('last_biome', assets.map.biomes.spawnKey(assets.map.spawnBiomeAtLatLon(p.lat, p.lon)));
     } catch (_) {}
-  }
-
-  /// A chave do bioma da célula z20, ou `null` fora do pacote.
-  String? _biomeKeyAtCell(MapAssets assets, int cx, int cy) {
-    try {
-      return assets.map.biomes.spawnKey(assets.map.spawnBiomeAtCell(cx, cy));
-    } catch (_) {
-      return null;
-    }
   }
 
   /// A chave do bioma em (lat, lon), ou `null` fora do pacote.
@@ -235,6 +226,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     st.tickChat(1, now, r.data.mentor);
     _tickLayers(r, st);
     _optionalSensors(r, st, now);
+    _patrol?.tick();
     if (_weatherIn-- <= 0) {
       _weatherIn = 10;
       _updateWeather();
@@ -279,7 +271,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   void _optionalSensors(_Ready r, GameState st, int now) {
     try {
-      final pocketOn = st.setting(kPocketSetting);
+      final pocketOn = st.setting(kPocketSetting) || PatrolController.instance.running; // com a Patrulha, o bolso vem junto
       if (pocketOn && _proxSub == null) {
         _proxSub = const DeviceSensors().proximity().listen(_pocket.onProximity, onError: (_) {});
       } else if (!pocketOn && _proxSub != null) {
@@ -287,7 +279,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       }
       if (st.setting(kStepsSetting) && _stepsIn-- <= 0) {
         _stepsIn = 30;
-        final tracker = StepTracker(state: st, balance: r.data.steps, read: const DeviceSensors().readSteps);
+        final tracker = StepTracker(state: st, balance: r.data.steps, read: const DeviceSensors().readSteps, nowUtc: () => tools.clock.nowUtc);
         unawaited(tracker.sync(r.data.schedule.select(now).epoch).then((n) {
           if (n > 0 && mounted) _toast('+$n ${n == 1 ? 'Fagulha' : 'Fagulhas'} pelos seus passos');
         }));
@@ -295,6 +287,19 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     } catch (_) {
       // sensores são opcionais
     }
+  }
+
+  PatrolHooks? _patrol;
+
+  /// Bolso coberto com a Patrulha ligada: o serviço joga, então o mapa para de desenhar (taxa de quadros mínima). Destapar
+  /// volta. Sem a Patrulha o mapa continua: é ele quem coleta.
+  void _pocketFps() {
+    final game = _ready?.game;
+    if (game == null) return;
+    final low = _pocket.covered && PatrolController.instance.running;
+    game.setPocket(low); // o clima desenha poucas partículas no bolso
+    if (low && !game.paused) game.pauseEngine();
+    if (!low && game.paused) game.resumeEngine();
   }
 
   void _stopProximity() {
@@ -314,7 +319,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   /// A caminhada conta de 10 em 10 metros, para não gravar o save a cada passo.
   void _onWalked(double meters) {
-    if (_ready?.travel.quiet ?? false) return; // de carro não é caminhada
+    if ((_ready?.travel.quiet ?? false) || PatrolController.instance.running) return; // de carro não é caminhada; na Patrulha, o diário conta
     _walkedM += meters;
     if (_walkedM < 10) return;
     final whole = _walkedM.floor();
@@ -327,6 +332,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   Future<void> _restart() async {
     if (!mounted) return;
     _restarting = true;
+    final own = ModalRoute.of(context);
+    Navigator.of(context).popUntil((r) => r == own || r.isFirst); // os Ajustes e o que estiver por cima saem: o mapa novo entra no lugar deste
     await Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
       builder: (_) => GameMapScreen(
         tools: widget.tools,
@@ -341,18 +348,27 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     ));
   }
 
+  /// Recomeçar do zero (Ajustes): apaga o progresso, mantém a identidade e reabre o mapa como numa instalação nova.
+  Future<void> _freshStart(_Ready r) async {
+    await (await FreshStart.onDevice(r.session.store, stopPatrol: _stopPatrol)).run(r.session, tools.clock.realNowUtc);
+    await _restart();
+  }
+
+  /// Gancho da Patrulha do Véu: encerra o serviço antes de o recomeço apagar o diário.
+  Future<void> _stopPatrol() => stopPatrol();
+
   SettingsScreen _settings(_Ready r) => SettingsScreen(
         session: r.session,
         data: r.data,
         nowUtc: () => tools.clock.nowUtc,
         realNowUtc: () => tools.clock.realNowUtc,
         appVersion: _version,
-        cellSideM: () => 2 * metersPerCell(r.game.playerLat),
         followHeading: () => r.game.rotation.followHeading,
         onFollowHeading: (on) {
           if (r.game.rotation.followHeading != on) r.game.toggleFollowHeading();
         },
         onRestart: _restart,
+        onFreshStart: () => _freshStart(r),
         notifier: _notifier,
         regions: r.layers.regions,
       );
@@ -554,36 +570,14 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     tools.clock.raiseFloor(session.state.lastSeenUtc);
     session.onSeen = tools.clock.raiseFloor;
     // O clima do mundo: o modelo é o da época ATIVA naquele instante (nunca o da mais nova); o debug pode forçar qualquer id.
-    final climate = ClimateWorld(
-      seed: session.state.seed,
-      schedule: data.schedule,
-      speciesOfType: data.ecoOfType,
-      itemExists: data.itemNames.containsKey,
-      biomeAt: (cx, cy) => _biomeKeyAtCell(assets, cx, cy),
-      forced: () => tools.force.weather,
-    );
-    final world = WorldView(
-      field: SpawnField(
-        seed: session.state.seed,
-        schedule: data.schedule,
-        map: assets.map,
-        typeOf: (id) => data.species(id)?.type.name,
-        snapper: WalkPaths(assets.visual!, blocked: assets.noWalk),
-        weatherAt: climate.idAt,
-        climate: climate,
-        levelCapOf: data.progress.levelCapFor,
-      ),
+    final climate = climateWorldFor(state: session.state, data: data, assets: assets, forced: () => tools.force.weather);
+    final world = worldViewFor(
       state: session.state,
-      street: data.street,
+      data: data,
+      assets: assets,
+      weatherAt: climate.idAt,
+      climate: climate,
       force: tools.force,
-      typeOf: (id) => data.species(id)?.type.name,
-      auraM: assets.balance.auraM,
-      touchRangeM: assets.balance.touchRangeM,
-      viewM: assets.balance.viewM,
-      trackerM: assets.balance.trackerM,
-      abilities: () => abilitiesOf(session.state, data),
-      ritual: data.ritual,
-      itemName: data.itemName,
       onMessage: _toast,
     );
     final game = GameMapGame(
@@ -643,7 +637,11 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       nowUtc: () => tools.clock.nowUtc,
       highway: assets.noWalk == null ? null : highwayTest(assets.noWalk!, data.travel.highwayTolM / metersPerCell(game.playerLat)),
     );
-    world.quiet = () => travel.quiet;
+    // Com a Patrulha ligada quem coleta é o serviço; o mapa mostra e lê o diário (patrol_controller.dart).
+    world.quiet = () => travel.quiet || PatrolController.instance.running;
+    _patrol = PatrolHooks(state: session.state, balance: data.patrol, nowUtc: () => tools.clock.nowUtc, onMessage: _toast, onFocus: (m) => _startEncounter(m.toSpawn()));
+    _pocket.addListener(_pocketFps);
+    PatrolController.instance.addListener(_pocketFps);
     world.travelPickupM = () => travel.pickupBonusM;
     game.travelLayer = TravelLayer(travel, carM: assets.balance.ghostCarM);
     travel.addListener(() {
@@ -655,7 +653,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       layers.noteFix(s.lastRaw);
       noteTravelPosition(travel, s, game.avatar);
       _rememberBiome(s, session.state, assets);
-      _revealFog(s, session.state, data);
+      _markVisited(s, session.state);
       _rebuild();
     });
     game.onFollowHeading = _setFollowHeading;
@@ -686,6 +684,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final note = session.loadNote;
       if (note != null) _toast(note, seconds: 8);
+      unawaited(_patrol?.sync());
       _ensureAccess();
     });
     return _ready!;
@@ -764,6 +763,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       _stopProximity();
     } else if (state == AppLifecycleState.resumed) {
       _ensureAccess(); // o jogador pode ter mexido nos ajustes
+      unawaited(_patrol?.sync()); // o que a Patrulha juntou com o app fechado
       if (ready.game.rotation.followHeading) _setFollowHeading(true);
     }
   }
@@ -791,6 +791,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       t.cancel();
     }
     _stopProximity();
+    _patrol?.dispose();
+    PatrolController.instance.removeListener(_pocketFps);
     _pocket.dispose();
     super.dispose();
   }
@@ -889,6 +891,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                 top: 112,
                 child: VeilBadge(source: r.layers.source, onExplain: () => _toast(kVeilBadgeHelp, seconds: 6)),
               ),
+              if (_patrol != null) Positioned(right: 8, top: 168, child: PatrolHudButton(hooks: _patrol!)),
               Positioned(
                 left: 8,
                 top: 56,
@@ -906,7 +909,6 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                   state: r.session.state,
                   data: r.data,
                   nowUtc: () => tools.clock.nowUtc,
-                  cellSideM: () => 2 * metersPerCell(r.game.playerLat),
                   onOpenSettings: () => Navigator.of(context).push(phoneRoute<void>(_settings(r))),
                 ))),
               )),
@@ -970,7 +972,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             ],
           ),
         ),
-        PocketOverlay(mode: _pocket, enabled: () => r.session.state.setting(kPocketSetting)),
+        PocketOverlay(mode: _pocket, enabled: () => r.session.state.setting(kPocketSetting) || PatrolController.instance.running),
       ],
     );
   }

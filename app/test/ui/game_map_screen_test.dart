@@ -866,13 +866,10 @@ void main() {
       expect(env.game.rainCount, 0);
     });
 
-    testWidgets('a névoa: o caminho do simulador revela em volta do Conjurador no conjunto de debug, e o véu recorta as células', (tester) async {
+    testWidgets('células visitadas: o caminho do simulador não conta', (tester) async {
       final env = await pumpGame(tester);
       await env.live(4);
-      final fog = env.game.worldView!.state.fog;
-      expect(fog.debugCount, greaterThan(3), reason: 'o simulador revela, marcado como debug');
-      expect(fog.revealedCount, 0, reason: 'o contador de área só conta o caminho real');
-      expect(env.game.fogCuts, greaterThan(3));
+      expect(env.game.worldView!.state.visitedCells, isEmpty, reason: 'o simulador não marca células visitadas');
     });
 
     /// Leva o Conjurador até um Eco real da área (a 300 m do Unicamp), para haver Ecos novos à vista.

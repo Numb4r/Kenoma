@@ -32,7 +32,6 @@ import '../sprites/sprite_image.dart' show mapEcoPx, mapPlayerPx, mapSpiritPx;
 import 'art_renderer.dart';
 import 'art_style.dart';
 import 'spawn_painter.dart';
-import 'fog_painter.dart';
 import 'climate_fx.dart';
 import 'climate_painter.dart';
 import '../../data/climate_catalog.dart';
@@ -110,7 +109,6 @@ class GameMapGame extends FlameGame {
   late final ArtRenderer _art = ArtRenderer(visual: visual, style: style, balance: balance, floorTile: floorTile, floorGridCells: floorGridCells);
   late final StreetLabelPainter _labels = StreetLabelPainter(visual);
   late final TrafficPainter _traffic = TrafficPainter(visual, carM: balance.ghostCarM, pedestrianM: balance.ghostPedestrianM, roadWidthM: balance.roadWidthM);
-  final FogPainter _fog = FogPainter();
   final TracePainter _trace = TracePainter();
   late final ClimatePainter _climate = ClimatePainter(cap: climateBalance.particleCap, pocketRate: climateBalance.pocketRate);
 
@@ -144,12 +142,11 @@ class GameMapGame extends FlameGame {
   ui.Image? familiarImage;
   final double familiarOffsetM;
 
-  /// Quantas partículas de clima e quantas células reveladas (recortes do véu) foram desenhadas no último quadro.
+  /// Quantas partículas de clima foram desenhadas no último quadro.
   int get rainCount => _climate.count;
 
   /// Onde estão as partículas de clima na tela (testes de cobertura).
   Iterable<Offset> get climatePositions => _climate.positions;
-  int get fogCuts => _fog.lastCut;
 
   /// Quantos fantasmas do tráfego foram desenhados no último quadro.
   int get ghostsDrawn => _traffic.lastDrawn;
@@ -415,7 +412,6 @@ class GameMapGame extends FlameGame {
     }
     travelLayer?.paintGround(canvas, view, cam, metersPerCell(_lat), utc: _exactUtc(), avatar: avatar);
     if (streetNames()) _labels.paint(canvas, view, cam);
-    if (streetLifeEnabled && worldView != null && _hasFix) _fog.paint(canvas, view, cam, worldView!.state.fog);
     if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
     final wv = worldView;
     if (wv != null && _hasFix) {

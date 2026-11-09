@@ -54,7 +54,7 @@ void main() {
   var follow = false;
 
   Future<void> pump(WidgetTester tester, GameSession s, {_FakeIo? io, String? scanned, int? now, _FakeNotifier? notifier}) async {
-    tester.view.physicalSize = const Size(1080, 5400);
+    tester.view.physicalSize = const Size(1080, 7200); // a lista dos Ajustes cresce: tudo à vista, sem rolar
     tester.view.devicePixelRatio = 2.625;
     addTearDown(tester.view.reset);
     restarts = 0;
@@ -66,7 +66,6 @@ void main() {
         nowUtc: () => now ?? t,
         realNowUtc: () => now ?? t,
         appVersion: '0.12.0+18',
-        cellSideM: () => 35.2,
         followHeading: () => follow,
         onFollowHeading: (on) => follow = on,
         onRestart: () async => restarts++,

@@ -1,4 +1,4 @@
-/// Números da "Rua viva" (Fase 1, fatia 2) lidos de `balance.json`: o que cada comportamento faz, o Radar, a névoa e o
+/// Números da "Rua viva" (Fase 1, fatia 2) lidos de `balance.json`: o que cada comportamento faz, o Radar e o
 /// Familiar. É o que não muda o mundo; o que muda (pesos, chances, clima) fica na época. Nenhum número vive no código.
 library;
 
@@ -7,12 +7,11 @@ class StreetLifeBalance {
       : this._(
           balance['behavior'] as Map<String, dynamic>,
           balance['radar'] as Map<String, dynamic>,
-          balance['fog'] as Map<String, dynamic>,
           balance['familiar'] as Map<String, dynamic>,
           balance['weather'] as Map<String, dynamic>,
         );
 
-  StreetLifeBalance._(Map<String, dynamic> b, Map<String, dynamic> r, Map<String, dynamic> f, Map<String, dynamic> fam, Map<String, dynamic> w)
+  StreetLifeBalance._(Map<String, dynamic> b, Map<String, dynamic> r, Map<String, dynamic> fam, Map<String, dynamic> w)
       : skittishFleeSpeedMps = _d((b['skittish'] as Map<String, dynamic>)['flee_speed_mps']),
         skittishSpeedWindowS = _d((b['skittish'] as Map<String, dynamic>)['speed_window_s']),
         skittishWanderScale = _d((b['skittish'] as Map<String, dynamic>)['wander_scale']),
@@ -25,7 +24,6 @@ class StreetLifeBalance {
         traceHideWithinM = _d(r['trace_hide_within_m']),
         radarLevel2PlayerLevel = (r['level2_player_level'] as num).toInt(),
         hiddenRevealS = _d(r['hidden_reveal_s']),
-        fogRevealRadiusM = _d(f['reveal_radius_m']),
         familiarPickupBonusM = _d(fam['pickup_bonus_m']),
         familiarFollowOffsetM = _d(fam['follow_offset_m']),
         rainParticles = (w['rain_particles'] as num).toInt();
@@ -54,9 +52,6 @@ class StreetLifeBalance {
   final double traceHideWithinM;
   final int radarLevel2PlayerLevel;
   final double hiddenRevealS;
-
-  /// Névoa: o raio revelado em volta do caminho.
-  final double fogRevealRadiusM;
 
   /// Familiar: bônus de coleta (m) e a distância ao lado do Conjurador (m).
   final double familiarPickupBonusM;

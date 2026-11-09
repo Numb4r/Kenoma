@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kenoma/core/features.dart';
 import 'package:kenoma/player/conjurer_balance.dart';
 import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/save/founder.dart';
@@ -22,7 +21,6 @@ void main() {
         state: s,
         data: data,
         nowUtc: () => 1790040000,
-        cellSideM: cell ? () => 35 : null,
         onOpenSettings: onSettings,
       ),
     ));
@@ -83,17 +81,8 @@ void main() {
     s.conjurer.markDay(10);
     await open(tester, s);
     expect(find.text('1,3 km'), findsOneWidget);
-    expect(find.text('ÁREA REVELADA'), findsOneWidget);
+    expect(find.text('ÁREA REVELADA'), findsNothing, reason: 'a névoa saiu na 0.16.0');
     expect(find.text('CAPTURAS'), findsOneWidget);
-  });
-
-  testWidgets('com a Rua viva desligada, a área revelada some', (tester) async {
-    final old = streetLifeEnabled;
-    streetLifeEnabled = false;
-    addTearDown(() => streetLifeEnabled = old);
-    await open(tester, state());
-    expect(find.text('ÁREA REVELADA'), findsNothing);
-    expect(find.text('FAGULHAS'), findsOneWidget);
   });
 
   testWidgets('selo de fundador só com founder; sem certificados a seção some', (tester) async {

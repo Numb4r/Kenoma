@@ -16,6 +16,7 @@ import '../player/conjurer_balance.dart' show School;
 import '../player/circle.dart' show MapAbilities;
 import '../player/game_state.dart';
 import 'climate_world.dart';
+import 'debug_creatures.dart';
 import 'debug_force.dart';
 import 'radar.dart';
 import 'spawn_field.dart';
@@ -153,6 +154,8 @@ class WorldView {
   /// A velocidade média do jogador na janela do Arisco, em m/s: o deslocamento do primeiro ao último ponto dividido pelo
   /// tempo (o caminho inteiro somaria o tremor do GPS). 0 com menos de 3 s de percurso.
   double get playerSpeedMps {
+    final o = speedOverride;
+    if (o != null) return o();
     // A fuga do Arisco usa a velocidade do GPS cru (a que o jogador de fato anda); sem leituras cruas, a do marcador.
     final raw = _gpsTrack.length >= 2;
     final track = raw ? _gpsTrack : _track;
@@ -162,6 +165,10 @@ class WorldView {
     final dx = track.last.x - track.first.x, dy = track.last.y - track.first.y;
     return math.sqrt(dx * dx + dy * dy) * (raw ? _gpsMpc : _mpc) / span;
   }
+
+  /// A Patrulha lê o GPS a cada ~10 s, mais espaçado que a janela do Arisco: ela mede a velocidade entre leituras e a passa
+  /// aqui. `null`: a janela de sempre.
+  double Function()? speedOverride;
 
   /// O percurso do GPS cru, só para a velocidade do Arisco: a coleta e a Aura seguem a posição suavizada do marcador.
   final _gpsTrack = <({int t, double x, double y})>[];
@@ -253,6 +260,8 @@ class WorldView {
     final all = [
       for (final s in field.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel))
         if (visibleTier(s) && (viewCap == null || !s.isEco || distanceM(s) <= viewCap)) _withForce(s),
+      // As do "Criar criatura": fora do mundo, valem em qualquer nível.
+      ...?force?.creatures.around(px: px, py: py, metersPerCell21: _mpc, radiusM: auraRadiusM, tUtc: tUtc, biomeAt: _biomeKeyAt),
     ];
     allEcos = [for (final s in all) if (s.isEco && !state.isDone(s.uid)) s];
     final collected = <WorldSpawn>[];
@@ -268,7 +277,7 @@ class WorldView {
         continue;
       }
       if (s.isEco && distanceM(s) <= viewM) {
-        state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny);
+        if (!isDebugUid(s.uid)) state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny); // a de debug não entra no bestiário
         if (ritual != null && isRitualOnlyId(s.entryId)) noteRitualSighting(state, ritual!, s.uid, s.entryId, _ritualSeen);
         if (s.shiny && _announced.add(s.uid)) onShiny?.call(s);
       }
@@ -339,7 +348,7 @@ class WorldView {
       showS: (300 * climate.traceTimeMult).round(), // o Frio guarda os rastros por mais tempo
     );
     state.recordSweep(tUtc, [for (final s in out.revealed) s.uid], tUtc + street.hiddenRevealS.round());
-    if (out.revealed.isNotEmpty) state.recordEvent('hidden_revealed', '', out.revealed.length);
+    state.recordEvent('hidden_revealed', '', out.revealed.where((s) => !isDebugUid(s.uid)).length); // as de debug não contam
     traces = out.traces;
     spawns = [...spawns, for (final s in out.revealed) if (!spawns.any((o) => o.uid == s.uid)) s];
     return out;
@@ -365,6 +374,9 @@ class WorldView {
     onCollected?.call(s);
     return TouchResult.collected;
   }
+
+  /// A chave de bioma (variante) de uma célula z20, para a criatura de debug com variante de bioma.
+  String _biomeKeyAt(int cx, int cy) => field.map.biomes.spawnKey(field.map.spawnBiomeAtCell(cx, cy));
 
   /// Tira o spawn da vista (o Eco foi capturado ou fugiu).
   void remove(WorldSpawn s) {

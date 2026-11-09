@@ -6,16 +6,27 @@ library;
 import 'mentor_script.dart';
 
 class ChatEntry {
-  const ChatEntry({required this.id, required this.utc});
+  const ChatEntry({required this.id, required this.utc, this.vars = const {}});
 
-  factory ChatEntry.fromJson(Map<String, dynamic> j) => ChatEntry(id: j['id'] as String, utc: j['utc'] as int);
+  factory ChatEntry.fromJson(Map<String, dynamic> j) => ChatEntry(
+        id: j['id'] as String,
+        utc: j['utc'] as int,
+        vars: {for (final e in ((j['vars'] as Map<String, dynamic>?) ?? const {}).entries) e.key: '${e.value}'},
+      );
 
   final String id;
 
   /// Quando a mensagem chegou, em segundos UTC.
   final int utc;
 
-  Map<String, dynamic> toJson() => {'id': id, 'utc': utc};
+  /// Os números da mensagem (`{sparks}` no texto vira o valor de `sparks`): o resumo da Patrulha. Campo opcional: versões
+  /// antigas leem a entrada sem ele.
+  final Map<String, String> vars;
+
+  /// [text] com os `{nome}` trocados por [vars].
+  String fill(String text) => text.replaceAllMapped(RegExp(r'\{(\w+)\}'), (x) => vars[x[1]] ?? x[0]!);
+
+  Map<String, dynamic> toJson() => {'id': id, 'utc': utc, if (vars.isNotEmpty) 'vars': vars};
 }
 
 class ChatState {

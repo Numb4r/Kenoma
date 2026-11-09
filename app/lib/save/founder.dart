@@ -9,6 +9,9 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart' show sha256;
 
 /// Hash de uma linha do log: `SHA-256("anterior|versão|utc|player_id")` em hexadecimal.
+/// A "versão" da linha que o Recomeçar do zero grava no log: a cadeia continua, e a data fica no `utc`.
+const String kRestartEntry = 'recomeço';
+
 String chainHash({required String prev, required String version, required int utc, required String playerId}) =>
     sha256.convert(utf8.encode('$prev|$version|$utc|$playerId')).toString();
 
@@ -49,12 +52,21 @@ class Founder {
   final int firstSeenUtc;
   final List<VersionEntry> versionsSeen;
 
-  /// Anota a versão aberta agora. Só acrescenta se for diferente da última: uma linha por versão, não por abertura.
+  /// Anota a versão aberta agora. Só acrescenta se for diferente da última: uma linha por versão, não por abertura. A
+  /// linha de recomeço não conta como versão: reabrir a mesma versão depois dela não repete a linha.
   bool noteVersion(String version, int utc) {
-    if (versionsSeen.isNotEmpty && versionsSeen.last.version == version) return false;
+    final versions = versionsSeen.where((e) => e.version != kRestartEntry);
+    if (versions.isNotEmpty && versions.last.version == version) return false;
+    _append(version, utc);
+    return true;
+  }
+
+  /// O jogador recomeçou do zero em [utc]: uma linha [kRestartEntry] encadeada como as outras.
+  void noteRestart(int utc) => _append(kRestartEntry, utc);
+
+  void _append(String version, int utc) {
     final prev = versionsSeen.isEmpty ? '' : versionsSeen.last.hash;
     versionsSeen.add(VersionEntry(version: version, utc: utc, prev: prev, hash: chainHash(prev: prev, version: version, utc: utc, playerId: playerId)));
-    return true;
   }
 
   /// Se a cadeia está íntegra: cada linha aponta para o hash da anterior e o próprio hash confere.

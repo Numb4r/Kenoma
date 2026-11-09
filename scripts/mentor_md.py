@@ -81,6 +81,15 @@ for m in mentor.get("radio", []):
     who = "Familiar" if m.get("from") == "familiar" else "mentor"
     out.append(f"| `{m['id']}` | {who} | {m['text']} |")
 out.append("")
+out.append("## Mensagens com números (Patrulha e passos)\n")
+out.append("Saem pelo código, quantas vezes for preciso (lista `direct` do JSON). O resumo da Patrulha sai quando ela termina (ou quando o app "
+           "abre e vê que ela acabou), com `{min}` (minutos), `{sparks}` (Fagulhas), `{materials}` (materiais) e `{marks}` (Ecos marcados). "
+           "Os marcos de passos saem uma vez por dia local, ao passar de 5 mil e de 10 mil passos.\n")
+out.append("| Id | Quem | Texto |\n| --- | --- | --- |")
+for m in mentor.get("direct", []):
+    who = "Familiar" if m.get("from") == "familiar" else "mentor"
+    out.append(f"| `{m['id']}` | {who} | {m['text']} |")
+out.append("")
 out.append(f"## Fórum {forum['forum']}: pedidos diários\n")
 out.append("Três pedidos por dia, sorteados por `hash(seed, época, data, slot)`. O texto tem `{n}` (a meta), `{tipo}` (Fogo, Planta, "
            "Água ou qualquer tipo) e `{item}` (giz, ervas, água pura). Usuários: " + ", ".join(f"`{u}`" for u in forum["users"]) + ".\n")

@@ -5,6 +5,7 @@ library;
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 import '../core/behavior.dart';
+import 'debug_creatures.dart';
 
 class DebugForce extends ChangeNotifier {
   /// Pedidos para o **próximo Eco novo** que aparecer à vista. Cada um é gasto quando o Eco aparece.
@@ -34,6 +35,9 @@ class DebugForce extends ChangeNotifier {
     }
     return e;
   }
+
+  /// As criaturas do "Criar criatura": nascem na Aura fora do mundo determinístico (`debug_creatures.dart`).
+  final DebugCreatures creatures = DebugCreatures();
 
   bool get pendingEco => nextBehavior != null || nextVariant || nextShiny || nextSpirit || nextRitual;
 

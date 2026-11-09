@@ -158,8 +158,10 @@ void main() {
   testWidgets('o menu deixa sentir a identidade de cada tipo e os alertas da resistência', (tester) async {
     await pumpMenu(tester);
     for (final label in ['FOGO', 'ÁGUA', 'PLANTA', 'FOGO: AVISO', 'ÁGUA: VIRADA', 'PLANTA: BROTO']) {
-      await tester.scrollUntilVisible(find.text(label), 200, scrollable: find.byType(Scrollable).first);
-      expect(find.text(label), findsOneWidget, reason: label);
+      // Só no item da vibração: o "Criar criatura" também tem os tipos.
+      final f = find.descendant(of: find.byKey(const Key('item-cap.vibration')), matching: find.text(label));
+      await tester.scrollUntilVisible(f, 200, scrollable: find.byType(Scrollable).first);
+      expect(f, findsOneWidget, reason: label);
     }
   });
 

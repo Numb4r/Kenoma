@@ -7,10 +7,11 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/features.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
 import '../../player/profile_stats.dart';
+import '../../player/progression.dart' show localDay;
+import '../../world/steps.dart' show stepsToday;
 import '../sprites/familiar_sprite.dart';
 import '../tema.dart';
 import 'phone_shell.dart';
@@ -20,14 +21,12 @@ import 'profile_widgets.dart';
 const String kProfileSeenTalentKey = 'profile_seen_talent';
 
 class ProfileScreen extends StatefulWidget {
-  /// [nowUtc] é o relógio do jogo (padrão: o real); [cellSideM] dá o lado da célula z20 para a área revelada (sem ele a
-  /// área não aparece); [onOpenSettings] abre os Ajustes (sem ele o atalho do grupo não aparece).
-  const ProfileScreen({required this.state, required this.data, this.nowUtc, this.cellSideM, this.onOpenSettings, super.key});
+  /// [nowUtc] é o relógio do jogo (padrão: o real); [onOpenSettings] abre os Ajustes (sem ele o atalho do grupo não aparece).
+  const ProfileScreen({required this.state, required this.data, this.nowUtc, this.onOpenSettings, super.key});
 
   final GameState state;
   final GameData data;
   final int Function()? nowUtc;
-  final double Function()? cellSideM;
   final VoidCallback? onOpenSettings;
 
   @override
@@ -170,7 +169,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _stats() {
-    final cell = widget.cellSideM;
     return ProfilePanel(
       title: 'Estatísticas',
       child: Wrap(spacing: KEspaco.s2, runSpacing: KEspaco.s2, children: [
@@ -178,9 +176,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         StatTile('Capturas', '${s.story.count('capture')}'),
         StatTile('Espécies', '${speciesRegistered(s.bestiary)}'),
         StatTile('Fagulhas', '${s.story.count('spark')}'),
+        if (s.setting('steps_counter')) StatTile('Passos hoje', '${stepsToday(s, localDay(widget.nowUtc?.call() ?? DateTime.now().millisecondsSinceEpoch ~/ 1000))}'),
         StatTile('Fusões', '${s.conjurer.fusions}'),
         StatTile('Dias jogados', '${s.conjurer.daysPlayed.length}'),
-        if (streetLifeEnabled && cell != null) StatTile('Área revelada', formatKm2(s.fog.areaKm2(cell()))),
       ]),
     );
   }

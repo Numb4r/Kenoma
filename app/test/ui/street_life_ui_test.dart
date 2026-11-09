@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,12 +6,9 @@ import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/story/chat_state.dart';
 import 'package:kenoma/ui/collection/collection_screen.dart';
 import 'package:kenoma/ui/game/encounter_flow.dart';
-import 'package:kenoma/ui/game/fog_painter.dart';
 import 'package:kenoma/ui/menu/bestiary_screen.dart';
 import 'package:kenoma/ui/menu/chat_screen.dart';
 import 'package:kenoma/ui/menu/radar_screen.dart';
-import 'package:kenoma/world/fog.dart';
-import 'package:kenoma/world/map_camera.dart';
 import 'package:kenoma/world/radar.dart';
 
 import '../support/fixtures.dart';
@@ -202,23 +198,4 @@ void main() {
       expect(find.text('FAMILIAR'), findsOneWidget);
     });
   });
-
-  group('chuva e névoa', () {
-    test('o véu recorta uma célula por célula revelada à vista, e nada sem névoa revelada', () {
-      const size = ui.Size(411, 914);
-      final cam = MapCamera.atLatLon(-22.8174, -47.0697, pixelsPerCell: 80);
-      final fog = FogState();
-      final painter = FogPainter();
-      final rec = ui.PictureRecorder();
-      final canvas = ui.Canvas(rec);
-      painter.paint(canvas, size, cam, fog);
-      expect(painter.lastCut, 0);
-      fog.reveal(cam.centerX, cam.centerY, 40, 17.6);
-      painter.paint(canvas, size, cam, fog);
-      expect(painter.lastCut, fog.revealedCount);
-      expect(painter.lastCut, greaterThan(3));
-      rec.endRecording();
-    });
-  });
 }
-
