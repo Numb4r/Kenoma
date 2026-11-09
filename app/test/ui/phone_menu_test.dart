@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/astro.dart';
 import 'package:kenoma/core/features.dart';
 import 'package:kenoma/core/weather.dart';
+import 'package:kenoma/data/climate_catalog.dart';
 import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/ui/menu/chat_screen.dart';
 import 'package:kenoma/ui/menu/forum_screen.dart';
@@ -39,7 +40,7 @@ void main() {
                 radar: () => const PhoneScreen(title: 'Radar', child: SizedBox()),
                 nowUtc: () => t,
                 epochId: () => 1,
-                weather: () => Weather.rain,
+                weather: () => ClimateInfo.legacy(Weather.rain),
                 lat: () => -22.9,
               ),
               child: const Text('abrir'),

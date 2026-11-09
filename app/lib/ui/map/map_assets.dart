@@ -13,7 +13,8 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../core/biomes.dart';
 import '../../core/epochs.dart';
-import '../../core/weather.dart';
+import '../../core/climate.dart' show ClimateEvent;
+import '../../world/climate_world.dart';
 import '../../data/game_data.dart';
 import '../../player/circle.dart' show abilitiesOf;
 import '../../player/game_state.dart';
@@ -79,21 +80,35 @@ class MapAssets {
 
 /// O clima determinístico (o da seed) da célula z20 `(cx, cy)` em [t]: o que pesa nos spawns e o que se vê sem a rede. O
 /// modelo é o da época ATIVA naquele instante (nunca o da mais nova): o mundo de cada época é só dela. O app e a Patrulha
-/// usam esta mesma função. MERGE-B: o clima novo (época 6) entra aqui, não em cópias.
-Weather seedWeatherOfCell(EpochSchedule schedule, int seed, int cx, int cy, int t) {
-  final model = schedule.select(t).epoch.ecoV2?.weather;
-  if (model == null) return Weather.clear;
-  final (rx, ry) = weatherRegionOfCell(cx, cy);
-  return model.at(seed: seed, tUtc: t, regionX: rx, regionY: ry);
-}
+/// usam esta mesma função: da época 6 em diante, o clima completo (36 climas e os eventos do feed); antes, o de quatro estados.
+String seedWeatherOfCell(EpochSchedule schedule, int seed, int cx, int cy, int t, {List<ClimateEvent> events = const []}) =>
+    climateIdOfCell(schedule, seed, cx, cy, t, events: events);
+
+/// As peças do clima (o Eco do raio, granizo, poças...) do mundo de [state]: as mesmas no mapa e na Patrulha.
+ClimateWorld climateWorldFor({required GameState state, required GameData data, required MapAssets assets, String? Function()? forced}) => ClimateWorld(
+      seed: state.seed,
+      schedule: data.schedule,
+      speciesOfType: data.ecoOfType,
+      itemExists: data.itemNames.containsKey,
+      biomeAt: (cx, cy) {
+        try {
+          return assets.map.biomes.spawnKey(assets.map.spawnBiomeAtCell(cx, cy));
+        } catch (_) {
+          return null;
+        }
+      },
+      forced: forced,
+    );
 
 /// O mundo que o jogador vê e alcança, montado do mesmo jeito no mapa do jogo e no serviço da Patrulha (o mesmo código de
-/// geração nos dois: Fagulhas, materiais e Ecos iguais). [weatherAt] é o clima de cada célula (o debug pode forçar no app).
+/// geração nos dois: Fagulhas, materiais e Ecos iguais). [weatherAt] é o id do clima de cada célula (o debug pode forçar no
+/// app) e [climate], as peças do clima; sem ele, um [climateWorldFor] sem debug.
 WorldView worldViewFor({
   required GameState state,
   required GameData data,
   required MapAssets assets,
-  required Weather Function(int cx, int cy, int t) weatherAt,
+  required String Function(int cx, int cy, int t) weatherAt,
+  ClimateWorld? climate,
   DebugForce? force,
   void Function(String message)? onMessage,
 }) =>
@@ -105,6 +120,7 @@ WorldView worldViewFor({
         typeOf: (id) => data.species(id)?.type.name,
         snapper: WalkPaths(assets.visual!, blocked: assets.noWalk),
         weatherAt: weatherAt,
+        climate: climate ?? climateWorldFor(state: state, data: data, assets: assets),
         levelCapOf: data.progress.levelCapFor,
       ),
       state: state,

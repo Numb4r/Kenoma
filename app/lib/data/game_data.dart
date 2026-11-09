@@ -20,6 +20,7 @@ import '../world/street_life_balance.dart';
 import '../story/mentor_script.dart';
 import '../ui/menu/phone_apps.dart';
 import 'balance_version.dart';
+import 'climate_catalog.dart';
 import 'tuning_data.dart';
 
 class Recipe {
@@ -65,6 +66,8 @@ class GameData {
     this.variants = const {},
     this.phone = const PhoneApps([]),
     RitualBook? ritual,
+    this.climates = const ClimateCatalog(),
+    this.climateBalance = const ClimateBalance(),
   })  : ritual = ritual ?? RitualBook(balance: RitualBalance(const {})),
         ridePatterns = ridePatterns ?? RidePatterns.none();
 
@@ -84,7 +87,8 @@ class GameData {
       forum: await json('forum'),
       rituals: await json('rituals').catchError((_) => <String, dynamic>{}), // sem o arquivo, o ritual fica sem receitas
       ridePatterns: await json('ride_patterns').catchError((_) => <String, dynamic>{}), // sem o arquivo, a corrida vai pelos botões
-    );
+      climates: await json('clima').then<Map<String, dynamic>?>((j) => j).catchError((_) => null), // sem o arquivo, os quatro climas antigos
+    )..remember();
   }
 
   factory GameData.fromJson({
@@ -98,8 +102,11 @@ class GameData {
     required Map<String, dynamic> forum,
     Map<String, dynamic>? rituals,
     Map<String, dynamic>? ridePatterns,
+    Map<String, dynamic>? climates,
   }) =>
       GameData(
+        climates: ClimateCatalog.fromJson(climates),
+        climateBalance: ClimateBalance.fromJson(balance['climate'] as Map<String, dynamic>?),
         ritual: RitualBook.fromJson(rituals, balance),
         mentor: MentorScript.fromJson(mentor),
         forum: ForumData.fromJson(forum),
@@ -186,7 +193,25 @@ class GameData {
     return null;
   }
 
+  /// O lado visual dos climas (`clima.json`).
+  final ClimateCatalog climates;
+
+  /// O que vale por aparelho no clima (partículas, clarão, distância mínima do raio).
+  final ClimateBalance climateBalance;
+
   String itemName(String id) => itemNames[id] ?? id;
+
+  /// Guarda o catálogo do clima para o menu de debug.
+  void remember() {
+    if (climates.climates.isNotEmpty) ClimateCatalog.lastLoaded = climates;
+  }
+
+  /// Uma espécie de Eco (só a camada Eco) do tipo [type] (`any`: qualquer uma), escolhida por [pick] em `[0, 1)`. `null` se
+  /// o jogo não tem espécie desse tipo (Elétrico, Espectral...): as peças do clima caem no fallback do dado.
+  String? ecoOfType(String type, double pick) {
+    final pool = [for (final s in tuning.species) if (s.id.endsWith('.eco') && (type == 'any' || s.type.name == type)) s.id];
+    return pool.isEmpty ? null : pool[(pick * pool.length).floor().clamp(0, pool.length - 1)];
+  }
 
   EcoSpecies? species(String id) {
     for (final s in tuning.species) {

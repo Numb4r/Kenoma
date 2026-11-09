@@ -33,6 +33,17 @@ class MainActivity : FlutterActivity() {
                     // sem som neste aparelho: o aviso na tela basta
                 }
                 result.success(null)
+            } else if (call.method == "thunder") {
+                // Trovão sem arquivo de áudio: um tom grave e longo, mais fraco de longe (o atraso pela distância vem do Dart).
+                try {
+                    val volume = (call.argument<Int>("volume") ?: 80).coerceIn(10, 100)
+                    val tone = ToneGenerator(AudioManager.STREAM_MUSIC, volume)
+                    tone.startTone(ToneGenerator.TONE_CDMA_LOW_L, 700)
+                    Handler(Looper.getMainLooper()).postDelayed({ tone.release() }, 900)
+                } catch (_: RuntimeException) {
+                    // sem som neste aparelho: o clarão basta
+                }
+                result.success(null)
             } else {
                 result.notImplemented()
             }

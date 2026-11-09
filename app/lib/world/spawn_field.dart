@@ -14,6 +14,7 @@ import '../core/tiles.dart';
 import '../core/walkable.dart';
 import '../core/weather.dart';
 import '../core/windows.dart';
+import 'climate_world.dart';
 import 'region_map.dart';
 
 /// Um item de spawn no mundo, já com posição e nível.
@@ -32,6 +33,7 @@ class WorldSpawn {
     this.behavior = EcoBehavior.passive,
     this.variant,
     this.shiny = false,
+    this.tag,
   });
 
   final int uid;
@@ -60,6 +62,15 @@ class WorldSpawn {
   final String? variant;
   final bool shiny;
 
+  /// Marca de quem nasceu de uma peça do clima (`charged`: o Eco do raio). Só no mapa: não vai para o save.
+  final String? tag;
+
+  /// Cópia em outra posição (a Fagulha que deriva com o vento).
+  WorldSpawn movedTo(double x, double y) => WorldSpawn(
+        uid: uid, kind: kind, entryId: entryId, quantity: quantity, x: x, y: y, cellX: cellX, cellY: cellY, window: window,
+        level: level, behavior: behavior, variant: variant, shiny: shiny, tag: tag,
+      );
+
   /// Cópia com a espécie e o nível trocados (o debug força um Espírito no lugar do Eco).
   WorldSpawn withSpecies(String entryId, int level) => WorldSpawn(
         uid: uid,
@@ -75,6 +86,7 @@ class WorldSpawn {
         behavior: behavior,
         variant: variant,
         shiny: shiny,
+        tag: tag,
       );
 
   /// Cópia com o comportamento, a variante e o Brilhante trocados (o debug força o próximo spawn).
@@ -92,6 +104,7 @@ class WorldSpawn {
         behavior: behavior,
         variant: variant,
         shiny: shiny,
+        tag: tag,
       );
 
   /// Se é um Eco raro: variante, Brilhante ou Oculto (ou, com [playerLevel], de nível acima do jogador). Só os raros
@@ -108,15 +121,19 @@ class WorldSpawn {
 }
 
 class SpawnField {
-  SpawnField({required this.seed, required this.schedule, required this.map, this.maxCached = 4000, this.weatherAt, this.typeOf, this.snapper, this.levelCapOf});
+  SpawnField({required this.seed, required this.schedule, required this.map, this.maxCached = 4000, this.weatherAt, this.typeOf, this.snapper, this.levelCapOf, this.climate});
 
   final int seed;
   final EpochSchedule schedule;
   final RegionMap map;
   final int maxCached;
 
-  /// O clima de uma célula z20 no instante, para os pesos de spawn das épocas com o fluxo v2. `null`: sempre limpo.
-  final Weather Function(int cellX, int cellY, int tUtc)? weatherAt;
+  /// O id do clima de uma célula z20 no instante, para os pesos de spawn das épocas com o fluxo v2. `null`: sempre limpo.
+  final String Function(int cellX, int cellY, int tUtc)? weatherAt;
+
+  /// As peças do clima completo (época 6 em diante): o que nasce do raio, das poças..., a deriva das Fagulhas e o nível a
+  /// mais. `null`: só o sorteio normal.
+  final ClimateWorld? climate;
 
   /// O tipo (`fire`, `plant`, `water`) de uma espécie, para o clima mexer nos pesos.
   final String? Function(String entryId)? typeOf;
@@ -127,14 +144,14 @@ class SpawnField {
   /// O teto de nível de uma espécie (o Eco vai a 20, o Espírito a 30). `null`: 20 para todas.
   final int Function(String entryId)? levelCapOf;
 
-  final _cells = <(int, int, int, int), List<SpawnItem>>{};
+  final _cells = <(int, String, int, int, int), List<SpawnItem>>{};
   int _revision = 0;
   final _levels = <int, int>{};
 
   /// Nível do Eco: `limitar(nível do Conjurador + delta, 1, teto da camada)`, calculado na primeira vez que ele
   /// entra no raio de visão e guardado pelo uid.
-  int _levelOf(SpawnItem item, int playerLevel) =>
-      _levels.putIfAbsent(item.uid, () => (playerLevel + (item.levelDelta ?? 0)).clamp(1, levelCapOf?.call(item.entryId) ?? 20));
+  int _levelOf(SpawnItem item, int playerLevel, [int add = 0]) =>
+      _levels.putIfAbsent(item.uid, () => (playerLevel + (item.levelDelta ?? 0) + add).clamp(1, levelCapOf?.call(item.entryId) ?? 20));
 
   /// Os itens da célula z20 `(cx, cy)` no instante [tUtc]. Todos, existam ou não.
   List<SpawnItem> cellItems(int cx, int cy, int tUtc) {
@@ -148,13 +165,28 @@ class SpawnField {
     // célula, não o do instante: assim a espécie de um Eco não muda enquanto o jogador anda até ele, ainda que a janela de 3 h
     // do clima vire no meio.
     final windowStart = window * windowSeconds - windowOffset(seed, cx, cy);
-    final weather = epoch.ecoV2 == null || weatherAt == null ? Weather.clear : weatherAt!(cx, cy, windowStart);
-    final key = (epoch.id * 8 + weather.index, cx, cy, window);
+    final weather = epoch.ecoV2 == null || weatherAt == null ? 'clear' : weatherAt!(cx, cy, windowStart);
+    final key = (epoch.id, weather, cx, cy, window);
     final cached = _cells[key];
     if (cached != null) return cached;
     if (_cells.length >= maxCached) _cells.clear();
     final biome = map.biomes.spawnKey(map.spawnBiomeAtCell(cx, cy));
-    return _cells[key] = generateCell(seed: seed, epoch: epoch, cellX: cx, cellY: cy, window: window, biomeKey: biome, weather: weather, typeOf: typeOf, snapper: snapper);
+    // Até a época 5: o clima de quatro estados. Da 6 em diante: os multiplicadores e o Brilhante do clima completo.
+    final model = epoch.climate;
+    final def = model?.def(weather);
+    return _cells[key] = generateCell(
+      seed: seed,
+      epoch: epoch,
+      cellX: cx,
+      cellY: cy,
+      window: window,
+      biomeKey: biome,
+      weather: model == null ? Weather.parse(weather) : Weather.clear,
+      climateMult: def == null || def.spawn.isEmpty ? null : def.spawn,
+      shinyMult: def?.modifier?.shinyMult ?? 1,
+      typeOf: typeOf,
+      snapper: snapper,
+    );
   }
 
   /// Segundos até a janela da célula acabar.
@@ -175,9 +207,11 @@ class SpawnField {
     for (var cy = ((py - r) / 2).floor(); cy <= ((py + r) / 2).floor(); cy++) {
       for (var cx = ((px - r) / 2).floor(); cx <= ((px + r) / 2).floor(); cx++) {
         final window = windowIndex(seed, cx, cy, tUtc);
+        final levelAdd = climate?.levelAddAt(cx, cy, tUtc) ?? 0;
+        final windowStart = window * windowSeconds - windowOffset(seed, cx, cy);
         for (final item in cellItems(cx, cy, tUtc)) {
           if (!item.exists) continue;
-          final spawn = WorldSpawn(
+          var spawn = WorldSpawn(
             uid: item.uid,
             kind: item.kind,
             entryId: item.entryId,
@@ -187,14 +221,30 @@ class SpawnField {
             cellX: cx,
             cellY: cy,
             window: window,
-            level: item.kind == 'eco' ? _levelOf(item, playerLevel) : null,
+            level: item.kind == 'eco' ? _levelOf(item, playerLevel, levelAdd) : null,
             behavior: item.behavior,
             variant: item.variantBiome,
             shiny: item.shiny,
           );
+          if (climate != null && spawn.isSpark) {
+            final moved = climate!.adjustSpark(spawn, windowStart, tUtc, mpc);
+            if (moved == null) continue; // evaporou (Onda de calor) ou subiu ao céu (Céu Invertido)
+            spawn = moved;
+          }
           if (spawn.distanceM(px, py, mpc) <= radiusM) out.add(spawn);
         }
       }
+    }
+    final c = climate;
+    if (c != null) {
+      out.addAll(c.extras(
+        x21: px,
+        y21: py,
+        radiusM: radiusM,
+        t: tUtc,
+        metersPerCell21: mpc,
+        levelOf: (id, add, uid) => _levels.putIfAbsent(uid, () => (playerLevel + add + c.levelAddAt(px.floor() >>> 1, py.floor() >>> 1, tUtc)).clamp(1, levelCapOf?.call(id) ?? 20)),
+      ));
     }
     return out;
   }

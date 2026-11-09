@@ -2,9 +2,13 @@
 /// clima forçado.
 library;
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import '../core/weather.dart';
+import '../data/climate_catalog.dart';
 import '../ui/tema.dart';
 import '../world/places.dart';
 import 'clock_input.dart';
@@ -141,19 +145,70 @@ List<DebugItem> timeItems(DebugEnv env) {
       id: 'time.weather',
       title: 'Clima forçado',
       section: DebugSection.time,
-      keywords: const ['chuva', 'sol', 'nublado', 'tempo', 'hud', 'spawns'],
+      keywords: const ['chuva', 'sol', 'nublado', 'tempo', 'hud', 'spawns', 'clima', 'evento', 'místico'],
+      builder: (_) => _WeatherItem(tools: tools),
+    ),
+    DebugItem(
+      id: 'time.weather_tap',
+      title: 'Efeito do clima no toque',
+      section: DebugSection.time,
+      keywords: const ['raio', 'granizo', 'redemoinho', 'meteoro', 'toque', 'clima', 'efeito'],
       builder: (_) => ListenableBuilder(
         listenable: tools.force,
         builder: (context, _) => DebugColumn([
-          const DebugNote('Vale para o HUD, a chuva e os pesos de spawn.'),
+          DebugNote(tools.force.tapEffect == null ? 'Escolha um efeito e toque no mapa: ele acontece ali, só neste aparelho.' : 'Toque no mapa para soltar: ${_tapNames[tools.force.tapEffect] ?? tools.force.tapEffect}'),
           DebugWrap([
-            DebugChip('Real', on: tools.force.weather == null, color: KCores.veuVioleta, onTap: () => tools.force.set(clearWeather: true)),
-            for (final w in Weather.values) DebugChip(w.label, on: tools.force.weather == w, color: KCores.veuVioleta, onTap: () => tools.force.set(weather: w)),
+            for (final e in _tapNames.entries)
+              DebugChip(e.value, on: tools.force.tapEffect == e.key, color: KCores.sinalCiano, onTap: () => tools.force.set(tapEffect: e.key)),
           ]),
         ]),
       ),
     ),
   ];
+}
+
+const _tapNames = {'lightning': 'Raio', 'hail': 'Granizo', 'dust_devil': 'Redemoinho', 'meteor': 'Meteoro', 'violet_bolt': 'Raio violeta', 'spark_fall': 'Fagulha do céu', 'puddle': 'Poça', 'rainbow_foot': 'Pé do arco-íris'};
+
+/// Os quatro climas antigos sempre à mão; os outros 32 (nativos, de outras regiões e místicos) chegam do `clima.json`.
+class _WeatherItem extends StatefulWidget {
+  const _WeatherItem({required this.tools});
+
+  final DevTools tools;
+
+  @override
+  State<_WeatherItem> createState() => _WeatherItemState();
+}
+
+class _WeatherItemState extends State<_WeatherItem> {
+  ClimateCatalog? _catalog = ClimateCatalog.lastLoaded;
+
+  /// Só lê o arquivo quando pedem (o mapa já deixa o catálogo carregado): ler ao montar o item travava a leitura dos
+  /// assets nos testes de widget.
+  void _load() {
+    rootBundle.loadString('assets/data/clima.json', cache: false).then((s) {
+      if (mounted) setState(() => _catalog = ClimateCatalog.fromJson(jsonDecode(s) as Map<String, dynamic>));
+    }).catchError((_) {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final force = widget.tools.force;
+    final legacy = {for (final w in Weather.values) w.id};
+    Widget chip(String id, String label) => DebugChip(label, on: force.weather == id, color: KCores.veuVioleta, onTap: () => force.set(weather: id));
+    return ListenableBuilder(
+      listenable: force,
+      builder: (context, _) => DebugColumn([
+        const DebugNote('Vale para o HUD, o desenho, as peças do clima e os pesos de spawn. Antes da época 6, as peças usam o modelo dela.'),
+        DebugWrap([
+          DebugChip('Real', on: force.weather == null, color: KCores.veuVioleta, onTap: () => force.set(clearWeather: true)),
+          for (final w in Weather.values) chip(w.id, w.label),
+          for (final c in _catalog?.climates.values ?? const <ClimateInfo>[])
+            if (!legacy.contains(c.id)) chip(c.id, c.name),
+          if (_catalog == null) DebugButton(label: 'Todos os climas', color: KCores.textoMudo, onTap: _load),
+        ]),
+      ]),
+    );
+  }
 }
 
 class _ClockItem extends StatefulWidget {

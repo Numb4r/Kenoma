@@ -5,11 +5,11 @@ import 'package:kenoma/world/weather_source.dart';
 class _Fake implements WeatherSource {
   _Fake(this.result);
 
-  Weather? result;
+  String? result;
   final calls = <(double, double, int)>[];
 
   @override
-  Future<Weather?> fetch(double lat, double lon, int tUtc) async {
+  Future<String?> fetch(double lat, double lon, int tUtc) async {
     calls.add((lat, lon, tUtc));
     return result;
   }
@@ -23,6 +23,14 @@ void main() {
     expect([for (final c in [2, 3, 45, 48, 71, 85]) weatherFromWmoCode(c)], everyElement(Weather.cloudy));
     expect([for (final c in [51, 55, 61, 65, 67, 80, 82]) weatherFromWmoCode(c)], everyElement(Weather.rain));
     expect([for (final c in [95, 96, 99]) weatherFromWmoCode(c)], everyElement(Weather.storm));
+  });
+
+  test('o código real vira só clima nativo: neve vira Frio, granizo e neblina têm o seu, calor e vento pesam', () {
+    expect([for (final c in [0, 1, 2, 3, 45, 51, 61, 71, 95, 96]) climateFromWmo(c)], ['clear', 'clear', 'cloudy', 'cloudy', 'fog', 'drizzle', 'rain', 'cold', 'storm', 'hail']);
+    expect(climateFromWmo(0, tempC: 34), 'strong_sun');
+    expect(climateFromWmo(3, tempC: 8), 'cold');
+    expect(climateFromWmo(1, windKmh: 30), 'wind');
+    expect(climateFromWmo(2, windKmh: 60), 'gale');
   });
 
   test('a posição é arredondada a ~1 km: amigos a poucas ruas pedem a mesma coisa', () {
@@ -53,34 +61,34 @@ void main() {
         'weather_code': [0, 0, 0, 63, 95, 0, 0],
       },
     };
-    expect(pickHourlyWeather(json, t), Weather.rain, reason: 'o código da hora do meio da janela');
+    expect(pickHourlyWeather(json, t), 'rain', reason: 'o código da hora do meio da janela');
     expect(pickHourlyWeather({'hourly': {'time': <String>[], 'weather_code': <int>[]}}, t), isNull);
     expect(pickHourlyWeather({'x': 1}, t), isNull);
     expect(pickHourlyWeather({'hourly': {'time': ['a'], 'weather_code': <int>[]}}, t), isNull);
   });
 
   group('serviço', () {
-    Weather det(double la, double lo, int tt) => Weather.clear;
+    String det(double la, double lo, int tt) => 'clear';
 
     test('com a rede desligada (o padrão) mostra o determinístico e nunca consulta a rede', () async {
-      final src = _Fake(Weather.storm);
+      final src = _Fake('storm');
       final svc = WeatherService(deterministic: det, source: src, online: () => false);
       await svc.refresh(-22.8, -47.0, t);
       expect(src.calls, isEmpty);
-      expect(svc.shown(-22.8, -47.0, t), Weather.clear);
+      expect(svc.shown(-22.8, -47.0, t), 'clear');
     });
 
     test('ligada: depois da resposta mostra o da rede; antes dela, o determinístico', () async {
-      final src = _Fake(Weather.storm);
+      final src = _Fake('storm');
       final svc = WeatherService(deterministic: det, source: src, online: () => true);
-      expect(svc.shown(-22.8174, -47.0697, t), Weather.clear);
+      expect(svc.shown(-22.8174, -47.0697, t), 'clear');
       await svc.refresh(-22.8174, -47.0697, t);
-      expect(svc.shown(-22.8174, -47.0697, t), Weather.storm);
+      expect(svc.shown(-22.8174, -47.0697, t), 'storm');
       expect(src.calls.single, (-22.82, -47.07, t), reason: 'só a posição arredondada sai do aparelho');
     });
 
     test('uma consulta por janela e por quadra: andar um pouco ou voltar a pedir não repete', () async {
-      final src = _Fake(Weather.rain);
+      final src = _Fake('rain');
       final svc = WeatherService(deterministic: det, source: src, online: () => true);
       await svc.refresh(-22.8174, -47.0697, t);
       await svc.refresh(-22.8190, -47.0701, t + 60);
@@ -92,22 +100,22 @@ void main() {
 
     test('sem rede ou com erro volta ao determinístico em silêncio e tenta de novo depois', () async {
       final src = _Fake(null);
-      final svc = WeatherService(deterministic: (a, b, c) => Weather.cloudy, source: src, online: () => true);
+      final svc = WeatherService(deterministic: (a, b, c) => 'cloudy', source: src, online: () => true);
       await svc.refresh(-22.8, -47.0, t);
-      expect(svc.shown(-22.8, -47.0, t), Weather.cloudy);
-      src.result = Weather.rain;
+      expect(svc.shown(-22.8, -47.0, t), 'cloudy');
+      src.result = 'rain';
       await svc.refresh(-22.8, -47.0, t + 30);
       expect(src.calls.length, 2, reason: 'a falha não fica gravada como resposta');
-      expect(svc.shown(-22.8, -47.0, t + 30), Weather.rain);
+      expect(svc.shown(-22.8, -47.0, t + 30), 'rain');
     });
 
     test('desligar a rede volta ao determinístico mesmo com resposta guardada', () async {
       var on = true;
-      final svc = WeatherService(deterministic: det, source: _Fake(Weather.storm), online: () => on);
+      final svc = WeatherService(deterministic: det, source: _Fake('storm'), online: () => on);
       await svc.refresh(-22.8, -47.0, t);
-      expect(svc.shown(-22.8, -47.0, t), Weather.storm);
+      expect(svc.shown(-22.8, -47.0, t), 'storm');
       on = false;
-      expect(svc.shown(-22.8, -47.0, t), Weather.clear);
+      expect(svc.shown(-22.8, -47.0, t), 'clear');
     });
   });
 }

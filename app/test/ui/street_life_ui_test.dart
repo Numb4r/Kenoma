@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,7 +6,6 @@ import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/story/chat_state.dart';
 import 'package:kenoma/ui/collection/collection_screen.dart';
 import 'package:kenoma/ui/game/encounter_flow.dart';
-import 'package:kenoma/ui/game/rain_painter.dart';
 import 'package:kenoma/ui/menu/bestiary_screen.dart';
 import 'package:kenoma/ui/menu/chat_screen.dart';
 import 'package:kenoma/ui/menu/radar_screen.dart';
@@ -200,28 +198,4 @@ void main() {
       expect(find.text('FAMILIAR'), findsOneWidget);
     });
   });
-
-  group('chuva e névoa', () {
-    test('a chuva sobe devagar com o clima, a tempestade pesa mais e sem chuva as gotas somem', () {
-      final rain = RainPainter(maxDrops: 70);
-      const size = ui.Size(411, 914);
-      for (var i = 0; i < 300; i++) {
-        rain.update(1 / 30, size, 1.0);
-      }
-      final light = rain.count;
-      expect(light, inInclusiveRange(55, 76));
-      for (var i = 0; i < 300; i++) {
-        rain.update(1 / 30, size, 1.6);
-      }
-      expect(rain.count, greaterThan(light));
-      expect(rain.count, lessThanOrEqualTo(120));
-      rain.update(1 / 30, size, 0);
-      expect(rain.count, greaterThan(0), reason: 'não corta de uma vez');
-      for (var i = 0; i < 600; i++) {
-        rain.update(1 / 30, size, 0);
-      }
-      expect(rain.count, 0);
-    });
-  });
 }
-

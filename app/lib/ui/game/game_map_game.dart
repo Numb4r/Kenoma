@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import '../../capture/eco_type.dart';
 import '../../core/astro.dart';
+import '../../core/climate.dart' show ClimateZone;
 import '../../core/weather.dart';
 import '../../world/companion.dart';
 import '../../core/tiles.dart';
@@ -31,7 +32,9 @@ import '../sprites/sprite_image.dart' show mapEcoPx, mapPlayerPx, mapSpiritPx;
 import 'art_renderer.dart';
 import 'art_style.dart';
 import 'spawn_painter.dart';
-import 'rain_painter.dart';
+import 'climate_fx.dart';
+import 'climate_painter.dart';
+import '../../data/climate_catalog.dart';
 import 'street_label_painter.dart';
 import 'trace_painter.dart';
 import 'traffic_painter.dart';
@@ -64,10 +67,12 @@ class GameMapGame extends FlameGame {
     this.streetNames = _off,
     this.veilTraffic = _off,
     this.rainFx = _off,
-    this.weatherShown = _clear,
+    this.climateShown = _clearInfo,
+    this.climateCatalog = const ClimateCatalog(),
+    this.climateBalance = const ClimateBalance(),
+    this.reduceFlashes = _off,
     this.variantTint,
     this.familiarImage,
-    this.rainDrops = 70,
     this.familiarOffsetM = 6,
     this.sprites = const {},
     this.typeOf = _noType,
@@ -105,7 +110,15 @@ class GameMapGame extends FlameGame {
   late final StreetLabelPainter _labels = StreetLabelPainter(visual);
   late final TrafficPainter _traffic = TrafficPainter(visual, carM: balance.ghostCarM, pedestrianM: balance.ghostPedestrianM, roadWidthM: balance.roadWidthM);
   final TracePainter _trace = TracePainter();
-  late final RainPainter _rain = RainPainter(maxDrops: rainDrops);
+  late final ClimatePainter _climate = ClimatePainter(cap: climateBalance.particleCap, pocketRate: climateBalance.pocketRate);
+
+  /// O que as peças do clima desenham no mapa (raio, poças, redemoinho...) e o trovão.
+  late final ClimateFx climateFx = ClimateFx(catalog: climateCatalog, balance: climateBalance);
+  List<ClimateZone> _zones = const [];
+  double _climateIn = 0;
+
+  /// Modo bolso: o clima desenha bem menos partículas (o agente da Patrulha liga).
+  void setPocket(bool on) => _climate.setPocket(on);
 
   /// O Familiar que anda ao lado do Conjurador.
   final companion = Companion();
@@ -114,19 +127,26 @@ class GameMapGame extends FlameGame {
   /// Se os nomes de rua estão ligados nos Ajustes (lido a cada quadro).
   final bool Function() streetNames;
 
-  /// A chuva no mapa está ligada nos Ajustes, e o clima que se vê agora (o que o HUD mostra).
+  /// O clima no mapa está ligado nos Ajustes, e o clima que se vê agora (o que o HUD mostra).
   final bool Function() rainFx;
-  final Weather Function() weatherShown;
+  final ClimateInfo Function() climateShown;
+  final ClimateCatalog climateCatalog;
+  final ClimateBalance climateBalance;
 
-  /// A paleta da variante ou do Brilhante (0xAARRGGBB), ou `null`; o sprite do Familiar; quantas gotas tem a chuva e a
-  /// que distância (m) o Familiar anda ao lado do Conjurador.
+  /// "Reduzir clarões" nos Ajustes: o clarão do raio vira um escurecimento leve.
+  final bool Function() reduceFlashes;
+
+  /// A paleta da variante ou do Brilhante (0xAARRGGBB), ou `null`; o sprite do Familiar e a que distância (m) o Familiar
+  /// anda ao lado do Conjurador.
   final VariantTintOf? variantTint;
   ui.Image? familiarImage;
-  final int rainDrops;
   final double familiarOffsetM;
 
-  /// Quantas gotas de chuva foram desenhadas no último quadro.
-  int get rainCount => _rain.count;
+  /// Quantas partículas de clima foram desenhadas no último quadro.
+  int get rainCount => _climate.count;
+
+  /// Onde estão as partículas de clima na tela (testes de cobertura).
+  Iterable<Offset> get climatePositions => _climate.positions;
 
   /// Quantos fantasmas do tráfego foram desenhados no último quadro.
   int get ghostsDrawn => _traffic.lastDrawn;
@@ -346,10 +366,7 @@ class GameMapGame extends FlameGame {
     } else {
       companion.clear();
     }
-    if (size.x > 0) {
-      final w = weatherShown();
-      _rain.update(dt, Size(size.x, size.y), rainFx() ? (w == Weather.storm ? 1.6 : (w == Weather.rain ? 1.0 : 0.0)) : 0.0);
-    }
+    if (size.x > 0) _updateClimate(dt);
     _lightIn -= dt;
     if (_lightIn <= 0 && _hasFix) {
       _lightIn = 5;
@@ -389,13 +406,75 @@ class GameMapGame extends FlameGame {
     _art.paint(canvas, view, cam, dpr: dpr, metersPerCell: metersPerCell(_lat), coarse: coarse);
     _paintLight(canvas, view);
     if (veilTraffic() && _hasFix && worldView != null) {
-      _traffic.paint(canvas, view, cam, seed: worldView!.field.seed, tUtc: nowUtc(), tUtcExact: _exactUtc(), lonDeg: _lon, metersPerCell: metersPerCell(_lat), light: light);
+      _traffic.paint(canvas, view, cam, seed: worldView!.field.seed, tUtc: nowUtc(), tUtcExact: _trafficUtc(), lonDeg: _lon, metersPerCell: metersPerCell(_lat), light: light);
     } else {
       _traffic.lastDrawn = 0;
     }
     travelLayer?.paintGround(canvas, view, cam, metersPerCell(_lat), utc: _exactUtc(), avatar: avatar);
     if (streetNames()) _labels.paint(canvas, view, cam);
     if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
+    final wv = worldView;
+    if (wv != null && _hasFix) {
+      climateFx.paintGround(canvas, view, cam, zones: _zones, metersPerCell21: metersPerCell(_lat), exactUtc: _exactUtc(), climate: wv.climate, ecos: wv.spawns.where((s) => s.isEco).toList());
+    }
+    _paintWorld(canvas, view, cam);
+    // O clima por cima do mapa e dos spawns, por baixo do HUD (o rastreador da borda é HUD): cobre a tela toda.
+    climateFx.paintSky(canvas, view, cam);
+    final (ax, ay) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
+    _climate.paint(canvas, view, player: avatar.hasPosition ? Offset(ax, ay) : null);
+    final w = worldView;
+    if (w != null && avatar.hasPosition) {
+      final off = ecoSizePx / 2;
+      final tracked = w.tracked(
+        trackerM: w.trackerRangeM,
+        max: trackerMax,
+        offScreen: (s) {
+          final (x, y) = cam.cellToScreen(s.x, s.y, view.width, view.height);
+          return x < -off || y < -off || x > view.width + off || y > view.height + off;
+        },
+      );
+      paintTracker(canvas, view, tracked, sprites: sprites, typeOf: typeOf, bottomInset: bottomInset, rotation: cam.rotation);
+    }
+  }
+
+  /// O clima de agora: as camadas da tela (o que se vê) e, a cada meio segundo, os acontecimentos das peças em volta.
+  void _updateClimate(double dt) {
+    final reduce = reduceFlashes();
+    _climate.reduceFlashes = reduce;
+    climateFx.reduceFlashes = reduce;
+    final c = worldView?.climate;
+    final cam = follow.camera;
+    if (c != null && avatar.hasPosition) {
+      // O vento do mundo visto na tela: gira com o mapa.
+      final (x0, y0) = cam.cellToScreen(avatar.x, avatar.y, 2, 2);
+      final (x1, y1) = cam.cellToScreen(avatar.x + math.sin(c.windHeadingRad), avatar.y - math.cos(c.windHeadingRad), 2, 2);
+      final d = math.sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
+      if (d > 1e-9) _climate.wind = Offset((x1 - x0) / d, (y1 - y0) / d);
+    }
+    _climate.localHour = DateTime.fromMillisecondsSinceEpoch(nowUtc() * 1000).hour; // só desenho (a geada da manhã)
+    _climate.update(dt, Size(size.x, size.y), climateShown(), enabled: rainFx());
+    climateFx.update(dt);
+    final cw = worldView?.field.climate;
+    _climateIn -= dt;
+    if (cw != null && _hasFix && avatar.hasPosition && _climateIn <= 0) {
+      _climateIn = 0.5;
+      final mpc = metersPerCell(_lat);
+      climateFx.observe(cw, px: avatar.x, py: avatar.y, metersPerCell21: mpc, exactUtc: _exactUtc());
+      _zones = cw.zonesNear(avatar.x, avatar.y, math.sqrt(size.x * size.x + size.y * size.y) / follow.pixelsPerCell, nowUtc());
+      if (c?.playerTrails ?? false) climateFx.noteStep(avatar.x, avatar.y, mpc);
+    }
+  }
+
+  /// O tráfego do Véu mais lento com o clima (Dilúvio): o tempo anda [PlayerClimate.trafficMult] vezes desde o começo da
+  /// janela do clima, igual em todos os aparelhos.
+  double _trafficUtc() {
+    final t = _exactUtc(), c = worldView?.climate;
+    if (c == null || c.trafficMult == 1) return t;
+    return c.windWindowStart + (t - c.windWindowStart) * c.trafficMult;
+  }
+
+  /// Aura, spawns, Familiar, Conjurador e retorno visual. Sem posição, nada.
+  void _paintWorld(Canvas canvas, Size view, MapCamera cam) {
     if (!avatar.hasPosition) return;
     final (sx, sy) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
     final center = Offset(sx, sy);
@@ -449,19 +528,6 @@ class GameMapGame extends FlameGame {
     }
     travelLayer?.paintCar(canvas, view, cam, metersPerCell(_lat), utc: _exactUtc(), avatar: avatar);
     fx.paint(canvas, view, cam, avatar: center, playerSize: playerSize, sparkSize: sparkSize, dpr: dpr);
-    if (w != null) {
-      final off = spriteSize / 2;
-      final tracked = w.tracked(
-        trackerM: w.trackerRangeM,
-        max: trackerMax,
-        offScreen: (s) {
-          final (x, y) = cam.cellToScreen(s.x, s.y, view.width, view.height);
-          return x < -off || y < -off || x > view.width + off || y > view.height + off;
-        },
-      );
-      paintTracker(canvas, view, tracked, sprites: sprites, typeOf: typeOf, bottomInset: bottomInset, rotation: cam.rotation);
-    }
-    _rain.paint(canvas);
   }
 
   /// A luz do dia sobre o desenho do mapa: à noite escurece e esfria (multiplica por um azul profundo), no nascer e
@@ -575,4 +641,4 @@ EcoType? _noType(String _) => null;
 int _zero() => 0;
 
 bool _off() => false;
-Weather _clear() => Weather.clear;
+ClimateInfo _clearInfo() => ClimateInfo.legacy(Weather.clear);

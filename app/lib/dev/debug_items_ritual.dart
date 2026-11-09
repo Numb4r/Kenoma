@@ -104,7 +104,7 @@ class _RitualOpenerState extends State<_RitualOpener> {
 
   WorldCondition _world(RitualRecipe r) {
     final t = widget.env.tools.clock.nowUtc;
-    final base = WorldCondition(hour: localHourOf(t), biome: 'urban', moon: moonPhase(t), weather: widget.env.tools.force.weather ?? Weather.clear);
+    final base = WorldCondition(hour: localHourOf(t), biome: 'urban', moon: moonPhase(t), weather: Weather.parse(widget.env.tools.force.weather));
     return _correct ? r.condition.satisfying(base) : base;
   }
 

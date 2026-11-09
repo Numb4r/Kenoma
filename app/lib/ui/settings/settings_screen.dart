@@ -2,6 +2,7 @@
 /// desatualizado, a versão e o player_id, os interruptores do mapa e o backup.
 library;
 
+import '../flashes.dart';
 import '../../core/features.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
@@ -308,8 +309,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (streetLifeEnabled) ...[
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Chuva no mapa', style: TextStyle(fontSize: 8)),
-              subtitle: const Text('Gotas em pixels quando chove. Só visual', style: TextStyle(fontSize: 8, color: kDim)),
+              title: const Text('Clima no mapa', style: TextStyle(fontSize: 8)),
+              subtitle: const Text('Chuva, neve, neblina e o resto do clima desenhados por cima do mapa. Só visual', style: TextStyle(fontSize: 8, color: kDim)),
               value: s.settingOr('rain_fx', true),
               activeThumbColor: kSignal,
               onChanged: (v) => s.setSetting('rain_fx', v),
@@ -323,6 +324,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (v) => s.setSetting('weather_online', v),
             ),
             ],
+            SwitchListTile(
+              key: const Key('reduce-flashes'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Reduzir clarões', style: TextStyle(fontSize: 8)),
+              subtitle: const Text('Troca o clarão dos raios por um escurecimento leve e acalma os brilhos que piscam', style: TextStyle(fontSize: 8, color: kDim)),
+              value: s.setting(kReduceFlashesSetting),
+              activeThumbColor: kSignal,
+              onChanged: (v) {
+                s.setSetting(kReduceFlashesSetting, v);
+                reduceFlashes.value = v;
+              },
+            ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Seguir direção', style: TextStyle(fontSize: 8)),

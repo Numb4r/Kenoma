@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:async';
 import 'dart:io';
 
@@ -14,7 +15,6 @@ import 'package:kenoma/world/spawn_field.dart';
 import 'package:kenoma/dev/dev_tools.dart';
 import 'package:kenoma/dev/gps_simulator.dart';
 import 'package:kenoma/ui/game/game_map_game.dart';
-import 'package:kenoma/core/weather.dart';
 import 'package:kenoma/core/behavior.dart';
 import 'package:kenoma/ui/game/player_hud.dart';
 import 'package:kenoma/ui/menu/circle_screen.dart';
@@ -42,7 +42,7 @@ class _Bundle extends CachingAssetBundle {
 }
 
 Map<String, List<int>> realAssets() => {
-      for (final f in ['epochs', 'biomes', 'balance', 'creatures', 'items', 'recipes', 'mentor', 'forum', 'rituals']) 'assets/data/$f.json': File('assets/data/$f.json').readAsBytesSync(),
+      for (final f in ['epochs', 'biomes', 'balance', 'creatures', 'items', 'recipes', 'mentor', 'forum', 'rituals', 'clima']) 'assets/data/$f.json': File('assets/data/$f.json').readAsBytesSync(),
       'assets/regions/campinas_e0.bin': File('assets/regions/campinas_e0.bin').readAsBytesSync(),
       'assets/regions/campinas_e0_vis.bin': File('assets/regions/campinas_e0_vis.bin').readAsBytesSync(),
       'assets/regions/campinas_e2_nowalk.bin': File('assets/regions/campinas_e2_nowalk.bin').readAsBytesSync(),
@@ -808,11 +808,11 @@ void main() {
     testWidgets('o clima forçado pelo debug aparece no HUD junto da lua e faz chover no mapa; sem chuva, nada cai', (tester) async {
       final env = await pumpGame(tester);
       expect(find.byKey(const Key('weather-label')), findsOneWidget);
-      env.tools.force.set(weather: Weather.rain);
+      env.tools.force.set(weather: 'rain');
       await env.live(12); // o clima que se vê é atualizado a cada 10 s
       expect(find.text('CHUVA'), findsOneWidget);
       expect(env.game.rainCount, greaterThan(20));
-      env.tools.force.set(weather: Weather.clear);
+      env.tools.force.set(weather: 'clear');
       await env.live(12);
       expect(find.text('CHUVA'), findsNothing);
       for (var i = 0; i < 40; i++) {
@@ -821,9 +821,42 @@ void main() {
       expect(env.game.rainCount, 0);
     });
 
+    testWidgets('a tempestade cobre a tela inteira, do topo aos cantos, girando o mapa 360° e com zoom de 40 e 80 m', (tester) async {
+      final env = await pumpGame(tester);
+      env.tools.force.set(weather: 'storm');
+      await env.live(12);
+      final g = env.game;
+      for (final widthM in [40.0, 80.0]) {
+        g.widthM = widthM;
+        for (var turn = 0; turn < 8; turn++) {
+          g.dragRotate(math.pi / 4); // oito passos de 45°: uma volta inteira
+          const cols = 6, rows = 10;
+          final hit = <int>{};
+          for (var f = 0; f < 50; f++) {
+            await tester.pump(const Duration(milliseconds: 50));
+            for (final q in g.climatePositions) {
+              if (q.dx < 0 || q.dy < 0 || q.dx >= g.size.x || q.dy >= g.size.y) continue;
+              hit.add((q.dy / g.size.y * rows).floor() * cols + (q.dx / g.size.x * cols).floor());
+            }
+          }
+          expect(hit.length, cols * rows, reason: 'faltou chuva em parte da tela com $widthM m e ${(turn + 1) * 45}°');
+        }
+      }
+    });
+
+    testWidgets('tocar no clima do HUD mostra numa linha o efeito no spawn', (tester) async {
+      final env = await pumpGame(tester);
+      env.tools.force.set(weather: 'storm');
+      await env.live(11);
+      expect(find.text('TEMPESTADE'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('weather-hud')));
+      await tester.pump();
+      expect(find.textContaining('ELÉTRICOS MAIS COMUNS'), findsOneWidget);
+    });
+
     testWidgets('o interruptor "chuva no mapa" apaga a chuva mesmo com o clima de chuva', (tester) async {
       final env = await pumpGame(tester);
-      env.tools.force.set(weather: Weather.storm);
+      env.tools.force.set(weather: 'storm');
       await env.live(12);
       expect(env.game.rainCount, greaterThan(40));
       env.game.worldView!.state.setSetting('rain_fx', false);

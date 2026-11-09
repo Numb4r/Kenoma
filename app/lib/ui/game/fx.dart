@@ -11,6 +11,7 @@ import 'package:flutter/painting.dart' show TextPainter, TextSpan, TextStyle, Te
 import '../../world/map_camera.dart';
 import '../../world/spawn_field.dart';
 import '../colors.dart';
+import '../flashes.dart';
 import 'spawn_painter.dart' show paintMaterialIcon, paintSparkIcon;
 
 /// Durações dos efeitos, em segundos.
@@ -169,7 +170,7 @@ class Fx {
     for (final age in _glints) {
       final u = age / fxGlintS;
       final r = 3 + u * 9;
-      final alpha = (1 - u).clamp(0.0, 1.0);
+      final alpha = (1 - u).clamp(0.0, 1.0) * (reduceFlashes.value ? 0.35 : 1); // reduzir clarões: brilho fraco
       final c = avatar.translate(0, -playerSize * 0.3);
       for (final (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]) {
         final diag = dx != 0 && dy != 0 ? 0.7 : 1.0;

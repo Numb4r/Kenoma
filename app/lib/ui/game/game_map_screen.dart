@@ -23,7 +23,9 @@ import '../ritual/ritual_screen.dart';
 import '../../net/region_catalog.dart' show RegionEntry;
 import '../../world/layered_world.dart';
 import '../../world/map_layers.dart';
-import '../../world/weather_source.dart';
+import '../../data/climate_catalog.dart';
+import '../flashes.dart';
+import 'climate_driver.dart';
 import '../chime.dart';
 import '../sprites/familiar_sprite.dart';
 import '../../data/game_data.dart';
@@ -151,24 +153,17 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   String _version = 'dev';
 
-  WeatherService? _weather;
-  Weather _shownWeather = Weather.clear;
+  /// O clima: o do mundo (peças, pesos de spawn) e o que se vê (HUD e desenho). Ver `climate_driver.dart`.
+  ClimateDriver? _climate;
 
-  /// O clima determinístico (o da seed) numa posição: o que pesa nos spawns e o que se vê sem a rede.
-  Weather _weatherAtLatLon(int seed, GameData data, double lat, double lon, int t) {
-    final (cx, cy) = latLonToTile(lat, lon, 20);
-    return _weatherOfCell(seed, data, cx, cy, t);
-  }
-
-  /// Atualiza o clima que se vê (HUD e chuva): o forçado pelo debug, ou o da rede se ligado, ou o determinístico.
+  /// Atualiza o clima que se vê: o forçado pelo debug, ou o da rede se ligado, ou o determinístico.
   void _updateWeather() {
-    final r = _ready, svc = _weather;
-    if (r == null || svc == null) return;
-    final now = tools.clock.nowUtc;
-    final lat = r.game.playerLat, lon = r.game.playerLon;
-    unawaited(svc.refresh(lat, lon, now));
-    final next = tools.force.weather ?? svc.shown(lat, lon, now);
-    if (next != _shownWeather) setState(() => _shownWeather = next);
+    final r = _ready, c = _climate;
+    if (r == null || c == null) return;
+    reduceFlashes.value = r.session.state.setting(kReduceFlashesSetting);
+    final u = c.update(r.game.playerLat, r.game.playerLon, tools.clock.nowUtc);
+    if (u.changed) setState(() {});
+    if (u.notice != null) _toast(u.notice!, seconds: 5);
   }
 
   /// As células z17 visitadas: só o caminho real, sem o simulador e sem dirigir.
@@ -203,16 +198,20 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _toast('Um Eco Brilhante apareceu por perto!', seconds: 4);
   }
 
-  /// O clima determinístico de uma célula (o que pesa nos spawns). O debug pode forçá-lo.
-  Weather _weatherOfCell(int seed, GameData data, int cx, int cy, int t) {
-    return tools.force.weather ?? seedWeatherOfCell(data.schedule, seed, cx, cy, t);
-  }
   late final Notifier _notifier = widget.notifier ?? LocalNotifier();
 
   /// O mapa está sendo trocado por um novo: a tela nova já ligou o wake lock e esta não pode desligá-lo.
   bool _restarting = false;
 
   Timer? _storyTimer;
+
+  /// Trovões esperando o som chegar (cancelados ao fechar o mapa).
+  final _thunders = <Timer>[];
+
+  /// O trovão chega com o atraso do som pela distância.
+  void _scheduleThunder(double distanceM) => _thunders
+    ..removeWhere((t) => !t.isActive)
+    ..add(Timer(thunderDelay(distanceM), () => unawaited(playThunder(distanceM))));
   bool _inBackground = false;
   double _walkedM = 0;
 
@@ -298,7 +297,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final game = _ready?.game;
     if (game == null) return;
     final low = _pocket.covered && PatrolController.instance.running;
-    // MERGE-B: avisar o clima da taxa reduzida aqui (partículas no modo bolso).
+    game.setPocket(low); // o clima desenha poucas partículas no bolso
     if (low && !game.paused) game.pauseEngine();
     if (!low && game.paused) game.resumeEngine();
   }
@@ -441,6 +440,11 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final r = _ready;
     if (r == null || _busy) return;
     final (cellX, cellY) = r.game.cellAt(at);
+    final fx = tools.force.takeTapEffect(); // debug: o efeito de clima escolhido acontece onde o dedo tocou
+    if (fx != null) {
+      if (!(_climate?.world.debugTrigger(fx, cellX, cellY, tools.clock.nowUtc) ?? false)) _toast('Nenhum clima tem o efeito $fx');
+      return;
+    }
     if (r.travel.tapCell(cellX, cellY) || r.travel.quiet) return; // escolheu o destino, ou o mundo está calado
     final spawn = r.game.spawnAt(at);
     if (spawn == null) return;
@@ -489,7 +493,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       hour: localHourOf(t),
       biome: r.assets.map.biomes.spawnKey(r.assets.map.spawnBiomeAtCell(eco.cellX, eco.cellY)),
       moon: moonPhase(t),
-      weather: _weatherOfCell(r.session.state.seed, r.data, eco.cellX, eco.cellY, t),
+      weather: r.data.climates.of(_climate!.world.idAt(eco.cellX, eco.cellY, t)).base,
     );
   }
 
@@ -565,11 +569,14 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     }
     tools.clock.raiseFloor(session.state.lastSeenUtc);
     session.onSeen = tools.clock.raiseFloor;
+    // O clima do mundo: o modelo é o da época ATIVA naquele instante (nunca o da mais nova); o debug pode forçar qualquer id.
+    final climate = climateWorldFor(state: session.state, data: data, assets: assets, forced: () => tools.force.weather);
     final world = worldViewFor(
       state: session.state,
       data: data,
       assets: assets,
-      weatherAt: (cx, cy, t) => _weatherOfCell(session.state.seed, data, cx, cy, t),
+      weatherAt: climate.idAt,
+      climate: climate,
       force: tools.force,
       onMessage: _toast,
     );
@@ -595,12 +602,14 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       streetNames: () => session.state.setting('street_names'),
       veilTraffic: () => session.state.settingOr('veil_traffic', true),
       rainFx: () => streetLifeEnabled && session.state.settingOr('rain_fx', true),
-      weatherShown: () => streetLifeEnabled ? _shownWeather : Weather.clear,
-      variantTint: (s) => data.variantInfo(biome: s.variant, shiny: s.shiny)?.tint,
+      climateShown: () => streetLifeEnabled ? _climate!.info : ClimateInfo.legacy(Weather.clear),
+      climateCatalog: data.climates,
+      climateBalance: data.climateBalance,
+      reduceFlashes: () => session.state.setting(kReduceFlashesSetting),
+      variantTint: (s) => data.variantInfo(biome: s.variant, shiny: s.shiny)?.tint ?? data.climates.tags[s.tag]?.tint, // o Eco carregado do raio é ciano
       familiarImage: familiar,
       floorTile: assets.world!.isFloorTile,
       floorGridCells: assets.fallback!.floorGridCells,
-      rainDrops: data.street.rainParticles,
       familiarOffsetM: data.street.familiarFollowOffsetM,
       sprites: sprites,
       typeOf: (id) => data.species(id)?.type,
@@ -655,11 +664,11 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     world.onFled = game.onEcoFled;
     world.onShiny = _onShiny;
     world.onEnteredRange = _onEnteredRange;
-    _weather = WeatherService(
-      deterministic: (lat, lon, t) => _weatherAtLatLon(session.state.seed, data, lat, lon, t),
-      source: OpenMeteoSource(),
-      online: () => session.state.setting('weather_online'),
-    );
+    _climate = ClimateDriver(data: data, world: climate, online: () => session.state.setting('weather_online'));
+    unawaited(_climate!.loadEvents());
+    game.climateFx
+      ..onThunder = _scheduleThunder
+      ..onEcoBorn = (d) => _toast(data.climates.tags[d.piece.spawn?.tag]?.born ?? 'Algo nasceu ali', seconds: 3);
     session.state.onNotice = _toast;
     session.state.ensureDaily(data.forum, data.schedule.select(tools.clock.nowUtc).epoch.id, localDay(tools.clock.nowUtc));
     _storyTimer = Timer.periodic(const Duration(seconds: 1), (_) => _storyTick());
@@ -778,6 +787,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _toastTimer?.cancel();
     _longTimer?.cancel();
     _storyTimer?.cancel();
+    for (final t in _thunders) {
+      t.cancel();
+    }
     _stopProximity();
     _patrol?.dispose();
     PatrolController.instance.removeListener(_pocketFps);
@@ -872,7 +884,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
               Positioned(
                 right: 8,
                 top: 56,
-                child: MoonHud(nowUtc: () => tools.clock.nowUtc, lat: () => game.playerLat, weather: streetLifeEnabled ? () => _shownWeather : null),
+                child: MoonHud(nowUtc: () => tools.clock.nowUtc, lat: () => game.playerLat, weather: streetLifeEnabled ? () => _climate!.info : null, onWeatherTap: (i) => _toast(i.hud, seconds: 4)),
               ),
               Positioned(
                 right: 8,
@@ -921,7 +933,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                           onSweep: () => r.world.radar(tools.clock.nowUtc),
                         ),
                         nowUtc: () => tools.clock.nowUtc,
-                        weather: () => _shownWeather,
+                        weather: () => _climate!.info,
                         lat: () => game.playerLat,
                         epochId: () => r.data.schedule.select(tools.clock.nowUtc).epoch.id,
                       ),

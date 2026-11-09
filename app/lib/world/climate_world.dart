@@ -1,0 +1,374 @@
+/// O clima no mundo: qual clima vale numa célula e hora, o que as peças fazem nascer (Eco do raio, granizo, poças...), a
+/// deriva e o sumiço das Fagulhas e os modificadores do jogador. Tudo determinístico (seed, época, célula z17 e janela):
+/// amigos juntos veem o mesmo raio no mesmo ponto. O que é de cada aparelho (o clima forçado pelo debug, o efeito tocado no
+/// mapa) entra por [forced] e [debugDrops] e não vai para mais ninguém. Dart puro.
+library;
+
+import 'dart:math' as math;
+
+import '../core/climate.dart';
+import '../core/epochs.dart';
+import '../core/fnv.dart';
+import '../core/weather.dart';
+import '../core/windows.dart';
+import 'spawn_field.dart';
+
+/// O que o clima de agora faz com o jogador (Aura, visão, sintonia, calma, rastros, tráfego, vento).
+class PlayerClimate {
+  const PlayerClimate({
+    this.id = 'clear',
+    this.auraAddM = 0,
+    this.viewMaxM,
+    this.toleranceMult = 1,
+    this.wanderMult = 1,
+    this.immuneSchool,
+    this.calm = false,
+    this.traceTimeMult = 1,
+    this.playerTrails = false,
+    this.ecoTracksM = 0,
+    this.trafficMult = 1,
+    this.windHeadingRad = 0,
+    this.windWindowStart = 0,
+  });
+
+  final String id;
+  final double auraAddM;
+  final double? viewMaxM;
+  final double toleranceMult;
+  final double wanderMult;
+  final String? immuneSchool;
+  final bool calm;
+  final double traceTimeMult;
+  final bool playerTrails;
+  final double ecoTracksM;
+  final double trafficMult;
+
+  /// Direção do vento (radianos a partir do norte, sentido horário) e o começo da janela do clima (o tráfego lento conta
+  /// daqui, igual em todos os aparelhos).
+  final double windHeadingRad;
+  final int windWindowStart;
+
+  /// A deriva do sinal na sintonia para a escola [school] (`null`: sem escola).
+  double wanderFor(String? school) => school != null && school == immuneSchool ? 1 : wanderMult;
+
+  static const none = PlayerClimate();
+}
+
+class ClimateWorld {
+  ClimateWorld({
+    required this.seed,
+    required this.schedule,
+    required this.speciesOfType,
+    required this.itemExists,
+    this.biomeAt,
+    String? Function()? forced,
+  }) : forced = forced ?? _none;
+
+  final int seed;
+  final EpochSchedule schedule;
+
+  /// O clima forçado pelo debug (qualquer id), ou `null`.
+  final String? Function() forced;
+
+  /// A espécie de Eco de um tipo (`water`; `any` para qualquer), escolhida por [pick] em `[0, 1)`. `null`: não há.
+  final String? Function(String type, double pick) speciesOfType;
+  final bool Function(String itemId) itemExists;
+
+  /// A chave de bioma de spawn da célula z20, para itens que só nascem em alguns biomas.
+  final String? Function(int cx20, int cy20)? biomeAt;
+
+  /// Climas forçados por evento (`events.json` assinado). Trocados quando o feed chega.
+  List<ClimateEvent> events = const [];
+
+  /// Efeitos disparados pelo debug num ponto tocado: só neste aparelho.
+  final debugDrops = <ClimateDrop>[];
+  final debugZones = <ClimateZone>[];
+
+  final _dropCache = <(int, int, int, int, int), List<ClimateDrop>>{};
+  final _zoneCache = <(int, int, int, int, int), List<ClimateZone>>{};
+
+  /// O modelo e a época que valem em [t]: os da época; com o clima forçado pelo debug numa época sem modelo, o da época mais
+  /// nova que tem (só neste aparelho, para dar para testar antes da época 6 começar).
+  (Epoch, ClimateModel)? modelAt(int t) {
+    final e = schedule.select(t).epoch;
+    if (e.climate != null) return (e, e.climate!);
+    if (forced() == null) return null;
+    for (final o in schedule.epochs.reversed) {
+      if (o.climate != null) return (e, o.climate!);
+    }
+    return null;
+  }
+
+  /// O id do clima na célula z20 em [t]: o forçado, o do modelo completo (épocas 6+) ou o de quatro estados (épocas 3 a 5).
+  /// É o que pesa nos spawns.
+  String idAt(int cx20, int cy20, int t) => forced() ?? climateIdOfCell(schedule, seed, cx20, cy20, t, events: events);
+
+  /// A definição do clima da célula z17 em [t], com o modelo e a época. `null` sem modelo.
+  ({Epoch epoch, ClimateModel model, ClimateDef def, int window})? _defAt17(int cx17, int cy17, int t) {
+    final me = modelAt(t);
+    if (me == null) return null;
+    final (epoch, model) = me;
+    final id = forced() ?? model.at(seed: seed, tUtc: t, rx: cx17 >>> 5, ry: cy17 >>> 5, events: events);
+    final def = model.def(id);
+    return def == null ? null : (epoch: epoch, model: model, def: def, window: model.windowOf(t));
+  }
+
+  /// A definição do clima na célula z20 em [t] (o mesmo da z17 que a contém).
+  ClimateDef? defAt(int cx20, int cy20, int t) => _defAt17(cx20 >>> 3, cy20 >>> 3, t)?.def;
+
+  /// O que o clima da posição (células z21 fracionárias) faz com o jogador agora.
+  PlayerClimate modsAt(double x21, double y21, int t) {
+    final cx17 = x21.floor() >>> 4, cy17 = y21.floor() >>> 4;
+    final d = _defAt17(cx17, cy17, t);
+    if (d == null) return PlayerClimate(id: forced() ?? 'clear');
+    final mod = d.def.modifier, mov = d.def.movement, tr = d.def.trails;
+    return PlayerClimate(
+      id: d.def.id,
+      auraAddM: mod?.auraAddM ?? 0,
+      viewMaxM: mod?.viewMaxM,
+      toleranceMult: mod?.toleranceMult ?? 1,
+      wanderMult: mod?.wanderMult ?? 1,
+      immuneSchool: mod?.immuneSchool,
+      calm: mod?.calm ?? false,
+      traceTimeMult: tr?.traceTimeMult ?? 1,
+      playerTrails: tr?.player ?? false,
+      ecoTracksM: tr?.ecoTracksM ?? 0,
+      trafficMult: mov?.trafficMult ?? 1,
+      windHeadingRad: _heading(d, cx17, cy17, mov),
+      windWindowStart: d.window * d.model.windowS,
+    );
+  }
+
+  double _heading(({Epoch epoch, ClimateModel model, ClimateDef def, int window}) d, int cx17, int cy17, MovementPiece? mov) =>
+      mov?.headingDeg != null ? mov!.headingDeg! * math.pi / 180 : d.model.windHeading(seed, d.epoch.id, cx17 >>> 5, cy17 >>> 5, d.window);
+
+  /// Níveis a mais nos Ecos da célula z20 (Tempestade de Ecos).
+  int levelAddAt(int cx20, int cy20, int t) => defAt(cx20, cy20, t)?.modifier?.levelAdd ?? 0;
+
+  /// A Fagulha do sorteio normal com o clima: deriva com o vento ou some depois do tempo de vida. [windowStart] é o começo da
+  /// janela de 20 minutos da célula dela. `null`: sumiu.
+  WorldSpawn? adjustSpark(WorldSpawn s, int windowStart, int t, double metersPerCell21) {
+    if (!s.isSpark) return s;
+    final d = _defAt17(s.cellX >>> 3, s.cellY >>> 3, t);
+    final mov = d?.def.movement;
+    if (d == null || mov == null) return s;
+    final age = t - windowStart;
+    if (mov.sparkTtlS != null && age > mov.sparkTtlS!) return null;
+    if (mov.sparkDriftMps <= 0) return s;
+    final m = math.min(mov.sparkDriftMps * age, mov.driftMaxM) / metersPerCell21;
+    final h = _heading(d, s.cellX >>> 3, s.cellY >>> 3, mov);
+    return s.movedTo(s.x + math.sin(h) * m, s.y - math.cos(h) * m);
+  }
+
+  Iterable<(int, int)> _cells17(double x21, double y21, double r21) sync* {
+    for (var cy = ((y21 - r21) / 16).floor(); cy <= ((y21 + r21) / 16).floor(); cy++) {
+      for (var cx = ((x21 - r21) / 16).floor(); cx <= ((x21 + r21) / 16).floor(); cx++) {
+        yield (cx, cy);
+      }
+    }
+  }
+
+  void _trim() {
+    if (_dropCache.length > 96) _dropCache.clear();
+    if (_zoneCache.length > 96) _zoneCache.clear();
+  }
+
+  /// Os acontecimentos das quedas (raio, granizo, meteoro...) perto de (x21, y21) com tempo em `[tFrom, tTo]`, das janelas
+  /// do clima que tocam esse intervalo. Inclui os disparados pelo debug.
+  List<ClimateDrop> dropsNear(double x21, double y21, double radius21, int tFrom, int tTo) {
+    _trim();
+    final out = <ClimateDrop>[];
+    final seen = <int>{};
+    for (final t in {tFrom, tTo}) {
+      for (final (cx, cy) in _cells17(x21, y21, radius21)) {
+        final d = _defAt17(cx, cy, t);
+        if (d == null) continue;
+        for (var i = 0; i < d.def.pieces.length; i++) {
+          final p = d.def.pieces[i];
+          if (p is! DropPiece) continue;
+          final list = _dropCache.putIfAbsent((d.epoch.id * 64 + i, cx, cy, d.window, d.def.id.hashOfId), () => d.model.drops(seed, d.epoch.id, cx, cy, d.window, i, p));
+          // A lista está em ordem de tempo: começa do primeiro a partir de tFrom (busca binária).
+          var lo = 0, hi = list.length;
+          while (lo < hi) {
+            final mid = (lo + hi) ~/ 2;
+            if (list[mid].tUtc < tFrom) {
+              lo = mid + 1;
+            } else {
+              hi = mid;
+            }
+          }
+          for (var k = lo; k < list.length && list[k].tUtc <= tTo; k++) {
+            if (seen.add(list[k].uid)) out.add(list[k]);
+          }
+        }
+      }
+    }
+    for (final drop in debugDrops) {
+      if (drop.tUtc >= tFrom && drop.tUtc <= tTo) out.add(drop);
+    }
+    return out;
+  }
+
+  /// As zonas ativas em [t] perto de (x21, y21), mais as do debug.
+  List<ClimateZone> zonesNear(double x21, double y21, double radius21, int t) {
+    _trim();
+    final out = <ClimateZone>[];
+    for (final (cx, cy) in _cells17(x21, y21, radius21)) {
+      final d = _defAt17(cx, cy, t);
+      if (d == null) continue;
+      for (var i = 0; i < d.def.pieces.length; i++) {
+        final p = d.def.pieces[i];
+        if (p is! ZonePiece) continue;
+        final list = _zoneCache.putIfAbsent((d.epoch.id * 64 + i, cx, cy, d.window, d.def.id.hashOfId), () => d.model.zones(seed, d.epoch.id, cx, cy, d.window, i, p));
+        out.addAll(list.where((z) => z.activeAt(t)));
+      }
+    }
+    out.addAll(debugZones.where((z) => z.activeAt(t)));
+    return out;
+  }
+
+  /// O que as peças fazem nascer em volta de (x21, y21) em [t]: Ecos e itens com uid próprio, como os spawns normais.
+  /// [levelOf] dá o nível do Eco a partir do acréscimo sorteado (o nível é individual).
+  List<WorldSpawn> extras({
+    required double x21,
+    required double y21,
+    required double radiusM,
+    required int t,
+    required double metersPerCell21,
+    required int Function(String speciesId, int levelAdd, int uid) levelOf,
+  }) {
+    final r21 = radiusM / metersPerCell21;
+    final out = <WorldSpawn>[];
+    // Quedas: vivem do instante da queda até o fim do tempo de vida (até 3 h, então basta olhar a janela anterior).
+    for (final drop in dropsNear(x21, y21, r21, t - 3 * 3600, t)) {
+      final p = drop.piece;
+      final spawn = p.spawn, item = p.item;
+      if (spawn != null && drop.spawnRoll < spawn.chance && t < drop.tUtc + spawn.ttlS) {
+        final s = _eco(spawn, drop.pick, drop.x, drop.y, fnv1a64([drop.uid, 1]), t, levelOf);
+        if (s != null) out.add(s);
+      }
+      if (item != null && drop.itemRoll < item.chance && t < drop.tUtc + item.ttlS) {
+        final s = _item(item, drop.pick, drop.x + 0.3, drop.y + 0.3, fnv1a64([drop.uid, 2]));
+        if (s != null) out.add(s);
+      }
+    }
+    for (final z in zonesNear(x21, y21, r21, t)) {
+      final p = z.piece;
+      final n = z.slots.length;
+      for (var j = 0; j < n; j++) {
+        final slot = z.slots[j];
+        // Zona que anda deixa o que nasce pelo caminho: a vaga j aparece na fração (j + 0,5) / n do percurso.
+        final tj = p.speedMps > 0 ? z.startUtc + ((j + 0.5) / n * p.durationS).floor() : z.startUtc;
+        if (t < tj) continue;
+        final (cx, cy) = z.centerAt(tj.toDouble(), metersPerCell21);
+        final rr = p.radiusM / metersPerCell21;
+        final x = cx + slot.dx * rr, y = cy + slot.dy * rr;
+        final spawn = p.spawn, item = p.item;
+        if (spawn != null && j < spawn.perZone && slot.roll < spawn.chance) {
+          final s = _eco(spawn, slot.pick, x, y, fnv1a64([z.uidBase, j, 1]), t, levelOf);
+          if (s != null) out.add(s);
+        }
+        if (item != null && j < item.perZone && slot.roll2 < item.chance) {
+          final s = _item(item, slot.pick, x + 0.3, y + 0.3, fnv1a64([z.uidBase, j, 2]));
+          if (s != null) out.add(s);
+        }
+      }
+    }
+    return [for (final s in out) if (s.distanceM(x21, y21, metersPerCell21) <= radiusM) s];
+  }
+
+  WorldSpawn? _eco(PieceSpawn spawn, double pick, double x, double y, int uid, int t, int Function(String, int, int) levelOf) {
+    final species = speciesOfType(spawn.type, pick) ?? spawn.fallbackSpecies;
+    if (species == null) return null; // tipo sem espécie no jogo e sem fallback: o dado fica sem efeito
+    final (lo, hi) = spawn.levelAdd;
+    final add = lo + (pick * 1000).floor() % (hi - lo + 1);
+    final cx20 = x.floor() >>> 1, cy20 = y.floor() >>> 1;
+    return WorldSpawn(
+      uid: uid,
+      kind: 'eco',
+      entryId: species,
+      quantity: 1,
+      x: x,
+      y: y,
+      cellX: cx20,
+      cellY: cy20,
+      window: windowIndex(seed, cx20, cy20, t),
+      level: levelOf(species, add, uid),
+      tag: spawn.tag,
+    );
+  }
+
+  WorldSpawn? _item(PieceItem item, double pick, double x, double y, int uid) {
+    final cx20 = x.floor() >>> 1, cy20 = y.floor() >>> 1;
+    if (item.biomes != null && !item.biomes!.contains(biomeAt?.call(cx20, cy20))) return null;
+    var id = item.ids[(pick * item.ids.length).floor().clamp(0, item.ids.length - 1)];
+    if (!itemExists(id)) {
+      final f = item.fallback;
+      if (f == null || !itemExists(f)) return null; // item que ainda não existe e sem fallback: sem efeito
+      id = f;
+    }
+    final (lo, hi) = item.qty;
+    return WorldSpawn(
+      uid: uid,
+      kind: item.kind == 'spark' ? 'spark' : 'material',
+      entryId: id,
+      quantity: lo + (pick * 997).floor() % (hi - lo + 1),
+      x: x,
+      y: y,
+      cellX: cx20,
+      cellY: cy20,
+      window: 0,
+    );
+  }
+
+  /// Debug: dispara a peça [pieceName] (de qualquer clima) no ponto (x21, y21) em [t], só neste aparelho. Com criatura ou
+  /// item, eles nascem com certeza. Devolve `false` se nenhum clima tem a peça.
+  bool debugTrigger(String pieceName, double x21, double y21, int t) {
+    final m = modelAt(t)?.$2 ?? _latestModel;
+    if (m == null) return false;
+    for (final def in m.defs.values) {
+      for (final p in def.pieces) {
+        if (p.name != pieceName) continue;
+        final uid = fnv1a64([seed, t, (x21 * 1000).round(), (y21 * 1000).round(), salt('DBGFX')]);
+        if (p is DropPiece) {
+          debugDrops.add(ClimateDrop(piece: p, pieceIndex: -1, index: debugDrops.length, tUtc: t, x: x21, y: y21, spawnRoll: 0, itemRoll: 0, pick: (uid >>> 40) / (1 << 24), uid: uid));
+          return true;
+        }
+        if (p is ZonePiece) {
+          debugZones.add(ClimateZone(
+            piece: p, pieceIndex: -1, index: debugZones.length, x0: x21, y0: y21, headingRad: (uid >>> 40) / (1 << 24) * 2 * math.pi,
+            startUtc: t, endUtc: t + p.durationS, uidBase: uid,
+            slots: [for (var j = 0; j < math.max(p.spawn?.perZone ?? 0, p.item?.perZone ?? 0); j++) (dx: 0.3 * j, dy: 0.0, roll: 0.0, roll2: 0.0, pick: 0.5)],
+          ));
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  ClimateModel? get _latestModel {
+    for (final e in schedule.epochs.reversed) {
+      if (e.climate != null) return e.climate;
+    }
+    return null;
+  }
+}
+
+String? _none() => null;
+
+/// O clima determinístico (id) da célula z20 em [t], sem o debug: o do modelo completo da época ativa (6 em diante, com os
+/// eventos do feed) ou o de quatro estados (épocas 3 a 5). O modelo é o da época ATIVA naquele instante, nunca o da mais
+/// nova. O app e a Patrulha chegam aqui por `seedWeatherOfCell` (`ui/map/map_assets.dart`).
+String climateIdOfCell(EpochSchedule schedule, int seed, int cx20, int cy20, int t, {List<ClimateEvent> events = const []}) {
+  final e = schedule.select(t).epoch;
+  final (rx, ry) = weatherRegionOfCell(cx20, cy20);
+  final m = e.climate;
+  if (m != null) return m.at(seed: seed, tUtc: t, rx: rx, ry: ry, events: events);
+  return e.ecoV2?.weather.at(seed: seed, tUtc: t, regionX: rx, regionY: ry).id ?? 'clear';
+}
+
+extension on String {
+  /// Chave estável do id do clima para os caches (FNV dos bytes, estável entre execuções).
+  int get hashOfId => fnv1a64Bytes(codeUnits);
+}

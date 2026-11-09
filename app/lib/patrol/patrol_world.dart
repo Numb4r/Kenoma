@@ -5,10 +5,12 @@ library;
 
 import 'dart:io';
 
+import '../core/climate.dart' show ClimateEvent;
 import '../core/tiles.dart';
 import '../data/game_data.dart';
 import '../player/game_state.dart';
 import '../save/ksv_save_store.dart';
+import '../net/signed_feed.dart' show loadSignedEvents;
 import '../save/migrations.dart';
 import '../ui/map/map_assets.dart';
 import '../world/fallback_service.dart';
@@ -59,11 +61,9 @@ Future<PatrolWorld?> openPatrolWorld({required int Function() nowUtc, required i
     baseUrl: () => '',
     post: _offline,
   );
-  final world = worldViewFor(
-    state: state,
-    data: data,
-    assets: loaded,
-    weatherAt: (cx, cy, t) => seedWeatherOfCell(data.schedule, state.seed, cx, cy, t),
-  );
+  // O clima do mundo (época 6 em diante: as peças e os eventos do feed assinado) é o mesmo do app.
+  final climate = climateWorldFor(state: state, data: data, assets: loaded)
+    ..events = [for (final e in await loadSignedEvents()) ?ClimateEvent.tryParse(e)];
+  final world = worldViewFor(state: state, data: data, assets: loaded, weatherAt: climate.idAt, climate: climate);
   return PatrolWorld(data: data, state: state, assets: loaded, layers: layers, world: world, balance: data.patrol);
 }

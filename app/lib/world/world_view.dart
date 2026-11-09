@@ -15,6 +15,7 @@ import '../core/tiles.dart';
 import '../player/conjurer_balance.dart' show School;
 import '../player/circle.dart' show MapAbilities;
 import '../player/game_state.dart';
+import 'climate_world.dart';
 import 'debug_creatures.dart';
 import 'debug_force.dart';
 import 'radar.dart';
@@ -92,7 +93,11 @@ class WorldView {
       (streetLifeEnabled ? street.familiarPickupBonusM : 0) +
       travelPickupM() +
       state.cb.auraBonusFor(state.playerLevel) +
-      (state.conjurer.school == School.shaman ? state.cb.shamanAuraBonusM : 0);
+      (state.conjurer.school == School.shaman ? state.cb.shamanAuraBonusM : 0) +
+      climate.auraAddM;
+
+  /// O que o clima de agora faz com o jogador (Aura, visão, calma, rastros, sintonia). Atualizado em [refresh].
+  PlayerClimate climate = PlayerClimate.none;
 
   /// Alcance do rastreador: o maior entre o padrão e o do Círculo.
   double get trackerRangeM => math.max(trackerM, abilities().trackerRangeM);
@@ -235,6 +240,7 @@ class WorldView {
     _py = py;
     _mpc = metersPerCell(lat);
     _hasPlayer = true;
+    climate = field.climate?.modsAt(px, py, tUtc) ?? PlayerClimate.none;
     syncRitualUnlock(state);
     // Um salto de mais de 25 m entre duas leituras é teleporte ou troca de fonte: o percurso recomeça.
     if (_track.isNotEmpty) {
@@ -249,9 +255,11 @@ class WorldView {
     final ritualsOn = state.playerLevel >= state.cb.ritualLevel;
     bool visibleTier(WorldSpawn s) =>
         !s.isEco || tierOfId(s.entryId) == SpeciesTier.eco || (isRitualOnlyId(s.entryId) ? ritualsOn : spiritsOn);
+    // Neblina e Nevasca: os Ecos só aparecem até a visão do clima (nem no rastreador).
+    final viewCap = climate.viewMaxM;
     final all = [
       for (final s in field.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel))
-        if (visibleTier(s)) _withForce(s),
+        if (visibleTier(s) && (viewCap == null || !s.isEco || distanceM(s) <= viewCap)) _withForce(s),
       // As do "Criar criatura": fora do mundo, valem em qualquer nível.
       ...?force?.creatures.around(px: px, py: py, metersPerCell21: _mpc, radiusM: auraRadiusM, tUtc: tUtc, biomeAt: _biomeKeyAt),
     ];
@@ -306,7 +314,7 @@ class WorldView {
 
   /// O Agressivo dentro da Aura abre a folha uma vez por Eco. Se a tela estava ocupada, tenta de novo no próximo quadro.
   void _tryAggressive(WorldSpawn s) {
-    if (s.behavior != EcoBehavior.aggressive || _aggroFired.contains(s.uid) || isRitualOnlyId(s.entryId)) return;
+    if (s.behavior != EcoBehavior.aggressive || _aggroFired.contains(s.uid) || isRitualOnlyId(s.entryId) || climate.calm) return;
     if (onAggressive?.call(s) ?? false) _aggroFired.add(s.uid);
   }
 
@@ -315,7 +323,7 @@ class WorldView {
     switch (s.behavior) {
       case EcoBehavior.skittish:
         // O Xamã Urbano conversa com as criaturas: os Ariscos não fogem dele.
-        if (state.conjurer.school != School.shaman && playerSpeedMps > street.skittishFleeSpeedMps) {
+        if (state.conjurer.school != School.shaman && !climate.calm && playerSpeedMps > street.skittishFleeSpeedMps) {
           state.markDone(s.uid, tUtc); // a fuga entra no registro, como na falha
           onMessage?.call('Um Eco arisco fugiu: você chegou rápido demais');
           return true;
@@ -337,6 +345,7 @@ class WorldView {
       tUtc: tUtc,
       playerLevel: state.playerLevel,
       balance: street,
+      showS: (300 * climate.traceTimeMult).round(), // o Frio guarda os rastros por mais tempo
     );
     state.recordSweep(tUtc, [for (final s in out.revealed) s.uid], tUtc + street.hiddenRevealS.round());
     state.recordEvent('hidden_revealed', '', out.revealed.where((s) => !isDebugUid(s.uid)).length); // as de debug não contam
