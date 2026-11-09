@@ -273,7 +273,9 @@ void main() {
       final w = _schedule().epochs.last.walkable!;
       expect(w.exclude, isNotNull);
       expect(w.excludePacks['test_city']?.file, 'test_e5_nowalk.bin');
-      expect(loadEpochs().epochs.last.walkable!.excludePacks, isEmpty);
+      final real = loadEpochs().epochs;
+      expect(real.firstWhere((e) => e.id == 4).walkable!.excludePacks, isEmpty, reason: 'a época 4 não muda');
+      expect(real.firstWhere((e) => e.id == 5).walkable!.excludePacks.keys, ['sao_paulo']);
     });
 
     test('época do feed com região baixável não exige o pacote nos assets; a embutida continua exigindo', () {

@@ -1,0 +1,39 @@
+{
+  "format": 1,
+  "regions": [
+    {
+      "id": "sao_paulo",
+      "name": "São Paulo",
+      "bbox": [
+        -46.83,
+        -24.01,
+        -46.36,
+        -23.35
+      ],
+      "epoch": 5,
+      "files": {
+        "logic": {
+          "file": "sao_paulo_e5.bin",
+          "url": "https://github.com/Numb4r/Kenoma/releases/download/regions-e5/sao_paulo_e5.bin",
+          "sha256": "75fc763478409e6b6853ca859165b8b96fc7868b1c99014d71c068657b6cbd47",
+          "bytes": 807677,
+          "sig": "ab0260e0f5ce13634e869532cb27336027659ae150ba22e1448b8141c66bec1b844476b637ae5a920a42c79968ea2ad3c240c1edec7b3db4aadff69e23ec6b06"
+        },
+        "visual": {
+          "file": "sao_paulo_e5_vis.bin",
+          "url": "https://github.com/Numb4r/Kenoma/releases/download/regions-e5/sao_paulo_e5_vis.bin",
+          "sha256": "9204f9ce5c6154878a8ac0c4f6b7e8e6aa7a598662bb2d0b2363d916b03e76b7",
+          "bytes": 11043360,
+          "sig": "1b248a31e1b089865e5c2cc50acb642214a7f93a79df05e22d4849cc8be07789f396d0b24c84450379738ff56c1f627b8156a0e6b2930f869b669646c97bdf0d"
+        },
+        "nowalk": {
+          "file": "sao_paulo_e5_nowalk.bin",
+          "url": "https://github.com/Numb4r/Kenoma/releases/download/regions-e5/sao_paulo_e5_nowalk.bin",
+          "sha256": "74bcb43321a838cfec1c8cd927e65cd64daf8bb0f33d17fcb21654085376f582",
+          "bytes": 139188,
+          "sig": "3c18e51ee4f5a2afca14911ad3c68f802ae0c54afd0451598055f3b46bcbc71c3993148a0791d4192de362660541c632f7043bd9e6fd9a54a5256d5b38c10b00"
+        }
+      }
+    }
+  ]
+}

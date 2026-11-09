@@ -563,7 +563,7 @@ void main() {
     });
 
     testWidgets('relógio depois do fim da época 0: o mapa abre e avisa que o mundo está desatualizado', (tester) async {
-      final after = DateTime.utc(2027, 2, 1).millisecondsSinceEpoch ~/ 1000;
+      final after = DateTime.utc(2035, 1, 1).millisecondsSinceEpoch ~/ 1000;
       await pumpGame(tester, clockUtc: after);
       expect(find.text('MUNDO DESATUALIZADO'), findsOneWidget);
       expect(find.byType(Joystick), findsOneWidget, reason: 'o mapa funciona mesmo assim');
