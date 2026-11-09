@@ -97,7 +97,7 @@ JournalResult applyJournal(GameState state, List<Map<String, dynamic>> lines, {r
     final uid = int.tryParse('${l['uid']}');
     // A Patrulha em curso: contadores do resumo e a hora da última linha (o fim, se o serviço morrer sem escrevê-lo).
     final run = state.settings[kPatrolRunKey] is Map ? Map<String, dynamic>.from(state.settings[kPatrolRunKey] as Map) : null;
-    if (run != null && k != 'end') state.setSetting(kPatrolRunKey, run..['last'] = t);
+    if (run != null && k != 'end' && k != 'start') state.setSetting(kPatrolRunKey, run..['last'] = t);
     void bump(String key, int n) {
       if (run == null) return;
       run[key] = ((run[key] as int?) ?? 0) + n;
@@ -106,9 +106,12 @@ JournalResult applyJournal(GameState state, List<Map<String, dynamic>> lines, {r
 
     switch (k) {
       case 'start':
+        if (run != null) _summary(state, (run['last'] as int?) ?? t); // a anterior morreu sem fim e o app não a viu
         state.setSetting(kPatrolRunKey, {'t0': t, 'last': t, 'sparks': 0, 'materials': 0, 'marks': 0});
         final steps = l['steps'], boot = l['boot'];
-        if (steps is int && boot is int) setPatrolSpans(state, [...patrolSpansOf(state), PatrolSpan(bootUtc: boot, from: steps)]);
+        // Os trechos só saem quando o contador lê; com ele desligado, ficam os últimos poucos.
+        final spans = patrolSpansOf(state);
+        if (steps is int && boot is int) setPatrolSpans(state, [...spans.skip(spans.length > 7 ? spans.length - 7 : 0), PatrolSpan(bootUtc: boot, from: steps)]);
       case 'spark' || 'material':
         if (uid == null || state.isDone(uid)) continue;
         final item = l['item'] as String, q = (l['q'] as int?) ?? 1;

@@ -118,6 +118,8 @@ void main() {
     final prefs = DebugPrefs(file: file, defaultOpen: true);
     final reg = await pumpMenu(tester, prefs);
     expect(find.textContaining('Nenhum favorito'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('star-time.clock'))); // a seção Posição cresceu
+    await tester.pump();
     await tester.tap(find.byKey(const Key('star-time.clock')));
     await tester.pump();
     expect(prefs.favorites, ['time.clock']);
