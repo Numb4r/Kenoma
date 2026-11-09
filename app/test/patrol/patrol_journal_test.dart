@@ -159,6 +159,19 @@ void main() {
       expect(s.settings.containsKey(kPatrolRunKey), isFalse);
     });
 
+    test('o resumo no Chat sai com os números no texto e sobrevive ao save', () async {
+      final s = fresh();
+      writer()
+        ..write({'k': 'start', 't': t0})
+        ..write(spark(70, q: 12))
+        ..write({'k': 'end', 't': t0 + 34 * 60, 'why': 'time'});
+      await incorporateJournal(s, file, running: false, nowUtc: t0 + 34 * 60);
+      final entry = GameState.fromJson(jsonDecode(jsonEncode(s.toJson(t0))) as Map<String, dynamic>, loadProgressBalance()).story.chat.delivered.single;
+      final text = entry.fill(loadGameData().mentor.byId(entry.id)!.text);
+      expect(text, startsWith('34 minutos de Patrulha. 12 Fagulhas e 0 materiais'));
+      expect(text, isNot(contains('{')));
+    });
+
     test('sem diário e sem Patrulha em curso, nada muda', () async {
       final s = fresh();
       final r = await incorporateJournal(s, file, running: false, nowUtc: t0);

@@ -3,6 +3,7 @@ library;
 
 import 'debug_capture.dart';
 import 'debug_env.dart';
+import 'debug_items_patrol.dart';
 import 'debug_items_position.dart';
 import 'debug_items_profile.dart';
 import 'debug_items_school.dart';
@@ -13,6 +14,7 @@ import 'debug_registry.dart';
 
 DebugRegistry buildDefaultRegistry(DebugEnv env) => DebugRegistry()
   ..addAll(positionItems(env))
+  ..addAll(patrolItems(env))
   ..addAll(timeItems(env))
   ..addAll(spawnItems(env))
   ..addAll(mapItems(env))

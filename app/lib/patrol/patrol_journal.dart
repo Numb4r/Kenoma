@@ -179,6 +179,8 @@ Future<JournalResult> incorporateJournal(
 }) async {
   var res = JournalResult();
   if (await file.exists()) {
+    // ponytail: relê o arquivo inteiro (o cabeçalho confere o deslocamento); 2 h de Patrulha dão poucas centenas de KB. Ler só
+    // do deslocamento se pesar.
     final bytes = await file.readAsBytes();
     final saved = state.settings[kJournalKey];
     final head = parseJournal(bytes, bytes.length).head;
