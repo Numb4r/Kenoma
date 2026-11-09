@@ -29,7 +29,7 @@ const String spark = 'item.dust.fire';
 WorldSpawn eco(int uid, {String species = 'soot.eco'}) => WorldSpawn(uid: uid, kind: 'eco', entryId: species, quantity: 1, x: x0, y: y0, cellX: 0, cellY: 0, window: 1, level: 2);
 
 class Rig {
-  Rig({this.now = 1800000000, TrafficGraph? graph}) {
+  Rig({this.now = 1800000000, TrafficGraph? graph, bool sandbox = false}) {
     state = GameState(groupCode: 'KENOMA-TESTE', balance: loadProgressBalance());
     travel = TravelSession(
       state: state,
@@ -40,6 +40,7 @@ class Rig {
       sparkItem: (_, _, _) => spark,
       ecosInReach: () => ecos,
       nowUtc: () => now,
+      sandbox: () => sandbox,
     );
   }
 
@@ -99,6 +100,17 @@ void main() {
       expect(r.state.count(spark), 5);
       expect(o.marks.map((m) => m.uid).toSet(), {GameState.uidKey(1), GameState.uidKey(2)});
       expect(r.state.markOf(1), isNotNull);
+    });
+
+    test('GPS simulado sem recompensa: passageiro sem baú e sem estatística', () async {
+      final r = Rig(sandbox: true)..choose(Vehicle.car);
+      r.travel.answerPassenger(true);
+      await r.drive();
+      final o = r.travel.outcome!;
+      expect((o.chest, o.sparks), (false, 0));
+      expect(r.state.count(spark), 0);
+      expect(r.state.story.count('trip_m'), 0);
+      expect(r.state.progress.xp, 0);
     });
 
     test('motorista: só a distância gravada', () async {

@@ -321,7 +321,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   /// A caminhada conta de 10 em 10 metros, para não gravar o save a cada passo.
   void _onWalked(double meters) {
-    if ((_ready?.travel.quiet ?? false) || PatrolController.instance.running) return; // de carro não é caminhada; na Patrulha, o diário conta
+    if ((_ready?.travel.quiet ?? false) || PatrolController.instance.running || tools.sandboxed) return; // de carro não é caminhada; na Patrulha, o diário conta; simulado não conta
     _walkedM += meters;
     if (_walkedM < 10) return;
     final whole = _walkedM.floor();
@@ -646,9 +646,11 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       nowUtc: () => tools.clock.nowUtc,
       highway: assets.noWalk == null ? null : highwayTest(assets.noWalk!, data.travel.highwayTolM / metersPerCell(game.playerLat)),
       access: assets.world == null ? null : accessTest(assets.world!, accessTol),
+      sandbox: () => tools.sandboxed,
     );
     // Com a Patrulha ligada quem coleta é o serviço; o mapa mostra e lê o diário (patrol_controller.dart).
     world.quiet = () => travel.quiet || PatrolController.instance.running;
+    world.sandbox = () => tools.sandboxed;
     _patrol = PatrolHooks(state: session.state, balance: data.patrol, nowUtc: () => tools.clock.nowUtc, onMessage: _toast, onFocus: (m) => _startEncounter(m.toSpawn()));
     _pocket.addListener(_pocketFps);
     PatrolController.instance.addListener(_pocketFps);

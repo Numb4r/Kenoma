@@ -82,7 +82,7 @@ class _PatrolSimState extends State<_PatrolSim> {
       tickS: data.patrol.tickS,
       maxDurationS: data.patrol.maxHoursDefault * 3600,
       clockOffsetS: tools.clock.nowUtc - tools.clock.realNowUtc,
-      sim: PatrolSim(lat: sim.lat, lon: sim.lon, mps: sim.speedMps, dx: _dir.$1, dy: _dir.$2),
+      sim: PatrolSim(lat: sim.lat, lon: sim.lon, mps: sim.speedMps, dx: _dir.$1, dy: _dir.$2, rewards: widget.env.tools.simRewards),
     );
     say(err ?? 'Patrulha simulada ligada: pode bloquear a tela');
   }

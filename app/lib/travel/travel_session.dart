@@ -53,7 +53,13 @@ class TravelSession extends ChangeNotifier {
     required this.nowUtc,
     this.highway,
     this.access,
+    this.sandbox = _never,
   });
+
+  static bool _never() => false;
+
+  /// GPS simulado sem recompensa: a viagem acaba sem baú e sem estatística, como quem dirige.
+  final bool Function() sandbox;
 
   /// Rodovias e vias expressas: fora da rota a pé e de bicicleta. `null`: sem esse dado.
   final bool Function(GhostLine)? highway;
@@ -323,9 +329,12 @@ class TravelSession extends ChangeNotifier {
     final now = nowUtc();
     final trip = _trip;
     final dist = trip?.recordedM ?? 0;
-    state.recordEvent('trip_m', vehicle.name, dist.floor());
+    final sandboxed = sandbox();
+    if (!sandboxed) state.recordEvent('trip_m', vehicle.name, dist.floor());
     final perKm = balance.vehicles[vehicle]!.sparksPerKm;
-    if (!passenger) {
+    if (sandboxed) {
+      outcome = TripOutcome(distanceM: dist, driver: !passenger, marks: List.unmodifiable(tripMarks));
+    } else if (!passenger) {
       outcome = TripOutcome(distanceM: dist, driver: true);
     } else {
       final today = localDay(now);
