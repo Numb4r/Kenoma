@@ -18,11 +18,19 @@ const kFloorSeenSetting = 'map_floor_seen';
 const kFloorSeenEvent = 'map_floor_seen';
 
 class MapLayers {
-  MapLayers({required this.world, this.fallback, this.regions});
+  MapLayers({required this.world, this.fallback, this.regions, this.readUnmetered, this.networkCheckS = 30}) {
+    fallback?.unmetered = () => _unmetered;
+  }
 
   final LayeredWorld world;
   final FallbackService? fallback;
   final RegionManager? regions;
+
+  /// Se a rede de agora é Wi-Fi sem cobrança (`SystemBridge.unmeteredWifi`), lida a cada [networkCheckS] passos.
+  final Future<bool> Function()? readUnmetered;
+  final int networkCheckS;
+  bool _unmetered = false;
+  int _ticks = 0;
 
   /// De onde vem o mapa sob o jogador: o selo do HUD e a fala do Familiar leem daqui.
   final source = ValueNotifier<MapSourceKind>(MapSourceKind.pack);
@@ -34,6 +42,8 @@ class MapLayers {
   /// Um passo por segundo, com a posição do jogador.
   Future<void> tick(double lat, double lon) async {
     source.value = world.sourceAt(lat, lon);
+    final read = readUnmetered;
+    if (read != null && fallback != null && _ticks++ % networkCheckS == 0) _unmetered = await read();
     await Future.wait([if (fallback != null) fallback!.tick(lat, lon), if (regions != null) regions!.tick(lat, lon)]);
   }
 

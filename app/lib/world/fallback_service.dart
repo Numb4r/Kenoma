@@ -89,6 +89,12 @@ class FallbackService {
   final int Function() nowUtc;
   final int Function() realNowUtc;
 
+  /// Rede sem cobrança (Wi-Fi): pré-carrega os blocos à frente, com as mesmas regras de uma consulta por bloco e da espera
+  /// entre consultas. Nos dados móveis, só o bloco do jogador e os seguintes na direção do movimento.
+  bool Function() unmetered = _metered;
+
+  static bool _metered() => false;
+
   /// Velocidade pelo GPS, em m/s, e a direção do movimento em z21 (`-1`, `0` ou `1` por eixo).
   double speedMps = 0;
   (int, int) _dir = (0, 0);
@@ -133,12 +139,32 @@ class FallbackService {
     _dir = moved < _movingMps ? (0, 0) : (dx.abs() >= _axis * d ? dx.sign.toInt() : 0, dy.abs() >= _axis * d ? dy.sign.toInt() : 0);
   }
 
-  /// O bloco do jogador e, em seguida, os vizinhos para onde ele vai, nos que um bloco acrescenta algo.
+  /// O bloco do jogador e, em seguida, os vizinhos para onde ele vai, nos que um bloco acrescenta algo. Com Wi-Fi, depois
+  /// deles, os blocos até `prefetch_blocks` à frente num cone de 90° (parado, os oito em volta), do mais perto ao mais longe.
   List<(int, int)> wanted(double lat, double lon) {
     final (x, y) = latLonToTile(lat, lon, blockZoom);
     final (sx, sy) = _dir;
+    final ahead = <(int, int)>[];
+    if (unmetered()) {
+      final n = balance.prefetchBlocks;
+      for (var dy = -n; dy <= n; dy++) {
+        for (var dx = -n; dx <= n; dx++) {
+          final dot = dx * sx + dy * sy, cross = dx * sy - dy * sx;
+          final take = sx == 0 && sy == 0 ? math.max(dx.abs(), dy.abs()) == 1 : dot > 0 && cross.abs() <= dot;
+          if (take) ahead.add((dx, dy));
+        }
+      }
+      int ring((int, int) d) => math.max(d.$1.abs(), d.$2.abs());
+      ahead.sort((a, b) => ring(a) != ring(b) ? ring(a) - ring(b) : (a.$1 * a.$1 + a.$2 * a.$2) - (b.$1 * b.$1 + b.$2 * b.$2));
+    }
     return [
-      for (final t in {(x, y), if (sx != 0) (x + sx, y), if (sy != 0) (x, y + sy), if (sx != 0 && sy != 0) (x + sx, y + sy)})
+      for (final t in {
+        (x, y),
+        if (sx != 0) (x + sx, y),
+        if (sy != 0) (x, y + sy),
+        if (sx != 0 && sy != 0) (x + sx, y + sy),
+        for (final (dx, dy) in ahead) (x + dx, y + dy),
+      })
         if (world.needsBlock(t.$1, t.$2)) t,
     ];
   }

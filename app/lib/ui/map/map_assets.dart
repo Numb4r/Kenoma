@@ -37,6 +37,7 @@ import '../../world/fallback/block_builder.dart';
 import '../../world/fallback/block_codec.dart';
 import '../../world/map_balance.dart';
 import '../../world/map_fallback_balance.dart';
+import '../../travel/system_bridge.dart';
 import '../../world/map_layers.dart';
 import '../../world/region_map.dart';
 import 'biome_textures.dart';
@@ -187,6 +188,8 @@ Future<MapLayers> openMapLayers({
   return MapLayers(
     world: world,
     regions: regions,
+    readUnmetered: const SystemBridge().unmeteredWifi,
+    networkCheckS: balance.networkCheckS,
     fallback: codec == null
         ? null
         : FallbackService(

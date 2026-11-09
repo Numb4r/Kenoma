@@ -26,6 +26,9 @@ class SystemBridge {
 
   Future<bool> openUrl(String url) => _call('openUrl', url);
 
+  /// A rede de agora é Wi-Fi e sem cobrança: o fallback pré-carrega os blocos à frente. `false` nos dados móveis ou sem plugin.
+  Future<bool> unmeteredWifi() => _call('unmeteredWifi');
+
   /// Se o Android já deu ao Kenoma o acesso às notificações.
   Future<bool> notificationAccess() => _call('notificationAccess');
 

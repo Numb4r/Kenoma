@@ -3,7 +3,7 @@
   "map_fallback": {
     "servers": ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://overpass.private.coffee/api/interpreter"],
     "timeout_s": 150, "min_gap_s": 30, "retry_s": 60, "max_query_speed_kmh": 30, "max_reply_mb": 32,
-    "disk_limit_mb": 64, "memory_blocks": 32, "region_confirm_mb": 10, "floor_grid_cells": 2
+    "disk_limit_mb": 64, "memory_blocks": 32, "region_confirm_mb": 10, "floor_grid_cells": 2, "prefetch_blocks": 2, "network_check_s": 30
   },
   "mark": { "duration_s": 300, "max_active": 3 },
   "behavior": {
