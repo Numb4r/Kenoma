@@ -113,7 +113,7 @@ void main() {
       expect(r.state.progress.xp, 0);
     });
 
-    test('motorista: só a distância gravada', () async {
+    test('motorista: só a distância gravada, nem baú na chegada', () async {
       final r = Rig()..choose(Vehicle.car);
       r.travel.answerPassenger(false);
       expect(r.travel.quiet, isTrue, reason: 'o mundo fica calado');
@@ -131,7 +131,20 @@ void main() {
       expect(r.state.count(spark), 0);
       expect(r.state.settings.containsKey(kChestGivenSetting), isFalse);
       expect(r.state.story.count('trip_m'), greaterThan(2800));
+      expect(r.state.story.count('trip_chest'), 0, reason: 'a chegada não abre baú');
+      expect(r.state.inventory, isEmpty);
       expect(r.state.progress.xp, 0);
+      expect(r.travel.stage, TravelStage.done, reason: 'chegou: a viagem acabou e não rendeu nada');
+    });
+
+    test('motorista de moto também não recebe nada', () async {
+      final r = Rig()..choose(Vehicle.moto);
+      r.travel.answerPassenger(false);
+      r.ecos = [eco(1)];
+      await r.drive();
+      final o = r.travel.outcome!;
+      expect((o.driver, o.chest, o.sparks, o.marks.length), (true, false, 0, 0));
+      expect((r.state.inventory.length, r.state.progress.xp), (0, 0));
     });
 
     test('moto pergunta; ônibus não, e é passageiro', () {
