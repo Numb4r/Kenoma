@@ -1092,6 +1092,7 @@
       "name": "Cinzas do Véu",
       "base": "cloudy",
       "hud": "Cinzas do Véu: nas manchas de cinza nascem Ecos mais fortes",
+      "provisional": "até existir a espécie ou o sistema",
       "icon": [
         "ash_veil"
       ],
@@ -1130,6 +1131,7 @@
       "name": "Procissão na névoa",
       "base": "cloudy",
       "hud": "Procissão na névoa: Espectrais muito mais comuns; no fim do rastro das figuras há um Eco forte",
+      "provisional": "até existir a espécie ou o sistema",
       "icon": [
         "fog",
         "figure"
@@ -1229,6 +1231,7 @@
       "name": "Maré do Véu",
       "base": "cloudy",
       "hud": "Maré do Véu: construções de outra era aparecem no mapa e guardam Ectoplasma",
+      "provisional": "até existir a espécie ou o sistema",
       "icon": [
         "wave_veil"
       ],
@@ -1253,6 +1256,7 @@
       "name": "Sol Negro",
       "base": "cloudy",
       "hud": "Sol Negro: Sombra muito mais comum, Luz menos; as sombras guardam Ectoplasma",
+      "provisional": "até existir a espécie ou o sistema",
       "icon": [
         "sun_black"
       ],
