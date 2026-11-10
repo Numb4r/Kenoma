@@ -56,7 +56,7 @@ class DevTools extends ChangeNotifier {
   bool _simRewards = false;
 
   /// "GPS simulado dá recompensa". Desligado (o padrão), nada que se ganha com o simulador conta para XP, estatísticas ou
-  /// bestiário, no mapa e na Patrulha simulada, e as capturas entram marcadas como debug.
+  /// bestiário nem entra na Bolsa, no mapa e na Patrulha simulada, e as capturas entram marcadas como debug.
   bool get simRewards => _simRewards;
 
   void setSimRewards(bool value) {

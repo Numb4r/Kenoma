@@ -76,7 +76,7 @@ void main() {
         ..write({'k': 'walk', 't': t0, 'm': 300})
         ..write({'k': 'trip', 't': t0, 'm': 900});
       final r = await incorporateJournal(s, file, running: true, nowUtc: t0 + 60);
-      expect((r.sparks, s.count('item.dust.fire')), (1, 1));
+      expect((r.sparks, s.count('item.dust.fire')), (1, 0), reason: 'conta no resumo, mas nada entra na Bolsa');
       expect(s.progress.xp, 0);
       expect((s.story.count('spark'), s.story.count('walk_m'), s.story.count('trip_m')), (0, 0, 0));
     });

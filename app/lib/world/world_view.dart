@@ -328,13 +328,13 @@ class WorldView {
         visible.add(s);
         continue;
       }
-      state.add(s.entryId, s.quantity);
+      if (!sandbox()) state.add(s.entryId, s.quantity); // GPS simulado sem recompensa: nada entra na Bolsa
       state.markDone(s.uid, tUtc);
       _gainXp(state.balance.spark, tUtc);
       _record('spark', s.entryId.replaceFirst('item.dust.', ''), s.quantity);
       collected.add(s);
       onCollected?.call(s);
-      onMessage?.call('+${s.quantity} ${itemName(s.entryId)}${sandbox() ? ' (debug)' : ''}');
+      onMessage?.call('+${s.quantity} ${itemName(s.entryId)}${sandbox() ? ' (debug, fora da Bolsa)' : ''}');
     }
     _inAura
       ..clear()
@@ -410,12 +410,12 @@ class WorldView {
     if (s.isEco && state.markOf(s.uid) != null) return TouchResult.encounter;
     if (!canReach(s)) return TouchResult.tooFar;
     if (s.isEco) return TouchResult.encounter;
-    state.add(s.entryId, s.quantity);
+    if (!sandbox()) state.add(s.entryId, s.quantity); // GPS simulado sem recompensa: nada entra na Bolsa
     state.markDone(s.uid, tUtc);
     _gainXp(state.balance.material, tUtc);
     _record('material', s.entryId, s.quantity);
     spawns = [for (final o in spawns) if (o.uid != s.uid) o];
-    onMessage?.call('+${s.quantity} ${itemName(s.entryId)}${sandbox() ? ' (debug)' : ''}');
+    onMessage?.call('+${s.quantity} ${itemName(s.entryId)}${sandbox() ? ' (debug, fora da Bolsa)' : ''}');
     onCollected?.call(s);
     return TouchResult.collected;
   }
