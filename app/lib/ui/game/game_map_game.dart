@@ -12,6 +12,7 @@ import '../../capture/eco_type.dart';
 import '../../core/astro.dart';
 import '../../core/weather.dart';
 import '../../world/companion.dart';
+import '../../world/creature_wind.dart';
 import '../../core/tiles.dart';
 import '../../world/aura.dart';
 import '../../world/follow_camera.dart';
@@ -117,6 +118,9 @@ class GameMapGame extends FlameGame {
   late final ClimateFx climateFx = ClimateFx(catalog: climateCatalog, balance: climateBalance);
   late final ClimateGround climateGround = ClimateGround(catalog: climateCatalog, visual: visual, roadWidthM: balance.roadWidthM);
   double _climateIn = 0;
+
+  /// O vento nas criaturas (só desenho): inclina, balança e empurra os leves; cai devagar quando o vento passa.
+  late final CreatureWind creatureWind = CreatureWind(climateBalance.creatureWind);
 
   /// Modo bolso: o clima desenha bem menos partículas (o agente da Patrulha liga).
   void setPocket(bool on) => _climate.setPocket(on);
@@ -458,6 +462,7 @@ class GameMapGame extends FlameGame {
     }
     _climate.localHour = DateTime.fromMillisecondsSinceEpoch(nowUtc() * 1000).hour; // só desenho (a geada da manhã)
     _climate.update(dt, Size(size.x, size.y), climateShown(), enabled: rainFx());
+    creatureWind.update(dt, rainFx() ? climateShown().windForce : 0);
     climateFx.update(dt);
     final cw = worldView?.field.climate;
     _climateIn -= dt;
@@ -552,6 +557,9 @@ class GameMapGame extends FlameGame {
         spiritSize: spiritSizePx,
         sparkSize: sparkSize,
         dpr: dpr,
+        wind: creatureWind,
+        windDir: _climate.wind,
+        pxPerM: cam.pixelsPerCell / metersPerCell(_lat),
       );
     }
     if (travelLayer?.hidesPlayer != true) {
@@ -664,7 +672,9 @@ class GameMapGame extends FlameGame {
     var bestD = double.infinity;
     for (final s in w.spawns) {
       final (sx, sy) = cam.cellToScreen(s.x, s.y, size.x, size.y);
-      final d = (Offset(sx, sy) - screen).distance;
+      // O toque vale onde o spawn está desenhado (o vento empurra os leves só no desenho).
+      final push = _climate.wind * (creatureWind.pushM(s, _time) * follow.pixelsPerCell / metersPerCell(_lat));
+      final d = (Offset(sx, sy) + push - screen).distance;
       if (d <= hitRadius(s, ecoSizePx, sparkSizePx, spiritSize: spiritSizePx) && d < bestD) {
         best = s;
         bestD = d;

@@ -3,6 +3,7 @@
 library;
 
 import '../core/weather.dart';
+import '../world/creature_wind.dart' show CreatureWindBalance;
 
 int _color(Object? hex, [int fallback = 0xFFE8E4F4]) {
   if (hex is! String || !hex.startsWith('#')) return fallback;
@@ -214,6 +215,7 @@ class ClimateBalance {
     this.fallMs = 600,
     this.footprintEveryM = 3,
     this.footprintMax = 40,
+    this.creatureWind = const CreatureWindBalance(),
   });
 
   factory ClimateBalance.fromJson(Map<String, dynamic>? j) {
@@ -233,6 +235,7 @@ class ClimateBalance {
       fallMs: d('fall_ms', 600),
       footprintEveryM: d('footprint_every_m', 3),
       footprintMax: (j['footprint_max'] as num?)?.toInt() ?? 40,
+      creatureWind: CreatureWindBalance.fromJson(j['creature_wind'] as Map<String, dynamic>?),
     );
   }
 
@@ -260,4 +263,7 @@ class ClimateBalance {
   /// Pegadas na neve: uma a cada [footprintEveryM] metros, no máximo [footprintMax].
   final double footprintEveryM;
   final int footprintMax;
+
+  /// O vento nas criaturas do mapa (`creature_wind`): inclinação, empurrão dos leves e partículas soltas. Só desenho.
+  final CreatureWindBalance creatureWind;
 }
