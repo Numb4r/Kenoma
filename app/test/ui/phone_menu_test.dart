@@ -193,4 +193,46 @@ void main() {
     expect(find.byKey(const Key('status-weather')), findsNothing);
     expect(find.byKey(const Key('app-radar')), findsNothing);
   });
+
+  testWidgets('um app abre mesmo se o botão que abriu o celular saiu da árvore (HUD reorganizado)', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
+    final show = ValueNotifier(true);
+    final s = state(10)..setSetting('phone_seen_radar', true);
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: ValueListenableBuilder<bool>(
+          valueListenable: show,
+          builder: (_, on, _) => on
+              ? Builder(
+                  builder: (context) => TextButton(
+                    key: const Key('open'),
+                    onPressed: () => showPhoneMenu(
+                      context,
+                      state: s,
+                      data: data,
+                      settings: () => const PhoneScreen(title: 'Ajustes', child: SizedBox()),
+                      radar: () => const PhoneScreen(title: 'Radar', child: SizedBox()),
+                      nowUtc: () => t,
+                      epochId: () => 1,
+                    ),
+                    child: const Text('abrir'),
+                  ),
+                )
+              : const SizedBox(),
+        ),
+      ),
+    ));
+    await tester.tap(find.byKey(const Key('open')));
+    await settle(tester);
+    show.value = false; // o botão do HUD sai da árvore com o celular aberto
+    await settle(tester);
+    await tester.ensureVisible(find.byKey(const Key('app-radar')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('app-radar')));
+    await settle(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('phone-back')), findsOneWidget, reason: 'o Radar abriu por cima do celular');
+  });
 }

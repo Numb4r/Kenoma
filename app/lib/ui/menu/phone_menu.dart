@@ -87,6 +87,10 @@ Future<void> showPhoneMenu(
 }) {
   final status = PhoneStatusSource(nowUtc: nowUtc, lat: lat ?? () => 0, weather: weather);
   phoneStatusSource = status;
+  // Navega pelo contexto da própria folha, vivo enquanto o celular está aberto: o de quem abriu (o botão do HUD) pode já ter
+  // saído da árvore quando o HUD se reorganiza (faixa da Patrulha, corrida), e Navigator.of nele falharia.
+  var sheet = context;
+  NavigatorState nav() => Navigator.of(sheet.mounted ? sheet : context);
 
   void open(String id) {
     final screen = switch (id) {
@@ -101,7 +105,7 @@ Future<void> showPhoneMenu(
         state: state,
         data: data,
         nowUtc: nowUtc,
-        onOpenSettings: () => Navigator.of(context).push(phoneRoute<void>(settings())),
+        onOpenSettings: () => nav().push(phoneRoute<void>(settings())),
       ),
       PhoneAppId.settings => settings(),
       PhoneAppId.routes => routes?.call(),
@@ -110,9 +114,9 @@ Future<void> showPhoneMenu(
       _ => null, // vision
     };
     if (screen == null) {
-      Navigator.of(context).pop();
+      nav().pop();
     } else {
-      Navigator.of(context).push(phoneRoute<void>(screen));
+      nav().push(phoneRoute<void>(screen));
     }
   }
 
@@ -122,7 +126,10 @@ Future<void> showPhoneMenu(
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     elevation: 0,
-    builder: (_) => PhoneSheet(state: state, data: data, status: status, onOpen: open),
+    builder: (sheetContext) {
+      sheet = sheetContext;
+      return PhoneSheet(state: state, data: data, status: status, onOpen: open);
+    },
   );
 }
 
