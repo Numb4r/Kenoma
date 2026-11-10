@@ -180,6 +180,17 @@ class ClimateCover {
     for (var cy = top.floor() - 1; cy <= b.ceil(); cy++) {
       for (var cx = l.floor() - 1; cx <= r.ceil(); cx++) {
         final base = fnv1a64Of3(cx ^ seed, cy, 0x5A0);
+        // Um monte de neve por célula: uma sombra azulada larga, em degraus de pixel, com o lado de cima claro.
+        final dh = fnv1a64Of3(base, 99, 1);
+        final dx = cx + ((dh >>> 40) & 0xffff) / 65536, dy = cy + ((dh >>> 24) & 0xffff) / 65536;
+        final len = (4 + ((dh >>> 8) & 0xff) / 64) / mpc, wid = len * 0.35;
+        final d0 = at(dx, dy);
+        for (var k = -len; k <= len; k += q) {
+          final hw = (wid * math.sqrt(math.max(0, 1 - (k / len) * (k / len))) / q).floor() * q;
+          if (hw <= 0) continue;
+          canvas.drawRect(ui.Rect.fromLTRB(d0.dx + k, d0.dy, d0.dx + k + q, d0.dy + hw), _fill..color = _c(_snowShadow, 0.22 * cover));
+          canvas.drawRect(ui.Rect.fromLTRB(d0.dx + k, d0.dy - hw * 0.6, d0.dx + k + q, d0.dy), _fill..color = _c(_snowLight, 0.3 * cover));
+        }
         final n = per.round();
         for (var k = 0; k < n; k++) {
           final h = fnv1a64Of3(base, k, 7);
@@ -217,12 +228,12 @@ class ClimateCover {
   void _dune(ui.Canvas canvas, ui.Path path, List<ui.Offset> pts, double lv, double w, double q, int color, double alpha) {
     canvas.drawPath(path, _stroke..strokeWidth = w * 1.6..color = _c(color, alpha * 0.25 * lv)..strokeCap = ui.StrokeCap.round);
     canvas.drawPath(path, _stroke..strokeWidth = w * 1.3..color = _c(color, alpha * 0.55 * lv));
-    canvas.drawPath(path, _stroke..strokeWidth = w * (0.5 + 0.5 * lv)..color = _c(color, alpha * lv));
+    canvas.drawPath(path, _stroke..strokeWidth = w * (0.7 + 0.5 * lv)..color = _c(color, alpha * lv));
     _stroke.strokeCap = ui.StrokeCap.square;
     canvas.drawPath(ui.Path()..addPolygon(offsetPolyline(pts, w * 0.22), false), _stroke..strokeWidth = w * 0.3..color = _c(_sandShadow, 0.5 * lv));
     canvas.drawPath(ui.Path()..addPolygon(offsetPolyline(pts, -w * 0.08), false), _stroke..strokeWidth = math.max(q, w * 0.1)..color = _c(_sandLight, 0.8 * lv));
     // Ondulações: riscos curtos de través, claro e sombra lado a lado, a cada ~2 m.
-    _along(pts, w * 0.35, (o, tx, ty) {
+    _along(pts, w * 0.6, (o, tx, ty) {
       final nx = -ty, ny = tx, h = w * 0.35 * lv;
       canvas.drawLine(o - ui.Offset(nx, ny) * h, o + ui.Offset(nx, ny) * h, _stroke..strokeWidth = q..color = _c(_sandLight, 0.6 * lv));
       canvas.drawLine(o - ui.Offset(nx, ny) * h + ui.Offset(tx, ty) * q, o + ui.Offset(nx, ny) * h + ui.Offset(tx, ty) * q, _stroke..color = _c(_sandShadow, 0.5 * lv));

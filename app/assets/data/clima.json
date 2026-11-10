@@ -651,10 +651,10 @@
           "alpha": 0.85,
           "per_window": true,
           "share": {
-            "pedestrian": 0.3,
-            "local": 0.25,
-            "secondary": 0.15,
-            "principal": 0.1
+            "pedestrian": 0.4,
+            "local": 0.4,
+            "secondary": 0.3,
+            "principal": 0.2
           },
           "grow_s": 1800,
           "fade_s": 2400
@@ -699,9 +699,9 @@
           "grow_s": 1200,
           "share": {
             "pedestrian": 0.0,
-            "local": 0.4,
-            "secondary": 0.25,
-            "principal": 0.15
+            "local": 0.65,
+            "secondary": 0.5,
+            "principal": 0.35
           },
           "fade_s": 3600
         }
@@ -1311,8 +1311,8 @@
           "kind": "scatter",
           "shape": "shadow",
           "color": "#e8e4f4",
-          "alpha": 0.3,
-          "per_cell": 2,
+          "alpha": 0.38,
+          "per_cell": 10,
           "grow_s": 600,
           "fade_s": 900
         }
@@ -1892,7 +1892,7 @@
   "procession": {
     "min_figures": 12,
     "max_figures": 20,
-    "spacing_m": 1.6,
+    "spacing_m": 3.0,
     "speed_mps": 0.8,
     "candle_every_m": 6,
     "candle_s": 1800,

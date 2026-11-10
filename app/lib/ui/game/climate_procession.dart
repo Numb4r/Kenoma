@@ -15,35 +15,37 @@ const int _outline = 0xFF1A1424, _flame = 0xFFFFB35A, _flameCore = 0xFFFFF1C2, _
 final _fill = ui.Paint()..isAntiAlias = false;
 final _glow = ui.Paint();
 
-/// Meia largura da túnica em cada uma das 15 linhas (em pixels da figura): capuz em cima, a túnica abrindo para baixo.
-const _halfWidth = [1.0, 2, 3, 3, 3, 3, 3, 3.5, 3.5, 4, 4, 4.5, 4.5, 5, 5];
+/// Meia largura da túnica em cada uma das linhas (em pixels de arte): capuz em cima, a túnica abrindo para baixo.
+const _halfWidth = [1.0, 1.5, 2, 2, 2, 2, 2.5, 2.5, 3, 3];
+const _rows = 10;
 
 /// Uma figura encapuzada com os pés em ([sx], [sy]) (pontos de tela), de [heightPx] de altura. [screenHeading] é a direção
 /// em que ela anda na tela: a vela vai na mão da frente.
 void paintHoodedFigure(ui.Canvas canvas, double sx, double sy, {required double heightPx, required double artPx, required int robe, required int glow, required double alpha, required double flicker, required double screenHeading}) {
-  final u = math.max(artPx * 0.5, (heightPx / 15 / artPx).roundToDouble() * artPx);
-  final h = 15 * u;
+  // Um pixel da figura é um pixel de arte enquanto ela cabe na altura de um passante; de longe (zoom), encolhe junto.
+  final u = math.min(artPx, heightPx / _rows);
+  final h = _rows * u;
   final side = math.cos(screenHeading) >= 0 ? 1.0 : -1.0;
   final top = sy - h;
   // A luz fraca da vela, por baixo de tudo.
-  final hand = ui.Offset(sx + side * 4.5 * u, top + 8 * u);
+  final hand = ui.Offset(sx + side * 3.5 * u, top + 6 * u);
   _glow
     ..color = _c(glow, 0.22 * alpha * (0.85 + 0.15 * flicker))
     ..maskFilter = ui.MaskFilter.blur(ui.BlurStyle.normal, 3 * u);
   canvas.drawCircle(hand.translate(0, -u), 4 * u, _glow);
   // Contorno e túnica.
-  for (var r = 0; r < 15; r++) {
+  for (var r = 0; r < _rows; r++) {
     final hw = _halfWidth[r] * u;
-    canvas.drawRect(ui.Rect.fromLTRB(sx - hw - u, top + r * u - (r == 0 ? u : 0), sx + hw + u, top + (r + 1) * u + (r == 14 ? u : 0)), _fill..color = _c(_outline, alpha));
+    canvas.drawRect(ui.Rect.fromLTRB(sx - hw - u, top + r * u - (r == 0 ? u : 0), sx + hw + u, top + (r + 1) * u + (r == _rows - 1 ? u : 0)), _fill..color = _c(_outline, alpha));
   }
-  for (var r = 0; r < 15; r++) {
+  for (var r = 0; r < _rows; r++) {
     final hw = _halfWidth[r] * u;
-    final shade = r >= 2 && r <= 5 ? 0.82 : (r % 4 == 3 ? 0.9 : 1.0); // o capuz e as dobras da túnica
+    final shade = r >= 1 && r <= 3 ? 0.8 : (r % 3 == 2 ? 0.9 : 1.0); // o capuz e as dobras da túnica
     final col = ui.Color.lerp(const ui.Color(_outline), ui.Color(robe), shade)!;
     canvas.drawRect(ui.Rect.fromLTRB(sx - hw, top + r * u, sx + hw, top + (r + 1) * u), _fill..color = col.withValues(alpha: alpha));
   }
   // O rosto escuro dentro do capuz, virado para onde ela anda.
-  canvas.drawRect(ui.Rect.fromLTWH(sx + (side > 0 ? 0 : -2 * u), top + 3 * u, 2 * u, 2 * u), _fill..color = _c(_outline, alpha));
+  canvas.drawRect(ui.Rect.fromLTWH(sx + (side > 0 ? 0 : -u), top + 2 * u, u, 2 * u), _fill..color = _c(_outline, alpha));
   // A vela na mão.
   canvas.drawRect(ui.Rect.fromLTWH(hand.dx - u / 2, hand.dy - u, u, 2 * u), _fill..color = _c(_wax, alpha));
   canvas.drawRect(ui.Rect.fromLTWH(hand.dx - u / 2, hand.dy - 2 * u - (flicker > 0.6 ? u : 0), u, u), _fill..color = _c(_flame, alpha));

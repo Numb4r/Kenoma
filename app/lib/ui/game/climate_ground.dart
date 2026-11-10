@@ -486,9 +486,9 @@ class ClimateGround {
     for (final (f, sx, sy, a) in near) {
       paintHoodedFigure(canvas, sx, sy, heightPx: figureM * pxPerM, artPx: artPixelDp, robe: v.color, glow: v.glow, alpha: a, flicker: math.sin(t * 9 + f.x * 3), screenHeading: f.heading + cam.rotation);
     }
-    final head = figs.first;
-    placed.add((kind: 'procession', x: head.x, y: head.y));
-    for (final f in figs) {
+    if (near.isEmpty) return;
+    placed.add((kind: 'procession', x: figs.first.x, y: figs.first.y));
+    for (final (f, _, _, _) in near) {
       placed.add((kind: 'procession_figure', x: f.x, y: f.y));
     }
   }

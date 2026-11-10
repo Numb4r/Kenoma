@@ -278,8 +278,8 @@ void main() {
     test('ruas baixas: fixas pela seed, a fração da classe, nunca nas calçadas altas; dunas mudam a cada janela', () {
       final flood = streetCoverOf(catalog.of('deluge'))!, sand = streetCoverOf(catalog.of('sandstorm'))!;
       double share(RoadClass c) => [for (var i = 0; i < 4000; i++) flood.level(seed, (12092, 18513, i), c, 0, 1)].where((l) => l > 0).length / 4000;
-      expect(share(RoadClass.local), closeTo(0.4, 0.03));
-      expect(share(RoadClass.principal), closeTo(0.15, 0.03));
+      expect(share(RoadClass.local), closeTo(0.65, 0.03));
+      expect(share(RoadClass.principal), closeTo(0.35, 0.03));
       expect(share(RoadClass.pedestrian), 0);
       expect(flood.level(seed, (1, 2, 3), RoadClass.local, 5, 1), flood.level(seed, (1, 2, 3), RoadClass.local, 9, 1), reason: 'não muda de janela');
       final w1 = [for (var i = 0; i < 400; i++) sand.level(seed, (1, 2, i), RoadClass.local, 1, 1)];

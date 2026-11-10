@@ -10,9 +10,11 @@ import 'package:kenoma/data/climate_catalog.dart';
 import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/ui/game/climate_ground.dart';
 import 'package:kenoma/ui/game/climate_painter.dart';
+import 'package:kenoma/ui/game/climate_puddle.dart';
 import 'package:kenoma/ui/game/traffic_painter.dart';
 import 'package:kenoma/world/climate_world.dart';
 import 'package:kenoma/world/map_camera.dart';
+import 'package:kenoma/world/procession.dart';
 import 'package:kenoma/world/street_cover.dart';
 import 'package:kenoma/world/veil_traffic.dart';
 import 'package:kenoma/world/visual_map.dart';
@@ -114,6 +116,62 @@ void main() {
       expect(streets(seed), isNotEmpty);
       expect(streets(seed), streets(seed));
       expect(streets(seed + 1), isNot(streets(seed)));
+    });
+  });
+
+  group('formação no tempo', () {
+    final visual = VisualMap(VisualPack.parse(Uint8List.fromList(File('assets/regions/campinas_e0_vis.bin').readAsBytesSync())), cacheTiles: 32);
+    const center = (12092 * 64.0 + 32, 18513 * 64.0 + 32), t0 = 1900000000;
+    Set<String> kinds(String id, double since, {String? prev, double? sinceEnd}) {
+      final g = ClimateGround(catalog: catalog, visual: visual);
+      final c = PlayerClimate(id: prev == null ? id : 'clear', runStartUtc: (t0 - since).round(), prevId: prev, prevStartUtc: t0 - 20000, prevEndUtc: (t0 - (sinceEnd ?? 0)).round());
+      g.paint(ui.Canvas(ui.PictureRecorder()), view, MapCamera(centerX: center.$1, centerY: center.$2, pixelsPerCell: 40), mpc: mpc, exactUtc: t0.toDouble(), seed: 7, shown: catalog.of(prev == null ? id : 'clear'), c: c);
+      return {for (final m in g.placed) m.kind};
+    }
+
+    test('a neve: nada no começo, as ruas só no fim; derretendo, as ruas somem primeiro', () {
+      expect(kinds('snow', 0), isNot(contains('street_snow')));
+      expect(kinds('snow', 600), isNot(contains('street_snow')), reason: 'primeiro o chão e os telhados');
+      expect(kinds('snow', 3600), contains('street_snow'));
+      expect(kinds('clear', 0, prev: 'snow', sinceEnd: 300), contains('street_snow'), reason: 'derretendo');
+      expect(kinds('clear', 0, prev: 'snow', sinceEnd: 3000), isNot(contains('street_snow')));
+      expect(kinds('deluge', 60), contains('street_flood'), reason: 'a água começa a subir');
+      expect(kinds('clear', 0, prev: 'deluge', sinceEnd: 3700), isNot(contains('street_flood')), reason: 'escoou');
+    });
+
+    test('três variantes de poça, de contorno irregular (não é oval), iguais pelo mesmo hash', () {
+      final shapes = [for (var v = 0; v < 3; v++) puddleRows(v, 1234, 12)];
+      expect(shapes[0], isNot(shapes[1]));
+      expect(shapes[1], isNot(shapes[2]));
+      expect(puddleRows(2, 1234, 12), shapes[2]);
+      // Um oval teria as larguras das linhas simétricas e lisas; o contorno irregular quebra a simetria.
+      final rows = shapes[0];
+      final widths = [for (final (_, a, b) in rows) b - a];
+      expect(widths, isNot(widths.reversed.toList()));
+      expect(puddleRows(0, 99, 12), isNot(shapes[0]), reason: 'cada poça com o seu contorno');
+    });
+
+    test('a Procissão: 12 a 20 figuras pela rota e velas no chão por onde passou, até 120 m', () {
+      final e7 = loadEpochs().epochs.firstWhere((e) => e.id == 7).climate!;
+      final piece = e7.def('fog_procession')!.pieces.whereType<ZonePiece>().single;
+      final graph = TrafficGraph(loadTile: visual.tile, cellsPerTile: visual.cellsPerTile, extent: visual.pack.extent, stitch: true);
+      final z = ClimateZone(piece: piece, pieceIndex: 0, index: 0, x0: center.$1, y0: center.$2, headingRad: 1.0, startUtc: t0 - 600, endUtc: t0 + 600, slots: const [], uidBase: 77);
+      final plan = planProcession(graph, z, mpc: mpc)!;
+      final head = plan.figuresAt(t0.toDouble()).first;
+      final g = ClimateGround(catalog: catalog, visual: visual)
+        ..zones = [z]
+        ..processionPlans[z.uidBase] = plan;
+      final cam = MapCamera(centerX: head.x, centerY: head.y, pixelsPerCell: 40, rotation: 0.7);
+      g.paint(ui.Canvas(ui.PictureRecorder()), const ui.Size(411, 914), cam, mpc: mpc, exactUtc: t0.toDouble(), seed: 7, shown: catalog.of('fog_procession'), playerX: head.x, playerY: head.y);
+      final figs = g.placed.where((m) => m.kind == 'procession_figure').length;
+      expect(figs, inInclusiveRange(12, 20));
+      expect(g.placed.where((m) => m.kind == 'candle'), isNotEmpty);
+      // Longe (mais de 120 m), a fila não aparece.
+      final far = ClimateGround(catalog: catalog, visual: visual)
+        ..zones = [z]
+        ..processionPlans[z.uidBase] = plan;
+      far.paint(ui.Canvas(ui.PictureRecorder()), const ui.Size(411, 914), cam, mpc: mpc, exactUtc: t0.toDouble(), seed: 7, shown: catalog.of('fog_procession'), playerX: head.x + 200 / mpc, playerY: head.y);
+      expect(far.placed.where((m) => m.kind == 'procession_figure'), isEmpty);
     });
   });
 

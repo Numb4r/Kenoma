@@ -16,8 +16,8 @@ O que o GDD não define e foi escolhido aqui foi aprovado na revisão da 0.17.0.
 | Limpo (`clear`) | nada | reflexos de sol no chão de dia; poças de chuva anterior secando | reflexos de sol | rastros do Radar duram 1,25× | — |
 | Sol forte (`strong_sun`) | tom lavado | miragens; asfalto tremendo em faixas presas ao chão | miragem | Ecos de Fogo nascem nas miragens | — |
 | Nublado (`cloudy`) | tom cinza | sombras de nuvem andando (antes na tela) | sombra de nuvem | Ecos de Sombra nascem nas sombras (Sombra sem espécie: sem alvo) | — |
-| Garoa (`drizzle`) | gotas finas | poças pequenas nas ruas | poças pequenas | poças pequenas dão água pura | — |
-| Chuva (`rain`) | chuva, tom azul | poças nas ruas; brilho no chão (antes na tela) | poças que crescem, refletem o céu e secam em até 1 h depois | poças dão água pura e fazem nascer Ecos de Água | — |
+| Garoa (`drizzle`) | gotas finas | poças pequenas nas ruas, formando aos poucos | poças pequenas (pixel, três variantes) | poças pequenas dão água pura | — |
+| Chuva (`rain`) | chuva, tom azul | poças nas ruas; brilho no chão (antes na tela) | poças em pixel (redonda, comprida, dois lóbulos), da cor do asfalto mais escura e azulada: pontos molhados que crescem em 30 min, reflexo claro de leve, anéis de gota enquanto chove, secam em até 1 h depois | poças dão água pura e fazem nascer Ecos de Água | — |
 | Tempestade (`storm`) | chuva inclinada, clarão | raio, marca queimada que fica 30 min; poças | marca queimada | Eco carregado no ponto do raio | — |
 | Granizo (`hail`) | pedras quicando | pedrinhas brancas espalhadas no chão | granizo no chão | cristal de gelo coletável (sem o item: água pura) | — |
 | Arco-íris (`rainbow`) | arco no céu | pé do arco brilhando; poças secando | pé do arco | material raro e chance de Feérico (Feérico sem espécie: sem alvo) | — |
@@ -30,10 +30,10 @@ O que o GDD não define e foi escolhido aqui foi aprovado na revisão da 0.17.0.
 | Geada forte (`hard_frost`, novo) | tom frio, sopro | chão branco; poças viram gelo | poças congeladas | cristal de gelo em cada poça congelada; passantes fantasmas mais lentos | — |
 | Trovoada seca (`dry_thunder`, novo) | céu laranja, clarão, sem chuva | raio e brasa no ponto | brasa por 5 min, depois marca queimada | a brasa solta Fagulhas de Fogo por 5 min; Eco carregado como na Tempestade | — |
 | Smog (`smog`, novo) | céu marrom, bordas apagadas | fuligem sobre as avenidas | avenidas escurecidas | zonas de fuligem nas ruas com sucata extra | — |
-| Neve (`snow`) | flocos | neve acumulando primeiro nas ruas pouco usadas; trilhas do tráfego nas avenidas; pegadas | neve nas ruas e pegadas | pegadas do jogador e dos Ecos; seguir pegadas leva ao Eco | events.json / debug |
+| Neve (`snow`) | flocos | pó fino, depois a grama, o chão e os telhados (tudo fora das ruas e da água), por último as ruas (caminhos e locais antes das avenidas); derrete ao contrário; pegadas | branco azulado com sombra, montes e textura de pixel; nas ruas, neve suja com trilhas escuras do tráfego | pegadas do jogador e dos Ecos; seguir pegadas leva ao Eco | events.json / debug |
 | Nevasca (`blizzard`) | neve de lado, véu | neve acumulando 2× mais rápido | neve nas ruas | visão até 40 m, Aura −2 m | events.json / debug |
-| Tempestade de areia (`sandstorm`) | parede de areia | dunas cobrindo parte das ruas; fantasmas mudam de rota | dunas | material escondido na duna só aparece a até 15 m (cavar = chegar perto; não há escavação) | events.json / debug |
-| Dilúvio (`deluge`) | chuva forte | ruas baixas alagadas; carros viram barcos e canoas; passantes só nas calçadas altas | água sobre as ruas baixas | zonas de água com Ecos de Água; tráfego lento | events.json / debug |
+| Tempestade de areia (`sandstorm`) | parede de areia | dunas subindo aos poucos sobre parte das ruas; fantasmas mudam de rota quando a duna já subiu | dunas com crista clara e lado sombreado, ondulações de vento, cor de areia, bordas misturadas com a rua | material escondido na duna só aparece a até 15 m (cavar = chegar perto; não há escavação) | events.json / debug |
+| Dilúvio (`deluge`) | chuva forte | a água sobe nas ruas baixas em 20 min e escoa em 1 h; carros viram barcos e canoas; passantes só nas calçadas altas | água sobre as ruas baixas; as zonas de água crescem de pontos molhados até o raio | zonas de água com Ecos de Água; tráfego lento | events.json / debug |
 | Onda de calor (`heat_wave`) | sol branco | asfalto tremendo em faixas presas ao chão | asfalto tremendo | Fagulhas evaporam em 2 min | events.json / debug |
 | Tornado (`tornado`) | tom escuro, folhas | funil andando (o funil saiu da tela) e trilha de destroços | trilha de destroços | destroços coletáveis pela trilha (sucata e ervas); puxar Fagulhas: sem alvo | events.json / debug |
 | Aurora (`aurora`) | céu ondulando | faixas verdes e violeta no chão | luz da aurora no chão | tolerância da sintonia 1,25× | NOAA: sem fonte (events.json) |
@@ -46,11 +46,11 @@ O que o GDD não define e foi escolhido aqui foi aprovado na revisão da 0.17.0.
 | Estática (`static`) | glitch, pixels | pixels falhando no chão | pixels no chão | sintonia com ruído, menos ao Tecnomante | NOAA: sem fonte (events.json) |
 | Silêncio (`silence`) | cores sem saturação | o tráfego do Véu para no lugar | fantasmas parados (pendente: aguardando vídeo) | Ecos não fogem; Exposição ao Véu: sem alvo | Os Que Escutam (events.json) |
 | Cinzas do Véu (`veil_ash`) | cinza violeta caindo | manchas de cinza violeta | manchas de cinza | nas manchas nascem Ecos de nível +1 a +3 (provisório até existir a espécie ou o sistema: no lugar das Corrompidas) | — |
-| Procissão na névoa (`fog_procession`) | névoa, vinheta | figuras em fila andando pelo chão (antes na tela) | figuras e o rastro delas | visão até 60 m; no fim do rastro nasce um Eco de nível alto (provisório até existir a espécie ou o sistema: Espectral sem espécie) | Finados |
+| Procissão na névoa (`fog_procession`) | névoa, vinheta | fila de 12 a 20 figuras encapuzadas (tamanho de passante, túnica clara com contorno escuro, vela com luz fraca na mão) a 0,8 m/s pelas ruas, numa rota pelo grafo costurado até o Eco do fim; visível até 120 m | velas acesas no chão por onde a fila passou, por 30 min, e a trilha até o Eco | visão até 60 m; no fim do rastro nasce um Eco de nível alto (provisório até existir a espécie ou o sistema: Espectral sem espécie) | Finados |
 | Vento das Fendas (`rift_wind`) | fiapos violeta | riscos violeta no chão na direção do vento | riscos no chão | Fagulhas derivam; apontar a Fenda: sem Fendas | Fenda crescendo: sem Fendas |
 | Céu Invertido (`inverted_sky`) | chuva subindo | sombras de coisas flutuando | sombras flutuando | Fagulhas somem no céu em 3 min | — |
 | Maré do Véu (`veil_tide`) | tom violeta leve | o chão ondula (antes na tela); prédios de outra era | prédios translúcidos | prédios dão Ectoplasma (provisório até existir a espécie ou o sistema); spawns antigos: sem alvo | — |
-| Sol Negro (`black_sun`) | dia escuro | sombras invertidas (antes na tela) | sombras claras no chão | sombras dão Ectoplasma (provisório até existir a espécie ou o sistema); Sombra em dobro: sem alvo | eclipse solar visto do centro da região do clima, parcial conta (ver Eclipses) |
+| Sol Negro (`black_sun`) | dia escuro | sombras invertidas (antes na tela), formando em 10 min | sombras claras no chão (enfeite espalhado e as zonas do mundo, agora claras) | sombras dão Ectoplasma (provisório até existir a espécie ou o sistema); Sombra em dobro: sem alvo | eclipse solar visto do centro da região do clima, parcial conta (ver Eclipses) |
 | Garoa Prismática (`prismatic_drizzle`) | gotas coloridas | poças com reflexo em cores | poças prismáticas | chance de Brilhante 2× | — |
 | Chuva congelante (`freezing_rain`, novo) | gotas brancas | ruas brilhando de gelo; galhos caídos | gelo nas ruas | galhos coletáveis (madeira; sem o item: ervas); carros fantasmas derrapam e andam devagar | events.json / debug |
 | Furacão (`hurricane`, novo) | chuva forte | bandas girando em volta do olho; o olho atravessa o mapa | olho e bandas | dentro do olho nasce um Eco raro; tráfego do Véu mais lento | events.json |
@@ -90,12 +90,41 @@ O Sol Negro e a Lua Carmim não têm mais data fixa: valem só onde o eclipse é
 
 ## Decisões
 
-- **Ruas baixas** (Dilúvio): não há relevo no projeto. Cada rua do pacote visual (tile z15 e índice da linha) é baixa se `hash(seed, tile, linha)` cai abaixo da fração da classe: local 40%, secundária 25%, principal 15%, caminho de pedestre 0% (as calçadas altas). Fixas pela seed: as mesmas ruas alagam em todo Dilúvio.
+- **Ruas baixas** (Dilúvio): não há relevo no projeto. Cada rua do pacote visual (tile z15 e índice da linha) é baixa se `hash(seed, tile, linha)` cai abaixo da fração da classe: local 65%, secundária 50%, principal 35%, caminho de pedestre 0% (as calçadas altas; na 0.17.0 eram 40, 25 e 15%, e numa tela de 60 m quase nada alagava). Fixas pela seed: as mesmas ruas alagam em todo Dilúvio.
 - **Poças**: sem SRTM, os pontos baixos são fixos por célula z17 (`hash(seed, época, célula)`), levados à rua mais próxima pelo mesmo `WalkPaths` dos spawns. Crescem em 30 min de chuva, duram enquanto chove e secam na hora seguinte.
-- **Neve nas ruas**: cobre primeiro os caminhos e as ruas locais, depois as secundárias, por último as principais, onde ficam duas trilhas escuras do tráfego.
-- **Dunas**: por janela de 3 h, um trecho de parte das ruas; os fantasmas não entram em rua com duna.
+- **Neve**: o pacote visual não tem prédios, então "telhado" é tudo que não é rua nem água. A neve cobre primeiro a grama (áreas verdes), depois o chão e os telhados, e só então as ruas: caminhos e locais antes das secundárias e das principais. Nas avenidas ficam duas trilhas escuras do tráfego; nas locais, uma no meio.
+- **Dunas**: dentro da rua sorteada, o trecho da duna cresce do meio para as pontas; os fantasmas só desviam depois de a duna passar de 30%. Frações: caminho e local 40%, secundária 30%, principal 20%.
+- Por janela de 3 h, as dunas mudam de rua.
 - **Barcos**: carro fantasma em rua baixa alagada vira barco (moto vira canoa); passante não nasce nem entra em rua alagada.
 - Cobertura das ruas, barcos, dunas e decoração do chão são só desenho (`clima.json`). Poças, crateras, brasas, olhares, runas e zonas são do mundo (época 7).
+
+## Formação no tempo (0.17.1)
+
+Nada aparece pronto (`app/lib/world/climate_form.dart`). O estado de cada marca é função do tempo desde o começo do clima no lugar (`PlayerClimate.runStartUtc`, o começo da primeira das janelas seguidas com ele) e, depois que ele acaba, desde o fim (`prevEndUtc`, com o clima de antes em `prevId`). Os dois instantes saem do mundo (seed, região e janela): dois aparelhos juntos veem a mesma fase. Os tempos são só desenho, em `clima.json`: `grow_s` e `fade_s` em cada camada `ground` (padrão 15 min e 30 min) e em cada peça desenhada como zona (padrão 20 s).
+
+| Marca | Forma em | Some em | Como |
+| --- | --- | --- | --- |
+| Poças (Chuva, Garoa, Carmim, ácida, Prismática) | 30 min (época 7, `grow_s` da peça) | até 1 h (`dry_s`) | pontos molhados que se juntam e crescem; secando, encolhem |
+| Neve e Nevasca | 1 h e 30 min | 1 h | pó (camada `scatter`, 10 e 5 min), grama, chão e telhados, ruas; derrete ao contrário |
+| Dunas | 30 min | 40 min | o trecho cresce do meio, a duna sobe |
+| Água do Dilúvio | 20 min (ruas), 15 min (zonas) | 1 h (ruas), 15 min (zonas) | a água sobe de borda a borda; zonas de pontos molhados ao raio |
+| Gelo nas ruas (Chuva congelante) | 20 min | 45 min | o brilho cobre a rua aos poucos |
+| Fuligem (Smog) | 30 min (ruas), 10 min (zonas) | 45 min e 10 min | as avenidas escurecem |
+| Geada (Frio, Geada forte) | 30 e 20 min | 30 e 40 min | pontos brancos aparecendo |
+| Cinzas (Fumaça, Cinzas do Véu) | 20 min (enfeite), 10 min (zonas) | 40 min e 10 min | manchas aparecendo |
+| Sombras do Sol Negro | 10 min (enfeite), 5 min (zonas) | 15 min e 5 min | sombras claras aparecendo |
+| Brasas e marcas de raio | já eram no tempo (`glow_s`, `mark_s`) | — | brasa acesa, depois marca queimada que some |
+
+No debug, o clima forçado começa do zero no instante em que é forçado; trocar de clima forçado deixa o anterior secando. "Velocidade do clima" (1×, 10×, 60×; Tempo e mundo) acelera só a formação do clima forçado, neste aparelho (`DebugForce.phase`). O mundo de quem não força nada não muda: a impressão digital do que nasce (Finados de 2027 e uma semana de janeiro) é a mesma da 0.17.0 (`test/world/climate_form_test.dart`).
+
+**Simulação de clima** (debug, Tempo e mundo): passa por todos os climas do `clima.json`, cada um do zero por um tempo configurável (1, 2 ou 5 min de parede; padrão 2 min a 60×). Em cada passo, o clima forma nos primeiros três quartos e no último acaba (vira Limpo) e o que deixou no chão seca. A zona de avisos mostra "SIMULAÇÃO n/N · CLIMA · FASE · 60X". Dá para pular para qualquer clima e repetir o atual. Ligada, nada do que se pega dá recompensa (`DevTools.sandboxed`), como o GPS simulado sem recompensa.
+
+## Procissão (0.17.1)
+
+- **Por que sumia.** Três coisas juntas: (1) a camada do mapa só lia as zonas das células z17 (~290 m) a até um raio da tela (~60 m em volta), e a Procissão anda ~900 m a partir da célula onde nasce, então quase sempre estava fora da leitura quando passava pela tela; (2) cada célula tem uma Procissão de 20 min por janela de 3 h, então forçar o clima no debug caía, em ~9 de cada 10 vezes, num momento sem nenhuma perto; (3) as figuras eram retângulos `#3a3350` com 50% de opacidade, quase invisíveis no mapa escuro e atrás do véu claro da névoa.
+- **Agora.** A leitura do desenho procura as zonas que andam a até 1,1 km e as mantém por 31 min depois do fim (as velas), sem mudar o que o mundo faz nascer. A rota é a do grafo de ruas costurado (`stitch`, o mesmo do Modo Viagem), a pé, do ponto onde a zona nasce até o ponto de rua mais perto de onde nasce o Eco do fim (`app/lib/world/procession.dart`). A frente da fila anda a 0,8 m/s e chega ao fim no instante em que o Eco aparece; se a rota é mais longa que o caminho a 0,8 m/s, a fila sai da névoa já no meio dela. Sem rua perto, a fila anda na reta da zona, como antes. Números no bloco `procession` do `clima.json`.
+- **Épocas até a 7.** O Eco do fim continua no ponto da reta (às vezes fora da rua: a trilha de velas vai do fim da rota até ele) e só existe até o fim da zona (60 s depois de aparecer: o `ttl_s` de 20 min do dado nunca valeu para zonas).
+- **Época 8 (parâmetro para quem monta a época).** `"street_route": true` na peça `procession` do clima `fog_procession`: o Eco do fim nasce no ponto de rua mais perto do fim (o fim da rota e das velas) e fica `spawn.ttl_s` depois de aparecer, mesmo com a zona acabada.
 
 ## Efeitos sem alvo
 

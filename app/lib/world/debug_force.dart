@@ -59,9 +59,9 @@ class DebugForce extends ChangeNotifier {
   double _startC = 0, _prevFormedC = 0, _prevEndC = 0;
   String? _prevId;
 
-  /// O clima forçado [id] começa do zero agora; o de antes passa a secar.
-  void _begin(String? id) {
-    final now = _clock();
+  /// O clima forçado [id] começa do zero agora (ou [agoC] segundos de clima atrás); o de antes passa a secar.
+  void _begin(String? id, [double agoC = 0]) {
+    final now = _clock() - agoC;
     if (_current != null && id != null) {
       _prevId = _current;
       _prevFormedC = now - _startC;
@@ -137,12 +137,11 @@ class DebugForce extends ChangeNotifier {
     final key = (st.index, st.round, st.fading);
     if (key == _simKey) return;
     _simKey = key;
-    if (st.fading) {
-      _begin(ClimateSim.fadeTo); // o clima acaba: o que ele deixou no chão seca
-    } else {
-      _current = null; // o passo novo começa do zero, sem herdar o de antes
-      _begin(st.id);
-    }
+    // Os instantes são os do passo, não os de quando alguém olhou: a fase não depende de quantas vezes o mapa pergunta.
+    final within = st.progress * s.stepS;
+    _current = null; // o passo novo começa do zero, sem herdar o de antes
+    _begin(st.id, within * _speed);
+    if (st.fading) _begin(ClimateSim.fadeTo, (within - ClimateSim.formShare * s.stepS) * _speed); // acabou: o que deixou no chão seca
   }
 
   /// A peça (`lightning`, `hail`, `dust_devil`, `meteor`...) que o próximo toque no mapa dispara ali. `null`: nenhuma.

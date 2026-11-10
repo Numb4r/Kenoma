@@ -94,9 +94,15 @@ ProcessionPlan? planProcession(TrafficGraph graph, ClimateZone z, {required doub
   final p = z.piece;
   final arrive = z.startUtc + (p.slotAt ?? 0.95) * p.durationS;
   final (ex, ey) = z.centerAt(arrive, mpc);
-  final route = findRoute(graph, fromX: z.x0, fromY: z.y0, toX: ex, toY: ey, rules: const RouteRules(RouteProfile.foot), mpc: mpc, snapM: look.snapM, maxNodes: maxNodes);
-  if (route == null || route.offData || route.lengthM < look.spacingM) return null;
+  final route = _onStreets(findRoute(graph, fromX: z.x0, fromY: z.y0, toX: ex, toY: ey, rules: const RouteRules(RouteProfile.foot), mpc: mpc, snapM: look.snapM, maxNodes: maxNodes), mpc);
+  if (route == null || route.lengthM < look.spacingM) return null;
   return ProcessionPlan(route: route, arriveUtc: arrive, startUtc: z.startUtc, endUtc: z.endUtc, figures: processionSize(z.uidBase, look), look: look, ecoX: ex, ecoY: ey, mpc: mpc);
+}
+
+/// A rota sem as duas pontas fora da rua (a busca começa no ponto pedido e termina no destino): só o que está sobre as ruas.
+TravelPath? _onStreets(TravelPath? r, double mpc) {
+  if (r == null || r.offData || r.pointCount < 4) return null;
+  return TravelPath(r.xy.sublist(2, r.xy.length - 2), mpc);
 }
 
 /// A mesma rota de [planProcession] em fatias, devolvendo o controle entre elas (o mapa não trava).
@@ -104,8 +110,8 @@ Future<ProcessionPlan?> planProcessionAsync(TrafficGraph graph, ClimateZone z, {
   final p = z.piece;
   final arrive = z.startUtc + (p.slotAt ?? 0.95) * p.durationS;
   final (ex, ey) = z.centerAt(arrive, mpc);
-  final route = await findRouteAsync(graph, fromX: z.x0, fromY: z.y0, toX: ex, toY: ey, rules: const RouteRules(RouteProfile.foot), mpc: mpc, snapM: look.snapM, maxNodes: maxNodes, sliceNodes: 600);
-  if (route == null || route.offData || route.lengthM < look.spacingM) return null;
+  final route = _onStreets(await findRouteAsync(graph, fromX: z.x0, fromY: z.y0, toX: ex, toY: ey, rules: const RouteRules(RouteProfile.foot), mpc: mpc, snapM: look.snapM, maxNodes: maxNodes, sliceNodes: 600), mpc);
+  if (route == null || route.lengthM < look.spacingM) return null;
   return ProcessionPlan(route: route, arriveUtc: arrive, startUtc: z.startUtc, endUtc: z.endUtc, figures: processionSize(z.uidBase, look), look: look, ecoX: ex, ecoY: ey, mpc: mpc);
 }
 
