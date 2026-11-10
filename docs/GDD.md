@@ -186,7 +186,7 @@ Cada clima interage com o mapa por cinco mecânicas genéricas, combinadas em da
 | Chuva | chuva cheia, ruas brilhando | Água ++, Fogo − | poças: zonas onde nascem Ecos de Água e água pura |
 | Tempestade | chuva forte inclinada, céu escuro | Elétrico ++, Água + | raios: ponto de impacto com clarão, trovão, poeira e marca queimada; às vezes nasce um Eco Elétrico ali |
 | Granizo | pedras de gelo quicando no chão | Terra +, Água + | coletável: pedras de granizo viram cristal de gelo, material raro, por poucos minutos |
-| Arco-íris | arco no céu depois de chuva com sol | Luz ++, Feérico + | o pé do arco é um ponto no mapa com material raro e chance de Feérico |
+| Arco-íris | arco no céu depois de chuva com sol | Luz ++, Feérico + | aparece por sorteio depois de uma chuva e dura pouco; o arco fica fixo no mapa e o pé dele é um ponto com material raro e chance de Feérico, que dá para achar com um item fabricado |
 | Neblina | véu branco nas bordas, vultos ao longe | Espectral ++ | visão dos Ecos cai para 60 m; Espectrais aparecem e somem a até 40 m |
 | Frio | sopro visível, geada nas áreas verdes de manhã | Espectral +, Fogo − | geada guarda pegadas: rastros de Ecos ficam visíveis por mais tempo |
 | Vento | folhas e papéis cruzando a tela | Feérico + | Fagulhas derivam devagar na direção do vento |
@@ -248,16 +248,37 @@ Alguns climas são presos a eventos do jogo:
 
 | Evento | Clima |
 | --- | --- |
-| Lua Carmim | Chuva Carmim |
-| Eclipse real | Sol Negro |
+| Lua Carmim (eclipse lunar total visível da região) | Chuva Carmim |
+| Eclipse solar visível da região, parcial conta | Sol Negro |
 | Fenda crescendo | Vento das Fendas e, perto do colapso, Tempestade de Ecos |
 | Chuva de meteoros do calendário | Chuva de meteoros |
 | Tempestade geomagnética real (NOAA) | Aurora e Estática |
 | Finados | Procissão na névoa |
 | Festa Junina | Chuva de Fagulhas, como fogos |
 | Temporada de panteão | clima próprio do panteão, definido na temporada |
-| Evento de Os Que Escutam | Silêncio ou Vigília |
+| Evento de Os Que Escutam | Silêncio (o tráfego do Véu congela no instante em que ele começa) ou Vigília |
 | Lua cheia muito perto da Terra | Lua Dupla, rara |
+
+O que um clima deixa no chão se forma com o tempo e some com o tempo, nunca aparece pronto: poças crescem durante a chuva, a neve cobre primeiro o chão e os telhados e só depois as ruas, dunas sobem aos poucos, e tudo seca, derrete ou se desfaz depois. O estado de cada marca é função do tempo desde o início do clima, então amigos juntos veem a mesma fase. Os passantes fantasmas se vestem conforme o clima: guarda-chuva e capa na chuva, casaco e cachecol no frio e na neve, roupa leve no calor, máscara na fumaça e no smog.
+
+O clima real e o sorteio cobrem só os climas nativos. Para todo clima de outra região e todo místico aparecer ao menos uma vez por ano, eles entram pelo calendário do Véu, embarcado na época e ajustável pelo feed assinado:
+
+| Quando | Evento | Climas |
+| --- | --- | --- |
+| 1º de janeiro | Ano-Novo | Chuva de Fagulhas, como fogos |
+| Carnaval | Carnaval do Véu | Garoa Prismática |
+| Quarta-feira de Cinzas | Cinzas | Cinzas do Véu |
+| fevereiro e março | Águas do Véu | Dilúvio, Furacão (raro) |
+| 1º de abril | Dia do Avesso | Céu Invertido |
+| equinócios | Noite das Runas | Chuva de Runas |
+| maio | Semana da Fuligem | Chuva ácida, Smog |
+| solstício de inverno | Noite Branca | Neve do Véu |
+| julho | Inverno do Véu | Neve, Nevasca, Chuva congelante |
+| 14 de julho, aniversário de Campinas | Maré da Cidade | Maré do Véu, com a cidade antiga |
+| agosto e setembro | Estação Seca do Véu | Tempestade de areia, Onda de calor, Tornado (raro) |
+| sextas-feiras 13 | Sexta dos Olhos | Vigília |
+| 31 de outubro | Noite Calada | Silêncio |
+| dezembro | Noite Boreal | Aurora, Estática |
 
 ### Eventos
 
@@ -617,7 +638,7 @@ A interface do jogo é o celular do personagem. Toda função nova nasce como ap
 
 ### Rastros e scanner
 
-Criaturas raras deixam rastros que apontam direção aproximada. O scanner tem níveis. No primeiro mostra só pegada e direção, depois tipo elemental, depois Poder e variante, e no topo localização exata e traços passivos antes da sintonia. Encantamentos amplificam temporariamente e gadgets aumentam permanentemente. O Radar é um app do celular com tela de sonar: um pulso parte do Conjurador e volta com ecos. Rastros aparecem como arcos difusos na direção provável, mais estreitos quanto mais perto, e Ocultos a até 60 m como uma distorção que só vira Eco quando o jogador anda até ela. O pulso também corre pelo mapa como uma onda ciano e deixa os rastros marcados por alguns minutos. O rastreador da borda da tela mostra o que o Radar já achou, em vez de ser uma lista separada.
+Criaturas raras deixam rastros que apontam direção aproximada. O scanner tem níveis. No primeiro mostra só pegada e direção, depois tipo elemental, depois Poder e variante, e no topo localização exata e traços passivos antes da sintonia. Encantamentos amplificam temporariamente e gadgets aumentam permanentemente. O Radar é um app do celular com tela de sonar: um pulso parte do Conjurador e volta com ecos. Rastros aparecem como arcos difusos na direção provável, mais estreitos quanto mais perto, e Ocultos a até 60 m como uma distorção que só vira Eco quando o jogador anda até ela. O pulso também corre pelo mapa como uma onda ciano e deixa os rastros marcados por alguns minutos. O Radar não vem no começo: o mentor entrega o app no nível 5. Não há rastreador fixo na borda da tela; depois de um pulso, marcas finas na borda apontam a direção do que foi achado por dois minutos e somem.
 
 ### Escolas de Conjuração
 
