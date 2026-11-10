@@ -1,4 +1,4 @@
-# Auditoria do clima (0.17.0)
+# Auditoria do clima (0.17.1)
 
 Base: `docs/GDD.md`, "Tempo, astronomia e clima" (rev 328), o `assets/data/clima.json` e o bloco `climate` da época 6 em `assets/data/epochs.json`. Cada clima tem duas camadas:
 
@@ -18,9 +18,9 @@ O que o GDD não define e foi escolhido aqui foi aprovado na revisão da 0.17.0.
 | Nublado (`cloudy`) | tom cinza | sombras de nuvem andando (antes na tela) | sombra de nuvem | Ecos de Sombra nascem nas sombras (Sombra sem espécie: sem alvo) | — |
 | Garoa (`drizzle`) | gotas finas | poças pequenas nas ruas | poças pequenas | poças pequenas dão água pura | — |
 | Chuva (`rain`) | chuva, tom azul | poças nas ruas; brilho no chão (antes na tela) | poças que crescem, refletem o céu e secam em até 1 h depois | poças dão água pura e fazem nascer Ecos de Água | — |
-| Tempestade (`storm`) | chuva inclinada, clarão | raio, marca queimada que fica 30 min; poças | marca queimada | Eco carregado no ponto do raio | — |
-| Granizo (`hail`) | pedras quicando | pedrinhas brancas espalhadas no chão | granizo no chão | cristal de gelo coletável (sem o item: água pura) | — |
-| Arco-íris (`rainbow`) | arco no céu | pé do arco brilhando; poças secando | pé do arco | material raro e chance de Feérico (Feérico sem espécie: sem alvo) | — |
+| Tempestade (`storm`) | chuva inclinada, clarão | raio, marca queimada que fica 30 min; poças | marca queimada | Eco carregado no ponto do raio, sem aviso (só a faísca em volta dele no mapa) | — |
+| Granizo (`hail`) | pedras quicando | pedrinhas brancas espalhadas no chão | granizo no chão | cristal de gelo coletável (época 8; até a 7, água pura) | — |
+| Arco-íris (`rainbow`) | só um tom claro (o arco saiu da tela) | da época 8: o arco de pé num ponto do mapa, girando com ele, e o pé brilhando | pé do arco | Fragmento de luz no pé e chance de Feérico (Feérico sem espécie: sem alvo); o Prisma de orvalho aponta o pé | depois da chuva, por sorteio (ver Arco-íris) |
 | Neblina (`fog`) | véu branco nas bordas | vultos parados no chão, longe do jogador (antes na tela) | vultos | visão dos Ecos até 60 m | — |
 | Frio (`cold`) | sopro | geada nas áreas do mapa de manhã | geada (pontos brancos de manhã) | rastros duram 2× | — |
 | Vento (`wind`) | folhas cruzando | folhas paradas no chão | folhas no chão | Fagulhas derivam com o vento | — |
@@ -60,7 +60,7 @@ O que o GDD não define e foi escolhido aqui foi aprovado na revisão da 0.17.0.
 
 ## Eventos que forçam clima
 
-Ordem: o forçado pelo debug, o `events.json` assinado, o calendário da época 7, os eclipses, a astronomia, o sorteio. O app Céu mostra o motivo (`ClimateOutlook`, `app/lib/world/climate_outlook.dart`).
+Ordem: o forçado pelo debug, o `events.json` assinado, o calendário da época (7: datas fixas; 8: mais o calendário do Véu), os eclipses, a astronomia, o sorteio. O app Céu mostra o motivo (`ClimateOutlook`, `app/lib/world/climate_outlook.dart`).
 
 | Evento | Clima | Fonte | Situação |
 | --- | --- | --- | --- |
@@ -87,6 +87,51 @@ O Sol Negro e a Lua Carmim não têm mais data fixa: valem só onde o eclipse é
 - **Precisão.** Contra os programas da NASA com os mesmos elementos, o erro é de até 1 s nos instantes e abaixo de 0,001 na magnitude (`app/test/core/eclipse_test.dart`; tolerância do teste: 1 min e 0,005). Os ΔT são os previstos pelo Canon (75 s em 2026, contra ~69 s medidos): ~2 km na faixa, bem menos que a região.
 - **Vetores.** 2024-04-08 em Dallas: máximo às 18h42 UT, magnitude 1,056 (total); nada em Campinas. 2027-02-06: parcial em Campinas (máximo 16h22 UT, magnitude 0,825) e em quase todo o Brasil; o limite norte passa em Roraima (Boa Vista vê 0,03, o Monte Caburaí já não); nada em Bogotá; em Luanda o Sol se põe eclipsado. Lunar 2029-06-26 visto de Campinas; 2028-12-31, não (Lua abaixo do horizonte).
 - **App Céu.** O motivo traz a hora local (fuso do clima, -3) do máximo visível: "… Máximo às 13h22."
+
+## Calendário do Véu (época 8)
+
+O sorteio e o clima real só trazem os nativos. O calendário do Véu do GDD (rev 333) traz cada clima de outra região e cada místico ao menos uma vez por ano. Mora no bloco `climate.calendar` da época 8 (`epochs.json`), na ordem abaixo: a primeira regra que bate ganha. Tudo pela hora local do meio da janela de 3 h (fuso fixo -3) e pela seed, sem a região: a cidade inteira vê o mesmo. Código: `app/lib/core/veil_calendar.dart`; datas móveis em `app/lib/core/astro.dart`.
+
+| Evento (`id`) | Quando | Clima |
+| --- | --- | --- |
+| Ano-Novo (`ano_novo`) | 1º de janeiro, o dia todo | Chuva de Fagulhas |
+| Carnaval do Véu (`carnaval`) | segunda e terça de Carnaval (Páscoa − 48 e − 47) | Garoa Prismática |
+| Cinzas (`cinzas`) | Quarta-feira de Cinzas (Páscoa − 46) | Cinzas do Véu |
+| Dia do Avesso (`dia_do_avesso`) | 1º de abril | Céu Invertido |
+| Noite das Runas (`runas_marco`, `runas_setembro`) | data local dos equinócios, das 18h à meia-noite | Chuva de Runas |
+| Noite Branca (`noite_branca`) | data local do solstício de junho (inverno do sul), das 18h à meia-noite | Neve do Véu |
+| Maré da Cidade (`mare_da_cidade`) | 14 de julho, aniversário de Campinas | Maré do Véu |
+| Sexta dos Olhos (`sexta_dos_olhos`) | toda sexta-feira 13 | Vigília |
+| Noite Calada (`noite_calada`) | 31 de outubro, das 18h à meia-noite | Silêncio |
+| (da época 7) | Finados, São João, Festa Junina, chuvas de meteoros | como na época 7 |
+| Águas do Véu (`aguas_do_veu`) | fevereiro e março: 3 dias de Dilúvio e 1 de Furacão | Dilúvio, Furacão |
+| Semana da Fuligem (`semana_fuligem`) | maio: 7 dias seguidos, Chuva ácida e Smog alternados pela seed | Chuva ácida, Smog |
+| Inverno do Véu (`inverno_do_veu`) | julho: 2 dias de Neve, 1 de Nevasca, 1 de Chuva congelante | Neve, Nevasca, Chuva congelante |
+| Estação Seca do Véu (`estacao_seca`) | agosto e setembro: 2 dias de Tempestade de areia, 2 de Onda de calor, 1 de Tornado | Tempestade de areia, Onda de calor, Tornado |
+| Noite Boreal (`noite_boreal`) | dezembro: 2 noites de Aurora e 1 de Estática, das 18h à meia-noite | Aurora, Estática |
+
+- **Períodos.** Uma regra com `climates` escolhe, por ano, um dia do período para cada clima da lista (a lista repete o clima para dar mais dias; `consecutive`: dias seguidos). A escolha sai de `hash(seed, ano, id)`: todo clima da lista aparece no ano, o dia muda de ano para ano e é o mesmo em todo aparelho. Os dias de uma regra anterior (Carnaval, Cinzas, 14 de julho, sextas-feiras 13, as noites de meteoros) não entram na escolha, para nenhum período perder o dia dele.
+- **Datas móveis.** Páscoa pelo algoritmo de Meeus/Jones/Butcher. Equinócios e solstícios pelo cap. 27 de Meeus (termos periódicos da tabela 27.C, ΔT de 69 s): erro de cerca de 1 min contra o USNO (teste: 2024 a 2026, tolerância 3 min). A data é a local: o equinócio de 23/09/2026 às 00h05 UTC cai no dia 22 em Campinas.
+- **Feed.** O `events.json` assinado continua passando na frente (`kind: climate`). Para mudar uma data, `kind: calendar_skip` com o `event` desliga a regra no período e um `climate` manda o clima na data nova. A 0.17.0 ignora o `calendar_skip`.
+- **App Céu.** Mostra o próximo evento do calendário (nome, clima, dia e hora locais), sem contar o que já está valendo.
+- **Sem data no calendário.** Sol Negro e Chuva Carmim (eclipses), Vento das Fendas e Tempestade de Ecos (Fendas) e Lua Dupla (lua cheia no perigeu) continuam só pelo evento deles, como no GDD: não aparecem todo ano. Pendente: revisão (se devem ganhar data no calendário).
+- **Teste.** `app/test/core/veil_calendar_test.dart` varre 2030, 2031 e 2033 com três seeds: os 22 outros climas de outra região e místicos aparecem todos.
+
+## Arco-íris (época 8)
+
+- **Quando.** Não sai mais do sorteio da estação (os pesos de `rainbow` e a regra `after` saíram da época 8). Na primeira janela de 3 h sem chuva depois de uma com chuva (`rain`, `storm`, `drizzle`, `hail`), na região do clima (tile z12), nasce um arco com 25% de chance, no começo da janela, e dura de 20 a 40 min. Sorteio por `hash(seed, época, região, janela)`. Com o clima Arco-íris forçado (feed ou debug), vale a janela inteira.
+- **Onde.** O pé fica num ponto da seed a até 400 m do centro da região, levado à rua mais próxima (até 35 m; tenta 8 pontos). É fixo enquanto o arco dura. Os números ficam na peça `rainbow` do clima `rainbow` da época 8 (`chance`, `duration_s`, `within_m`, `after`, `radius_m`): decidem o mundo, então não estão no `balance.json`.
+- **Desenho.** Objeto do mapa (`app/lib/ui/game/rainbow_painter.dart`), entre o chão e os spawns: a base vai de um pé ao outro na direção da seed, gira e dá zoom com o mapa, e a altura sobe na tela. Aparece em 90 s e some nos últimos 5 min. Raio, faixas, cores e esmaecer no `clima.json` (`rainbow_arc`), só desenho. A camada de tela `arc` saiu.
+- **Pé.** Uma zona de 8 m enquanto o arco dura: Fragmento de luz (`item.prism_shard`) e 30% de Feérico (sem espécie: sem alvo).
+- **Prisma de orvalho** (`item.dew_prism`). Bancada: 2 Água pura, 1 Fragmento de luz e 1 Cristal de gelo (`recipe.dew_prism`). No app Céu, "Usar Prisma de orvalho" mostra a distância e o rumo até o pé do arco ativo mais perto (até 6 km) e gasta o prisma; sem arco ativo, não gasta. Código: `app/lib/world/dew_prism.dart`.
+- **Itens novos.** Cristal de gelo (`item.ice_crystal`: granizo e poças da Geada forte) e Fragmento de luz (`item.prism_shard`: pé do arco e, na época 8, as miragens do Sol forte, 25%). Os dois têm `since_epoch: 8` no `items.json`: nas épocas 6 e 7 as peças continuam com o fallback de antes (água pura, Ectoplasma), e o que essas épocas geram não muda.
+- **Debug.** "Efeito do clima no toque" > Arco-íris solta um arco com o pé no ponto tocado; "Ir até o pé do arco-íris" teleporta o GPS simulado até o pé ativo mais perto.
+
+## Raio do debug e céu do HUD
+
+- **Raio aqui** (debug, Tempo e mundo): o próximo toque no mapa faz o raio cair ali, com traço, clarão, trovão, poeira, marca queimada e o Eco carregado. O raio do debug anima mesmo a menos de `strike_min_player_m` do jogador e mesmo tocado no fim de um segundo.
+- **Eco carregado.** Sem aviso nenhum (o toast saiu, e não há notificação nem Chat): ele aparece no mapa com a faísca ciano em volta.
+- **Céu do HUD.** A lua e a segunda lua da Lua Dupla e o Sol Negro moram na faixa logo abaixo dos avisos (`HudLayout.sky`, `app/lib/ui/game/hud_layout.dart`), fora de todas as zonas; o teste de layout confere em 360×800, 412×915 e 480×1000 dp. O arco-íris é do mapa e fica por baixo do HUD, como os Ecos.
 
 ## Decisões
 
