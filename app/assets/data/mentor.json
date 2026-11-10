@@ -74,7 +74,9 @@
     { "id": "ritual_hint_rill", "from": "mentor", "requires": { "event": "ritual_seen_rill", "min": 1 },
       "text": "Wellmirror só se mostra quando a luz da noite está inteira. Água se espelha, mas a raiz bebe até o fundo. Você anda de noite?" },
     { "id": "ritual_first", "from": "familiar", "requires": { "event": "ritual_done", "min": 1 },
-      "text": "*O Familiar anda uma vez em volta do desenho que se fechou, devagar, como quem confere uma costura. Depois se senta no centro, onde a criatura estava. Parece dizer: ainda está quente.*" }
+      "text": "*O Familiar anda uma vez em volta do desenho que se fechou, devagar, como quem confere uma costura. Depois se senta no centro, onde a criatura estava. Parece dizer: ainda está quente.*" },
+    { "id": "radar_gift", "from": "mentor", "requires": { "event": "level_5", "min": 1 },
+      "text": "Cinco. Você já ouve o que está perto. Deixei uma coisa no seu celular: o Radar. Um pulso, e o que está longe responde, por dois minutos, na beira da tela. Depois some. Você acha que só você ouve o pulso?" }
   ],
   "phone_unlock": {
     "radar": "*O Familiar encosta no ícone novo e uma onda fraca sai dele, em círculo. Parece dizer: agora eu alcanço mais longe.*",

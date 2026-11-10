@@ -318,7 +318,7 @@ void main() {
     for (final dp in const [Size(360, 800), Size(412, 915), Size(480, 1000)]) {
       testWidgets('em ${dp.width.round()}×${dp.height.round()} dp, com simulador, bússola, Radar e viagem, nada do HUD cobre outra peça', (tester) async {
         final env = await pumpGame(tester, screen: dp * 2.625);
-        env.game.worldView!.state.levelOverride = 2; // o Radar entra no HUD
+        env.game.worldView!.state.levelOverride = 5; // o Radar entra no HUD
         env.game.dragRotate(0.8); // fora do norte: a bússola aparece
         env.game.touchEnd();
         await tester.tap(find.byType(PhoneButton));
@@ -337,7 +337,6 @@ void main() {
           'retrato': tester.getRect(find.byKey(const Key('portrait-hud'))),
           'celular': tester.getRect(find.byType(PhoneButton)),
           'joystick': tester.getRect(find.byType(Joystick)),
-          'rastreador': env.game.trackerRect!,
         };
         expect(find.byKey(const Key('travel-chip')), findsOneWidget, reason: 'a viagem tem atalho na faixa');
         final names = rects.keys.toList();
@@ -984,9 +983,10 @@ void main() {
       expect(w.state.story.count('hidden_revealed'), greaterThan(0));
     });
 
-    testWidgets('o menu do celular tem o Radar a partir do nível 2', (tester) async {
+    testWidgets('o Radar e o atalho dele no HUD só chegam no nível 5', (tester) async {
       final env = await pumpGame(tester);
-      env.game.worldView!.state.levelOverride = 2;
+      expect(find.byKey(const Key('radar-shortcut')), findsNothing, reason: 'antes do Radar, sem atalho (o atalho no nível 5 está no teste das zonas do HUD)');
+      env.game.worldView!.state.levelOverride = 5;
       await tester.tap(find.byType(PhoneButton));
       await env.settle(10);
       expect(find.text('RADAR'), findsOneWidget);

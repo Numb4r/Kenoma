@@ -214,12 +214,14 @@ class WorldView {
     return sonarEchoes(traces: traces, distortions: distortions, ecoOf: (uid) => byUid[uid], playerX: _px, playerY: _py, metersPerCell: _mpc, balance: street);
   }
 
-  /// O rastreador: o que o Radar achou e os Ecos fora da tela, até [max], a até [trackerM] metros.
-  List<TrackedEco> tracked({required bool Function(WorldSpawn) offScreen, required double trackerM, required int max}) {
-    if (!_hasPlayer) return const [];
+  /// As marcas da borda da tela em [nowUtc]: por `edge_marks_s` depois do último pulso, a direção de cada achado dele que
+  /// não está na tela ([onScreen]). Sem pulso, nenhuma.
+  List<EdgeMark> edgeMarksAt(double nowUtc, {required bool Function(WorldSpawn) onScreen}) {
+    final p = pulse;
+    if (!_hasPlayer || p == null || nowUtc - p.t >= street.edgeMarksS) return const [];
     final byUid = {for (final s in allEcos) s.uid: s};
     final finds = [for (final e in sonar()) if (byUid[e.uid] != null) (eco: byUid[e.uid]!, echo: e)];
-    return trackEcos(spawns: spawns, playerX: _px, playerY: _py, metersPerCell21: _mpc, trackerM: trackerM, offScreen: offScreen, max: max, finds: finds);
+    return edgeMarks(finds: finds, pulseUtc: p.t, nowUtc: nowUtc, showS: street.edgeMarksS, pulseSpeedMps: street.pulseSpeedMps, onScreen: onScreen);
   }
 
   bool inAura(WorldSpawn s) => _hasPlayer && distanceM(s) <= auraRadiusM;

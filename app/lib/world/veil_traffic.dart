@@ -99,6 +99,33 @@ class Ghost {
   double get alpha => switch (phase) { GhostPhase.alive => 1.0, GhostPhase.fadeIn => phaseT, GhostPhase.fadeOut => 1 - phaseT };
 }
 
+/// A roupa do passante conforme o clima (só desenho): acessório por cima do sprite ou troca de paleta.
+enum GhostOutfit { none, umbrella, raincoat, coat, beanie, scarf, light, cap, hat, mask }
+
+/// O que cada grupo de roupa do `clima.json` (`outfit`) veste, com o peso de cada peça.
+const Map<String, List<(GhostOutfit, int)>> outfitWeights = {
+  'rain': [(GhostOutfit.umbrella, 70), (GhostOutfit.raincoat, 25), (GhostOutfit.none, 5)],
+  'cold': [(GhostOutfit.coat, 40), (GhostOutfit.beanie, 30), (GhostOutfit.scarf, 30)],
+  'heat': [(GhostOutfit.light, 40), (GhostOutfit.cap, 35), (GhostOutfit.hat, 25)],
+  'mask': [(GhostOutfit.mask, 85), (GhostOutfit.none, 15)],
+};
+
+final int _saltOutfit = salt('OUTF');
+
+/// A roupa do passante [ghostId] no grupo [group] (`null` ou desconhecido: nenhuma). Sai da identidade do fantasma, então
+/// é a mesma nos dois aparelhos e não muda de um quadro para o outro; cada passante veste uma peça diferente.
+GhostOutfit ghostOutfit(String? group, int ghostId) {
+  final w = outfitWeights[group];
+  if (w == null) return GhostOutfit.none;
+  final total = w.fold(0, (a, e) => a + e.$2);
+  var r = (fnv1a64([ghostId, _saltOutfit]) >>> 32) % total;
+  for (final (o, n) in w) {
+    if (r < n) return o;
+    r -= n;
+  }
+  return GhostOutfit.none;
+}
+
 /// A hora local média do lugar, de 0 a 24: o instante UTC mais a longitude (15° por hora). Determinística: não usa o
 /// fuso do aparelho, então o grupo inteiro vê a mesma hora.
 double localHour(int utcSeconds, double lonDeg) {

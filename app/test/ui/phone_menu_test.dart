@@ -69,7 +69,7 @@ void main() {
 
   test('a tabela vem do balance.json e os ícones são todos de 12 x 12', () {
     expect([for (final a in data.phone.apps) a.id], order);
-    expect({for (final a in data.phone.apps) a.id: a.unlockLevel}, {'vision': 1, 'radar': 2, 'bestiary': 1, 'circle': 1, 'bag': 1, 'bench': 2, 'chat': 2, 'forum': 2, 'profile': 1, 'routes': 1, 'patrol': 1, 'sky': 1, 'settings': 1});
+    expect({for (final a in data.phone.apps) a.id: a.unlockLevel}, {'vision': 1, 'radar': 5, 'bestiary': 1, 'circle': 1, 'bag': 1, 'bench': 2, 'chat': 2, 'forum': 2, 'profile': 1, 'routes': 1, 'patrol': 1, 'sky': 1, 'settings': 1});
     for (final id in order) {
       final art = phoneIconArt[id]!;
       expect(art.length, 12, reason: id);
@@ -83,7 +83,7 @@ void main() {
   });
 
   testWidgets('a grade lista os 13 apps na ordem e todos têm toque de pelo menos 48 dp', (tester) async {
-    await openPhone(tester, state(2)..setSetting('phone_seen_radar', true));
+    await openPhone(tester, state(5)..setSetting('phone_seen_radar', true));
     final pos = <double>[];
     for (final id in order) {
       final f = find.byKey(Key('app-$id'));
@@ -114,7 +114,7 @@ void main() {
   testWidgets('no nível 2 os apps abrem e o botão voltar de cada tela devolve ao celular', (tester) async {
     final s = state(2)..setSetting('phone_seen_radar', true);
     await openPhone(tester, s);
-    for (final id in ['chat', 'forum', 'radar', 'routes', 'patrol', 'sky', 'settings', 'profile']) {
+    for (final id in ['chat', 'forum', 'routes', 'patrol', 'sky', 'settings', 'profile']) {
       await tester.ensureVisible(find.byKey(Key('app-$id'))); // com o balão do Familiar a grade rola
       await tester.pump();
       await tester.tap(find.byKey(Key('app-$id')));
@@ -136,6 +136,23 @@ void main() {
     expect(find.byType(ForumScreen), findsOneWidget);
   });
 
+  testWidgets('o Radar fica bloqueado com ??? até o nível 5 e abre a partir dele', (tester) async {
+    await openPhone(tester, state(4));
+    expect(find.text('???'), findsOneWidget, reason: 'só o Radar ainda não veio');
+    expect(find.text('RADAR'), findsNothing);
+    await tester.tap(find.byKey(const Key('app-radar')));
+    await settle(tester);
+    expect(find.byKey(const Key('phone-back')), findsNothing, reason: 'bloqueado não abre');
+    await closePhone(tester);
+    final s = state(5)..setSetting('phone_seen_radar', true);
+    await tester.pumpWidget(const SizedBox());
+    await openPhone(tester, s);
+    expect(find.text('RADAR'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('app-radar')));
+    await settle(tester);
+    expect(find.byKey(const Key('phone-back')), findsOneWidget);
+  });
+
   testWidgets('a Visão espectral fecha o celular', (tester) async {
     await openPhone(tester, state(1));
     await tester.tap(find.byKey(const Key('app-vision')));
@@ -144,7 +161,7 @@ void main() {
   });
 
   testWidgets('o app novo se forma uma vez, o Familiar comenta e fica marcado como visto', (tester) async {
-    final s = state(2);
+    final s = state(5);
     await openPhone(tester, s);
     expect(find.byKey(const Key('familiar-balloon')), findsOneWidget);
     expect(find.textContaining(data.mentor.phoneUnlock['radar']!), findsOneWidget);

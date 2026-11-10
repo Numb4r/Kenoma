@@ -26,6 +26,7 @@
     },
     "strong_sun": {
       "name": "Sol forte",
+      "outfit": "heat",
       "base": "clear",
       "hud": "Sol forte: Fogo mais comum; miragens no asfalto trazem Ecos de Fogo",
       "icon": [
@@ -67,6 +68,7 @@
     },
     "drizzle": {
       "name": "Garoa",
+      "outfit": "rain",
       "base": "rain",
       "hud": "Garoa: Água mais comum; poças pequenas com água pura",
       "icon": [
@@ -103,6 +105,7 @@
     },
     "rain": {
       "name": "Chuva",
+      "outfit": "rain",
       "base": "rain",
       "hud": "Chuva: Água mais comum, Fogo menos; poças trazem Ecos de Água e água pura",
       "icon": [
@@ -144,6 +147,7 @@
     },
     "storm": {
       "name": "Tempestade",
+      "outfit": "rain",
       "base": "storm",
       "hud": "Tempestade: Elétricos mais comuns; raios caem e às vezes deixam um Eco carregado",
       "icon": [
@@ -286,6 +290,7 @@
     },
     "cold": {
       "name": "Frio",
+      "outfit": "cold",
       "base": "clear",
       "hud": "Frio: Espectrais mais comuns, Fogo menos; rastros do Radar duram mais",
       "icon": [
@@ -330,6 +335,7 @@
     },
     "wind": {
       "name": "Vento",
+      "wind_force": 0.35,
       "base": "clear",
       "hud": "Vento: Feéricos mais comuns; Fagulhas derivam com o vento",
       "icon": [
@@ -368,6 +374,7 @@
     },
     "gale": {
       "name": "Vendaval",
+      "wind_force": 0.65,
       "base": "cloudy",
       "hud": "Vendaval: Feéricos bem mais comuns; papéis voando pelo mapa",
       "icon": [
@@ -461,6 +468,7 @@
     },
     "smoke": {
       "name": "Fumaça de queimada",
+      "outfit": "mask",
       "base": "cloudy",
       "hud": "Fumaça: Fogo mais comum, Planta menos; zonas de cinza trazem Ecos de Fogo",
       "icon": [
@@ -501,6 +509,7 @@
     },
     "snow": {
       "name": "Neve",
+      "outfit": "cold",
       "base": "cloudy",
       "hud": "Neve: Água e Espectrais mais comuns; pegadas na neve levam aos Ecos",
       "icon": [
@@ -556,6 +565,7 @@
     },
     "blizzard": {
       "name": "Nevasca",
+      "outfit": "cold",
       "base": "storm",
       "hud": "Nevasca: Espectrais bem mais comuns; visão de 40 m e Aura menor",
       "icon": [
@@ -709,6 +719,7 @@
     },
     "heat_wave": {
       "name": "Onda de calor",
+      "outfit": "heat",
       "base": "clear",
       "hud": "Onda de calor: Fogo muito mais comum; Fagulhas evaporam em 2 minutos",
       "icon": [
@@ -734,6 +745,7 @@
     },
     "tornado": {
       "name": "Tornado",
+      "wind_force": 0.85,
       "base": "storm",
       "hud": "Tornado: Feéricos mais comuns; o funil deixa uma trilha de destroços coletáveis",
       "icon": [
@@ -809,6 +821,7 @@
     },
     "acid_rain": {
       "name": "Chuva ácida",
+      "outfit": "mask",
       "base": "rain",
       "hud": "Chuva ácida: Metal mais comum; sucata a mais no Urbano",
       "icon": [
@@ -1370,6 +1383,7 @@
     },
     "hard_frost": {
       "name": "Geada forte",
+      "outfit": "cold",
       "base": "clear",
       "hud": "Geada forte: Espectrais mais comuns, Água menos; poças congeladas guardam cristais",
       "icon": [
@@ -1447,6 +1461,7 @@
     },
     "smog": {
       "name": "Smog",
+      "outfit": "mask",
       "base": "cloudy",
       "hud": "Smog: Metal e Digital mais comuns; fuligem nas avenidas com sucata",
       "icon": [
@@ -1483,6 +1498,7 @@
     },
     "freezing_rain": {
       "name": "Chuva congelante",
+      "outfit": "cold",
       "base": "rain",
       "hud": "Chuva congelante: Água e Metal mais comuns; ruas de gelo, galhos caídos e carros derrapando",
       "icon": [
@@ -1540,6 +1556,7 @@
     },
     "hurricane": {
       "name": "Furacão",
+      "wind_force": 1.0,
       "base": "storm",
       "hud": "Furacão: Feéricos e Água muito mais comuns; no olho que cruza o mapa nasce um Eco raro",
       "icon": [
