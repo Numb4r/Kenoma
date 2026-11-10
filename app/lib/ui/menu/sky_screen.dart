@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/astro.dart';
 import '../../data/climate_catalog.dart';
+import '../../world/dew_prism.dart';
 import '../../world/sky_outlook.dart';
 import '../colors.dart';
 import '../game/moon_hud.dart' show MoonPainter, WeatherGlyphPainter;
@@ -19,7 +20,7 @@ const _body = TextStyle(fontSize: 8, color: kText, height: 1.8);
 const _dim = TextStyle(fontSize: 8, color: kDim, height: 1.8);
 
 class SkyScreen extends StatefulWidget {
-  const SkyScreen({required this.nowUtc, required this.lat, required this.catalog, this.shown, this.outlook, this.windows = 6, super.key});
+  const SkyScreen({required this.nowUtc, required this.lat, required this.catalog, this.shown, this.outlook, this.windows = 6, this.nextEvent, this.prisms, this.usePrism, super.key});
 
   final int Function() nowUtc;
 
@@ -34,12 +35,38 @@ class SkyScreen extends StatefulWidget {
   /// Quantas janelas listar, a de agora inclusive.
   final int windows;
 
+  /// O próximo evento do calendário do Véu depois de [nowUtc] (`climate_outlook.dart`, `nextCalendarEvent`).
+  final ({String event, String climate, int startUtc})? Function(int nowUtc)? nextEvent;
+
+  /// Quantos Prismas de orvalho há na bolsa, e usar um (aponta o pé do arco-íris; `null`: nenhum arco, nada gasto).
+  final int Function()? prisms;
+  final PrismReading? Function()? usePrism;
+
   @override
   State<SkyScreen> createState() => _SkyScreenState();
 }
 
 class _SkyScreenState extends State<SkyScreen> {
   Timer? _tick;
+
+  /// O próximo evento, calculado uma vez por janela de 3 h (varre até um ano de janelas).
+  int? _nextAt;
+  ({String event, String climate, int startUtc})? _next;
+
+  /// A última leitura do prisma, ou a frase de quando não havia arco.
+  String? _prism;
+
+  void _usePrism() {
+    final r = widget.usePrism?.call();
+    setState(() => _prism = r == null
+        ? 'O PRISMA FICA CLARO: NENHUM ARCO-ÍRIS AGORA. ELE NÃO SE GASTOU.'
+        : 'O PÉ DO ARCO-ÍRIS ESTÁ A ${r.distanceM.round()} M, PARA O ${compassPoint(r.bearingDeg).toUpperCase()} (${r.bearingDeg.round()}°). O PRISMA SE DESFEZ.');
+  }
+
+  static String _when(int utc) {
+    final d = DateTime.fromMillisecondsSinceEpoch(utc * 1000); // só exibição: o horário do aparelho
+    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')} ÀS ${phoneClock(utc)}';
+  }
 
   @override
   void initState() {
@@ -65,6 +92,13 @@ class _SkyScreenState extends State<SkyScreen> {
     final list = widget.outlook?.call(now, widget.windows) ?? const <SkyWindow>[];
     final shown = widget.shown?.call();
     final active = [for (final w in list.take(1)) if (w.reason != null) w];
+    final window = now ~/ 10800;
+    if (widget.nextEvent != null && _nextAt != window) {
+      _nextAt = window;
+      _next = widget.nextEvent!(now);
+    }
+    final next = _next;
+    final prisms = widget.prisms?.call() ?? 0;
     return ScreenFrame(
       title: 'Céu',
       subtitle: phoneClock(now),
@@ -112,6 +146,24 @@ class _SkyScreenState extends State<SkyScreen> {
                   ),
                 ),
               ]),
+            ),
+        ],
+        if (widget.nextEvent != null) ...[
+          const SectionTitle('Calendário do Véu'),
+          Text(
+            next == null ? 'NENHUM EVENTO NO CALENDÁRIO.' : 'PRÓXIMO: ${next.event.toUpperCase()}, ${next.climate.toUpperCase()}. ${_when(next.startUtc)}.',
+            key: const Key('sky-next-event'),
+            style: _body,
+          ),
+        ],
+        if (widget.usePrism != null && (prisms > 0 || _prism != null)) ...[
+          const SectionTitle('Arco-íris'),
+          if (_prism != null) Text(_prism!, key: const Key('sky-prism-reading'), style: _body.copyWith(color: kSignal)),
+          if (prisms > 0)
+            TextButton(
+              key: const Key('sky-use-prism'),
+              onPressed: _usePrism,
+              child: Text('USAR PRISMA DE ORVALHO ($prisms)', style: _body.copyWith(color: kSignal)),
             ),
         ],
         const SectionTitle('Lua'),

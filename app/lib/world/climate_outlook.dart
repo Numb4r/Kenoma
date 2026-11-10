@@ -91,6 +91,14 @@ ClimateOutlook climateOutlook({required ClimateWorld world, required ClimateCata
   return ClimateOutlook(now: at(start), next: [for (var k = 1; k <= windows; k++) at(start + k * windowS)]);
 }
 
+/// O próximo evento do calendário do Véu (o app Céu): o nome do evento, o do clima e o começo, ou `null` sem calendário.
+({String event, String climate, int startUtc})? nextCalendarEvent({required ClimateWorld world, required ClimateCatalog catalog, required int nowUtc}) {
+  final m = world.schedule.select(nowUtc).epoch.climate;
+  final n = m?.nextCalendar(world.seed, nowUtc, events: world.events);
+  if (n == null) return null;
+  return (event: catalog.events[n.rule.id]?.name ?? n.rule.id, climate: catalog.of(n.climate).name, startUtc: n.startUtc);
+}
+
 /// `14h05`: a hora local (o fuso fixo do modelo do clima, como o resto do clima) de [utc].
 String _localHm(int utc, int offsetH) {
   final d = DateTime.fromMillisecondsSinceEpoch((utc + offsetH * 3600) * 1000, isUtc: true);

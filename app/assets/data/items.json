@@ -22,6 +22,9 @@
     { "id": "item.seal.fire", "name": "Selo de Fogo", "kind": "seal", "tolerance": 0.08, "bonus_vs_type": "plant", "bonus_multiplier": 1.4 },
     { "id": "item.seal.plant", "name": "Selo de Planta", "kind": "seal", "tolerance": 0.08, "bonus_vs_type": "water", "bonus_multiplier": 1.4 },
     { "id": "item.seal.water", "name": "Selo de Água", "kind": "seal", "tolerance": 0.08, "bonus_vs_type": "fire", "bonus_multiplier": 1.4 },
-    { "id": "item.tonic.focus", "name": "Tônico de foco", "kind": "tonic", "extra_time_s": 5 }
+    { "id": "item.tonic.focus", "name": "Tônico de foco", "kind": "tonic", "extra_time_s": 5 },
+    { "id": "item.ice_crystal", "name": "Cristal de gelo", "kind": "material", "since_epoch": 8 },
+    { "id": "item.prism_shard", "name": "Fragmento de luz", "kind": "material", "since_epoch": 8 },
+    { "id": "item.dew_prism", "name": "Prisma de orvalho", "kind": "tool" }
   ]
 }

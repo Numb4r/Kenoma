@@ -14,7 +14,7 @@
   "radar": { "cooldown_s": 120, "radius_m": 60, "trace_range_m": 250, "trace_error_deg": 30, "trace_hide_within_m": 40, "level2_player_level": 5, "hidden_reveal_s": 900, "arc_near_deg": 24, "arc_far_deg": 90, "hidden_resolve_m": 20, "pulse_speed_mps": 125, "trace_show_s": 300, "edge_marks_s": 120 },
   "familiar": { "pickup_bonus_m": 2, "follow_offset_m": 6 },
   "weather": { "rain_particles": 70 },
-  "climate": { "particle_cap": 260, "pocket_rate": 0.2, "flash_ms": 120, "flash_alpha": 0.55, "dim_alpha": 0.18, "bolt_ms": 350, "burn_mark_s": 60, "strike_min_player_m": 15, "flash_max_m": 400, "thunder_max_m": 1000, "fall_ms": 600, "footprint_every_m": 3, "footprint_max": 40,
+  "climate": { "particle_cap": 260, "pocket_rate": 0.2, "flash_ms": 120, "flash_alpha": 0.55, "dim_alpha": 0.18, "bolt_ms": 350, "burn_mark_s": 60, "strike_min_player_m": 15, "flash_max_m": 400, "thunder_max_m": 1000, "fall_ms": 600, "footprint_every_m": 3, "footprint_max": 40, "prism_search_m": 6000,
     "creature_wind": { "lean_deg": 16, "push_m": 4, "light_level": 5, "rise_s": 4, "fall_s": 90, "motes": 3 } },
   "tuning": {
     "progress_up_per_s": 0.2,

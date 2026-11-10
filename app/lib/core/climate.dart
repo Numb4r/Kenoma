@@ -16,6 +16,9 @@ import 'eclipse.dart';
 import 'fnv.dart';
 import 'pcg32.dart';
 import 'tiles.dart';
+import 'veil_calendar.dart';
+
+export 'veil_calendar.dart' show CalendarRule, CalendarAnchor, CalendarHit, VeilCalendar;
 
 /// Sal do sorteio do clima da época 6 (separado do `WTHR` do modelo antigo).
 final int saltClimate = salt('CLM6');
@@ -33,7 +36,9 @@ final int saltWind = salt('WIND6');
 /// eventos do calendário e da astronomia. Fluxos próprios: não tocam em nenhum sorteio da época 6.
 final int saltPuddle = salt('PDL7');
 final int saltPuddleFx = salt('PDLFX7');
-final int saltCalendar = salt('CAL7');
+
+/// Época 8: o arco-íris depois da chuva (se nasce, quanto dura, onde fica o pé), por região e janela.
+final int saltRainbow = salt('RBW8');
 
 /// Categorias do GDD. Só os nativos entram no sorteio; os outros só por evento ou debug.
 enum ClimateCategory { native, otherRegion, mystic }
@@ -183,6 +188,16 @@ sealed class ClimatePiece {
           ecoTracksM: _d(j['eco_tracks_m']),
           traceTimeMult: _d(j['trace_time_mult'], 1),
         ),
+      'rainbow' => RainbowPiece(
+          name,
+          chance: _d(j['chance'], 0.25),
+          durationS: _range(j['duration_s'], (1200, 2400)),
+          withinM: _d(j['within_m'], 400),
+          after: {for (final c in (j['after'] as List<dynamic>?) ?? const []) c as String},
+          radiusM: _d(j['radius_m'], 8),
+          spawn: j['spawn'] == null ? null : PieceSpawn.fromJson(j['spawn'] as Map<String, dynamic>),
+          item: j['item'] == null ? null : PieceItem.fromJson(j['item'] as Map<String, dynamic>),
+        ),
       final other => throw FormatException('peça de clima desconhecida: $other'),
     };
   }
@@ -309,6 +324,61 @@ class TrailsPiece extends ClimatePiece {
   final double traceTimeMult;
 }
 
+/// Época 8: o arco-íris fixo no mapa depois da chuva (ver [ClimateModel.rainbowAt]). O pé é uma zona de [radiusM] com o
+/// que nasce ali ([spawn], [item]) enquanto o arco dura. O desenho e o esmaecer moram no `clima.json` (`rainbow_arc`).
+class RainbowPiece extends ClimatePiece {
+  const RainbowPiece(super.name, {required this.chance, required this.durationS, required this.withinM, required this.after, required this.radiusM, this.spawn, this.item});
+
+  final double chance;
+  final (int, int) durationS;
+
+  /// O pé fica a até isto (metros) do centro da região do clima (tile z12).
+  final double withinM;
+
+  /// Os climas de chuva: o arco nasce na primeira janela sem eles depois de uma com eles.
+  final Set<String> after;
+  final double radiusM;
+  final PieceSpawn? spawn;
+  final PieceItem? item;
+}
+
+/// Um arco-íris: quando, a direção da base (de um pé ao outro, radianos a partir do norte), os candidatos ao ponto do pé
+/// (células z21) e os sorteios do que nasce no pé.
+class RainbowArc {
+  const RainbowArc({required this.piece, required this.startUtc, required this.endUtc, required this.headingRad, required this.spots, required this.slot, required this.uid, this.x, this.y});
+
+  final RainbowPiece piece;
+  final int startUtc, endUtc;
+  final double headingRad;
+  final List<(double, double)> spots;
+  final ({double dx, double dy, double roll, double roll2, double pick}) slot;
+  final int uid;
+
+  /// O pé escolhido (células z21), já na rua. `null`: o primeiro candidato.
+  final double? x, y;
+
+  double get footX => x ?? spots.first.$1;
+  double get footY => y ?? spots.first.$2;
+
+  RainbowArc placed(double x, double y) => RainbowArc(piece: piece, startUtc: startUtc, endUtc: endUtc, headingRad: headingRad, spots: spots, slot: slot, uid: uid, x: x, y: y);
+
+  bool activeAt(num t) => t >= startUtc && t < endUtc;
+
+  /// O pé como zona (o que nasce ali e o brilho no chão), enquanto o arco dura.
+  ClimateZone get foot => ClimateZone(
+        piece: ZonePiece(piece.name, ghost: false, perCell: 1, radiusM: piece.radiusM, durationS: endUtc - startUtc, speedMps: 0, spawn: piece.spawn, item: piece.item),
+        pieceIndex: -2,
+        index: 0,
+        x0: footX,
+        y0: footY,
+        headingRad: headingRad,
+        startUtc: startUtc,
+        endUtc: endUtc,
+        slots: [slot],
+        uidBase: uid,
+      );
+}
+
 class ClimateDef {
   const ClimateDef({required this.id, required this.category, this.spawn = const {}, this.pieces = const []});
 
@@ -357,20 +427,24 @@ class SeasonRule {
 
 /// Um clima forçado por evento (`events.json` assinado): vale nas janelas cujo meio cai em `[startsUtc, endsUtc)`.
 class ClimateEvent {
-  const ClimateEvent({required this.climate, required this.startsUtc, required this.endsUtc, this.id, this.reason});
+  const ClimateEvent({required this.climate, required this.startsUtc, required this.endsUtc, this.id, this.reason, this.skipsCalendar = false});
 
-  /// `null` se a entrada não é de clima ou está malformada: o app antigo e o novo ignoram o que não entendem.
+  /// `null` se a entrada não é de clima ou está malformada: o app antigo e o novo ignoram o que não entendem. Época 8:
+  /// `calendar_skip` desliga a regra `event` do calendário no período (o feed ajusta o calendário do Véu: para mudar a
+  /// data, desliga e manda um `climate` na data nova).
   static ClimateEvent? tryParse(Map<String, dynamic> j) {
     try {
-      if (j['kind'] != 'climate') return null;
+      final skip = j['kind'] == 'calendar_skip';
+      if (j['kind'] != 'climate' && !skip) return null;
       final s = DateTime.parse(j['starts_utc'] as String), e = DateTime.parse(j['ends_utc'] as String);
       if (!s.isUtc || !e.isUtc) return null;
       return ClimateEvent(
-        climate: j['climate'] as String,
+        climate: skip ? '' : j['climate'] as String,
         startsUtc: s.millisecondsSinceEpoch ~/ 1000,
         endsUtc: e.millisecondsSinceEpoch ~/ 1000,
         id: j['event'] as String?,
         reason: j['reason'] as String?,
+        skipsCalendar: skip,
       );
     } catch (_) {
       return null;
@@ -384,6 +458,9 @@ class ClimateEvent {
   /// O evento (`crimson_moon`, `listeners`...: o texto mora no `clima.json`) e a frase do motivo, se o feed mandar.
   final String? id;
   final String? reason;
+
+  /// Não força clima: desliga a regra [id] do calendário em `[startsUtc, endsUtc)`.
+  final bool skipsCalendar;
 }
 
 /// De onde veio o clima de uma janela: o sorteio da estação, o feed assinado, o calendário da época, a astronomia ou o
@@ -402,38 +479,6 @@ class ClimateCause {
 
   /// Eclipses: o instante UTC do máximo visível do lugar, para o motivo do app Céu.
   final int? maxUtc;
-}
-
-/// Época 7: um evento do calendário embarcado. Vale na janela cujo meio (hora local) cai no mês [month], entre os dias
-/// [days] e nas horas [hours] (`[início, fim)`, pode virar a meia-noite); com [chance] < 1, por um sorteio da seed por
-/// janela, o mesmo para a cidade inteira.
-class CalendarRule {
-  const CalendarRule({required this.id, required this.climate, this.month, this.days, this.hours, this.chance = 1});
-
-  factory CalendarRule.fromJson(Map<String, dynamic> j) => CalendarRule(
-        id: j['id'] as String,
-        climate: j['climate'] as String,
-        month: (j['month'] as num?)?.toInt(),
-        days: j['days'] == null ? null : _range(j['days'], (1, 31)),
-        hours: j['hours'] == null ? null : _range(j['hours'], (0, 24)),
-        chance: _d(j['chance'], 1),
-      );
-
-  final String id;
-  final String climate;
-  final int? month;
-  final (int, int)? days;
-  final (int, int)? hours;
-  final double chance;
-
-  bool matches(DateTime local) {
-    if (month != null && local.month != month) return false;
-    final d = days;
-    if (d != null && (local.day < d.$1 || local.day > d.$2)) return false;
-    final h = hours;
-    if (h != null && !(h.$1 <= h.$2 ? local.hour >= h.$1 && local.hour < h.$2 : local.hour >= h.$1 || local.hour < h.$2)) return false;
-    return true;
-  }
 }
 
 /// Época 7: um evento da astronomia. Hoje só a lua cheia muito perto da Terra (Lua Dupla): lua ao menos [fullMin] cheia e a
@@ -555,7 +600,7 @@ class ClimateModel {
         if (defs[id]?.category != ClimateCategory.native) throw FormatException('o sorteio só usa climas nativos: $id');
       }
     }
-    for (final id in [...calendar.map((r) => r.climate), ...astro.map((r) => r.climate), ...eclipses.map((r) => r.climate)]) {
+    for (final id in [...calendar.expand((r) => r.allClimates), ...astro.map((r) => r.climate), ...eclipses.map((r) => r.climate)]) {
       if (!defs.containsKey(id)) throw FormatException('evento com clima desconhecido: $id');
     }
   }
@@ -642,14 +687,13 @@ class ClimateModel {
     final w = windowOf(tUtc);
     final mid = w * windowS + windowS ~/ 2;
     for (final e in events) {
-      if (mid >= e.startsUtc && mid < e.endsUtc && defs.containsKey(e.climate)) return ClimateCause(e.climate, source: ClimateSource.feed, event: e.id, reason: e.reason);
+      if (!e.skipsCalendar && mid >= e.startsUtc && mid < e.endsUtc && defs.containsKey(e.climate)) return ClimateCause(e.climate, source: ClimateSource.feed, event: e.id, reason: e.reason);
     }
     if (calendar.isNotEmpty || astro.isNotEmpty || eclipses.isNotEmpty) {
       final local = DateTime.fromMillisecondsSinceEpoch((mid + localOffsetH * 3600) * 1000, isUtc: true);
       bool roll(String id, double chance) => chance >= 1 || Pcg32(fnv1a64([seed, w, fnv1a64Bytes(id.codeUnits), saltCalendar]), saltKenoma).nextFloat() < chance;
-      for (final r in calendar) {
-        if (r.matches(local) && roll(r.id, r.chance)) return ClimateCause(r.climate, source: ClimateSource.calendar, event: r.id);
-      }
+      final hit = veil.at(seed, w, mid, skipped: _skips(events, mid));
+      if (hit != null) return ClimateCause(hit.climate, source: ClimateSource.calendar, event: hit.rule.id);
       for (final r in eclipses) {
         final v = r.visibleIn(w * windowS, (w + 1) * windowS, rx, ry);
         if (v != null) return ClimateCause(r.climate, source: ClimateSource.astro, event: r.id, maxUtc: v.maxUtc);
@@ -659,6 +703,78 @@ class ClimateModel {
       }
     }
     return ClimateCause(drawn(seed, w, rx, ry));
+  }
+
+  /// O calendário com os dias escolhidos dos períodos (época 8).
+  late final VeilCalendar veil = VeilCalendar(calendar, localOffsetH: localOffsetH);
+
+  static bool Function(String id)? _skips(List<ClimateEvent> events, int mid) {
+    final off = {for (final e in events) if (e.skipsCalendar && mid >= e.startsUtc && mid < e.endsUtc) ?e.id};
+    return off.isEmpty ? null : off.contains;
+  }
+
+  /// O próximo evento do calendário depois da janela de [fromUtc] (o app Céu), até [days] dias à frente: o evento, o clima
+  /// e o começo da primeira janela dele. Um evento que já vale na janela de agora só conta quando volta depois de parar.
+  ({CalendarRule rule, String climate, int startUtc})? nextCalendar(int seed, int fromUtc, {List<ClimateEvent> events = const [], int days = 400}) {
+    final w0 = windowOf(fromUtc);
+    int mid(int w) => w * windowS + windowS ~/ 2;
+    var running = veil.at(seed, w0, mid(w0), skipped: _skips(events, mid(w0)))?.rule.id;
+    for (var w = w0 + 1; w <= w0 + days * 86400 ~/ windowS; w++) {
+      final hit = veil.at(seed, w, mid(w), skipped: _skips(events, mid(w)));
+      if (hit != null && hit.rule.id != running) return (rule: hit.rule, climate: hit.climate, startUtc: w * windowS);
+      running = hit?.rule.id;
+    }
+    return null;
+  }
+
+  /// O clima que tem o arco-íris da época 8 (a peça `rainbow`) e a peça. `null` antes da época 8.
+  late final (String, RainbowPiece)? rainbow = () {
+    for (final d in defs.values) {
+      for (final p in d.pieces) {
+        if (p is RainbowPiece) return (d.id, p);
+      }
+    }
+    return null;
+  }();
+
+  /// Época 8: o arco-íris da região z12 `(rx, ry)` na janela [window]. Nasce no começo de uma janela sem chuva logo depois
+  /// de uma com chuva (`after`), com a chance da peça, e dura o sorteado; numa janela com o próprio clima do arco-íris
+  /// (feed ou debug, [forcedRainbow]) vale a janela inteira, sem sorteio. O pé fica a até `within_m` do centro da região:
+  /// [RainbowArc.spots] são os candidatos, em ordem (quem chama leva o primeiro que cai na rua). `null`: sem arco.
+  RainbowArc? rainbowAt(int seed, int epochId, int rx, int ry, int window, {List<ClimateEvent> events = const [], bool forcedRainbow = false}) {
+    final rb = rainbow;
+    if (rb == null) return null;
+    final (rid, p) = rb;
+    final start = window * windowS;
+    final now = forcedRainbow ? rid : resolve(seed: seed, tUtc: start, rx: rx, ry: ry, events: events).climate;
+    final forced = now == rid;
+    if (!forced && (p.after.contains(now) || !p.after.contains(resolve(seed: seed, tUtc: start - 1, rx: rx, ry: ry, events: events).climate))) return null;
+    final rng = Pcg32(fnv1a64([seed, epochId, rx, ry, window, saltRainbow]), saltKenoma);
+    final u = rng.nextFloat();
+    final (lo, hi) = p.durationS;
+    final dur = lo + rng.nextInt(hi - lo + 1);
+    final heading = rng.nextFloat() * 2 * math.pi;
+    final slot = (dx: 0.0, dy: 0.0, roll: rng.nextFloat(), roll2: rng.nextFloat(), pick: rng.nextFloat());
+    final (lat, _) = tileFractionToLatLon(rx + 0.5, ry + 0.5, 12);
+    final r21 = p.withinM / metersPerCell(lat);
+    final cx = (rx + 0.5) * 512, cy = (ry + 0.5) * 512;
+    final spots = <(double, double)>[
+      for (var k = 0; k < 8; k++)
+        () {
+          final a = rng.nextFloat() * 2 * math.pi, r = math.sqrt(rng.nextFloat()) * r21;
+          return (cx + math.sin(a) * r, cy - math.cos(a) * r);
+        }(),
+    ];
+    if (!forced && u >= p.chance) return null;
+    return RainbowArc(
+      piece: p,
+      startUtc: start,
+      endUtc: forced ? start + windowS : start + dur,
+      headingRad: heading,
+      spots: spots,
+      slot: slot,
+      uid: fnv1a64([seed, epochId, rx, ry, window, saltRainbow, saltClimateUid]),
+    );
   }
 
   ClimateDef? def(String id) => defs[id];

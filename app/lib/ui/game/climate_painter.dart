@@ -1,4 +1,4 @@
-/// O clima no espaço da tela: as camadas do `clima.json` (partículas, tinta, véu nas bordas, arco-íris, aurora, glitch...)
+/// O clima no espaço da tela: as camadas do `clima.json` (partículas, tinta, véu nas bordas, aurora, luas, glitch...)
 /// desenhadas por cima do mapa e por baixo do HUD, cobrindo a tela inteira em qualquer rotação, zoom e proporção (não
 /// dependem da câmera). Só o que cai do céu ou cobre a vista: o que está no chão é do mapa (`climate_ground.dart`). Cada
 /// camada sobe e desce devagar quando o clima muda. Só visual.
@@ -158,8 +158,8 @@ class ClimatePainter {
 
   static final _paint = ui.Paint()..isAntiAlias = false;
 
-  /// Desenha as camadas. [player] é o Conjurador na tela (o sopro do Frio sai dali).
-  void paint(ui.Canvas canvas, ui.Size view, {ui.Offset? player}) {
+  /// Desenha as camadas. [player] é o Conjurador na tela (o sopro do Frio sai dali). [sky]: as vagas do céu no HUD.
+  void paint(ui.Canvas canvas, ui.Size view, {ui.Offset? player, Map<String, ui.Rect> sky = const {}}) {
     for (final p in _pools.values) {
       final l = p.layer;
       final a = l.val('alpha', 0.4) * p.level;
@@ -167,7 +167,7 @@ class ClimatePainter {
       if (l.kind == 'particles') {
         _paintParticles(canvas, p, a);
       } else {
-        paintClimateLayer(canvas, view, l, a, _time, player: player ?? view.center(ui.Offset.zero), reduceFlashes: reduceFlashes);
+        paintClimateLayer(canvas, view, l, a, _time, player: player ?? view.center(ui.Offset.zero), reduceFlashes: reduceFlashes, sky: sky);
       }
     }
   }

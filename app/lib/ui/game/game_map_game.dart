@@ -35,6 +35,7 @@ import 'spawn_painter.dart';
 import 'climate_fx.dart';
 import 'climate_ground.dart';
 import 'climate_painter.dart';
+import 'rainbow_painter.dart';
 import '../../data/climate_catalog.dart';
 import 'street_label_painter.dart';
 import 'trace_painter.dart';
@@ -116,6 +117,9 @@ class GameMapGame extends FlameGame {
   late final ClimateFx climateFx = ClimateFx(catalog: climateCatalog, balance: climateBalance);
   late final ClimateGround climateGround = ClimateGround(
       catalog: climateCatalog, visual: visual, roadWidthM: balance.roadWidthM, artPixelDp: balance.artPixelDp, asphalt: style.asphalt.toARGB32(), figureM: balance.ghostPedestrianM);
+
+  /// O arco-íris de pé no mapa (época 8), entre o chão e os spawns: gira com o mapa.
+  late final RainbowPainter rainbow = RainbowPainter(climateCatalog.rainbowArc);
   double _climateIn = 0;
 
   /// O vento nas criaturas (só desenho): inclina, balança e empurra os leves; cai devagar quando o vento passa.
@@ -420,12 +424,13 @@ class GameMapGame extends FlameGame {
     if (streetNames()) _labels.paint(canvas, view, cam);
     if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
     if (wv != null && _hasFix) _paintClimateGround(canvas, view, cam, wv);
+    if (_hasFix) rainbow.paint(canvas, view, cam, metersPerCell21: metersPerCell(_lat), exactUtc: _exactUtc());
     _paintWorld(canvas, view, cam);
     canvas.restore();
     // O clima da tela por cima do mapa e dos spawns, por baixo do HUD (as marcas do Radar na borda são HUD): cobre a tela toda.
     climateFx.paintSky(canvas, view, cam);
     final (ax, ay) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
-    _climate.paint(canvas, view, player: avatar.hasPosition ? Offset(ax, ay) : null);
+    _climate.paint(canvas, view, player: avatar.hasPosition ? Offset(ax, ay) : null, sky: skyRects);
     final w = worldView;
     if (w != null && avatar.hasPosition && w.pulse != null) {
       final off = ecoSizePx / 2;
@@ -462,6 +467,7 @@ class GameMapGame extends FlameGame {
       final mpc = metersPerCell(_lat);
       climateFx.observe(cw, px: avatar.x, py: avatar.y, metersPerCell21: mpc, exactUtc: _exactUtc());
       climateGround.observe(cw, px: avatar.x, py: avatar.y, radius21: math.sqrt(size.x * size.x + size.y * size.y) / follow.pixelsPerCell, mpc: mpc, t: nowUtc());
+      rainbow.observe(cw, px: avatar.x, py: avatar.y, radius21: math.sqrt(size.x * size.x + size.y * size.y) / follow.pixelsPerCell, metersPerCell21: mpc, t: nowUtc());
       if (c?.playerTrails ?? false) climateFx.noteStep(avatar.x, avatar.y, mpc);
     }
   }
@@ -608,6 +614,9 @@ class GameMapGame extends FlameGame {
     compass.dispose();
     super.onRemove();
   }
+
+  /// As vagas dos elementos do céu (lua, segunda lua, Sol Negro) no HUD (`HudLayout.sky`): fora de todas as zonas.
+  Map<String, Rect> skyRects = const {};
 
   /// Alturas na tela, em pixels lógicos: os metros do mundo (`balance.json`) convertidos pelo zoom de agora e ajustados
   /// a um múltiplo inteiro de pixels físicos por pixel do sprite (nada de pixel mais gordo que o vizinho).

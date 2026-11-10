@@ -169,17 +169,16 @@ class PieceVisual {
   static const fallback = PieceVisual(style: 'zone', color: 0xFF9B7BFF, glow: 0xFF9B7BFF, alpha: 0.25, flash: false);
 }
 
-/// A marca de quem nasce de uma peça (`charged`): o nome, a paleta e o aviso de quando nasce.
+/// A marca de quem nasce de uma peça (`charged`): o nome e a paleta. Sem aviso: o Eco só aparece no mapa.
 class ClimateTag {
-  const ClimateTag({required this.name, required this.tint, this.born});
+  const ClimateTag({required this.name, required this.tint});
 
   final String name;
   final int tint;
-  final String? born;
 }
 
 class ClimateCatalog {
-  const ClimateCatalog({this.climates = const {}, this.pieces = const {}, this.tags = const {}, this.events = const {}, this.reasons = const {}, this.procession = const {}});
+  const ClimateCatalog({this.climates = const {}, this.pieces = const {}, this.tags = const {}, this.events = const {}, this.reasons = const {}, this.rainbowArc = const {}, this.procession = const {}});
 
   factory ClimateCatalog.fromJson(Map<String, dynamic>? j) => j == null
       ? const ClimateCatalog()
@@ -188,13 +187,14 @@ class ClimateCatalog {
           pieces: {for (final e in ((j['pieces'] as Map<String, dynamic>?) ?? const {}).entries) e.key: PieceVisual.fromJson(e.value as Map<String, dynamic>)},
           tags: {
             for (final e in ((j['tags'] as Map<String, dynamic>?) ?? const {}).entries)
-              e.key: ClimateTag(name: (e.value as Map<String, dynamic>)['name'] as String, tint: _color(e.value['tint']), born: e.value['born'] as String?),
+              e.key: ClimateTag(name: (e.value as Map<String, dynamic>)['name'] as String, tint: _color(e.value['tint'])),
           },
           events: {
             for (final e in ((j['events'] as Map<String, dynamic>?) ?? const {}).entries)
               e.key: (name: (e.value as Map<String, dynamic>)['name'] as String, reason: e.value['reason'] as String),
           },
           reasons: {for (final e in ((j['reasons'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as String},
+          rainbowArc: (j['rainbow_arc'] as Map<String, dynamic>?) ?? const {},
           procession: (j['procession'] as Map<String, dynamic>?) ?? const {},
         );
 
@@ -209,6 +209,9 @@ class ClimateCatalog {
   /// `debug`, `feed`).
   final Map<String, ({String name, String reason})> events;
   final Map<String, String> reasons;
+
+  /// O desenho do arco-íris de pé no mapa (época 8): raio, faixas, cores, opacidade e esmaecer (`rainbow_painter.dart`).
+  final Map<String, dynamic> rainbowArc;
 
   /// Os números da fila da Procissão (figuras, espaço, velocidade, velas, alcance): só desenho.
   final Map<String, dynamic> procession;
@@ -236,6 +239,7 @@ class ClimateBalance {
     this.fallMs = 600,
     this.footprintEveryM = 3,
     this.footprintMax = 40,
+    this.prismSearchM = 6000,
     this.creatureWind = const CreatureWindBalance(),
   });
 
@@ -256,6 +260,7 @@ class ClimateBalance {
       fallMs: d('fall_ms', 600),
       footprintEveryM: d('footprint_every_m', 3),
       footprintMax: (j['footprint_max'] as num?)?.toInt() ?? 40,
+      prismSearchM: d('prism_search_m', 6000),
       creatureWind: CreatureWindBalance.fromJson(j['creature_wind'] as Map<String, dynamic>?),
     );
   }
@@ -284,6 +289,9 @@ class ClimateBalance {
   /// Pegadas na neve: uma a cada [footprintEveryM] metros, no máximo [footprintMax].
   final double footprintEveryM;
   final int footprintMax;
+
+  /// Até onde o Prisma de orvalho procura um arco-íris ativo (o do aparelho: decide só se o prisma se gasta).
+  final double prismSearchM;
 
   /// O vento nas criaturas do mapa (`creature_wind`): inclinação, empurrão dos leves e partículas soltas. Só desenho.
   final CreatureWindBalance creatureWind;

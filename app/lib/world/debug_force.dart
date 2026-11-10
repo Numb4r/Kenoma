@@ -147,6 +147,10 @@ class DebugForce extends ChangeNotifier {
   /// A peça (`lightning`, `hail`, `dust_devil`, `meteor`...) que o próximo toque no mapa dispara ali. `null`: nenhuma.
   String? tapEffect;
 
+  /// O pé do arco-íris ativo mais perto do Conjurador (latitude, longitude), posto pelo mapa do jogo enquanto ele está
+  /// aberto: "Ir até o pé do arco-íris" teleporta o GPS simulado até lá. `null`: sem mapa ou sem arco.
+  (double, double)? Function()? rainbowFoot;
+
   /// Gasta o pedido de efeito no toque.
   String? takeTapEffect() {
     final e = tapEffect;

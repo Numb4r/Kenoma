@@ -6,7 +6,9 @@ import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/ui/menu/sky_screen.dart';
 import 'package:kenoma/ui/patrol/patrol_screen.dart';
 import 'package:kenoma/ui/settings/connectivity_section.dart' show kPocketSetting;
+import 'package:kenoma/world/climate_outlook.dart' show nextCalendarEvent;
 import 'package:kenoma/world/climate_world.dart';
+import 'package:kenoma/world/dew_prism.dart';
 import 'package:kenoma/world/sky_outlook.dart';
 
 import '../support/fixtures.dart';
@@ -94,6 +96,41 @@ void main() {
       expect(find.text('TEMPESTADE'), findsOneWidget);
       expect(find.byKey(const Key('sky-event')), findsOneWidget, reason: 'o clima forçado aparece como evento ativo, com o motivo');
       expect(find.textContaining('% ILUMINADA'), findsOneWidget);
+    });
+
+    testWidgets('o Céu mostra o próximo evento do calendário do Véu e usa o Prisma de orvalho', (tester) async {
+      await tall(tester);
+      final e8 = loadEpochs().epochs.firstWhere((e) => e.id == 8);
+      final t = DateTime.utc(2030, 7, 13, 15).millisecondsSinceEpoch ~/ 1000; // véspera da Maré da Cidade
+      var prisms = 2;
+      final readings = <PrismReading?>[null, (bearingDeg: 45.0, distanceM: 320.0)];
+      await tester.pumpWidget(MaterialApp(
+        home: SkyScreen(
+          nowUtc: () => t,
+          lat: () => -22.8,
+          catalog: data.climates,
+          shown: () => data.climates.of('clear'),
+          outlook: cellSkyOutlook(world(), lat: () => -22.8174, lon: () => -47.0697),
+          nextEvent: (now) => nextCalendarEvent(world: world(), catalog: data.climates, nowUtc: now),
+          prisms: () => prisms,
+          usePrism: () {
+            final r = readings.removeAt(0);
+            if (r != null) prisms--;
+            return r;
+          },
+        ),
+      ));
+      await tester.pump();
+      expect(t, greaterThan(e8.startsUtc));
+      expect(find.textContaining('MARÉ DA CIDADE, MARÉ DO VÉU'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('sky-use-prism')));
+      await tester.pump();
+      expect(find.textContaining('NENHUM ARCO-ÍRIS AGORA'), findsOneWidget);
+      expect(find.text('USAR PRISMA DE ORVALHO (2)'), findsOneWidget, reason: 'sem arco, não gasta');
+      await tester.tap(find.byKey(const Key('sky-use-prism')));
+      await tester.pump();
+      expect(find.textContaining('320 M, PARA O NORDESTE (45°)'), findsOneWidget);
+      expect(find.text('USAR PRISMA DE ORVALHO (1)'), findsOneWidget);
     });
 
     testWidgets('sem a Rua viva o Céu mostra só a lua', (tester) async {

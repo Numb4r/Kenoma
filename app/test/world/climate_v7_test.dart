@@ -67,6 +67,7 @@ void main() {
         schedule: loadEpochs(),
         speciesOfType: data.ecoOfType,
         itemExists: data.itemNames.containsKey,
+        itemSince: (id) => data.itemSinceEpoch[id],
         snapper: WalkPaths(visual),
         forced: () => forced,
       )..events = events;
@@ -79,6 +80,22 @@ void main() {
       expect(climateFingerprint(e6.climate!, seed, 6), _e6ClimateBehavior);
       expect(e6.climate!.calendar, isEmpty, reason: 'a época 6 não tem calendário nem astronomia');
       expect(e6.climate!.astro, isEmpty);
+    });
+
+    test('o clima da época 7 gera exatamente o mesmo de antes da 0.17.1: dado, peças e um ano de calendário, eclipses e astronomia', () {
+      final json = (epochsJson()['epochs'] as List<dynamic>).cast<Map<String, dynamic>>().firstWhere((e) => e['id'] == 7);
+      expect(fnv1a64Bytes(utf8.encode(jsonEncode(json['climate']))), _e7ClimateJson);
+      final m = e7.climate!;
+      expect(climateFingerprint(m, seed, 7), _e7ClimateBehavior);
+      final year = [
+        for (var w = utc(2026, 11, 10) ~/ m.windowS; w < utc(2027, 11, 10) ~/ m.windowS; w++)
+          for (final (rx, ry) in [(1514, 2315), (1515, 2316)])
+            fnv1a64Bytes(utf8.encode(() {
+              final c = m.resolve(seed: seed, tUtc: w * m.windowS, rx: rx, ry: ry);
+              return '${c.climate}/${c.source.name}/${c.event}/${c.maxUtc}';
+            }())),
+      ];
+      expect(fnv1a64(year), _e7ResolveYear);
     });
 
     test('a época 7 copia a 6 (pacotes, spawns, caminhos) e só muda o clima; começa depois da 6', () {
@@ -138,13 +155,13 @@ void main() {
       expect(born(rain + 10800 + 3000), isNot(contains('item.pure_water')), reason: 'quase seca: sem água');
     });
 
-    test('na Geada forte as poças viram gelo inteiro, com cristal (sem o item: água pura)', () {
+    test('na Geada forte as poças viram gelo inteiro, com cristal (na época 7 o cristal ainda não existe: água pura)', () {
       final a = device(forced: 'hard_frost');
       final t = e7.startsUtc + 30 * 86400;
       final ps = a.puddlesNear(x21, y21, 40, t);
       expect(ps, isNotEmpty);
       expect(ps.every((p) => p.frozen && p.size == 1), isTrue);
-      expect(data.itemNames.containsKey('item.ice_crystal'), isFalse);
+      expect(data.itemSinceEpoch['item.ice_crystal'], 8, reason: 'o cristal nasceu na 0.17.1, com a época 8');
       final items = {for (final s in a.extras(x21: x21, y21: y21, radiusM: 400, t: t, metersPerCell21: mpc, levelOf: (id, add, uid) => 3)) s.entryId};
       expect(items, contains('item.pure_water'));
       expect(a.modsAt(x21, y21, t).walkerMult, 0.6, reason: 'passantes mais lentos no gelo');
@@ -366,3 +383,8 @@ void main() {
 /// o `climate.dart` da 0.16.0.
 const int _e6ClimateJson = -7022951198357737936;
 const int _e6ClimateBehavior = -784045845125105133;
+
+/// Tirados com o bloco `climate` da época 7 publicado na 0.17.0 (commit f24155a), com o `climate.dart` dessa versão.
+const int _e7ClimateJson = 7839597196110545926;
+const int _e7ClimateBehavior = -4745010646301111484;
+const int _e7ResolveYear = 1956781955064653655;

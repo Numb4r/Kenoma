@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/ui/game/climate_layers.dart' show screenLayerKinds;
 import 'package:kenoma/ui/game/hud_layout.dart';
 
 void main() {
@@ -30,6 +31,30 @@ void main() {
         }
       }
     }
+  });
+
+  test('os elementos do céu (lua, segunda lua da Lua Dupla, Sol Negro) ficam fora de todas as zonas do HUD, nos três tamanhos', () {
+    for (final s in sizes) {
+      for (final insets in const [(0.0, 0.0), (24.0, 48.0)]) {
+        for (var bits = 0; bits < 16; bits++) {
+          final l = hudLayout(s, top: insets.$1, bottom: insets.$2, trackerMax: 4, marks: 9, shortcuts: bits & 1 != 0, compass: bits & 2 != 0, radar: bits & 4 != 0, simulator: bits & 8 != 0);
+          final why = '$s insets $insets bits $bits';
+          expect(l.sky.keys, unorderedEquals(['moon', 'moon2', 'black_sun']));
+          final sky = l.sky.entries.toList();
+          for (final (i, e) in sky.indexed) {
+            expect(e.value.left >= 0 && e.value.top >= 0 && e.value.right <= s.width && e.value.bottom <= s.height, isTrue, reason: '$why: ${e.key} fora da tela');
+            for (final z in l.all.entries) {
+              expect(e.value.intersect(z.value).isEmpty, isTrue, reason: '$why: ${e.key} ${e.value} fica embaixo de ${z.key} ${z.value}');
+            }
+            for (final o in sky.skip(i + 1)) {
+              expect(e.value.intersect(o.value).isEmpty, isTrue, reason: '$why: ${e.key} cobre ${o.key}');
+            }
+          }
+        }
+      }
+    }
+    // O arco-íris não é mais da tela: é um objeto do mapa, desenhado por baixo do HUD (`rainbow_painter.dart`).
+    expect(screenLayerKinds, isNot(contains('arc')));
   });
 
   test('as zonas ficam onde o pedido diz: bússola abaixo da barra à direita, faixa logo acima do celular, Radar acima do rastreador', () {

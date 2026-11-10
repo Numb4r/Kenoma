@@ -53,6 +53,7 @@ class GameData {
     required this.tuning,
     required this.schedule,
     required this.itemNames,
+    this.itemSinceEpoch = const {},
     required this.startInventory,
     required this.recipes,
     required this.progress,
@@ -128,6 +129,10 @@ class GameData {
         progress: ProgressBalance(balance),
         schedule: EpochSchedule.fromJson(epochs),
         itemNames: {for (final i in items['items'] as List<dynamic>) (i as Map<String, dynamic>)['id'] as String: i['name'] as String},
+        itemSinceEpoch: {
+          for (final i in items['items'] as List<dynamic>)
+            if ((i as Map<String, dynamic>)['since_epoch'] case final num e) i['id'] as String: e.toInt(),
+        },
         startInventory: {for (final e in (balance['start_inventory'] as Map<String, dynamic>).entries) e.key: e.value as int},
         recipes: {
           for (final r in recipes['recipes'] as List<dynamic>)
@@ -150,6 +155,10 @@ class GameData {
   final TuningData tuning;
   final EpochSchedule schedule;
   final Map<String, String> itemNames;
+
+  /// A primeira época em que o item existe para o mundo (`since_epoch`): as peças do clima de épocas anteriores seguem
+  /// com o fallback de antes, e o item não muda o que uma época publicada gera.
+  final Map<String, int> itemSinceEpoch;
   final Map<String, int> startInventory;
   final Map<String, Recipe> recipes;
 

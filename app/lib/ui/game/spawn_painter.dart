@@ -102,6 +102,7 @@ void paintSpawns(
       }
       if (blow) _motes(canvas, center, wind.motes(s.uid, time), windDir, size, _moteColor(s, typeOf));
       if (s.behavior != EcoBehavior.passive) _behaviorIcon(canvas, center, s.behavior, size);
+      if (s.tag == 'charged') _chargedSparks(canvas, center, size, time + s.uid % 5);
       if (marked?.call(s) ?? false) _markRing(canvas, center, size);
     } else if (s.isSpark) {
       _leaning(canvas, center.translate(0, sparkSize / 2), lean, () => _spark(canvas, center, spawnColor(s, typeOf), sparkSize, dpr, near, time + s.uid % 7));
@@ -171,6 +172,17 @@ void _behaviorIcon(ui.Canvas canvas, ui.Offset c, EcoBehavior b, double size) {
       canvas.drawRect(ui.Rect.fromLTWH(o.dx - 1, o.dy - 1, 2, 2), _flat..color = kText);
     case EcoBehavior.passive:
       break;
+  }
+}
+
+/// A faísca em volta do Eco carregado do raio: três pontos ciano girando e piscando. É o único aviso dele.
+void _chargedSparks(ui.Canvas canvas, ui.Offset c, double size, double time) {
+  for (var i = 0; i < 3; i++) {
+    final a = time * 2.4 + i * 2.094;
+    if (math.sin(time * 9 + i * 1.7) < -0.3) continue; // pisca
+    final p = c.translate(math.cos(a) * size * 0.5, math.sin(a) * size * 0.3 - size * 0.15);
+    canvas.drawRect(ui.Rect.fromCenter(center: p, width: 3, height: 3), _flat..color = kSignal);
+    canvas.drawRect(ui.Rect.fromCenter(center: p, width: 1, height: 5), _flat..color = kText);
   }
 }
 

@@ -5,7 +5,10 @@
 ///
 /// O raio a menos de [ClimateBalance.strikeMinPlayerM] do jogador não aparece para ele: o sorteio é do mundo e não pode
 /// depender de onde cada um está, então quem está perto demais simplesmente não vê esse raio (o Eco que nasce ali continua
-/// lá, igual para todos).
+/// lá, igual para todos). O raio do debug ("Raio aqui", no toque) cai mesmo do lado do jogador.
+///
+/// O Eco carregado que nasce do raio não tem aviso (nem toast, nem notificação, nem Chat): ele só aparece no mapa, com a
+/// faísca em volta.
 library;
 
 import 'dart:math' as math;
@@ -48,9 +51,6 @@ class ClimateFx {
   /// O trovão: chamado com a distância (m) quando o raio cai; quem chama atrasa o som pela distância.
   void Function(double distM)? onThunder;
 
-  /// Uma peça fez nascer um Eco aqui perto (o Eco carregado do raio): a tela avisa.
-  void Function(ClimateDrop drop)? onEcoBorn;
-
   /// Reduzir clarões: o clarão vira um escurecimento leve e o impacto não treme a tela.
   bool reduceFlashes = false;
 
@@ -75,10 +75,11 @@ class ClimateFx {
     final now = exactUtc.floor();
     for (final d in world.dropsNear(px, py, balance.thunderMaxM / metersPerCell21, now - 2, now)) {
       if (!_seen.add(d.uid)) continue;
-      if (!strikeVisibleFor(d, px, py, metersPerCell21, balance.strikeMinPlayerM)) continue;
+      final debug = d.pieceIndex < 0; // tocado no debug: só neste aparelho, cai onde o dedo tocou e anima inteiro
+      if (!debug && !strikeVisibleFor(d, px, py, metersPerCell21, balance.strikeMinPlayerM)) continue;
       final dist = math.sqrt((d.x - px) * (d.x - px) + (d.y - py) * (d.y - py)) * metersPerCell21;
       final v = catalog.piece(d.piece.name);
-      final s = _Strike(d, v, dist)..age = (exactUtc - d.tUtc).clamp(0.0, 2.0);
+      final s = _Strike(d, v, dist)..age = debug ? 0 : (exactUtc - d.tUtc).clamp(0.0, 2.0);
       if (s.age > 1.0) continue; // chegou atrasado (o app estava fechado): não anima
       for (var i = 0; i < 9; i++) {
         s.bolt.add(_next() - 0.5);
@@ -88,8 +89,6 @@ class ClimateFx {
         if (v.flash && dist <= balance.flashMaxM) _flashPeak = _flash = math.max(_flash, 1 - dist / balance.flashMaxM * 0.6);
         if (v.flash) onThunder?.call(dist);
         if (v.shake && dist <= balance.flashMaxM) _shake = math.max(_shake, 1 - dist / balance.flashMaxM * 0.7);
-        final sp = d.piece.spawn;
-        if (sp != null && d.spawnRoll < sp.chance) onEcoBorn?.call(d);
       }
     }
     if (_seen.length > 4000) _seen.clear();
