@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/climate.dart';
+import 'package:kenoma/core/epochs.dart';
 import 'package:kenoma/core/seed.dart';
 import 'package:kenoma/core/spawn.dart';
 import 'package:kenoma/core/tiles.dart';
@@ -15,10 +16,19 @@ void main() {
   final seed = seedGlobal('KENOMA-TESTE');
   final data = loadGameData();
 
+  /// As épocas até a 6: estes testes descrevem o clima da época 6, que ficou travado quando a 7 começou.
+  EpochSchedule upTo6() {
+    final json = epochsJson();
+    return EpochSchedule.fromJson({
+      ...json,
+      'epochs': [for (final e in json['epochs'] as List<dynamic>) if ((e as Map<String, dynamic>)['id'] as int <= 6) e],
+    });
+  }
+
   /// Um aparelho: lê o epochs.json do zero (nada compartilhado na memória com o outro).
   ClimateWorld device({String? forced, String? Function(String, double)? species}) => ClimateWorld(
         seed: seed,
-        schedule: loadEpochs(),
+        schedule: upTo6(),
         speciesOfType: species ?? data.ecoOfType,
         itemExists: data.itemNames.containsKey,
         forced: () => forced,
@@ -26,7 +36,7 @@ void main() {
 
   final e6 = loadEpochs().epochs.firstWhere((e) => e.id == 6);
   final model = e6.climate!;
-  final t0 = e6.startsUtc + 7 * 86400; // janeiro de 2030: verão
+  final t0 = DateTime.utc(2030, 1, 8).millisecondsSinceEpoch ~/ 1000; // janeiro: verão, ainda com o clima da época 6
   final (cx20, cy20) = latLonToTile(-22.8174, -47.0697, 20); // Unicamp
   final natives = {for (final d in model.defs.values) if (d.category == ClimateCategory.native) d.id};
 
@@ -37,7 +47,7 @@ void main() {
         final t = t0 + k * 3600;
         expect(a.idAt(cx20 + k % 3 * 300, cy20, t), b.idAt(cx20 + k % 3 * 300, cy20, t));
       }
-      final other = ClimateWorld(seed: seed + 1, schedule: loadEpochs(), speciesOfType: data.ecoOfType, itemExists: (_) => true);
+      final other = ClimateWorld(seed: seed + 1, schedule: upTo6(), speciesOfType: data.ecoOfType, itemExists: (_) => true);
       expect([for (var k = 0; k < 200; k++) other.idAt(cx20, cy20, t0 + k * 10800)], isNot([for (var k = 0; k < 200; k++) a.idAt(cx20, cy20, t0 + k * 10800)]));
     });
 

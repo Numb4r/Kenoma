@@ -81,14 +81,14 @@ void main() {
       expect(e6.climate!.astro, isEmpty);
     });
 
-    test('a época 7 copia a 6 (pacotes, spawns, caminhos) e só muda o clima; começa numa data provisória', () {
+    test('a época 7 copia a 6 (pacotes, spawns, caminhos) e só muda o clima; começa depois da 6', () {
       final all = (epochsJson()['epochs'] as List<dynamic>).cast<Map<String, dynamic>>();
       final j6 = all.firstWhere((e) => e['id'] == 6), j7 = all.firstWhere((e) => e['id'] == 7);
       for (final k in j6.keys) {
         if (const {'id', 'starts_utc', 'valid_until_utc', 'climate'}.contains(k)) continue;
         expect(jsonEncode(j7[k]), jsonEncode(j6[k]), reason: k);
       }
-      expect(j7['starts_utc'], '2030-01-01T00:00:00Z');
+      expect(DateTime.parse(j7['starts_utc'] as String).isAfter(DateTime.parse(j6['starts_utc'] as String)), isTrue);
     });
   });
 
