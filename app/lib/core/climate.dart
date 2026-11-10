@@ -12,8 +12,10 @@ library;
 import 'dart:math' as math;
 
 import 'astro.dart';
+import 'eclipse.dart';
 import 'fnv.dart';
 import 'pcg32.dart';
+import 'tiles.dart';
 
 /// Sal do sorteio do clima da época 6 (separado do `WTHR` do modelo antigo).
 final int saltClimate = salt('CLM6');
@@ -379,7 +381,7 @@ class ClimateEvent {
 enum ClimateSource { season, feed, calendar, astro, debug }
 
 class ClimateCause {
-  const ClimateCause(this.climate, {this.source = ClimateSource.season, this.event, this.reason});
+  const ClimateCause(this.climate, {this.source = ClimateSource.season, this.event, this.reason, this.maxUtc});
 
   final String climate;
   final ClimateSource source;
@@ -387,39 +389,34 @@ class ClimateCause {
 
   /// A frase do motivo que veio do feed (o calendário e a astronomia usam a do `clima.json`).
   final String? reason;
+
+  /// Eclipses: o instante UTC do máximo visível do lugar, para o motivo do app Céu.
+  final int? maxUtc;
 }
 
 /// Época 7: um evento do calendário embarcado. Vale na janela cujo meio (hora local) cai no mês [month], entre os dias
-/// [days] e nas horas [hours] (`[início, fim)`, pode virar a meia-noite), ou dentro de [utc]; com [chance] < 1, por um
-/// sorteio da seed por janela, o mesmo para a cidade inteira.
+/// [days] e nas horas [hours] (`[início, fim)`, pode virar a meia-noite); com [chance] < 1, por um sorteio da seed por
+/// janela, o mesmo para a cidade inteira.
 class CalendarRule {
-  const CalendarRule({required this.id, required this.climate, this.month, this.days, this.hours, this.utc, this.chance = 1});
+  const CalendarRule({required this.id, required this.climate, this.month, this.days, this.hours, this.chance = 1});
 
-  factory CalendarRule.fromJson(Map<String, dynamic> j) {
-    final u = j['utc'] as List<dynamic>?;
-    int iso(Object s) => DateTime.parse(s as String).millisecondsSinceEpoch ~/ 1000;
-    return CalendarRule(
-      id: j['id'] as String,
-      climate: j['climate'] as String,
-      month: (j['month'] as num?)?.toInt(),
-      days: j['days'] == null ? null : _range(j['days'], (1, 31)),
-      hours: j['hours'] == null ? null : _range(j['hours'], (0, 24)),
-      utc: u == null ? null : (iso(u[0]), iso(u[1])),
-      chance: _d(j['chance'], 1),
-    );
-  }
+  factory CalendarRule.fromJson(Map<String, dynamic> j) => CalendarRule(
+        id: j['id'] as String,
+        climate: j['climate'] as String,
+        month: (j['month'] as num?)?.toInt(),
+        days: j['days'] == null ? null : _range(j['days'], (1, 31)),
+        hours: j['hours'] == null ? null : _range(j['hours'], (0, 24)),
+        chance: _d(j['chance'], 1),
+      );
 
   final String id;
   final String climate;
   final int? month;
   final (int, int)? days;
   final (int, int)? hours;
-  final (int, int)? utc;
   final double chance;
 
-  bool matches(int midUtc, DateTime local) {
-    final u = utc;
-    if (u != null && (midUtc < u.$1 || midUtc >= u.$2)) return false;
+  bool matches(DateTime local) {
     if (month != null && local.month != month) return false;
     final d = days;
     if (d != null && (local.day < d.$1 || local.day > d.$2)) return false;
@@ -454,6 +451,50 @@ class AstroRule {
     final h = hours;
     if (h != null && !(h.$1 <= h.$2 ? local.hour >= h.$1 && local.hour < h.$2 : local.hour >= h.$1 || local.hour < h.$2)) return false;
     return moonIllumination(midUtc) >= fullMin && moonDistanceKm(midUtc) <= distanceMaxKm;
+  }
+}
+
+/// Época 7: eclipses da NASA (`eclipse.dart`) que forçam [climate] na janela em que o trecho visível do centro da região
+/// do clima (tile z12) cruza a janela. Visto do centro, não do jogador: amigos juntos na mesma região veem o mesmo.
+class EclipseRule {
+  EclipseRule({required this.id, required this.climate, required this.events});
+
+  factory EclipseRule.fromJson(Map<String, dynamic> j) {
+    final kind = j['kind'] as String;
+    if (kind != 'solar' && kind != 'lunar') throw FormatException('eclipse de tipo desconhecido: $kind');
+    return EclipseRule(
+      id: j['id'] as String,
+      climate: j['climate'] as String,
+      events: [
+        for (final ev in j['events'] as List<dynamic>)
+          () {
+            final m = ev as Map<String, dynamic>;
+            final date = m['date'] as String, e = [for (final v in m['elements'] as List<dynamic>) (v as num).toDouble()];
+            return kind == 'solar' ? SolarEclipse(date, e) : LunarEclipse(date, e) as Eclipse;
+          }(),
+      ],
+    );
+  }
+
+  final String id;
+  final String climate;
+  final List<Eclipse> events;
+
+  // ponytail: cresce com as regiões visitadas durante um eclipse (poucas); limpar se um dia houver viagem longa no app.
+  final Map<(int, int, int), EclipseView?> _memo = {};
+
+  /// O trecho visível, da região z12 `(rx, ry)`, do eclipse que cruza `[from, to)`; `null` se nenhum.
+  EclipseView? visibleIn(int from, int to, int rx, int ry) {
+    for (final (i, ev) in events.indexed) {
+      final (a, b) = ev.span;
+      if (b < from || a >= to) continue;
+      final v = _memo.putIfAbsent((i, rx, ry), () {
+        final (lat, lon) = tileFractionToLatLon(rx + 0.5, ry + 0.5, 12);
+        return ev.viewFrom(lat, lon);
+      });
+      if (v != null && v.endUtc >= from && v.startUtc < to) return v;
+    }
+    return null;
   }
 }
 
@@ -498,13 +539,13 @@ class ClimateZone {
 }
 
 class ClimateModel {
-  ClimateModel({required this.windowS, required this.localOffsetH, required this.seasons, required this.after, required this.defs, this.calendar = const [], this.astro = const []}) {
+  ClimateModel({required this.windowS, required this.localOffsetH, required this.seasons, required this.after, required this.defs, this.calendar = const [], this.astro = const [], this.eclipses = const []}) {
     for (final r in seasons) {
       for (final id in r.weights.keys) {
         if (defs[id]?.category != ClimateCategory.native) throw FormatException('o sorteio só usa climas nativos: $id');
       }
     }
-    for (final id in [...calendar.map((r) => r.climate), ...astro.map((r) => r.climate)]) {
+    for (final id in [...calendar.map((r) => r.climate), ...astro.map((r) => r.climate), ...eclipses.map((r) => r.climate)]) {
       if (!defs.containsKey(id)) throw FormatException('evento com clima desconhecido: $id');
     }
   }
@@ -524,6 +565,7 @@ class ClimateModel {
         defs: {for (final e in (j['climates'] as Map<String, dynamic>).entries) e.key: ClimateDef.fromJson(e.key, e.value as Map<String, dynamic>)},
         calendar: [for (final r in (j['calendar'] as List<dynamic>?) ?? const []) CalendarRule.fromJson(r as Map<String, dynamic>)],
         astro: [for (final r in (j['astro'] as List<dynamic>?) ?? const []) AstroRule.fromJson(r as Map<String, dynamic>)],
+        eclipses: [for (final r in (j['eclipses'] as List<dynamic>?) ?? const []) EclipseRule.fromJson(r as Map<String, dynamic>)],
       );
 
   final int windowS;
@@ -536,9 +578,10 @@ class ClimateModel {
   final Map<String, Set<String>> after;
   final Map<String, ClimateDef> defs;
 
-  /// Época 7: os eventos do calendário embarcado e da astronomia, na ordem em que valem (o primeiro que bate ganha).
+  /// Época 7: os eventos do calendário embarcado, dos eclipses e da astronomia, nessa ordem (o primeiro que bate ganha).
   final List<CalendarRule> calendar;
   final List<AstroRule> astro;
+  final List<EclipseRule> eclipses;
 
   int windowOf(int tUtc) => tUtc ~/ windowS;
 
@@ -582,20 +625,24 @@ class ClimateModel {
   String at({required int seed, required int tUtc, required int rx, required int ry, List<ClimateEvent> events = const []}) =>
       resolve(seed: seed, tUtc: tUtc, rx: rx, ry: ry, events: events).climate;
 
-  /// O clima da janela e de onde ele veio: o feed assinado, o calendário, a astronomia (as duas só da época 7 em diante) ou o
-  /// sorteio da estação. O calendário e a astronomia sorteiam a chance com a seed e a janela, sem a região: a cidade inteira
-  /// vê o mesmo evento.
+  /// O clima da janela e de onde ele veio: o feed assinado, o calendário, os eclipses, a astronomia (os três só da época 7
+  /// em diante) ou o sorteio da estação. O calendário e a astronomia sorteiam a chance com a seed e a janela, sem a região:
+  /// a cidade inteira vê o mesmo evento. O eclipse vale onde é visível do centro da região.
   ClimateCause resolve({required int seed, required int tUtc, required int rx, required int ry, List<ClimateEvent> events = const []}) {
     final w = windowOf(tUtc);
     final mid = w * windowS + windowS ~/ 2;
     for (final e in events) {
       if (mid >= e.startsUtc && mid < e.endsUtc && defs.containsKey(e.climate)) return ClimateCause(e.climate, source: ClimateSource.feed, event: e.id, reason: e.reason);
     }
-    if (calendar.isNotEmpty || astro.isNotEmpty) {
+    if (calendar.isNotEmpty || astro.isNotEmpty || eclipses.isNotEmpty) {
       final local = DateTime.fromMillisecondsSinceEpoch((mid + localOffsetH * 3600) * 1000, isUtc: true);
       bool roll(String id, double chance) => chance >= 1 || Pcg32(fnv1a64([seed, w, fnv1a64Bytes(id.codeUnits), saltCalendar]), saltKenoma).nextFloat() < chance;
       for (final r in calendar) {
-        if (r.matches(mid, local) && roll(r.id, r.chance)) return ClimateCause(r.climate, source: ClimateSource.calendar, event: r.id);
+        if (r.matches(local) && roll(r.id, r.chance)) return ClimateCause(r.climate, source: ClimateSource.calendar, event: r.id);
+      }
+      for (final r in eclipses) {
+        final v = r.visibleIn(w * windowS, (w + 1) * windowS, rx, ry);
+        if (v != null) return ClimateCause(r.climate, source: ClimateSource.astro, event: r.id, maxUtc: v.maxUtc);
       }
       for (final r in astro) {
         if (r.matches(mid, local) && roll(r.id, r.chance)) return ClimateCause(r.climate, source: ClimateSource.astro, event: r.id);

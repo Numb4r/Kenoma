@@ -190,6 +190,27 @@ void main() {
       expect((ecl.climate, ecl.event), ('black_sun', 'solar_eclipse'));
     });
 
+    test('o eclipse só força o clima onde é visível do centro da região z12, e o Céu dá a hora local do máximo', () {
+      ClimateCause atPlace(double lat, double lon, int t) {
+        final (x, y) = latLonToTile(lat, lon, 12);
+        return m.resolve(seed: seed, tUtc: t, rx: x, ry: y);
+      }
+
+      // 2027-02-06: parcial em Campinas das 14h32 às 18h00 UT, nada em Bogotá.
+      expect([for (final h in [13, 15, 17]) atPlace(-22.9056, -47.0608, utc(2027, 2, 6, h)).climate], everyElement('black_sun'));
+      // O 4º contato (18h00min03 UT) ainda pega a janela das 18h; a das 21h já é da estação.
+      expect(atPlace(-22.9056, -47.0608, utc(2027, 2, 6, 19)).event, 'solar_eclipse');
+      expect(atPlace(-22.9056, -47.0608, utc(2027, 2, 6, 22)).event, isNot('solar_eclipse'));
+      expect(atPlace(4.71, -74.07, utc(2027, 2, 6, 16)).event, isNot('solar_eclipse'));
+      // Lua Carmim: o total de 2029-06-26 é visto de Campinas; o de 2028-12-31 acontece com a Lua abaixo do horizonte.
+      final crimson = atPlace(-22.9056, -47.0608, utc(2029, 6, 26, 3));
+      expect((crimson.climate, crimson.event, crimson.source), ('crimson_rain', 'crimson_moon', ClimateSource.astro));
+      expect(atPlace(-22.9056, -47.0608, utc(2028, 12, 31, 17)).event, isNot('crimson_moon'));
+      expect(atPlace(35.68, 139.69, utc(2028, 12, 31, 17)).climate, 'crimson_rain', reason: 'em Tóquio a Lua está no céu');
+      final o = climateOutlook(world: device(), catalog: catalog, lat: -22.9056, lon: -47.0608, nowUtc: utc(2027, 2, 6, 16));
+      expect(o.now.reason, '${catalog.events['solar_eclipse']!.reason} Máximo às 13h22.');
+    });
+
     test('a lua cheia no perigeu traz a Lua Dupla, rara; a lua cheia no apogeu não', () {
       // 14/11/2016: a lua cheia mais perto da Terra desde 1948 (356.509 km às 11h23 UTC).
       expect(moonDistanceKm(utc(2016, 11, 14, 11) + 1380), closeTo(356509, 900));
