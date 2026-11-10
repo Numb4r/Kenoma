@@ -48,6 +48,9 @@ class PlayerClimate {
     this.windHeadingRad = 0,
     this.windWindowStart = 0,
     this.runStartUtc = 0,
+    this.prevId,
+    this.prevStartUtc = 0,
+    this.prevEndUtc = 0,
   });
 
   final String id;
@@ -73,6 +76,11 @@ class PlayerClimate {
   /// Desde quando (UTC) este clima vale sem parar aqui: o começo da primeira das janelas seguidas com ele.
   final int runStartUtc;
 
+  /// O clima de antes deste no lugar e quando ele valeu: o que ele deixou no chão seca ou derrete depois do fim
+  /// (`climate_form.dart`). `null`: nenhum.
+  final String? prevId;
+  final int prevStartUtc, prevEndUtc;
+
   /// A deriva do sinal na sintonia para a escola [school] (`null`: sem escola).
   double wanderFor(String? school) => school != null && school == immuneSchool ? 1 : wanderMult;
 
@@ -88,6 +96,7 @@ class ClimateWorld {
     this.biomeAt,
     this.snapper,
     String? Function()? forced,
+    this.forcedPhase,
   }) : forced = forced ?? _none;
 
   final int seed;
@@ -95,6 +104,10 @@ class ClimateWorld {
 
   /// O clima forçado pelo debug (qualquer id), ou `null`.
   final String? Function() forced;
+
+  /// Há quanto tempo (segundos de clima, já com a velocidade do debug) o clima forçado começa do zero, e o forçado de antes
+  /// dele, secando. Só neste aparelho. `null`: o forçado vale inteiro, como antes.
+  final ForcedPhase Function()? forcedPhase;
 
   /// A espécie de Eco de um tipo (`water`; `any` para qualquer), escolhida por [pick] em `[0, 1)`. `null`: não há.
   final String? Function(String type, double pick) speciesOfType;
@@ -165,6 +178,21 @@ class ClimateWorld {
     final d = _defAt17(cx17, cy17, t);
     if (d == null) return PlayerClimate(id: forced() ?? 'clear');
     final mod = d.def.modifier, mov = d.def.movement, tr = d.def.trails;
+    final windowStart = d.window * d.model.windowS;
+    final fp = forced() == null ? null : forcedPhase?.call();
+    final int runStart, prevStart, prevEnd;
+    final String? prevId;
+    if (fp != null) {
+      runStart = t - fp.ageS.round();
+      prevId = fp.prevId;
+      prevEnd = t - fp.prevSinceEndS.round();
+      prevStart = prevEnd - fp.prevFormedS.round();
+    } else {
+      runStart = _runStart(cx17, cy17, d.def.id, windowStart, d.model.windowS);
+      prevId = _defAt17(cx17, cy17, runStart - 1)?.def.id;
+      prevEnd = runStart;
+      prevStart = prevId == null ? runStart : _runStart(cx17, cy17, prevId, runStart - d.model.windowS, d.model.windowS);
+    }
     return PlayerClimate(
       id: d.def.id,
       auraAddM: mod?.auraAddM ?? 0,
@@ -179,8 +207,11 @@ class ClimateWorld {
       trafficMult: mov?.trafficMult ?? 1,
       walkerMult: mov?.walkerMult ?? 1,
       windHeadingRad: _heading(d, cx17, cy17, mov),
-      windWindowStart: d.window * d.model.windowS,
-      runStartUtc: _runStart(cx17, cy17, d.def.id, d.window * d.model.windowS, d.model.windowS),
+      windWindowStart: windowStart,
+      runStartUtc: runStart,
+      prevId: prevId,
+      prevStartUtc: prevStart,
+      prevEndUtc: prevEnd,
     );
   }
 
@@ -292,7 +323,7 @@ class ClimateWorld {
   void _trim() {
     // A camada do mapa lê até 1,5 km e 3 h para trás (crateras): cabe com folga, sem esvaziar a cada leitura.
     if (_dropCache.length > 320) _dropCache.clear();
-    if (_zoneCache.length > 320) _zoneCache.clear();
+    if (_zoneCache.length > 1200) _zoneCache.clear(); // a Procissão é lida até ~1 km em volta
   }
 
   /// Os acontecimentos das quedas (raio, granizo, meteoro...) perto de (x21, y21) com tempo em `[tFrom, tTo]`, das janelas
@@ -331,21 +362,35 @@ class ClimateWorld {
     return out;
   }
 
-  /// As zonas ativas em [t] perto de (x21, y21), mais as do debug.
-  List<ClimateZone> zonesNear(double x21, double y21, double radius21, int t) {
+  /// As zonas ativas em [t] perto de (x21, y21), mais as do debug. Para o desenho: [movingExtra21] procura as zonas que
+  /// andam (a Procissão, o funil) também nas células mais longe, de onde elas podem ter vindo andando, e [lookBackS] traz
+  /// as que andam e acabaram há até isso (o rastro de velas que fica). Os padrões são os do mundo (`extras`).
+  List<ClimateZone> zonesNear(double x21, double y21, double radius21, int t, {double movingExtra21 = 0, int lookBackS = 0}) {
     _trim();
     final out = <ClimateZone>[];
-    for (final (cx, cy) in _cells17(x21, y21, radius21)) {
-      final d = _defAt17(cx, cy, t);
-      if (d == null) continue;
-      for (var i = 0; i < d.def.pieces.length; i++) {
-        final p = d.def.pieces[i];
-        if (p is! ZonePiece) continue;
-        final list = _zoneCache.putIfAbsent((d.epoch.id * 64 + i, cx, cy, d.window, d.def.id.hashOfId), () => [for (final z in d.model.zones(seed, d.epoch.id, cx, cy, d.window, i, p)) ?_snapZone(z)]);
-        out.addAll(list.where((z) => z.activeAt(t)));
+    final seen = <int>{};
+    final memo = <(int, int, int), ({Epoch epoch, ClimateModel model, ClimateDef def, int window})?>{};
+    bool keep(ClimateZone z) {
+      if (z.activeAt(t)) return true;
+      return lookBackS > 0 && z.piece.speedMps > 0 && t >= z.startUtc && t < z.endUtc + lookBackS;
+    }
+
+    for (final tt in {t, if (lookBackS > 0) t - lookBackS}) {
+      for (final (cx, cy) in _cells17(x21, y21, radius21 + movingExtra21)) {
+        final far = movingExtra21 > 0 && ((cx + 0.5) * 16 - x21).abs() > radius21 + 8 || movingExtra21 > 0 && ((cy + 0.5) * 16 - y21).abs() > radius21 + 8;
+        final d = forced() != null ? _defAt17(cx, cy, tt) : memo.putIfAbsent((cx >>> 5, cy >>> 5, tt), () => _defAt17(cx, cy, tt));
+        if (d == null) continue;
+        for (var i = 0; i < d.def.pieces.length; i++) {
+          final p = d.def.pieces[i];
+          if (p is! ZonePiece || (far && p.speedMps <= 0)) continue;
+          final list = _zoneCache.putIfAbsent((d.epoch.id * 64 + i, cx, cy, d.window, d.def.id.hashOfId), () => [for (final z in d.model.zones(seed, d.epoch.id, cx, cy, d.window, i, p)) ?_snapZone(z)]);
+          for (final z in list) {
+            if (keep(z) && seen.add(z.uidBase)) out.add(z);
+          }
+        }
       }
     }
-    out.addAll(debugZones.where((z) => z.activeAt(t)));
+    out.addAll(debugZones.where(keep));
     return out;
   }
 
@@ -381,7 +426,21 @@ class ClimateWorld {
       final PuddlePiece piece;
       final int wetWindow;
       final double size;
-      if (cur != null) {
+      final fp = forced() == null ? null : forcedPhase?.call();
+      if (fp != null) {
+        // O clima forçado começa do zero quando foi forçado, e o de antes seca a partir dali (só neste aparelho).
+        final prev = fp.prevId == null ? null : d.model.def(fp.prevId!)?.puddles;
+        if (cur != null) {
+          piece = cur;
+          size = cur.always ? 1.0 : math.min(1.0, fp.ageS / cur.growS);
+        } else if (prev != null && !prev.always) {
+          piece = prev;
+          size = math.min(1.0, fp.prevFormedS / prev.growS) - fp.prevSinceEndS / prev.dryS;
+        } else {
+          continue;
+        }
+        wetWindow = d.window;
+      } else if (cur != null) {
         piece = cur;
         wetWindow = d.window;
         final before = cur.always ? null : _defAt17(cx, cy, start - 1)?.def.puddles;
@@ -436,7 +495,8 @@ class ClimateWorld {
         if (s != null) out.add(s);
       }
     }
-    for (final z in zonesNear(x21, y21, r21, t)) {
+    final linger = _lingerS(t);
+    for (final z in zonesNear(x21, y21, r21, t, lookBackS: linger, movingExtra21: linger > 0 ? 1200 / metersPerCell21 : 0)) {
       final p = z.piece;
       final n = z.slots.length;
       for (var j = 0; j < n; j++) {
@@ -445,8 +505,10 @@ class ClimateWorld {
         // Com `slot_at` (época 7), todas aparecem naquele ponto do percurso: o fim do rastro da Procissão.
         final tj = p.speedMps > 0 ? z.startUtc + ((p.slotAt ?? (j + 0.5) / n) * p.durationS).floor() : z.startUtc;
         if (t < tj) continue;
-        final (cx, cy) = z.centerAt(tj.toDouble(), metersPerCell21);
-        final rr = p.radiusM / metersPerCell21;
+        if (!z.activeAt(t) && !(p.streetRoute && t < tj + (p.spawn?.ttlS ?? 0))) continue;
+        var (cx, cy) = z.centerAt(tj.toDouble(), metersPerCell21);
+        if (p.streetRoute) (cx, cy) = _toStreet(cx, cy) ?? (cx, cy);
+        final rr = p.streetRoute ? 0.0 : p.radiusM / metersPerCell21; // pela rua: no fim da rota, em cima das velas
         final x = cx + slot.dx * rr, y = cy + slot.dy * rr;
         final spawn = p.spawn, item = p.item;
         if (spawn != null && j < spawn.perZone && slot.roll < spawn.chance) {
@@ -472,6 +534,17 @@ class ClimateWorld {
       }
     }
     return [for (final s in out) if (s.distanceM(x21, y21, metersPerCell21) <= radiusM) s];
+  }
+
+  /// Quanto (s) as zonas com `street_route` do clima de agora mantêm o que nasceu depois de acabar: 0 até a época 7.
+  int _lingerS(int t) {
+    var m = 0;
+    for (final def in modelAt(t)?.$2.defs.values ?? const <ClimateDef>[]) {
+      for (final p in def.pieces) {
+        if (p is ZonePiece && p.streetRoute) m = math.max(m, p.durationS + (p.spawn?.ttlS ?? 0));
+      }
+    }
+    return m;
   }
 
   WorldSpawn? _eco(PieceSpawn spawn, double pick, double x, double y, int uid, int t, int Function(String, int, int) levelOf) {
@@ -550,6 +623,10 @@ class ClimateWorld {
 }
 
 String? _none() => null;
+
+/// O clima forçado pelo debug no tempo: há quanto ele vale ([ageS]) e o forçado de antes ([prevId]), que formou por
+/// [prevFormedS] e acabou há [prevSinceEndS]. Segundos de clima (a velocidade do debug já entra).
+typedef ForcedPhase = ({double ageS, String? prevId, double prevFormedS, double prevSinceEndS});
 
 /// O clima determinístico (id) da célula z20 em [t], sem o debug: o do modelo completo da época ativa (6 em diante, com os
 /// eventos do feed) ou o de quatro estados (épocas 3 a 5). O modelo é o da época ATIVA naquele instante, nunca o da mais

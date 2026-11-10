@@ -86,7 +86,7 @@ String seedWeatherOfCell(EpochSchedule schedule, int seed, int cx, int cy, int t
     climateIdOfCell(schedule, seed, cx, cy, t, events: events);
 
 /// As peças do clima (o Eco do raio, granizo, poças...) do mundo de [state]: as mesmas no mapa e na Patrulha.
-ClimateWorld climateWorldFor({required GameState state, required GameData data, required MapAssets assets, String? Function()? forced}) => ClimateWorld(
+ClimateWorld climateWorldFor({required GameState state, required GameData data, required MapAssets assets, String? Function()? forced, ForcedPhase Function()? forcedPhase}) => ClimateWorld(
       seed: state.seed,
       schedule: data.schedule,
       speciesOfType: data.ecoOfType,
@@ -101,6 +101,7 @@ ClimateWorld climateWorldFor({required GameState state, required GameData data, 
       // Poças e zonas paradas da época 7 vão para a rua pelos mesmos caminhos dos spawns (o app e a Patrulha).
       snapper: assets.visual == null ? null : WalkPaths(assets.visual!, blocked: assets.noWalk),
       forced: forced,
+      forcedPhase: forcedPhase,
     );
 
 /// O mundo que o jogador vê e alcança, montado do mesmo jeito no mapa do jogo e no serviço da Patrulha (o mesmo código de

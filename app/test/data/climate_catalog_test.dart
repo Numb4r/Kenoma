@@ -10,7 +10,7 @@ import '../support/fixtures.dart';
 /// As formas de partícula da tela e de enfeite do chão que o código sabe desenhar, e os estilos de peça do céu
 /// (`climate_fx.dart`); os do chão vêm de `climate_ground.dart`.
 const _shapes = {'streak', 'wisp', 'leaf', 'ember', 'flake', 'hail', 'dust', 'ash', 'pixel', 'glyph'};
-const _groundShapes = {'glint', 'frost', 'leaf', 'branch', 'ember', 'streak', 'float', 'glyph', 'pixel', 'hailstone', 'dust', 'ash', 'figure'};
+const _groundShapes = {'glint', 'frost', 'leaf', 'branch', 'ember', 'streak', 'float', 'glyph', 'pixel', 'hailstone', 'dust', 'ash', 'figure', 'shadow'};
 const _skyStyles = {'bolt', 'meteor', 'fall'};
 
 void main() {

@@ -10,6 +10,7 @@ library;
 import '../core/fnv.dart';
 import '../data/climate_catalog.dart';
 import '../data/visual_pack.dart';
+import 'climate_form.dart';
 
 final int _saltLow = salt('LOWST');
 final int _saltDune = salt('DUNE');
@@ -35,7 +36,7 @@ class StreetCover {
   /// Fração das ruas de cada classe que a cobertura pega (alagamento, dunas, fuligem). Sem a classe: nenhuma.
   final Map<String, double> share;
 
-  /// Segundos até a cobertura ficar inteira, desde o começo do clima.
+  /// Segundos até a cobertura ficar inteira, desde o começo do clima (a neve: até as avenidas).
   final double growS;
 
   /// Neve: o tráfego abre duas trilhas nas avenidas. Gelo: os carros derrapam.
@@ -44,40 +45,45 @@ class StreetCover {
 
   static double _u(List<int> fields) => (fnv1a64(fields) >>> 32) / 4294967296.0;
 
-  /// Quanto a rua [key] (tile z15 e índice da linha) da classe [cls] está coberta, de 0 a 1, [sinceS] segundos depois do
-  /// começo do clima, na janela de 3 h [window] (as dunas mudam a cada janela).
-  double level(int seed, (int, int, int) key, RoadClass cls, int window, double sinceS) {
-    final grow = growS <= 0 ? 1.0 : (sinceS / growS).clamp(0.0, 1.0);
+  /// Quanto da cobertura se formou [sinceS] segundos depois do começo do clima (0 a 1; ver `climate_form.dart`).
+  double amountAt(double sinceS) => formAmount(sinceStartS: sinceS, growS: growS, fadeS: 0);
+
+  /// Quanto a rua [key] (tile z15 e índice da linha) da classe [cls] está coberta, de 0 a 1, com [amount] da cobertura
+  /// formada ([amountAt]), na janela de 3 h [window] (as dunas mudam a cada janela).
+  double level(int seed, (int, int, int) key, RoadClass cls, int window, double amount) {
     final (tx, ty, i) = key;
     switch (kind) {
       case StreetCoverKind.flood:
-        return _u([seed, tx, ty, i, _saltLow]) < (share[cls.name] ?? 0) ? grow : 0;
+        return _u([seed, tx, ty, i, _saltLow]) < (share[cls.name] ?? 0) ? amount : 0;
       case StreetCoverKind.sand:
-        return _u([seed, tx, ty, i, window, _saltDune]) < (share[cls.name] ?? 0) ? 1 : 0;
+        return _u([seed, tx, ty, i, window, _saltDune]) < (share[cls.name] ?? 0) ? amount : 0;
       case StreetCoverKind.soot:
-        return (share[cls.name] ?? 0) > 0 ? grow : 0;
+        return (share[cls.name] ?? 0) > 0 ? amount : 0;
       case StreetCoverKind.ice:
-        return grow;
+        return amount;
       case StreetCoverKind.snow:
-        // A neve fica primeiro onde ninguém passa: caminhos e ruas locais; as avenidas por último.
-        final rate = switch (cls) { RoadClass.pedestrian => 1.4, RoadClass.local => 1.0, RoadClass.secondary => 0.55, RoadClass.principal => 0.3 };
-        return growS <= 0 ? 1 : (sinceS / growS * rate).clamp(0.0, 1.0);
+        // A neve fica primeiro no chão e nos telhados; nas ruas, primeiro onde ninguém passa e por último nas avenidas.
+        return snowStages(amount).street(roadRank(cls));
     }
   }
 
-  /// O trecho da rua que a duna cobre, em fração do comprimento: um terço dela, em lugar sorteado.
-  (double, double) duneSpan(int seed, (int, int, int) key, int window) {
+  /// 0: caminho de pedestre, 1: local, 2: secundária, 3: principal (a ordem em que a neve chega).
+  static int roadRank(RoadClass cls) => switch (cls) { RoadClass.pedestrian => 0, RoadClass.local => 1, RoadClass.secondary => 2, RoadClass.principal => 3 };
+
+  /// O trecho da rua que a duna cobre, em fração do comprimento: até um terço dela, em lugar sorteado, crescendo do meio
+  /// com [level].
+  (double, double) duneSpan(int seed, (int, int, int) key, int window, [double level = 1]) {
     final (tx, ty, i) = key;
-    final a = _u([seed, tx, ty, i, window, _saltDune, 1]) * 0.65;
-    return (a, a + 0.35);
+    final a = _u([seed, tx, ty, i, window, _saltDune, 1]) * 0.65, half = 0.175 * level.clamp(0.0, 1.0);
+    return (a + 0.175 - half, a + 0.175 + half);
   }
 
-  /// O estado da rua para o tráfego. Neve, gelo e fuligem não mudam a rota.
+  /// O estado da rua para o tráfego, [sinceS] segundos depois do começo do clima. Neve, gelo e fuligem não mudam a rota.
   StreetState stateOf(int seed, (int, int, int) key, RoadClass cls, int window, double sinceS) {
     if (kind != StreetCoverKind.flood && kind != StreetCoverKind.sand) return StreetState.normal;
-    final l = level(seed, key, cls, window, sinceS);
+    final l = level(seed, key, cls, window, amountAt(sinceS));
     if (l <= 0) return StreetState.normal;
-    if (kind == StreetCoverKind.sand) return StreetState.blocked;
+    if (kind == StreetCoverKind.sand) return l >= 0.3 ? StreetState.blocked : StreetState.normal; // a duna fecha quando já subiu
     return l >= 0.5 ? StreetState.flooded : StreetState.normal; // a água sobe antes de os carros virarem barcos
   }
 }

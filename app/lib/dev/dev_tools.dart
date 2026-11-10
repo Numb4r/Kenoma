@@ -65,8 +65,8 @@ class DevTools extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// O simulador está ligado e não dá recompensa.
-  bool get sandboxed => _useSimulator && !_simRewards;
+  /// O simulador está ligado e não dá recompensa, ou a Simulação de clima está ligada (ela nunca dá recompensa).
+  bool get sandboxed => (_useSimulator && !_simRewards) || force.simulating;
 
   String? _feedUrl;
 
