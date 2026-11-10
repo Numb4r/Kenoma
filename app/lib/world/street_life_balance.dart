@@ -29,6 +29,7 @@ class StreetLifeBalance {
         hiddenResolveM = _d(r['hidden_resolve_m']),
         pulseSpeedMps = _d(r['pulse_speed_mps']),
         traceShowS = (r['trace_show_s'] as num).toInt(),
+        edgeMarksS = (r['edge_marks_s'] as num?)?.toDouble() ?? 120,
         familiarPickupBonusM = _d(fam['pickup_bonus_m']),
         familiarFollowOffsetM = _d(fam['follow_offset_m']),
         rainParticles = (w['rain_particles'] as num).toInt();
@@ -66,6 +67,9 @@ class StreetLifeBalance {
   final double hiddenResolveM;
   final double pulseSpeedMps;
   final int traceShowS;
+
+  /// Depois de um pulso, por quanto tempo (s) as marcas finas na borda da tela apontam o que ele achou.
+  final double edgeMarksS;
 
   /// Familiar: bônus de coleta (m) e a distância ao lado do Conjurador (m).
   final double familiarPickupBonusM;

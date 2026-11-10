@@ -13,6 +13,7 @@ import 'package:kenoma/world/places.dart';
 import 'package:kenoma/world/radar.dart';
 import 'package:kenoma/world/region_map.dart';
 import 'package:kenoma/world/spawn_field.dart';
+import 'package:kenoma/world/tracker.dart' show edgePoint;
 import 'package:kenoma/world/world_view.dart';
 
 import '../support/fixtures.dart';
@@ -227,8 +228,15 @@ void main() {
       v.refresh(lat: pla, lon: plo, tUtc: t0);
       expect(v.spawns.any((s) => s.uid == eco.uid), isFalse);
       expect(v.allEcos.any((s) => s.uid == eco.uid), isTrue, reason: 'existe, o Radar o conhece');
-      expect(v.tracked(offScreen: (_) => true, trackerM: 120, max: 9).any((t) => t.spawn.uid == eco.uid), isFalse);
+      expect(v.edgeMarksAt(t0.toDouble(), onScreen: (_) => false), isEmpty, reason: 'sem pulso, nenhuma marca na borda');
       expect(v.touch(eco, t0), TouchResult.encounter, reason: 'a regra do toque não muda; ele só não está na lista');
+    });
+
+    test('a marca da borda fica onde a direção do achado cruza a borda da tela', () {
+      expect(edgePoint(100, 200, 0, 400, 800, inset: 6), (394.0, 200.0), reason: 'leste: borda direita');
+      expect(edgePoint(100, 200, -math.pi / 2, 400, 800, inset: 6).$2, closeTo(6, 1e-9), reason: 'norte: borda de cima');
+      final (x, y) = edgePoint(200, 400, math.pi * 0.75, 400, 800);
+      expect((x, y.round()), (0.0, 600), reason: 'sudoeste: a esquerda vem antes de baixo');
     });
 
     test('o pulso acha os Ocultos a até 60 m como distorção; o Eco só aparece quando o jogador anda até ela', () {
@@ -243,7 +251,12 @@ void main() {
       v.refresh(lat: pla, lon: plo, tUtc: t0 + 1);
       expect(v.spawns.any((s) => s.uid == eco.uid), isFalse, reason: 'a 40 m ainda é só distorção');
       expect(v.sonar().where((e) => e.uid == eco.uid).single.distortion, isTrue);
-      expect(v.tracked(offScreen: (_) => true, trackerM: 120, max: 9).any((t) => t.spawn.uid == eco.uid && t.find!.distortion), isTrue, reason: 'o rastreador mostra o que o Radar achou');
+      bool marked(double t, {bool onScreen = false}) => v.edgeMarksAt(t, onScreen: (_) => onScreen).any((m) => m.uid == eco.uid && m.distortion);
+      expect(marked(t0 + 1.0), isTrue, reason: 'a marca da borda aponta o que o Radar achou');
+      expect(marked(t0 + 1.0, onScreen: true), isFalse, reason: 'na tela, sem marca');
+      expect(marked(t0 + street.edgeMarksS - 1), isTrue);
+      expect(v.edgeMarksAt(t0 + street.edgeMarksS - 1, onScreen: (_) => false).first.alpha, lessThan(1), reason: 'apaga no fim');
+      expect(marked(t0 + street.edgeMarksS), isFalse, reason: 'some depois de 2 minutos');
       expect(state.story.count('hidden_revealed'), 0);
 
       (pla, plo) = south(la, lo, street.hiddenResolveM - 3);

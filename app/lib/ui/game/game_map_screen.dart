@@ -613,8 +613,6 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       minWidthM: assets.balance.cameraMinWidthM,
       maxWidthM: assets.balance.cameraMaxWidthM,
       sparkSizeM: assets.balance.sparkSizeM,
-      trackerM: assets.balance.trackerM,
-      trackerMax: assets.balance.trackerMax,
       declinationDeg: assets.balance.compassDeclinationDeg,
       dpr: dpr,
       worldView: world,
@@ -985,7 +983,6 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final game = r.game;
     final pad = MediaQuery.paddingOf(context);
     final screen = MediaQuery.sizeOf(context);
-    game.bottomInset = pad.bottom;
     final blocked = _access != null && _access != LocationAccess.granted && !tools.useSimulator;
     final st = r.session.state;
     final now = tools.clock.nowUtc;
@@ -995,14 +992,13 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       screen,
       top: pad.top,
       bottom: pad.bottom,
-      trackerMax: r.assets.balance.trackerMax,
+      trackerMax: 0, // sem rastreador fixo: o atalho do Radar fica no canto (as marcas do pulso vão na borda da tela)
       marks: st.activeMarks(now).length,
       shortcuts: patrolOn || travelChip != null,
       compass: true, // a vaga da bússola fica reservada: ela aparece e some sem empurrar nada
       radar: _radarUnlocked(r),
       simulator: tools.useSimulator,
     );
-    game.trackerRect = hud.tracker;
     final warnings = _warnings(r);
     return Stack(
       children: [

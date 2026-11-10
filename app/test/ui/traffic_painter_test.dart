@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -50,6 +51,47 @@ void main() {
     }
   });
 
+  test('passante com roupa pelo clima: cada grupo veste o que deve, varia por passante e é igual em dois aparelhos', () {
+    final ids = [for (var i = 0; i < 400; i++) 0x9e3779b97f4a7c15 * (i + 1) & 0x7fffffffffffffff];
+    const expected = {
+      'rain': {GhostOutfit.umbrella, GhostOutfit.raincoat},
+      'cold': {GhostOutfit.coat, GhostOutfit.beanie, GhostOutfit.scarf},
+      'heat': {GhostOutfit.light, GhostOutfit.cap, GhostOutfit.hat},
+      'mask': {GhostOutfit.mask},
+    };
+    for (final MapEntry(key: group, value: want) in expected.entries) {
+      final worn = [for (final id in ids) ghostOutfit(group, id)];
+      expect(worn, [for (final id in ids) ghostOutfit(group, id)], reason: 'a mesma escolha de novo');
+      expect(worn.toSet().containsAll(want), isTrue, reason: '$group: ${worn.toSet()}');
+      expect(worn.toSet().difference({...want, GhostOutfit.none}), isEmpty, reason: group);
+      expect(worn.where(want.contains).length, greaterThan(ids.length * 0.7), reason: '$group: quase todos vestem');
+    }
+    expect(ids.map((id) => ghostOutfit(null, id)).toSet(), {GhostOutfit.none}, reason: 'céu limpo: roupa de sempre');
+    expect(ghostOutfit('rain', ids.first), ghostOutfit('rain', ids.first));
+    // O clima do `clima.json` liga ao grupo: a chuva veste guarda-chuva, o frio casaco, o sol boné, a fumaça máscara.
+    final climas = jsonDecode(File('assets/data/clima.json').readAsStringSync())['climates'] as Map<String, dynamic>;
+    for (final (id, group) in [('drizzle', 'rain'), ('storm', 'rain'), ('snow', 'cold'), ('freezing_rain', 'cold'), ('heat_wave', 'heat'), ('smog', 'mask'), ('acid_rain', 'mask')]) {
+      expect((climas[id] as Map<String, dynamic>)['outfit'], group, reason: id);
+    }
+    // As matrizes com roupa continuam retangulares, com cor em cada papel, e o guarda-chuva fica por cima da cabeça.
+    for (final m in GhostModel.values.where(isUpright)) {
+      for (final o in GhostOutfit.values) {
+        for (var f = 0; f < 2; f++) {
+          final rows = spriteRows(m, f, o);
+          final colors = paletteOf(m, 1, o);
+          for (final r in rows) {
+            expect(r.length, rows.first.length, reason: '${m.name} ${o.name}');
+            for (final c in r.split('')) {
+              if (c != '.') expect(colors.containsKey(c), isTrue, reason: '${m.name} ${o.name} usa "$c" sem cor');
+            }
+          }
+          if (o == GhostOutfit.umbrella) expect(rows.length, spriteRows(m, f).length + 5);
+        }
+      }
+    }
+    expect(paletteOf(GhostModel.adult, 0, GhostOutfit.coat)['t'], isNot(paletteOf(GhostModel.adult, 0)['t']), reason: 'o casaco troca a blusa');
+  });
+
   test('todos os modelos, paletas, quadros e fases desenham sem erro', () {
     final painter = make();
     final rec = ui.PictureRecorder();
@@ -60,7 +102,7 @@ void main() {
         for (final phase in GhostPhase.values) {
           for (final travelled in [0.0, 0.7]) {
             final g = Ghost(id: n, model: m, palette: p, x: 0, y: 0, heading: 0.4 * n, speedMps: 3, phase: phase, phaseT: 0.5, travelledM: travelled);
-            painter.drawGhost(canvas, g, 100.0 + n % 7, 200, 0.3, 8, n.isEven ? 0.0 : 1.0);
+            painter.drawGhost(canvas, g, 100.0 + n % 7, 200, 0.3, 8, n.isEven ? 0.0 : 1.0, outfit: const [null, "rain", "cold", "heat", "mask"][n % 5]);
             n++;
           }
         }
