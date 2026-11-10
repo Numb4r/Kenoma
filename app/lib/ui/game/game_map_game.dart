@@ -60,8 +60,6 @@ class GameMapGame extends FlameGame {
     required this.minWidthM,
     required this.maxWidthM,
     required this.sparkSizeM,
-    required this.trackerM,
-    required this.trackerMax,
     this.declinationDeg = 0,
     this.dpr = 1,
     this.worldView,
@@ -197,9 +195,6 @@ class GameMapGame extends FlameGame {
   /// Altura do Conjurador e dos Ecos, e tamanho das Fagulhas e dos materiais, em metros do mundo.
   final double sparkSizeM;
 
-  /// Alcance do rastreador, em metros, e quantos Ecos ele mostra.
-  final double trackerM;
-  final int trackerMax;
 
   /// Declinação magnética do lugar, em graus (leste positivo): a bússola do celular lê o norte magnético e o
   /// mapa tem o norte verdadeiro.
@@ -426,23 +421,18 @@ class GameMapGame extends FlameGame {
     if (wv != null && _hasFix) _paintClimateGround(canvas, view, cam, wv);
     _paintWorld(canvas, view, cam);
     canvas.restore();
-    // O clima da tela por cima do mapa e dos spawns, por baixo do HUD (o rastreador da borda é HUD): cobre a tela toda.
+    // O clima da tela por cima do mapa e dos spawns, por baixo do HUD (as marcas do Radar na borda são HUD): cobre a tela toda.
     climateFx.paintSky(canvas, view, cam);
     final (ax, ay) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
     _climate.paint(canvas, view, player: avatar.hasPosition ? Offset(ax, ay) : null);
     final w = worldView;
-    if (w != null && avatar.hasPosition) {
+    if (w != null && avatar.hasPosition && w.pulse != null) {
       final off = ecoSizePx / 2;
-      final tracked = w.tracked(
-        trackerM: w.trackerRangeM,
-        max: trackerMax,
-        offScreen: (s) {
-          final (x, y) = cam.cellToScreen(s.x, s.y, view.width, view.height);
-          return x < -off || y < -off || x > view.width + off || y > view.height + off;
-        },
-      );
-      final box = trackerRect ?? Rect.fromLTWH(view.width - 56, view.height - bottomInset - 8 - trackerMax * 62, 48, trackerMax * 62.0);
-      paintTracker(canvas, box, tracked, sprites: sprites, typeOf: typeOf, rotation: cam.rotation);
+      final marks = w.edgeMarksAt(_exactUtc(), onScreen: (s) {
+        final (x, y) = cam.cellToScreen(s.x, s.y, view.width, view.height);
+        return x >= -off && y >= -off && x <= view.width + off && y <= view.height + off;
+      });
+      paintEdgeMarks(canvas, view, Offset(ax, ay), marks, rotation: cam.rotation);
     }
   }
 
@@ -617,12 +607,6 @@ class GameMapGame extends FlameGame {
     compass.dispose();
     super.onRemove();
   }
-
-  /// Barra de navegação do sistema embaixo, em pixels lógicos: o rastreador fica acima dela.
-  double bottomInset = 0;
-
-  /// A zona do rastreador no HUD (`hud_layout.dart`), em pixels lógicos da tela do jogo. `null`: o canto de baixo à direita.
-  Rect? trackerRect;
 
   /// Alturas na tela, em pixels lógicos: os metros do mundo (`balance.json`) convertidos pelo zoom de agora e ajustados
   /// a um múltiplo inteiro de pixels físicos por pixel do sprite (nada de pixel mais gordo que o vizinho).

@@ -318,7 +318,7 @@ void main() {
     for (final dp in const [Size(360, 800), Size(412, 915), Size(480, 1000)]) {
       testWidgets('em ${dp.width.round()}×${dp.height.round()} dp, com simulador, bússola, Radar e viagem, nada do HUD cobre outra peça', (tester) async {
         final env = await pumpGame(tester, screen: dp * 2.625);
-        env.game.worldView!.state.levelOverride = 2; // o Radar entra no HUD
+        env.game.worldView!.state.levelOverride = 5; // o Radar entra no HUD
         env.game.dragRotate(0.8); // fora do norte: a bússola aparece
         env.game.touchEnd();
         await tester.tap(find.byType(PhoneButton));
@@ -337,7 +337,6 @@ void main() {
           'retrato': tester.getRect(find.byKey(const Key('portrait-hud'))),
           'celular': tester.getRect(find.byType(PhoneButton)),
           'joystick': tester.getRect(find.byType(Joystick)),
-          'rastreador': env.game.trackerRect!,
         };
         expect(find.byKey(const Key('travel-chip')), findsOneWidget, reason: 'a viagem tem atalho na faixa');
         final names = rects.keys.toList();

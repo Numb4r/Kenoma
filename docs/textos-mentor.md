@@ -65,6 +65,7 @@ Saem sozinhas, uma vez cada, quando o acontecimento acontece, sem esperar a fila
 | `ritual_hint_frond` (mentor) | ritual_seen_frond ≥ 1 | Rootseer não se mexe por sintonia. Ela escuta onde o chão ainda é verde. Quem queima o mato aprende a respeitá-lo. Você olhou o que cresce debaixo do concreto? |
 | `ritual_hint_rill` (mentor) | ritual_seen_rill ≥ 1 | Wellmirror só se mostra quando a luz da noite está inteira. Água se espelha, mas a raiz bebe até o fundo. Você anda de noite? |
 | `ritual_first` (Familiar) | ritual_done ≥ 1 | *O Familiar anda uma vez em volta do desenho que se fechou, devagar, como quem confere uma costura. Depois se senta no centro, onde a criatura estava. Parece dizer: ainda está quente.* |
+| `radar_gift` (mentor) | level_5 ≥ 1 | Cinco. Você já ouve o que está perto. Deixei uma coisa no seu celular: o Radar. Um pulso, e o que está longe responde, por dois minutos, na beira da tela. Depois some. Você acha que só você ouve o pulso? |
 
 ## Falas de desbloqueio do celular
 
