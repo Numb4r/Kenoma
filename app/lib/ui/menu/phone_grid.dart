@@ -113,7 +113,7 @@ class _AppTile extends StatelessWidget {
     return Pressable(
       key: Key('app-${app.id}'),
       onTap: locked ? null : () => onOpen(app.id),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
+      child: FittedBox(fit: BoxFit.scaleDown, child: Column(mainAxisSize: MainAxisSize.min, children: [
         Stack(clipBehavior: Clip.none, children: [
           Container(
             width: 72,
@@ -135,13 +135,16 @@ class _AppTile extends StatelessWidget {
             ),
         ]),
         const SizedBox(height: KEspaco.s1),
-        Text(
-          locked ? '???' : app.label.toUpperCase(),
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          style: KTexto.rotulo.copyWith(fontSize: 9, color: locked ? KCores.textoMudo : KCores.texto),
+        SizedBox(
+          width: 84,
+          child: Text(
+            locked ? '???' : app.label.toUpperCase(),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            style: KTexto.rotulo.copyWith(fontSize: 9, color: locked ? KCores.textoMudo : KCores.texto),
+          ),
         ),
-      ]),
+      ])), // em telas estreitas o nome em duas linhas não cabe: o ícone encolhe um pouco
     );
   }
 }

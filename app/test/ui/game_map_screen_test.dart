@@ -20,6 +20,7 @@ import 'package:kenoma/ui/game/player_hud.dart';
 import 'package:kenoma/ui/menu/circle_screen.dart';
 import 'package:kenoma/ui/menu/phone_menu.dart';
 import 'package:kenoma/ui/menu/profile_screen.dart';
+import 'package:kenoma/ui/menu/sky_screen.dart';
 import 'package:kenoma/ui/game/game_map_screen.dart';
 import 'package:kenoma/ui/game/joystick.dart';
 import 'package:kenoma/world/location_access.dart';
@@ -92,6 +93,12 @@ class Env {
     }
   }
 
+  /// Abre a folha do selo de modo (estado do GPS, troca de fonte, simulador e menu de debug).
+  Future<void> openSeal() async {
+    await tester.tap(find.byKey(const Key('mode-seal')));
+    await settle(10);
+  }
+
   Future<void> settle([int frames = 6]) async {
     for (var i = 0; i < frames; i++) {
       await tester.pump(const Duration(milliseconds: 50));
@@ -101,6 +108,7 @@ class Env {
 
 Future<Env> pumpGame(
   WidgetTester tester, {
+  Size screen = const Size(1080, 2400),
   bool simulator = true,
   bool simRewards = true,
   FakeGateway? gateway,
@@ -110,7 +118,7 @@ Future<Env> pumpGame(
   bool realClock = false,
   void Function(DevTools tools)? beforeOpen,
 }) async {
-  tester.view.physicalSize = const Size(1080, 2400);
+  tester.view.physicalSize = screen;
   tester.view.devicePixelRatio = 2.625;
   addTearDown(tester.view.reset);
   final gps = FakeGps();
@@ -148,9 +156,11 @@ void main() {
       expect(env.game.avatar.y, closeTo(y, 0.5));
       expect(env.game.follow.followX, closeTo(env.game.avatar.x, 1e-6), reason: 'a primeira posição não desliza');
       expect(env.game.auraM, 10.0);
+      expect(find.text('SIMULADOR'), findsOneWidget, reason: 'o selo de modo na barra');
+      expect(find.textContaining('SEGUINDO'), findsNothing, reason: 'seguindo bem, o HUD não fala do GPS');
+      await env.openSeal();
       expect(find.textContaining('SEGUINDO'), findsOneWidget);
       expect(find.textContaining('-22.8174'), findsOneWidget);
-      expect(find.text('SIMULADOR'), findsOneWidget);
     });
 
     testWidgets('o joystick anda o Conjurador e a câmera o segue, deslizando atrás dele', (tester) async {
@@ -260,8 +270,10 @@ void main() {
       expect(env.game.follow.followX, lessThanOrEqualTo(env.game.avatar.x + 0.05), reason: 'a câmera não passa do marcador');
     });
 
-    testWidgets('os botões do overlay: velocidade e teleportes', (tester) async {
+    testWidgets('os botões do simulador na folha do selo: velocidade e teleportes', (tester) async {
       final env = await pumpGame(tester);
+      expect(find.textContaining('CORRENDO'), findsNothing, reason: 'as fichas não cobrem o mapa');
+      await env.openSeal();
       await tester.tap(find.textContaining('CORRENDO'));
       await tester.pump();
       expect(env.sim.speedMps, 3.0);
@@ -297,9 +309,47 @@ void main() {
         await tester.pump(const Duration(milliseconds: 50));
       }
       expect(gameOf(tester).avatar.hasPosition, isTrue, reason: 'a precisão melhorou: o marcador aparece');
-      expect(find.textContaining('SEGUINDO'), findsOneWidget);
+      expect(find.textContaining('PRECISÃO RUIM'), findsNothing, reason: 'seguindo: o aviso sai do HUD');
       await tester.pumpWidget(const SizedBox.shrink());
     });
+  });
+
+  group('HUD', () {
+    for (final dp in const [Size(360, 800), Size(412, 915), Size(480, 1000)]) {
+      testWidgets('em ${dp.width.round()}×${dp.height.round()} dp, com simulador, bússola, Radar e viagem, nada do HUD cobre outra peça', (tester) async {
+        final env = await pumpGame(tester, screen: dp * 2.625);
+        env.game.worldView!.state.levelOverride = 2; // o Radar entra no HUD
+        env.game.dragRotate(0.8); // fora do norte: a bússola aparece
+        env.game.touchEnd();
+        await tester.tap(find.byType(PhoneButton));
+        await env.settle(10);
+        await tester.tap(find.byKey(const Key('app-routes')));
+        await env.settle(10);
+        await tester.tap(find.byKey(const Key('travel-hud'))); // nova viagem
+        await env.settle(4);
+        await tester.tap(find.byKey(const Key('travel-pick-map'))); // volta ao mapa para tocar o destino
+        await env.settle(10);
+        final rects = <String, Rect>{
+          'barra': tester.getRect(find.byKey(const Key('hud-bar'))),
+          'bússola': tester.getRect(find.byType(CompassButton)),
+          'faixa': tester.getRect(find.byKey(const Key('hud-strip'))),
+          'atalho do Radar': tester.getRect(find.byKey(const Key('radar-shortcut'))),
+          'retrato': tester.getRect(find.byKey(const Key('portrait-hud'))),
+          'celular': tester.getRect(find.byType(PhoneButton)),
+          'joystick': tester.getRect(find.byType(Joystick)),
+          'rastreador': env.game.trackerRect!,
+        };
+        expect(find.byKey(const Key('travel-chip')), findsOneWidget, reason: 'a viagem tem atalho na faixa');
+        final names = rects.keys.toList();
+        for (var i = 0; i < names.length; i++) {
+          final a = rects[names[i]]!;
+          expect(a.left >= 0 && a.top >= 0 && a.right <= dp.width && a.bottom <= dp.height, isTrue, reason: '${names[i]} fora da tela: $a');
+          for (var j = i + 1; j < names.length; j++) {
+            expect(a.intersect(rects[names[j]]!).isEmpty, isTrue, reason: '${names[i]} $a cobre ${names[j]} ${rects[names[j]]}');
+          }
+        }
+      });
+    }
   });
 
   group('câmera de jogo', () {
@@ -542,12 +592,16 @@ void main() {
       expect(env.game.avatar.x, closeTo(gx, 0.5));
       await tester.tap(find.text('GPS REAL'));
       await env.settle(10);
+      await tester.tap(find.text('USAR SIMULADOR'));
+      await env.settle(10);
       expect(env.tools.useSimulator, isTrue, reason: 'useSimulator depois do toque');
       expect(find.byType(Joystick), findsOneWidget);
       final (sx, _) = cellOf(kUnicamp.$1, kUnicamp.$2);
       expect(env.game.avatar.x, closeTo(sx, 0.5), reason: 'agora o marcador está no simulador, não no GPS');
       expect(env.gps.started, isFalse);
       await tester.tap(find.text('SIMULADOR'));
+      await env.settle(10);
+      await tester.tap(find.text('USAR GPS REAL'));
       await env.settle(10);
       expect(env.tools.useSimulator, isFalse);
       expect(env.gps.started, isTrue);
@@ -568,7 +622,7 @@ void main() {
     testWidgets('relógio depois do fim da época 0: o mapa abre e avisa que o mundo está desatualizado', (tester) async {
       final after = DateTime.utc(2035, 1, 1).millisecondsSinceEpoch ~/ 1000;
       await pumpGame(tester, clockUtc: after);
-      expect(find.text('MUNDO DESATUALIZADO'), findsOneWidget);
+      expect(find.textContaining('MUNDO DESATUALIZADO'), findsOneWidget);
       expect(find.byType(Joystick), findsOneWidget, reason: 'o mapa funciona mesmo assim');
     });
 
@@ -598,7 +652,7 @@ void main() {
       expect(find.text('VOLTAR'), findsOneWidget);
     });
 
-    testWidgets('o botão < volta ao menu e para a fonte de posição', (tester) async {
+    testWidgets('o menu de debug, atrás do selo de modo, volta ao menu e para a fonte de posição', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.625;
       addTearDown(tester.view.reset);
@@ -621,7 +675,11 @@ void main() {
         await tester.pump(const Duration(milliseconds: 50));
       }
       await tester.pump(const Duration(milliseconds: 400));
-      await tester.tap(find.text('<'));
+      await tester.tap(find.byKey(const Key('mode-seal')));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50)); // o mapa anima sempre: sem pumpAndSettle aqui
+      }
+      await tester.tap(find.byKey(const Key('open-debug-menu')));
       await tester.pumpAndSettle();
       expect(find.text('abrir'), findsOneWidget);
       // A fonte compartilhada parou: nenhuma leitura chega depois de sair.
@@ -847,14 +905,18 @@ void main() {
       }
     });
 
-    testWidgets('tocar no clima do HUD mostra numa linha o efeito no spawn', (tester) async {
+    testWidgets('tocar no clima do HUD abre o Céu, com o efeito no spawn e o motivo do clima forçado', (tester) async {
       final env = await pumpGame(tester);
       env.tools.force.set(weather: 'storm');
       await env.live(11);
       expect(find.text('TEMPESTADE'), findsOneWidget);
       await tester.tap(find.byKey(const Key('weather-hud')));
-      await tester.pump();
-      expect(find.textContaining('ELÉTRICOS MAIS COMUNS'), findsOneWidget);
+      await env.settle(10);
+      expect(find.byType(SkyScreen), findsOneWidget);
+      expect(find.byKey(const Key('sky-now')), findsOneWidget);
+      expect(find.textContaining('ELÉTRICOS MAIS COMUNS'), findsWidgets);
+      expect(find.textContaining('FORÇADO NO MENU DE DEBUG'), findsWidgets, reason: 'o Céu diz por que o clima é esse');
+      expect(find.byKey(const Key('sky-moon')), findsOneWidget);
     });
 
     testWidgets('o interruptor "chuva no mapa" apaga a chuva mesmo com o clima de chuva', (tester) async {
@@ -905,7 +967,7 @@ void main() {
       expect(st.progress.xp, 0);
     });
 
-    testWidgets('um Eco oculto forçado não aparece no mapa até a varredura do Radar, e depois aparece', (tester) async {
+    testWidgets('um Eco oculto forçado não aparece no mapa até o pulso do Radar achar a distorção e o jogador chegar nela', (tester) async {
       final env = await pumpGame(tester, beforeOpen: (t) => t.force.set(behavior: EcoBehavior.hidden));
       final w = env.game.worldView!;
       if (env.tools.force.pendingEco) await goToSomeEco(env); // sem Eco à vista no começo: vai até um
@@ -917,8 +979,8 @@ void main() {
       env.sim.teleport(la, lo);
       await env.simulate(const Duration(seconds: 6), frames: 120);
       w.radar(env.tools.clock.nowUtc);
-      await env.settle(4);
-      expect(w.spawns.any((s) => s.uid == target.uid), isTrue);
+      await env.settle(10);
+      expect(w.spawns.any((s) => s.uid == target.uid), isTrue, reason: 'em cima da distorção: virou Eco');
       expect(w.state.story.count('hidden_revealed'), greaterThan(0));
     });
 

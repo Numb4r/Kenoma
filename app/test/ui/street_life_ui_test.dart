@@ -27,7 +27,7 @@ void main() {
   }
 
   group('Radar', () {
-    testWidgets('um toque varre, mostra o resultado e depois recarrega por 2 minutos', (tester) async {
+    testWidgets('um toque dispara o pulso, mostra o resultado e depois recarrega por 2 minutos', (tester) async {
       await tall(tester);
       final s = state();
       var now = t;
@@ -40,31 +40,57 @@ void main() {
           onSweep: () {
             sweeps++;
             s.recordSweep(now, const [], now + 900);
-            return const RadarOutcome(traces: [], revealed: []);
+            return const RadarOutcome(traces: [], distortions: []);
           },
+          echoes: () => const [],
+          rotation: () => 0,
         ),
       ));
       expect(find.text('SCANNER NÍVEL 1'), findsOneWidget);
-      await tester.tap(find.text('VARRER'));
+      expect(find.byKey(const Key('radar-sonar')), findsOneWidget);
+      await tester.tap(find.text('PULSO'));
       await tester.pump();
       expect(sweeps, 1);
       expect(find.byKey(const Key('radar-result')), findsOneWidget);
-      expect(find.text('NADA RARO POR PERTO.'), findsOneWidget);
+      expect(find.text('RADAR: NADA RARO POR PERTO'), findsOneWidget);
       expect(find.text('RECARREGANDO 2:00'), findsOneWidget);
       await tester.tap(find.text('RECARREGANDO 2:00'));
       await tester.pump();
       expect(sweeps, 1, reason: 'carregando: o toque não varre');
       now += 121;
       await tester.pump(const Duration(seconds: 1));
-      expect(find.text('VARRER'), findsOneWidget);
+      expect(find.text('PULSO'), findsOneWidget);
     });
 
     testWidgets('o nível 2 do scanner (nível 5 do Conjurador) aparece no texto', (tester) async {
       await tall(tester);
       final s = state()..levelOverride = 5;
-      await tester.pumpWidget(MaterialApp(home: RadarScreen(state: s, street: street, nowUtc: () => t, onSweep: () => const RadarOutcome(traces: [], revealed: []))));
+      await tester.pumpWidget(MaterialApp(
+          home: RadarScreen(state: s, street: street, nowUtc: () => t, onSweep: () => const RadarOutcome(traces: [], distortions: []), echoes: () => const [], rotation: () => 0)));
       expect(find.text('SCANNER NÍVEL 2'), findsOneWidget);
-      expect(find.textContaining('MOSTRAM O TIPO'), findsOneWidget);
+      expect(find.textContaining('COR DO TIPO'), findsOneWidget);
+    });
+
+    testWidgets('o atalho do HUD dispara o pulso só com o Radar pronto e mostra a recarga', (tester) async {
+      final s = state();
+      var now = t, pulses = 0;
+      await tester.pumpWidget(MaterialApp(
+        home: Center(
+          child: RadarShortcut(state: s, street: street, nowUtc: () => now, onPulse: () {
+            pulses++;
+            s.recordSweep(now, const [], now);
+          }),
+        ),
+      ));
+      await tester.tap(find.byKey(const Key('radar-shortcut')));
+      await tester.pump();
+      expect(pulses, 1);
+      await tester.tap(find.byKey(const Key('radar-shortcut')));
+      expect(pulses, 1, reason: 'recarregando');
+      now += 121;
+      await tester.pump(const Duration(seconds: 1));
+      await tester.tap(find.byKey(const Key('radar-shortcut')));
+      expect(pulses, 2);
     });
   });
 

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/ui/chime.dart';
 import 'package:kenoma/player/game_session.dart';
 import 'package:kenoma/save/backup.dart';
 import 'package:kenoma/save/backup_io.dart';
@@ -86,6 +87,22 @@ void main() {
     expect(find.text('VERSÃO 0.12.0+18'), findsOneWidget);
     expect(find.text(s.state.founder!.playerId), findsOneWidget);
     expect(find.textContaining('DESATUALIZADO'), findsNothing);
+  });
+
+  testWidgets('só preferências: a Patrulha e o modo bolso moram no app Patrulha; o som tem interruptor', (tester) async {
+    final s = await session(MemorySaveStore());
+    await pump(tester, s);
+    expect(find.text('Modo bolso'), findsNothing);
+    expect(find.text('Patrulha do Véu'), findsNothing);
+    for (final t in ['TELA E SOM', 'PERMISSÕES', 'DADOS']) {
+      expect(find.text(t), findsOneWidget, reason: t);
+    }
+    expect(s.state.settingOr('sound', true), isTrue);
+    await tester.tap(find.byKey(const Key('sound-switch')));
+    await tester.pump();
+    expect(s.state.setting('sound'), isFalse);
+    expect(soundOn.value, isFalse);
+    soundOn.value = true;
   });
 
   testWidgets('depois do fim da última época avisa que o mundo está desatualizado', (tester) async {

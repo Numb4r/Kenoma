@@ -5,13 +5,14 @@ import 'package:kenoma/travel/deep_links.dart';
 import 'package:kenoma/travel/travel_balance.dart';
 import 'package:kenoma/travel/travel_session.dart';
 import 'package:kenoma/ui/settings/ride_notifications_screen.dart';
-import 'package:kenoma/ui/travel/travel_overlay.dart';
+import 'package:kenoma/ui/travel/routes_screen.dart';
 import 'package:kenoma/world/traffic_graph.dart';
 
 import '../support/fixtures.dart';
 
 void main() {
   late TravelSession travel;
+  var pickedOnMap = 0;
 
   Widget app() {
     final data = loadGameData();
@@ -27,22 +28,32 @@ void main() {
       nowUtc: () => 1800000000,
     );
     return MaterialApp(
-      home: Scaffold(
-        body: Stack(children: [
-          Positioned.fill(
-            child: TravelOverlay(travel: travel, state: state, data: data, appVersion: 'test', playerLat: () => -22.9, playerLon: () => -47.0, onMessage: (_, {seconds = 2}) {}),
-          ),
-        ]),
+      home: RoutesScreen(
+        travel: travel,
+        state: state,
+        data: data,
+        appVersion: 'test',
+        playerLat: () => -22.9,
+        playerLon: () => -47.0,
+        onMessage: (_, {seconds = 2}) {},
+        onPickOnMap: () => pickedOnMap++,
       ),
     );
   }
 
-  testWidgets('do botão do HUD ao fim da viagem, de passageiro', (tester) async {
+  setUp(() => pickedOnMap = 0);
+
+  testWidgets('do app Rotas ao fim da viagem, de passageiro', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(app());
     await tester.tap(find.byKey(const Key('travel-hud')));
     await tester.pump();
     expect(travel.stage, TravelStage.pickDestination);
     expect(find.text('BUSCAR'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('travel-pick-map')));
+    expect(pickedOnMap, 1, reason: 'o destino no mapa fecha o celular');
 
     travel.tapCell(1000, 2000);
     await tester.pump();
@@ -67,6 +78,9 @@ void main() {
   });
 
   testWidgets('quem dirige não vê o Rádio', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(app());
     travel.open();
     travel.tapCell(1000, 2000);
@@ -78,6 +92,9 @@ void main() {
   });
 
   testWidgets('a corrida pelos botões mostra o tempo, Entrei e Cheguei', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(app());
     travel.open();
     travel.tapCell(1000, 2000);

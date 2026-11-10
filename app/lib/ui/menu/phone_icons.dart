@@ -48,6 +48,18 @@ const Map<String, List<String>> phoneIconArt = {
     '............', '....llll....', '...llllll...', '...llllll...', '...llllll...', '....llll....',
     '............', '..vvvvvvvv..', '.vvvvvvvvvv.', '.vvvvvvvvvv.', '.vvvvvvvvvv.', '............',
   ],
+  PhoneAppId.routes: [
+    '.........oo.', '........oooo', '........o..o', '........oooo', '.........oo.', '..cc......o.',
+    '.c..c.......', '.c..c..tt...', '..cc..t..t..', '..c..t....t.', '..c.t.......', '..ct........',
+  ],
+  PhoneAppId.patrol: [
+    '..vvvvvvvv..', '.vllllllllv.', '.vl......lv.', '.vl.cccc.lv.', '.vl.c..c.lv.', '.vl.cccc.lv.',
+    '.vl......lv.', '..vl....lv..', '..vl.oo.lv..', '...vl..lv...', '....vllv....', '.....vv.....',
+  ],
+  PhoneAppId.sky: [
+    '...tt.......', '..t.........', '.t..........', '.t.......o..', '.t..........', '..t.....o...',
+    '...tt.......', '......llll..', '....llllllll', '...lllllllll', '....llllllll', '............',
+  ],
   PhoneAppId.settings: [
     '.....tt.....', '..t..tt..t..', '..tttttttt..', '...tt..tt...', '.ttt....ttt.', 'tttt....tttt',
     'tttt....tttt', '.ttt....ttt.', '...tt..tt...', '..tttttttt..', '..t..tt..t..', '.....tt.....',

@@ -1,5 +1,6 @@
-/// A tela da Patrulha do Véu (HUD na primeira vez e Ajustes): o que acontece, o gasto de bateria, até quando ela fica
-/// ligada, e o botão que pede as permissões (notificações e localização durante o uso) e liga o serviço.
+/// O app Patrulha do celular: liga e desliga a Patrulha do Véu e o modo bolso, mostra a patrulha atual e o histórico das
+/// anteriores (os resumos que o diário deixou no Chat), e explica o gasto de bateria e as permissões. O botão de ligar pede
+/// as permissões (notificações e localização durante o uso) e liga o serviço.
 library;
 
 import 'package:flutter/material.dart';
@@ -13,7 +14,28 @@ import '../../player/game_state.dart';
 import '../../world/location_access.dart';
 import '../colors.dart';
 import '../menu/screen_frame.dart';
+import '../settings/connectivity_section.dart' show kPocketSetting;
 import '../tuning/tuning_screen.dart' show PixelButton;
+
+/// As patrulhas que acabaram, da mais nova para a mais velha: os resumos que o diário entregou no Chat
+/// (`patrol_summary`, com minutos, Fagulhas, materiais e marcas).
+List<({int endUtc, int min, int sparks, int materials, int marks})> patrolHistory(GameState s) => [
+      for (final e in s.story.chat.delivered.reversed)
+        if (e.id == 'patrol_summary')
+          (
+            endUtc: e.utc,
+            min: int.tryParse(e.vars['min'] ?? '') ?? 0,
+            sparks: int.tryParse(e.vars['sparks'] ?? '') ?? 0,
+            materials: int.tryParse(e.vars['materials'] ?? '') ?? 0,
+            marks: int.tryParse(e.vars['marks'] ?? '') ?? 0,
+          ),
+    ];
+
+String _when(int utc) {
+  final t = DateTime.fromMillisecondsSinceEpoch(utc * 1000, isUtc: true).toLocal();
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${two(t.day)}/${two(t.month)} ${two(t.hour)}:${two(t.minute)}';
+}
 
 /// Horas até a Patrulha desligar sozinha, do Ajuste (padrão e teto do `balance.json`).
 int patrolMaxHours(GameState s, PatrolBalance b) => ((s.settings[kPatrolMaxHoursKey] as int?) ?? b.maxHoursDefault).clamp(1, b.maxHoursLimit);
@@ -55,7 +77,38 @@ class PatrolScreen extends StatelessWidget {
     final c = PatrolController.instance;
     return ListenableBuilder(
       listenable: Listenable.merge([c, state]),
-      builder: (context, _) => ScreenFrame(title: 'Patrulha do Véu', children: [
+      builder: (context, _) => ScreenFrame(title: 'Patrulha', children: [
+        if (c.running) ...[
+          Text('LIGADA · ${c.status['min'] ?? 0} MIN · ${c.status['sparks'] ?? 0} FAGULHAS · ${c.status['marks'] ?? 0} MARCAS', key: const Key('patrol-now'), style: const TextStyle(fontSize: 8, color: kSignal)),
+          const SizedBox(height: 8),
+          PixelButton(label: 'Encerrar a Patrulha', color: kEssence, onTap: () => c.stop()),
+        ] else
+          PixelButton(
+            label: 'Ligar a Patrulha',
+            color: kSignal,
+            onTap: () async {
+              final err = await startPatrolFlow(state: state, balance: balance);
+              onMessage?.call(err ?? 'Patrulha ligada');
+            },
+          ),
+        const SizedBox(height: 8),
+        SwitchListTile(
+          key: const Key('pocket-switch'),
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Modo bolso', style: TextStyle(fontSize: 8)),
+          subtitle: const Text(
+            'Com o celular no bolso (sensor de proximidade coberto) o mapa escurece e o celular vibra quando um Eco chega ao alcance de toque. A coleta continua. Com a Patrulha ligada, vale sempre',
+            style: TextStyle(fontSize: 8, color: kDim),
+          ),
+          value: state.setting(kPocketSetting),
+          activeThumbColor: kSignal,
+          onChanged: (v) => state.setSetting(kPocketSetting, v),
+        ),
+        const SectionTitle('Anteriores'),
+        if (patrolHistory(state).isEmpty) const Text('NENHUMA PATRULHA AINDA.', style: TextStyle(fontSize: 8, color: kDim, height: 1.8)),
+        for (final p in patrolHistory(state).take(20))
+          Text('${_when(p.endUtc)} · ${p.min} MIN · ${p.sparks} FAGULHAS · ${p.materials} MATERIAIS · ${p.marks} MARCAS', style: body),
+        const SectionTitle('Como funciona'),
         const Text(
           'Com a Patrulha ligada o jogo continua com o app fechado ou a tela bloqueada, como um app de corrida. '
           'Ela coleta as Fagulhas e os materiais que entram na Aura e marca os Ecos que passam a até 30 m. '
@@ -85,21 +138,6 @@ class PatrolScreen extends StatelessWidget {
               onSelected: (_) => state.setSetting(kPatrolMaxHoursKey, h),
             ),
         ]),
-        const SizedBox(height: 16),
-        if (c.running) ...[
-          Text('LIGADA · ${c.status['min'] ?? 0} MIN · ${c.status['sparks'] ?? 0} FAGULHAS · ${c.status['marks'] ?? 0} MARCAS', style: const TextStyle(fontSize: 8, color: kSignal)),
-          const SizedBox(height: 8),
-          PixelButton(label: 'Encerrar a Patrulha', color: kEssence, onTap: () => c.stop()),
-        ] else
-          PixelButton(
-            label: 'Ligar a Patrulha',
-            color: kSignal,
-            onTap: () async {
-              final err = await startPatrolFlow(state: state, balance: balance);
-              onMessage?.call(err ?? 'Patrulha ligada');
-              if (err == null && context.mounted) Navigator.of(context).maybePop();
-            },
-          ),
       ]),
     );
   }

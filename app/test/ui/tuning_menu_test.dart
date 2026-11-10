@@ -425,9 +425,13 @@ void main() {
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
+      await tapVisible(tester, find.byKey(const Key('mode-seal')));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
       expect(find.textContaining('SEGUINDO'), findsOneWidget);
       expect(find.textContaining('-22.8174'), findsOneWidget);
-      await tapVisible(tester, find.text('<'));
+      await tapVisible(tester, find.byKey(const Key('open-debug-menu')));
       await tester.pumpAndSettle();
       expect(find.text('MAPA DO JOGO'), findsOneWidget, reason: 'o < volta ao menu');
     });

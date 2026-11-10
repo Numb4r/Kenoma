@@ -1,7 +1,9 @@
-/// Ajustes (docs/fase0-spec.md, seção 9): o grupo (código, QR e entrar noutro), a época e o aviso de mundo
-/// desatualizado, a versão e o player_id, os interruptores do mapa e o backup.
+/// Ajustes (docs/fase0-spec.md, seção 9): só preferências. O grupo (código, QR e entrar noutro), tela e som, as permissões
+/// opcionais, a região e os dados (época, versão e player_id, backup, recomeçar). O que é jogo (Patrulha, modo bolso,
+/// viagem, Radar, clima) mora no app dele no celular.
 library;
 
+import '../chime.dart';
 import '../flashes.dart';
 import '../../core/features.dart';
 import 'package:flutter/material.dart';
@@ -253,43 +255,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 8),
             PixelButton(label: 'Entrar noutro grupo', color: kSignal, onTap: _joinGroup),
-            const SectionTitle('Época'),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: panelBox(line: sel.stale ? kEssence : kPanelLine),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('ÉPOCA ${sel.epoch.id}', style: const TextStyle(fontSize: 16, color: kText)),
-                const SizedBox(height: 4),
-                Text('COMEÇOU EM ${_date(sel.epoch.startsUtc)}', style: const TextStyle(fontSize: 8, color: kDim, height: 1.8)),
-                Text('VALE ATÉ ${_date(sel.epoch.validUntilUtc)}', style: const TextStyle(fontSize: 8, color: kDim, height: 1.8)),
-                if (sel.stale)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: Text('MUNDO DESATUALIZADO. ATUALIZE O APP: SEUS AMIGOS PODEM ESTAR EM OUTRA ÉPOCA.', style: TextStyle(fontSize: 8, color: kEssence, height: 1.8)),
-                  ),
-              ]),
-            ),
-            const SectionTitle('App'),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: panelBox(),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('VERSÃO ${widget.appVersion}', style: const TextStyle(fontSize: 8, color: kText, height: 1.8)),
-                const SizedBox(height: 4),
-                const Text('PLAYER_ID', style: TextStyle(fontSize: 8, color: kDim)),
-                Text(id, key: const Key('player-id'), style: const TextStyle(fontSize: 8, color: kText, height: 1.8)),
-                const SizedBox(height: 8),
-                PixelButton(
-                  label: 'Copiar player_id',
-                  color: kVeil,
-                  onTap: () async {
-                    await Clipboard.setData(ClipboardData(text: id));
-                    if (mounted) _say('player_id copiado');
-                  },
-                ),
-              ]),
-            ),
-            const SectionTitle('Mapa'),
+            const SectionTitle('Tela e som'),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Nomes de rua', style: TextStyle(fontSize: 8)),
@@ -348,6 +314,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
             SwitchListTile(
+              key: const Key('sound-switch'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Sons', style: TextStyle(fontSize: 8)),
+              subtitle: const Text('O aviso do Brilhante e o trovão. A vibração da sintonia continua', style: TextStyle(fontSize: 8, color: kDim)),
+              value: s.settingOr(kSoundSetting, true),
+              activeThumbColor: kSignal,
+              onChanged: (v) {
+                s.setSetting(kSoundSetting, v);
+                soundOn.value = v;
+              },
+            ),
+            const SectionTitle('Permissões'),
+            SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Avisos no celular', style: TextStyle(fontSize: 8)),
               subtitle: const Text('Diárias renovadas e descanso cheio, às 9 h. Desligado por padrão', style: TextStyle(fontSize: 8, color: kDim)),
@@ -355,8 +334,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
               activeThumbColor: kSignal,
               onChanged: _setNotifications,
             ),
-            if (widget.regions != null) RegionsSection(manager: widget.regions!),
             ConnectivitySection(state: s, data: widget.data, nowUtc: widget.nowUtc),
+            if (widget.regions != null) RegionsSection(manager: widget.regions!),
+            const SectionTitle('Dados'),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: panelBox(line: sel.stale ? kEssence : kPanelLine),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('ÉPOCA ${sel.epoch.id}', style: const TextStyle(fontSize: 16, color: kText)),
+                const SizedBox(height: 4),
+                Text('COMEÇOU EM ${_date(sel.epoch.startsUtc)}', style: const TextStyle(fontSize: 8, color: kDim, height: 1.8)),
+                Text('VALE ATÉ ${_date(sel.epoch.validUntilUtc)}', style: const TextStyle(fontSize: 8, color: kDim, height: 1.8)),
+                if (sel.stale)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text('MUNDO DESATUALIZADO. ATUALIZE O APP: SEUS AMIGOS PODEM ESTAR EM OUTRA ÉPOCA.', style: TextStyle(fontSize: 8, color: kEssence, height: 1.8)),
+                  ),
+              ]),
+            ),
+            const SectionTitle('App'),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: panelBox(),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('VERSÃO ${widget.appVersion}', style: const TextStyle(fontSize: 8, color: kText, height: 1.8)),
+                const SizedBox(height: 4),
+                const Text('PLAYER_ID', style: TextStyle(fontSize: 8, color: kDim)),
+                Text(id, key: const Key('player-id'), style: const TextStyle(fontSize: 8, color: kText, height: 1.8)),
+                const SizedBox(height: 8),
+                PixelButton(
+                  label: 'Copiar player_id',
+                  color: kVeil,
+                  onTap: () async {
+                    await Clipboard.setData(ClipboardData(text: id));
+                    if (mounted) _say('player_id copiado');
+                  },
+                ),
+              ]),
+            ),
             const SectionTitle('Backup'),
             const Text('O backup é o seu jogo inteiro num arquivo. Mande para o Google Drive ou para si mesmo.', style: TextStyle(fontSize: 8, color: kDim, height: 1.8)),
             const SizedBox(height: 8),

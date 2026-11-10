@@ -122,8 +122,14 @@ class WorldView {
   /// Todos os Ecos ao redor, inclusive os Ocultos que ainda ninguém revelou: o Radar varre estes.
   List<WorldSpawn> allEcos = const [];
 
-  /// Os rastros que a última varredura deixou no mapa (some quando passa do tempo).
+  /// Os rastros que o último pulso deixou no mapa (some quando passa do tempo).
   List<Trace> traces = const [];
+
+  /// Os Ocultos que o último pulso achou e que o jogador ainda não alcançou.
+  List<Distortion> distortions = const [];
+
+  /// O último pulso: quando e de onde (células z21) a onda partiu. Só desenho.
+  ({int t, double x, double y})? pulse;
 
   /// Um Agressivo entrou na Aura: a tela abre a folha de preparo sozinha (e o celular vibra).
   /// Devolve `true` se abriu; com `false` (tela ocupada) a chance não se gasta e ele tenta de novo no próximo quadro.
@@ -196,10 +202,25 @@ class WorldView {
   /// Metros do jogador até o spawn.
   double distanceM(WorldSpawn s) => s.distanceM(_px, _py, _mpc);
 
-  /// Os Ecos fora da tela que o rastreador mostra: até [max], a até [trackerM] metros.
-  List<TrackedEco> tracked({required bool Function(WorldSpawn) offScreen, required double trackerM, required int max}) => !_hasPlayer
-      ? const []
-      : trackEcos(spawns: spawns, playerX: _px, playerY: _py, metersPerCell21: _mpc, trackerM: trackerM, offScreen: offScreen, max: max);
+  /// O jogador (células z21 fracionárias) e os metros por célula da latitude dele, na última atualização.
+  double get playerX => _px;
+  double get playerY => _py;
+  double get metersPerCell21 => _mpc;
+
+  /// O que o sonar mostra agora: os arcos dos rastros e as distorções, vistos do jogador.
+  List<SonarEcho> sonar() {
+    if (!_hasPlayer) return const [];
+    final byUid = {for (final s in allEcos) s.uid: s};
+    return sonarEchoes(traces: traces, distortions: distortions, ecoOf: (uid) => byUid[uid], playerX: _px, playerY: _py, metersPerCell: _mpc, balance: street);
+  }
+
+  /// O rastreador: o que o Radar achou e os Ecos fora da tela, até [max], a até [trackerM] metros.
+  List<TrackedEco> tracked({required bool Function(WorldSpawn) offScreen, required double trackerM, required int max}) {
+    if (!_hasPlayer) return const [];
+    final byUid = {for (final s in allEcos) s.uid: s};
+    final finds = [for (final e in sonar()) if (byUid[e.uid] != null) (eco: byUid[e.uid]!, echo: e)];
+    return trackEcos(spawns: spawns, playerX: _px, playerY: _py, metersPerCell21: _mpc, trackerM: trackerM, offScreen: offScreen, max: max, finds: finds);
+  }
 
   bool inAura(WorldSpawn s) => _hasPlayer && distanceM(s) <= auraRadiusM;
 
@@ -260,6 +281,7 @@ class WorldView {
     _track.add((t: tUtc, x: px, y: py));
     _track.removeWhere((p) => tUtc - p.t > street.skittishSpeedWindowS);
     traces = [for (final t in traces) if (t.untilUtc > tUtc) t];
+    _resolveDistortions(tUtc);
     // Os Espíritos só aparecem a partir do nível `spirit_spawn_level`. É individual: o mundo é o mesmo para todos.
     final spiritsOn = state.playerLevel >= state.cb.spiritSpawnLevel;
     final ritualsOn = state.playerLevel >= state.cb.ritualLevel;
@@ -344,8 +366,20 @@ class WorldView {
     return false;
   }
 
-  /// Uma varredura do Radar em [tUtc]: mostra os rastros dos Ecos raros por perto e revela os Ocultos bem perto. A
-  /// recarga é conferida por quem chama (`radarWaitS`). Os Ocultos revelados passam a aparecer no mapa na hora.
+  /// As distorções vencidas saem; as que o jogador alcançou viram Eco no mapa (o Oculto fica revelado por
+  /// `hidden_reveal_s`). Individual: o save guarda só o que este aparelho revelou.
+  void _resolveDistortions(int tUtc) {
+    if (distortions.isEmpty) return;
+    final live = [for (final d in distortions) if (d.untilUtc > tUtc && !state.isDone(d.eco.uid)) d];
+    final reached = reachedDistortions(live, distanceM, street);
+    distortions = [for (final d in live) if (!reached.contains(d)) d];
+    if (reached.isEmpty) return;
+    state.revealHidden([for (final d in reached) d.eco.uid], tUtc, tUtc + street.hiddenRevealS.round());
+    _record('hidden_revealed', '', reached.where((d) => !isDebugUid(d.eco.uid)).length); // as de debug não contam
+  }
+
+  /// Um pulso do Radar em [tUtc]: rastros dos Ecos raros por perto e distorções dos Ocultos bem perto. A recarga é
+  /// conferida por quem chama (`radarWaitS`). Um Oculto só aparece no mapa quando o jogador chega à distorção dele.
   RadarOutcome radar(int tUtc) {
     final out = sweep(
       all: [for (final s in allEcos) if (!state.isDone(s.uid)) s],
@@ -355,12 +389,13 @@ class WorldView {
       tUtc: tUtc,
       playerLevel: state.playerLevel,
       balance: street,
-      showS: (300 * climate.traceTimeMult).round(), // o Frio guarda os rastros por mais tempo
+      showS: (street.traceShowS * climate.traceTimeMult).round(), // o Frio guarda os rastros por mais tempo
     );
-    state.recordSweep(tUtc, [for (final s in out.revealed) s.uid], tUtc + street.hiddenRevealS.round());
-    _record('hidden_revealed', '', out.revealed.where((s) => !isDebugUid(s.uid)).length); // as de debug não contam
+    state.recordSweep(tUtc, const [], tUtc);
     traces = out.traces;
-    spawns = [...spawns, for (final s in out.revealed) if (!spawns.any((o) => o.uid == s.uid)) s];
+    distortions = out.distortions;
+    pulse = (t: tUtc, x: _px, y: _py);
+    _resolveDistortions(tUtc); // já em cima de uma: aparece na próxima atualização
     return out;
   }
 
