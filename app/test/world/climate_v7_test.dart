@@ -149,6 +149,15 @@ void main() {
       expect(items, contains('item.pure_water'));
       expect(a.modsAt(x21, y21, t).walkerMult, 0.6, reason: 'passantes mais lentos no gelo');
     });
+
+    test('na Chuva Carmim as poças dão Essência carmesim, de toque', () {
+      expect(data.itemName('item.essence.crimson'), 'Essência carmesim');
+      final a = device(forced: 'crimson_rain');
+      final t = e7.startsUtc + 30 * 86400 + 1800;
+      final items = [for (final s in a.extras(x21: x21, y21: y21, radiusM: 400, t: t, metersPerCell21: mpc, levelOf: (id, add, uid) => 3)) if (!s.isEco) s];
+      expect(items, isNotEmpty);
+      expect(items.every((s) => s.entryId == 'item.essence.crimson' && !s.isSpark), isTrue);
+    });
   });
 
   group('meteoros', () {
