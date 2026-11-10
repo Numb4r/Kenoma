@@ -983,9 +983,10 @@ void main() {
       expect(w.state.story.count('hidden_revealed'), greaterThan(0));
     });
 
-    testWidgets('o menu do celular tem o Radar a partir do nível 2', (tester) async {
+    testWidgets('o Radar e o atalho dele no HUD só chegam no nível 5', (tester) async {
       final env = await pumpGame(tester);
-      env.game.worldView!.state.levelOverride = 2;
+      expect(find.byKey(const Key('radar-shortcut')), findsNothing, reason: 'antes do Radar, sem atalho (o atalho no nível 5 está no teste das zonas do HUD)');
+      env.game.worldView!.state.levelOverride = 5;
       await tester.tap(find.byType(PhoneButton));
       await env.settle(10);
       expect(find.text('RADAR'), findsOneWidget);
