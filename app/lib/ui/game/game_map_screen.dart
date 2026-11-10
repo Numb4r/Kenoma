@@ -20,6 +20,7 @@ import '../../core/species_ids.dart' show isRitualOnlyId;
 import '../../crafting/ritual_data.dart';
 import '../ritual/ritual_screen.dart';
 import '../../net/region_catalog.dart' show RegionEntry;
+import '../../world/climate_form.dart';
 import '../../world/layered_world.dart';
 import '../../world/map_layers.dart';
 import '../../data/climate_catalog.dart';
@@ -236,9 +237,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _optionalSensors(r, st, now);
     _patrol?.tick();
     _radioTick(r, now);
-    if (_weatherIn-- <= 0) {
+    if (_weatherIn-- <= 0 || tools.force.simulating) {
       _weatherIn = 10;
       _updateWeather();
+      if (tools.force.simulating) setState(() {}); // a fase da simulação nos avisos
     }
   }
 
@@ -589,7 +591,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     tools.clock.raiseFloor(session.state.lastSeenUtc);
     session.onSeen = tools.clock.raiseFloor;
     // O clima do mundo: o modelo é o da época ATIVA naquele instante (nunca o da mais nova); o debug pode forçar qualquer id.
-    final climate = climateWorldFor(state: session.state, data: data, assets: assets, forced: () => tools.force.weather);
+    final climate = climateWorldFor(state: session.state, data: data, assets: assets, forced: () => tools.force.weather, forcedPhase: tools.force.phase);
     final world = worldViewFor(
       state: session.state,
       data: data,
@@ -943,7 +945,19 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       if (r.assets.stale) 'MUNDO DESATUALIZADO',
       if (tools.clock.overridden) 'RELÓGIO UTC ${_StatusLines.utc(tools.clock.now)} (OVERRIDE)',
       if (s.status != TrackingStatus.tracking) _StatusLines.line(s, tools),
+      ?_simLine(r),
     ];
+  }
+
+  /// A Simulação de clima do debug: o clima, a fase e a velocidade, na zona de avisos (não cobre o HUD).
+  String? _simLine(_Ready r) {
+    final st = tools.force.simState(), sim = tools.force.sim;
+    if (st == null || sim == null) return null;
+    final info = r.data.climates.of(st.id), p = tools.force.phase();
+    final amount = st.fading
+        ? formAmount(sinceStartS: p.prevFormedS + p.prevSinceEndS, sinceEndS: p.prevSinceEndS, growS: info.formS, fadeS: info.fadeS)
+        : formAmount(sinceStartS: p.ageS, growS: info.formS, fadeS: info.fadeS);
+    return 'SIMULAÇÃO ${st.index + 1}/${sim.ids.length} · ${info.name.toUpperCase()} · ${formPhaseLabel(amount, ending: st.fading).toUpperCase()} · ${tools.force.speed.toInt()}X';
   }
 
   /// A folha do selo de modo: o estado do GPS, a troca de fonte, os controles do simulador e o menu de debug (que nunca

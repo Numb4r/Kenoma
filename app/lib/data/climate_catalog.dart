@@ -82,6 +82,16 @@ class ClimateInfo {
   /// Aviso que aparece uma vez quando o clima começa a ser visto (o Familiar avisa que não é neve).
   final String? notice;
 
+  /// Quanto o que este clima deixa no chão leva para se formar e para sumir depois que ele acaba (o maior `grow_s` e
+  /// `fade_s` das camadas do mapa; sem eles, 30 min e 1 h). Só desenho e a fase que o debug mostra.
+  double get formS => _most('grow_s', 1800);
+  double get fadeS => _most('fade_s', 3600);
+
+  double _most(String key, double fallback) {
+    final m = ground.fold(0.0, (a, l) => l.val(key) > a ? l.val(key) : a);
+    return m > 0 ? m : fallback;
+  }
+
   /// Quantas partículas este clima desenha no máximo (soma das camadas): o limite fixo por estado.
   int get maxParticles => layers.where((l) => l.kind == 'particles').fold(0, (a, l) => a + l.count('count'));
 }

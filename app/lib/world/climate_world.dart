@@ -48,6 +48,9 @@ class PlayerClimate {
     this.windHeadingRad = 0,
     this.windWindowStart = 0,
     this.runStartUtc = 0,
+    this.prevId,
+    this.prevStartUtc = 0,
+    this.prevEndUtc = 0,
   });
 
   final String id;
@@ -73,6 +76,11 @@ class PlayerClimate {
   /// Desde quando (UTC) este clima vale sem parar aqui: o começo da primeira das janelas seguidas com ele.
   final int runStartUtc;
 
+  /// O clima de antes deste no lugar e quando ele valeu: o que ele deixou no chão seca ou derrete depois do fim
+  /// (`climate_form.dart`). `null`: nenhum.
+  final String? prevId;
+  final int prevStartUtc, prevEndUtc;
+
   /// A deriva do sinal na sintonia para a escola [school] (`null`: sem escola).
   double wanderFor(String? school) => school != null && school == immuneSchool ? 1 : wanderMult;
 
@@ -88,6 +96,7 @@ class ClimateWorld {
     this.biomeAt,
     this.snapper,
     String? Function()? forced,
+    this.forcedPhase,
   }) : forced = forced ?? _none;
 
   final int seed;
@@ -95,6 +104,10 @@ class ClimateWorld {
 
   /// O clima forçado pelo debug (qualquer id), ou `null`.
   final String? Function() forced;
+
+  /// Há quanto tempo (segundos de clima, já com a velocidade do debug) o clima forçado começa do zero, e o forçado de antes
+  /// dele, secando. Só neste aparelho. `null`: o forçado vale inteiro, como antes.
+  final ForcedPhase Function()? forcedPhase;
 
   /// A espécie de Eco de um tipo (`water`; `any` para qualquer), escolhida por [pick] em `[0, 1)`. `null`: não há.
   final String? Function(String type, double pick) speciesOfType;
@@ -165,6 +178,21 @@ class ClimateWorld {
     final d = _defAt17(cx17, cy17, t);
     if (d == null) return PlayerClimate(id: forced() ?? 'clear');
     final mod = d.def.modifier, mov = d.def.movement, tr = d.def.trails;
+    final windowStart = d.window * d.model.windowS;
+    final fp = forced() == null ? null : forcedPhase?.call();
+    final int runStart, prevStart, prevEnd;
+    final String? prevId;
+    if (fp != null) {
+      runStart = t - fp.ageS.round();
+      prevId = fp.prevId;
+      prevEnd = t - fp.prevSinceEndS.round();
+      prevStart = prevEnd - fp.prevFormedS.round();
+    } else {
+      runStart = _runStart(cx17, cy17, d.def.id, windowStart, d.model.windowS);
+      prevId = _defAt17(cx17, cy17, runStart - 1)?.def.id;
+      prevEnd = runStart;
+      prevStart = prevId == null ? runStart : _runStart(cx17, cy17, prevId, runStart - d.model.windowS, d.model.windowS);
+    }
     return PlayerClimate(
       id: d.def.id,
       auraAddM: mod?.auraAddM ?? 0,
@@ -179,8 +207,11 @@ class ClimateWorld {
       trafficMult: mov?.trafficMult ?? 1,
       walkerMult: mov?.walkerMult ?? 1,
       windHeadingRad: _heading(d, cx17, cy17, mov),
-      windWindowStart: d.window * d.model.windowS,
-      runStartUtc: _runStart(cx17, cy17, d.def.id, d.window * d.model.windowS, d.model.windowS),
+      windWindowStart: windowStart,
+      runStartUtc: runStart,
+      prevId: prevId,
+      prevStartUtc: prevStart,
+      prevEndUtc: prevEnd,
     );
   }
 
@@ -314,7 +345,21 @@ class ClimateWorld {
       final PuddlePiece piece;
       final int wetWindow;
       final double size;
-      if (cur != null) {
+      final fp = forced() == null ? null : forcedPhase?.call();
+      if (fp != null) {
+        // O clima forçado começa do zero quando foi forçado, e o de antes seca a partir dali (só neste aparelho).
+        final prev = fp.prevId == null ? null : d.model.def(fp.prevId!)?.puddles;
+        if (cur != null) {
+          piece = cur;
+          size = cur.always ? 1.0 : math.min(1.0, fp.ageS / cur.growS);
+        } else if (prev != null && !prev.always) {
+          piece = prev;
+          size = math.min(1.0, fp.prevFormedS / prev.growS) - fp.prevSinceEndS / prev.dryS;
+        } else {
+          continue;
+        }
+        wetWindow = d.window;
+      } else if (cur != null) {
         piece = cur;
         wetWindow = d.window;
         final before = cur.always ? null : _defAt17(cx, cy, start - 1)?.def.puddles;
@@ -483,6 +528,10 @@ class ClimateWorld {
 }
 
 String? _none() => null;
+
+/// O clima forçado pelo debug no tempo: há quanto ele vale ([ageS]) e o forçado de antes ([prevId]), que formou por
+/// [prevFormedS] e acabou há [prevSinceEndS]. Segundos de clima (a velocidade do debug já entra).
+typedef ForcedPhase = ({double ageS, String? prevId, double prevFormedS, double prevSinceEndS});
 
 /// O clima determinístico (id) da célula z20 em [t], sem o debug: o do modelo completo da época ativa (6 em diante, com os
 /// eventos do feed) ou o de quatro estados (épocas 3 a 5). O modelo é o da época ATIVA naquele instante, nunca o da mais

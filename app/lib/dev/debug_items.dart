@@ -3,6 +3,7 @@ library;
 
 import 'debug_capture.dart';
 import 'debug_env.dart';
+import 'debug_items_climate.dart';
 import 'debug_items_creature.dart';
 import 'debug_items_patrol.dart';
 import 'debug_items_position.dart';
@@ -17,6 +18,7 @@ DebugRegistry buildDefaultRegistry(DebugEnv env) => DebugRegistry()
   ..addAll(positionItems(env))
   ..addAll(patrolItems(env))
   ..addAll(timeItems(env))
+  ..addAll(climateTimeItems(env.tools))
   ..addAll(spawnItems(env))
   ..addAll(creatureItems(env))
   ..addAll(mapItems(env))
