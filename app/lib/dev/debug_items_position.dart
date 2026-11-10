@@ -180,9 +180,15 @@ List<DebugItem> timeItems(DebugEnv env) {
         DebugButton(
           label: 'Ir até o pé do arco-íris',
           onTap: () {
-            final p = tools.force.rainbowFoot?.call();
-            if (p == null) return debugSnack(context, 'Nenhum arco-íris ativo por perto (abra o mapa do jogo)');
             if (!tools.useSimulator) tools.setUseSimulator(true);
+            final jump = tools.force.rainbowFoot;
+            if (jump == null) {
+              // O menu de debug fecha o mapa: o teleporte fica pedido e acontece quando ele abrir.
+              tools.force.rainbowJumpPending = true;
+              return debugSnack(context, 'Abra o mapa do jogo: o GPS simulado vai até o pé do arco-íris mais perto');
+            }
+            final p = jump();
+            if (p == null) return debugSnack(context, 'Nenhum arco-íris ativo por perto');
             tools.simulator.teleport(p.$1, p.$2);
             debugSnack(context, 'No pé do arco-íris');
           },
@@ -208,7 +214,7 @@ List<DebugItem> timeItems(DebugEnv env) {
   ];
 }
 
-const _tapNames = {'lightning': 'Raio', 'hail': 'Granizo', 'dust_devil': 'Redemoinho', 'meteor': 'Meteoro', 'violet_bolt': 'Raio violeta', 'spark_fall': 'Fagulha do céu', 'puddle': 'Poça', 'rainbow': 'Arco-íris', 'dry_bolt': 'Raio seco', 'branch': 'Galho', 'rune': 'Runa', 'gaze': 'Olhar', 'hurricane_eye': 'Olho do furacão'};
+const _tapNames = {'lightning': 'Raio', 'hail': 'Granizo', 'dust_devil': 'Redemoinho', 'meteor': 'Meteoro', 'violet_bolt': 'Raio violeta', 'spark_fall': 'Fagulha do céu', 'puddle': 'Poça', 'rainbow': 'Arco-íris', 'dry_bolt': 'Raio seco', 'branch': 'Galho', 'rune': 'Runa', 'gaze': 'Olhar', 'hurricane_eye': 'Olho do furacão', 'procession': 'Procissão'};
 
 /// Os quatro climas antigos sempre à mão; os outros (nativos, de outras regiões e místicos) chegam do `clima.json`.
 class _WeatherItem extends StatefulWidget {

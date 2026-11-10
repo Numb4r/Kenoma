@@ -240,6 +240,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _optionalSensors(r, st, now);
     _patrol?.tick();
     _radioTick(r, now);
+    if (tools.force.rainbowJumpPending) _pendingRainbowJump(r);
     if (_weatherIn-- <= 0 || tools.force.simulating) {
       _weatherIn = 10;
       _updateWeather();
@@ -698,6 +699,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     world.onEnteredRange = _onEnteredRange;
     _climate = ClimateDriver(data: data, world: climate, online: () => session.state.setting('weather_online'));
     tools.force.rainbowFoot = () => _ready == null ? null : _rainbowFoot(_ready!);
+    climate.debugArcs.addAll(tools.force.tapArcs);
     unawaited(_climate!.loadEvents());
     game.climateFx
       .onThunder = _scheduleThunder;
@@ -822,6 +824,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     tools.removeListener(_rebuild);
     tools.clock.removeListener(_rebuild);
     tools.force.rainbowFoot = null;
+    tools.force.tapArcs
+      ..clear()
+      ..addAll(_climate?.world.debugArcs ?? const []);
     final r = _ready;
     if (r != null) {
       r.session.state.removeListener(_onStateForFamiliar);
@@ -908,6 +913,19 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   PrismReading? _usePrism(_Ready r) {
     final (x, y) = latLonToTileFraction(r.game.playerLat, r.game.playerLon, biomeZoom);
     return useDewPrism(world: _climate!.world, take: () => r.session.state.take(dewPrismId), x21: x, y21: y, t: tools.clock.nowUtc, metersPerCell21: metersPerCell(r.game.playerLat), searchM: r.data.climateBalance.prismSearchM);
+  }
+
+  /// Debug: o "Ir até o pé do arco-íris" pedido com o mapa fechado. Espera alguns segundos pelo pacote (o pé vai para a
+  /// rua) e desiste com aviso se não houver arco.
+  int _rainbowJumpTries = 0;
+  void _pendingRainbowJump(_Ready r) {
+    final p = _rainbowFoot(r);
+    if (p == null && ++_rainbowJumpTries < 5) return;
+    tools.force.rainbowJumpPending = false;
+    _rainbowJumpTries = 0;
+    if (p == null) return _toast('Nenhum arco-íris ativo por perto', seconds: 3);
+    tools.simulator.teleport(p.$1, p.$2);
+    _toast('No pé do arco-íris', seconds: 3);
   }
 
   /// Debug: o pé do arco-íris ativo mais perto do Conjurador (latitude, longitude), ou `null`.

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 import '../core/behavior.dart';
 import 'climate_sim.dart';
+import '../core/climate.dart' show RainbowArc;
 import 'climate_world.dart' show ForcedPhase;
 import 'debug_creatures.dart';
 
@@ -150,6 +151,12 @@ class DebugForce extends ChangeNotifier {
   /// O pé do arco-íris ativo mais perto do Conjurador (latitude, longitude), posto pelo mapa do jogo enquanto ele está
   /// aberto: "Ir até o pé do arco-íris" teleporta o GPS simulado até lá. `null`: sem mapa ou sem arco.
   (double, double)? Function()? rainbowFoot;
+
+  /// "Ir até o pé do arco-íris" pedido com o mapa fechado: o mapa faz o teleporte assim que abre e acha um arco.
+  bool rainbowJumpPending = false;
+
+  /// Os arcos soltos no toque, guardados quando o mapa fecha: o menu de debug fecha o mapa e o arco sobrevive à volta.
+  final List<RainbowArc> tapArcs = [];
 
   /// Gasta o pedido de efeito no toque.
   String? takeTapEffect() {
