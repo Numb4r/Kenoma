@@ -110,6 +110,7 @@ Future<Env> pumpGame(
   WidgetTester tester, {
   Size screen = const Size(1080, 2400),
   bool simulator = true,
+  bool simRewards = true,
   FakeGateway? gateway,
   int? clockUtc,
   HeadingSource? heading,
@@ -127,6 +128,8 @@ Future<Env> pumpGame(
   // dos testes de toque. Os testes da época 2 passam o horário que querem.
   if (!realClock || clockUtc != null) tools.clock.setUtc(clockUtc ?? 1792080000);
   if (simulator) await tools.setUseSimulator(true);
+  // Os testes de jogo andam com o simulador e conferem progresso: com a recompensa ligada. O padrão do app é desligada.
+  tools.setSimRewards(simRewards);
   beforeOpen?.call(tools);
   await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: gw, bundle: _Bundle(realAssets()), headingSource: heading, store: store)));
   for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
@@ -952,6 +955,16 @@ void main() {
       expect(seen, isNotEmpty);
       expect(env.game.worldView!.state.story.count('shiny_seen'), 1);
       expect(env.tools.force.pendingEco, isFalse);
+    });
+
+    testWidgets('com o simulador sem recompensa (o padrão), o Eco Brilhante à vista não entra no bestiário', (tester) async {
+      final env = await pumpGame(tester, simRewards: false, beforeOpen: (t) => t.force.set(shiny: true));
+      expect(DevTools(realSource: FakeGps()).simRewards, isFalse, reason: 'desligado por padrão');
+      if (env.tools.force.pendingEco) await goToSomeEco(env);
+      expect(env.tools.force.pendingEco, isFalse);
+      final st = env.game.worldView!.state;
+      expect(st.bestiary.values.where((e) => e.seen), isEmpty);
+      expect(st.progress.xp, 0);
     });
 
     testWidgets('um Eco oculto forçado não aparece no mapa até o pulso do Radar achar a distorção e o jogador chegar nela', (tester) async {

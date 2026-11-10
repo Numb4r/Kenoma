@@ -57,10 +57,10 @@ class PatrolConfig {
 }
 
 class PatrolSim {
-  const PatrolSim({required this.lat, required this.lon, required this.mps, required this.dx, required this.dy});
+  const PatrolSim({required this.lat, required this.lon, required this.mps, required this.dx, required this.dy, this.rewards = false});
 
   factory PatrolSim.fromJson(Map<String, dynamic> j) =>
-      PatrolSim(lat: _d(j['lat']), lon: _d(j['lon']), mps: _d(j['mps']), dx: _d(j['dx']), dy: _d(j['dy']));
+      PatrolSim(lat: _d(j['lat']), lon: _d(j['lon']), mps: _d(j['mps']), dx: _d(j['dx']), dy: _d(j['dy']), rewards: (j['rewards'] as bool?) ?? false);
 
   static double _d(Object? v) => (v as num).toDouble();
 
@@ -69,7 +69,10 @@ class PatrolSim {
   /// Direção do joystick: [dx] para leste, [dy] para norte.
   final double dx, dy;
 
-  Map<String, dynamic> toJson() => {'lat': lat, 'lon': lon, 'mps': mps, 'dx': dx, 'dy': dy};
+  /// "GPS simulado dá recompensa" do debug. Desligado, o diário desta Patrulha não conta para XP nem estatísticas.
+  final bool rewards;
+
+  Map<String, dynamic> toJson() => {'lat': lat, 'lon': lon, 'mps': mps, 'dx': dx, 'dy': dy, 'rewards': rewards};
 }
 
 @pragma('vm:entry-point')
@@ -119,7 +122,7 @@ class PatrolTaskHandler extends TaskHandler {
         streetAt: world.streetAt,
         recordCells: config.sim == null,
       );
-      _write([engine.startLine(extra: {..._steps(await _sensors.readSteps()), if (config.sim != null) 'sim': true})]);
+      _write([engine.startLine(extra: {..._steps(await _sensors.readSteps()), if (config.sim != null) 'sim': true, if (config.sim != null && !config.sim!.rewards) 'sandbox': true})]);
       await _notes.initialize(settings: const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')));
       final sim = config.sim;
       final source = _source = sim == null

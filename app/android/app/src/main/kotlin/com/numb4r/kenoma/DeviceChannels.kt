@@ -6,7 +6,10 @@ import android.app.backup.BackupManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
+import android.os.Build
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -25,7 +28,8 @@ import io.flutter.plugin.common.MethodChannel
  * - `kenoma/battery` (MethodChannel): a carga da bateria em %, ou null.
  * - `kenoma/proximity` (EventChannel): `true` quando o sensor de proximidade está coberto.
  * - `kenoma/system` (MethodChannel): `openBackupSettings`, `requestBackup` (BackupManager.dataChanged), `isInstalled`, `launchPackage`, `openUrl`, `notificationAccess`,
- *   `openNotificationSettings` e `setRideRelay` (o interruptor das notificações de corrida).
+ *   `openNotificationSettings`, `setRideRelay` (o interruptor das notificações de corrida) e `activeRides` (as notificações de
+ *   corrida que já estão na barra) e `unmeteredWifi` (Wi-Fi sem cobrança, para a pré-carga do fallback).
  * - `kenoma/ride_notifications` (EventChannel): título e texto das notificações do Uber e da 99, só enquanto o Dart ouve.
  */
 class DeviceChannels(private val activity: Activity) {
@@ -55,6 +59,8 @@ class DeviceChannels(private val activity: Activity) {
                 "openUrl" -> result.success(openUrl(call.arguments as? String))
                 "notificationAccess" -> result.success(hasNotificationAccess())
                 "openNotificationSettings" -> result.success(openNotificationSettings())
+                "activeRides" -> result.success(RideNotificationListener.activeRides())
+                "unmeteredWifi" -> result.success(unmeteredWifi())
                 "setRideRelay" -> {
                     RideNotificationListener.relayEnabled = call.arguments == true
                     result.success(true)
@@ -107,6 +113,18 @@ class DeviceChannels(private val activity: Activity) {
             true
         } catch (_: RuntimeException) {
             false // inclui ActivityNotFoundException: ninguém abre este link
+        }
+    }
+
+    /** Wi-Fi sem cobrança (o roteador do celular de alguém costuma vir marcado como com cobrança e não conta). */
+    private fun unmeteredWifi(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
+        return try {
+            val cm = activity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
+            caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+        } catch (_: RuntimeException) {
+            false
         }
     }
 

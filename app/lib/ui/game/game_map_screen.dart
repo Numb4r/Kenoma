@@ -64,8 +64,10 @@ import '../../world/sky_outlook.dart';
 import '../../story/local_notifier.dart';
 import '../../story/notification_plan.dart';
 import '../settings/regions_section.dart' show regionSizeLabel;
-import '../../travel/travel_path.dart' show highwayTest;
+import '../../travel/travel_path.dart' show accessTest, bridgeTest, highwayTest;
+import '../../travel/system_bridge.dart';
 import '../../travel/travel_session.dart';
+import '../settings/ride_notifications_screen.dart' show kRideNotifySetting;
 import '../travel/travel_layer.dart';
 import '../travel/travel_overlay.dart';
 import '../settings/settings_screen.dart';
@@ -336,7 +338,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   /// A caminhada conta de 10 em 10 metros, para não gravar o save a cada passo.
   void _onWalked(double meters) {
-    if ((_ready?.travel.quiet ?? false) || PatrolController.instance.running) return; // de carro não é caminhada; na Patrulha, o diário conta
+    if ((_ready?.travel.quiet ?? false) || PatrolController.instance.running || tools.sandboxed) return; // de carro não é caminhada; na Patrulha, o diário conta; simulado não conta
     _walkedM += meters;
     if (_walkedM < 10) return;
     final whole = _walkedM.floor();
@@ -643,19 +645,29 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       confirm: _confirmRegion,
     );
     final tracker = PlayerTracker(source: tools.source);
+    final accessTol = data.travel.accessTolM / metersPerCell(game.playerLat);
     final travel = TravelSession(
       state: session.state,
       balance: data.travel,
-      graph: TrafficGraph(loadTile: assets.visual!.tile, cellsPerTile: assets.visual!.cellsPerTile, extent: assets.visual!.pack.extent, cacheTiles: 512),
+      graph: TrafficGraph(
+          loadTile: assets.visual!.tile,
+          cellsPerTile: assets.visual!.cellsPerTile,
+          extent: assets.visual!.pack.extent,
+          cacheTiles: 512,
+          stitch: true,
+          noCrossingAt: assets.world == null ? null : bridgeTest(assets.world!, accessTol)),
       patterns: data.ridePatterns,
       radioLines: data.mentor.radio,
       sparkItem: (lat, lon, t) => sparkForBiome(data.schedule.select(t).epoch, _biomeKeyAt(assets, lat, lon)),
       ecosInReach: () => [for (final s in world.spawns) if (s.isEco && world.distanceM(s) <= data.travel.autoMarkM) s],
       nowUtc: () => tools.clock.nowUtc,
       highway: assets.noWalk == null ? null : highwayTest(assets.noWalk!, data.travel.highwayTolM / metersPerCell(game.playerLat)),
+      access: assets.world == null ? null : accessTest(assets.world!, accessTol),
+      sandbox: () => tools.sandboxed,
     );
     // Com a Patrulha ligada quem coleta é o serviço; o mapa mostra e lê o diário (patrol_controller.dart).
     world.quiet = () => travel.quiet || PatrolController.instance.running;
+    world.sandbox = () => tools.sandboxed;
     _patrol = PatrolHooks(state: session.state, balance: data.patrol, nowUtc: () => tools.clock.nowUtc, onMessage: _toast, onFocus: (m) => _startEncounter(m.toSpawn()));
     _pocket.addListener(_pocketFps);
     PatrolController.instance.addListener(_pocketFps);
@@ -704,9 +716,21 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       final note = session.loadNote;
       if (note != null) _toast(note, seconds: 8);
       unawaited(_patrol?.sync());
+      unawaited(_checkActiveRides());
       _ensureAccess();
     });
     return _ready!;
+  }
+
+  /// Uma corrida do Uber ou da 99 pedida fora do jogo: com a permissão e o interruptor dos Ajustes, as notificações que
+  /// já estão na barra retomam a viagem no estado certo.
+  Future<void> _checkActiveRides() async {
+    final r = _ready;
+    if (r == null || !r.session.state.setting(kRideNotifySetting)) return;
+    const bridge = SystemBridge();
+    if (!await bridge.notificationAccess()) return;
+    final active = await bridge.activeRides();
+    if (active.isNotEmpty && mounted) r.travel.onActiveNotifications(active);
   }
 
   School? _familiarSchool;
@@ -783,6 +807,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     } else if (state == AppLifecycleState.resumed) {
       _ensureAccess(); // o jogador pode ter mexido nos ajustes
       unawaited(_patrol?.sync()); // o que a Patrulha juntou com o app fechado
+      unawaited(_checkActiveRides());
       if (ready.game.rotation.followHeading) _setFollowHeading(true);
     }
   }

@@ -1,9 +1,11 @@
 // Consulta, codec e UTM do fallback. Os vetores de UTM vieram do pyproj 3.7.2 (pipeline/.venv), EPSG:31982, 31983 e 31984.
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/data/map_sources.dart';
 import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/world/fallback/block.dart';
 import 'package:kenoma/world/fallback/block_builder.dart';
@@ -65,6 +67,7 @@ void main() {
         ],
       ),
       noWalk: [774400.25, 1185664.5, 774401.125, 1185665.0],
+      access: [774400.25, 1185664.5, 774401.125, 1185665.0, 7],
     );
     final bytes = encodeBlock(block);
     expect(String.fromCharCodes(bytes.sublist(0, 4)), 'FBK1');
@@ -72,6 +75,7 @@ void main() {
     expect((back.tx, back.ty, back.epochId), (12100, 18526, 4));
     expect(back.cells, cells);
     expect(back.noWalk, block.noWalk);
+    expect(back.access, block.access);
     expect(back.visual.lines.length, 2);
     expect(back.visual.lines[0].xy, block.visual.lines[0].xy);
     expect(back.visual.lines[0].name, 'Avenida Norte-Sul');
@@ -80,6 +84,39 @@ void main() {
     expect(back.visual.areas[0].kind, AreaKind.water);
     expect(back.visual.areas[0].rings[1], block.visual.areas[0].rings[1]);
     expect(() => decodeBlock(Uint8List(30)), throwsFormatException);
+
+    // O bloco gravado antes da 0.17.0 (versão 1, sem o acesso) continua legível.
+    final v2 = encodeBlock(FallbackBlock(tx: 1, ty: 2, epochId: 3, cells: cells, visual: block.visual, noWalk: block.noWalk));
+    final body = gzip.decode(v2.sublist(18));
+    final v1 = Uint8List.fromList([...v2.sublist(0, 18), ...gzip.encode(body.sublist(0, body.length - 1))]);
+    v1[4] = 1;
+    final old = decodeBlock(v1);
+    expect(old.noWalk, block.noWalk);
+    expect(old.access, isEmpty);
+  });
+
+  test('o bloco tira das tags da Overpass o acesso da rota, sem mudar a grade', () {
+    // Tile z15 (12100, 18526) é Campinas; duas ruas no meio dele, uma privada e uma aberta.
+    const lon0 = 12100.5 / 32768 * 360 - 180;
+    final lat0 = math.atan(sinh(math.pi * (1 - 2 * 18526.5 / 32768))) * 180 / math.pi;
+    Map<String, dynamic> way(int id, Map<String, String> tags, double dLat) => {
+          'type': 'way',
+          'id': id,
+          'tags': tags,
+          'geometry': [
+            {'lat': lat0 + dLat, 'lon': lon0 - 0.002},
+            {'lat': lat0 + dLat, 'lon': lon0 + 0.002},
+          ],
+        };
+    String doc(List<Map<String, dynamic>> ways) => jsonEncode({'elements': ways});
+    final open = way(1, {'highway': 'residential'}, 0);
+    final closed = way(2, {'highway': 'residential', 'access': 'private'}, 0.001);
+    final a = buildBlock(overpassJson: doc([open]), tx: 12100, ty: 18526, epochId: 0, rules: rules);
+    final b = buildBlock(overpassJson: doc([open, closed]), tx: 12100, ty: 18526, epochId: 0, rules: rules);
+    expect(a.access, isEmpty);
+    expect(b.access.length, 5, reason: 'um trecho da rua privada');
+    expect(b.access[4], kAccessFoot | kAccessBike | kAccessMotor);
+    expect(b.cells, a.cells, reason: 'a grade de biomas não muda');
   });
 
   test('UTM contra o pyproj, ida e volta', () {

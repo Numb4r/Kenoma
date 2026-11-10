@@ -145,6 +145,43 @@ void main() {
     expect(s.wanted(lat, lon), [(tx, ty), (tx + 1, ty), (tx, ty - 1), (tx + 1, ty - 1)]);
   });
 
+  group('pré-carga com Wi-Fi', () {
+    test('parado: os oito em volta; andando: o cone de 90° à frente, até prefetch_blocks, do mais perto ao mais longe', () {
+      final r = _Rig();
+      final s = r.open()..unmetered = () => true;
+      expect(r.balance.prefetchBlocks, 2);
+      expect(s.wanted(lat, lon), [
+        (tx, ty),
+        (tx, ty - 1), (tx - 1, ty), (tx + 1, ty), (tx, ty + 1), // os quatro lados, depois as quinas
+        (tx - 1, ty - 1), (tx + 1, ty - 1), (tx - 1, ty + 1), (tx + 1, ty + 1),
+      ]);
+      s.noteFix(const GeoFix(lat: lat, lon: lon, accuracyM: 5, timeMs: 0));
+      s.noteFix(const GeoFix(lat: lat, lon: lon + 0.0001, accuracyM: 5, timeMs: 5000)); // para leste, a pé
+      expect(s.wanted(lat, lon), [
+        (tx, ty), (tx + 1, ty), // o dos dados móveis vem primeiro
+        (tx + 1, ty - 1), (tx + 1, ty + 1),
+        (tx + 2, ty), (tx + 2, ty - 1), (tx + 2, ty + 1), (tx + 2, ty - 2), (tx + 2, ty + 2),
+      ]);
+      s.unmetered = () => false;
+      expect(s.wanted(lat, lon), [(tx, ty), (tx + 1, ty)], reason: 'nos dados móveis, só o bloco do jogador e o seguinte');
+    });
+
+    test('a pré-carga segue uma consulta por bloco e a espera entre consultas', () async {
+      final r = _Rig();
+      final s = r.open()..unmetered = () => true;
+      for (var i = 0; i < 3; i++) {
+        await s.tick(lat, lon);
+      }
+      expect(r.calls.length, 1, reason: 'dentro de min_gap_s');
+      for (var i = 0; i < 12; i++) {
+        r.now += r.balance.minGapS;
+        await s.tick(lat, lon);
+      }
+      expect(r.calls.length, 9, reason: 'o do jogador e os oito em volta, uma vez cada');
+      expect({for (final c in r.calls) c.body}.length, 9);
+    });
+  });
+
   test('servidor alternativo: troca no 429, no 504, no timeout e no erro', () async {
     final r = _Rig();
     final s = r.open();

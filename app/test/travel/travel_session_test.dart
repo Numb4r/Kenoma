@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/seed.dart';
 import 'package:kenoma/core/tiles.dart';
+import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/player/progression.dart' show localDay;
 import 'package:kenoma/story/mentor_script.dart';
@@ -27,17 +29,18 @@ const String spark = 'item.dust.fire';
 WorldSpawn eco(int uid, {String species = 'soot.eco'}) => WorldSpawn(uid: uid, kind: 'eco', entryId: species, quantity: 1, x: x0, y: y0, cellX: 0, cellY: 0, window: 1, level: 2);
 
 class Rig {
-  Rig({this.now = 1800000000}) {
+  Rig({this.now = 1800000000, TrafficGraph? graph, bool sandbox = false}) {
     state = GameState(groupCode: 'KENOMA-TESTE', balance: loadProgressBalance());
     travel = TravelSession(
       state: state,
       balance: TravelBalance(loadJson('assets/data/balance.json')),
-      graph: TrafficGraph(loadTile: (_, _) => null, cellsPerTile: 64, extent: 4096),
+      graph: graph ?? TrafficGraph(loadTile: (_, _) => null, cellsPerTile: 64, extent: 4096),
       patterns: RidePatterns.fromJson(loadJson('assets/data/ride_patterns.json')),
       radioLines: const [MentorMessage(id: 'a', afterS: 0, text: 'A'), MentorMessage(id: 'b', afterS: 0, text: 'B')],
       sparkItem: (_, _, _) => spark,
       ecosInReach: () => ecos,
       nowUtc: () => now,
+      sandbox: () => sandbox,
     );
   }
 
@@ -99,7 +102,18 @@ void main() {
       expect(r.state.markOf(1), isNotNull);
     });
 
-    test('motorista: só a distância gravada', () async {
+    test('GPS simulado sem recompensa: passageiro sem baú e sem estatística', () async {
+      final r = Rig(sandbox: true)..choose(Vehicle.car);
+      r.travel.answerPassenger(true);
+      await r.drive();
+      final o = r.travel.outcome!;
+      expect((o.chest, o.sparks), (false, 0));
+      expect(r.state.count(spark), 0);
+      expect(r.state.story.count('trip_m'), 0);
+      expect(r.state.progress.xp, 0);
+    });
+
+    test('motorista: só a distância gravada, nem baú na chegada', () async {
       final r = Rig()..choose(Vehicle.car);
       r.travel.answerPassenger(false);
       expect(r.travel.quiet, isTrue, reason: 'o mundo fica calado');
@@ -117,7 +131,20 @@ void main() {
       expect(r.state.count(spark), 0);
       expect(r.state.settings.containsKey(kChestGivenSetting), isFalse);
       expect(r.state.story.count('trip_m'), greaterThan(2800));
+      expect(r.state.story.count('trip_chest'), 0, reason: 'a chegada não abre baú');
+      expect(r.state.inventory, isEmpty);
       expect(r.state.progress.xp, 0);
+      expect(r.travel.stage, TravelStage.done, reason: 'chegou: a viagem acabou e não rendeu nada');
+    });
+
+    test('motorista de moto também não recebe nada', () async {
+      final r = Rig()..choose(Vehicle.moto);
+      r.travel.answerPassenger(false);
+      r.ecos = [eco(1)];
+      await r.drive();
+      final o = r.travel.outcome!;
+      expect((o.driver, o.chest, o.sparks, o.marks.length), (true, false, 0, 0));
+      expect((r.state.inventory.length, r.state.progress.xp), (0, 0));
     });
 
     test('moto pergunta; ônibus não, e é passageiro', () {
@@ -407,6 +434,135 @@ void main() {
       final state = GameState(groupCode: 'KENOMA-TESTE', balance: loadProgressBalance());
       recordChest(state, 100, 5, 30);
       expect(state.toJson(0)['settings'], containsPair(kChestGivenSetting, 5));
+    });
+  });
+
+  group('rota', () {
+    // Uma rua reta de leste a oeste sobre y0, de x0 a x0 + 60 células (600 m), num tile só.
+    TrafficGraph street() => TrafficGraph(
+        loadTile: (x, y) => x == 15625 && y == 31250 ? VisualTile(lines: [VisualLine(RoadClass.local, Int32List.fromList([0, 0, 3840, 0]))], areas: const []) : null,
+        cellsPerTile: 64,
+        extent: 4096,
+        stitch: true);
+
+    test('a rota sai com o que falta e o tempo estimado; longe dela mais de 30 m, é refeita de onde o jogador está', () async {
+      final r = Rig(graph: street())..choose(Vehicle.car, km: 0.5);
+      r.travel.answerPassenger(true);
+      await pumpEventQueue();
+      final first = r.travel.route!;
+      expect(first.lengthM, closeTo(500, 1e-6));
+      expect(r.travel.routeStatus, 'FALTAM 0,5 KM · ~1 MIN', reason: '500 m a 24 km/h');
+      // 20 m da rota: segue a mesma.
+      r.now += 60;
+      r.travel.onPosition(x: x0 + 10, y: y0 + 2, mpc: mpc, speedMps: 5);
+      await pumpEventQueue();
+      expect(identical(r.travel.route, first), isTrue);
+      expect(r.travel.routeLeftM, closeTo(400, 1e-6));
+      // 50 m: refaz, começando de onde está.
+      r.travel.onPosition(x: x0 + 20, y: y0 + 5, mpc: mpc, speedMps: 5);
+      await pumpEventQueue();
+      final second = r.travel.route!;
+      expect(identical(second, first), isFalse);
+      expect((second.xy[0], second.xy[1]), (x0 + 20, y0 + 5));
+      expect(second.lengthM, closeTo(50 + 300, 1e-6));
+      // Ainda longe, mas dentro da espera: não refaz a cada leitura.
+      r.travel.onPosition(x: x0 + 21, y: y0 + 5, mpc: mpc, speedMps: 5);
+      await pumpEventQueue();
+      expect(identical(r.travel.route, second), isTrue);
+    });
+
+    test('destino fora dos dados: o aviso da reta no fim', () async {
+      final r = Rig(graph: street())..choose(Vehicle.foot, km: 2);
+      await pumpEventQueue();
+      expect(r.travel.route!.offData, isTrue);
+      expect(r.travel.routeStatus, endsWith('O DESTINO ESTÁ FORA DO MAPA: O FIM É EM LINHA RETA'));
+    });
+  });
+
+  group('corrida já em andamento (notificações da barra)', () {
+    // SINTÉTICAS: ainda não temos o texto de notificações reais do Uber e da 99. Quando chegarem, os padrões mudam em
+    // assets/data/ride_patterns.json e estas frases trocam pelas de verdade.
+    RideNotice synthetic(String title, String text, {String package = kUberPackage, int postMs = 1}) =>
+        (package: package, title: title, text: text, postMs: postMs);
+
+    Rig idleWithFix() => Rig()..at(0);
+
+    test('carro a caminho, com o tempo: vira viagem de carona sem destino e sem rota, e o carro nasce', () async {
+      final r = idleWithFix();
+      r.travel.onActiveNotifications([synthetic('Uber', 'Seu motorista está a caminho e chega em 4 min. Onix prata')]);
+      expect(r.travel.stage, TravelStage.traveling);
+      expect(r.travel.resumed, isTrue);
+      final ride = r.travel.ride!;
+      expect(ride.appName, 'Uber');
+      expect(ride.state, RideState.driverComing);
+      expect(ride.etaDueUtc, r.now + 240);
+      expect(ride.carType, 'hatch');
+      expect(r.travel.vehicle, Vehicle.car);
+      expect(r.travel.passenger, isTrue);
+      expect(r.travel.destX, isNull);
+      expect(r.travel.quiet, isFalse, reason: 'só conta depois do embarque');
+      await pumpEventQueue();
+      expect(r.travel.route, isNull);
+      expect(r.travel.routeStatus, 'SEM DESTINO');
+      expect(r.travel.approach, isNotNull, reason: 'o carro vem buscar');
+    });
+
+    test('já embarcado: grava desde agora, sem costura, e acaba na notificação de fim com o baú onde desceu', () async {
+      final r = idleWithFix();
+      r.travel.onActiveNotifications([synthetic('99', 'Corrida em andamento', package: k99Package)]);
+      expect(r.travel.ride!.state, RideState.inTrip);
+      expect(r.travel.quiet, isTrue);
+      expect(r.travel.radioOn, isTrue);
+      expect(r.travel.boardingAt(r.now.toDouble()), isNull, reason: 'ele já estava dentro');
+      for (var m = 0.0; m < 2000; m += 100) {
+        r.now += 10;
+        r.at(m);
+        r.travel.tick(speedMps: 10);
+      }
+      expect(r.travel.stage, TravelStage.traveling, reason: 'sem destino não há chegada pelo GPS');
+      r.travel.onNotification(k99Package, '99', 'Corrida finalizada. Avalie sua corrida');
+      expect(r.travel.ride!.state, RideState.finished);
+      r.now += 60;
+      r.travel.tick(speedMps: 0);
+      final o = r.travel.outcome!;
+      expect(r.travel.stage, TravelStage.done);
+      expect(o.driver, isFalse);
+      expect(o.distanceM, closeTo(1900, 150));
+      expect(o.sparks, greaterThan(0));
+    });
+
+    test('chegando: o carro já está no ponto', () {
+      final r = idleWithFix();
+      r.travel.onActiveNotifications([synthetic('Uber', 'Seu motorista chegou ao local de embarque')]);
+      expect(r.travel.ride!.state, RideState.arrived);
+    });
+
+    test('vale a mais nova reconhecida; se ela é o fim, nada volta', () {
+      final r = idleWithFix();
+      r.travel.onActiveNotifications([
+        synthetic('Uber', 'Seu motorista está a caminho', postMs: 1),
+        synthetic('Uber', 'Viagem finalizada', postMs: 2),
+        synthetic('Uber', 'Promoção de fim de semana', postMs: 3),
+      ]);
+      expect(r.travel.stage, TravelStage.idle);
+      expect(r.travel.ride, isNull);
+    });
+
+    test('outro app, texto sem estado, ou o jogador escolhendo destino: nada muda', () {
+      final r = idleWithFix();
+      r.travel.onActiveNotifications([synthetic('Mensagem', 'motorista a caminho', package: 'com.whatsapp'), synthetic('Uber', 'Ganhe 10% na próxima')]);
+      expect(r.travel.stage, TravelStage.idle);
+      r.travel.open();
+      r.travel.onActiveNotifications([synthetic('Uber', 'Seu motorista está a caminho')]);
+      expect(r.travel.stage, TravelStage.pickDestination);
+    });
+
+    test('com a corrida do jogo em curso, as da barra atualizam o estado', () {
+      final r = Rig()..choose(Vehicle.car);
+      r.travel.startRide('Uber', kUberPackage);
+      r.travel.onActiveNotifications([synthetic('Uber', 'Viagem iniciada'), synthetic('99', 'Corrida finalizada', package: k99Package)]);
+      expect(r.travel.ride!.state, RideState.inTrip, reason: 'a do 99 não é desta corrida');
+      expect(r.travel.resumed, isFalse);
     });
   });
 }

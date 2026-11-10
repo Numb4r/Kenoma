@@ -3,6 +3,7 @@ library;
 
 import 'dart:math' as math;
 
+import '../../data/map_sources.dart' show kAccessBike, kAccessBridge, kAccessFoot, kAccessMotor;
 import 'block.dart';
 
 /// Uma regra casada: o bioma, se vale para `area` ou `line`, e o buffer da linha em metros.
@@ -133,4 +134,30 @@ String overpassQuery({required int tx, required int ty, required String dateIso,
   });
   out.write(');\nout body geom;\n');
   return out.toString();
+}
+
+const Set<String> _closedValues = {'no', 'private'};
+const Set<String> _bikeOk = {'yes', 'designated', 'permissive'};
+
+/// A chave mais específica que existe decide.
+bool _modeClosed(Map<String, dynamic> tags, List<String> keys) {
+  for (final k in keys) {
+    final v = tags[k];
+    if (v != null) return _closedValues.contains(v);
+  }
+  return false;
+}
+
+/// Os bits de rota de uma via (`kAccess*`), as regras de `access_mask` em `pipeline/build_noaccess.py`.
+int accessMask(Map<String, dynamic> tags) {
+  var m = 0;
+  if (_modeClosed(tags, const ['foot', 'access'])) m |= kAccessFoot;
+  if (_modeClosed(tags, const ['bicycle', 'vehicle', 'access']) ||
+      (const {'steps', 'footway', 'pedestrian'}.contains(tags['highway']) && !_bikeOk.contains(tags['bicycle']))) {
+    m |= kAccessBike;
+  }
+  if (_modeClosed(tags, const ['motor_vehicle', 'vehicle', 'access'])) m |= kAccessMotor;
+  final bridge = tags['bridge'];
+  if (bridge != null && bridge != 'no') m |= kAccessBridge;
+  return m;
 }

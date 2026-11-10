@@ -2,6 +2,8 @@
 /// aparelho. Dart puro.
 library;
 
+import 'travel_path.dart' show RouteProfile;
+
 enum Vehicle {
   foot('A pé'),
   bike('Bicicleta'),
@@ -22,13 +24,17 @@ enum Vehicle {
 
   /// As regras de rua de quem vai motorizado: respeita a mão única e fica fora dos caminhos de pedestre.
   bool get motorized => passive;
+
+  /// Por onde a rota passa.
+  RouteProfile get profile => switch (this) { foot => RouteProfile.foot, bike => RouteProfile.bike, _ => RouteProfile.motor };
 }
 
 class VehicleBalance {
   VehicleBalance(Map<String, dynamic> j)
       : maxKmh = (j['max_kmh'] as num).toDouble(),
         bandM = (j['band_m'] as num).toDouble(),
-        sparksPerKm = (j['sparks_per_km'] as num).toDouble();
+        sparksPerKm = (j['sparks_per_km'] as num).toDouble(),
+        routeKmh = (j['route_kmh'] as num).toDouble();
 
   /// Até esta velocidade o trecho conta para o baú (e, na bicicleta, para a coleta na faixa da rota).
   final double maxKmh;
@@ -39,6 +45,10 @@ class VehicleBalance {
 
   /// Fagulhas por km no baú. 0: sem baú (a pé é jogo normal).
   final double sparksPerKm;
+
+  /// A velocidade média da estimativa de tempo da rota, com paradas e semáforos.
+  final double routeKmh;
+  double get routeMps => routeKmh / 3.6;
 }
 
 class TravelBalance {
@@ -55,6 +65,9 @@ class TravelBalance {
         arrivalSpeedMps = _d(_m(t, 'arrival')['speed_mps']),
         snapM = _d(_m(t, 'route')['snap_m']),
         highwayTolM = _d(_m(t, 'route')['highway_tol_m']),
+        accessTolM = _d(_m(t, 'route')['access_tol_m']),
+        offRouteM = _d(_m(t, 'route')['off_route_m']),
+        rerouteMinS = _m(t, 'route')['reroute_min_s'] as int,
         maxNodes = _m(t, 'route')['max_nodes'] as int,
         sliceNodes = _m(t, 'route')['slice_nodes'] as int,
         pickViewM = _d(_m(t, 'view')['pick_m']),
@@ -98,6 +111,13 @@ class TravelBalance {
 
   /// Distância até uma via bloqueada que faz o trecho contar como rodovia, a mesma tolerância de `WalkPaths`.
   final double highwayTolM;
+
+  /// Distância até uma via do arquivo de rota que faz o trecho herdar os bits dela (fechado, viaduto).
+  final double accessTolM;
+
+  /// Longe da rota mais que isto, ela é refeita de onde o jogador está; no máximo uma vez a cada [rerouteMinS].
+  final double offRouteM;
+  final int rerouteMinS;
   final int maxNodes;
   final int sliceNodes;
 

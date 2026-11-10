@@ -98,6 +98,8 @@ JournalResult applyJournal(GameState state, List<Map<String, dynamic>> lines, {r
     // A Patrulha em curso: contadores do resumo e a hora da última linha (o fim, se o serviço morrer sem escrevê-lo).
     final run = state.settings[kPatrolRunKey] is Map ? Map<String, dynamic>.from(state.settings[kPatrolRunKey] as Map) : null;
     if (run != null && k != 'end' && k != 'start') state.setSetting(kPatrolRunKey, run..['last'] = t);
+    // A Patrulha simulada com o "GPS simulado dá recompensa" desligado: o que vem fica, mas não conta para XP nem estatística.
+    final sandbox = run?['sandbox'] == true;
     void bump(String key, int n) {
       if (run == null) return;
       run[key] = ((run[key] as int?) ?? 0) + n;
@@ -107,7 +109,7 @@ JournalResult applyJournal(GameState state, List<Map<String, dynamic>> lines, {r
     switch (k) {
       case 'start':
         if (run != null) _summary(state, (run['last'] as int?) ?? t); // a anterior morreu sem fim e o app não a viu
-        state.setSetting(kPatrolRunKey, {'t0': t, 'last': t, 'sparks': 0, 'materials': 0, 'marks': 0});
+        state.setSetting(kPatrolRunKey, {'t0': t, 'last': t, 'sparks': 0, 'materials': 0, 'marks': 0, if (l['sandbox'] == true) 'sandbox': true});
         final steps = l['steps'], boot = l['boot'];
         // Os trechos só saem quando o contador lê; com ele desligado, ficam os últimos poucos.
         final spans = patrolSpansOf(state);
@@ -117,8 +119,10 @@ JournalResult applyJournal(GameState state, List<Map<String, dynamic>> lines, {r
         final item = l['item'] as String, q = (l['q'] as int?) ?? 1;
         state.add(item, q);
         state.markDone(uid, t);
-        state.gainXp(k == 'spark' ? state.balance.spark : state.balance.material, t);
-        state.recordEvent(k as String, k == 'spark' ? item.replaceFirst('item.dust.', '') : item, q);
+        if (!sandbox) {
+          state.gainXp(k == 'spark' ? state.balance.spark : state.balance.material, t);
+          state.recordEvent(k as String, k == 'spark' ? item.replaceFirst('item.dust.', '') : item, q);
+        }
         if (k == 'spark') {
           res.sparks += q;
           bump('sparks', q);
@@ -137,9 +141,9 @@ JournalResult applyJournal(GameState state, List<Map<String, dynamic>> lines, {r
       case 'cell':
         onCell?.call(l['x'] as int, l['y'] as int, t);
       case 'walk':
-        state.recordEvent('walk_m', '', (l['m'] as int?) ?? 0);
+        if (!sandbox) state.recordEvent('walk_m', '', (l['m'] as int?) ?? 0);
       case 'trip':
-        state.recordEvent('trip_m', 'car', (l['m'] as int?) ?? 0);
+        if (!sandbox) state.recordEvent('trip_m', 'car', (l['m'] as int?) ?? 0);
       case 'end':
         _closeSpans(state, l['steps'] as int?);
         _summary(state, t);

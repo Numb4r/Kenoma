@@ -53,6 +53,21 @@ class DevTools extends ChangeNotifier {
 
   bool get useSimulator => _useSimulator;
 
+  bool _simRewards = false;
+
+  /// "GPS simulado dá recompensa". Desligado (o padrão), nada que se ganha com o simulador conta para XP, estatísticas ou
+  /// bestiário, no mapa e na Patrulha simulada, e as capturas entram marcadas como debug.
+  bool get simRewards => _simRewards;
+
+  void setSimRewards(bool value) {
+    if (value == _simRewards) return;
+    _simRewards = value;
+    notifyListeners();
+  }
+
+  /// O simulador está ligado e não dá recompensa.
+  bool get sandboxed => _useSimulator && !_simRewards;
+
   String? _feedUrl;
 
   /// A base do feed de regiões, terminada em `/`: a publicada ou a que o debug pôs, para testar com servidor local via `adb

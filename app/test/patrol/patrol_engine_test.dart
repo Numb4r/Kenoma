@@ -9,6 +9,7 @@ import 'package:kenoma/data/map_sources.dart';
 import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/patrol/patrol_balance.dart';
 import 'package:kenoma/patrol/patrol_engine.dart';
+import 'package:kenoma/patrol/patrol_journal.dart' show applyJournal;
 import 'package:kenoma/patrol/street_name.dart';
 import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/player/mark.dart';
@@ -177,6 +178,11 @@ void main() {
       final trip = out.lines.firstWhere((l) => l['k'] == 'trip');
       expect((trip['driver'], (trip['m'] as int) > 300), (true, true));
       expect(e.mode, PatrolMode.walking);
+      // No app, o diário do trecho ao volante e da chegada só grava a viagem: nem baú, nem item, nem XP, nem marca.
+      final s = GameState(groupCode: 'KENOMA-TESTE', balance: loadProgressBalance());
+      applyJournal(s, [{'k': 'start', 't': t0}, for (final l in [...there.lines, trip]) jsonDecode(jsonEncode(l)) as Map<String, dynamic>, {'k': 'end', 't': t0 + 400}], nowUtc: t0 + 400);
+      expect(s.story.count('trip_m'), trip['m']);
+      expect((s.inventory.length, s.progress.xp, s.marks.length), (0, 0, 0));
     });
 
     test('passageiro: Ecos do caminho marcados; a resposta vale para o próximo carro, sem perguntar de novo', () {

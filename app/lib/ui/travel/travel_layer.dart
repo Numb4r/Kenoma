@@ -64,18 +64,21 @@ class TravelLayer {
     canvas.drawRect(ui.Rect.fromCenter(center: ui.Offset(sx, sy), width: 8, height: 8), _fill);
   }
 
+  /// A rota pelas ruas; fora dos dados, do [TravelPath.dashFrom] em diante, a reta tracejada até o destino.
   void _paintRoute(ui.Canvas canvas, ui.Size view, MapCamera cam, TravelPath route) {
     _line.color = kSignal.withValues(alpha: 0.85);
     final area = (ui.Offset.zero & view).inflate(8);
     final xy = route.xy;
+    final solidEnd = 2 * (route.dashFrom ?? route.pointCount - 1);
     var (ax, ay) = cam.cellToScreen(xy[0], xy[1], view.width, view.height);
-    for (var i = 2; i < xy.length; i += 2) {
+    for (var i = 2; i <= solidEnd; i += 2) {
       final (bx, by) = cam.cellToScreen(xy[i], xy[i + 1], view.width, view.height);
       final box = ui.Rect.fromPoints(ui.Offset(ax, ay), ui.Offset(bx, by));
       if (box.overlaps(area)) canvas.drawLine(ui.Offset(ax, ay), ui.Offset(bx, by), _line);
       ax = bx;
       ay = by;
     }
+    if (route.dashFrom != null) _paintDashes(canvas, view, cam, xy[solidEnd], xy[solidEnd + 1], xy[xy.length - 2], xy[xy.length - 1]);
   }
 
   /// Sem rota: a reta tracejada até o destino, só no pedaço que cabe na tela.

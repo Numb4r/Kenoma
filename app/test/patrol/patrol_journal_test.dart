@@ -68,6 +68,19 @@ void main() {
       expect(s.progress.xp, greaterThan(0));
     });
 
+    test('Patrulha simulada sem recompensa: os itens vêm, sem XP nem estatística, caminhada e viagem também não contam', () async {
+      final s = fresh();
+      writer()
+        ..write({'k': 'start', 't': t0, 'sim': true, 'sandbox': true})
+        ..write(spark(1))
+        ..write({'k': 'walk', 't': t0, 'm': 300})
+        ..write({'k': 'trip', 't': t0, 'm': 900});
+      final r = await incorporateJournal(s, file, running: true, nowUtc: t0 + 60);
+      expect((r.sparks, s.count('item.dust.fire')), (1, 1));
+      expect(s.progress.xp, 0);
+      expect((s.story.count('spark'), s.story.count('walk_m'), s.story.count('trip_m')), (0, 0, 0));
+    });
+
     test('duas incorporações seguidas não duplicam nada', () async {
       final s = fresh();
       writer()
