@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import '../core/epochs.dart';
+import '../data/access_pack.dart';
 import '../data/nowalk_pack.dart';
 import '../data/region_loader.dart' show sha256Hex;
 import '../data/region_pack.dart';
@@ -15,6 +16,10 @@ import 'feed_config.dart';
 import 'signed_feed.dart' show verifySigned;
 
 const String kKindLogic = 'logic', kKindVisual = 'visual', kKindNoWalk = 'nowalk';
+
+/// O arquivo de rota (`_noaccess.bin`), em `route_files`: fora das épocas, vale o SHA-256 do catálogo assinado. Fica fora de
+/// `files` porque a 0.16 exige que todo arquivo de lá esteja em `epochs.json` e recusaria a região inteira.
+const String kKindAccess = 'access';
 
 final _safeName = RegExp(r'^[A-Za-z0-9._-]+$');
 
@@ -37,7 +42,7 @@ class RegionFileRef {
 }
 
 class RegionEntry {
-  const RegionEntry({required this.id, required this.name, required this.bbox, required this.epoch, required this.files});
+  const RegionEntry({required this.id, required this.name, required this.bbox, required this.epoch, required this.files, this.routeFiles = const {}});
 
   factory RegionEntry.fromJson(Map<String, dynamic> j) => RegionEntry(
         id: j['id'] as String,
@@ -45,6 +50,9 @@ class RegionEntry {
         bbox: [for (final v in j['bbox'] as List<dynamic>) (v as num).toDouble()],
         epoch: j['epoch'] as int,
         files: {for (final e in (j['files'] as Map<String, dynamic>).entries) e.key: RegionFileRef.fromJson(e.value as Map<String, dynamic>)},
+        routeFiles: {
+          for (final e in ((j['route_files'] as Map<String, dynamic>?) ?? const {}).entries) e.key: RegionFileRef.fromJson(e.value as Map<String, dynamic>),
+        },
       );
 
   final String id;
@@ -56,6 +64,9 @@ class RegionEntry {
 
   /// Por tipo: [kKindLogic], [kKindVisual] e [kKindNoWalk].
   final Map<String, RegionFileRef> files;
+
+  /// O que só a rota lê: [kKindAccess]. Opcional, e fora de [totalBytes] e da época.
+  final Map<String, RegionFileRef> routeFiles;
 
   int get totalBytes => files.values.fold(0, (sum, f) => sum + f.bytes);
 
@@ -145,3 +156,17 @@ RegionOpen openRegionFiles(String id, List<RegionFileJob> jobs, {String publicKe
   if (logic == null || visual == null) return RegionOpen(error: '$id: faltam arquivos');
   return RegionOpen(region: LoadedRegion(id: id, grid: logic, visual: visual, noWalk: noWalk));
 }
+
+/// Lê e confere o arquivo de rota: SHA-256 do catálogo e, recém-baixado, a assinatura. `null` se não confere. Roda em Isolate.
+AccessPack? openAccessFile(RegionFileJob job, {String publicKeyHex = kFeedPublicKeyHex}) {
+  try {
+    final bytes = File(job.path).readAsBytesSync();
+    if (sha256Hex(bytes) != job.sha256.toLowerCase()) return null;
+    final sig = job.sigHex;
+    if (sig != null && !verifySigned(bytes, sig, publicKeyHex: publicKeyHex)) return null;
+    return AccessPack.parse(bytes);
+  } catch (_) {
+    return null;
+  }
+}
+

@@ -8,6 +8,9 @@ import 'travel_path.dart';
 
 enum RideState { searching, driverComing, arrived, inTrip, finished }
 
+/// Uma notificação de corrida que já estava na barra: o pacote, o texto e quando ela saiu (ms UTC).
+typedef RideNotice = ({String package, String title, String text, int postMs});
+
 /// O que uma notificação disse. Tudo `null`: não reconhecida, e a corrida segue pelos botões.
 class RideSignal {
   const RideSignal({this.state, this.etaMin, this.carType, this.carColor});

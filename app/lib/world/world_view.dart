@@ -84,6 +84,10 @@ class WorldView {
   /// Modo Viagem: a faixa de coleta ao longo da rota, de bicicleta.
   double Function() travelPickupM = _noPickup;
 
+  /// GPS simulado sem recompensa (o interruptor do debug desligado): o que se pega continua vindo, mas nada conta para XP,
+  /// estatísticas nem bestiário, e a captura entra na coleção marcada como debug.
+  bool Function() sandbox = _never;
+
   /// O raio de coleta automática de Fagulhas e materiais: a Aura base mais o Círculo (Aura e coleta) e o Familiar, que
   /// anda ao lado do Conjurador e não ocupa espaço no Círculo. É o ÚNICO valor: a lógica e o círculo desenhado leem este.
   double get auraRadiusM =>
@@ -227,7 +231,13 @@ class WorldView {
   bool canReach(WorldSpawn s) => _hasPlayer && (s.isEco ? inTouchRange(s) : inAura(s));
 
   void _gainXp(int raw, int tUtc) {
+    if (sandbox()) return;
     if (state.gainXp(raw, tUtc) > 0) onMessage?.call('Nível ${state.progress.level}!');
+  }
+
+  /// A estatística da coleta, fora do GPS simulado sem recompensa.
+  void _record(String kind, String key, int n) {
+    if (!sandbox()) state.recordEvent(kind, key, n);
   }
 
   /// O Eco do debug: se o menu pediu para forçar o próximo Eco novo, é este (uma vez só); se já foi forçado, continua.
@@ -299,7 +309,7 @@ class WorldView {
         continue;
       }
       if (s.isEco && distanceM(s) <= viewM) {
-        if (!isDebugUid(s.uid)) state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny); // a de debug não entra no bestiário
+        if (!isDebugUid(s.uid) && !sandbox()) state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny); // a de debug não entra no bestiário
         if (ritual != null && isRitualOnlyId(s.entryId)) noteRitualSighting(state, ritual!, s.uid, s.entryId, _ritualSeen);
         if (s.shiny && _announced.add(s.uid)) onShiny?.call(s);
       }
@@ -321,10 +331,10 @@ class WorldView {
       state.add(s.entryId, s.quantity);
       state.markDone(s.uid, tUtc);
       _gainXp(state.balance.spark, tUtc);
-      state.recordEvent('spark', s.entryId.replaceFirst('item.dust.', ''), s.quantity);
+      _record('spark', s.entryId.replaceFirst('item.dust.', ''), s.quantity);
       collected.add(s);
       onCollected?.call(s);
-      onMessage?.call('+${s.quantity} ${itemName(s.entryId)}');
+      onMessage?.call('+${s.quantity} ${itemName(s.entryId)}${sandbox() ? ' (debug)' : ''}');
     }
     _inAura
       ..clear()
@@ -365,7 +375,7 @@ class WorldView {
     distortions = [for (final d in live) if (!reached.contains(d)) d];
     if (reached.isEmpty) return;
     state.revealHidden([for (final d in reached) d.eco.uid], tUtc, tUtc + street.hiddenRevealS.round());
-    state.recordEvent('hidden_revealed', '', reached.where((d) => !isDebugUid(d.eco.uid)).length); // as de debug não contam
+    _record('hidden_revealed', '', reached.where((d) => !isDebugUid(d.eco.uid)).length); // as de debug não contam
   }
 
   /// Um pulso do Radar em [tUtc]: rastros dos Ecos raros por perto e distorções dos Ocultos bem perto. A recarga é
@@ -403,9 +413,9 @@ class WorldView {
     state.add(s.entryId, s.quantity);
     state.markDone(s.uid, tUtc);
     _gainXp(state.balance.material, tUtc);
-    state.recordEvent('material', s.entryId, s.quantity);
+    _record('material', s.entryId, s.quantity);
     spawns = [for (final o in spawns) if (o.uid != s.uid) o];
-    onMessage?.call('+${s.quantity} ${itemName(s.entryId)}');
+    onMessage?.call('+${s.quantity} ${itemName(s.entryId)}${sandbox() ? ' (debug)' : ''}');
     onCollected?.call(s);
     return TouchResult.collected;
   }

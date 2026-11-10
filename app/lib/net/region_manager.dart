@@ -9,6 +9,7 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 import '../core/epochs.dart';
+import '../data/access_pack.dart';
 import '../world/layered_world.dart';
 import 'feed_config.dart';
 import 'map_http.dart';
@@ -35,6 +36,8 @@ typedef RegionConfirm = Future<bool> Function(RegionEntry region, int totalBytes
 
 // Função solta: um closure dentro da classe levaria o gerenciador inteiro para o Isolate.
 Future<RegionOpen> _openInIsolate(String id, List<RegionFileJob> jobs, String key) => Isolate.run(() => openRegionFiles(id, jobs, publicKeyHex: key));
+
+Future<AccessPack?> _openAccessInIsolate(RegionFileJob job, String key) => Isolate.run(() => openAccessFile(job, publicKeyHex: key));
 
 class RegionManager extends ChangeNotifier {
   RegionManager({
@@ -85,6 +88,9 @@ class RegionManager extends ChangeNotifier {
   int _catalogAt = 0;
   bool _refreshing = false;
 
+  /// Regiões cujo arquivo de rota já foi tentado nesta sessão: uma vez só, ele é opcional.
+  final _routeTried = <String>{};
+
   Epoch get _epoch => schedule.select(nowUtc()).epoch;
 
   File get _stamp => File('${dir.path}/regions_try.txt');
@@ -118,7 +124,33 @@ class RegionManager extends ChangeNotifier {
       if (!jobs.every((j) => File(j.path).existsSync())) continue;
       await _install(id, await _openInIsolate(id, jobs, publicKeyHex));
     }
+    for (final r in catalog?.regions ?? const <RegionEntry>[]) {
+      await _routeFiles(r);
+    }
     notifyListeners();
+  }
+
+  /// O arquivo de rota de uma região já instalada: do disco ou baixado, conferido pelo catálogo assinado. Falha não avisa e
+  /// não mexe na região: a rota segue sem ele.
+  Future<void> _routeFiles(RegionEntry r) async {
+    final f = r.routeFiles[kKindAccess];
+    if (f == null || !world.hasRegion(r.id) || world.hasAccess(r.id) || !_routeTried.add(r.id)) return;
+    try {
+      await dir.create(recursive: true);
+      final dest = _dest(f);
+      final fresh = !await dest.exists();
+      if (fresh) await _fetchPart(f, Uri.parse(baseUrl()).resolve(f.url));
+      final path = fresh ? _part(f).path : dest.path;
+      final pack = await _openAccessInIsolate(RegionFileJob(kind: kKindAccess, path: path, sha256: f.sha256, sigHex: fresh ? f.sig : null), publicKeyHex);
+      if (pack == null) {
+        await File(path).delete();
+        return;
+      }
+      if (fresh) await _part(f).rename(dest.path);
+      world.setAccess(r.id, pack);
+    } catch (_) {
+      // sem rede: na próxima sessão
+    }
   }
 
   /// Monta a região aberta no mundo; o que não conferiu sai do disco. `true` se entrou.
@@ -161,6 +193,9 @@ class RegionManager extends ChangeNotifier {
 
   /// Um passo do caminho automático: dentro da bbox de uma região, com internet, baixa sozinho.
   Future<void> tick(double lat, double lon) async {
+    for (final r in catalog?.regions ?? const <RegionEntry>[]) {
+      await _routeFiles(r);
+    }
     if (world.sourceAt(lat, lon) == MapSourceKind.pack) return;
     final now = realNowUtc();
     if (now >= _catalogAt) await refreshCatalog();
@@ -222,6 +257,7 @@ class RegionManager extends ChangeNotifier {
     await _install(r.id, open);
     _failed.remove(r.id);
     onNotice?.call('Mapa de ${r.name} pronto');
+    await _routeFiles(r);
     return true;
   }
 

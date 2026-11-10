@@ -17,7 +17,9 @@ class MapFallbackBalance {
         diskLimitBytes = (m['disk_limit_mb'] as int) * _mb,
         memoryBlocks = m['memory_blocks'] as int,
         regionConfirmBytes = (m['region_confirm_mb'] as int) * _mb,
-        floorGridCells = m['floor_grid_cells'] as int;
+        floorGridCells = m['floor_grid_cells'] as int,
+        prefetchBlocks = m['prefetch_blocks'] as int,
+        networkCheckS = m['network_check_s'] as int;
 
   /// Servidores Overpass, na ordem: troca no erro, no timeout, no 429 e no 504.
   final List<Uri> servers;
@@ -42,4 +44,8 @@ class MapFallbackBalance {
 
   /// Lado da grade fraca do piso, em células z21.
   final int floorGridCells;
+
+  /// Com Wi-Fi, quantos blocos à frente pré-carregar, e de quanto em quanto tempo conferir se a rede é sem cobrança.
+  final int prefetchBlocks;
+  final int networkCheckS;
 }

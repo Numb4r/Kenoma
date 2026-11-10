@@ -38,9 +38,11 @@ class _AppPatterns {
           for (final k in _stateKeys.keys.toList().reversed)
             _stateKeys[k]!: _regexes((j['states'] as Map<String, dynamic>)[k]),
         },
-        eta = _regexes(j['eta']);
+        eta = _regexes(j['eta']),
+        name = j['name'] as String?;
 
   final Map<RideState, List<RegExp>> states;
+  final String? name;
   final List<RegExp> eta;
 }
 
@@ -71,6 +73,9 @@ class RidePatterns {
   /// O carro quando a notificação não diz.
   final String defaultType;
   final int defaultColor;
+
+  /// O nome do app de corrida de [package] (`Uber`, `99`), ou `null` se não é um deles.
+  String? appName(String package) => _apps.containsKey(package) ? (_apps[package]!.name ?? package) : null;
 
   /// Interpreta o título e o texto de uma notificação de [package].
   RideSignal parse(String package, String title, String text) {

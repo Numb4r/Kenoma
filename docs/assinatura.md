@@ -153,7 +153,8 @@ Publicar São Paulo (época 5), só quando decidir. Precisa de `gh` (não instal
 gh release create regions-e5 --title "Regiões, época 5" \
   pipeline/out/regions/sao_paulo_e5.bin \
   pipeline/out/regions/sao_paulo_e5_vis.bin \
-  pipeline/out/regions/sao_paulo_e5_nowalk.bin
+  pipeline/out/regions/sao_paulo_e5_nowalk.bin \
+  pipeline/out/regions/sao_paulo_e5_noaccess.bin
 git subtree push --prefix docs/pages origin gh-pages   # e, em Settings > Pages, Deploy from branch > gh-pages > / (root)
 curl -sI https://numb4r.github.io/Kenoma/regions.json | head -1
 ```

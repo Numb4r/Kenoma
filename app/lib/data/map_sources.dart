@@ -33,6 +33,16 @@ abstract interface class VisualSource {
   VisualTile? decode(int x, int y);
 }
 
+/// Bits do que só a rota lê (`pipeline/build_noaccess.py`): fechado a pé, de bicicleta, motorizado, e viaduto.
+const int kAccessFoot = 1, kAccessBike = 2, kAccessMotor = 4, kAccessBridge = 8;
+
+/// O que só a rota do Modo Viagem lê: vias fechadas por modo (`access`, `foot`, `bicycle`...) e viadutos. Individual: não
+/// muda o mundo e não entra em época.
+abstract interface class RouteAccessSource {
+  /// Os trechos perto da célula z20 `(cx, cy)`, em grupos de cinco: `x0, y0, x1, y1` (células z21 fracionárias) e os bits.
+  List<double> accessNear(int cx, int cy);
+}
+
 /// As vias onde não se anda.
 abstract interface class NoWalkSource {
   /// Os segmentos `x0, y0, x1, y1, ...` (células z21 fracionárias) perto da célula z20 `(cx, cy)`. Vazio se nenhum.

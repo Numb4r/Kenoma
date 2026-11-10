@@ -95,10 +95,13 @@ Future<void> runEncounter(
     ));
     if (run == null) return; // saiu no meio: o selo já foi gasto
     final o = run.outcome;
-    if (o.success && isDebugUid(eco.uid)) {
-      // Criatura do "Criar criatura": vai para a coleção marcada, sem bestiário, XP, Ectoplasma nem estatística.
+    if (o.success && (isDebugUid(eco.uid) || world.sandbox())) {
+      // Criatura do "Criar criatura", ou pega com o GPS simulado sem recompensa: vai para a coleção marcada, sem bestiário,
+      // XP, Ectoplasma nem estatística.
       state.capture(uid: eco.uid, speciesId: species.id, level: level, nowUtc: nowUtc(), variant: eco.variant, shiny: eco.shiny, debug: true);
-      onMessage?.call('${species.name} de debug na coleção: não conta para o progresso');
+      onMessage?.call(isDebugUid(eco.uid)
+          ? '${species.name} de debug na coleção: não conta para o progresso'
+          : '${species.name} com GPS simulado na coleção: não conta para o progresso');
       world.remove(eco);
       return;
     }

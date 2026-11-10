@@ -37,6 +37,13 @@ List<DebugItem> positionItems(DebugEnv env) {
             color: KCores.sinalCiano,
             onChanged: (v) => tools.setUseSimulator(v),
           ),
+          DebugSwitch(
+            title: 'GPS simulado dá recompensa',
+            subtitle: 'Desligado: com o simulador (no mapa e na Patrulha simulada) nada conta para XP, estatísticas ou bestiário, e as capturas entram marcadas como debug.',
+            value: tools.simRewards,
+            color: KCores.brasaLaranja,
+            onChanged: tools.setSimRewards,
+          ),
         ]),
       ),
     ),
