@@ -491,14 +491,21 @@ class GameMapGame extends FlameGame {
         decor: rainFx(),
       );
 
-  /// O tráfego do Véu mais lento com o clima (Dilúvio): o tempo anda [PlayerClimate.trafficMult] vezes desde o começo da
-  /// janela do clima, igual em todos os aparelhos. Com [walker], o dos passantes, que a Geada forte deixa ainda mais lentos.
+  /// O relógio do tráfego do Véu com o clima (`ClimateWorld.trafficClock`): mais lento no Dilúvio, parado no Silêncio desde
+  /// o instante em que ele começou, igual em todos os aparelhos. Com [walker], o dos passantes (Geada forte).
   double _trafficUtc({bool walker = false}) {
-    final t = _exactUtc(), c = worldView?.climate;
-    final mult = (c?.trafficMult ?? 1) * (walker ? c?.walkerMult ?? 1 : 1);
-    if (c == null || mult == 1) return t;
-    return c.windWindowStart + (t - c.windWindowStart) * mult;
+    final t = _exactUtc(), cw = worldView?.field.climate;
+    if (cw == null || !avatar.hasPosition) return t;
+    final f = cw.forced();
+    if (f != _forcedId) {
+      _forcedId = f;
+      _forcedAt = t; // o clima do debug começa agora, só neste aparelho
+    }
+    return cw.trafficClock(avatar.x, avatar.y, t, walker: walker, sinceUtc: f == null ? null : _forcedAt);
   }
+
+  String? _forcedId;
+  double _forcedAt = 0;
 
   /// Aura, spawns, Familiar, Conjurador e retorno visual. Sem posição, nada.
   void _paintWorld(Canvas canvas, Size view, MapCamera cam) {
