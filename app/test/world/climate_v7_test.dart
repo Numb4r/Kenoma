@@ -149,6 +149,26 @@ void main() {
       expect(items, contains('item.pure_water'));
       expect(a.modsAt(x21, y21, t).walkerMult, 0.6, reason: 'passantes mais lentos no gelo');
     });
+
+    test('na Chuva Carmim as poças dão Essência carmesim, de toque', () {
+      expect(data.itemName('item.essence.crimson'), 'Essência carmesim');
+      final a = device(forced: 'crimson_rain');
+      final t = e7.startsUtc + 30 * 86400 + 1800;
+      final items = [for (final s in a.extras(x21: x21, y21: y21, radiusM: 400, t: t, metersPerCell21: mpc, levelOf: (id, add, uid) => 3)) if (!s.isEco) s];
+      expect(items, isNotEmpty);
+      expect(items.every((s) => s.entryId == 'item.essence.crimson' && !s.isSpark), isTrue);
+    });
+
+    test('na Chuva de Runas a runa é Giz com o bônus do próximo ritual', () {
+      final a = device(forced: 'rune_rain');
+      final t = e7.startsUtc + 30 * 86400;
+      final runes = [
+        for (var k = 0; k < 10800; k += 600)
+          for (final s in a.extras(x21: x21, y21: y21, radiusM: 1500, t: t - t % 10800 + k, metersPerCell21: mpc, levelOf: (id, add, uid) => 3)) if (s.tag == 'rune_bonus') s,
+      ];
+      expect(runes, isNotEmpty);
+      expect(runes.every((s) => s.entryId == 'item.chalk' && !s.isSpark), isTrue);
+    });
   });
 
   group('meteoros', () {
@@ -188,6 +208,27 @@ void main() {
       expect(nights.every((c) => c.climate == 'meteor_shower' || c.source == ClimateSource.season), isTrue);
       final ecl = at(utc(2027, 2, 6, 16));
       expect((ecl.climate, ecl.event), ('black_sun', 'solar_eclipse'));
+    });
+
+    test('o eclipse só força o clima onde é visível do centro da região z12, e o Céu dá a hora local do máximo', () {
+      ClimateCause atPlace(double lat, double lon, int t) {
+        final (x, y) = latLonToTile(lat, lon, 12);
+        return m.resolve(seed: seed, tUtc: t, rx: x, ry: y);
+      }
+
+      // 2027-02-06: parcial em Campinas das 14h32 às 18h00 UT, nada em Bogotá.
+      expect([for (final h in [13, 15, 17]) atPlace(-22.9056, -47.0608, utc(2027, 2, 6, h)).climate], everyElement('black_sun'));
+      // O 4º contato (18h00min03 UT) ainda pega a janela das 18h; a das 21h já é da estação.
+      expect(atPlace(-22.9056, -47.0608, utc(2027, 2, 6, 19)).event, 'solar_eclipse');
+      expect(atPlace(-22.9056, -47.0608, utc(2027, 2, 6, 22)).event, isNot('solar_eclipse'));
+      expect(atPlace(4.71, -74.07, utc(2027, 2, 6, 16)).event, isNot('solar_eclipse'));
+      // Lua Carmim: o total de 2029-06-26 é visto de Campinas; o de 2028-12-31 acontece com a Lua abaixo do horizonte.
+      final crimson = atPlace(-22.9056, -47.0608, utc(2029, 6, 26, 3));
+      expect((crimson.climate, crimson.event, crimson.source), ('crimson_rain', 'crimson_moon', ClimateSource.astro));
+      expect(atPlace(-22.9056, -47.0608, utc(2028, 12, 31, 17)).event, isNot('crimson_moon'));
+      expect(atPlace(35.68, 139.69, utc(2028, 12, 31, 17)).climate, 'crimson_rain', reason: 'em Tóquio a Lua está no céu');
+      final o = climateOutlook(world: device(), catalog: catalog, lat: -22.9056, lon: -47.0608, nowUtc: utc(2027, 2, 6, 16));
+      expect(o.now.reason, '${catalog.events['solar_eclipse']!.reason} Máximo às 13h22.');
     });
 
     test('a lua cheia no perigeu traz a Lua Dupla, rara; a lua cheia no apogeu não', () {

@@ -61,17 +61,19 @@ class ClimateOutlook {
 /// O clima de agora e das [windows] janelas seguintes em ([lat], [lon]) no instante [nowUtc].
 ClimateOutlook climateOutlook({required ClimateWorld world, required ClimateCatalog catalog, required double lat, required double lon, required int nowUtc, int windows = 4}) {
   final (cx, cy) = latLonToTile(lat, lon, 20);
-  final windowS = world.modelAt(nowUtc)?.$2.windowS ?? 10800;
+  final model = world.modelAt(nowUtc)?.$2;
+  final windowS = model?.windowS ?? 10800;
   final start = nowUtc - nowUtc % windowS;
   OutlookWindow at(int s) {
     final cause = world.causeAt(cx, cy, s + windowS ~/ 2);
     final info = catalog.of(cause.climate);
     final ev = cause.event == null ? null : catalog.events[cause.event];
+    final max = cause.maxUtc;
     final reason = switch (cause.source) {
       ClimateSource.season => catalog.reasons['season'] ?? 'O clima da estação.',
       ClimateSource.debug => catalog.reasons['debug'] ?? 'Forçado pelo debug.',
       ClimateSource.feed => cause.reason ?? ev?.reason ?? catalog.reasons['feed'] ?? 'Evento do feed.',
-      ClimateSource.calendar || ClimateSource.astro => ev?.reason ?? cause.event ?? '',
+      ClimateSource.calendar || ClimateSource.astro => [ev?.reason ?? cause.event ?? '', if (max != null) 'Máximo às ${_localHm(max, model?.localOffsetH ?? -3)}.'].join(' '),
     };
     return OutlookWindow(
       startUtc: s,
@@ -87,4 +89,10 @@ ClimateOutlook climateOutlook({required ClimateWorld world, required ClimateCata
   }
 
   return ClimateOutlook(now: at(start), next: [for (var k = 1; k <= windows; k++) at(start + k * windowS)]);
+}
+
+/// `14h05`: a hora local (o fuso fixo do modelo do clima, como o resto do clima) de [utc].
+String _localHm(int utc, int offsetH) {
+  final d = DateTime.fromMillisecondsSinceEpoch((utc + offsetH * 3600) * 1000, isUtc: true);
+  return '${d.hour}h${d.minute.toString().padLeft(2, '0')}';
 }

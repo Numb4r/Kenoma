@@ -448,6 +448,7 @@ class ClimateWorld {
       cellX: cx20,
       cellY: cy20,
       window: 0,
+      tag: item.tag,
     );
   }
 

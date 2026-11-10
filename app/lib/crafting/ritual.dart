@@ -121,6 +121,17 @@ RitualOutcome performRitual({
 /// Quantos espaços da receita a pesquisa já revelou.
 int ritualRevealed(GameState s, RitualRecipe r) => (s.conjurer.ritualResearch[r.speciesId] ?? 0).clamp(0, r.slotCount);
 
+/// Abriu o ritual de [r]: um bônus de runa guardado ([ConjurerState.runeBonus]) revela o próximo espaço ???. Gasta um bônus
+/// só se havia espaço escondido. Devolve se revelou.
+bool useRuneBonus(GameState s, RitualRecipe r) {
+  final now = ritualRevealed(s, r);
+  if (s.conjurer.runeBonus <= 0 || now >= r.slotCount) return false;
+  s.conjurer.runeBonus--;
+  s.conjurer.ritualResearch[r.speciesId] = now + 1;
+  s.recordEvent('rune_bonus_used', r.speciesId, 1); // avisa os ouvintes (grava o save)
+  return true;
+}
+
 /// Um Eco de ritual [uid] da espécie [speciesId] apareceu à vista. Cada Eco diferente ([seen] guarda os já contados nesta
 /// sessão) revela espaços e, no primeiro da família, solta o evento da dica do mentor (`ritual_seen_<família>`).
 void noteRitualSighting(GameState s, RitualBook book, int uid, String speciesId, Set<int> seen) {

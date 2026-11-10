@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,7 @@ import 'package:kenoma/core/weather.dart';
 import 'package:kenoma/crafting/ritual.dart';
 import 'package:kenoma/crafting/ritual_data.dart';
 import 'package:kenoma/player/game_state.dart';
+import 'package:kenoma/save/migrations.dart';
 import 'package:kenoma/story/chat_state.dart';
 import 'package:kenoma/story/mentor_script.dart';
 import 'package:kenoma/ui/ritual/ritual_text.dart';
@@ -227,6 +229,27 @@ void main() {
       }
       expect(ritualRevealed(s, soot), soot.slotCount, reason: 'não passa do total');
       expect(slot(soot.circleIndex), 'Criatura de Água, nível 5+');
+    });
+
+    test('o bônus da runa revela um espaço ao abrir o ritual, um por runa, e não passa do total', () {
+      final s = make();
+      expect(useRuneBonus(s, soot), isFalse, reason: 'sem runa, nada');
+      s.conjurer.runeBonus = 2;
+      expect(useRuneBonus(s, soot), isTrue);
+      expect((ritualRevealed(s, soot), s.conjurer.runeBonus), (1, 1));
+      s.conjurer.ritualResearch['soot.ritual'] = soot.slotCount;
+      expect(useRuneBonus(s, soot), isFalse, reason: 'receita toda revelada: o bônus fica para outra');
+      expect(s.conjurer.runeBonus, 1);
+    });
+
+    test('o bônus vai para o save sem schema novo: o save v5 real (0.15.0) migrado abre com 0, e o valor volta igual', () {
+      final real = jsonDecode(File('test/fixtures/save_v5_0150.json').readAsStringSync()) as Map<String, dynamic>;
+      final old = GameState.fromJson(migrateSave(real), data.progress);
+      expect(old.conjurer.runeBonus, 0);
+      expect((old.conjurer.toJson()).containsKey('rune_bonus'), isFalse, reason: 'sem bônus o bloco fica como na 0.17.0');
+      old.conjurer.runeBonus = 3;
+      final back = GameState.fromJson(jsonDecode(jsonEncode(old.toJson(now))) as Map<String, dynamic>, data.progress);
+      expect(back.conjurer.runeBonus, 3);
     });
 
     test('o primeiro avistamento da família solta o evento da dica do mentor, uma vez', () {

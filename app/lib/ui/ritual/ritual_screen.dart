@@ -99,6 +99,10 @@ class _RitualScreenState extends State<RitualScreen> with SingleTickerProviderSt
     EcoSprite.load(widget.recipe.speciesId).then((s) {
       if (mounted) setState(() => _sprite = s);
     }).catchError((_) {});
+    // Depois do primeiro quadro: gastar o bônus avisa os ouvintes do estado, o que não pode acontecer durante o build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_locked && useRuneBonus(widget.state, widget.recipe)) setState(() => _note = 'A runa revelou um espaço do ritual.');
+    });
   }
 
   @override

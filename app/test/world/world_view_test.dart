@@ -63,6 +63,20 @@ void main() {
     expect(state.isDone(far.first.uid), isFalse);
   });
 
+  test('a runa da Chuva de Runas dá Giz e guarda um bônus de ritual; no GPS simulado sem recompensa, nenhum dos dois', () {
+    final near = find('material');
+    WorldSpawn rune(WorldSpawn m) => WorldSpawn(uid: m.uid, kind: 'material', entryId: 'item.chalk', quantity: 1, x: m.x, y: m.y, cellX: m.cellX, cellY: m.cellY, window: 0, tag: 'rune_bonus');
+    final (view, state, _) = make();
+    view.refresh(lat: near.$1, lon: near.$2, tUtc: t0);
+    expect(view.touch(rune(near.$3), t0), TouchResult.collected);
+    expect((state.count('item.chalk'), state.conjurer.runeBonus), (1, 1));
+    final (v2, st2, _) = make();
+    v2.sandbox = () => true;
+    v2.refresh(lat: near.$1, lon: near.$2, tUtc: t0);
+    v2.touch(rune(near.$3), t0);
+    expect((st2.count('item.chalk'), st2.conjurer.runeBonus), (0, 0));
+  });
+
   test('material: toque dentro da Aura coleta; fora, não faz nada', () {
     final near = find('material');
     final (view, state, _) = make();
