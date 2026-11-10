@@ -203,6 +203,73 @@ class ClimateWorld {
   double _heading(({Epoch epoch, ClimateModel model, ClimateDef def, int window}) d, int cx17, int cy17, MovementPiece? mov) =>
       mov?.headingDeg != null ? mov!.headingDeg! * math.pi / 180 : d.model.windHeading(seed, d.epoch.id, cx17 >>> 5, cy17 >>> 5, d.window);
 
+  /// O relógio do tráfego do Véu (só desenho) na posição (células z21) em [t]: o tempo real, mais lento com `traffic_mult`
+  /// (contado do começo da janela, igual em todos os aparelhos) e parado nos climas de `traffic_mult` 0 (o Silêncio). A parada
+  /// congela no instante em que o Silêncio começa ali (o começo das janelas seguidas dele, ou o `starts_utc` do evento do
+  /// feed, se for mais tarde) e acaba no fim delas (ou no `ends_utc`). Depois o tráfego volta a andar de onde parou: o
+  /// relógio fica atrasado a duração da parada até o fim da janela seguinte, quando volta à hora real. [sinceUtc]: o clima
+  /// foi forçado pelo debug neste instante (a parada não começa antes). Com [walker], o dos passantes (Geada forte).
+  double trafficClock(double x21, double y21, double t, {bool walker = false, double? sinceUtc}) {
+    final cx = x21.floor() >>> 4, cy = y21.floor() >>> 4;
+    final d = _defAt17(cx, cy, t.floor());
+    if (d == null) return t;
+    final ws = d.model.windowS, t0 = d.window * ws;
+    final mov = d.def.movement;
+    final mult = (mov?.trafficMult ?? 1) * (walker ? mov?.walkerMult ?? 1 : 1);
+    final key = (cx, cy, d.window, sinceUtc?.floor(), events);
+    if (key != _stopKey) {
+      _stopKey = key;
+      _stop = _trafficStop(cx, cy, d.window, ws, sinceUtc?.floor());
+    }
+    final stop = _stop;
+    if (stop != null && t >= stop.s) {
+      if (t < stop.e) return stop.s.toDouble();
+      final late = (stop.e - stop.s).toDouble();
+      if (stop.e > t0) return t - late; // acabou no meio desta janela (o fim do evento)
+      return t0 - late + (t - t0) * mult;
+    }
+    if (mult == 0) return t; // janela de Silêncio antes do começo do evento
+    return mult == 1 ? t : t0 + (t - t0) * mult;
+  }
+
+  (int, int, int, int?, List<ClimateEvent>)? _stopKey;
+  ({int s, int e})? _stop;
+
+  bool _stopped(int cx17, int cy17, int t) => (_defAt17(cx17, cy17, t)?.def.movement?.trafficMult ?? 1) == 0;
+
+  /// A parada do tráfego `[s, e)` que vale na janela [window]: a da própria janela ou a que acabou na anterior (até 8 janelas
+  /// seguidas para trás e para a frente). `null`: nenhuma.
+  ({int s, int e})? _trafficStop(int cx17, int cy17, int window, int ws, int? since) {
+    final int last;
+    if (_stopped(cx17, cy17, window * ws)) {
+      last = window;
+    } else if (_stopped(cx17, cy17, (window - 1) * ws)) {
+      last = window - 1;
+    } else {
+      return null;
+    }
+    var first = last, end = last;
+    while (first > last - 8 && _stopped(cx17, cy17, (first - 1) * ws)) {
+      first--;
+    }
+    while (end < last + 8 && _stopped(cx17, cy17, (end + 1) * ws)) {
+      end++;
+    }
+    var s = first * ws, e = (end + 1) * ws;
+    if (forced() == null) {
+      final id = _defAt17(cx17, cy17, last * ws)!.def.id;
+      // O feed manda na janela cujo meio cai no evento: o horário dele é o começo e o fim de verdade.
+      for (final ev in events) {
+        if (ev.climate != id) continue;
+        final m0 = first * ws + ws ~/ 2, m1 = end * ws + ws ~/ 2;
+        if (m0 >= ev.startsUtc && m0 < ev.endsUtc) s = math.max(s, ev.startsUtc);
+        if (m1 >= ev.startsUtc && m1 < ev.endsUtc) e = math.min(e, ev.endsUtc);
+      }
+    }
+    if (since != null) s = math.max(s, since);
+    return e > s ? (s: s, e: e) : null;
+  }
+
   /// Níveis a mais nos Ecos da célula z20 (Tempestade de Ecos).
   int levelAddAt(int cx20, int cy20, int t) => defAt(cx20, cy20, t)?.modifier?.levelAdd ?? 0;
 

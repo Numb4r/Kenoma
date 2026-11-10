@@ -92,10 +92,43 @@ const SpriteRows _childTop = [
 const SpriteRows _childLegsA = ['op.po', 'okoko'];
 const SpriteRows _childLegsB = ['opopo', 'okoko'];
 
-SpriteRows _adult(int frame) => [..._adultTop, ...(frame == 0 ? _adultLegsA : _adultLegsB)];
+/// O guarda-chuva aberto por cima da cabeça (`w` pano, `W` borda, `r` cabo).
+const SpriteRows _umbrella = ['..ooo..', '.owwwo.', 'owwwwwo', 'oWoWoWo', '...r...'];
 
-SpriteRows _pair(int frame) {
-  final adult = _adult(frame);
+/// O corpo do adulto com a roupa [o]: o acessório troca pixels da cabeça e do tronco (`c` boné ou chapéu, `e` gorro,
+/// `f` cachecol, `m` máscara) e o guarda-chuva cresce [_umbrella] por cima. As cores vêm de [paletteOf].
+SpriteRows _dressed(GhostOutfit o) {
+  final r = [..._adultTop];
+  switch (o) {
+    case GhostOutfit.beanie:
+      r[0] = '..oeo..';
+      r[1] = '.oeeeo.';
+    case GhostOutfit.cap:
+      r[0] = '..occ..';
+      r[1] = '.occccc';
+    case GhostOutfit.hat:
+      r[0] = '..ccc..';
+      r[1] = 'ccccccc';
+    case GhostOutfit.scarf:
+      r[3] = '.offfo.';
+      r[4] = '.oftto.';
+    case GhostOutfit.mask:
+      r[2] = '.ommmo.';
+    case GhostOutfit.light:
+      r[5] = r[6] = 'ostttso'; // braços de fora
+    case GhostOutfit.raincoat:
+      r[0] = '..ttt..'; // o capuz, da cor da capa
+      r[1] = '.ottto.';
+    case GhostOutfit.umbrella || GhostOutfit.coat || GhostOutfit.none:
+      break;
+  }
+  return o == GhostOutfit.umbrella ? [..._umbrella, ...r] : r;
+}
+
+SpriteRows _adult(int frame, [GhostOutfit o = GhostOutfit.none]) => [..._dressed(o), ...(frame == 0 ? _adultLegsA : _adultLegsB)];
+
+SpriteRows _pair(int frame, [GhostOutfit o = GhostOutfit.none]) {
+  final adult = _adult(frame, o);
   final child = [..._childTop, ...(frame == 0 ? _childLegsA : _childLegsB)];
   final pad = adult.length - child.length;
   return [
@@ -103,25 +136,27 @@ SpriteRows _pair(int frame) {
   ];
 }
 
-SpriteRows _elder(int frame) {
-  final a = _adult(frame);
+SpriteRows _elder(int frame, [GhostOutfit o = GhostOutfit.none]) {
+  final a = _adult(frame, o);
+  final top = o == GhostOutfit.umbrella ? _umbrella.length : 0;
   return [
     for (var i = 0; i < a.length; i++)
       // cabeça e ombros inclinados um pixel à frente (esquerda), bengala na direita
-      '${i < 5 ? '${a[i].substring(1)}.' : a[i]}${i >= 5 ? 'n' : '.'}',
+      '${i < top + 5 ? '${a[i].substring(1)}.' : a[i]}${i >= top + 5 ? 'n' : '.'}',
   ];
 }
 
-/// As linhas do sprite de [m] no [frame] (0 ou 1; só os passantes de pé têm dois quadros).
-SpriteRows spriteRows(GhostModel m, int frame) => switch (m) {
+/// As linhas do sprite de [m] no [frame] (0 ou 1; só os passantes de pé têm dois quadros), com a roupa [o] do clima (só
+/// nos passantes de pé; ciclistas e carros ficam como estão).
+SpriteRows spriteRows(GhostModel m, int frame, [GhostOutfit o = GhostOutfit.none]) => switch (m) {
       GhostModel.hatch => _hatch,
       GhostModel.sedan => _sedan,
       GhostModel.pickup => _pickup,
       GhostModel.moto => _moto,
       GhostModel.cyclist => _cyclist,
-      GhostModel.adult => _adult(frame),
-      GhostModel.childPair => _pair(frame),
-      GhostModel.elder => _elder(frame),
+      GhostModel.adult => _adult(frame, o),
+      GhostModel.childPair => _pair(frame, o),
+      GhostModel.elder => _elder(frame, o),
     };
 
 /// Os modelos desenhados de pé na tela, com dois quadros de caminhada. Os outros se desenham de cima e giram.
@@ -145,8 +180,35 @@ const ui.Color _tire = ui.Color(0xFF3A2F4A);
 
 ui.Color _shade(ui.Color c, double t) => ui.Color.lerp(c, kOutline, t)!;
 
-/// As cores de cada papel para o modelo [m] e a paleta [p] (de 0 a `paletteCount - 1`).
-Map<String, ui.Color> paletteOf(GhostModel m, int p) {
+const List<ui.Color> _umbrellas = [kVeil, kSignal, kEssence, ui.Color(0xFF6C7FB8), ui.Color(0xFF8A3B3B), kText];
+const List<ui.Color> _raincoats = [ui.Color(0xFFE8C14A), ui.Color(0xFF5FA8D3), ui.Color(0xFFE8E4F4)];
+const List<ui.Color> _coats = [ui.Color(0xFF6B4A2F), ui.Color(0xFF4A4458), ui.Color(0xFF7A3B4A), ui.Color(0xFF3F4A6C)];
+const List<ui.Color> _knits = [ui.Color(0xFFB8484A), kEssence, kSignal, ui.Color(0xFFE8C14A), kVeil];
+const List<ui.Color> _caps = [ui.Color(0xFFE8E4F4), ui.Color(0xFFD8B45A), ui.Color(0xFF6C7FB8), kEssence];
+
+/// As cores de cada papel para o modelo [m], a paleta [p] (de 0 a `paletteCount - 1`) e a roupa [o] do clima: a capa e o
+/// casaco trocam a blusa, a roupa leve a clareia; o guarda-chuva, o gorro e o boné variam de cor com a paleta.
+Map<String, ui.Color> paletteOf(GhostModel m, int p, [GhostOutfit o = GhostOutfit.none]) {
+  final base = _paletteOf(m, p);
+  if (o == GhostOutfit.none || m.kind == GhostKind.car) return base;
+  final i = p % m.paletteCount;
+  final umbrella = _umbrellas[i % _umbrellas.length];
+  return {
+    ...base,
+    if (o == GhostOutfit.raincoat) 't': _raincoats[i % _raincoats.length],
+    if (o == GhostOutfit.coat) ...{'t': _coats[i % _coats.length], 'p': _shade(_coats[(i + 1) % _coats.length], 0.4)},
+    if (o == GhostOutfit.light) 't': ui.Color.lerp(base['t'], const ui.Color(0xFFFFFFFF), 0.45)!,
+    'w': umbrella,
+    'W': _shade(umbrella, 0.35),
+    'r': const ui.Color(0xFF8A8FA3),
+    'c': _caps[i % _caps.length],
+    'e': _knits[i % _knits.length],
+    'f': _knits[(i + 2) % _knits.length],
+    'm': const ui.Color(0xFFE8E4F4),
+  };
+}
+
+Map<String, ui.Color> _paletteOf(GhostModel m, int p) {
   final i = p % m.paletteCount;
   if (m.kind == GhostKind.car) {
     final body = _carBodies[i];
@@ -213,18 +275,17 @@ class GhostSprites {
   final Map<int, ui.Picture> _pictures = {};
 
   /// Colunas e linhas da matriz do modelo.
-  (int, int) sizeOf(GhostModel m) {
-    final rows = spriteRows(m, 0);
+  /// Com a roupa [o], o guarda-chuva deixa o passante mais alto.
+  (int, int) sizeOf(GhostModel m, [GhostOutfit o = GhostOutfit.none]) {
+    final rows = spriteRows(m, 0, o);
     return (rows.first.length, rows.length);
   }
 
-  ui.Picture picture(GhostModel m, int palette, int frame) {
+  ui.Picture picture(GhostModel m, int palette, int frame, [GhostOutfit o = GhostOutfit.none]) {
     final f = frame % framesOf(m);
-    final key = (m.index * 8 + palette % m.paletteCount) * 2 + f;
-    return _pictures[key] ??= _record(m, palette, f);
+    final key = ((m.index * 8 + palette % m.paletteCount) * 2 + f) * 16 + o.index;
+    return _pictures[key] ??= recordSprite(spriteRows(m, f, o), paletteOf(m, palette, o));
   }
-
-  ui.Picture _record(GhostModel m, int palette, int frame) => recordSprite(spriteRows(m, frame), paletteOf(m, palette));
 
   final Map<int, ui.Picture> _boats = {};
 

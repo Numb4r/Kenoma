@@ -104,6 +104,7 @@ class TrafficPainter {
     StreetState Function(GhostLine line, double tUtc)? streetState,
     Object? coverKey,
     bool skid = false,
+    String? outfit,
   }) {
     lastDrawn = 0;
     lastBoats = 0;
@@ -133,7 +134,7 @@ class TrafficPainter {
       } else {
         // Gelo (Chuva congelante): o carro derrapa, balançando a frente.
         final wobble = skid && g.kind == GhostKind.car ? math.sin(t * 2.3 + (g.id & 0xff)) * 0.35 : 0.0;
-        drawGhost(canvas, g, sx, sy, cam.rotation + wobble, pxPerM, night);
+        drawGhost(canvas, g, sx, sy, cam.rotation + wobble, pxPerM, night, outfit: outfit);
       }
       lastDrawn++;
     }
@@ -160,15 +161,17 @@ class TrafficPainter {
   }
 
   /// Desenha um fantasma na tela em ([sx], [sy]). Os de pé ficam em pé (os pés na posição) e alternam dois quadros
-  /// de caminhada; os outros giram com o mapa. [pxPerM] são pixels de tela por metro.
-  void drawGhost(ui.Canvas canvas, Ghost g, double sx, double sy, double rotation, double pxPerM, double night) {
+  /// de caminhada; os outros giram com o mapa. [pxPerM] são pixels de tela por metro. Com [outfit] (o grupo de roupa do
+  /// clima, `clima.json`), cada passante de pé veste a peça que a identidade dele sorteia.
+  void drawGhost(ui.Canvas canvas, Ghost g, double sx, double sy, double rotation, double pxPerM, double night, {String? outfit}) {
     final m = g.model;
-    final (cols, rows) = sprites.sizeOf(m);
     final upright = isUpright(m);
+    final dress = upright ? ghostOutfit(outfit, g.id) : GhostOutfit.none;
+    final (cols, rows) = sprites.sizeOf(m, dress);
     var unit = (m.kind == GhostKind.car ? carM * pxPerM / carRefPx : pedestrianM * pxPerM / pedRefPx);
     if (upright) unit = math.max(1.0, (unit * 2).round() / 2);
     final frame = upright ? (g.travelledM / 0.6).floor() & 1 : 0;
-    final pic = sprites.picture(m, g.palette, frame);
+    final pic = sprites.picture(m, g.palette, frame, dress);
     final fading = g.phase != GhostPhase.alive;
     final w = cols * unit, h = rows * unit;
     if (fading) {

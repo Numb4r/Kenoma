@@ -3,6 +3,7 @@
 library;
 
 import '../core/weather.dart';
+import '../world/creature_wind.dart' show CreatureWindBalance;
 
 int _color(Object? hex, [int fallback = 0xFFE8E4F4]) {
   if (hex is! String || !hex.startsWith('#')) return fallback;
@@ -41,7 +42,7 @@ class ClimateLayer {
 }
 
 class ClimateInfo {
-  const ClimateInfo({required this.id, required this.name, required this.base, required this.hud, this.icon = const [], this.layers = const [], this.ground = const [], this.notice});
+  const ClimateInfo({required this.id, required this.name, required this.base, required this.hud, this.icon = const [], this.layers = const [], this.ground = const [], this.notice, this.outfit, this.windForce = 0});
 
   factory ClimateInfo.fromJson(String id, Map<String, dynamic> j) => ClimateInfo(
         id: id,
@@ -52,6 +53,8 @@ class ClimateInfo {
         layers: [for (final l in (j['layers'] as List<dynamic>?) ?? const []) ClimateLayer((l as Map<String, dynamic>)['layer'] as String, l)],
         ground: [for (final l in (j['ground'] as List<dynamic>?) ?? const []) ClimateLayer((l as Map<String, dynamic>)['kind'] as String, l)],
         notice: j['notice'] as String?,
+        outfit: j['outfit'] as String?,
+        windForce: (j['wind_force'] as num?)?.toDouble() ?? 0,
       );
 
   /// Sem o `clima.json` (testes antigos): os quatro estados do modelo antigo.
@@ -81,6 +84,13 @@ class ClimateInfo {
 
   /// Aviso que aparece uma vez quando o clima começa a ser visto (o Familiar avisa que não é neve).
   final String? notice;
+
+  /// O que os passantes fantasmas vestem (`rain`, `cold`, `heat`, `mask`: `veil_traffic.dart`, `ghostOutfit`). Só desenho.
+  final String? outfit;
+
+  /// A força do vento nas criaturas do mapa, de 0 a 1 (Vento, Vendaval, Tornado, Furacão): inclinam, balançam e os leves são
+  /// empurrados (`world/creature_wind.dart`). Só desenho.
+  final double windForce;
 
   /// Quantas partículas este clima desenha no máximo (soma das camadas): o limite fixo por estado.
   int get maxParticles => layers.where((l) => l.kind == 'particles').fold(0, (a, l) => a + l.count('count'));
@@ -209,6 +219,7 @@ class ClimateBalance {
     this.footprintEveryM = 3,
     this.footprintMax = 40,
     this.prismSearchM = 6000,
+    this.creatureWind = const CreatureWindBalance(),
   });
 
   factory ClimateBalance.fromJson(Map<String, dynamic>? j) {
@@ -229,6 +240,7 @@ class ClimateBalance {
       footprintEveryM: d('footprint_every_m', 3),
       footprintMax: (j['footprint_max'] as num?)?.toInt() ?? 40,
       prismSearchM: d('prism_search_m', 6000),
+      creatureWind: CreatureWindBalance.fromJson(j['creature_wind'] as Map<String, dynamic>?),
     );
   }
 
@@ -259,4 +271,7 @@ class ClimateBalance {
 
   /// Até onde o Prisma de orvalho procura um arco-íris ativo (o do aparelho: decide só se o prisma se gasta).
   final double prismSearchM;
+
+  /// O vento nas criaturas do mapa (`creature_wind`): inclinação, empurrão dos leves e partículas soltas. Só desenho.
+  final CreatureWindBalance creatureWind;
 }

@@ -10,6 +10,7 @@ import 'package:flutter/painting.dart' show TextPainter, TextSpan, TextStyle, Te
 import '../../capture/eco_type.dart';
 import '../../core/behavior.dart';
 import '../../core/species_ids.dart';
+import '../../world/creature_wind.dart';
 import '../../world/map_camera.dart';
 import '../../world/spawn_field.dart';
 import '../colors.dart';
@@ -64,10 +65,22 @@ void paintSpawns(
   required double sparkSize,
   double? spiritSize,
   double dpr = 1,
+  CreatureWind? wind,
+  ui.Offset windDir = ui.Offset.zero,
+  double pxPerM = 0,
 }) {
   final ordered = [...spawns]..sort((a, b) => a.y.compareTo(b.y));
+  final blow = wind != null && !wind.calm && windDir != ui.Offset.zero;
   for (final s in ordered) {
-    final (sx, sy) = cam.cellToScreen(s.x, s.y, view.width, view.height);
+    var (sx, sy) = cam.cellToScreen(s.x, s.y, view.width, view.height);
+    var lean = 0.0;
+    if (blow) {
+      // Só desenho: o empurrão dos leves e a inclinação; o ponto de coleta continua em (s.x, s.y).
+      final push = windDir * (wind.pushM(s, time) * pxPerM);
+      sx += push.dx;
+      sy += push.dy;
+      lean = wind.lean(s.uid, time) * windDir.dx;
+    }
     final margin = math.max(spriteSize, 60);
     if (sx < -margin || sy < -margin || sx > view.width + margin || sy > view.height + margin) continue;
     final center = ui.Offset(sx.roundToDouble(), sy.roundToDouble());
@@ -81,17 +94,19 @@ void paintSpawns(
         // A costura abre do centro para fora e o Eco aparece dentro dela.
         canvas.save();
         canvas.clipRect(ui.Rect.fromCenter(center: center, width: size * appear + 1, height: size * 2));
-        _eco(canvas, center.translate(0, hop), s, sprites[s.entryId], size, typeOf, near, time, avoid, tint: tint);
+        _eco(canvas, center.translate(0, hop), s, sprites[s.entryId], size, typeOf, near, time, avoid, tint: tint, lean: lean);
         canvas.restore();
         paintSeam(canvas, center, size, appear);
       } else {
-        _eco(canvas, center.translate(0, hop), s, sprites[s.entryId], size, typeOf, near, time, avoid, tint: tint);
+        _eco(canvas, center.translate(0, hop), s, sprites[s.entryId], size, typeOf, near, time, avoid, tint: tint, lean: lean);
       }
+      if (blow) _motes(canvas, center, wind.motes(s.uid, time), windDir, size, _moteColor(s, typeOf));
       if (s.behavior != EcoBehavior.passive) _behaviorIcon(canvas, center, s.behavior, size);
       if (s.tag == 'charged') _chargedSparks(canvas, center, size, time + s.uid % 5);
       if (marked?.call(s) ?? false) _markRing(canvas, center, size);
     } else if (s.isSpark) {
-      _spark(canvas, center, spawnColor(s, typeOf), sparkSize, dpr, near, time + s.uid % 7);
+      _leaning(canvas, center.translate(0, sparkSize / 2), lean, () => _spark(canvas, center, spawnColor(s, typeOf), sparkSize, dpr, near, time + s.uid % 7));
+      if (blow) _motes(canvas, center, wind.motes(s.uid, time), windDir, sparkSize * 1.5, spawnColor(s, typeOf));
     } else {
       _material(canvas, center, spawnColor(s, typeOf), sparkSize, near);
     }
@@ -99,6 +114,35 @@ void paintSpawns(
 }
 
 final _flat = ui.Paint()..isAntiAlias = false;
+
+/// Desenha [draw] inclinado [lean] radianos em volta de [feet] (o vento: o topo vai para o lado, os pés ficam).
+void _leaning(ui.Canvas canvas, ui.Offset feet, double lean, void Function() draw) {
+  if (lean.abs() < 1e-3) return draw();
+  canvas.save();
+  canvas.translate(feet.dx, feet.dy);
+  canvas.skew(-math.tan(lean), 0);
+  canvas.translate(-feet.dx, -feet.dy);
+  draw();
+  canvas.restore();
+}
+
+/// O que se solta do sprite com o vento: brasas do Fogo, folhas da Planta, fiapos da Água.
+ui.Color _moteColor(WorldSpawn s, EcoTypeOf typeOf) => switch (typeOf(s.entryId)) {
+      EcoType.fire => kEssence,
+      EcoType.plant => const ui.Color(0xFF6BD36A),
+      _ => kText,
+    };
+
+/// As partículas soltas, saindo de [c] na direção [dir] do vento (pixels de tela), um pixel de arte cada.
+void _motes(ui.Canvas canvas, ui.Offset c, List<WindMote> motes, ui.Offset dir, double size, ui.Color color) {
+  if (motes.isEmpty) return;
+  final px = math.max(1.0, (size / 16).roundToDouble());
+  final side = ui.Offset(-dir.dy, dir.dx);
+  for (final m in motes) {
+    final p = c + dir * (size * 0.3 + m.along * size * 1.6) + side * (m.side * size * 0.35);
+    canvas.drawRect(ui.Rect.fromLTWH(p.dx.roundToDouble(), p.dy.roundToDouble(), px, px), _flat..color = color.withValues(alpha: m.alpha.clamp(0.0, 1.0)));
+  }
+}
 
 /// O ícone do comportamento, pequeno, no canto de cima à direita do Eco: dois chevrons (Arisco), um ponto de exclamação
 /// (Agressivo) ou um olho (Oculto revelado).
@@ -148,7 +192,7 @@ void _markRing(ui.Canvas canvas, ui.Offset c, double size) {
   canvas.drawRect(r, ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 2..color = kVeil..isAntiAlias = false);
 }
 
-void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double size, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid, {int? tint}) {
+void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double size, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid, {int? tint, double lean = 0}) {
   final color = spawnColor(s, typeOf);
   // Sombra no chão.
   canvas.drawOval(
@@ -181,6 +225,14 @@ void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double 
         ..isAntiAlias = true,
     );
   }
+  final leaning = lean.abs() >= 1e-3;
+  if (leaning) {
+    // O vento inclina a silhueta em volta dos pés (a sombra fica no chão).
+    canvas.save();
+    canvas.translate(dst.center.dx, dst.bottom);
+    canvas.skew(-math.tan(lean), 0);
+    canvas.translate(-dst.center.dx, -dst.bottom);
+  }
   if (sprite != null && near) {
     // Ao alcance de toque (30 m): contorno violeta pulsando em volta da silhueta, um pixel de arte de espessura.
     final px = size / sprite.width;
@@ -208,6 +260,7 @@ void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double 
   } else {
     canvas.drawRect(dst.deflate(size * 0.2), _flat..color = color);
   }
+  if (leaning) canvas.restore();
   if (!near) return;
   // Anel e rótulo têm tamanho fixo de tela. Perto do Conjurador ficam de fora: nada cobre o marcador.
   final ring = ui.Rect.fromCenter(center: c.translate(0, size * 0.42), width: kRingRadiusDp * 2, height: kRingRadiusDp * 2);

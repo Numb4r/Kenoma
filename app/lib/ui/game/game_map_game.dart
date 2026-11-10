@@ -12,6 +12,7 @@ import '../../capture/eco_type.dart';
 import '../../core/astro.dart';
 import '../../core/weather.dart';
 import '../../world/companion.dart';
+import '../../world/creature_wind.dart';
 import '../../core/tiles.dart';
 import '../../world/aura.dart';
 import '../../world/follow_camera.dart';
@@ -60,8 +61,6 @@ class GameMapGame extends FlameGame {
     required this.minWidthM,
     required this.maxWidthM,
     required this.sparkSizeM,
-    required this.trackerM,
-    required this.trackerMax,
     this.declinationDeg = 0,
     this.dpr = 1,
     this.worldView,
@@ -121,6 +120,9 @@ class GameMapGame extends FlameGame {
   /// O arco-íris de pé no mapa (época 8), entre o chão e os spawns: gira com o mapa.
   late final RainbowPainter rainbow = RainbowPainter(climateCatalog.rainbowArc);
   double _climateIn = 0;
+
+  /// O vento nas criaturas (só desenho): inclina, balança e empurra os leves; cai devagar quando o vento passa.
+  late final CreatureWind creatureWind = CreatureWind(climateBalance.creatureWind);
 
   /// Modo bolso: o clima desenha bem menos partículas (o agente da Patrulha liga).
   void setPocket(bool on) => _climate.setPocket(on);
@@ -197,9 +199,6 @@ class GameMapGame extends FlameGame {
   /// Altura do Conjurador e dos Ecos, e tamanho das Fagulhas e dos materiais, em metros do mundo.
   final double sparkSizeM;
 
-  /// Alcance do rastreador, em metros, e quantos Ecos ele mostra.
-  final double trackerM;
-  final int trackerMax;
 
   /// Declinação magnética do lugar, em graus (leste positivo): a bússola do celular lê o norte magnético e o
   /// mapa tem o norte verdadeiro.
@@ -416,7 +415,7 @@ class GameMapGame extends FlameGame {
     if (veilTraffic() && _hasFix && wv != null) {
       final tc = rainFx() ? climateGround.trafficCover(wv.field.seed, climateShown(), wv.climate) : null; // barcos, dunas, gelo
       final walk = wv.climate.walkerMult == 1 ? null : _trafficUtc(walker: true);
-      _traffic.paint(canvas, view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: _trafficUtc(), tWalkExact: walk, lonDeg: _lon, metersPerCell: metersPerCell(_lat), light: light, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false);
+      _traffic.paint(canvas, view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: _trafficUtc(), tWalkExact: walk, lonDeg: _lon, metersPerCell: metersPerCell(_lat), light: light, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false, outfit: climateShown().outfit);
     } else {
       _traffic.lastDrawn = 0;
     }
@@ -427,23 +426,18 @@ class GameMapGame extends FlameGame {
     if (_hasFix) rainbow.paint(canvas, view, cam, metersPerCell21: metersPerCell(_lat), exactUtc: _exactUtc());
     _paintWorld(canvas, view, cam);
     canvas.restore();
-    // O clima da tela por cima do mapa e dos spawns, por baixo do HUD (o rastreador da borda é HUD): cobre a tela toda.
+    // O clima da tela por cima do mapa e dos spawns, por baixo do HUD (as marcas do Radar na borda são HUD): cobre a tela toda.
     climateFx.paintSky(canvas, view, cam);
     final (ax, ay) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
     _climate.paint(canvas, view, player: avatar.hasPosition ? Offset(ax, ay) : null, sky: skyRects);
     final w = worldView;
-    if (w != null && avatar.hasPosition) {
+    if (w != null && avatar.hasPosition && w.pulse != null) {
       final off = ecoSizePx / 2;
-      final tracked = w.tracked(
-        trackerM: w.trackerRangeM,
-        max: trackerMax,
-        offScreen: (s) {
-          final (x, y) = cam.cellToScreen(s.x, s.y, view.width, view.height);
-          return x < -off || y < -off || x > view.width + off || y > view.height + off;
-        },
-      );
-      final box = trackerRect ?? Rect.fromLTWH(view.width - 56, view.height - bottomInset - 8 - trackerMax * 62, 48, trackerMax * 62.0);
-      paintTracker(canvas, box, tracked, sprites: sprites, typeOf: typeOf, rotation: cam.rotation);
+      final marks = w.edgeMarksAt(_exactUtc(), onScreen: (s) {
+        final (x, y) = cam.cellToScreen(s.x, s.y, view.width, view.height);
+        return x >= -off && y >= -off && x <= view.width + off && y <= view.height + off;
+      });
+      paintEdgeMarks(canvas, view, Offset(ax, ay), marks, rotation: cam.rotation);
     }
   }
 
@@ -463,6 +457,7 @@ class GameMapGame extends FlameGame {
     }
     _climate.localHour = DateTime.fromMillisecondsSinceEpoch(nowUtc() * 1000).hour; // só desenho (a geada da manhã)
     _climate.update(dt, Size(size.x, size.y), climateShown(), enabled: rainFx());
+    creatureWind.update(dt, rainFx() ? climateShown().windForce : 0);
     climateFx.update(dt);
     final cw = worldView?.field.climate;
     _climateIn -= dt;
@@ -497,14 +492,21 @@ class GameMapGame extends FlameGame {
         decor: rainFx(),
       );
 
-  /// O tráfego do Véu mais lento com o clima (Dilúvio): o tempo anda [PlayerClimate.trafficMult] vezes desde o começo da
-  /// janela do clima, igual em todos os aparelhos. Com [walker], o dos passantes, que a Geada forte deixa ainda mais lentos.
+  /// O relógio do tráfego do Véu com o clima (`ClimateWorld.trafficClock`): mais lento no Dilúvio, parado no Silêncio desde
+  /// o instante em que ele começou, igual em todos os aparelhos. Com [walker], o dos passantes (Geada forte).
   double _trafficUtc({bool walker = false}) {
-    final t = _exactUtc(), c = worldView?.climate;
-    final mult = (c?.trafficMult ?? 1) * (walker ? c?.walkerMult ?? 1 : 1);
-    if (c == null || mult == 1) return t;
-    return c.windWindowStart + (t - c.windWindowStart) * mult;
+    final t = _exactUtc(), cw = worldView?.field.climate;
+    if (cw == null || !avatar.hasPosition) return t;
+    final f = cw.forced();
+    if (f != _forcedId) {
+      _forcedId = f;
+      _forcedAt = t; // o clima do debug começa agora, só neste aparelho
+    }
+    return cw.trafficClock(avatar.x, avatar.y, t, walker: walker, sinceUtc: f == null ? null : _forcedAt);
   }
+
+  String? _forcedId;
+  double _forcedAt = 0;
 
   /// Aura, spawns, Familiar, Conjurador e retorno visual. Sem posição, nada.
   void _paintWorld(Canvas canvas, Size view, MapCamera cam) {
@@ -551,6 +553,9 @@ class GameMapGame extends FlameGame {
         spiritSize: spiritSizePx,
         sparkSize: sparkSize,
         dpr: dpr,
+        wind: creatureWind,
+        windDir: _climate.wind,
+        pxPerM: cam.pixelsPerCell / metersPerCell(_lat),
       );
     }
     if (travelLayer?.hidesPlayer != true) {
@@ -609,12 +614,6 @@ class GameMapGame extends FlameGame {
     super.onRemove();
   }
 
-  /// Barra de navegação do sistema embaixo, em pixels lógicos: o rastreador fica acima dela.
-  double bottomInset = 0;
-
-  /// A zona do rastreador no HUD (`hud_layout.dart`), em pixels lógicos da tela do jogo. `null`: o canto de baixo à direita.
-  Rect? trackerRect;
-
   /// As vagas dos elementos do céu (lua, segunda lua, Sol Negro) no HUD (`HudLayout.sky`): fora de todas as zonas.
   Map<String, Rect> skyRects = const {};
 
@@ -666,7 +665,9 @@ class GameMapGame extends FlameGame {
     var bestD = double.infinity;
     for (final s in w.spawns) {
       final (sx, sy) = cam.cellToScreen(s.x, s.y, size.x, size.y);
-      final d = (Offset(sx, sy) - screen).distance;
+      // O toque vale onde o spawn está desenhado (o vento empurra os leves só no desenho).
+      final push = _climate.wind * (creatureWind.pushM(s, _time) * follow.pixelsPerCell / metersPerCell(_lat));
+      final d = (Offset(sx, sy) + push - screen).distance;
       if (d <= hitRadius(s, ecoSizePx, sparkSizePx, spiritSize: spiritSizePx) && d < bestD) {
         best = s;
         bestD = d;

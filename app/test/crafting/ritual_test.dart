@@ -304,7 +304,7 @@ void main() {
 
     test('os textos batem com o docs/textos-mentor.md (rode scripts/mentor_md.py)', () {
       final md = File('../docs/textos-mentor.md').readAsStringSync();
-      expect(script.events, hasLength(5));
+      expect(script.events, hasLength(6)); // as do ritual e a entrega do Radar
       for (final m in script.events) {
         expect(md, contains(m.text), reason: m.id);
         expect(m.text.length, lessThan(320), reason: m.id);
