@@ -98,7 +98,7 @@ JournalResult applyJournal(GameState state, List<Map<String, dynamic>> lines, {r
     // A Patrulha em curso: contadores do resumo e a hora da última linha (o fim, se o serviço morrer sem escrevê-lo).
     final run = state.settings[kPatrolRunKey] is Map ? Map<String, dynamic>.from(state.settings[kPatrolRunKey] as Map) : null;
     if (run != null && k != 'end' && k != 'start') state.setSetting(kPatrolRunKey, run..['last'] = t);
-    // A Patrulha simulada com o "GPS simulado dá recompensa" desligado: o que vem fica, mas não conta para XP nem estatística.
+    // A Patrulha simulada com o "GPS simulado dá recompensa" desligado: nada entra na Bolsa nem conta para XP ou estatística.
     final sandbox = run?['sandbox'] == true;
     void bump(String key, int n) {
       if (run == null) return;
@@ -117,7 +117,7 @@ JournalResult applyJournal(GameState state, List<Map<String, dynamic>> lines, {r
       case 'spark' || 'material':
         if (uid == null || state.isDone(uid)) continue;
         final item = l['item'] as String, q = (l['q'] as int?) ?? 1;
-        state.add(item, q);
+        if (!sandbox) state.add(item, q); // GPS simulado sem recompensa: nada entra na Bolsa
         state.markDone(uid, t);
         if (!sandbox) {
           state.gainXp(k == 'spark' ? state.balance.spark : state.balance.material, t);

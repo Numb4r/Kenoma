@@ -144,16 +144,16 @@ void main() {
         onMessage: msgs.add,
       )..sandbox = () => true;
       v.refresh(lat: hit.$1, lon: hit.$2, tUtc: t0);
-      expect(state.count(hit.$3.entryId), greaterThanOrEqualTo(hit.$3.quantity));
+      expect(state.count(hit.$3.entryId), 0, reason: 'GPS simulado sem recompensa: nada entra na Bolsa');
       expect(state.progress.xp, 0);
       expect(state.progress.level, 1);
       expect(state.story.count('spark'), 0);
       expect(state.bestiary.values.any((e) => e.seen), isFalse, reason: 'os Ecos à vista não entram no bestiário');
-      expect(msgs.where((m) => m.startsWith('+')).every((m) => m.endsWith('(debug)')), isTrue);
+      expect(msgs.where((m) => m.startsWith('+')).every((m) => m.endsWith('(debug, fora da Bolsa)')), isTrue);
       final m = find('material');
       v.refresh(lat: m.$1, lon: m.$2, tUtc: t0);
       v.touch(v.spawns.firstWhere((x) => x.uid == m.$3.uid), t0);
-      expect(state.count(m.$3.entryId), greaterThanOrEqualTo(m.$3.quantity));
+      expect(state.count(m.$3.entryId), 0);
       expect((state.progress.xp, state.story.count('material')), (0, 0));
     });
 
