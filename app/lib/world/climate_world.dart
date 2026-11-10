@@ -320,13 +320,11 @@ class ClimateWorld {
   /// Os arcos ativos em [t] com o pé a até [radius21] células z21 de (x21, y21), mais os do debug.
   List<RainbowArc> rainbowsNear(double x21, double y21, double radius21, int t) {
     final out = <RainbowArc>[];
-    final regions = {
-      for (final dx in [-radius21, radius21])
-        for (final dy in [-radius21, radius21]) ((x21 + dx).floor() >>> 9, (y21 + dy).floor() >>> 9),
-    };
-    for (final (rx, ry) in regions) {
-      final a = rainbowIn(rx, ry, t);
-      if (a != null) out.add(a);
+    for (var ry = (y21 - radius21).floor() >>> 9; ry <= (y21 + radius21).floor() >>> 9; ry++) {
+      for (var rx = (x21 - radius21).floor() >>> 9; rx <= (x21 + radius21).floor() >>> 9; rx++) {
+        final a = rainbowIn(rx, ry, t);
+        if (a != null) out.add(a);
+      }
     }
     out.addAll(debugArcs.where((a) => a.activeAt(t)));
     return [for (final a in out) if (math.sqrt((a.footX - x21) * (a.footX - x21) + (a.footY - y21) * (a.footY - y21)) <= radius21) a];
