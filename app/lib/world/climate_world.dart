@@ -87,6 +87,7 @@ class ClimateWorld {
     required this.itemExists,
     this.biomeAt,
     this.snapper,
+    this.itemSince,
     String? Function()? forced,
   }) : forced = forced ?? _none;
 
@@ -100,6 +101,10 @@ class ClimateWorld {
   final String? Function(String type, double pick) speciesOfType;
   final bool Function(String itemId) itemExists;
 
+  /// A primeira época em que o item existe para o mundo (`since_epoch` do `items.json`; `null`: sempre). Antes dela o
+  /// item vale como inexistente e a peça usa o fallback: criar o item numa versão nova não muda as épocas publicadas.
+  final int? Function(String itemId)? itemSince;
+
   /// A chave de bioma de spawn da célula z20, para itens que só nascem em alguns biomas.
   final String? Function(int cx20, int cy20)? biomeAt;
 
@@ -112,10 +117,12 @@ class ClimateWorld {
   /// Efeitos disparados pelo debug num ponto tocado: só neste aparelho.
   final debugDrops = <ClimateDrop>[];
   final debugZones = <ClimateZone>[];
+  final debugArcs = <RainbowArc>[];
 
   final _dropCache = <(int, int, int, int, int), List<ClimateDrop>>{};
   final _zoneCache = <(int, int, int, int, int), List<ClimateZone>>{};
   final _spotCache = <(int, int, int, int), List<PuddleSpot>>{};
+  final _arcCache = <(int, int, int, int, bool), RainbowArc?>{};
 
   /// O modelo e a época que valem em [t]: os da época; com o clima forçado pelo debug numa época sem modelo, o da época mais
   /// nova que tem (só neste aparelho, para dar para testar antes da época 6 começar).
@@ -279,7 +286,50 @@ class ClimateWorld {
       }
     }
     out.addAll(debugZones.where((z) => z.activeAt(t)));
+    for (final a in rainbowsNear(x21, y21, radius21, t)) {
+      out.add(a.foot);
+    }
     return out;
+  }
+
+  /// Época 8: o arco-íris da região z12 `(rx, ry)` em [t], com o pé já na rua (o primeiro candidato que cai a menos de
+  /// 35 m de um caminho; sem nenhum, o primeiro). Com o clima do arco-íris forçado pelo debug, vale a janela inteira, só
+  /// neste aparelho. `null`: sem arco agora.
+  RainbowArc? rainbowIn(int rx, int ry, int t) {
+    final me = modelAt(t);
+    if (me == null) return null;
+    var (epoch, model) = me;
+    final f = forced();
+    // Forçado pelo debug antes da época 8: o arco da época mais nova que tem (só neste aparelho).
+    if (f != null && model.rainbow == null) model = schedule.epochs.reversed.map((e) => e.climate).firstWhere((m) => m?.rainbow != null, orElse: () => model) ?? model;
+    final rb = model.rainbow;
+    if (rb == null || (f != null && f != rb.$1)) return null;
+    final w = model.windowOf(t);
+    if (_arcCache.length > 64) _arcCache.clear();
+    final arc = _arcCache.putIfAbsent((epoch.id, rx, ry, w, f != null), () {
+      final a = model.rainbowAt(seed, epoch.id, rx, ry, w, events: events, forcedRainbow: f != null);
+      if (a == null) return null;
+      for (final (x, y) in a.spots) {
+        if (_toStreet(x, y) case final p?) return a.placed(p.$1, p.$2);
+      }
+      return a;
+    });
+    return arc != null && arc.activeAt(t) ? arc : null;
+  }
+
+  /// Os arcos ativos em [t] com o pé a até [radius21] células z21 de (x21, y21), mais os do debug.
+  List<RainbowArc> rainbowsNear(double x21, double y21, double radius21, int t) {
+    final out = <RainbowArc>[];
+    final regions = {
+      for (final dx in [-radius21, radius21])
+        for (final dy in [-radius21, radius21]) ((x21 + dx).floor() >>> 9, (y21 + dy).floor() >>> 9),
+    };
+    for (final (rx, ry) in regions) {
+      final a = rainbowIn(rx, ry, t);
+      if (a != null) out.add(a);
+    }
+    out.addAll(debugArcs.where((a) => a.activeAt(t)));
+    return [for (final a in out) if (math.sqrt((a.footX - x21) * (a.footX - x21) + (a.footY - y21) * (a.footY - y21)) <= radius21) a];
   }
 
   /// A zona parada com `snap` vai para a rua mais próxima (como os spawns); sem rua a menos de 35 m, ela não existe.
@@ -360,12 +410,12 @@ class ClimateWorld {
         if (s != null) out.add(s);
       }
       if (item != null && drop.itemRoll < item.chance && t < drop.tUtc + item.ttlS) {
-        final s = _item(item, drop.pick, drop.x + 0.3, drop.y + 0.3, fnv1a64([drop.uid, 2]));
+        final s = _item(item, drop.pick, drop.x + 0.3, drop.y + 0.3, fnv1a64([drop.uid, 2]), drop.tUtc);
         if (s != null) out.add(s);
       }
       final item2 = p.item2; // a cratera: o mesmo sorteio do item, outro uid
       if (item2 != null && drop.itemRoll < item2.chance && t < drop.tUtc + item2.ttlS) {
-        final s = _item(item2, drop.pick, drop.x - 0.3, drop.y + 0.2, fnv1a64([drop.uid, 3]));
+        final s = _item(item2, drop.pick, drop.x - 0.3, drop.y + 0.2, fnv1a64([drop.uid, 3]), drop.tUtc);
         if (s != null) out.add(s);
       }
     }
@@ -387,7 +437,7 @@ class ClimateWorld {
           if (s != null) out.add(s);
         }
         if (item != null && j < item.perZone && slot.roll2 < item.chance) {
-          final s = _item(item, slot.pick, x + 0.3, y + 0.3, fnv1a64([z.uidBase, j, 2]));
+          final s = _item(item, slot.pick, x + 0.3, y + 0.3, fnv1a64([z.uidBase, j, 2]), z.startUtc);
           if (s != null && (item.revealM == null || s.distanceM(x21, y21, metersPerCell21) <= item.revealM!)) out.add(s); // a duna esconde
         }
       }
@@ -400,7 +450,7 @@ class ClimateWorld {
         if (s != null) out.add(s);
       }
       if (item != null && pd.size >= 0.3 && r.itemRoll < item.chance) {
-        final s = _item(item, r.pick, pd.x + 0.3, pd.y + 0.3, fnv1a64([r.uid, 2]));
+        final s = _item(item, r.pick, pd.x + 0.3, pd.y + 0.3, fnv1a64([r.uid, 2]), t);
         if (s != null) out.add(s);
       }
     }
@@ -428,13 +478,20 @@ class ClimateWorld {
     );
   }
 
-  WorldSpawn? _item(PieceItem item, double pick, double x, double y, int uid) {
+  /// O item existe para o mundo na época de [t] (ver [itemSince]).
+  bool _exists(String id, int t) {
+    if (!itemExists(id)) return false;
+    final since = itemSince?.call(id);
+    return since == null || schedule.select(t).epoch.id >= since;
+  }
+
+  WorldSpawn? _item(PieceItem item, double pick, double x, double y, int uid, int t) {
     final cx20 = x.floor() >>> 1, cy20 = y.floor() >>> 1;
     if (item.biomes != null && !item.biomes!.contains(biomeAt?.call(cx20, cy20))) return null;
     var id = item.ids[(pick * item.ids.length).floor().clamp(0, item.ids.length - 1)];
-    if (!itemExists(id)) {
+    if (!_exists(id, t)) {
       final f = item.fallback;
-      if (f == null || !itemExists(f)) return null; // item que ainda não existe e sem fallback: sem efeito
+      if (f == null || !_exists(f, t)) return null; // item que ainda não existe e sem fallback: sem efeito
       id = f;
     }
     final (lo, hi) = item.qty;
@@ -461,6 +518,14 @@ class ClimateWorld {
       for (var p in def.pieces) {
         if (p.name != pieceName) continue;
         final uid = fnv1a64([seed, t, (x21 * 1000).round(), (y21 * 1000).round(), salt('DBGFX')]);
+        if (p is RainbowPiece) {
+          // O arco do debug: o pé no ponto tocado, com o material e o Eco certos, pelo tempo mais longo do arco.
+          debugArcs.add(RainbowArc(
+            piece: p, startUtc: t, endUtc: t + p.durationS.$2, headingRad: (uid >>> 40) / (1 << 24) * 2 * math.pi, uid: uid,
+            spots: [(x21, y21)], slot: (dx: 0.0, dy: 0.0, roll: 0.0, roll2: 0.0, pick: 0.5),
+          ));
+          return true;
+        }
         if (p is PuddlePiece) {
           p = ZonePiece(p.name, ghost: false, perCell: 1, radiusM: p.radiusM.$2.toDouble(), durationS: 1800, speedMps: 0, spawn: p.spawn, item: p.item);
         }

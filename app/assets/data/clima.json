@@ -219,16 +219,12 @@
     "rainbow": {
       "name": "Arco-íris",
       "base": "clear",
-      "hud": "Arco-íris: Luz mais comum; o pé do arco guarda material raro",
+      "hud": "Arco-íris: fica de pé num ponto do mapa; o pé guarda material raro",
       "icon": [
         "sun",
         "rainbow"
       ],
       "layers": [
-        {
-          "layer": "arc",
-          "alpha": 0.35
-        },
         {
           "layer": "tint",
           "color": "#fff6d8",
@@ -1266,6 +1262,10 @@
           "color": "#1a1424",
           "alpha": 0.5,
           "blend": "multiply"
+        },
+        {
+          "layer": "black_sun",
+          "alpha": 0.95
         }
       ],
       "ground": [
@@ -1823,8 +1823,7 @@
   "tags": {
     "charged": {
       "name": "Eco carregado",
-      "tint": "#5fd3c6",
-      "born": "Um Eco carregado nasceu do raio"
+      "tint": "#5fd3c6"
     }
   },
   "reasons": {
@@ -1888,6 +1887,82 @@
     "geomagnetic_storm": {
       "name": "Tempestade geomagnética",
       "reason": "Tempestade geomagnética: o céu ondula."
+    },
+    "ano_novo": {
+      "name": "Ano-Novo",
+      "reason": "Ano-Novo: Fagulhas caem do céu como fogos."
+    },
+    "carnaval": {
+      "name": "Carnaval do Véu",
+      "reason": "Carnaval do Véu: a garoa refrata em cores e os Brilhantes aparecem mais."
+    },
+    "cinzas": {
+      "name": "Cinzas",
+      "reason": "Quarta-feira de Cinzas: cai a cinza violeta do Véu."
+    },
+    "dia_do_avesso": {
+      "name": "Dia do Avesso",
+      "reason": "Dia do Avesso: a chuva sobe e as Fagulhas flutuam."
+    },
+    "runas_marco": {
+      "name": "Noite das Runas",
+      "reason": "Equinócio: na Noite das Runas, glifos caem do céu."
+    },
+    "runas_setembro": {
+      "name": "Noite das Runas",
+      "reason": "Equinócio: na Noite das Runas, glifos caem do céu."
+    },
+    "noite_branca": {
+      "name": "Noite Branca",
+      "reason": "Solstício de inverno: na Noite Branca cai a Neve do Véu."
+    },
+    "mare_da_cidade": {
+      "name": "Maré da Cidade",
+      "reason": "Aniversário de Campinas: a Maré do Véu traz a cidade antiga."
+    },
+    "sexta_dos_olhos": {
+      "name": "Sexta dos Olhos",
+      "reason": "Sexta-feira 13: os olhos se abrem entre as nuvens."
+    },
+    "noite_calada": {
+      "name": "Noite Calada",
+      "reason": "31 de outubro: na Noite Calada, o som some."
+    },
+    "aguas_do_veu": {
+      "name": "Águas do Véu",
+      "reason": "Águas do Véu: as águas de outras terras vazam pelo Véu."
+    },
+    "semana_fuligem": {
+      "name": "Semana da Fuligem",
+      "reason": "Semana da Fuligem: a chuva corrói e o ar escurece."
+    },
+    "inverno_do_veu": {
+      "name": "Inverno do Véu",
+      "reason": "Inverno do Véu: o frio de outras terras chega pelo Véu."
+    },
+    "estacao_seca": {
+      "name": "Estação Seca do Véu",
+      "reason": "Estação Seca do Véu: areia, calor e vento de outras terras."
+    },
+    "noite_boreal": {
+      "name": "Noite Boreal",
+      "reason": "Noite Boreal: o céu ondula e o sinal falha."
     }
+  },
+  "rainbow_arc": {
+    "arc_m": 90,
+    "band_m": 3,
+    "colors": [
+      "#ff5a36",
+      "#ff7a45",
+      "#ffe9a8",
+      "#6bd36a",
+      "#4aa8ff",
+      "#9b7bff"
+    ],
+    "alpha": 0.55,
+    "fade_in_s": 90,
+    "fade_out_s": 300,
+    "foot_glow": "#ffe9a8"
   }
 }

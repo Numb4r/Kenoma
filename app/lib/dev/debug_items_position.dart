@@ -156,6 +156,40 @@ List<DebugItem> timeItems(DebugEnv env) {
       builder: (_) => _WeatherItem(tools: tools),
     ),
     DebugItem(
+      id: 'time.lightning_here',
+      title: 'Raio aqui',
+      section: DebugSection.time,
+      keywords: const ['raio', 'trovão', 'clarão', 'tempestade', 'toque', 'eco carregado'],
+      builder: (_) => ListenableBuilder(
+        listenable: tools.force,
+        builder: (context, _) => DebugColumn([
+          DebugNote(tools.force.tapEffect == 'lightning'
+              ? 'Toque no mapa: o raio cai ali, com traço, clarão, trovão, poeira, marca queimada e o Eco carregado. Só neste aparelho.'
+              : 'Arme e toque no mapa: o raio cai no ponto tocado, mesmo do seu lado.'),
+          DebugButton(label: 'Raio aqui', color: KCores.sinalCiano, onTap: () => tools.force.set(tapEffect: 'lightning')),
+        ]),
+      ),
+    ),
+    DebugItem(
+      id: 'time.rainbow_foot',
+      title: 'Ir até o pé do arco-íris',
+      section: DebugSection.time,
+      keywords: const ['arco-íris', 'arco', 'pé', 'prisma', 'teleporte', 'feérico'],
+      builder: (context) => DebugColumn([
+        const DebugNote('Teleporta o GPS simulado até o pé do arco-íris ativo mais perto. Sem arco: force o clima Arco-íris ou solte um no toque.'),
+        DebugButton(
+          label: 'Ir até o pé do arco-íris',
+          onTap: () {
+            final p = tools.force.rainbowFoot?.call();
+            if (p == null) return debugSnack(context, 'Nenhum arco-íris ativo por perto (abra o mapa do jogo)');
+            if (!tools.useSimulator) tools.setUseSimulator(true);
+            tools.simulator.teleport(p.$1, p.$2);
+            debugSnack(context, 'No pé do arco-íris');
+          },
+        ),
+      ]),
+    ),
+    DebugItem(
       id: 'time.weather_tap',
       title: 'Efeito do clima no toque',
       section: DebugSection.time,
@@ -174,7 +208,7 @@ List<DebugItem> timeItems(DebugEnv env) {
   ];
 }
 
-const _tapNames = {'lightning': 'Raio', 'hail': 'Granizo', 'dust_devil': 'Redemoinho', 'meteor': 'Meteoro', 'violet_bolt': 'Raio violeta', 'spark_fall': 'Fagulha do céu', 'puddle': 'Poça', 'rainbow_foot': 'Pé do arco-íris', 'dry_bolt': 'Raio seco', 'branch': 'Galho', 'rune': 'Runa', 'gaze': 'Olhar', 'hurricane_eye': 'Olho do furacão'};
+const _tapNames = {'lightning': 'Raio', 'hail': 'Granizo', 'dust_devil': 'Redemoinho', 'meteor': 'Meteoro', 'violet_bolt': 'Raio violeta', 'spark_fall': 'Fagulha do céu', 'puddle': 'Poça', 'rainbow': 'Arco-íris', 'dry_bolt': 'Raio seco', 'branch': 'Galho', 'rune': 'Runa', 'gaze': 'Olhar', 'hurricane_eye': 'Olho do furacão'};
 
 /// Os quatro climas antigos sempre à mão; os outros (nativos, de outras regiões e místicos) chegam do `clima.json`.
 class _WeatherItem extends StatefulWidget {

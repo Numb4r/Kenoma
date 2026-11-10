@@ -61,6 +61,9 @@ import '../patrol/patrol_screen.dart';
 import '../travel/routes_screen.dart';
 import '../../travel/ride.dart' show RideState;
 import '../../world/sky_outlook.dart';
+import '../../world/climate_outlook.dart' show nextCalendarEvent;
+import '../../world/dew_prism.dart';
+import '../../core/climate.dart' show RainbowArc;
 import '../../story/local_notifier.dart';
 import '../../story/notification_plan.dart';
 import '../settings/regions_section.dart' show regionSizeLabel;
@@ -694,10 +697,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     world.onShiny = _onShiny;
     world.onEnteredRange = _onEnteredRange;
     _climate = ClimateDriver(data: data, world: climate, online: () => session.state.setting('weather_online'));
+    tools.force.rainbowFoot = () => _ready == null ? null : _rainbowFoot(_ready!);
     unawaited(_climate!.loadEvents());
     game.climateFx
-      ..onThunder = _scheduleThunder
-      ..onEcoBorn = (d) => _toast(data.climates.tags[d.piece.spawn?.tag]?.born ?? 'Algo nasceu ali', seconds: 3);
+      .onThunder = _scheduleThunder;
     session.state.onNotice = _toast;
     session.state.ensureDaily(data.forum, data.schedule.select(tools.clock.nowUtc).epoch.id, localDay(tools.clock.nowUtc));
     _storyTimer = Timer.periodic(const Duration(seconds: 1), (_) => _storyTick());
@@ -818,6 +821,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     if (!_restarting) unawaited(WakelockPlus.disable().catchError((_) {}));
     tools.removeListener(_rebuild);
     tools.clock.removeListener(_rebuild);
+    tools.force.rainbowFoot = null;
     final r = _ready;
     if (r != null) {
       r.session.state.removeListener(_onStateForFamiliar);
@@ -892,10 +896,29 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             catalog: r.data.climates,
             shown: streetLifeEnabled ? () => _climate!.info : null,
             outlook: streetLifeEnabled ? cellSkyOutlook(_climate!.world, lat: () => r.game.playerLat, lon: () => r.game.playerLon, catalog: r.data.climates) : null,
+            nextEvent: streetLifeEnabled ? (now) => nextCalendarEvent(world: _climate!.world, catalog: r.data.climates, nowUtc: now) : null,
+            prisms: () => r.session.state.count(dewPrismId),
+            usePrism: streetLifeEnabled ? () => _usePrism(r) : null,
           ),
         PhoneAppId.settings => _settings(r),
         _ => null,
       };
+
+  /// O Prisma de orvalho na posição do Conjurador: só se gasta com um arco-íris ativo.
+  PrismReading? _usePrism(_Ready r) {
+    final (x, y) = latLonToTileFraction(r.game.playerLat, r.game.playerLon, biomeZoom);
+    return useDewPrism(world: _climate!.world, take: () => r.session.state.take(dewPrismId), x21: x, y21: y, t: tools.clock.nowUtc, metersPerCell21: metersPerCell(r.game.playerLat));
+  }
+
+  /// Debug: o pé do arco-íris ativo mais perto do Conjurador (latitude, longitude), ou `null`.
+  (double, double)? _rainbowFoot(_Ready r) {
+    final (x, y) = latLonToTileFraction(r.game.playerLat, r.game.playerLon, biomeZoom);
+    final arcs = _climate?.world.rainbowsNear(x, y, 6000 / metersPerCell(r.game.playerLat), tools.clock.nowUtc) ?? const [];
+    if (arcs.isEmpty) return null;
+    double d(RainbowArc a) => (a.footX - x) * (a.footX - x) + (a.footY - y) * (a.footY - y);
+    final a = arcs.reduce((p, q) => d(p) <= d(q) ? p : q);
+    return tileFractionToLatLon(a.footX, a.footY, biomeZoom);
+  }
 
   /// Fecha o celular e os apps: o mapa volta à vista (escolher o destino da viagem tocando nele).
   void _backToMap() {
@@ -1003,6 +1026,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       simulator: tools.useSimulator,
     );
     game.trackerRect = hud.tracker;
+    game.skyRects = hud.sky;
     final warnings = _warnings(r);
     return Stack(
       children: [

@@ -9,9 +9,9 @@ void main() {
   GameState state([Map<String, int> inv = const {}]) => GameState(groupCode: 'KENOMA-TESTE', balance: data.progress, inventory: inv);
   final r = data.recipes;
 
-  test('as quatro receitas existem: simples, reforçado, selos de tipo e tônico', () {
+  test('as receitas existem: simples, reforçado, selos de tipo, tônico e o Prisma de orvalho', () {
     expect(r.keys.toSet(), {
-      'recipe.seal.simple', 'recipe.seal.reinforced', 'recipe.seal.fire', 'recipe.seal.plant', 'recipe.seal.water', 'recipe.tonic.focus',
+      'recipe.seal.simple', 'recipe.seal.reinforced', 'recipe.seal.fire', 'recipe.seal.plant', 'recipe.seal.water', 'recipe.tonic.focus', 'recipe.dew_prism',
     });
     expect(r['recipe.seal.reinforced']!.anyEssence, 2);
     expect(r['recipe.seal.reinforced']!.inputs, {'item.seal.simple': 1});

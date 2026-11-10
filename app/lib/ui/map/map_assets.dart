@@ -91,6 +91,7 @@ ClimateWorld climateWorldFor({required GameState state, required GameData data, 
       schedule: data.schedule,
       speciesOfType: data.ecoOfType,
       itemExists: data.itemNames.containsKey,
+      itemSince: (id) => data.itemSinceEpoch[id],
       biomeAt: (cx, cy) {
         try {
           return assets.map.biomes.spawnKey(assets.map.spawnBiomeAtCell(cx, cy));

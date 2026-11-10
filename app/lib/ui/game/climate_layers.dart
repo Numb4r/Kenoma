@@ -1,6 +1,6 @@
 /// As camadas do clima que não são partículas, cada uma um desenho curto no espaço da TELA: só o que está no céu ou cobre a
-/// vista (tom, véu, arco-íris, aurora, glitch, rachaduras, estrelas cadentes, a segunda lua, os olhos da Vigília, o sopro do
-/// Conjurador). O que está no chão é do mapa (`climate_ground.dart`). O tipo vem do `clima.json` (`layer`), os números
+/// vista (tom, véu, aurora, glitch, rachaduras, estrelas cadentes, as luas da Lua Dupla, o Sol Negro, os olhos da Vigília, o
+/// sopro do Conjurador). O arco-íris é do mapa (`rainbow_painter.dart`). O que está no chão é do mapa (`climate_ground.dart`). O tipo vem do `clima.json` (`layer`), os números
 /// também. Só visual: posições de enfeite saem de um embaralhador local, nunca do mundo.
 library;
 
@@ -12,7 +12,7 @@ import '../../data/climate_catalog.dart';
 final _p = ui.Paint()..isAntiAlias = false;
 
 /// Os tipos que esta camada desenha (o teste do catálogo confere o `clima.json` contra eles).
-const Set<String> screenLayerKinds = {'particles', 'tint', 'vignette', 'desaturate', 'arc', 'aurora', 'glitch', 'cracks', 'meteors', 'breath', 'moons', 'eyes'};
+const Set<String> screenLayerKinds = {'particles', 'tint', 'vignette', 'desaturate', 'aurora', 'glitch', 'cracks', 'meteors', 'breath', 'moons', 'black_sun', 'eyes'};
 
 /// Um número em `[0, 1)` fixo para (i, j): posições de enfeite que não pulam de um quadro para o outro.
 double _h(int i, int j) {
@@ -24,8 +24,9 @@ double _h(int i, int j) {
 
 ui.Color _c(int argb, double a) => ui.Color(argb).withValues(alpha: a.clamp(0.0, 1.0));
 
-/// Desenha a camada [l] com opacidade [a] no instante [t] (segundos de jogo). [player] é o Conjurador na tela.
-void paintClimateLayer(ui.Canvas canvas, ui.Size view, ClimateLayer l, double a, double t, {required ui.Offset player, bool reduceFlashes = false}) {
+/// Desenha a camada [l] com opacidade [a] no instante [t] (segundos de jogo). [player] é o Conjurador na tela. [sky] são as
+/// vagas dos elementos do céu no HUD (`hud_layout.dart`, `HudLayout.sky`); sem elas, uma posição padrão no alto da tela.
+void paintClimateLayer(ui.Canvas canvas, ui.Size view, ClimateLayer l, double a, double t, {required ui.Offset player, bool reduceFlashes = false, Map<String, ui.Rect> sky = const {}}) {
   final w = view.width, h = view.height, rect = ui.Offset.zero & view;
   switch (l.kind) {
     case 'tint':
@@ -41,15 +42,6 @@ void paintClimateLayer(ui.Canvas canvas, ui.Size view, ClimateLayer l, double a,
       canvas.drawRect(rect, ui.Paint()
         ..color = ui.Color.fromRGBO(128, 128, 128, a.clamp(0.0, 1.0))
         ..blendMode = ui.BlendMode.saturation);
-    case 'arc':
-      const colors = [0xFFFF5A36, 0xFFFF7A45, 0xFFFFE9A8, 0xFF6BD36A, 0xFF4AA8FF, 0xFF9B7BFF];
-      final c = ui.Offset(w * 0.5, h * 0.62), r0 = w * 0.78;
-      for (var i = 0; i < colors.length; i++) {
-        canvas.drawArc(ui.Rect.fromCircle(center: c, radius: r0 - i * 5), math.pi, math.pi, false, ui.Paint()
-          ..style = ui.PaintingStyle.stroke
-          ..strokeWidth = 5
-          ..color = _c(colors[i], a));
-      }
     case 'aurora':
       final cs = l.colors.isEmpty ? [0xFF6BD36A, 0xFF9B7BFF] : l.colors;
       for (var i = 0; i < cs.length; i++) {
@@ -103,11 +95,19 @@ void paintClimateLayer(ui.Canvas canvas, ui.Size view, ClimateLayer l, double a,
         canvas.drawCircle(player.translate(6 + s * 6, -26 - s * 10), 2 + s * 4, ui.Paint()..color = _c(l.color(), a * (1 - s)));
       }
     case 'moons':
-      // Lua Dupla: duas luas no alto da tela, a segunda um pouco menor e violeta, balançando devagar.
-      final m1 = ui.Offset(w * 0.72, h * 0.1), m2 = ui.Offset(w * 0.84 + math.sin(t * 0.2) * 4, h * 0.14);
-      canvas.drawCircle(m1, 14, _p..color = _c(l.color(), a));
-      canvas.drawCircle(m2, 10, _p..color = _c(0xFFB8A8D8, a * 0.9));
-      canvas.drawCircle(m2.translate(-3, -2), 8, _p..color = _c(0xFF1A1424, a * 0.25));
+      // Lua Dupla: as duas luas na faixa do céu do HUD, a segunda menor e violeta, balançando devagar dentro da vaga.
+      final r1 = sky['moon'] ?? ui.Rect.fromCenter(center: ui.Offset(w * 0.72, h * 0.2), width: 28, height: 28);
+      final r2 = sky['moon2'] ?? ui.Rect.fromCenter(center: ui.Offset(w * 0.6, h * 0.21), width: 20, height: 20);
+      final m2 = r2.center.translate(math.sin(t * 0.2) * 1.5, 0);
+      canvas.drawCircle(r1.center, r1.shortestSide / 2, _p..color = _c(l.color(), a));
+      canvas.drawCircle(m2, r2.shortestSide / 2 - 1.5, _p..color = _c(0xFFB8A8D8, a * 0.9));
+      canvas.drawCircle(m2.translate(-2, -1.5), r2.shortestSide / 2 - 3.5, _p..color = _c(0xFF1A1424, a * 0.25));
+    case 'black_sun':
+      // Sol Negro: um disco escuro com a coroa violeta, na vaga dele no céu do HUD.
+      final r = sky['black_sun'] ?? ui.Rect.fromCenter(center: ui.Offset(w * 0.3, h * 0.2), width: 32, height: 32);
+      final rad = r.shortestSide / 2;
+      canvas.drawCircle(r.center, rad, _p..color = _c(0xFF9B7BFF, a * (0.45 + 0.15 * math.sin(t * 0.8))));
+      canvas.drawCircle(r.center, rad - 3, _p..color = _c(0xFF1A1424, a));
     case 'eyes':
       // Vigília: olhos que abrem e fecham entre as nuvens, e um satélite cruzando devagar.
       final n = l.count('count', 5);

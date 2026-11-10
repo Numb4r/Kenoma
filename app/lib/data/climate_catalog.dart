@@ -142,17 +142,16 @@ class PieceVisual {
   static const fallback = PieceVisual(style: 'zone', color: 0xFF9B7BFF, glow: 0xFF9B7BFF, alpha: 0.25, flash: false);
 }
 
-/// A marca de quem nasce de uma peça (`charged`): o nome, a paleta e o aviso de quando nasce.
+/// A marca de quem nasce de uma peça (`charged`): o nome e a paleta. Sem aviso: o Eco só aparece no mapa.
 class ClimateTag {
-  const ClimateTag({required this.name, required this.tint, this.born});
+  const ClimateTag({required this.name, required this.tint});
 
   final String name;
   final int tint;
-  final String? born;
 }
 
 class ClimateCatalog {
-  const ClimateCatalog({this.climates = const {}, this.pieces = const {}, this.tags = const {}, this.events = const {}, this.reasons = const {}});
+  const ClimateCatalog({this.climates = const {}, this.pieces = const {}, this.tags = const {}, this.events = const {}, this.reasons = const {}, this.rainbowArc = const {}});
 
   factory ClimateCatalog.fromJson(Map<String, dynamic>? j) => j == null
       ? const ClimateCatalog()
@@ -161,13 +160,14 @@ class ClimateCatalog {
           pieces: {for (final e in ((j['pieces'] as Map<String, dynamic>?) ?? const {}).entries) e.key: PieceVisual.fromJson(e.value as Map<String, dynamic>)},
           tags: {
             for (final e in ((j['tags'] as Map<String, dynamic>?) ?? const {}).entries)
-              e.key: ClimateTag(name: (e.value as Map<String, dynamic>)['name'] as String, tint: _color(e.value['tint']), born: e.value['born'] as String?),
+              e.key: ClimateTag(name: (e.value as Map<String, dynamic>)['name'] as String, tint: _color(e.value['tint'])),
           },
           events: {
             for (final e in ((j['events'] as Map<String, dynamic>?) ?? const {}).entries)
               e.key: (name: (e.value as Map<String, dynamic>)['name'] as String, reason: e.value['reason'] as String),
           },
           reasons: {for (final e in ((j['reasons'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as String},
+          rainbowArc: (j['rainbow_arc'] as Map<String, dynamic>?) ?? const {},
         );
 
   /// O último catálogo lido do app (o menu de debug lista os climas daqui).
@@ -181,6 +181,9 @@ class ClimateCatalog {
   /// `debug`, `feed`).
   final Map<String, ({String name, String reason})> events;
   final Map<String, String> reasons;
+
+  /// O desenho do arco-íris de pé no mapa (época 8): raio, faixas, cores, opacidade e esmaecer (`rainbow_painter.dart`).
+  final Map<String, dynamic> rainbowArc;
 
   /// O visual do clima [id]. Id desconhecido: o estado antigo com esse id, ou Limpo.
   ClimateInfo of(String id) => climates[id] ?? ClimateInfo.legacy(Weather.parse(id));

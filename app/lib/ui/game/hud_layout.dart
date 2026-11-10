@@ -7,6 +7,9 @@
 /// - **Embaixo:** retrato à esquerda, celular no centro, rastreador à direita com o atalho do Radar acima.
 /// - **Atalhos temporários:** a faixa logo acima do celular (Patrulha ativa, viagem em andamento).
 /// - **Simulador:** o joystick à esquerda, acima da faixa.
+/// - **Céu:** a faixa logo abaixo dos avisos, entre a coluna das marcações e a da bússola: a lua e a segunda lua da Lua
+///   Dupla, à direita, e o Sol Negro, à esquerda ([HudLayout.sky]). Ficam fora de todas as zonas, então nada do HUD as
+///   cobre. O arco-íris não está aqui: ele é do mapa (`rainbow_painter.dart`) e fica por baixo do HUD, como os Ecos.
 library;
 
 import 'dart:math' as math;
@@ -28,6 +31,9 @@ abstract final class HudSize {
   static const double markH = 52;
   static const double markGap = 4;
   static const double noticeH = 72;
+  static const double moon = 28;
+  static const double moon2 = 20;
+  static const double blackSun = 32;
 }
 
 class HudLayout {
@@ -43,6 +49,7 @@ class HudLayout {
     this.strip,
     this.radar,
     this.joystick,
+    this.sky = const {},
   });
 
   final Rect bar;
@@ -62,6 +69,9 @@ class HudLayout {
   final Rect? strip;
   final Rect? radar;
   final Rect? joystick;
+
+  /// Os elementos do céu desenhados na tela (`moon`, `moon2`, `black_sun`): a camada do clima desenha dentro deles.
+  final Map<String, Rect> sky;
 
   /// Os retângulos presentes, por nome (o teste confere a sobreposição entre todos).
   Map<String, Rect> get all => {
@@ -119,5 +129,10 @@ HudLayout hudLayout(
     strip: shortcuts ? stripRect : null,
     radar: radar ? Rect.fromLTWH(w - m - HudSize.radar, tracker.top - m - HudSize.radar, HudSize.radar, HudSize.radar) : null,
     joystick: joystick,
+    sky: {
+      'moon': Rect.fromLTWH(notice.right - HudSize.moon, notice.bottom + m, HudSize.moon, HudSize.moon),
+      'moon2': Rect.fromLTWH(notice.right - HudSize.moon - m - HudSize.moon2, notice.bottom + m + HudSize.moon - HudSize.moon2, HudSize.moon2, HudSize.moon2),
+      'black_sun': Rect.fromLTWH(notice.left, notice.bottom + m, HudSize.blackSun, HudSize.blackSun),
+    },
   );
 }
