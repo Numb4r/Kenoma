@@ -174,9 +174,9 @@ List<DebugItem> timeItems(DebugEnv env) {
   ];
 }
 
-const _tapNames = {'lightning': 'Raio', 'hail': 'Granizo', 'dust_devil': 'Redemoinho', 'meteor': 'Meteoro', 'violet_bolt': 'Raio violeta', 'spark_fall': 'Fagulha do céu', 'puddle': 'Poça', 'rainbow_foot': 'Pé do arco-íris'};
+const _tapNames = {'lightning': 'Raio', 'hail': 'Granizo', 'dust_devil': 'Redemoinho', 'meteor': 'Meteoro', 'violet_bolt': 'Raio violeta', 'spark_fall': 'Fagulha do céu', 'puddle': 'Poça', 'rainbow_foot': 'Pé do arco-íris', 'dry_bolt': 'Raio seco', 'branch': 'Galho', 'rune': 'Runa', 'gaze': 'Olhar', 'hurricane_eye': 'Olho do furacão'};
 
-/// Os quatro climas antigos sempre à mão; os outros 32 (nativos, de outras regiões e místicos) chegam do `clima.json`.
+/// Os quatro climas antigos sempre à mão; os outros (nativos, de outras regiões e místicos) chegam do `clima.json`.
 class _WeatherItem extends StatefulWidget {
   const _WeatherItem({required this.tools});
 

@@ -184,6 +184,7 @@ class SpawnField {
       weather: model == null ? Weather.parse(weather) : Weather.clear,
       climateMult: def == null || def.spawn.isEmpty ? null : def.spawn,
       shinyMult: def?.modifier?.shinyMult ?? 1,
+      variantMult: def?.modifier?.variantMult ?? 1,
       typeOf: typeOf,
       snapper: snapper,
     );

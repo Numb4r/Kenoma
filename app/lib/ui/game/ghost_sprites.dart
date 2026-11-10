@@ -166,6 +166,25 @@ Map<String, ui.Color> paletteOf(GhostModel m, int p) {
   };
 }
 
+/// Barco e canoa fantasmas (Dilúvio), vistos de cima e de frente para a direita, como os carros: o carro da rua alagada
+/// vira barco, a moto vira canoa. `h` é quem rema.
+const SpriteRows boatRows = [
+  '..oooooooooo....',
+  '.obbbbbbbbbbooo.',
+  'obbaaaabbbbbbbbo',
+  'obbaggabbbbhbbbo',
+  'obbaaaabbbbbbbbo',
+  '.obbbbbbbbbbooo.',
+  '..oooooooooo....',
+];
+const SpriteRows canoeRows = [
+  '...oooooooo...',
+  '.oobbbbbbbboo.',
+  'obbbbhbbbhbbbo',
+  '.oobbbbbbbboo.',
+  '...oooooooo...',
+];
+
 /// As linhas do carro da corrida: `hatch`, `sedan` ou `suv`. Sem logo nem marca.
 SpriteRows rideCarRows(String type) => switch (type) { 'sedan' => _sedan, 'suv' => _suv, _ => _hatch };
 
@@ -206,4 +225,12 @@ class GhostSprites {
   }
 
   ui.Picture _record(GhostModel m, int palette, int frame) => recordSprite(spriteRows(m, frame), paletteOf(m, palette));
+
+  final Map<int, ui.Picture> _boats = {};
+
+  /// O barco (ou a canoa) que o carro [m] vira na rua alagada, com a paleta dele.
+  ui.Picture boat(GhostModel m, int palette) => _boats[m.index * 8 + palette % m.paletteCount] ??= recordSprite(boatRowsOf(m), paletteOf(m, palette));
 }
+
+/// A moto vira canoa; os outros carros, barco.
+SpriteRows boatRowsOf(GhostModel m) => m == GhostModel.moto ? canoeRows : boatRows;

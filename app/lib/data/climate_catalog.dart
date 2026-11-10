@@ -41,7 +41,7 @@ class ClimateLayer {
 }
 
 class ClimateInfo {
-  const ClimateInfo({required this.id, required this.name, required this.base, required this.hud, this.icon = const [], this.layers = const [], this.notice});
+  const ClimateInfo({required this.id, required this.name, required this.base, required this.hud, this.icon = const [], this.layers = const [], this.ground = const [], this.notice});
 
   factory ClimateInfo.fromJson(String id, Map<String, dynamic> j) => ClimateInfo(
         id: id,
@@ -50,6 +50,7 @@ class ClimateInfo {
         hud: j['hud'] as String? ?? j['name'] as String,
         icon: (j['icon'] as List<dynamic>?)?.cast<String>() ?? const [],
         layers: [for (final l in (j['layers'] as List<dynamic>?) ?? const []) ClimateLayer((l as Map<String, dynamic>)['layer'] as String, l)],
+        ground: [for (final l in (j['ground'] as List<dynamic>?) ?? const []) ClimateLayer((l as Map<String, dynamic>)['kind'] as String, l)],
         notice: j['notice'] as String?,
       );
 
@@ -70,7 +71,13 @@ class ClimateInfo {
   /// A linha que o toque no ícone mostra ("Tempestade: Elétricos mais comuns").
   final String hud;
   final List<String> icon;
+
+  /// A camada da tela: só o que cai do céu ou cobre a vista (partículas, tom, véu, clarão).
   final List<ClimateLayer> layers;
+
+  /// A camada do mapa que é só desenho (`climate_ground.dart`): cobertura das ruas, decoração presa ao chão, faixas, pares de
+  /// sombra. Gira, move e dá zoom com o mapa, em posições do hash da seed e do lugar.
+  final List<ClimateLayer> ground;
 
   /// Aviso que aparece uma vez quando o clima começa a ser visto (o Familiar avisa que não é neve).
   final String? notice;
@@ -81,7 +88,20 @@ class ClimateInfo {
 
 /// O visual de uma peça (raio, poça, redemoinho...): o estilo que o código conhece e as cores.
 class PieceVisual {
-  const PieceVisual({required this.style, required this.color, required this.glow, required this.alpha, required this.flash});
+  const PieceVisual({
+    required this.style,
+    required this.color,
+    required this.glow,
+    required this.alpha,
+    required this.flash,
+    this.mark,
+    this.markS = 0,
+    this.glowS = 0,
+    this.shake = false,
+    this.reflect = false,
+    this.prism = false,
+    this.trail = false,
+  });
 
   factory PieceVisual.fromJson(Map<String, dynamic> j) => PieceVisual(
         style: j['style'] as String,
@@ -89,6 +109,13 @@ class PieceVisual {
         glow: _color(j['glow'], _color(j['color'])),
         alpha: (j['alpha'] as num?)?.toDouble() ?? 0.4,
         flash: j['flash'] as bool? ?? false,
+        mark: j['mark'] as String?,
+        markS: (j['mark_s'] as num?)?.toDouble() ?? 0,
+        glowS: (j['glow_s'] as num?)?.toDouble() ?? 0,
+        shake: j['shake'] as bool? ?? false,
+        reflect: j['reflect'] as bool? ?? false,
+        prism: j['prism'] as bool? ?? false,
+        trail: j['trail'] as bool? ?? false,
       );
 
   final String style;
@@ -96,6 +123,21 @@ class PieceVisual {
   final int glow;
   final double alpha;
   final bool flash;
+
+  /// A marca que o impacto deixa no chão (`burn`, `burn_violet`, `crater`, `ember`), por quanto tempo e quanto dela brilha.
+  final String? mark;
+  final double markS;
+  final double glowS;
+
+  /// O impacto treme a tela de leve (o meteoro).
+  final bool shake;
+
+  /// A poça reflete o céu (e, com [prism], em cores).
+  final bool reflect;
+  final bool prism;
+
+  /// A zona que anda deixa um rastro no chão por onde passou (funil, Procissão, redemoinho).
+  final bool trail;
 
   static const fallback = PieceVisual(style: 'zone', color: 0xFF9B7BFF, glow: 0xFF9B7BFF, alpha: 0.25, flash: false);
 }
@@ -110,7 +152,7 @@ class ClimateTag {
 }
 
 class ClimateCatalog {
-  const ClimateCatalog({this.climates = const {}, this.pieces = const {}, this.tags = const {}});
+  const ClimateCatalog({this.climates = const {}, this.pieces = const {}, this.tags = const {}, this.events = const {}, this.reasons = const {}});
 
   factory ClimateCatalog.fromJson(Map<String, dynamic>? j) => j == null
       ? const ClimateCatalog()
@@ -121,6 +163,11 @@ class ClimateCatalog {
             for (final e in ((j['tags'] as Map<String, dynamic>?) ?? const {}).entries)
               e.key: ClimateTag(name: (e.value as Map<String, dynamic>)['name'] as String, tint: _color(e.value['tint']), born: e.value['born'] as String?),
           },
+          events: {
+            for (final e in ((j['events'] as Map<String, dynamic>?) ?? const {}).entries)
+              e.key: (name: (e.value as Map<String, dynamic>)['name'] as String, reason: e.value['reason'] as String),
+          },
+          reasons: {for (final e in ((j['reasons'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as String},
         );
 
   /// O último catálogo lido do app (o menu de debug lista os climas daqui).
@@ -129,6 +176,11 @@ class ClimateCatalog {
   final Map<String, ClimateInfo> climates;
   final Map<String, PieceVisual> pieces;
   final Map<String, ClimateTag> tags;
+
+  /// O nome e a frase do motivo de cada evento que força clima (o app Céu), e as frases de quando não há evento (`season`,
+  /// `debug`, `feed`).
+  final Map<String, ({String name, String reason})> events;
+  final Map<String, String> reasons;
 
   /// O visual do clima [id]. Id desconhecido: o estado antigo com esse id, ou Limpo.
   ClimateInfo of(String id) => climates[id] ?? ClimateInfo.legacy(Weather.parse(id));

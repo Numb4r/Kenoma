@@ -1,5 +1,7 @@
-/// As camadas do clima que não são partículas, cada uma um desenho curto no espaço da tela. O tipo vem do `clima.json`
-/// (`layer`), os números também. Só visual: posições de enfeite saem de um embaralhador local, nunca do mundo.
+/// As camadas do clima que não são partículas, cada uma um desenho curto no espaço da TELA: só o que está no céu ou cobre a
+/// vista (tom, véu, arco-íris, aurora, glitch, rachaduras, estrelas cadentes, a segunda lua, os olhos da Vigília, o sopro do
+/// Conjurador). O que está no chão é do mapa (`climate_ground.dart`). O tipo vem do `clima.json` (`layer`), os números
+/// também. Só visual: posições de enfeite saem de um embaralhador local, nunca do mundo.
 library;
 
 import 'dart:math' as math;
@@ -8,6 +10,9 @@ import 'dart:ui' as ui;
 import '../../data/climate_catalog.dart';
 
 final _p = ui.Paint()..isAntiAlias = false;
+
+/// Os tipos que esta camada desenha (o teste do catálogo confere o `clima.json` contra eles).
+const Set<String> screenLayerKinds = {'particles', 'tint', 'vignette', 'desaturate', 'arc', 'aurora', 'glitch', 'cracks', 'meteors', 'breath', 'moons', 'eyes'};
 
 /// Um número em `[0, 1)` fixo para (i, j): posições de enfeite que não pulam de um quadro para o outro.
 double _h(int i, int j) {
@@ -36,28 +41,6 @@ void paintClimateLayer(ui.Canvas canvas, ui.Size view, ClimateLayer l, double a,
       canvas.drawRect(rect, ui.Paint()
         ..color = ui.Color.fromRGBO(128, 128, 128, a.clamp(0.0, 1.0))
         ..blendMode = ui.BlendMode.saturation);
-    case 'shimmer':
-      final n = l.count('bands', 7);
-      for (var i = 0; i < n; i++) {
-        final y = ((i + (t * 0.15) % 1) / n) * h;
-        final k = 0.5 + 0.5 * math.sin(t * 2.4 + i * 1.7);
-        canvas.drawRect(ui.Rect.fromLTWH(0, y, w, 3), _p..color = _c(l.color(), a * k));
-      }
-    case 'shadows':
-      final n = l.count('count', 3), speed = l.val('speed', 10);
-      for (var i = 0; i < n; i++) {
-        final r = w * (0.35 + 0.25 * _h(i, 1));
-        final x = ((_h(i, 2) * (w + 2 * r) + t * speed) % (w + 2 * r)) - r;
-        final y = _h(i, 3) * h;
-        canvas.drawOval(ui.Rect.fromCenter(center: ui.Offset(x, y), width: r * 2, height: r * 1.2), ui.Paint()..color = _c(l.color(), a));
-      }
-    case 'sheen':
-      final n = l.count('count', 12), tick = (t * 1.5).floor();
-      for (var i = 0; i < n; i++) {
-        final k = _h(i, tick);
-        if (k < 0.5) continue;
-        canvas.drawRect(ui.Rect.fromLTWH(_h(i * 3, tick) * w, _h(i * 5, tick) * h, 3, 1), _p..color = _c(l.color(), a * (k - 0.5) * 2));
-      }
     case 'arc':
       const colors = [0xFFFF5A36, 0xFFFF7A45, 0xFFFFE9A8, 0xFF6BD36A, 0xFF4AA8FF, 0xFF9B7BFF];
       final c = ui.Offset(w * 0.5, h * 0.62), r0 = w * 0.78;
@@ -89,29 +72,6 @@ void paintClimateLayer(ui.Canvas canvas, ui.Size view, ClimateLayer l, double a,
         final r = ui.Rect.fromLTWH(_h(i, tick + 1) * w, _h(i, tick + 2) * h, 8 + _h(i, tick + 3) * 60, 2 + _h(i, tick + 4) * 6);
         canvas.drawRect(r, _p..color = _c(cs[i % cs.length], a * (reduceFlashes ? 0.5 : 1)));
       }
-    case 'ripple':
-      final n = l.count('bands', 6);
-      for (var i = 0; i < n; i++) {
-        final y = (i / n * h + t * 14) % h;
-        final dx = math.sin(t * 0.8 + i) * 18;
-        canvas.drawRect(ui.Rect.fromLTWH(dx - 20, y, w + 40, h / n * 0.4), ui.Paint()..color = _c(l.color(), a));
-      }
-    case 'funnel':
-      final x = ((t * 26) % (w + 240)) - 120, top = h * 0.05;
-      for (var i = 0; i < 14; i++) {
-        final y = top + i * h * 0.06;
-        final half = 70 - i * 4.2 + math.sin(t * 5 + i) * 4;
-        canvas.drawRect(ui.Rect.fromLTWH(x - half + math.sin(t * 2 + i * 0.5) * 10, y, half * 2, h * 0.05), _p..color = _c(l.color(), a));
-      }
-    case 'figures':
-      final n = l.count('count', 3), line = l.flag('line');
-      for (var i = 0; i < n; i++) {
-        final x = line ? ((t * 12 + i * 34) % (w + 60)) - 30 : (_h(i, 7) < 0.5 ? 12 + _h(i, 8) * 30 : w - 42 + _h(i, 8) * 30) + math.sin(t * 0.4 + i) * 6;
-        final y = line ? h * 0.42 : h * (0.2 + 0.6 * _h(i, 9));
-        final k = line ? 1.0 : 0.5 + 0.5 * math.sin(t * 0.5 + i * 2);
-        canvas.drawRect(ui.Rect.fromLTWH(x, y, 6, 16), _p..color = _c(l.color(), a * k));
-        canvas.drawRect(ui.Rect.fromLTWH(x + 1, y - 5, 4, 4), _p..color = _c(l.color(), a * k));
-      }
     case 'cracks':
       for (var i = 0; i < 4; i++) {
         final path = ui.Path()..moveTo(_h(i, 11) * w, 0);
@@ -142,5 +102,24 @@ void paintClimateLayer(ui.Canvas canvas, ui.Size view, ClimateLayer l, double a,
         final s = u / 0.5;
         canvas.drawCircle(player.translate(6 + s * 6, -26 - s * 10), 2 + s * 4, ui.Paint()..color = _c(l.color(), a * (1 - s)));
       }
+    case 'moons':
+      // Lua Dupla: duas luas no alto da tela, a segunda um pouco menor e violeta, balançando devagar.
+      final m1 = ui.Offset(w * 0.72, h * 0.1), m2 = ui.Offset(w * 0.84 + math.sin(t * 0.2) * 4, h * 0.14);
+      canvas.drawCircle(m1, 14, _p..color = _c(l.color(), a));
+      canvas.drawCircle(m2, 10, _p..color = _c(0xFFB8A8D8, a * 0.9));
+      canvas.drawCircle(m2.translate(-3, -2), 8, _p..color = _c(0xFF1A1424, a * 0.25));
+    case 'eyes':
+      // Vigília: olhos que abrem e fecham entre as nuvens, e um satélite cruzando devagar.
+      final n = l.count('count', 5);
+      for (var i = 0; i < n; i++) {
+        final open = math.sin(t * 0.7 + i * 2.1);
+        if (open < 0.2) continue;
+        final c = ui.Offset((0.1 + 0.8 * _h(i, 31)) * w, (0.05 + 0.22 * _h(i, 32)) * h);
+        final eh = 6 * open;
+        canvas.drawOval(ui.Rect.fromCenter(center: c, width: 22, height: eh), _p..color = _c(0xFFE8E4F4, a * 0.6));
+        canvas.drawRect(ui.Rect.fromCenter(center: c, width: 4, height: math.max(1, eh - 1)), _p..color = _c(l.color(), a));
+      }
+      final sx = (t * 9) % (w + 40) - 20;
+      canvas.drawRect(ui.Rect.fromLTWH(sx, h * 0.04 + sx * 0.05, 3, 1), _p..color = _c(0xFFE8E4F4, a));
   }
 }

@@ -10,6 +10,7 @@ import '../../core/tiles.dart';
 import '../../data/climate_catalog.dart';
 import '../../data/game_data.dart';
 import '../../net/signed_feed.dart';
+import '../../world/climate_outlook.dart';
 import '../../world/climate_world.dart';
 import '../../world/weather_source.dart';
 
@@ -50,6 +51,10 @@ class ClimateDriver {
     }
     return (changed: changed, notice: notice);
   }
+
+  /// O app Céu: o clima do mundo agora e nas próximas [windows] janelas em ([lat], [lon]), com o evento e o motivo.
+  ClimateOutlook outlook(double lat, double lon, int nowUtc, {int windows = 4}) =>
+      climateOutlook(world: world, catalog: data.climates, lat: lat, lon: lon, nowUtc: nowUtc, windows: windows);
 
   /// Os climas de evento do `events.json` assinado (o que não é de clima fica de fora). Falhas: nenhum evento.
   Future<void> loadEvents() async {

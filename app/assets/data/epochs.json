@@ -5441,6 +5441,2478 @@
           }
         }
       }
+    },
+    {
+      "id": 7,
+      "starts_utc": "2030-01-01T00:00:00Z",
+      "valid_until_utc": "2030-04-01T00:00:00Z",
+      "region_packs": {
+        "campinas": {
+          "file": "campinas_e0.bin",
+          "sha256": "559f3551cf04ef399eaca600a4397e4a074d1c58b8b744f83e46503fabfa4f30"
+        },
+        "sao_paulo": {
+          "file": "sao_paulo_e5.bin",
+          "sha256": "75fc763478409e6b6853ca859165b8b96fc7868b1c99014d71c068657b6cbd47"
+        }
+      },
+      "visual_packs": {
+        "campinas": {
+          "file": "campinas_e0_vis.bin",
+          "sha256": "e8491fa298a07beb4703cf4fe03d2694ed07490365efa8183d80963aab0c531b"
+        },
+        "sao_paulo": {
+          "file": "sao_paulo_e5_vis.bin",
+          "sha256": "9204f9ce5c6154878a8ac0c4f6b7e8e6aa7a598662bb2d0b2363d916b03e76b7"
+        }
+      },
+      "spawn": {
+        "items": [
+          {
+            "index": 0,
+            "kind": "eco",
+            "chance": {
+              "urban": 0.2475,
+              "green": 0.2475,
+              "water": 0.2475,
+              "residential": 0.198
+            },
+            "table": {
+              "urban": [
+                [
+                  "soot.eco",
+                  6
+                ],
+                [
+                  "frond.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "frond.eco",
+                  6
+                ],
+                [
+                  "soot.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "rill.eco",
+                  6
+                ],
+                [
+                  "soot.eco",
+                  1
+                ],
+                [
+                  "frond.eco",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "soot.eco",
+                  1
+                ],
+                [
+                  "frond.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ],
+            "level_delta": [
+              -2,
+              2
+            ]
+          },
+          {
+            "index": 1,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.35,
+              "green": 0.35,
+              "water": 0.35,
+              "residential": 0.35
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.35,
+              "green": 0.35,
+              "water": 0.35,
+              "residential": 0.35
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.35,
+              "green": 0.35,
+              "water": 0.35,
+              "residential": 0.35
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.35,
+              "green": 0.35,
+              "water": 0.35,
+              "residential": 0.35
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.35,
+              "green": 0.35,
+              "water": 0.35,
+              "residential": 0.35
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "material",
+            "chance": {
+              "urban": 0.2,
+              "green": 0.2,
+              "water": 0.2,
+              "residential": 0.2
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.scrap",
+                  3
+                ],
+                [
+                  "item.chalk",
+                  3
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.herbs",
+                  4
+                ],
+                [
+                  "item.chalk",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.pure_water",
+                  4
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.chalk",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.scrap",
+                  2
+                ],
+                [
+                  "item.chalk",
+                  2
+                ],
+                [
+                  "item.herbs",
+                  2
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              3
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "material",
+            "chance": {
+              "urban": 0.2,
+              "green": 0.2,
+              "water": 0.2,
+              "residential": 0.2
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.scrap",
+                  3
+                ],
+                [
+                  "item.chalk",
+                  3
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.herbs",
+                  4
+                ],
+                [
+                  "item.chalk",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.pure_water",
+                  4
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.chalk",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.scrap",
+                  2
+                ],
+                [
+                  "item.chalk",
+                  2
+                ],
+                [
+                  "item.herbs",
+                  2
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              3
+            ]
+          },
+          {
+            "index": 8,
+            "kind": "eco",
+            "chance": {
+              "urban": 0.006,
+              "green": 0.006,
+              "water": 0.006,
+              "residential": 0.006
+            },
+            "table": {
+              "urban": [
+                [
+                  "soot.spirit",
+                  6
+                ],
+                [
+                  "frond.spirit",
+                  1
+                ],
+                [
+                  "rill.spirit",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "soot.spirit",
+                  1
+                ],
+                [
+                  "frond.spirit",
+                  6
+                ],
+                [
+                  "rill.spirit",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "soot.spirit",
+                  1
+                ],
+                [
+                  "frond.spirit",
+                  1
+                ],
+                [
+                  "rill.spirit",
+                  6
+                ]
+              ],
+              "residential": [
+                [
+                  "soot.spirit",
+                  1
+                ],
+                [
+                  "frond.spirit",
+                  1
+                ],
+                [
+                  "rill.spirit",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ],
+            "level_delta": [
+              -2,
+              2
+            ]
+          },
+          {
+            "index": 9,
+            "kind": "eco",
+            "chance": {
+              "urban": 0.003,
+              "green": 0.003,
+              "water": 0.003,
+              "residential": 0.003
+            },
+            "table": {
+              "urban": [
+                [
+                  "soot.ritual",
+                  6
+                ],
+                [
+                  "frond.ritual",
+                  1
+                ],
+                [
+                  "rill.ritual",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "soot.ritual",
+                  1
+                ],
+                [
+                  "frond.ritual",
+                  6
+                ],
+                [
+                  "rill.ritual",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "soot.ritual",
+                  1
+                ],
+                [
+                  "frond.ritual",
+                  1
+                ],
+                [
+                  "rill.ritual",
+                  6
+                ]
+              ],
+              "residential": [
+                [
+                  "soot.ritual",
+                  1
+                ],
+                [
+                  "frond.ritual",
+                  1
+                ],
+                [
+                  "rill.ritual",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ],
+            "level_delta": [
+              -2,
+              2
+            ]
+          }
+        ]
+      },
+      "walkable": {
+        "eco_off_path_m": 15,
+        "max_dist_m": 35,
+        "ref_length_m": 25.0,
+        "max_factor": 1.0,
+        "exclude_pack": {
+          "file": "campinas_e2_nowalk.bin",
+          "sha256": "05c64cf5a9c29511bc0e32ec06863d5cd9a4a9de0e0e909d9c0c19a1acdaf625"
+        },
+        "exclude_packs": {
+          "sao_paulo": {
+            "file": "sao_paulo_e5_nowalk.bin",
+            "sha256": "74bcb43321a838cfec1c8cd927e65cd64daf8bb0f33d17fcb21654085376f582"
+          }
+        }
+      },
+      "requires_feature": "street_life",
+      "eco_v2": {
+        "behavior_weights": {
+          "passive": 70,
+          "skittish": 12,
+          "aggressive": 10,
+          "hidden": 8
+        },
+        "variant_chance": 0.12,
+        "shiny_chance": 0.0025,
+        "weather": {
+          "window_s": 10800,
+          "probs": {
+            "summer": [
+              0.3,
+              0.25,
+              0.32,
+              0.13
+            ],
+            "autumn": [
+              0.45,
+              0.3,
+              0.2,
+              0.05
+            ],
+            "winter": [
+              0.65,
+              0.27,
+              0.07,
+              0.01
+            ],
+            "spring": [
+              0.4,
+              0.3,
+              0.2,
+              0.1
+            ]
+          },
+          "spawn_multipliers": {
+            "rain": {
+              "water": 1.6,
+              "fire": 0.55
+            },
+            "storm": {
+              "water": 1.4,
+              "electric": 2.0,
+              "fire": 0.4
+            }
+          }
+        }
+      },
+      "climate": {
+        "window_s": 10800,
+        "local_offset_h": -3,
+        "seasons": [
+          {
+            "months": [
+              12,
+              1,
+              2,
+              3
+            ],
+            "hours": [
+              13,
+              20
+            ],
+            "weights": {
+              "storm": 30,
+              "rain": 20,
+              "drizzle": 6,
+              "cloudy": 12,
+              "clear": 8,
+              "strong_sun": 6,
+              "hail": 3,
+              "gale": 3,
+              "wind": 4,
+              "rainbow": 8
+            }
+          },
+          {
+            "months": [
+              12,
+              1,
+              2,
+              3
+            ],
+            "hours": [
+              6,
+              13
+            ],
+            "weights": {
+              "clear": 26,
+              "strong_sun": 24,
+              "cloudy": 20,
+              "drizzle": 6,
+              "rain": 8,
+              "wind": 8,
+              "rainbow": 3,
+              "fog": 3
+            }
+          },
+          {
+            "months": [
+              12,
+              1,
+              2,
+              3
+            ],
+            "weights": {
+              "clear": 30,
+              "cloudy": 26,
+              "rain": 16,
+              "storm": 8,
+              "drizzle": 10,
+              "wind": 8,
+              "fog": 2
+            }
+          },
+          {
+            "months": [
+              6,
+              7,
+              8,
+              9
+            ],
+            "hours": [
+              5,
+              10
+            ],
+            "weights": {
+              "fog": 32,
+              "cold": 26,
+              "clear": 16,
+              "cloudy": 10,
+              "smoke": 6,
+              "dry_dust": 4,
+              "drizzle": 4,
+              "wind": 2,
+              "hard_frost": 8
+            }
+          },
+          {
+            "months": [
+              8,
+              9
+            ],
+            "hours": [
+              12,
+              20
+            ],
+            "weights": {
+              "clear": 28,
+              "dry_dust": 18,
+              "smoke": 14,
+              "cold": 10,
+              "cloudy": 10,
+              "wind": 10,
+              "gale": 3,
+              "strong_sun": 5,
+              "drizzle": 2,
+              "smog": 8,
+              "dry_thunder": 8
+            }
+          },
+          {
+            "months": [
+              6,
+              7,
+              8,
+              9
+            ],
+            "hours": [
+              10,
+              18
+            ],
+            "weights": {
+              "clear": 28,
+              "dry_dust": 18,
+              "smoke": 14,
+              "cold": 10,
+              "cloudy": 10,
+              "wind": 10,
+              "gale": 3,
+              "strong_sun": 5,
+              "drizzle": 2,
+              "smog": 8
+            }
+          },
+          {
+            "months": [
+              6,
+              7,
+              8,
+              9
+            ],
+            "weights": {
+              "cold": 30,
+              "clear": 26,
+              "smoke": 14,
+              "fog": 10,
+              "cloudy": 12,
+              "wind": 6,
+              "dry_dust": 2,
+              "hard_frost": 6,
+              "smog": 6
+            }
+          },
+          {
+            "months": [
+              4,
+              5
+            ],
+            "hours": [
+              6,
+              18
+            ],
+            "weights": {
+              "clear": 30,
+              "cloudy": 22,
+              "drizzle": 8,
+              "rain": 10,
+              "storm": 3,
+              "cold": 4,
+              "fog": 3,
+              "wind": 8,
+              "rainbow": 3,
+              "strong_sun": 4,
+              "dry_dust": 5
+            }
+          },
+          {
+            "months": [
+              4,
+              5
+            ],
+            "weights": {
+              "clear": 34,
+              "cloudy": 24,
+              "cold": 14,
+              "fog": 10,
+              "drizzle": 8,
+              "rain": 6,
+              "wind": 4
+            }
+          },
+          {
+            "months": [
+              10,
+              11
+            ],
+            "hours": [
+              13,
+              20
+            ],
+            "weights": {
+              "storm": 16,
+              "rain": 18,
+              "cloudy": 16,
+              "clear": 14,
+              "strong_sun": 10,
+              "drizzle": 6,
+              "wind": 8,
+              "gale": 3,
+              "hail": 3,
+              "rainbow": 6
+            }
+          },
+          {
+            "months": [
+              10,
+              11
+            ],
+            "hours": [
+              6,
+              13
+            ],
+            "weights": {
+              "clear": 30,
+              "strong_sun": 16,
+              "cloudy": 20,
+              "drizzle": 6,
+              "rain": 8,
+              "wind": 10,
+              "dry_dust": 6,
+              "smoke": 4
+            }
+          },
+          {
+            "months": [
+              10,
+              11
+            ],
+            "weights": {
+              "clear": 32,
+              "cloudy": 26,
+              "rain": 14,
+              "storm": 8,
+              "drizzle": 8,
+              "wind": 8,
+              "smoke": 4
+            }
+          }
+        ],
+        "after": {
+          "rainbow": [
+            "rain",
+            "storm",
+            "drizzle",
+            "hail"
+          ]
+        },
+        "climates": {
+          "clear": {
+            "category": "native",
+            "pieces": [
+              {
+                "piece": "trails",
+                "name": "trails",
+                "trace_time_mult": 1.25
+              }
+            ]
+          },
+          "strong_sun": {
+            "category": "native",
+            "spawn": {
+              "fire": 1.4
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "mirage",
+                "per_cell": 1,
+                "radius_m": 20,
+                "duration_s": 900,
+                "spawn": {
+                  "type": "fire",
+                  "chance": 0.6
+                }
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "noturnos −: as espécies ainda não têm a marca de noturna"
+                ]
+              }
+            ]
+          },
+          "cloudy": {
+            "category": "native",
+            "spawn": {
+              "shadow": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "cloud_shadow",
+                "per_cell": 2,
+                "radius_m": 60,
+                "duration_s": 1200,
+                "speed_mps": 1.5,
+                "spawn": {
+                  "type": "shadow",
+                  "chance": 0.5
+                }
+              }
+            ]
+          },
+          "drizzle": {
+            "category": "native",
+            "spawn": {
+              "water": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "puddles",
+                "name": "puddle_small",
+                "per_cell": 2,
+                "radius_m": [
+                  2,
+                  5
+                ],
+                "grow_s": 2400,
+                "dry_s": 1800,
+                "item": {
+                  "ids": [
+                    "item.pure_water"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.3
+                }
+              }
+            ]
+          },
+          "rain": {
+            "category": "native",
+            "spawn": {
+              "water": 1.8,
+              "fire": 0.6
+            },
+            "pieces": [
+              {
+                "piece": "puddles",
+                "name": "puddle",
+                "per_cell": 5,
+                "radius_m": [
+                  4,
+                  10
+                ],
+                "grow_s": 1800,
+                "dry_s": 3600,
+                "spawn": {
+                  "type": "water",
+                  "chance": 0.25
+                },
+                "item": {
+                  "ids": [
+                    "item.pure_water"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5
+                }
+              }
+            ]
+          },
+          "storm": {
+            "category": "native",
+            "spawn": {
+              "electric": 2.0,
+              "water": 1.4,
+              "fire": 0.4
+            },
+            "pieces": [
+              {
+                "piece": "impact",
+                "name": "lightning",
+                "every_s": [
+                  20,
+                  60
+                ],
+                "spawn": {
+                  "type": "electric",
+                  "fallback_species": "soot.eco",
+                  "tag": "charged",
+                  "chance": 0.08,
+                  "level_add": [
+                    0,
+                    2
+                  ],
+                  "ttl_s": 600
+                }
+              },
+              {
+                "piece": "puddles",
+                "name": "puddle",
+                "per_cell": 5,
+                "radius_m": [
+                  4,
+                  10
+                ],
+                "grow_s": 1800,
+                "dry_s": 3600,
+                "spawn": {
+                  "type": "water",
+                  "chance": 0.15
+                },
+                "item": {
+                  "ids": [
+                    "item.pure_water"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.4
+                }
+              }
+            ]
+          },
+          "hail": {
+            "category": "native",
+            "spawn": {
+              "earth": 1.3,
+              "water": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "collectible",
+                "name": "hail",
+                "every_s": [
+                  8,
+                  20
+                ],
+                "item": {
+                  "ids": [
+                    "item.ice_crystal"
+                  ],
+                  "fallback": "item.pure_water",
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.25,
+                  "ttl_s": 180
+                }
+              }
+            ]
+          },
+          "rainbow": {
+            "category": "native",
+            "spawn": {
+              "light": 2.0,
+              "fairy": 1.4
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "rainbow_foot",
+                "per_cell": 1,
+                "radius_m": 8,
+                "duration_s": 1800,
+                "spawn": {
+                  "type": "fairy",
+                  "chance": 0.3
+                },
+                "item": {
+                  "ids": [
+                    "item.prism_shard"
+                  ],
+                  "fallback": "item.ectoplasm",
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 1.0
+                }
+              }
+            ]
+          },
+          "fog": {
+            "category": "native",
+            "spawn": {
+              "spectral": 2.0
+            },
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "view_max_m": 60,
+                "effects": [
+                  "Espectrais aparecem e somem a até 40 m"
+                ]
+              }
+            ]
+          },
+          "cold": {
+            "category": "native",
+            "spawn": {
+              "spectral": 1.3,
+              "fire": 0.7
+            },
+            "pieces": [
+              {
+                "piece": "trails",
+                "name": "trails",
+                "trace_time_mult": 2.0
+              }
+            ]
+          },
+          "wind": {
+            "category": "native",
+            "spawn": {
+              "fairy": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "movement",
+                "name": "movement",
+                "spark_drift_mps": 0.05,
+                "drift_max_m": 12
+              }
+            ]
+          },
+          "gale": {
+            "category": "native",
+            "spawn": {
+              "fairy": 1.8
+            },
+            "pieces": [
+              {
+                "piece": "movement",
+                "name": "movement",
+                "spark_drift_mps": 0.12,
+                "drift_max_m": 25
+              },
+              {
+                "piece": "collectible",
+                "name": "papers",
+                "every_s": [
+                  30,
+                  90
+                ]
+              }
+            ]
+          },
+          "dry_dust": {
+            "category": "native",
+            "spawn": {
+              "earth": 1.8,
+              "fire": 1.2,
+              "plant": 0.7
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "dust_devil",
+                "per_cell": 1,
+                "radius_m": 10,
+                "duration_s": 600,
+                "speed_mps": 2.0,
+                "spawn": {
+                  "type": "earth",
+                  "chance": 0.5,
+                  "per_zone": 2
+                }
+              }
+            ]
+          },
+          "smoke": {
+            "category": "native",
+            "spawn": {
+              "fire": 1.7,
+              "plant": 0.6
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "ash_zone",
+                "per_cell": 1,
+                "radius_m": 30,
+                "duration_s": 1800,
+                "spawn": {
+                  "type": "fire",
+                  "chance": 0.5,
+                  "per_zone": 2
+                }
+              }
+            ]
+          },
+          "snow": {
+            "category": "other_region",
+            "spawn": {
+              "water": 1.3,
+              "spectral": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "trails",
+                "name": "trails",
+                "player": true,
+                "eco_tracks_m": 30
+              }
+            ]
+          },
+          "blizzard": {
+            "category": "other_region",
+            "spawn": {
+              "spectral": 2.0
+            },
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "view_max_m": 40,
+                "aura_add_m": -2
+              }
+            ]
+          },
+          "sandstorm": {
+            "category": "other_region",
+            "spawn": {
+              "earth": 2.0
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "dune",
+                "per_cell": 2,
+                "radius_m": 15,
+                "duration_s": 2400,
+                "snap": true,
+                "item": {
+                  "ids": [
+                    "item.scrap",
+                    "item.chalk"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5,
+                  "reveal_m": 15
+                }
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "dunas escondem materiais que só aparecem cavando: não há escavação"
+                ]
+              }
+            ]
+          },
+          "deluge": {
+            "category": "other_region",
+            "spawn": {
+              "water": 2.6
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "flood",
+                "per_cell": 4,
+                "radius_m": 25,
+                "duration_s": 3600,
+                "spawn": {
+                  "type": "water",
+                  "chance": 0.5,
+                  "per_zone": 2
+                }
+              },
+              {
+                "piece": "movement",
+                "name": "movement",
+                "traffic_mult": 0.5
+              }
+            ]
+          },
+          "heat_wave": {
+            "category": "other_region",
+            "spawn": {
+              "fire": 2.6
+            },
+            "pieces": [
+              {
+                "piece": "movement",
+                "name": "movement",
+                "spark_ttl_s": 120
+              }
+            ]
+          },
+          "tornado": {
+            "category": "other_region",
+            "spawn": {
+              "fairy": 1.8,
+              "electric": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "funnel",
+                "per_cell": 1,
+                "radius_m": 15,
+                "duration_s": 900,
+                "speed_mps": 4.0,
+                "item": {
+                  "ids": [
+                    "item.scrap",
+                    "item.herbs"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.7,
+                  "ttl_s": 3600,
+                  "per_zone": 6
+                }
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "puxa Fagulhas no caminho e as solta adiante"
+                ]
+              }
+            ]
+          },
+          "aurora": {
+            "category": "other_region",
+            "spawn": {
+              "light": 2.0,
+              "spectral": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "tolerance_mult": 1.25
+              }
+            ]
+          },
+          "acid_rain": {
+            "category": "other_region",
+            "spawn": {
+              "metal": 2.0
+            },
+            "pieces": [
+              {
+                "piece": "collectible",
+                "name": "scrap",
+                "every_s": [
+                  40,
+                  120
+                ],
+                "item": {
+                  "ids": [
+                    "item.scrap"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 0.6,
+                  "ttl_s": 600,
+                  "biomes": [
+                    "urban"
+                  ]
+                }
+              },
+              {
+                "piece": "puddles",
+                "name": "acid_puddle",
+                "per_cell": 3,
+                "radius_m": [
+                  3,
+                  8
+                ],
+                "grow_s": 1800,
+                "dry_s": 3600
+              }
+            ]
+          },
+          "meteor_shower": {
+            "category": "other_region",
+            "spawn": {
+              "light": 1.3,
+              "draconic": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "impact",
+                "name": "meteor",
+                "every_s": [
+                  600,
+                  1800
+                ],
+                "spawn": {
+                  "type": "draconic",
+                  "chance": 0.3,
+                  "level_add": [
+                    1,
+                    3
+                  ],
+                  "ttl_s": 7200
+                },
+                "item": {
+                  "ids": [
+                    "item.dust.fire",
+                    "item.dust.plant",
+                    "item.dust.water"
+                  ],
+                  "kind": "spark",
+                  "qty": [
+                    3,
+                    5
+                  ],
+                  "chance": 1.0,
+                  "ttl_s": 600
+                },
+                "item2": {
+                  "ids": [
+                    "item.meteorite"
+                  ],
+                  "fallback": "item.ectoplasm",
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.6,
+                  "ttl_s": 7200
+                }
+              }
+            ]
+          },
+          "veil_snow": {
+            "category": "mystic",
+            "spawn": {
+              "spectral": 2.0,
+              "shadow": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "collectible",
+                "name": "veil_flake",
+                "every_s": [
+                  10,
+                  25
+                ],
+                "item": {
+                  "ids": [
+                    "item.dust.fire",
+                    "item.dust.plant",
+                    "item.dust.water"
+                  ],
+                  "kind": "spark",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5,
+                  "ttl_s": 120
+                }
+              }
+            ]
+          },
+          "crimson_rain": {
+            "category": "mystic",
+            "pieces": [
+              {
+                "piece": "puddles",
+                "name": "crimson_puddle",
+                "per_cell": 4,
+                "radius_m": [
+                  4,
+                  10
+                ],
+                "grow_s": 1800,
+                "dry_s": 3600,
+                "spawn": {
+                  "type": "crimson",
+                  "chance": 0.4
+                },
+                "item": {
+                  "ids": [
+                    "item.dust.fire"
+                  ],
+                  "kind": "spark",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5
+                }
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "variantes Carmesim ++: não há variante Carmesim",
+                  "só na Lua Carmim: não há Lua Carmim"
+                ]
+              }
+            ]
+          },
+          "spark_rain": {
+            "category": "mystic",
+            "pieces": [
+              {
+                "piece": "collectible",
+                "name": "spark_fall",
+                "every_s": [
+                  3,
+                  8
+                ],
+                "item": {
+                  "ids": [
+                    "item.dust.fire",
+                    "item.dust.plant",
+                    "item.dust.water"
+                  ],
+                  "kind": "spark",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 1.0,
+                  "ttl_s": 180
+                }
+              }
+            ]
+          },
+          "echo_storm": {
+            "category": "mystic",
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "level_add": 3,
+                "effects": [
+                  "raios violeta abrem microfendas: não há microfendas"
+                ]
+              },
+              {
+                "piece": "impact",
+                "name": "violet_bolt",
+                "every_s": [
+                  30,
+                  90
+                ],
+                "spawn": {
+                  "type": "any",
+                  "chance": 0.15,
+                  "level_add": [
+                    3,
+                    6
+                  ],
+                  "ttl_s": 600
+                }
+              }
+            ]
+          },
+          "static": {
+            "category": "mystic",
+            "spawn": {
+              "digital": 2.0,
+              "electric": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "wander_mult": 1.6,
+                "immune_school": "technomancer"
+              }
+            ]
+          },
+          "silence": {
+            "category": "mystic",
+            "spawn": {
+              "spectral": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "calm": true,
+                "effects": [
+                  "a Exposição ao Véu sobe: não há Exposição",
+                  "os Que Escutam estão ouvindo"
+                ]
+              },
+              {
+                "piece": "movement",
+                "name": "movement",
+                "traffic_mult": 0.0
+              }
+            ]
+          },
+          "veil_ash": {
+            "category": "mystic",
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "Corrompidas +: não há Corrompidas"
+                ]
+              },
+              {
+                "piece": "zone",
+                "name": "veil_ash_zone",
+                "per_cell": 1,
+                "radius_m": 20,
+                "duration_s": 1800,
+                "spawn": {
+                  "type": "any",
+                  "chance": 0.4,
+                  "level_add": [
+                    1,
+                    3
+                  ]
+                }
+              }
+            ]
+          },
+          "fog_procession": {
+            "category": "mystic",
+            "spawn": {
+              "spectral": 3.0
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "procession",
+                "per_cell": 1,
+                "radius_m": 6,
+                "duration_s": 1200,
+                "speed_mps": 0.8,
+                "slot_at": 0.95,
+                "spawn": {
+                  "type": "any",
+                  "chance": 0.6,
+                  "level_add": [
+                    2,
+                    4
+                  ],
+                  "ttl_s": 1200
+                }
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "view_max_m": 60,
+                "effects": [
+                  "seguir as figuras até o fim leva a um Espectral raro"
+                ]
+              }
+            ]
+          },
+          "rift_wind": {
+            "category": "mystic",
+            "spawn": {
+              "draconic": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "movement",
+                "name": "movement",
+                "spark_drift_mps": 0.1,
+                "drift_max_m": 20
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "a deriva aponta a Fenda mais próxima: não há Fendas, vale o vento da região"
+                ]
+              }
+            ]
+          },
+          "inverted_sky": {
+            "category": "mystic",
+            "spawn": {
+              "fairy": 2.0
+            },
+            "pieces": [
+              {
+                "piece": "movement",
+                "name": "movement",
+                "spark_ttl_s": 180
+              }
+            ]
+          },
+          "veil_tide": {
+            "category": "mystic",
+            "pieces": [
+              {
+                "piece": "ghost",
+                "name": "ghost_building",
+                "per_cell": 2,
+                "radius_m": 30,
+                "duration_s": 2400,
+                "spawn": {
+                  "type": "ancient",
+                  "chance": 0.3
+                },
+                "item": {
+                  "ids": [
+                    "item.ectoplasm"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.4
+                }
+              }
+            ]
+          },
+          "black_sun": {
+            "category": "mystic",
+            "spawn": {
+              "shadow": 3.0,
+              "light": 0.6
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "inverted_shadow",
+                "per_cell": 2,
+                "radius_m": 30,
+                "duration_s": 1800,
+                "spawn": {
+                  "type": "shadow",
+                  "chance": 0.5,
+                  "per_zone": 2
+                },
+                "item": {
+                  "ids": [
+                    "item.ectoplasm"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.3
+                }
+              }
+            ]
+          },
+          "prismatic_drizzle": {
+            "category": "mystic",
+            "spawn": {
+              "water": 1.2
+            },
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "shiny_mult": 2.0
+              },
+              {
+                "piece": "puddles",
+                "name": "prism_puddle",
+                "per_cell": 3,
+                "radius_m": [
+                  3,
+                  7
+                ],
+                "grow_s": 1800,
+                "dry_s": 3600,
+                "item": {
+                  "ids": [
+                    "item.pure_water"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.3
+                }
+              }
+            ]
+          },
+          "hard_frost": {
+            "category": "native",
+            "spawn": {
+              "spectral": 1.3,
+              "water": 0.7
+            },
+            "pieces": [
+              {
+                "piece": "puddles",
+                "name": "ice_puddle",
+                "per_cell": 4,
+                "radius_m": [
+                  3,
+                  7
+                ],
+                "grow_s": 1800,
+                "dry_s": 3600,
+                "frozen": true,
+                "always": true,
+                "item": {
+                  "ids": [
+                    "item.ice_crystal"
+                  ],
+                  "fallback": "item.pure_water",
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5
+                }
+              },
+              {
+                "piece": "movement",
+                "name": "movement",
+                "walker_mult": 0.6
+              }
+            ]
+          },
+          "dry_thunder": {
+            "category": "native",
+            "spawn": {
+              "electric": 2.0,
+              "fire": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "impact",
+                "name": "dry_bolt",
+                "every_s": [
+                  40,
+                  120
+                ],
+                "spawn": {
+                  "type": "electric",
+                  "fallback_species": "soot.eco",
+                  "tag": "charged",
+                  "chance": 0.05,
+                  "level_add": [
+                    0,
+                    2
+                  ],
+                  "ttl_s": 600
+                },
+                "item": {
+                  "ids": [
+                    "item.dust.fire"
+                  ],
+                  "kind": "spark",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 1.0,
+                  "ttl_s": 300
+                }
+              }
+            ]
+          },
+          "smog": {
+            "category": "native",
+            "spawn": {
+              "metal": 1.4,
+              "digital": 1.4
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "soot_zone",
+                "per_cell": 2,
+                "radius_m": 25,
+                "duration_s": 2400,
+                "snap": true,
+                "item": {
+                  "ids": [
+                    "item.scrap"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 0.6,
+                  "per_zone": 2
+                }
+              }
+            ]
+          },
+          "freezing_rain": {
+            "category": "other_region",
+            "spawn": {
+              "water": 1.3,
+              "metal": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "collectible",
+                "name": "branch",
+                "every_s": [
+                  60,
+                  180
+                ],
+                "item": {
+                  "ids": [
+                    "item.wood"
+                  ],
+                  "fallback": "item.herbs",
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 0.5,
+                  "ttl_s": 900
+                }
+              },
+              {
+                "piece": "movement",
+                "name": "movement",
+                "traffic_mult": 0.5
+              }
+            ]
+          },
+          "hurricane": {
+            "category": "other_region",
+            "spawn": {
+              "fairy": 1.8,
+              "water": 1.8
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "hurricane_eye",
+                "per_cell": 1,
+                "radius_m": 70,
+                "duration_s": 1800,
+                "speed_mps": 5.0,
+                "spawn": {
+                  "type": "any",
+                  "chance": 0.5,
+                  "level_add": [
+                    3,
+                    5
+                  ]
+                }
+              },
+              {
+                "piece": "movement",
+                "name": "movement",
+                "traffic_mult": 0.6
+              }
+            ]
+          },
+          "rune_rain": {
+            "category": "mystic",
+            "spawn": {
+              "spectral": 1.3,
+              "shadow": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "rune",
+                "per_cell": 3,
+                "radius_m": 4,
+                "duration_s": 900,
+                "snap": true,
+                "item": {
+                  "ids": [
+                    "item.rune"
+                  ],
+                  "fallback": "item.chalk",
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.8
+                }
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "tocar uma runa dá bônus no próximo ritual: o save não guarda bônus"
+                ]
+              }
+            ]
+          },
+          "double_moon": {
+            "category": "mystic",
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "variant_mult": 2.0
+              }
+            ]
+          },
+          "vigil": {
+            "category": "mystic",
+            "spawn": {
+              "digital": 2.0,
+              "spectral": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "gaze",
+                "per_cell": 1,
+                "radius_m": 18,
+                "duration_s": 900,
+                "speed_mps": 1.2,
+                "spawn": {
+                  "type": "any",
+                  "chance": 0.5,
+                  "level_add": [
+                    2,
+                    4
+                  ]
+                }
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "a Exposição ao Véu sobe no olhar: não há Exposição"
+                ]
+              }
+            ]
+          }
+        },
+        "calendar": [
+          {
+            "id": "finados",
+            "climate": "fog_procession",
+            "month": 11,
+            "days": [
+              2,
+              2
+            ]
+          },
+          {
+            "id": "sao_joao",
+            "climate": "spark_rain",
+            "month": 6,
+            "days": [
+              23,
+              24
+            ],
+            "hours": [
+              18,
+              24
+            ]
+          },
+          {
+            "id": "festa_junina",
+            "climate": "spark_rain",
+            "month": 6,
+            "hours": [
+              18,
+              24
+            ],
+            "chance": 0.25
+          },
+          {
+            "id": "quadrantids",
+            "climate": "meteor_shower",
+            "month": 1,
+            "days": [
+              3,
+              4
+            ],
+            "hours": [
+              0,
+              6
+            ],
+            "chance": 0.5
+          },
+          {
+            "id": "lyrids",
+            "climate": "meteor_shower",
+            "month": 4,
+            "days": [
+              21,
+              23
+            ],
+            "hours": [
+              0,
+              6
+            ],
+            "chance": 0.5
+          },
+          {
+            "id": "eta_aquariids",
+            "climate": "meteor_shower",
+            "month": 5,
+            "days": [
+              4,
+              7
+            ],
+            "hours": [
+              0,
+              6
+            ],
+            "chance": 0.7
+          },
+          {
+            "id": "perseids",
+            "climate": "meteor_shower",
+            "month": 8,
+            "days": [
+              11,
+              13
+            ],
+            "hours": [
+              0,
+              6
+            ],
+            "chance": 0.5
+          },
+          {
+            "id": "orionids",
+            "climate": "meteor_shower",
+            "month": 10,
+            "days": [
+              20,
+              22
+            ],
+            "hours": [
+              0,
+              6
+            ],
+            "chance": 0.5
+          },
+          {
+            "id": "geminids",
+            "climate": "meteor_shower",
+            "month": 12,
+            "days": [
+              13,
+              15
+            ],
+            "hours": [
+              0,
+              6
+            ],
+            "chance": 0.7
+          },
+          {
+            "id": "solar_eclipse",
+            "climate": "black_sun",
+            "utc": [
+              "2027-02-06T14:00:00Z",
+              "2027-02-06T18:00:00Z"
+            ]
+          },
+          {
+            "id": "solar_eclipse",
+            "climate": "black_sun",
+            "utc": [
+              "2028-01-26T14:00:00Z",
+              "2028-01-26T18:00:00Z"
+            ]
+          },
+          {
+            "id": "crimson_moon",
+            "climate": "crimson_rain",
+            "utc": [
+              "2029-06-26T01:00:00Z",
+              "2029-06-26T06:00:00Z"
+            ]
+          },
+          {
+            "id": "crimson_moon",
+            "climate": "crimson_rain",
+            "utc": [
+              "2029-12-20T21:00:00Z",
+              "2029-12-21T01:00:00Z"
+            ]
+          }
+        ],
+        "astro": [
+          {
+            "id": "super_full_moon",
+            "climate": "double_moon",
+            "full_min": 0.985,
+            "distance_max_km": 358000,
+            "hours": [
+              18,
+              6
+            ],
+            "chance": 0.5
+          }
+        ]
+      }
     }
   ]
 }

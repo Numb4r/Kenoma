@@ -70,12 +70,13 @@ List<SpawnItem> generateCell({
   Weather weather = Weather.clear,
   Map<String, double>? climateMult,
   double shinyMult = 1,
+  double variantMult = 1,
   String? Function(String entryId)? typeOf,
   PathSnapper? snapper,
 }) =>
     [
       for (final def in epoch.items)
-        _generateItem(seed, epoch, cellX, cellY, window, biomeKey, def, climateMult ?? (weather == Weather.clear ? null : epoch.ecoV2?.weather.spawnMultipliers[weather.id]), shinyMult, typeOf, snapper),
+        _generateItem(seed, epoch, cellX, cellY, window, biomeKey, def, climateMult ?? (weather == Weather.clear ? null : epoch.ecoV2?.weather.spawnMultipliers[weather.id]), shinyMult, variantMult, typeOf, snapper),
     ];
 
 SpawnItem _generateItem(
@@ -88,6 +89,7 @@ SpawnItem _generateItem(
   SpawnItemDef def,
   Map<String, double>? weatherMult,
   double shinyMult,
+  double variantMult,
   String? Function(String entryId)? typeOf,
   PathSnapper? snapper,
 ) {
@@ -147,7 +149,7 @@ SpawnItem _generateItem(
       }
       bp -= weights[i];
     }
-    if (r2.nextFloat() < v2.variantChance) variantBiome = biomeKey;
+    if (r2.nextFloat() < v2.variantChance * variantMult) variantBiome = biomeKey; // variantMult: 1 fora da Lua Dupla (x * 1.0 == x)
     shiny = r2.nextFloat() < v2.shinyChance * shinyMult; // shinyMult é 1 fora do clima da época 6 (x * 1.0 == x)
     final speciesRoll = r2.nextFloat();
     // O clima mexe nos pesos por tipo. Com tempo limpo, ou sem regra para nenhuma espécie da tabela, a espécie é a original.

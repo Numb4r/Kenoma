@@ -10,7 +10,6 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import '../../capture/eco_type.dart';
 import '../../core/astro.dart';
-import '../../core/climate.dart' show ClimateZone;
 import '../../core/weather.dart';
 import '../../world/companion.dart';
 import '../../core/tiles.dart';
@@ -33,6 +32,7 @@ import 'art_renderer.dart';
 import 'art_style.dart';
 import 'spawn_painter.dart';
 import 'climate_fx.dart';
+import 'climate_ground.dart';
 import 'climate_painter.dart';
 import '../../data/climate_catalog.dart';
 import 'street_label_painter.dart';
@@ -112,9 +112,10 @@ class GameMapGame extends FlameGame {
   final TracePainter _trace = TracePainter();
   late final ClimatePainter _climate = ClimatePainter(cap: climateBalance.particleCap, pocketRate: climateBalance.pocketRate);
 
-  /// O que as peças do clima desenham no mapa (raio, poças, redemoinho...) e o trovão.
+  /// O clima em duas camadas: no céu (traço do raio, meteoro, clarão, tremor, trovão) e no chão do mapa (poças, crateras,
+  /// zonas, ruas cobertas, pegadas), que gira, move e dá zoom com o mapa.
   late final ClimateFx climateFx = ClimateFx(catalog: climateCatalog, balance: climateBalance);
-  List<ClimateZone> _zones = const [];
+  late final ClimateGround climateGround = ClimateGround(catalog: climateCatalog, visual: visual, roadWidthM: balance.roadWidthM);
   double _climateIn = 0;
 
   /// Modo bolso: o clima desenha bem menos partículas (o agente da Patrulha liga).
@@ -403,22 +404,25 @@ class GameMapGame extends FlameGame {
     if (size.x <= 0 || size.y <= 0) return;
     final view = Size(size.x, size.y);
     final cam = follow.camera;
+    canvas.save();
+    canvas.translate(climateFx.shakeOffset.dx, climateFx.shakeOffset.dy); // o impacto do meteoro treme o mundo, não o HUD
     _art.paint(canvas, view, cam, dpr: dpr, metersPerCell: metersPerCell(_lat), coarse: coarse);
     _paintLight(canvas, view);
-    if (veilTraffic() && _hasFix && worldView != null) {
-      _traffic.paint(canvas, view, cam, seed: worldView!.field.seed, tUtc: nowUtc(), tUtcExact: _trafficUtc(), lonDeg: _lon, metersPerCell: metersPerCell(_lat), light: light);
+    final wv = worldView;
+    if (veilTraffic() && _hasFix && wv != null) {
+      final tc = rainFx() ? climateGround.trafficCover(wv.field.seed, climateShown(), wv.climate) : null; // barcos, dunas, gelo
+      final walk = wv.climate.walkerMult == 1 ? null : _trafficUtc(walker: true);
+      _traffic.paint(canvas, view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: _trafficUtc(), tWalkExact: walk, lonDeg: _lon, metersPerCell: metersPerCell(_lat), light: light, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false);
     } else {
       _traffic.lastDrawn = 0;
     }
     travelLayer?.paintGround(canvas, view, cam, metersPerCell(_lat), utc: _exactUtc(), avatar: avatar);
     if (streetNames()) _labels.paint(canvas, view, cam);
     if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
-    final wv = worldView;
-    if (wv != null && _hasFix) {
-      climateFx.paintGround(canvas, view, cam, zones: _zones, metersPerCell21: metersPerCell(_lat), exactUtc: _exactUtc(), climate: wv.climate, ecos: wv.spawns.where((s) => s.isEco).toList());
-    }
+    if (wv != null && _hasFix) _paintClimateGround(canvas, view, cam, wv);
     _paintWorld(canvas, view, cam);
-    // O clima por cima do mapa e dos spawns, por baixo do HUD (o rastreador da borda é HUD): cobre a tela toda.
+    canvas.restore();
+    // O clima da tela por cima do mapa e dos spawns, por baixo do HUD (o rastreador da borda é HUD): cobre a tela toda.
     climateFx.paintSky(canvas, view, cam);
     final (ax, ay) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
     _climate.paint(canvas, view, player: avatar.hasPosition ? Offset(ax, ay) : null);
@@ -461,17 +465,39 @@ class GameMapGame extends FlameGame {
       _climateIn = 0.5;
       final mpc = metersPerCell(_lat);
       climateFx.observe(cw, px: avatar.x, py: avatar.y, metersPerCell21: mpc, exactUtc: _exactUtc());
-      _zones = cw.zonesNear(avatar.x, avatar.y, math.sqrt(size.x * size.x + size.y * size.y) / follow.pixelsPerCell, nowUtc());
+      climateGround.observe(cw, px: avatar.x, py: avatar.y, radius21: math.sqrt(size.x * size.x + size.y * size.y) / follow.pixelsPerCell, mpc: mpc, t: nowUtc());
       if (c?.playerTrails ?? false) climateFx.noteStep(avatar.x, avatar.y, mpc);
     }
   }
 
+  /// A camada do mapa do clima (ver `climate_ground.dart`), entre as ruas e os spawns.
+  void _paintClimateGround(Canvas canvas, Size view, MapCamera cam, WorldView wv) => climateGround.paint(
+        canvas,
+        view,
+        cam,
+        mpc: metersPerCell(_lat),
+        exactUtc: _exactUtc(),
+        seed: wv.field.seed,
+        shown: climateShown(),
+        c: wv.climate,
+        ecos: wv.spawns.where((s) => s.isEco).toList(),
+        steps: climateFx.steps,
+        playerX: avatar.x,
+        playerY: avatar.y,
+        night: light.night,
+        localHour: _climate.localHour,
+        sprites: sprites,
+        ecoSizePx: ecoSizePx,
+        decor: rainFx(),
+      );
+
   /// O tráfego do Véu mais lento com o clima (Dilúvio): o tempo anda [PlayerClimate.trafficMult] vezes desde o começo da
-  /// janela do clima, igual em todos os aparelhos.
-  double _trafficUtc() {
+  /// janela do clima, igual em todos os aparelhos. Com [walker], o dos passantes, que a Geada forte deixa ainda mais lentos.
+  double _trafficUtc({bool walker = false}) {
     final t = _exactUtc(), c = worldView?.climate;
-    if (c == null || c.trafficMult == 1) return t;
-    return c.windWindowStart + (t - c.windWindowStart) * c.trafficMult;
+    final mult = (c?.trafficMult ?? 1) * (walker ? c?.walkerMult ?? 1 : 1);
+    if (c == null || mult == 1) return t;
+    return c.windWindowStart + (t - c.windWindowStart) * mult;
   }
 
   /// Aura, spawns, Familiar, Conjurador e retorno visual. Sem posição, nada.
