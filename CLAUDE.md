@@ -101,6 +101,8 @@ Janelas de spawn têm 20 minutos, com deslocamento próprio por célula. Detalhe
 - **Já há amigos jogando.** Toda versão nova sai assinada com a mesma chave de release (`~/.kenoma-signing/`, ver `docs/assinatura.md`) e com a migração do save testada: quem atualiza instala por cima e não perde nada. Mudou o formato do save? Suba `saveSchemaVersion`, escreva a migração pura e o teste com um save antigo antes do APK. Nada de APK com a chave de debug. Mudança de época continua só por época nova (regra 8), e agora afeta quem já joga.
 - **O clima que muda o mundo mora no bloco `climate` da época** em `epochs.json`; `assets/data/clima.json` é só visual e textos. Climas de outras regiões e místicos só entram por `events.json` assinado ou debug, nunca pelo clima real.
 - **O serviço da Patrulha do Véu nunca grava o save principal.** Ele escreve `patrulha.jsonl` e o app incorpora pelo uid. Recomeçar do zero apaga o progresso e mantém `player_id`, log de versões, certificados e Ajustes do aparelho.
+- **Toda função nova é um app do celular do personagem** (`ui/menu/phone_apps.dart`, bloqueio por nível em `balance.json` `phone.apps`). O HUD só tem atalhos e o que precisa ser visto andando, em zonas fixas (`ui/game/hud_layout.dart`, com teste de não sobreposição em 360×800, 412×915 e 480×1000 dp). Ajustes só guarda preferências.
+- **O arquivo só de rotas (`*_noaccess.bin`) não entra em época** nem no pacote visual: ele não muda o mundo. No `regions.json` assinado vai em `route_files`, nunca em `files` (a 0.16 recusaria a região inteira).
 - Cores fixas: violeta `#9b7bff` é o Véu, ciano `#5fd3c6` é o sinal, laranja `#ff7a45` é Essência. Contorno `#1a1424`, nunca preto puro.
 
 ## Comandos

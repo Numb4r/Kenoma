@@ -57,6 +57,19 @@ Pode ser a mesma caminhada do item 1, nos primeiros 15 minutos.
 | Fala do Familiar ao passar de 5 mil e de 10 mil | |
 | Reiniciar o celular no meio do dia não dobra nem zera os passos convertidos | |
 
+
+## 5. Novidades da 0.17.0 que pedem rua
+
+| O que conferir | Resultado |
+| --- | --- |
+| Rota a pé no app Rotas até um ponto a ~1 km: segue as ruas e calçadas | |
+| Sair mais de 30 m da rota: ela é recalculada em poucos segundos | |
+| Tempo estimado da rota a pé contra o tempo real | |
+| Radar: pulso, andar até a distorção de um Oculto, o Eco aparece a ~20 m | |
+| Corrida pedida fora do jogo (Uber ou 99): abrir o Kenoma com o carro a caminho, já embarcado e chegando; o estado bate | |
+| Texto das notificações do Uber e do 99 nessa corrida (copiar para atualizar `ride_patterns.json`) | |
+| Fora de Campinas com Wi-Fi: os blocos à frente aparecem antes de chegar; com dados móveis, só o bloco do jogador | |
+
 ## Medido no simulado em 2026-11-09 (não é caminhada real)
 
 - Patrulha simulada pelo debug, a 1,4 m/s: em 4 minutos, 22 Fagulhas, 17 materiais e 1 Eco marcado; a notificação atualizou com o app aberto e, com a tela bloqueada por 4 minutos, foi a "6 Fagulhas · 1 Eco marcado · 4 min", com uma vibração de 136 ms na marcação; o app incorporou o diário com a Patrulha ativa e o resumo saiu no Chat.
