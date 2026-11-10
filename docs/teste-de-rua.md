@@ -70,6 +70,14 @@ Pode ser a mesma caminhada do item 1, nos primeiros 15 minutos.
 | Texto das notificações do Uber e do 99 nessa corrida (copiar para atualizar `ride_patterns.json`) | |
 | Fora de Campinas com Wi-Fi: os blocos à frente aparecem antes de chegar; com dados móveis, só o bloco do jogador | |
 
+## 6. Novidades da 0.17.1 que pedem rua
+
+| O que conferir | Resultado |
+| --- | --- |
+| Depois de uma chuva real: arco-íris no mapa e o Prisma de orvalho apontando o pé (distância e rumo batem andando) | |
+| Passantes de guarda-chuva na chuva real e de casaco no frio real | |
+| Radar andando: as marcas da borda da tela apontam para o rastro enquanto você vira e anda, e somem em 2 min | |
+
 ## Medido no simulado em 2026-11-09 (não é caminhada real)
 
 - Patrulha simulada pelo debug, a 1,4 m/s: em 4 minutos, 22 Fagulhas, 17 materiais e 1 Eco marcado; a notificação atualizou com o app aberto e, com a tela bloqueada por 4 minutos, foi a "6 Fagulhas · 1 Eco marcado · 4 min", com uma vibração de 136 ms na marcação; o app incorporou o diário com a Patrulha ativa e o resumo saiu no Chat.
