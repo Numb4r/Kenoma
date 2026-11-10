@@ -410,7 +410,10 @@ class WorldView {
     if (s.isEco && state.markOf(s.uid) != null) return TouchResult.encounter;
     if (!canReach(s)) return TouchResult.tooFar;
     if (s.isEco) return TouchResult.encounter;
-    if (!sandbox()) state.add(s.entryId, s.quantity); // GPS simulado sem recompensa: nada entra na Bolsa
+    if (!sandbox()) {
+      state.add(s.entryId, s.quantity); // GPS simulado sem recompensa: nada entra na Bolsa
+      if (s.tag == 'rune_bonus') state.conjurer.runeBonus++; // a runa guarda o bônus do próximo ritual
+    }
     state.markDone(s.uid, tUtc);
     _gainXp(state.balance.material, tUtc);
     _record('material', s.entryId, s.quantity);

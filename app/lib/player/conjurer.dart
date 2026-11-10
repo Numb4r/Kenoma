@@ -15,6 +15,7 @@ class ConjurerState {
     List<int>? daysPlayed,
     this.fusions = 0,
     this.playerName = '',
+    this.runeBonus = 0,
   })  : testScores = {...?testScores},
         ritualResearch = {...?ritualResearch},
         daysPlayed = [...?daysPlayed];
@@ -29,6 +30,7 @@ class ConjurerState {
         daysPlayed: [for (final d in (j?['days_played'] as List<dynamic>?) ?? const []) d as int],
         fusions: (j?['fusions'] as int?) ?? 0,
         playerName: (j?['player_name'] as String?) ?? '',
+        runeBonus: (j?['rune_bonus'] as int?) ?? 0,
       );
 
   /// A escola escolhida (definitiva até o nível 30), ou `null`.
@@ -56,6 +58,10 @@ class ConjurerState {
 
   /// O nome do Conjurador, editável no Perfil. Vazio: "Conjurador".
   String playerName;
+
+  /// Runas tocadas na Chuva de Runas que ainda não foram usadas: cada uma revela um espaço ??? no próximo ritual aberto.
+  /// Campo opcional (sem ele, 0): não precisou de schema novo.
+  int runeBonus;
 
   String get displayName => playerName.trim().isEmpty ? 'Conjurador' : playerName.trim();
 
@@ -91,5 +97,6 @@ class ConjurerState {
         'days_played': daysPlayed,
         'fusions': fusions,
         if (playerName.isNotEmpty) 'player_name': playerName,
+        if (runeBonus > 0) 'rune_bonus': runeBonus,
       };
 }

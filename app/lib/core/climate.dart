@@ -79,7 +79,7 @@ class PieceSpawn {
 
 /// Um item que uma peça faz cair ou nascer. [ids] é sorteado; o que não existe em `items.json` vira [fallback].
 class PieceItem {
-  const PieceItem({required this.ids, this.fallback, required this.kind, required this.qty, required this.chance, required this.ttlS, this.biomes, this.perZone = 1, this.revealM});
+  const PieceItem({required this.ids, this.fallback, required this.kind, required this.qty, required this.chance, required this.ttlS, this.biomes, this.perZone = 1, this.revealM, this.tag});
 
   factory PieceItem.fromJson(Map<String, dynamic> j) => PieceItem(
         ids: [for (final i in j['ids'] as List<dynamic>) i as String],
@@ -91,6 +91,7 @@ class PieceItem {
         biomes: (j['biomes'] as List<dynamic>?)?.cast<String>(),
         perZone: (j['per_zone'] as num?)?.toInt() ?? 1,
         revealM: (j['reveal_m'] as num?)?.toDouble(),
+        tag: j['tag'] as String?,
       );
 
   final List<String> ids;
@@ -108,6 +109,9 @@ class PieceItem {
 
   /// Escondido (a duna): só aparece para quem está a até isto do ponto. `null`: sempre.
   final double? revealM;
+
+  /// Efeito extra ao coletar (`rune_bonus`: a runa guarda um bônus para o próximo ritual).
+  final String? tag;
 }
 
 /// As peças. [name] liga a peça ao visual em `clima.json` e ao debug ("raio", "granizo", "redemoinho", "meteoro").

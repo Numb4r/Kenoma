@@ -7693,14 +7693,15 @@
                     1,
                     1
                   ],
-                  "chance": 0.8
+                  "chance": 0.8,
+                  "tag": "rune_bonus"
                 }
               },
               {
                 "piece": "modifier",
                 "name": "modifier",
                 "effects": [
-                  "tocar uma runa dá bônus no próximo ritual: o save não guarda bônus"
+                  "tocar uma runa dá Giz e guarda um bônus: o próximo ritual aberto revela um espaço ???"
                 ]
               }
             ]

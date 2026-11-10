@@ -158,6 +158,17 @@ void main() {
       expect(items, isNotEmpty);
       expect(items.every((s) => s.entryId == 'item.essence.crimson' && !s.isSpark), isTrue);
     });
+
+    test('na Chuva de Runas a runa é Giz com o bônus do próximo ritual', () {
+      final a = device(forced: 'rune_rain');
+      final t = e7.startsUtc + 30 * 86400;
+      final runes = [
+        for (var k = 0; k < 10800; k += 600)
+          for (final s in a.extras(x21: x21, y21: y21, radiusM: 1500, t: t - t % 10800 + k, metersPerCell21: mpc, levelOf: (id, add, uid) => 3)) if (s.tag == 'rune_bonus') s,
+      ];
+      expect(runes, isNotEmpty);
+      expect(runes.every((s) => s.entryId == 'item.chalk' && !s.isSpark), isTrue);
+    });
   });
 
   group('meteoros', () {
