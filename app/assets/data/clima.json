@@ -95,7 +95,9 @@
           "color": "#e8e4f4",
           "alpha": 0.25,
           "per_cell": 3,
-          "twinkle": true
+          "twinkle": true,
+          "grow_s": 900,
+          "fade_s": 2400
         }
       ]
     },
@@ -134,7 +136,9 @@
           "color": "#e8e4f4",
           "alpha": 0.35,
           "per_cell": 6,
-          "twinkle": true
+          "twinkle": true,
+          "grow_s": 600,
+          "fade_s": 3600
         }
       ]
     },
@@ -173,7 +177,9 @@
           "color": "#e8e4f4",
           "alpha": 0.3,
           "per_cell": 4,
-          "twinkle": true
+          "twinkle": true,
+          "grow_s": 300,
+          "fade_s": 3600
         }
       ]
     },
@@ -212,7 +218,9 @@
           "shape": "hailstone",
           "color": "#e8e4f4",
           "alpha": 0.8,
-          "per_cell": 5
+          "per_cell": 5,
+          "grow_s": 300,
+          "fade_s": 900
         }
       ]
     },
@@ -314,7 +322,9 @@
           "local_hours": [
             5,
             10
-          ]
+          ],
+          "grow_s": 1800,
+          "fade_s": 1800
         }
       ]
     },
@@ -443,7 +453,9 @@
           "shape": "dust",
           "color": "#e0c27a",
           "alpha": 0.45,
-          "per_cell": 5
+          "per_cell": 5,
+          "grow_s": 900,
+          "fade_s": 1800
         }
       ]
     },
@@ -481,7 +493,9 @@
           "shape": "ash",
           "color": "#8a8fa3",
           "alpha": 0.5,
-          "per_cell": 5
+          "per_cell": 5,
+          "grow_s": 1200,
+          "fade_s": 2400
         }
       ]
     },
@@ -526,14 +540,17 @@
           "color": "#f4f2fa",
           "alpha": 0.85,
           "grow_s": 3600,
-          "tracks": true
+          "tracks": true,
+          "fade_s": 3600
         },
         {
           "kind": "scatter",
           "shape": "frost",
           "color": "#ffffff",
           "alpha": 0.7,
-          "per_cell": 5
+          "per_cell": 5,
+          "grow_s": 600,
+          "fade_s": 3600
         }
       ]
     },
@@ -578,14 +595,17 @@
           "color": "#f4f2fa",
           "alpha": 0.9,
           "grow_s": 1800,
-          "tracks": true
+          "tracks": true,
+          "fade_s": 3600
         },
         {
           "kind": "scatter",
           "shape": "frost",
           "color": "#ffffff",
           "alpha": 0.7,
-          "per_cell": 7
+          "per_cell": 7,
+          "grow_s": 300,
+          "fade_s": 3600
         }
       ]
     },
@@ -635,7 +655,9 @@
             "local": 0.25,
             "secondary": 0.15,
             "principal": 0.1
-          }
+          },
+          "grow_s": 1800,
+          "fade_s": 2400
         }
       ]
     },
@@ -680,7 +702,8 @@
             "local": 0.4,
             "secondary": 0.25,
             "principal": 0.15
-          }
+          },
+          "fade_s": 3600
         }
       ]
     },
@@ -818,7 +841,9 @@
           "shape": "pixel",
           "color": "#a8c84a",
           "alpha": 0.5,
-          "per_cell": 4
+          "per_cell": 4,
+          "grow_s": 900,
+          "fade_s": 2400
         }
       ]
     },
@@ -924,7 +949,9 @@
           "color": "#d0344a",
           "alpha": 0.35,
           "per_cell": 4,
-          "twinkle": true
+          "twinkle": true,
+          "grow_s": 600,
+          "fade_s": 3600
         }
       ]
     },
@@ -969,7 +996,9 @@
           "color": "#ff7a45",
           "alpha": 0.6,
           "per_cell": 3,
-          "twinkle": true
+          "twinkle": true,
+          "grow_s": 300,
+          "fade_s": 600
         }
       ]
     },
@@ -1123,7 +1152,9 @@
           "shape": "ash",
           "color": "#9b7bff",
           "alpha": 0.5,
-          "per_cell": 5
+          "per_cell": 5,
+          "grow_s": 1200,
+          "fade_s": 2400
         }
       ]
     },
@@ -1275,6 +1306,15 @@
           "color": "#e8e4f4",
           "alpha": 0.25,
           "per_cell": 3
+        },
+        {
+          "kind": "scatter",
+          "shape": "shadow",
+          "color": "#e8e4f4",
+          "alpha": 0.3,
+          "per_cell": 2,
+          "grow_s": 600,
+          "fade_s": 900
         }
       ]
     },
@@ -1322,7 +1362,9 @@
             "#6bd36a",
             "#4aa8ff",
             "#9b7bff"
-          ]
+          ],
+          "grow_s": 900,
+          "fade_s": 2400
         }
       ]
     },
@@ -1356,7 +1398,9 @@
           "shape": "frost",
           "color": "#ffffff",
           "alpha": 0.75,
-          "per_cell": 8
+          "per_cell": 8,
+          "grow_s": 1200,
+          "fade_s": 2400
         }
       ]
     },
@@ -1395,7 +1439,9 @@
           "shape": "dust",
           "color": "#e0c27a",
           "alpha": 0.35,
-          "per_cell": 4
+          "per_cell": 4,
+          "grow_s": 900,
+          "fade_s": 1800
         }
       ]
     },
@@ -1429,7 +1475,9 @@
             "secondary": 1.0,
             "local": 0.0,
             "pedestrian": 0.0
-          }
+          },
+          "grow_s": 1800,
+          "fade_s": 2700
         }
       ]
     },
@@ -1467,7 +1515,9 @@
           "cover": "ice",
           "color": "#bfe9f0",
           "alpha": 0.4,
-          "skid": true
+          "skid": true,
+          "grow_s": 1200,
+          "fade_s": 2700
         },
         {
           "kind": "scatter",
@@ -1475,7 +1525,9 @@
           "color": "#ffffff",
           "alpha": 0.6,
           "per_cell": 5,
-          "twinkle": true
+          "twinkle": true,
+          "grow_s": 900,
+          "fade_s": 2700
         },
         {
           "kind": "scatter",
@@ -1686,12 +1738,16 @@
     "mirage": {
       "style": "zone",
       "color": "#fff0b0",
-      "alpha": 0.18
+      "alpha": 0.18,
+      "grow_s": 120,
+      "fade_s": 120
     },
     "cloud_shadow": {
       "style": "zone",
       "color": "#1a1424",
-      "alpha": 0.16
+      "alpha": 0.16,
+      "grow_s": 60,
+      "fade_s": 60
     },
     "puddle": {
       "style": "puddle",
@@ -1713,17 +1769,23 @@
     "ash_zone": {
       "style": "zone",
       "color": "#8a8fa3",
-      "alpha": 0.25
+      "alpha": 0.25,
+      "grow_s": 600,
+      "fade_s": 600
     },
     "dune": {
       "style": "zone",
       "color": "#e0c27a",
-      "alpha": 0.35
+      "alpha": 0.35,
+      "grow_s": 600,
+      "fade_s": 600
     },
     "flood": {
       "style": "puddle",
       "color": "#4aa8ff",
-      "alpha": 0.3
+      "alpha": 0.3,
+      "grow_s": 900,
+      "fade_s": 900
     },
     "funnel": {
       "style": "whirl",
@@ -1739,8 +1801,9 @@
     },
     "procession": {
       "style": "figures",
-      "color": "#3a3350",
-      "alpha": 0.5,
+      "color": "#d9d2ee",
+      "glow": "#ffb35a",
+      "alpha": 0.95,
       "trail": true
     },
     "ghost_building": {
@@ -1749,9 +1812,11 @@
       "alpha": 0.3
     },
     "inverted_shadow": {
-      "style": "zone",
-      "color": "#1a1424",
-      "alpha": 0.3
+      "style": "shadow",
+      "color": "#e8e4f4",
+      "alpha": 0.28,
+      "grow_s": 300,
+      "fade_s": 300
     },
     "dry_bolt": {
       "style": "bolt",
@@ -1790,12 +1855,16 @@
     "soot_zone": {
       "style": "zone",
       "color": "#2a2236",
-      "alpha": 0.3
+      "alpha": 0.3,
+      "grow_s": 600,
+      "fade_s": 600
     },
     "veil_ash_zone": {
       "style": "zone",
       "color": "#9b7bff",
-      "alpha": 0.18
+      "alpha": 0.18,
+      "grow_s": 600,
+      "fade_s": 600
     },
     "rune": {
       "style": "rune",
@@ -1819,6 +1888,16 @@
       "style": "fall",
       "color": "#6b4a2f"
     }
+  },
+  "procession": {
+    "min_figures": 12,
+    "max_figures": 20,
+    "spacing_m": 1.6,
+    "speed_mps": 0.8,
+    "candle_every_m": 6,
+    "candle_s": 1800,
+    "visible_m": 120,
+    "snap_m": 80
   },
   "tags": {
     "charged": {

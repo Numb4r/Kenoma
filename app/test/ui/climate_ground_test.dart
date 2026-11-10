@@ -11,6 +11,7 @@ import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/ui/game/climate_ground.dart';
 import 'package:kenoma/ui/game/climate_painter.dart';
 import 'package:kenoma/ui/game/traffic_painter.dart';
+import 'package:kenoma/world/climate_world.dart';
 import 'package:kenoma/world/map_camera.dart';
 import 'package:kenoma/world/street_cover.dart';
 import 'package:kenoma/world/veil_traffic.dart';
@@ -106,7 +107,7 @@ void main() {
     test('a água desenhada sobre as ruas baixas é a mesma para a mesma seed', () {
       List<PlacedMark> streets(int s) {
         final g = ClimateGround(catalog: catalog, visual: visual);
-        g.paint(ui.Canvas(ui.PictureRecorder()), view, MapCamera(centerX: center.$1, centerY: center.$2, pixelsPerCell: 4), mpc: mpc, exactUtc: 1e9, seed: s, shown: catalog.of('deluge'));
+        g.paint(ui.Canvas(ui.PictureRecorder()), view, MapCamera(centerX: center.$1, centerY: center.$2, pixelsPerCell: 4), mpc: mpc, exactUtc: 1e9, seed: s, shown: catalog.of('deluge'), c: const PlayerClimate(id: 'deluge'));
         return [for (final m in g.placed) if (m.kind == 'street_flood') m];
       }
 

@@ -5,6 +5,9 @@
 /// em posições que saem do mundo ([ClimateWorld]) ou do hash da seed e do lugar: dois aparelhos veem tudo no mesmo ponto.
 ///
 /// Os tamanhos de enfeite ficam em pixels de tela (como os spawns); os de mundo (poça, zona, cratera, rua), em metros.
+///
+/// Nada aparece pronto (`climate_form.dart`): cada camada se forma em `grow_s` desde o começo do clima no lugar e, quando ele
+/// acaba, seca ou derrete em `fade_s`. O começo e o fim vêm do mundo ([PlayerClimate]), iguais em dois aparelhos.
 library;
 
 import 'dart:math' as math;
@@ -13,19 +16,23 @@ import 'dart:ui' as ui;
 import '../../core/climate.dart';
 import '../../core/fnv.dart';
 import '../../data/climate_catalog.dart';
-import '../../data/visual_pack.dart';
+import '../../world/climate_form.dart';
 import '../../world/climate_world.dart';
 import '../../world/map_camera.dart';
+import '../../world/procession.dart';
 import '../../world/spawn_field.dart';
 import '../../world/street_cover.dart';
-import '../../world/veil_traffic.dart' show GhostLine;
+import '../../world/traffic_graph.dart';
 import '../../world/visual_map.dart';
+import 'climate_cover.dart';
+import 'climate_procession.dart';
+import 'climate_puddle.dart';
 
 /// Os tipos da camada `ground` do `clima.json` que este arquivo desenha (o teste do catálogo confere).
 const Set<String> groundLayerKinds = {'scatter', 'bands', 'streets', 'twins'};
 
 /// Os estilos de peça desenhados no chão (zonas e poças) e as marcas dos impactos.
-const Set<String> groundStyles = {'zone', 'puddle', 'ice', 'glow', 'whirl', 'ghost', 'figures', 'rune', 'eye', 'gaze'};
+const Set<String> groundStyles = {'zone', 'puddle', 'ice', 'glow', 'whirl', 'ghost', 'figures', 'rune', 'eye', 'gaze', 'shadow'};
 const Set<String> markStyles = {'burn', 'burn_violet', 'crater', 'ember'};
 
 /// Alcance do mundo lido em volta do jogador (poças, marcas): basta o que cabe na tela de perto.
@@ -37,11 +44,33 @@ typedef PlacedMark = ({String kind, double x, double y});
 ui.Color _c(int argb, double a) => ui.Color(argb).withValues(alpha: a.clamp(0.0, 1.0));
 
 class ClimateGround {
-  ClimateGround({required this.catalog, this.visual, this.roadWidthM = const {'principal': 12, 'secondary': 9, 'local': 6, 'pedestrian': 2}});
+  ClimateGround({
+    required this.catalog,
+    this.visual,
+    this.roadWidthM = const {'principal': 12, 'secondary': 9, 'local': 6, 'pedestrian': 2},
+    this.artPixelDp = 3,
+    this.asphalt = 0xFF272A37,
+    this.figureM = 4.5,
+  });
 
   final ClimateCatalog catalog;
   final VisualMap? visual;
   final Map<String, double> roadWidthM;
+
+  /// O pixel de arte (dp), a cor do asfalto (de onde a poça parte) e a altura de uma figura da Procissão (a do passante).
+  final double artPixelDp;
+  final int asphalt;
+  final double figureM;
+
+  late final ClimateCover? _cover = visual == null ? null : ClimateCover(visual: visual!, roadWidthM: roadWidthM);
+
+  /// O grafo costurado das rotas (o mesmo do Modo Viagem), para a fila da Procissão andar pelas ruas.
+  late final TrafficGraph? _graph = visual == null ? null : TrafficGraph(loadTile: visual!.tile, cellsPerTile: visual!.cellsPerTile, extent: visual!.pack.extent, cacheTiles: 128, stitch: true);
+  late final ProcessionLook look = processionLookOf(catalog.procession);
+
+  /// As rotas das Procissões já calculadas (uid da zona). `null`: sem rua, ela anda em reta como antes.
+  final processionPlans = <int, ProcessionPlan?>{};
+  final _planning = <int>{};
 
   /// O que o mundo tem em volta agora (lido a cada meio segundo por [observe]).
   List<ClimateZone> zones = const [];
@@ -57,9 +86,13 @@ class ClimateGround {
     ..strokeCap = ui.StrokeCap.round
     ..strokeJoin = ui.StrokeJoin.round;
 
-  /// Lê do mundo as zonas, as poças e os impactos que ainda deixam marca, em volta de (px, py) (células z21).
+  /// Lê do mundo as zonas, as poças e os impactos que ainda deixam marca, em volta de (px, py) (células z21). A Procissão é
+  /// procurada também longe (ela pode ter vindo andando de até ~1 km) e fica até 30 min depois do fim (as velas).
   void observe(ClimateWorld w, {required double px, required double py, required double radius21, required double mpc, required int t}) {
-    zones = w.zonesNear(px, py, radius21, t);
+    zones = w.zonesNear(px, py, radius21, t, movingExtra21: 1100 / mpc, lookBackS: look.candleS.ceil() + 60);
+    for (final z in zones) {
+      if (catalog.piece(z.piece.name).style == 'figures') _plan(z, mpc);
+    }
     final near = math.min(radius21, groundReadMaxM / mpc);
     puddles = w.puddlesNear(px, py, near, t);
     // Só olha para trás o tempo da marca mais longa dos climas daqui (agora e na janela anterior): a do raio é curta, a da
@@ -77,6 +110,42 @@ class ClimateGround {
             for (final d in w.dropsNear(px, py, near, t - markS.ceil(), t))
               if (d.piece.impact && t - d.tUtc < catalog.piece(d.piece.name).markS) d,
           ];
+  }
+
+  /// Calcula a rota da Procissão [z] uma vez, em fatias (não trava a tela).
+  void _plan(ClimateZone z, double mpc) {
+    final g = _graph;
+    if (g == null || processionPlans.containsKey(z.uidBase) || !_planning.add(z.uidBase)) return;
+    if (processionPlans.length > 64) processionPlans.clear();
+    planProcessionAsync(g, z, mpc: mpc, look: look)
+        .then((p) => processionPlans[z.uidBase] = p, onError: (Object _) => processionPlans[z.uidBase] = null)
+        .whenComplete(() => _planning.remove(z.uidBase));
+  }
+
+  // O clima que se vê quando não é o do mundo (o da rede): desde quando, neste aparelho, e o de antes dele.
+  String? _seenId, _lastId;
+  double _seenSince = 0, _lastStart = 0, _lastEnd = 0;
+
+  /// O começo do clima que se vê e o clima de antes (id, começo e fim): os do mundo se é ele que se vê; senão, os deste
+  /// aparelho (o clima da rede não é do mundo).
+  ({double start, String? prevId, double prevStart, double prevEnd}) _timing(ClimateInfo shown, PlayerClimate c, double t) {
+    if (_seenId != shown.id) {
+      if (_seenId != null) {
+        _lastId = _seenId;
+        _lastStart = _seenSince;
+        _lastEnd = t;
+      }
+      _seenId = shown.id;
+      _seenSince = t;
+    }
+    if (shown.id == c.id) return (start: c.runStartUtc.toDouble(), prevId: c.prevId, prevStart: c.prevStartUtc.toDouble(), prevEnd: c.prevEndUtc.toDouble());
+    return (start: _seenSince, prevId: _lastId, prevStart: _lastStart, prevEnd: _lastEnd);
+  }
+
+  /// Quanto a camada [g] já se formou (ou ainda resta depois do fim).
+  static double _amount(ClimateLayer g, double sinceStart, double? sinceEnd) {
+    final grow = g.raw.containsKey('grow_s') ? g.val('grow_s') : (g.kind == 'twins' ? 0.0 : 900.0);
+    return formAmount(sinceStartS: sinceStart, sinceEndS: sinceEnd, growS: grow, fadeS: g.val('fade_s', 1800));
   }
 
   /// A função de estado das ruas para o Tráfego do Véu com o clima [shown] (Dilúvio e areia), ou `null` se ele não mexe nas
@@ -121,22 +190,30 @@ class ClimateGround {
     canvas.rotate(cam.rotation);
     canvas.scale(ppc);
     final upright = <void Function()>[];
+    final tm = _timing(shown, c, exactUtc);
+    final prev = tm.prevId == null || tm.prevId == shown.id ? null : catalog.of(tm.prevId!);
     // [decor] falso (o clima no mapa desligado nos Ajustes): só o que é do mundo (poças, zonas, marcas) continua.
-    for (final (i, g) in decor ? shown.ground.indexed : const <(int, ClimateLayer)>[]) {
-      if (!g.showsAtHour(localHour)) continue;
-      switch (g.kind) {
-        case 'streets' when ppc >= 2:
-          _streets(canvas, g, seed, c, exactUtc, mpc, l, top, r, b, at);
-        case 'bands':
-          _bands(canvas, g, exactUtc, l, top, r, b, at);
-        case 'scatter' when ppc >= 3:
-          if (g.str('shape') == 'figure') {
-            upright.add(() => _figures(canvas, view, cam, g, i, seed, playerX, playerY, mpc, l, top, r, b));
-          } else {
-            _scatter(canvas, g, i, seed, exactUtc, c, px, l, top, r, b, at);
-          }
-        case 'twins':
-          upright.add(() => _twins(canvas, view, cam, g, ecos, sprites, ecoSizePx, mpc));
+    // O clima de antes primeiro (secando, por baixo), depois o de agora (formando).
+    for (final (info, start, end) in [if (decor && prev != null) (prev, tm.prevStart, tm.prevEnd), if (decor) (shown, tm.start, null)]) {
+      for (final (i, g) in info.ground.indexed) {
+        if (!g.showsAtHour(localHour)) continue;
+        final amount = _amount(g, exactUtc - start, end == null ? null : exactUtc - end);
+        if (amount <= 0) continue;
+        final layer = (fnv1a64Bytes(info.id.codeUnits) & 0xffff) * 8 + i; // a mesma camada, as mesmas posições, formando ou secando
+        switch (g.kind) {
+          case 'streets' when ppc >= 2:
+            _streets(canvas, g, seed, c, amount, exactUtc, mpc, px, l, top, r, b, cam, at);
+          case 'bands':
+            _bands(canvas, g, exactUtc, amount, l, top, r, b, at);
+          case 'scatter' when ppc >= 3:
+            if (g.str('shape') == 'figure') {
+              upright.add(() => _figures(canvas, view, cam, g, layer, seed, amount, playerX, playerY, mpc, l, top, r, b));
+            } else {
+              _scatter(canvas, g, layer, seed, exactUtc, amount, c, px, mpc, l, top, r, b, at);
+            }
+          case 'twins':
+            upright.add(() => _twins(canvas, view, cam, g, amount, ecos, sprites, ecoSizePx, mpc));
+        }
       }
     }
     // Só o que cai na tela (com folga): o mundo é lido num raio maior, para o pan não mostrar buraco.
@@ -147,8 +224,11 @@ class ClimateGround {
     for (final z in zones) {
       final v = catalog.piece(z.piece.name);
       if (v.style == 'figures') {
-        upright.add(() => _procession(canvas, view, cam, z, v, exactUtc, mpc));
-      } else {
+        final plan = processionPlans[z.uidBase];
+        // As velas no chão (giram com o mapa); as figuras em pé, depois.
+        if (plan != null) paintCandles(canvas, plan.candlesAt(exactUtc), t: exactUtc, q: artPixelDp * px, candleS: look.candleS, inView: inView, at: at, placed: placed);
+        upright.add(() => _procession(canvas, view, cam, z, v, plan, exactUtc, mpc, playerX, playerY));
+      } else if (z.activeAt(exactUtc.floor())) {
         _zone(canvas, z, v, exactUtc, mpc, px, at);
       }
     }
@@ -178,87 +258,16 @@ class ClimateGround {
     }
   }
 
-  void _streets(ui.Canvas canvas, ClimateLayer g, int seed, PlayerClimate c, double t, double mpc, double l, double top, double r, double b, ui.Offset Function(double, double) at) {
-    final vm = visual;
-    if (vm == null) return;
-    final cover = StreetCover.fromLayer(g);
-    final window = c.windWindowStart ~/ 10800, since = t - c.runStartUtc;
-    final unit = vm.cellsPerTile / vm.pack.extent;
-    final color = g.color(), alpha = g.val('alpha', 0.6);
-    for (final (tx, ty) in vm.tilesIn(l, top, r, b, marginCells: 4)) {
-      final tile = vm.tile(tx, ty);
-      if (tile == null) continue;
-      final x0 = tx * vm.cellsPerTile.toDouble(), y0 = ty * vm.cellsPerTile.toDouble();
-      bool near(List<int> xy, int k) {
-        final x = x0 + xy[2 * k] * unit, y = y0 + xy[2 * k + 1] * unit;
-        return x >= l - 8 && x <= r + 8 && y >= top - 8 && y <= b + 8;
-      }
-
-      for (final (i, line) in tile.lines.indexed) {
-        if (line.xy.length < 4) continue;
-        // Corte rápido: a ponta, o meio ou a outra ponta perto da tela (os trechos do OSM são curtos).
-        final n = line.xy.length ~/ 2;
-        if (!near(line.xy, 0) && !near(line.xy, n - 1) && !near(line.xy, n ~/ 2)) continue;
-        final lv = cover.level(seed, (tx, ty, i), line.roadClass, window, since);
-        if (lv <= 0) continue;
-        final w = (roadWidthM[line.roadClass.name] ?? 6) / mpc;
-        var pts = [for (var k = 0; k + 1 < line.xy.length; k += 2) at(tx * vm.cellsPerTile + line.xy[k] * unit, ty * vm.cellsPerTile + line.xy[k + 1] * unit)];
-        if (cover.kind == StreetCoverKind.sand) pts = _span(pts, cover.duneSpan(seed, (tx, ty, i), window));
-        if (pts.length < 2) continue;
-        final path = ui.Path()..addPolygon(pts, false);
-        switch (cover.kind) {
-          case StreetCoverKind.flood:
-            canvas.drawPath(path, _stroke..strokeWidth = w * 1.15..color = _c(color, alpha * lv));
-            canvas.drawPath(path, _stroke..strokeWidth = w * 0.25..color = _c(0xFFE8E4F4, 0.18 * lv * (0.6 + 0.4 * math.sin(t * 1.5 + i))));
-          case StreetCoverKind.snow:
-            final avenue = line.roadClass == RoadClass.principal || line.roadClass == RoadClass.secondary;
-            if (cover.tracks && avenue && lv > 0.3) {
-              // O tráfego abre duas trilhas: neve nas bordas, asfalto escuro nas trilhas, neve no meio.
-              canvas.drawPath(path, _stroke..strokeWidth = w..color = _c(color, alpha * lv));
-              canvas.drawPath(path, _stroke..strokeWidth = w * 0.6..color = _c(0xFF3A3350, 0.7));
-              canvas.drawPath(path, _stroke..strokeWidth = w * 0.25..color = _c(color, alpha * lv));
-            } else {
-              canvas.drawPath(path, _stroke..strokeWidth = w..color = _c(color, alpha * lv));
-            }
-          case StreetCoverKind.sand:
-            canvas.drawPath(path, _stroke..strokeWidth = w * 1.3..color = _c(color, alpha));
-            canvas.drawPath(path, _stroke..strokeWidth = w * 0.3..color = _c(0xFFC9A46B, alpha * 0.8));
-          case StreetCoverKind.ice:
-            canvas.drawPath(path, _stroke..strokeWidth = w..color = _c(color, alpha * lv));
-          case StreetCoverKind.soot:
-            canvas.drawPath(path, _stroke..strokeWidth = w * 1.2..color = _c(color, alpha * lv));
-        }
-        placed.add((kind: 'street_${cover.kind.name}', x: tx * vm.cellsPerTile + line.xy[0] * unit, y: ty * vm.cellsPerTile + line.xy[1] * unit));
-      }
-    }
+  void _streets(ui.Canvas canvas, ClimateLayer g, int seed, PlayerClimate c, double amount, double t, double mpc, double px, double l, double top, double r, double b, MapCamera cam, ui.Offset Function(double, double) at) {
+    _cover?.paint(canvas, StreetCover.fromLayer(g),
+        color: g.color(), alpha: g.val('alpha', 0.6), seed: seed, window: c.windWindowStart ~/ 10800, amount: amount, t: t, mpc: mpc, px: px, artPx: artPixelDp,
+        l: l, top: top, r: r, b: b, camX: cam.centerX, camY: cam.centerY, at: at, placed: placed);
   }
 
-  /// O trecho [span] (frações do comprimento) da polilinha.
-  static List<ui.Offset> _span(List<ui.Offset> pts, (double, double) span) {
-    var total = 0.0;
-    for (var k = 1; k < pts.length; k++) {
-      total += (pts[k] - pts[k - 1]).distance;
-    }
-    final a = span.$1 * total, b = span.$2 * total;
-    final out = <ui.Offset>[];
-    var s = 0.0;
-    for (var k = 1; k < pts.length; k++) {
-      final seg = (pts[k] - pts[k - 1]).distance;
-      if (seg <= 0) continue;
-      final s0 = s, s1 = s + seg;
-      s = s1;
-      if (s1 < a || s0 > b) continue;
-      ui.Offset lerp(double v) => ui.Offset.lerp(pts[k - 1], pts[k], ((v - s0) / seg).clamp(0.0, 1.0))!;
-      if (out.isEmpty) out.add(lerp(math.max(a, s0)));
-      out.add(lerp(math.min(b, s1)));
-    }
-    return out;
-  }
-
-  void _bands(ui.Canvas canvas, ClimateLayer g, double t, double l, double top, double r, double b, ui.Offset Function(double, double) at) {
+  void _bands(ui.Canvas canvas, ClimateLayer g, double t, double amount, double l, double top, double r, double b, ui.Offset Function(double, double) at) {
     const s = 6.0; // células (~100 m) entre faixas, presas ao chão
     final cs = g.colors.isEmpty ? [g.color()] : g.colors;
-    final a = g.val('alpha', 0.12), speed = g.val('speed', 0.1);
+    final a = g.val('alpha', 0.12) * amount, speed = g.val('speed', 0.1);
     final drift = (t * speed) % s;
     for (var k = (top / s).floor() - 1; k <= (b / s).ceil(); k++) {
       final y = k * s + drift;
@@ -286,11 +295,13 @@ class ClimateGround {
     }
   }
 
-  void _scatter(ui.Canvas canvas, ClimateLayer g, int layer, int seed, double t, PlayerClimate c, double px, double l, double top, double r, double b, ui.Offset Function(double, double) at) {
+  void _scatter(ui.Canvas canvas, ClimateLayer g, int layer, int seed, double t, double amount, PlayerClimate c, double px, double mpc, double l, double top, double r, double b, ui.Offset Function(double, double) at) {
     final shape = g.str('shape') ?? 'glint', twinkle = g.flag('twinkle');
     final cs = g.colors.isEmpty ? [g.color()] : g.colors;
     final a0 = g.val('alpha', 0.5);
     for (final (x, y, ph) in _spots(g, layer, seed, l, top, r, b)) {
+      // Formando, aparecem aos poucos (sempre os mesmos primeiro); secando, somem na ordem contrária.
+      if ((ph * 7919) % 1 >= amount) continue;
       final a = twinkle ? a0 * (0.5 + 0.5 * math.sin(t * 3 + ph * 6.28)) : a0;
       if (a <= 0.02) continue;
       _fill.color = _c(cs[(ph * 97).floor() % cs.length], a);
@@ -315,6 +326,15 @@ class ClimateGround {
         case 'glyph':
           canvas.drawRect(ui.Rect.fromLTWH(o.dx, o.dy, px, 4 * px), _fill);
           canvas.drawRect(ui.Rect.fromLTWH(o.dx + px, o.dy + px, px, px), _fill);
+        case 'shadow':
+          // Sombra invertida do Sol Negro: clara, comprida, com a borda em pixel (meio-tom).
+          final len = (3 + ph * 4) / mpc, wid = (1 + ph) / mpc, q = 3 * px;
+          for (var k = -len; k <= len; k += q) {
+            final f = 1 - (k / len) * (k / len);
+            final hw = (wid * math.sqrt(f) / q).floor() * q;
+            if (hw <= 0) continue;
+            canvas.drawRect(ui.Rect.fromLTRB(o.dx + k, o.dy - hw, o.dx + k + q, o.dy + hw), _fill);
+          }
         case 'pixel':
           if (((t * 4).floor() + (ph * 1000).floor()) % 3 == 0) continue; // falha: some e volta
           canvas.drawRect(ui.Rect.fromCenter(center: o, width: 2 * px, height: 2 * px), _fill);
@@ -325,28 +345,28 @@ class ClimateGround {
   }
 
   /// Vultos ao longe (Neblina): em pé na tela, num ponto do chão; somem perto do jogador ([near_m]).
-  void _figures(ui.Canvas canvas, ui.Size view, MapCamera cam, ClimateLayer g, int layer, int seed, double px0, double py0, double mpc, double l, double top, double r, double b) {
+  void _figures(ui.Canvas canvas, ui.Size view, MapCamera cam, ClimateLayer g, int layer, int seed, double amount, double px0, double py0, double mpc, double l, double top, double r, double b) {
     final near = g.val('near_m', 60);
     for (final (x, y, _) in _spots(g, layer, seed, l, top, r, b)) {
       final dM = math.sqrt((x - px0) * (x - px0) + (y - py0) * (y - py0)) * mpc;
       final k = ((dM - near * 0.6) / (near * 0.6)).clamp(0.0, 1.0);
       if (k <= 0) continue;
       final (sx, sy) = cam.cellToScreen(x, y, view.width, view.height);
-      _fill.color = _c(g.color(), g.val('alpha', 0.3) * k);
+      _fill.color = _c(g.color(), g.val('alpha', 0.3) * k * amount);
       canvas.drawRect(ui.Rect.fromLTWH(sx - 3, sy - 14, 6, 14), _fill);
       canvas.drawRect(ui.Rect.fromLTWH(sx - 2, sy - 19, 4, 4), _fill);
       placed.add((kind: 'figure', x: x, y: y));
     }
   }
 
-  void _twins(ui.Canvas canvas, ui.Size view, MapCamera cam, ClimateLayer g, List<WorldSpawn> ecos, Map<String, ui.Image> sprites, double size, double mpc) {
+  void _twins(ui.Canvas canvas, ui.Size view, MapCamera cam, ClimateLayer g, double amount, List<WorldSpawn> ecos, Map<String, ui.Image> sprites, double size, double mpc) {
     final chance = g.val('chance', 0.5);
     for (final e in ecos) {
       if (((e.uid >>> 16) & 0xffff) / 65536 >= chance) continue;
       // O par de sombra fica a 2 m a leste do Eco, no chão: gira com o mapa.
       final (sx, sy) = cam.cellToScreen(e.x + 2 / mpc, e.y, view.width, view.height);
       final img = sprites[e.entryId];
-      final p = ui.Paint()..colorFilter = ui.ColorFilter.mode(_c(g.color(), g.val('alpha', 0.45)), ui.BlendMode.srcIn);
+      final p = ui.Paint()..colorFilter = ui.ColorFilter.mode(_c(g.color(), g.val('alpha', 0.45) * amount), ui.BlendMode.srcIn);
       final dst = ui.Rect.fromCenter(center: ui.Offset(sx, sy - size / 2), width: size, height: size);
       if (img != null) {
         canvas.drawImageRect(img, ui.Offset.zero & ui.Size(img.width.toDouble(), img.height.toDouble()), dst, p);
@@ -358,39 +378,26 @@ class ClimateGround {
   }
 
   void _puddle(ui.Canvas canvas, Puddle p, PieceVisual v, double mpc, double px, double night, double t, ui.Offset Function(double, double) at) {
-    final r = math.max(2 * px, p.radiusM * p.size / mpc);
+    final q = artPixelDp * px;
+    final r = math.max(2 * q, p.radiusM * p.size / mpc);
     final o = at(p.x, p.y);
-    final rect = ui.Rect.fromCenter(center: o, width: r * 2, height: r * 1.3);
+    final h = fnv1a64Of3(p.rolls.uid, p.index, 0xF0D);
     placed.add((kind: 'puddle', x: p.x, y: p.y));
     if (v.style == 'ice') {
-      canvas.drawOval(rect, _fill..color = _c(v.color, v.alpha));
-      canvas.drawLine(o.translate(-r * 0.6, -r * 0.1), o.translate(r * 0.5, r * 0.2), _stroke..strokeWidth = px..color = _c(v.glow, 0.7));
-      canvas.drawLine(o.translate(-r * 0.1, -r * 0.5), o.translate(r * 0.1, r * 0.4), _stroke..strokeWidth = px..color = _c(v.glow, 0.6));
-      final k = 0.5 + 0.5 * math.sin(t * 2.5 + p.index);
-      canvas.drawRect(ui.Rect.fromCenter(center: o.translate(r * 0.3, -r * 0.2), width: 2 * px, height: 2 * px), _fill..color = _c(0xFFFFFFFF, k)); // o cristal
+      paintIcePuddle(canvas, o, radius: r, q: q, index: p.index, hash: h, color: v.color, glow: v.glow, alpha: v.alpha, t: t);
       return;
     }
-    if (!p.wet) canvas.drawOval(rect.inflate(px), _stroke..strokeWidth = px..color = _c(0xFF3A3350, 0.35)); // a marca de água secando
-    canvas.drawOval(rect, _fill..color = _c(v.color, v.alpha));
-    if (v.reflect) {
-      // O céu na poça: claro de dia, escuro com uma estrela à noite.
-      final sky = ui.Color.lerp(const ui.Color(0xFFE8E4F4), const ui.Color(0xFF2A2236), night)!;
-      canvas.drawOval(ui.Rect.fromCenter(center: o.translate(-r * 0.25, -r * 0.12), width: r * 0.9, height: r * 0.35), _fill..color = sky.withValues(alpha: 0.35));
-      if (night > 0.5) canvas.drawRect(ui.Rect.fromCenter(center: o.translate(r * 0.2, 0), width: px, height: px), _fill..color = _c(0xFFE8E4F4, 0.8));
-    }
-    if (v.prism) {
-      const cs = [0xFFFF5A36, 0xFFFFE9A8, 0xFF6BD36A, 0xFF4AA8FF];
-      for (var i = 0; i < cs.length; i++) {
-        canvas.drawRect(ui.Rect.fromLTWH(o.dx - r * 0.5 + i * r * 0.25, o.dy + r * 0.1, r * 0.22, px), _fill..color = _c(cs[i], 0.6));
-      }
-    }
+    paintPuddle(canvas, o,
+        radius: p.radiusM / mpc * math.max(p.size, 0.35), q: q, index: p.index, hash: h, size: p.size, tint: v.color, asphalt: asphalt, alpha: v.alpha,
+        raining: p.wet, reflect: v.reflect, prism: v.prism, night: night, t: t);
   }
 
   void _zone(ui.Canvas canvas, ClimateZone z, PieceVisual v, double t, double mpc, double px, ui.Offset Function(double, double) at) {
     final (cx, cy) = z.centerAt(t, mpc);
     final o = at(cx, cy);
     final r = z.piece.radiusM / mpc;
-    final fade = (math.min(t - z.startUtc, z.endUtc - t) / 20).clamp(0.0, 1.0);
+    final span = (z.endUtc - z.startUtc) / 3;
+    final fade = math.min(((t - z.startUtc) / math.min(v.growS, span)).clamp(0.0, 1.0), ((z.endUtc - t) / math.min(v.fadeS, span)).clamp(0.0, 1.0));
     final c = _c(v.color, v.alpha * fade);
     placed.add((kind: 'zone_${z.piece.name}', x: cx, y: cy));
     if (v.trail && z.piece.speedMps > 0) {
@@ -403,8 +410,17 @@ class ClimateGround {
     }
     switch (v.style) {
       case 'puddle':
-        canvas.drawOval(ui.Rect.fromCenter(center: o, width: r * 2, height: r * 1.3), _fill..color = c);
-        canvas.drawOval(ui.Rect.fromCenter(center: o.translate(-r * 0.3, -r * 0.15), width: r * 0.5, height: r * 0.15), _fill..color = _c(0xFFE8E4F4, 0.3 * fade));
+        // A água do Dilúvio sobe com a zona: começa em pontos molhados e cresce até o raio.
+        paintPuddle(canvas, o,
+            radius: r * math.max(0.35, fade), q: artPixelDp * px, index: z.index, hash: z.uidBase, size: fade, tint: v.color, asphalt: asphalt, alpha: v.alpha,
+            raining: true, reflect: true, prism: false, night: 0, t: t);
+      case 'shadow':
+        // A sombra invertida do Sol Negro: uma mancha clara de borda em pixel, que aparece e some aos poucos.
+        final q = artPixelDp * px;
+        for (var k = -r; k <= r; k += q) {
+          final hw = (r * 0.55 * math.sqrt(math.max(0, 1 - (k / r) * (k / r))) / q).floor() * q;
+          if (hw > 0) canvas.drawRect(ui.Rect.fromLTRB(o.dx + k, o.dy - hw, o.dx + k + q, o.dy + hw), _fill..color = c);
+        }
       case 'glow':
         final k = 0.7 + 0.3 * math.sin(t * 2);
         canvas.drawCircle(o, r * k, _fill..color = c);
@@ -441,19 +457,40 @@ class ClimateGround {
     }
   }
 
-  /// A Procissão: figuras em fila atrás do centro da zona, em pé na tela.
-  void _procession(ui.Canvas canvas, ui.Size view, MapCamera cam, ClimateZone z, PieceVisual v, double t, double mpc) {
-    final (cx, cy) = z.centerAt(t, mpc);
-    final fade = (math.min(t - z.startUtc, z.endUtc - t) / 20).clamp(0.0, 1.0);
-    _fill.color = _c(v.color, v.alpha * fade);
-    for (var i = 0; i < 6; i++) {
-      final d = i * 1.6 / mpc;
-      final (sx, sy) = cam.cellToScreen(cx - math.sin(z.headingRad) * d, cy + math.cos(z.headingRad) * d, view.width, view.height);
-      final bob = (math.sin(t * 3 + i) * 1).roundToDouble();
-      canvas.drawRect(ui.Rect.fromLTWH(sx - 3, sy - 14 + bob, 6, 14), _fill);
-      canvas.drawRect(ui.Rect.fromLTWH(sx - 2, sy - 19 + bob, 4, 4), _fill);
+  /// A Procissão: a fila de figuras encapuzadas pela rota das ruas, em pé na tela, visível até [ProcessionLook.visibleM]. Sem
+  /// rota (sem rua perto), a fila anda na reta da zona, como antes.
+  void _procession(ui.Canvas canvas, ui.Size view, MapCamera cam, ClimateZone z, PieceVisual v, ProcessionPlan? plan, double t, double mpc, double px0, double py0) {
+    final List<ProcessionFigure> figs;
+    if (plan != null) {
+      figs = plan.figuresAt(t);
+    } else {
+      if (!z.activeAt(t.floor())) return;
+      final (cx, cy) = z.centerAt(t, mpc);
+      final fade = (math.min(t - z.startUtc, z.endUtc - t) / 20).clamp(0.0, 1.0);
+      final n = processionSize(z.uidBase, look);
+      final hd = math.atan2(-math.cos(z.headingRad), math.sin(z.headingRad));
+      figs = [for (var i = 0; i < n; i++) (x: cx - math.sin(z.headingRad) * i * look.spacingM / mpc, y: cy + math.cos(z.headingRad) * i * look.spacingM / mpc, heading: hd, alpha: fade)];
     }
-    placed.add((kind: 'procession', x: cx, y: cy));
+    if (figs.isEmpty) return;
+    final pxPerM = cam.pixelsPerCell / mpc;
+    final near = <(ProcessionFigure, double, double, double)>[];
+    for (final (i, f) in figs.indexed) {
+      final dM = math.sqrt((f.x - px0) * (f.x - px0) + (f.y - py0) * (f.y - py0)) * mpc;
+      final a = f.alpha * (1 - (dM - look.visibleM) / 15).clamp(0.0, 1.0);
+      if (a <= 0) continue;
+      final (sx, sy) = cam.cellToScreen(f.x, f.y, view.width, view.height);
+      if (sx < -40 || sy < -60 || sx > view.width + 40 || sy > view.height + 40) continue;
+      near.add((f, sx, sy + (math.sin(t * 2.2 + i * 0.9) * pxPerM * 0.06).roundToDouble(), a));
+    }
+    near.sort((a, b) => a.$3.compareTo(b.$3)); // de trás para a frente na tela
+    for (final (f, sx, sy, a) in near) {
+      paintHoodedFigure(canvas, sx, sy, heightPx: figureM * pxPerM, artPx: artPixelDp, robe: v.color, glow: v.glow, alpha: a, flicker: math.sin(t * 9 + f.x * 3), screenHeading: f.heading + cam.rotation);
+    }
+    final head = figs.first;
+    placed.add((kind: 'procession', x: head.x, y: head.y));
+    for (final f in figs) {
+      placed.add((kind: 'procession_figure', x: f.x, y: f.y));
+    }
   }
 
   void _mark(ui.Canvas canvas, ClimateDrop d, PieceVisual v, double t, double mpc, double px, ui.Offset Function(double, double) at) {

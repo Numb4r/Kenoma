@@ -256,7 +256,7 @@ class ClimateWorld {
   void _trim() {
     // A camada do mapa lê até 1,5 km e 3 h para trás (crateras): cabe com folga, sem esvaziar a cada leitura.
     if (_dropCache.length > 320) _dropCache.clear();
-    if (_zoneCache.length > 320) _zoneCache.clear();
+    if (_zoneCache.length > 1200) _zoneCache.clear(); // a Procissão é lida até ~1 km em volta
   }
 
   /// Os acontecimentos das quedas (raio, granizo, meteoro...) perto de (x21, y21) com tempo em `[tFrom, tTo]`, das janelas
@@ -295,21 +295,35 @@ class ClimateWorld {
     return out;
   }
 
-  /// As zonas ativas em [t] perto de (x21, y21), mais as do debug.
-  List<ClimateZone> zonesNear(double x21, double y21, double radius21, int t) {
+  /// As zonas ativas em [t] perto de (x21, y21), mais as do debug. Para o desenho: [movingExtra21] procura as zonas que
+  /// andam (a Procissão, o funil) também nas células mais longe, de onde elas podem ter vindo andando, e [lookBackS] traz
+  /// as que andam e acabaram há até isso (o rastro de velas que fica). Os padrões são os do mundo (`extras`).
+  List<ClimateZone> zonesNear(double x21, double y21, double radius21, int t, {double movingExtra21 = 0, int lookBackS = 0}) {
     _trim();
     final out = <ClimateZone>[];
-    for (final (cx, cy) in _cells17(x21, y21, radius21)) {
-      final d = _defAt17(cx, cy, t);
-      if (d == null) continue;
-      for (var i = 0; i < d.def.pieces.length; i++) {
-        final p = d.def.pieces[i];
-        if (p is! ZonePiece) continue;
-        final list = _zoneCache.putIfAbsent((d.epoch.id * 64 + i, cx, cy, d.window, d.def.id.hashOfId), () => [for (final z in d.model.zones(seed, d.epoch.id, cx, cy, d.window, i, p)) ?_snapZone(z)]);
-        out.addAll(list.where((z) => z.activeAt(t)));
+    final seen = <int>{};
+    final memo = <(int, int, int), ({Epoch epoch, ClimateModel model, ClimateDef def, int window})?>{};
+    bool keep(ClimateZone z) {
+      if (z.activeAt(t)) return true;
+      return lookBackS > 0 && z.piece.speedMps > 0 && t >= z.startUtc && t < z.endUtc + lookBackS;
+    }
+
+    for (final tt in {t, if (lookBackS > 0) t - lookBackS}) {
+      for (final (cx, cy) in _cells17(x21, y21, radius21 + movingExtra21)) {
+        final far = movingExtra21 > 0 && ((cx + 0.5) * 16 - x21).abs() > radius21 + 8 || movingExtra21 > 0 && ((cy + 0.5) * 16 - y21).abs() > radius21 + 8;
+        final d = forced() != null ? _defAt17(cx, cy, tt) : memo.putIfAbsent((cx >>> 5, cy >>> 5, tt), () => _defAt17(cx, cy, tt));
+        if (d == null) continue;
+        for (var i = 0; i < d.def.pieces.length; i++) {
+          final p = d.def.pieces[i];
+          if (p is! ZonePiece || (far && p.speedMps <= 0)) continue;
+          final list = _zoneCache.putIfAbsent((d.epoch.id * 64 + i, cx, cy, d.window, d.def.id.hashOfId), () => [for (final z in d.model.zones(seed, d.epoch.id, cx, cy, d.window, i, p)) ?_snapZone(z)]);
+          for (final z in list) {
+            if (keep(z) && seen.add(z.uidBase)) out.add(z);
+          }
+        }
       }
     }
-    out.addAll(debugZones.where((z) => z.activeAt(t)));
+    out.addAll(debugZones.where(keep));
     return out;
   }
 
@@ -414,7 +428,8 @@ class ClimateWorld {
         if (s != null) out.add(s);
       }
     }
-    for (final z in zonesNear(x21, y21, r21, t)) {
+    final linger = _lingerS(t);
+    for (final z in zonesNear(x21, y21, r21, t, lookBackS: linger, movingExtra21: linger > 0 ? 1200 / metersPerCell21 : 0)) {
       final p = z.piece;
       final n = z.slots.length;
       for (var j = 0; j < n; j++) {
@@ -423,8 +438,10 @@ class ClimateWorld {
         // Com `slot_at` (época 7), todas aparecem naquele ponto do percurso: o fim do rastro da Procissão.
         final tj = p.speedMps > 0 ? z.startUtc + ((p.slotAt ?? (j + 0.5) / n) * p.durationS).floor() : z.startUtc;
         if (t < tj) continue;
-        final (cx, cy) = z.centerAt(tj.toDouble(), metersPerCell21);
-        final rr = p.radiusM / metersPerCell21;
+        if (!z.activeAt(t) && !(p.streetRoute && t < tj + (p.spawn?.ttlS ?? 0))) continue;
+        var (cx, cy) = z.centerAt(tj.toDouble(), metersPerCell21);
+        if (p.streetRoute) (cx, cy) = _toStreet(cx, cy) ?? (cx, cy);
+        final rr = p.streetRoute ? 0.0 : p.radiusM / metersPerCell21; // pela rua: no fim da rota, em cima das velas
         final x = cx + slot.dx * rr, y = cy + slot.dy * rr;
         final spawn = p.spawn, item = p.item;
         if (spawn != null && j < spawn.perZone && slot.roll < spawn.chance) {
@@ -450,6 +467,17 @@ class ClimateWorld {
       }
     }
     return [for (final s in out) if (s.distanceM(x21, y21, metersPerCell21) <= radiusM) s];
+  }
+
+  /// Quanto (s) as zonas com `street_route` do clima de agora mantêm o que nasceu depois de acabar: 0 até a época 7.
+  int _lingerS(int t) {
+    var m = 0;
+    for (final def in modelAt(t)?.$2.defs.values ?? const <ClimateDef>[]) {
+      for (final p in def.pieces) {
+        if (p is ZonePiece && p.streetRoute) m = math.max(m, p.durationS + (p.spawn?.ttlS ?? 0));
+      }
+    }
+    return m;
   }
 
   WorldSpawn? _eco(PieceSpawn spawn, double pick, double x, double y, int uid, int t, int Function(String, int, int) levelOf) {

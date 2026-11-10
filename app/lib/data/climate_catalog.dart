@@ -111,6 +111,8 @@ class PieceVisual {
     this.reflect = false,
     this.prism = false,
     this.trail = false,
+    this.growS = 20,
+    this.fadeS = 20,
   });
 
   factory PieceVisual.fromJson(Map<String, dynamic> j) => PieceVisual(
@@ -126,6 +128,8 @@ class PieceVisual {
         reflect: j['reflect'] as bool? ?? false,
         prism: j['prism'] as bool? ?? false,
         trail: j['trail'] as bool? ?? false,
+        growS: (j['grow_s'] as num?)?.toDouble() ?? 20,
+        fadeS: (j['fade_s'] as num?)?.toDouble() ?? 20,
       );
 
   final String style;
@@ -149,6 +153,9 @@ class PieceVisual {
   /// A zona que anda deixa um rastro no chão por onde passou (funil, Procissão, redemoinho).
   final bool trail;
 
+  /// A zona se forma em [growS] segundos desde o começo e some nos [fadeS] antes do fim (só desenho).
+  final double growS, fadeS;
+
   static const fallback = PieceVisual(style: 'zone', color: 0xFF9B7BFF, glow: 0xFF9B7BFF, alpha: 0.25, flash: false);
 }
 
@@ -162,7 +169,7 @@ class ClimateTag {
 }
 
 class ClimateCatalog {
-  const ClimateCatalog({this.climates = const {}, this.pieces = const {}, this.tags = const {}, this.events = const {}, this.reasons = const {}});
+  const ClimateCatalog({this.climates = const {}, this.pieces = const {}, this.tags = const {}, this.events = const {}, this.reasons = const {}, this.procession = const {}});
 
   factory ClimateCatalog.fromJson(Map<String, dynamic>? j) => j == null
       ? const ClimateCatalog()
@@ -178,6 +185,7 @@ class ClimateCatalog {
               e.key: (name: (e.value as Map<String, dynamic>)['name'] as String, reason: e.value['reason'] as String),
           },
           reasons: {for (final e in ((j['reasons'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as String},
+          procession: (j['procession'] as Map<String, dynamic>?) ?? const {},
         );
 
   /// O último catálogo lido do app (o menu de debug lista os climas daqui).
@@ -191,6 +199,9 @@ class ClimateCatalog {
   /// `debug`, `feed`).
   final Map<String, ({String name, String reason})> events;
   final Map<String, String> reasons;
+
+  /// Os números da fila da Procissão (figuras, espaço, velocidade, velas, alcance): só desenho.
+  final Map<String, dynamic> procession;
 
   /// O visual do clima [id]. Id desconhecido: o estado antigo com esse id, ou Limpo.
   ClimateInfo of(String id) => climates[id] ?? ClimateInfo.legacy(Weather.parse(id));
