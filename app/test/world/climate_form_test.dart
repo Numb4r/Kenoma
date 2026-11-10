@@ -32,9 +32,9 @@ void main() {
   final mpc = metersPerCell(-22.8174);
   final visual = VisualMap(VisualPack.parse(Uint8List.fromList(File('assets/regions/campinas_e0_vis.bin').readAsBytesSync())), cacheTiles: 64);
 
-  ClimateWorld device({String? Function()? forced, ForcedPhase Function()? phase}) => ClimateWorld(
+  ClimateWorld device({String? Function()? forced, ForcedPhase Function()? phase, int? upTo}) => ClimateWorld(
         seed: seed,
-        schedule: loadEpochs(),
+        schedule: upTo == null ? loadEpochs() : loadEpochsUpTo(upTo),
         speciesOfType: data.ecoOfType,
         itemExists: data.itemNames.containsKey,
         snapper: WalkPaths(visual),
@@ -236,7 +236,7 @@ void main() {
       expect(ClimatePiece.fromJson({...json, 'street_route': true}), isA<ZonePiece>().having((p) => p.streetRoute, 'streetRoute', true));
       // Impressão digital do mundo de antes da 0.17.1 (conferida rodando o código da 0.17.0): o que nasce no Finados de 2027
       // (a Procissão), numa semana de janeiro (chuvas, poças, raios) e o começo de cada clima.
-      final w = device();
+      final w = device(upTo: 7);
       final parts = <int>[];
       for (var t = utc(2027, 11, 2, 9); t < utc(2027, 11, 2, 15); t += 180) {
         for (final s in w.extras(x21: x21, y21: y21, radiusM: 2000, t: t, metersPerCell21: mpc, levelOf: (id, add, uid) => add)) {

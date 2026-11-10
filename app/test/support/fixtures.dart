@@ -48,3 +48,12 @@ GameData loadGameData() => GameData.fromJson(
       rituals: loadJson('assets/data/rituals.json'),
       climates: loadJson('assets/data/clima.json'),
     );
+
+/// As épocas até [lastId]: para testes que descrevem uma época que já ficou para trás (a seguinte começa no release).
+EpochSchedule loadEpochsUpTo(int lastId) {
+  final json = epochsJson();
+  return EpochSchedule.fromJson({
+    ...json,
+    'epochs': [for (final e in json['epochs'] as List<dynamic>) if ((e as Map<String, dynamic>)['id'] as int <= lastId) e],
+  });
+}

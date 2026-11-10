@@ -64,7 +64,7 @@ void main() {
   /// Um aparelho: lê o epochs.json do zero e monta os próprios caminhos.
   ClimateWorld device({String? forced, List<ClimateEvent> events = const []}) => ClimateWorld(
         seed: seed,
-        schedule: loadEpochs(),
+        schedule: loadEpochsUpTo(7), // este arquivo descreve a época 7, que ficou para trás quando a 8 começou
         speciesOfType: data.ecoOfType,
         itemExists: data.itemNames.containsKey,
         itemSince: (id) => data.itemSinceEpoch[id],
