@@ -294,22 +294,25 @@ void main() {
   group('ruas', () {
     test('ruas baixas: fixas pela seed, a fração da classe, nunca nas calçadas altas; dunas mudam a cada janela', () {
       final flood = streetCoverOf(catalog.of('deluge'))!, sand = streetCoverOf(catalog.of('sandstorm'))!;
-      double share(RoadClass c) => [for (var i = 0; i < 4000; i++) flood.level(seed, (12092, 18513, i), c, 0, 1e6)].where((l) => l > 0).length / 4000;
-      expect(share(RoadClass.local), closeTo(0.4, 0.03));
-      expect(share(RoadClass.principal), closeTo(0.15, 0.03));
+      double share(RoadClass c) => [for (var i = 0; i < 4000; i++) flood.level(seed, (12092, 18513, i), c, 0, 1)].where((l) => l > 0).length / 4000;
+      expect(share(RoadClass.local), closeTo(0.65, 0.03));
+      expect(share(RoadClass.principal), closeTo(0.35, 0.03));
       expect(share(RoadClass.pedestrian), 0);
-      expect(flood.level(seed, (1, 2, 3), RoadClass.local, 5, 1e6), flood.level(seed, (1, 2, 3), RoadClass.local, 9, 1e6), reason: 'não muda de janela');
-      final w1 = [for (var i = 0; i < 400; i++) sand.level(seed, (1, 2, i), RoadClass.local, 1, 0)];
-      final w2 = [for (var i = 0; i < 400; i++) sand.level(seed, (1, 2, i), RoadClass.local, 2, 0)];
+      expect(flood.level(seed, (1, 2, 3), RoadClass.local, 5, 1), flood.level(seed, (1, 2, 3), RoadClass.local, 9, 1), reason: 'não muda de janela');
+      final w1 = [for (var i = 0; i < 400; i++) sand.level(seed, (1, 2, i), RoadClass.local, 1, 1)];
+      final w2 = [for (var i = 0; i < 400; i++) sand.level(seed, (1, 2, i), RoadClass.local, 2, 1)];
       expect(w1, isNot(w2));
-      expect(sand.stateOf(seed, (1, 2, w1.indexOf(1)), RoadClass.local, 1, 0), StreetState.blocked);
+      expect(sand.stateOf(seed, (1, 2, w1.indexOf(1)), RoadClass.local, 1, 1e6), StreetState.blocked);
+      expect(sand.stateOf(seed, (1, 2, w1.indexOf(1)), RoadClass.local, 1, 0), StreetState.normal, reason: 'a duna ainda não subiu');
     });
 
     test('a neve cobre primeiro as ruas pouco usadas e por último as avenidas', () {
       final snow = streetCoverOf(catalog.of('snow'))!;
-      double at(RoadClass c, double s) => snow.level(seed, (0, 0, 0), c, 0, s);
-      expect(at(RoadClass.local, 1800), greaterThan(at(RoadClass.principal, 1800)));
-      expect(at(RoadClass.pedestrian, 1800), greaterThan(at(RoadClass.local, 1800)));
+      double at(RoadClass c, double s) => snow.level(seed, (0, 0, 0), c, 0, snow.amountAt(s));
+      final mid = snow.growS * 0.7;
+      expect(at(RoadClass.local, mid), greaterThan(at(RoadClass.principal, mid)));
+      expect(at(RoadClass.pedestrian, mid), greaterThan(at(RoadClass.local, mid)));
+      expect(at(RoadClass.pedestrian, snow.growS * 0.3), 0, reason: 'antes das ruas, o chão e os telhados');
       expect(at(RoadClass.principal, 4 * 3600), 1);
       expect(snow.tracks, isTrue);
     });

@@ -10766,7 +10766,8 @@
                     4
                   ],
                   "ttl_s": 1200
-                }
+                },
+                "street_route": true
               },
               {
                 "piece": "modifier",

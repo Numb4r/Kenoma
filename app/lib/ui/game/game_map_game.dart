@@ -115,7 +115,8 @@ class GameMapGame extends FlameGame {
   /// O clima em duas camadas: no céu (traço do raio, meteoro, clarão, tremor, trovão) e no chão do mapa (poças, crateras,
   /// zonas, ruas cobertas, pegadas), que gira, move e dá zoom com o mapa.
   late final ClimateFx climateFx = ClimateFx(catalog: climateCatalog, balance: climateBalance);
-  late final ClimateGround climateGround = ClimateGround(catalog: climateCatalog, visual: visual, roadWidthM: balance.roadWidthM);
+  late final ClimateGround climateGround = ClimateGround(
+      catalog: climateCatalog, visual: visual, roadWidthM: balance.roadWidthM, artPixelDp: balance.artPixelDp, asphalt: style.asphalt.toARGB32(), figureM: balance.ghostPedestrianM);
 
   /// O arco-íris de pé no mapa (época 8), entre o chão e os spawns: gira com o mapa.
   late final RainbowPainter rainbow = RainbowPainter(climateCatalog.rainbowArc);

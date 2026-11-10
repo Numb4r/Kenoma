@@ -85,6 +85,16 @@ class ClimateInfo {
   /// Aviso que aparece uma vez quando o clima começa a ser visto (o Familiar avisa que não é neve).
   final String? notice;
 
+  /// Quanto o que este clima deixa no chão leva para se formar e para sumir depois que ele acaba (o maior `grow_s` e
+  /// `fade_s` das camadas do mapa; sem eles, 30 min e 1 h). Só desenho e a fase que o debug mostra.
+  double get formS => _most('grow_s', 1800);
+  double get fadeS => _most('fade_s', 3600);
+
+  double _most(String key, double fallback) {
+    final m = ground.fold(0.0, (a, l) => l.val(key) > a ? l.val(key) : a);
+    return m > 0 ? m : fallback;
+  }
+
   /// O que os passantes fantasmas vestem (`rain`, `cold`, `heat`, `mask`: `veil_traffic.dart`, `ghostOutfit`). Só desenho.
   final String? outfit;
 
@@ -111,6 +121,8 @@ class PieceVisual {
     this.reflect = false,
     this.prism = false,
     this.trail = false,
+    this.growS = 20,
+    this.fadeS = 20,
   });
 
   factory PieceVisual.fromJson(Map<String, dynamic> j) => PieceVisual(
@@ -126,6 +138,8 @@ class PieceVisual {
         reflect: j['reflect'] as bool? ?? false,
         prism: j['prism'] as bool? ?? false,
         trail: j['trail'] as bool? ?? false,
+        growS: (j['grow_s'] as num?)?.toDouble() ?? 20,
+        fadeS: (j['fade_s'] as num?)?.toDouble() ?? 20,
       );
 
   final String style;
@@ -149,6 +163,9 @@ class PieceVisual {
   /// A zona que anda deixa um rastro no chão por onde passou (funil, Procissão, redemoinho).
   final bool trail;
 
+  /// A zona se forma em [growS] segundos desde o começo e some nos [fadeS] antes do fim (só desenho).
+  final double growS, fadeS;
+
   static const fallback = PieceVisual(style: 'zone', color: 0xFF9B7BFF, glow: 0xFF9B7BFF, alpha: 0.25, flash: false);
 }
 
@@ -161,7 +178,7 @@ class ClimateTag {
 }
 
 class ClimateCatalog {
-  const ClimateCatalog({this.climates = const {}, this.pieces = const {}, this.tags = const {}, this.events = const {}, this.reasons = const {}, this.rainbowArc = const {}});
+  const ClimateCatalog({this.climates = const {}, this.pieces = const {}, this.tags = const {}, this.events = const {}, this.reasons = const {}, this.rainbowArc = const {}, this.procession = const {}});
 
   factory ClimateCatalog.fromJson(Map<String, dynamic>? j) => j == null
       ? const ClimateCatalog()
@@ -178,6 +195,7 @@ class ClimateCatalog {
           },
           reasons: {for (final e in ((j['reasons'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as String},
           rainbowArc: (j['rainbow_arc'] as Map<String, dynamic>?) ?? const {},
+          procession: (j['procession'] as Map<String, dynamic>?) ?? const {},
         );
 
   /// O último catálogo lido do app (o menu de debug lista os climas daqui).
@@ -194,6 +212,9 @@ class ClimateCatalog {
 
   /// O desenho do arco-íris de pé no mapa (época 8): raio, faixas, cores, opacidade e esmaecer (`rainbow_painter.dart`).
   final Map<String, dynamic> rainbowArc;
+
+  /// Os números da fila da Procissão (figuras, espaço, velocidade, velas, alcance): só desenho.
+  final Map<String, dynamic> procession;
 
   /// O visual do clima [id]. Id desconhecido: o estado antigo com esse id, ou Limpo.
   ClimateInfo of(String id) => climates[id] ?? ClimateInfo.legacy(Weather.parse(id));

@@ -147,6 +147,7 @@ sealed class ClimatePiece {
           item: j['item'] == null ? null : PieceItem.fromJson(j['item'] as Map<String, dynamic>),
           snap: j['snap'] as bool? ?? false,
           slotAt: (j['slot_at'] as num?)?.toDouble(),
+          streetRoute: j['street_route'] as bool? ?? false,
         ),
       'puddles' => PuddlePiece(
           name,
@@ -219,7 +220,7 @@ class DropPiece extends ClimatePiece {
 /// Zona temporária (poça, miragem, sombra de nuvem, redemoinho que anda) e sobreposição fantasma (Maré do Véu): [perCell]
 /// zonas por célula z17 e janela, cada uma por [durationS] segundos, andando a [speedMps] numa direção sorteada.
 class ZonePiece extends ClimatePiece {
-  const ZonePiece(super.name, {required this.ghost, required this.perCell, required this.radiusM, required this.durationS, required this.speedMps, this.spawn, this.item, this.snap = false, this.slotAt});
+  const ZonePiece(super.name, {required this.ghost, required this.perCell, required this.radiusM, required this.durationS, required this.speedMps, this.spawn, this.item, this.snap = false, this.slotAt, this.streetRoute = false});
 
   final bool ghost;
   final int perCell;
@@ -234,6 +235,11 @@ class ZonePiece extends ClimatePiece {
 
   /// Época 7: na zona que anda, todas as vagas aparecem nesta fração do percurso (0,95: o fim do rastro da Procissão).
   final double? slotAt;
+
+  /// Época 8 em diante (a Procissão pelas ruas): o que nasce no fim do percurso vai para o ponto de rua mais perto (o fim da
+  /// rota da fila e das velas) e fica `spawn.ttl_s` depois de aparecer, mesmo com a zona já acabada. Sem isso (até a época
+  /// 7), nasce no ponto da reta e só existe até o fim da zona.
+  final bool streetRoute;
 }
 
 /// Época 7: poças nos pontos baixos das ruas. Os pontos são fixos por célula z17 (a mesma poça em toda chuva); crescem em
