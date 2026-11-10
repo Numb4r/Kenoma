@@ -866,7 +866,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             lat: () => r.game.playerLat,
             catalog: r.data.climates,
             shown: streetLifeEnabled ? () => _climate!.info : null,
-            outlook: streetLifeEnabled ? cellSkyOutlook(_climate!.world, lat: () => r.game.playerLat, lon: () => r.game.playerLon) : null,
+            outlook: streetLifeEnabled ? cellSkyOutlook(_climate!.world, lat: () => r.game.playerLat, lon: () => r.game.playerLon, catalog: r.data.climates) : null,
           ),
         PhoneAppId.settings => _settings(r),
         _ => null,

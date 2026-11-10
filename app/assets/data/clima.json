@@ -1825,7 +1825,7 @@
   },
   "reasons": {
     "season": "O clima da estação, sorteado para a região.",
-    "debug": "Forçado pelo menu de debug, só neste aparelho.",
+    "debug": "Forçado no menu de debug, só neste aparelho.",
     "feed": "Evento anunciado no feed do jogo."
   },
   "events": {

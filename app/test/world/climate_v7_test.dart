@@ -13,6 +13,7 @@ import 'package:kenoma/data/climate_catalog.dart';
 import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/world/climate_outlook.dart';
 import 'package:kenoma/world/climate_world.dart';
+import 'package:kenoma/world/sky_outlook.dart';
 import 'package:kenoma/world/spawn_field.dart';
 import 'package:kenoma/world/street_cover.dart';
 import 'package:kenoma/world/visual_map.dart';
@@ -224,6 +225,9 @@ void main() {
       expect(fin.effects['fog_procession'], catalog.of('fog_procession').hud);
       final plain = climateOutlook(world: device(), catalog: catalog, lat: -22.8174, lon: -47.0697, nowUtc: utc(2030, 11, 6, 15));
       expect((plain.event, plain.now.reason), (null, catalog.reasons['season']));
+      final sky = cellSkyOutlook(device(), lat: () => -22.8174, lon: () => -47.0697, catalog: catalog)(utc(2030, 11, 2, 15), 3);
+      expect((sky.first.climateId, sky.first.reason), ('fog_procession', 'É Finados: a Procissão anda na névoa.'), reason: 'o app Céu');
+      expect(cellSkyOutlook(device(), lat: () => -22.8174, lon: () => -47.0697, catalog: catalog)(utc(2030, 11, 6, 15), 2).first.reason, isNull);
       final dbg = climateOutlook(world: device(forced: 'aurora'), catalog: catalog, lat: -22.8174, lon: -47.0697, nowUtc: utc(2030, 11, 6, 15));
       expect((dbg.now.climate, dbg.now.source), ('aurora', ClimateSource.debug));
     });
