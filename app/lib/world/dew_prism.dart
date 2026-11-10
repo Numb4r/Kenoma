@@ -19,9 +19,9 @@ PrismReading prismReading(RainbowArc arc, double x21, double y21, double metersP
   return (bearingDeg: (deg + 360) % 360, distanceM: math.sqrt(dx * dx + dy * dy) * metersPerCell21);
 }
 
-/// Usa um prisma em (x21, y21) no instante [t]: o arco ativo mais perto a até [searchM] metros. Só com arco [take] gasta
-/// o item; `null` se não há arco (nada gasto) ou se [take] falhou (não há prisma).
-PrismReading? useDewPrism({required ClimateWorld world, required bool Function() take, required double x21, required double y21, required int t, required double metersPerCell21, double searchM = 6000}) {
+/// Usa um prisma em (x21, y21) no instante [t]: o arco ativo mais perto a até [searchM] metros (`prism_search_m` do
+/// `balance.json`). Só com arco [take] gasta o item; `null` se não há arco (nada gasto) ou se [take] falhou (não há prisma).
+PrismReading? useDewPrism({required ClimateWorld world, required bool Function() take, required double x21, required double y21, required int t, required double metersPerCell21, required double searchM}) {
   final arcs = world.rainbowsNear(x21, y21, searchM / metersPerCell21, t);
   if (arcs.isEmpty) return null;
   final best = arcs.map((a) => prismReading(a, x21, y21, metersPerCell21)).reduce((a, b) => a.distanceM <= b.distanceM ? a : b);

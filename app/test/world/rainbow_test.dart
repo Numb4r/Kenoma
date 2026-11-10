@@ -113,12 +113,12 @@ void main() {
       bool take() => ++taken > 0;
       // 200 m a leste e 150 m ao sul do pé: o pé fica a 250 m, para noroeste (306,87°).
       final px = arc.footX + 200 / mpc, py = arc.footY + 150 / mpc;
-      final r = useDewPrism(world: a, take: take, x21: px, y21: py, t: t, metersPerCell21: mpc)!;
+      final r = useDewPrism(world: a, take: take, x21: px, y21: py, t: t, metersPerCell21: mpc, searchM: data.climateBalance.prismSearchM)!;
       expect(r.distanceM, closeTo(250, 0.01));
       expect(r.bearingDeg, closeTo(306.87, 0.01));
       expect(compassPoint(r.bearingDeg), 'noroeste');
       expect(taken, 1);
-      expect(useDewPrism(world: a, take: take, x21: px, y21: py, t: arc.endUtc + 10, metersPerCell21: mpc), isNull);
+      expect(useDewPrism(world: a, take: take, x21: px, y21: py, t: arc.endUtc + 10, metersPerCell21: mpc, searchM: data.climateBalance.prismSearchM), isNull);
       expect(taken, 1, reason: 'sem arco ativo, o prisma não se gasta');
       expect(prismReading(arc, arc.footX, arc.footY - 100 / mpc, mpc).bearingDeg, closeTo(180, 1e-9), reason: 'o pé ao sul');
     });

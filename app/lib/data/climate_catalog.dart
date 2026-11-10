@@ -208,6 +208,7 @@ class ClimateBalance {
     this.fallMs = 600,
     this.footprintEveryM = 3,
     this.footprintMax = 40,
+    this.prismSearchM = 6000,
   });
 
   factory ClimateBalance.fromJson(Map<String, dynamic>? j) {
@@ -227,6 +228,7 @@ class ClimateBalance {
       fallMs: d('fall_ms', 600),
       footprintEveryM: d('footprint_every_m', 3),
       footprintMax: (j['footprint_max'] as num?)?.toInt() ?? 40,
+      prismSearchM: d('prism_search_m', 6000),
     );
   }
 
@@ -254,4 +256,7 @@ class ClimateBalance {
   /// Pegadas na neve: uma a cada [footprintEveryM] metros, no máximo [footprintMax].
   final double footprintEveryM;
   final int footprintMax;
+
+  /// Até onde o Prisma de orvalho procura um arco-íris ativo (o do aparelho: decide só se o prisma se gasta).
+  final double prismSearchM;
 }

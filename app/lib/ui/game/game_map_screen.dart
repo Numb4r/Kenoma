@@ -907,13 +907,13 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   /// O Prisma de orvalho na posição do Conjurador: só se gasta com um arco-íris ativo.
   PrismReading? _usePrism(_Ready r) {
     final (x, y) = latLonToTileFraction(r.game.playerLat, r.game.playerLon, biomeZoom);
-    return useDewPrism(world: _climate!.world, take: () => r.session.state.take(dewPrismId), x21: x, y21: y, t: tools.clock.nowUtc, metersPerCell21: metersPerCell(r.game.playerLat));
+    return useDewPrism(world: _climate!.world, take: () => r.session.state.take(dewPrismId), x21: x, y21: y, t: tools.clock.nowUtc, metersPerCell21: metersPerCell(r.game.playerLat), searchM: r.data.climateBalance.prismSearchM);
   }
 
   /// Debug: o pé do arco-íris ativo mais perto do Conjurador (latitude, longitude), ou `null`.
   (double, double)? _rainbowFoot(_Ready r) {
     final (x, y) = latLonToTileFraction(r.game.playerLat, r.game.playerLon, biomeZoom);
-    final arcs = _climate?.world.rainbowsNear(x, y, 6000 / metersPerCell(r.game.playerLat), tools.clock.nowUtc) ?? const [];
+    final arcs = _climate?.world.rainbowsNear(x, y, r.data.climateBalance.prismSearchM / metersPerCell(r.game.playerLat), tools.clock.nowUtc) ?? const [];
     if (arcs.isEmpty) return null;
     double d(RainbowArc a) => (a.footX - x) * (a.footX - x) + (a.footY - y) * (a.footY - y);
     final a = arcs.reduce((p, q) => d(p) <= d(q) ? p : q);
