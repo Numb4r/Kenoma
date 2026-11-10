@@ -36,8 +36,24 @@ def main() -> None:
             "bytes": len(data),
             "sig": sign(OUT / name),
         }
+    # O arquivo só de rotas (_noaccess.bin) vai em route_files, nunca em files: fica fora da época, e a 0.16 recusaria a região
+    # inteira se ele estivesse em files (cada arquivo de files tem de estar no epochs.json).
+    route_files = {}
+    access = OUT / f"{region}_e{epoch}_noaccess.bin"
+    if access.exists():
+        data = access.read_bytes()
+        route_files["access"] = {
+            "file": access.name,
+            "url": RELEASE.format(epoch=epoch, file=access.name),
+            "sha256": hashlib.sha256(data).hexdigest(),
+            "bytes": len(data),
+            "sig": sign(access),
+        }
     target = PAGES / "regions.json"
-    doc = {"format": 1, "regions": [{"id": region, "name": info["name"], "bbox": info["bbox"], "epoch": epoch, "files": files}]}
+    entry = {"id": region, "name": info["name"], "bbox": info["bbox"], "epoch": epoch, "files": files}
+    if route_files:
+        entry["route_files"] = route_files
+    doc = {"format": 1, "regions": [entry]}
     target.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
     (PAGES / "regions.json.sig").write_text(sign(target))
     total = sum(f["bytes"] for f in files.values())

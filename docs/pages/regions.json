@@ -33,6 +33,15 @@
           "bytes": 139188,
           "sig": "3c18e51ee4f5a2afca14911ad3c68f802ae0c54afd0451598055f3b46bcbc71c3993148a0791d4192de362660541c632f7043bd9e6fd9a54a5256d5b38c10b00"
         }
+      },
+      "route_files": {
+        "access": {
+          "file": "sao_paulo_e5_noaccess.bin",
+          "url": "https://github.com/Numb4r/Kenoma/releases/download/regions-e5/sao_paulo_e5_noaccess.bin",
+          "sha256": "feaecc1c025a0deb77b82598de69c4f5df397dbf251f59f9bf429a45ccd97165",
+          "bytes": 672482,
+          "sig": "8633ed0256cfa979781a81979e4b076c7b9a876461e88033756fed86943c758d8aea2080c507329453cd0ba73bdd15cb49b58a28cf855a4ece509577fbc24104"
+        }
       }
     }
   ]
