@@ -412,7 +412,7 @@ class GameMapGame extends FlameGame {
     if (veilTraffic() && _hasFix && wv != null) {
       final tc = rainFx() ? climateGround.trafficCover(wv.field.seed, climateShown(), wv.climate) : null; // barcos, dunas, gelo
       final walk = wv.climate.walkerMult == 1 ? null : _trafficUtc(walker: true);
-      _traffic.paint(canvas, view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: _trafficUtc(), tWalkExact: walk, lonDeg: _lon, metersPerCell: metersPerCell(_lat), light: light, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false);
+      _traffic.paint(canvas, view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: _trafficUtc(), tWalkExact: walk, lonDeg: _lon, metersPerCell: metersPerCell(_lat), light: light, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false, outfit: climateShown().outfit);
     } else {
       _traffic.lastDrawn = 0;
     }
