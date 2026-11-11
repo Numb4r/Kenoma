@@ -106,35 +106,70 @@ class TrafficPainter {
     bool skid = false,
     String? outfit,
   }) {
+    prepare(view, cam, seed: seed, tUtc: tUtc, metersPerCell: metersPerCell, light: light, tUtcExact: tUtcExact, tWalkExact: tWalkExact, streetState: streetState, coverKey: coverKey, skid: skid, outfit: outfit);
+    paintWalkers(canvas);
+    paintCars(canvas);
+  }
+
+  // O quadro preparado por [prepare]: quem está na tela, já ordenado, e o que o desenho precisa.
+  final _walkers = <(Ghost, double, double)>[], _cars = <(Ghost, double, double)>[];
+  ({double rotation, double pxPerM, double night, double t, StreetState Function(GhostLine, double)? streetState, bool skid, String? outfit})? _frame;
+
+  /// Calcula quem aparece neste quadro. O desenho vem depois, em duas camadas da ordem fixa (`draw_order.dart`):
+  /// [paintWalkers] e, por cima, [paintCars].
+  void prepare(
+    ui.Size view,
+    MapCamera cam, {
+    required int seed,
+    required int tUtc,
+    required double metersPerCell,
+    required DayLight light,
+    double? tUtcExact,
+    double? tWalkExact,
+    StreetState Function(GhostLine line, double tUtc)? streetState,
+    Object? coverKey,
+    bool skid = false,
+    String? outfit,
+  }) {
     lastDrawn = 0;
     lastBoats = 0;
+    _walkers.clear();
+    _cars.clear();
+    _frame = null;
     if (visual.pack.version < 2) return; // o pacote antigo não tem a mão única
     final t = tUtcExact ?? _timeFor(tUtc);
     final (l, top, r, b) = cam.visibleBounds(view.width, view.height);
     final m = trafficMarginM / metersPerCell;
     final ghosts = _fieldFor(seed, coverKey, streetState).ghostsIn(t, l - m, top - m, r + m, b + m, maxGhosts: maxGhosts, tWalk: tWalkExact);
-    final pxPerM = cam.pixelsPerCell / metersPerCell;
-    final night = light.night;
-    final onScreen = <(Ghost, double, double)>[];
     for (final g in ghosts) {
       final (sx, sy) = cam.cellToScreen(g.x, g.y, view.width, view.height);
       if (sx < -40 || sy < -40 || sx > view.width + 40 || sy > view.height + 40) continue;
-      onScreen.add((g, sx, sy));
+      (g.kind == GhostKind.car ? _cars : _walkers).add((g, sx, sy));
     }
-    // De baixo para cima: carros primeiro, depois quem anda a pé, do mais ao norte ao mais ao sul da tela.
-    onScreen.sort((a, b) {
-      final k = (a.$1.kind == GhostKind.car ? 0 : 1) - (b.$1.kind == GhostKind.car ? 0 : 1);
-      return k != 0 ? k : a.$3.compareTo(b.$3);
-    });
-    for (final (g, sx, sy) in onScreen) {
-      final line = g.line;
-      if (streetState != null && g.kind == GhostKind.car && line != null && streetState(line, t) == StreetState.flooded) {
-        drawBoat(canvas, g, sx, sy, cam.rotation, pxPerM, t);
+    // Dentro de cada camada, do mais ao norte ao mais ao sul da tela.
+    _walkers.sort((a, b) => a.$3.compareTo(b.$3));
+    _cars.sort((a, b) => a.$3.compareTo(b.$3));
+    _frame = (rotation: cam.rotation, pxPerM: cam.pixelsPerCell / metersPerCell, night: light.night, t: t, streetState: streetState, skid: skid, outfit: outfit);
+  }
+
+  /// Os passantes do quadro preparado.
+  void paintWalkers(ui.Canvas canvas) => _paintGhosts(canvas, _walkers);
+
+  /// Os carros (e barcos) do quadro preparado, por cima dos passantes.
+  void paintCars(ui.Canvas canvas) => _paintGhosts(canvas, _cars);
+
+  void _paintGhosts(ui.Canvas canvas, List<(Ghost, double, double)> list) {
+    final f = _frame;
+    if (f == null) return;
+    for (final (g, sx, sy) in list) {
+      final line = g.line, state = f.streetState;
+      if (state != null && g.kind == GhostKind.car && line != null && state(line, f.t) == StreetState.flooded) {
+        drawBoat(canvas, g, sx, sy, f.rotation, f.pxPerM, f.t);
         lastBoats++;
       } else {
         // Gelo (Chuva congelante): o carro derrapa, balançando a frente.
-        final wobble = skid && g.kind == GhostKind.car ? math.sin(t * 2.3 + (g.id & 0xff)) * 0.35 : 0.0;
-        drawGhost(canvas, g, sx, sy, cam.rotation + wobble, pxPerM, night, outfit: outfit);
+        final wobble = f.skid && g.kind == GhostKind.car ? math.sin(f.t * 2.3 + (g.id & 0xff)) * 0.35 : 0.0;
+        drawGhost(canvas, g, sx, sy, f.rotation + wobble, f.pxPerM, f.night, outfit: f.outfit);
       }
       lastDrawn++;
     }

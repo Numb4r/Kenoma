@@ -34,6 +34,7 @@ import 'art_style.dart';
 import 'spawn_painter.dart';
 import 'climate_fx.dart';
 import 'climate_ground.dart';
+import 'draw_order.dart';
 import 'climate_painter.dart';
 import 'rainbow_painter.dart';
 import '../../data/climate_catalog.dart';
@@ -408,39 +409,69 @@ class GameMapGame extends FlameGame {
     if (size.x <= 0 || size.y <= 0) return;
     final view = Size(size.x, size.y);
     final cam = follow.camera;
-    canvas.save();
-    canvas.translate(climateFx.shakeOffset.dx, climateFx.shakeOffset.dy); // o impacto do meteoro treme o mundo, não o HUD
-    _art.paint(canvas, view, cam, dpr: dpr, metersPerCell: metersPerCell(_lat), coarse: coarse);
-    _paintLight(canvas, view);
     final wv = worldView;
-    if (veilTraffic() && _hasFix && wv != null) {
+    final mpc = metersPerCell(_lat);
+    final traffic = veilTraffic() && _hasFix && wv != null;
+    if (traffic) {
       final tc = rainFx() ? climateGround.trafficCover(wv.field.seed, climateShown(), wv.climate) : null; // barcos, dunas, gelo
       final walk = wv.climate.walkerMult == 1 ? null : _trafficUtc(walker: true);
-      _traffic.paint(canvas, view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: _trafficUtc(), tWalkExact: walk, lonDeg: _lon, metersPerCell: metersPerCell(_lat), light: light, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false, outfit: climateShown().outfit);
+      _traffic.prepare(view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: _trafficUtc(), tWalkExact: walk, metersPerCell: mpc, light: light, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false, outfit: climateShown().outfit);
     } else {
       _traffic.lastDrawn = 0;
     }
-    travelLayer?.paintGround(canvas, view, cam, metersPerCell(_lat), utc: _exactUtc(), avatar: avatar);
-    if (streetNames()) _labels.paint(canvas, view, cam);
-    if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
-    if (wv != null && _hasFix) _paintClimateGround(canvas, view, cam, wv);
-    if (_hasFix) rainbow.paint(canvas, view, cam, metersPerCell21: metersPerCell(_lat), exactUtc: _exactUtc());
-    _paintWorld(canvas, view, cam);
-    canvas.restore();
-    // O clima da tela por cima do mapa e dos spawns, por baixo do HUD (as marcas do Radar na borda são HUD): cobre a tela toda.
-    climateFx.paintSky(canvas, view, cam);
+    final here = avatar.hasPosition;
     final (ax, ay) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
-    _climate.paint(canvas, view, player: avatar.hasPosition ? Offset(ax, ay) : null, sky: skyRects);
-    final w = worldView;
-    if (w != null && avatar.hasPosition && w.pulse != null) {
-      final off = ecoSizePx / 2;
-      final marks = w.edgeMarksAt(_exactUtc(), onScreen: (s) {
-        final (x, y) = cam.cellToScreen(s.x, s.y, view.width, view.height);
-        return x >= -off && y >= -off && x <= view.width + off && y <= view.height + off;
-      });
-      paintEdgeMarks(canvas, view, Offset(ax, ay), marks, rotation: cam.rotation);
-    }
+    final center = Offset(ax, ay);
+    canvas.save();
+    canvas.translate(climateFx.shakeOffset.dx, climateFx.shakeOffset.dy); // o impacto do meteoro treme o mundo, não o HUD
+    // A ordem é a de MapLayer (draw_order.dart), não a deste mapa.
+    paintLayers({
+      MapLayer.base: () {
+        _art.paint(canvas, view, cam, dpr: dpr, metersPerCell: mpc, coarse: coarse);
+        _paintLight(canvas, view);
+        travelLayer?.paintGround(canvas, view, cam, mpc, utc: _exactUtc(), avatar: avatar);
+        if (streetNames()) _labels.paint(canvas, view, cam);
+        if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
+      },
+      if (wv != null && _hasFix) MapLayer.climateGround: () => _paintClimateGround(canvas, view, cam, wv),
+      MapLayer.shadows: () {
+        climateGround.paintShadows();
+        if (here) _paintAura(canvas, view, cam, center);
+      },
+      if (here && wv != null) ...{
+        MapLayer.creatures: () => _paintSpawns(canvas, view, cam, wv, center, (s) => s.isEco),
+        MapLayer.sparks: () => _paintSpawns(canvas, view, cam, wv, center, (s) => s.isSpark),
+        MapLayer.materials: () => _paintSpawns(canvas, view, cam, wv, center, (s) => !s.isEco && !s.isSpark),
+      },
+      if (traffic) ...{
+        MapLayer.walkers: () => _traffic.paintWalkers(canvas),
+        MapLayer.cars: () => _traffic.paintCars(canvas),
+      },
+      if (here) MapLayer.player: () => _paintPlayer(canvas, view, cam, center),
+      MapLayer.air: () {
+        if (_hasFix) rainbow.paint(canvas, view, cam, metersPerCell21: mpc, exactUtc: _exactUtc());
+        climateGround.paintAir();
+        canvas.restore(); // fim do tremor: daqui para cima é tela
+      },
+      // O clima da tela por cima do mapa e de quem está nele, por igual, e por baixo do HUD: cobre a tela toda.
+      MapLayer.climateScreen: () {
+        climateFx.paintSky(canvas, view, cam);
+        _climate.paint(canvas, view, player: here ? center : null, sky: skyRects);
+      },
+      if (wv != null && here && wv.pulse != null)
+        MapLayer.hud: () {
+          final off = ecoSizePx / 2;
+          final marks = wv.edgeMarksAt(_exactUtc(), onScreen: (s) {
+            final (x, y) = cam.cellToScreen(s.x, s.y, view.width, view.height);
+            return x >= -off && y >= -off && x <= view.width + off && y <= view.height + off;
+          });
+          paintEdgeMarks(canvas, view, center, marks, rotation: cam.rotation);
+        },
+    }, drawn: lastLayers..clear());
   }
+
+  /// As camadas pintadas no último quadro, na ordem (debug e teste).
+  final lastLayers = <MapLayer>[];
 
   /// O clima de agora: as camadas da tela (o que se vê) e, a cada meio segundo, os acontecimentos das peças em volta.
   void _updateClimate(double dt) {
@@ -491,6 +522,7 @@ class GameMapGame extends FlameGame {
         sprites: sprites,
         ecoSizePx: ecoSizePx,
         decor: rainFx(),
+        layered: true,
       );
 
   /// O relógio do tráfego do Véu com o clima (`ClimateWorld.trafficClock`): mais lento no Dilúvio, parado no Silêncio desde
@@ -509,12 +541,8 @@ class GameMapGame extends FlameGame {
   String? _forcedId;
   double _forcedAt = 0;
 
-  /// Aura, spawns, Familiar, Conjurador e retorno visual. Sem posição, nada.
-  void _paintWorld(Canvas canvas, Size view, MapCamera cam) {
-    if (!avatar.hasPosition) return;
-    final (sx, sy) = cam.cellToScreen(avatar.x, avatar.y, view.width, view.height);
-    final center = Offset(sx, sy);
-    // De baixo para cima: Aura no chão, spawns, Conjurador por cima de tudo.
+  /// A Aura, o alcance de toque e os rastros: no chão, por baixo das criaturas.
+  void _paintAura(Canvas canvas, Size view, MapCamera cam, Offset center) {
     final w = worldView;
     paintAura(canvas, center, auraRadiusPx(auraM: w?.auraRadiusM ?? auraM, lat: _lat, pixelsPerCell: cam.pixelsPerCell));
     if (w != null && w.spawns.any((s) => s.isEco && w.distanceM(s) <= balance.touchRingShowM)) {
@@ -531,16 +559,17 @@ class GameMapGame extends FlameGame {
       canvas.drawCircle(center, auraRadiusPx(auraM: w?.auraRadiusM ?? auraM, lat: _lat, pixelsPerCell: ppc), ring..color = const Color(0xFFFF7A45));
       canvas.drawCircle(center, auraRadiusPx(auraM: w?.touchRangeM ?? 30, lat: _lat, pixelsPerCell: ppc), ring..color = const Color(0xFF5FD3C6));
     }
-    final spriteSize = ecoSizePx, playerSize = playerSizePx, sparkSize = sparkSizePx;
     if (w != null && (w.traces.isNotEmpty || w.distortions.isNotEmpty || w.pulse != null)) {
       _trace.paint(canvas, view, cam, world: w, playerX: avatar.x, playerY: avatar.y, metersPerCell: metersPerCell(_lat), exactUtc: _exactUtc());
     }
-    if (w != null) {
-      paintSpawns(
+  }
+
+  /// Os spawns de uma camada ([only]): criaturas, Fagulhas ou materiais.
+  void _paintSpawns(Canvas canvas, Size view, MapCamera cam, WorldView w, Offset center, bool Function(WorldSpawn) only) => paintSpawns(
         canvas,
         view,
         cam,
-        w.spawns,
+        [for (final s in w.spawns) if (only(s)) s],
         sprites: sprites,
         typeOf: typeOf,
         inAura: w.canReach,
@@ -549,16 +578,19 @@ class GameMapGame extends FlameGame {
         hopOf: (uid) => fx.hopOffset(uid, 8),
         appearOf: fx.appear,
         time: _time,
-        avoid: markerRect(center, playerSize).inflate(6),
-        spriteSize: spriteSize,
+        avoid: markerRect(center, playerSizePx).inflate(6),
+        spriteSize: ecoSizePx,
         spiritSize: spiritSizePx,
-        sparkSize: sparkSize,
+        sparkSize: sparkSizePx,
         dpr: dpr,
         wind: creatureWind,
         windDir: _climate.wind,
         pxPerM: cam.pixelsPerCell / metersPerCell(_lat),
       );
-    }
+
+  /// O Familiar, o Conjurador (ou o carro do Modo Viagem) e o retorno visual.
+  void _paintPlayer(Canvas canvas, Size view, MapCamera cam, Offset center) {
+    final playerSize = playerSizePx;
     if (travelLayer?.hidesPlayer != true) {
       if (streetLifeEnabled) _paintFamiliar(canvas, cam, view);
       // Parado, o Conjurador respira: dois quadros, o segundo um pixel de arte mais alto.
@@ -566,7 +598,7 @@ class GameMapGame extends FlameGame {
       paintPlayerMarker(canvas, center.translate(0, breath), sprite: _playerFrame, size: playerSize, mirrored: _facingLeft, dpr: dpr);
     }
     travelLayer?.paintCar(canvas, view, cam, metersPerCell(_lat), utc: _exactUtc(), avatar: avatar);
-    fx.paint(canvas, view, cam, avatar: center, playerSize: playerSize, sparkSize: sparkSize, dpr: dpr);
+    fx.paint(canvas, view, cam, avatar: center, playerSize: playerSize, sparkSize: sparkSizePx, dpr: dpr);
   }
 
   /// A luz do dia sobre o desenho do mapa: à noite escurece e esfria (multiplica por um azul profundo), no nascer e

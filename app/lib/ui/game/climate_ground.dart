@@ -35,6 +35,10 @@ const Set<String> groundLayerKinds = {'scatter', 'bands', 'streets', 'twins'};
 const Set<String> groundStyles = {'zone', 'puddle', 'ice', 'glow', 'whirl', 'ghost', 'figures', 'rune', 'eye', 'gaze', 'shadow'};
 const Set<String> markStyles = {'burn', 'burn_violet', 'crater', 'ember'};
 
+/// As zonas altas (o olho do furacão, o redemoinho, os prédios da Maré): presas ao mapa, mas no ar, por cima de quem anda
+/// (`draw_order.dart`, camada `air`). As outras zonas são marcas no chão.
+const Set<String> airZoneStyles = {'eye', 'whirl', 'ghost'};
+
 /// Alcance do mundo lido em volta do jogador (poças, marcas): basta o que cabe na tela de perto.
 const double groundReadMaxM = 1500;
 
@@ -180,16 +184,16 @@ class ClimateGround {
     Map<String, ui.Image> sprites = const {},
     double ecoSizePx = 24,
     bool decor = true,
+    bool layered = false,
   }) {
     placed.clear();
+    _shadowOps.clear();
+    _airOps.clear();
     final ppc = cam.pixelsPerCell, px = 1 / ppc;
     final (l, top, r, b) = cam.visibleBounds(view.width, view.height);
     ui.Offset at(double x, double y) => ui.Offset(x - cam.centerX, y - cam.centerY);
-    canvas.save();
-    canvas.translate(view.width / 2, view.height / 2);
-    canvas.rotate(cam.rotation);
-    canvas.scale(ppc);
-    final upright = <void Function()>[];
+    _inCamera(canvas, view, cam);
+    final upright = _airOps;
     final tm = _timing(shown, c, exactUtc);
     final prev = tm.prevId == null || tm.prevId == shown.id ? null : catalog.of(tm.prevId!);
     // [decor] falso (o clima no mapa desligado nos Ajustes): só o que é do mundo (poças, zonas, marcas) continua.
@@ -212,7 +216,7 @@ class ClimateGround {
               _scatter(canvas, g, layer, seed, exactUtc, amount, c, px, mpc, l, top, r, b, at);
             }
           case 'twins':
-            upright.add(() => _twins(canvas, view, cam, g, amount, ecos, sprites, ecoSizePx, mpc));
+            _shadowOps.add(() => _twins(canvas, view, cam, g, amount, ecos, sprites, ecoSizePx, mpc));
         }
       }
     }
@@ -229,7 +233,15 @@ class ClimateGround {
         if (plan != null) paintCandles(canvas, plan.candlesAt(exactUtc), t: exactUtc, q: artPixelDp * px, candleS: look.candleS, inView: inView, at: at, placed: placed);
         upright.add(() => _procession(canvas, view, cam, z, v, plan, exactUtc, mpc, playerX, playerY));
       } else if (z.activeAt(exactUtc.floor())) {
-        _zone(canvas, z, v, exactUtc, mpc, px, at);
+        if (airZoneStyles.contains(v.style)) {
+          upright.add(() {
+            _inCamera(canvas, view, cam);
+            _zone(canvas, z, v, exactUtc, mpc, px, at);
+            canvas.restore();
+          });
+        } else {
+          _zone(canvas, z, v, exactUtc, mpc, px, at);
+        }
       }
     }
     for (final d in marks) {
@@ -252,10 +264,38 @@ class ClimateGround {
       }
     }
     canvas.restore();
-    // O que fica em pé na tela (figuras, pares de sombra): o ponto é do mundo, o desenho não gira.
-    for (final f in upright) {
+    if (!layered) {
+      paintShadows();
+      paintAir();
+    }
+  }
+
+  // O que [paint] deixou para as camadas de cima do quadro (`draw_order.dart`).
+  final _shadowOps = <void Function()>[], _airOps = <void Function()>[];
+
+  void _inCamera(ui.Canvas canvas, ui.Size view, MapCamera cam) {
+    canvas.save();
+    canvas.translate(view.width / 2, view.height / 2);
+    canvas.rotate(cam.rotation);
+    canvas.scale(cam.pixelsPerCell);
+  }
+
+  /// As sombras do clima (os pares da Lua Dupla): depois das marcas do chão, antes das criaturas. Com `layered`, o jogo
+  /// chama depois de [paint], no mesmo canvas.
+  void paintShadows() {
+    for (final f in _shadowOps) {
       f();
     }
+    _shadowOps.clear();
+  }
+
+  /// O que é do mapa mas fica no ar (vultos da Neblina, a Procissão em pé, o olho do furacão, o redemoinho, os prédios
+  /// da Maré): por cima dos passantes, dos carros e do Conjurador.
+  void paintAir() {
+    for (final f in _airOps) {
+      f();
+    }
+    _airOps.clear();
   }
 
   void _streets(ui.Canvas canvas, ClimateLayer g, int seed, PlayerClimate c, double amount, double t, double mpc, double px, double l, double top, double r, double b, MapCamera cam, ui.Offset Function(double, double) at) {
