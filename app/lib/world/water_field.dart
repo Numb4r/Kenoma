@@ -145,7 +145,7 @@ class WaterField {
         // Onde a água se junta: a baixada (nenhuma vizinha mais baixa) ou o ponto com mais água que as 8 células em redor
         // (o pé de uma ladeira, a sarjeta no ponto baixo da rua). As poças de cada célula z17 são os maiores destes.
         var v = sink[i] == 0 ? cur[i] : 0;
-        if (v > 0 && to[i] >= 0) {
+        if (v > 0 && to[i] >= 0 && model.spotSpacing == 0) {
           for (var dy = -1; dy <= 1 && v > 0; dy++) {
             for (var dx = -1; dx <= 1; dx++) {
               final j = i + dy * w + dx;
@@ -252,6 +252,19 @@ class WaterField {
       }
     }
     found.sort((a, b) => a.$1 != b.$1 ? b.$1.compareTo(a.$1) : a.$2.compareTo(b.$2));
+    final gap = model.spotSpacing;
+    if (gap > 0) {
+      // Da mais funda para a mais rasa, pulando as que ficam coladas numa já escolhida.
+      final kept = <(int, int)>[];
+      for (final c in found) {
+        if (kept.length >= n) break;
+        final x = c.$2 & 15, y = c.$2 >>> 4;
+        if (kept.every((k) => ((k.$2 & 15) - x).abs() >= gap || ((k.$2 >>> 4) - y).abs() >= gap)) kept.add(c);
+      }
+      found
+        ..clear()
+        ..addAll(kept);
+    }
     return [
       for (final (i, (v, at)) in found.take(n).indexed)
         (index: i, x: cx17 * 16 + (at & 15) + 0.5, y: cy17 * 16 + (at >>> 4) + 0.5, depth: v / found.first.$1),

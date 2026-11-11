@@ -20,6 +20,7 @@ import '../../player/circle.dart' show abilitiesOf;
 import '../../player/game_state.dart';
 import '../../world/debug_force.dart';
 import '../../world/spawn_field.dart';
+import '../../world/street_dirs.dart';
 import '../../world/walk_paths.dart';
 import '../../world/water_field.dart';
 import '../../world/world_view.dart';
@@ -119,6 +120,7 @@ ClimateWorld climateWorldFor({required GameState state, required GameData data, 
       water: assets.waterFor,
       relief: assets.relief,
       typeOf: (id) => data.species(id)?.type.name,
+      streets: assets.visual == null ? null : StreetDirs(assets.visual!),
       forced: forced,
       forcedPhase: forcedPhase,
     );
@@ -245,6 +247,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
     LayeredWorld? world;
     TrafficPack? trafficPoints;
     ReliefPack? relief;
+    
     if (withVisual) {
       final pack = await loadVisualPack(region: kRegion, epoch: loaded.epoch, bundle: assets);
       if (pack is! VisualPack) return pack as String;
@@ -265,7 +268,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       }
       final access = await loadAccessPack(region: kRegion, bundle: assets);
       trafficPoints = await loadTrafficPack(region: kRegion, bundle: assets);
-      world = LayeredWorld(regions: [LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk, access: access)], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
+      world = LayeredWorld(regions: [LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk, access: access, relief: relief)], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
       visual = VisualMap(world);
     }
     final atlas = withAtlas ? await buildBiomeAtlas(biomes) : null;
@@ -281,7 +284,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       fallback: world == null ? null : MapFallbackBalance(balanceJson),
       codec: world == null ? null : fallbackCodec(biomesJson),
       trafficPoints: trafficPoints,
-      relief: relief,
+      relief: world ?? relief, // com as regiões baixadas: o relevo de cada uma
     );
   } catch (e) {
     return 'Não consegui ler os dados do mapa: $e';

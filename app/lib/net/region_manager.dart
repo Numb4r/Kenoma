@@ -120,6 +120,9 @@ class RegionManager extends ChangeNotifier {
       final jobs = <RegionFileJob>[
         for (final kind in [kKindLogic, kKindVisual, kKindNoWalk])
           if (epochRefOf(epoch, id, kind) case final ref?) RegionFileJob(kind: kind, path: '${dir.path}/${ref.file}', sha256: ref.sha256),
+        // O relevo é opcional: sem o arquivo no disco a região abre com o terreno plano.
+        if (epochRefOf(epoch, id, kKindRelief) case final ref? when File('${dir.path}/${ref.file}').existsSync())
+          RegionFileJob(kind: kKindRelief, path: '${dir.path}/${ref.file}', sha256: ref.sha256),
       ];
       if (!jobs.every((j) => File(j.path).existsSync())) continue;
       await _install(id, await _openInIsolate(id, jobs, publicKeyHex));

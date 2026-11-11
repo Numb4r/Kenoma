@@ -637,6 +637,7 @@ class GameMapGame extends FlameGame {
         dpr: dpr,
         wind: creatureWind,
         windDir: _climate.wind,
+        localWind: _localWindOf,
         pxPerM: cam.pixelsPerCell / metersPerCell(_lat),
       );
 
@@ -741,6 +742,14 @@ class GameMapGame extends FlameGame {
     if (screenVx.abs() > 1e-4) _facingLeft = screenVx < 0;
   }
 
+  /// O vento na tela no lugar do spawn [s]: o do clima canalizado pela rua (época 10 em diante), ou o do clima.
+  Offset _localWindOf(WorldSpawn s) {
+    final wv = worldView, f = wv?.field.climate?.windFactorAt(s.x, s.y, nowUtc(), wv.climate.windHeadingRad);
+    if (f == null || _climate.wind == Offset.zero) return _climate.wind;
+    final r = follow.camera.rotation, c = math.cos(r), sn = math.sin(r);
+    return Offset(f.$1 * c - f.$2 * sn, f.$1 * sn + f.$2 * c);
+  }
+
   /// O spawn sob o toque em [screen], se houver: o mais perto dentro do raio de toque.
   WorldSpawn? spawnAt(Offset screen) {
     final w = worldView;
@@ -751,7 +760,7 @@ class GameMapGame extends FlameGame {
     for (final s in w.spawns) {
       final (sx, sy) = cam.cellToScreen(s.x, s.y, size.x, size.y);
       // O toque vale onde o spawn está desenhado (o vento empurra os leves só no desenho).
-      final push = _climate.wind * (creatureWind.pushM(s, _time) * follow.pixelsPerCell / metersPerCell(_lat));
+      final push = _localWindOf(s) * (creatureWind.pushM(s, _time) * follow.pixelsPerCell / metersPerCell(_lat));
       final d = (Offset(sx, sy) + push - screen).distance;
       if (d <= hitRadius(s, ecoSizePx, sparkSizePx, spiritSize: spiritSizePx) && d < bestD) {
         best = s;

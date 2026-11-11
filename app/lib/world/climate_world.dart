@@ -4,6 +4,8 @@
 /// mapa) entra por [forced] e [debugDrops] e não vai para mais ninguém. Dart puro.
 library;
 
+import 'street_dirs.dart';
+import '../core/pcg32.dart';
 import '../core/behavior.dart';
 import '../data/relief_pack.dart';
 import '../core/astro.dart' show sunAltitudeDeg;
@@ -92,6 +94,8 @@ class PlayerClimate {
   static const none = PlayerClimate();
 }
 
+final int _saltWet = salt('WETST');
+
 class ClimateWorld {
   ClimateWorld({
     required this.seed,
@@ -104,6 +108,7 @@ class ClimateWorld {
     this.water,
     this.relief,
     this.typeOf,
+    this.streets,
     String? Function()? forced,
     this.forcedPhase,
   }) : forced = forced ?? _none;
@@ -140,6 +145,9 @@ class ClimateWorld {
 
   /// O tipo da espécie (`water`...), para o movimento dos Ecos de Água.
   final String? Function(String entryId)? typeOf;
+
+  /// A direção das ruas (o que canaliza o vento local, época 10 em diante).
+  final StreetDirs? streets;
 
   /// O instante exato do quadro (UTC fracionário), para o movimento ficar contínuo entre dois segundos. O jogo preenche
   /// antes de ler o mundo; sem ele vale o segundo inteiro.
@@ -401,6 +409,13 @@ class ClimateWorld {
     return s.movedTo(s.x + o.$1 / mpc, s.y + o.$2 / mpc);
   }
 
+  /// O vento no lugar (células z21) em relação ao do clima, soprando para [headingRad]: canalizado pela rua, abrigado
+  /// atrás das quadras. `null` antes da época 10 ou sem as ruas (vale a direção do clima).
+  (double, double)? windFactorAt(double x21, double y21, int t, double headingRad) {
+    final wm = schedule.select(t).epoch.wind, st = streets;
+    return wm == null || st == null ? null : wm.factor(headingRad, st.at(x21.floor(), y21.floor()));
+  }
+
   /// A Fagulha do sorteio normal com o clima: deriva com o vento ou some depois do tempo de vida. [windowStart] é o começo da
   /// janela de 20 minutos da célula dela. `null`: sumiu.
   WorldSpawn? adjustSpark(WorldSpawn s, int windowStart, int t, double metersPerCell21) {
@@ -413,6 +428,12 @@ class ClimateWorld {
     if (mov.sparkDriftMps <= 0) return s;
     final m = math.min(mov.sparkDriftMps * age, mov.driftMaxM) / metersPerCell21;
     final h = _heading(d, s.cellX >>> 3, s.cellY >>> 3, mov);
+    // Época 10 em diante: o vento local. A rua onde a Fagulha nasceu canaliza a deriva; atrás das quadras ela anda menos.
+    final wm = d.epoch.wind, st = streets;
+    if (wm != null && st != null) {
+      final f = wm.factor(h, st.at(s.cellX * 2 + 1, s.cellY * 2 + 1) ?? st.at(s.cellX * 2, s.cellY * 2));
+      return s.movedTo(s.x + f.$1 * m, s.y + f.$2 * m);
+    }
     return s.movedTo(s.x + math.sin(h) * m, s.y - math.cos(h) * m);
   }
 
@@ -558,6 +579,21 @@ class ClimateWorld {
     return ((cx20 + snap.px) * 2, (cy20 + snap.py) * 2);
   }
 
+  /// A poça que a neve derretida forma (época 10 em diante): a do clima `melt_as`, se o clima de antes era de neve.
+  PuddlePiece? _meltPiece(({Epoch epoch, ClimateModel model, ClimateDef def, int window}) d, String? prevId) {
+    final wm = d.epoch.water;
+    if (wm == null || prevId == null || !wm.meltClimates.contains(prevId) || wm.meltClimates.contains(d.def.id)) return null;
+    return d.model.def(wm.meltAs)?.puddles;
+  }
+
+  /// O tamanho da poça de degelo com a fração [e] do tempo de secar já passada: cresce enquanto a neve derrete e depois
+  /// seca. Devolve o tamanho e quanto já secou (`null` enquanto cresce).
+  (double, double?) _meltSize(WaterModel wm, double e) {
+    if (e < wm.meltRise) return (e / wm.meltRise, null);
+    final dried = (e - wm.meltRise) / (1 - wm.meltRise);
+    return (1 - dried, dried);
+  }
+
   /// As poças (época 7) perto de (x21, y21) em [t]: as da chuva desta janela, crescendo, e as da janela anterior, secando.
   /// Os pontos são fixos por célula; o tamanho e os sorteios saem da janela de chuva. Sem modelo ou sem poças: nenhuma.
   List<Puddle> puddlesNear(double x21, double y21, double radius21, int t) {
@@ -583,6 +619,9 @@ class ClimateWorld {
           piece = prev;
           dried = fp.prevSinceEndS / prev.dryS;
           size = math.min(1.0, fp.prevFormedS / prev.growS) - dried;
+        } else if (_meltPiece(d, fp.prevId) case final mp?) {
+          piece = mp;
+          (size, dried) = _meltSize(d.epoch.water!, fp.prevSinceEndS / mp.dryS);
         } else {
           continue;
         }
@@ -593,12 +632,20 @@ class ClimateWorld {
         final before = cur.always ? null : _defAt17(cx, cy, start - 1)?.def.puddles;
         size = cur.always || (before != null && !before.always) ? 1.0 : math.min(1.0, (t - start) / cur.growS);
       } else {
-        final before = _defAt17(cx, cy, start - 1)?.def.puddles;
-        if (before == null || before.always) continue; // o gelo derrete junto com a Geada
-        piece = before;
-        wetWindow = d.window - 1;
-        dried = (t - start) / before.dryS;
-        size = 1 - dried;
+        final prevDef = _defAt17(cx, cy, start - 1)?.def, before = prevDef?.puddles;
+        if (before != null && !before.always) {
+          piece = before;
+          wetWindow = d.window - 1;
+          dried = (t - start) / before.dryS;
+          size = 1 - dried;
+        } else if (_meltPiece(d, prevDef?.id) case final mp?) {
+          // A neve da janela anterior derrete: a água entra no campo e junta nas mesmas baixadas.
+          piece = mp;
+          wetWindow = d.window - 1;
+          (size, dried) = _meltSize(d.epoch.water!, (t - start) / mp.dryS);
+        } else {
+          continue; // o gelo derrete junto com a Geada
+        }
       }
       if (size <= 0 && (dried == null || d.epoch.water == null)) continue;
       final epochId = d.epoch.id;
@@ -614,11 +661,16 @@ class ClimateWorld {
                 if (_toStreet(s.x, s.y) case final p?) (index: s.index, x: p.$1, y: p.$2, radiusM: s.radiusM, depth: 0.0),
           ]);
       final bonus = d.epoch.water?.dryDepthBonus ?? 0;
+      final wm = d.epoch.water;
+      final hour = ((t + d.model.localOffsetH * 3600) % 86400) ~/ 3600;
+      final iced = wm != null && !piece.frozen && wm.freezeClimates.contains(d.def.id) && hour >= wm.freezeFromH && hour < wm.freezeToH ? d.model.def(wm.freezeAs)?.puddles : null;
       for (final s in spots) {
         // Secando, as baixadas mais fundas duram mais.
         final sz = dried == null ? size : size + dried * (1 - 1 / (1 + bonus * s.depth));
         if (sz <= 0) continue;
-        out.add(Puddle(piece: piece, index: s.index, x: s.x, y: s.y, radiusM: s.radiusM, size: math.min(1.0, sz), wet: cur != null, rolls: puddleRolls(seed, epochId, cx, cy, wetWindow, s.index)));
+        // Poça rasa congela de madrugada no Frio e na Geada (época 10 em diante): vira a poça de gelo, no mesmo lugar.
+        final shown = iced != null && sz <= d.epoch.water!.freezeMaxSize ? iced : piece;
+        out.add(Puddle(piece: shown, index: s.index, x: s.x, y: s.y, radiusM: s.radiusM, size: math.min(1.0, sz), wet: cur != null && identical(shown, piece), rolls: puddleRolls(seed, epochId, cx, cy, wetWindow, s.index)));
       }
     }
     return out;
@@ -678,6 +730,21 @@ class ClimateWorld {
           final s = _item(item, slot.pick, x + 0.3, y + 0.3, fnv1a64([z.uidBase, j, 2]), z.startUtc);
           if (s != null && (item.revealM == null || s.distanceM(x21, y21, metersPerCell21) <= item.revealM!)) out.add(s); // a duna esconde
         }
+      }
+    }
+    // Rua molhada (época 10 em diante): enquanto chove, qualquer trecho de rua pode ter um Eco de Água, mesmo sem poça.
+    for (final (cx, cy) in _cells17(x21, y21, r21)) {
+      final d = _defAt17(cx, cy, t);
+      final wm = d?.epoch.water, pd = d?.def.puddles, sp = pd?.spawn;
+      if (d == null || wm == null || wm.wetPerCell <= 0 || pd == null || pd.always || sp == null) continue;
+      final rng = Pcg32(fnv1a64([seed, d.epoch.id, cx, cy, d.window, _saltWet]), saltKenoma);
+      for (var k = 0; k < wm.wetPerCell; k++) {
+        final px = (cx + rng.nextFloat()) * 16, py = (cy + rng.nextFloat()) * 16, roll = rng.nextFloat(), pick = rng.nextFloat();
+        if (roll >= wm.wetChance) continue;
+        final p = _toStreet(px, py);
+        if (p == null) continue;
+        final s = _eco(sp, pick, p.$1, p.$2, fnv1a64([seed, d.epoch.id, cx, cy, d.window, k, _saltWet, saltClimateUid]), t, levelOf);
+        if (s != null) out.add(s);
       }
     }
     // Poças: água pura (ou o cristal da poça congelada) enquanto têm água, e o Eco de Água enquanto chove.

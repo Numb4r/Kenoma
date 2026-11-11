@@ -5,6 +5,7 @@
 /// mesmo com ou sem bloco, e Campinas não muda.
 library;
 
+import '../data/relief_pack.dart';
 import 'dart:collection';
 
 import '../core/tiles.dart';
@@ -21,7 +22,10 @@ enum MapSourceKind { pack, overpass, floor }
 
 /// Um pacote de região já lido e conferido.
 class LoadedRegion {
-  const LoadedRegion({required this.id, required this.grid, required this.visual, this.noWalk, this.access});
+  const LoadedRegion({required this.id, required this.grid, required this.visual, this.noWalk, this.access, this.relief});
+
+  /// O relevo da região (época 9 em diante). `null`: terreno plano.
+  final ReliefPack? relief;
 
   final String id;
   final RegionPack grid;
@@ -34,7 +38,26 @@ class LoadedRegion {
   bool contains(int x, int y) => x >= grid.x0 && y >= grid.y0 && x < grid.x0 + grid.width && y < grid.y0 + grid.height;
 }
 
-class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccessSource {
+class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccessSource, ReliefSource {
+  // O relevo: o da primeira região que cobre o ponto. Fora delas (blocos do fallback), terreno plano.
+  @override
+  double? heightAt(double x21, double y21) {
+    for (final r in _regions) {
+      final h = r.relief?.heightAt(x21, y21);
+      if (h != null) return h;
+    }
+    return null;
+  }
+
+  @override
+  int? h16At(int cx, int cy) {
+    for (final r in _regions) {
+      final h = r.relief?.h16At(cx, cy);
+      if (h != null) return h;
+    }
+    return null;
+  }
+
   LayeredWorld({required List<LoadedRegion> regions, this.maxBlocks = 32}) : _regions = [...regions] {
     assert(regions.isNotEmpty, 'o mundo começa com a região embutida');
   }
@@ -61,7 +84,7 @@ class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccess
     final i = _regions.indexWhere((r) => r.id == id);
     if (i < 0) return;
     final r = _regions[i];
-    _regions[i] = LoadedRegion(id: r.id, grid: r.grid, visual: r.visual, noWalk: r.noWalk, access: access);
+    _regions[i] = LoadedRegion(id: r.id, grid: r.grid, visual: r.visual, noWalk: r.noWalk, access: access, relief: r.relief);
   }
 
   void addRegion(LoadedRegion region) {

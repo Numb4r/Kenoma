@@ -4,6 +4,7 @@ library;
 import 'fog_model.dart';
 import 'motion_model.dart';
 import 'water_model.dart';
+import 'wind_model.dart';
 import 'climate.dart';
 import 'features.dart';
 import 'weather.dart';
@@ -144,6 +145,7 @@ class Epoch {
     this.water,
     this.fog,
     this.motion,
+    this.wind,
     this.ecoV2,
     this.walkable,
     this.requiresFeature,
@@ -175,6 +177,7 @@ class Epoch {
         water: json['water'] == null ? null : WaterModel.fromJson(json['water'] as Map<String, dynamic>),
         fog: json['fog'] == null ? null : FogModel.fromJson(json['fog'] as Map<String, dynamic>),
         motion: json['motion'] == null ? null : MotionModel.fromJson(json['motion'] as Map<String, dynamic>),
+        wind: json['wind'] == null ? null : WindModel.fromJson(json['wind'] as Map<String, dynamic>),
         walkable: json['walkable'] == null ? null : Walkable.fromJson(json['walkable'] as Map<String, dynamic>),
         requiresFeature: json['requires_feature'] as String?,
         ecoV2: json['eco_v2'] == null ? null : EcoV2.fromJson(json['eco_v2'] as Map<String, dynamic>),
@@ -211,6 +214,10 @@ class Epoch {
   /// O movimento próprio de Ecos e Fagulhas (Passivos que andam, Ecos de Água que rondam a poça, Correntes do Véu), da
   /// época 9 em diante. `null`: todos parados onde nascem, como antes.
   final MotionModel? motion;
+
+  /// O vento local canalizado pelas ruas, da época 10 em diante: a deriva das Fagulhas passa a segui-lo. `null`: a
+  /// deriva segue reta na direção do clima.
+  final WindModel? wind;
 
   /// Os quatro itens fixos de uma célula, na ordem do índice.
   final List<SpawnItemDef> items;

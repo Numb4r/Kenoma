@@ -67,13 +67,17 @@ void paintSpawns(
   double dpr = 1,
   CreatureWind? wind,
   ui.Offset windDir = ui.Offset.zero,
+  ui.Offset Function(WorldSpawn s)? localWind,
   double pxPerM = 0,
 }) {
   final ordered = [...spawns]..sort((a, b) => a.y.compareTo(b.y));
+  final climateWind = windDir;
   final blow = wind != null && !wind.calm && windDir != ui.Offset.zero;
   for (final s in ordered) {
     var (sx, sy) = cam.cellToScreen(s.x, s.y, view.width, view.height);
     var lean = 0.0;
+    // O vento no lugar da criatura (canalizado pela rua, fraco atrás das quadras), ou o do clima se não há o local.
+    final windDir = localWind?.call(s) ?? climateWind;
     if (blow) {
       // Só desenho: o empurrão dos leves e a inclinação; o ponto de coleta continua em (s.x, s.y).
       final push = windDir * (wind.pushM(s, time) * pxPerM);

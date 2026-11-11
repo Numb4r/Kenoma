@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import '../core/epochs.dart';
 import '../data/access_pack.dart';
 import '../data/nowalk_pack.dart';
+import '../data/relief_pack.dart';
 import '../data/region_loader.dart' show sha256Hex;
 import '../data/region_pack.dart';
 import '../data/visual_pack.dart';
@@ -15,7 +16,7 @@ import '../world/layered_world.dart';
 import 'feed_config.dart';
 import 'signed_feed.dart' show verifySigned;
 
-const String kKindLogic = 'logic', kKindVisual = 'visual', kKindNoWalk = 'nowalk';
+const String kKindLogic = 'logic', kKindVisual = 'visual', kKindNoWalk = 'nowalk', kKindRelief = 'relief';
 
 /// O arquivo de rota (`_noaccess.bin`), em `route_files`: fora das épocas, vale o SHA-256 do catálogo assinado. Fica fora de
 /// `files` porque a 0.16 exige que todo arquivo de lá esteja em `epochs.json` e recusaria a região inteira.
@@ -89,6 +90,7 @@ RegionPackRef? epochRefOf(Epoch epoch, String id, String kind) => switch (kind) 
       kKindLogic => epoch.regionPacks[id],
       kKindVisual => epoch.visualPacks[id],
       kKindNoWalk => epoch.walkable?.excludePacks[id],
+      kKindRelief => epoch.reliefPacks[id],
       _ => null,
     };
 
@@ -129,6 +131,7 @@ RegionOpen openRegionFiles(String id, List<RegionFileJob> jobs, {String publicKe
   RegionPack? logic;
   VisualPack? visual;
   NoWalkPack? noWalk;
+  ReliefPack? relief;
   for (final job in jobs) {
     RegionOpen fail(String why) => RegionOpen(error: '$id/${job.kind}: $why', bad: [job.path]);
     final Uint8List bytes;
@@ -148,13 +151,15 @@ RegionOpen openRegionFiles(String id, List<RegionFileJob> jobs, {String publicKe
           visual = VisualPack.parse(bytes);
         case kKindNoWalk:
           noWalk = NoWalkPack.parse(bytes);
+        case kKindRelief:
+          relief = ReliefPack.parse(bytes);
       }
     } catch (e) {
       return fail('corrompido: $e');
     }
   }
   if (logic == null || visual == null) return RegionOpen(error: '$id: faltam arquivos');
-  return RegionOpen(region: LoadedRegion(id: id, grid: logic, visual: visual, noWalk: noWalk));
+  return RegionOpen(region: LoadedRegion(id: id, grid: logic, visual: visual, noWalk: noWalk, relief: relief));
 }
 
 /// Lê e confere o arquivo de rota: SHA-256 do catálogo e, recém-baixado, a assinatura. `null` se não confere. Roda em Isolate.
