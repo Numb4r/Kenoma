@@ -230,6 +230,14 @@ O tráfego comum deixou de sair da seed: é a simulação local de `world/sim/` 
 - **Ruas:** o estado de cada rua (`StreetCover.stateOf`) é reaplicado a cada 30 s. Rua alagada: carro vira barco e o passante sai dela na primeira esquina e não volta. Rua com duna ou neve funda: nenhum carro entra; quem já estava sai.
 - **Trilhas:** os carros da simulação gastam a neve das ruas por onde passam (acima).
 
+## Água, neblina e vento no relevo (0.19.0, época 9)
+
+- **Poças:** da época 9 em diante, onde há relevo, os pontos saem de `WaterField.spots` (onde a água da chuva se junta), não mais de `puddleSpots` (sorteio pela seed). Quando crescem e secam, e o que nasce delas, não mudou; a mais funda dura até 50% a mais.
+- **Dilúvio:** `StreetCover.level` pergunta a `WaterField.lineFloods` se a rua alaga (fundo de vale, beira de rio ou lago). O `share` do `clima.json` só vale onde não há relevo. A cobertura por campo e o tráfego (carro vira barco, passante sai) usam o mesmo resultado.
+- **Neblina:** `ClimateWorld.fogAt` dá a densidade no lugar; `modsAt` multiplica o `view_max_m`. O desenho é o véu preso ao mapa (`ui/game/world_fx.dart`), em quatro tons. A Nevasca continua com a visão fixa de 40 m.
+- **Vento:** o campo local (`localWind`) é cenário e só move as folhas. A deriva das Fagulhas (`adjustSpark`) continua sendo a do clima, em linha reta, somada à Corrente do Véu.
+- **Chuva e passantes:** `outfit: rain` no clima liga `TrafficSim.raining`; quem estava na rua corre para o abrigo.
+
 ## Climas sem data (0.17.2)
 
 | Clima | Quando |

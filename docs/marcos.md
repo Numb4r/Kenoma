@@ -379,3 +379,45 @@ Ver "Cobertura por campo (0.18.0)" em `docs/clima-auditoria.md`: máscara única
 - **Durante a conferência entraram duas mudanças** (o APK instalado já as tem): semáforo de pedestre no meio da quadra (o nó com semáforo do OSM e só duas ruas de carro: a rua para por `ped_green_s` = 10 s enquanto a faixa abre), e os tetos subiram para 400 carros e 350 passantes.
 - **Não visto no aparelho:** gelo, fuligem e Dilúvio pelo campo novo (só no render fora da tela), a pausa do Silêncio, um passante esperando o verde no vídeo, a neve funda fechando rua, e a mesma área da captura da 0.17.2 (a de antes é no bairro do aparelho, a de depois é no Centro). O material coletado pelo simulador durante a conferência entrou como debug, fora da Bolsa.
 - Tela de bloqueio e app em primeiro plano conferidos antes de cada captura e durante a gravação. Numa das voltas a tecla voltar fechou o Kenoma e o app que estava aberto antes ficou na frente: a captura foi recusada.
+
+## Fase 1 · fatia 7 · Relevo, água, neblina, vento e vida urbana (0.19.0)
+
+Segue o GDD rev 336 ("Simulações do mundo"; o texto entrou no commit `f726cd7`, junto com a conferência da 0.18.0, por engano: não há um commit "docs: GDD rev 336" separado). A regra: o que muda o jogo é função da seed e do tempo, igual para amigos; o que é cenário pode ser simulação local. **Esta versão muda o mundo: época 9**, início 2026-11-11T17:30:00Z, válida até 2027-02-09. Save sem mudança de schema (continua 6). As épocas 0 a 8 não foram tocadas (conferido byte a byte ao acrescentar a 9). **A época 9 não está no feed assinado:** quem tem a 0.18.0 ou mais antiga continua na 8 até receber a 0.19.0.
+
+### O que muda o mundo (época 9)
+
+- **Relevo (`relief_packs`):** `campinas_e9_relief.bin`, do SRTM de 30 m (espelho público skadi), numa grade z20 de 1169 x 1206 amostras suavizadas (sigma de 1,2 amostra), de 527,8 a 998,6 m, 1.373.573 bytes, SHA-256 `1bb9c5ac…7d86` fixado na época. A altura de uma célula z21 é a interpolação bilinear das quatro amostras; a água usa a versão só com inteiros (`h16At`, 1/16 dm). `pipeline/build_relief.py` recusa regerar por cima. São Paulo e os blocos do fallback Overpass não têm relevo: lá o terreno é plano e valem as regras de antes (poças e ruas alagadas sorteadas, neblina igual em todo lugar).
+- **Água da chuva (`water`, `world/water_field.dart`):** por tile z15, com 32 células de folga: a chuva põe 1024 em cada célula z21 e, em 32 passos fixos, metade da água de cada célula vai para a vizinha mais baixa das oito. O leito das ruas fica abaixo do terreno (1 a 3 dm pela classe: são os canais), o bueiro tira 5, 10 ou 16 de cada 256 por passo (local, secundária, principal), e rios e lagos do pacote visual levam embora o que chega. Alturas e água em inteiros.
+  - **Poças:** em cada célula z17, os pontos onde mais água se juntou (a baixada, ou o ponto com mais água que os oito em volta), no máximo `per_cell` do clima, levados para a rua como antes. A mais funda é a maior e a última a secar (`dry_depth_bonus`: até 50% a mais de tempo). No Centro saem uns 20 por tile z15 (1,3 por célula z17); **antes eram 2 a 5 por célula z17**: há menos poças, e elas ficam nos pontos baixos de verdade. Os sorteios da poça (item, Eco) continuam os mesmos.
+  - **Dilúvio:** alaga a rua que tem pelo menos um terço do traçado em células por onde passou muita água (fundo de vale) ou a até três células de um rio ou lago e no máximo 1,2 m acima dele. No Centro, 4,5% das células. Os caminhos de pedestre não alagam. Sai o sorteio de `share` (continua valendo onde não há relevo).
+- **Neblina (`fog`):** em `fog` e `fog_procession`, a visão dos Ecos (`view_max_m`, 60 m) passa a depender do lugar: a altura do ponto contra a média de oito pontos a 16 células (15 m abaixo é fundo de vale, 15 m acima é alto de morro), mais a beira d'água. No vale 0,6 vez (36 m), no morro 1,6 vez (96 m). O sol acima de 8° começa a desfazê-la e em 30° a visão chega a 2,5 vezes.
+- **Movimento (`motion`, `core/motion_model.dart`):** função fechada da seed, do uid e do tempo, sem estado.
+  - Eco Passivo: anda devagar num raio de 3,5 m (duas ondas de períodos diferentes, em torno de 80 s). Arisco, Agressivo e Oculto ficam onde nascem.
+  - Eco de Água: ronda a poça mais próxima (o ponto onde a água se junta, a até 40 m) num círculo de 4 m; o que nasceu de uma poça ronda a dele.
+  - Correntes do Véu: nove em dez células z18 têm um redemoinho fixo pela seed; a Fagulha desliza a 0,04 m/s até o mais próximo (a até 60 m) e gira em volta dele a 1,5 m. A deriva do vento do clima soma por cima, como antes.
+  - Alcance de toque e Aura são medidos contra a posição do momento (a lista do mundo já sai com ela, relida a 4 Hz com o instante exato).
+
+### Cenário (local, fora das épocas)
+
+- **Véu da neblina:** preso ao mapa, em quatro tons pela densidade do lugar, por baixo da camada leve de tela que já existia. **Redemoinhos:** ponto de brilho que pulsa, com quatro pixels girando.
+- **Vento local (`world/sim/wind_field.dart`):** a direção e a força do clima canalizadas pelas ruas (1,35 vez ao longo da rua, quase nada na rua de través, metade atrás das quadras), com rajadas. Leva 40 folhas e papéis pelo chão nos climas de vento (`wind_mps`), que nascem fora da tela, do lado de onde o vento vem.
+- **Chuva:** quando ela começa, quem está na rua corre (2,4 vezes) para o abrigo mais próximo, que é a esquina a até 20 m de um ponto de ônibus, comércio ou bar do OSM, e fica parado lá até parar de chover. Quem nasce durante a chuva já vem de guarda-chuva e anda normal.
+- **Pombos:** um bando de 4 a 8 em cada praça ou parque do OSM a até 220 m; ciscam, e quando o avatar chega a 5 m levantam voo e pousam uns 13 m adiante. Só nascem e somem fora da vista.
+- **Pontos do OSM:** `campinas_e0_traffic.bin` foi regerado com ponto de ônibus (1.258), comércio (2.536), bar e restaurante (1.026), escola (582) e praça (1.575): 14.967 pontos, 56.231 bytes.
+- **Debug:** relevo como mapa de calor (seção Mapa e câmera).
+
+### Do pedido, o que NÃO entrou nesta versão
+
+- **Água:** a neve derretida não entra no campo de água; a poça rasa não congela de madrugada em Frio e Geada (continuam as poças de gelo próprias desses climas); as poças não entraram na máscara única dos blocos.
+- **Vento:** fumaça, fuligem do smog nascendo nas avenidas e areia ainda não seguem o campo; as dunas não andam; as criaturas continuam se inclinando pelo vento do clima, não pelo local; a deriva das Fagulhas pelo vento continua em linha reta na direção do clima (não é canalizada pelas ruas).
+- **Vida urbana:** esperar e entrar no ônibus (o Ônibus Espectral ainda não existe), sentar em praças, passear com cachorro, lotar comércio de dia e bar à noite, horário de escola e de fim de expediente, ciclistas na ciclovia, a multidão em dia de jogo, gatos, morcegos e maritacas.
+- **Ecos:** de Sombra e voadores ainda não existem.
+- **Relevo:** recorte de SRTM para os blocos do fallback e para São Paulo.
+
+### Testes
+
+`relief_pack_test` (interpolação e vetores fixos de Campinas, SHA do arquivo), `water_field_test` (a água para no fundo da bacia, igual em dois aparelhos e na emenda de tiles, ruas como canais, lago como sumidouro, margem alagada, Dilúvio por rua), `fog_model_test` (vale e morro, sol da manhã), `motion_model_test` (Eco Passivo, órbita, redemoinhos, Fagulha sem salto), `epoch9_world_test` (ponta a ponta com os arquivos de verdade: poças iguais em dois aparelhos e abaixo da vizinhança, Eco e Fagulha em movimento, neblina no vale e no morro), `wind_field_test` (vento desviado pelas ruas, rajadas, folhas), `birds_test` (pombos levantando voo), e em `traffic_sim_test` os passantes se abrigando na chuva. Suíte: 1684 testes, 4 pulados; `flutter analyze` limpo. O teste "um Eco oculto forçado…" de `game_map_screen_test` depende do relógio e falha de vez em quando (já falhava na 0.17.2).
+
+### Medido no PC
+
+- Campo de água: 6 a 8 ms por tile z15 (uma vez por tile, guardado). Montar o relevo: uma leitura de 1,4 MB ao abrir.

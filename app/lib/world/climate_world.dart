@@ -202,7 +202,7 @@ class ClimateWorld {
 
   /// A neblina no lugar (células z21) em [t], da época 9 em diante e só nos climas de neblina: quão baixo é o lugar, a
   /// densidade (0 a 1) e o multiplicador da visão dos Ecos. `null` sem relevo ali, fora desses climas ou em época sem `fog`.
-  ({double low, double density, double viewMult})? fogAt(double x21, double y21, int t, Epoch epoch, String climateId) {
+  ({double low, double density, double viewMult})? fogAt(double x21, double y21, int t, Epoch epoch, String climateId, {double? sunAltDeg}) {
     final fog = epoch.fog, r = relief;
     if (fog == null || r == null || !fog.climates.contains(climateId)) return null;
     final cx = x21.floor(), cy = y21.floor(), k = fog.ringCells, kd = (k * 0.7071).round();
@@ -215,8 +215,12 @@ class ClimateWorld {
       ring += v;
     }
     final low = fog.lowness(h, ring, water?.call(epoch)?.floodAt(cx, cy) ?? 0);
-    final (lat, lon) = tileFractionToLatLon(x21, y21, biomeZoom);
-    final sun = sunAltitudeDeg(lat, lon, t);
+    // [sunAltDeg]: o desenho calcula o sol uma vez para a tela inteira (a diferença em 100 m não se vê).
+    var sun = sunAltDeg;
+    if (sun == null) {
+      final (lat, lon) = tileFractionToLatLon(x21, y21, biomeZoom);
+      sun = sunAltitudeDeg(lat, lon, t);
+    }
     return (low: low, density: fog.density(low, sun), viewMult: fog.viewMult(low, sun));
   }
 

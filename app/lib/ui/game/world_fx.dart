@@ -6,7 +6,9 @@ library;
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import '../../core/astro.dart' show sunAltitudeDeg;
 import '../../core/epochs.dart';
+import '../../core/tiles.dart';
 import '../../world/climate_world.dart';
 import '../../world/map_camera.dart';
 import '../colors.dart';
@@ -21,6 +23,9 @@ void paintFogVeil(ui.Canvas canvas, ui.Size view, MapCamera cam, ClimateWorld wo
   const sub = 2;
   final x0 = l.floor(), y0 = top.floor(), x1 = r.ceil(), y1 = b.ceil();
   if ((x1 - x0) * (y1 - y0) > 1500) return;
+  final (lat, lon) = tileFractionToLatLon(cam.centerX, cam.centerY, biomeZoom);
+  final sun = sunAltitudeDeg(lat, lon, t);
+  if (epoch.fog!.cleared(sun) >= 1) return; // o sol já desfez tudo
   canvas.save();
   canvas.translate(view.width / 2, view.height / 2);
   canvas.rotate(cam.rotation);
@@ -28,7 +33,7 @@ void paintFogVeil(ui.Canvas canvas, ui.Size view, MapCamera cam, ClimateWorld wo
   canvas.translate(-cam.centerX, -cam.centerY);
   for (var y = y0 * sub; y < y1 * sub; y++) {
     for (var x = x0 * sub; x < x1 * sub; x++) {
-      final f = world.fogAt((x + 0.5) / sub, (y + 0.5) / sub, t, epoch, climateId);
+      final f = world.fogAt((x + 0.5) / sub, (y + 0.5) / sub, t, epoch, climateId, sunAltDeg: sun);
       if (f == null || f.density <= 0.02) continue;
       // Em degraus (pixel art): quatro tons de véu.
       final a = (f.density * 4).ceil() / 4 * 0.42;

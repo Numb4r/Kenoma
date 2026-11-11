@@ -73,7 +73,17 @@ No `regions.json` assinado, o de São Paulo entra em `route_files.access` da reg
 
 | Arquivo | Pontos | Bytes | SHA-256 |
 | --- | --- | --- | --- |
-| `app/assets/regions/campinas_e0_traffic.bin` | 7.991 (semáforo 909, pare 1.137, preferência 77, faixa 4.933, entrada 935) | 29.069 | `842434de03967a5d9553216b4dd3870ecb12aa3ebdf75c20bcb7e34db66d89d0` |
+| `app/assets/regions/campinas_e0_traffic.bin` (0.19.0, com a vida urbana) | 14.967 (semáforo 909, pare 1.137, preferência 77, faixa 4.933, entrada 934, ônibus 1.258, comércio 2.536, bar 1.026, escola 582, praça 1.575) | 56.231 | `c82bfdac97252ad6f9ca2bc05c53b531ff0119cb5872223d09be13e423fb186c` |
 
 São Paulo e os blocos do fallback ainda não têm o arquivo: onde não há nenhum ponto em volta, a simulação põe semáforo nos cruzamentos de avenidas e faz a rua menor ceder a vez. Para São Paulo, o arquivo entraria em `route_files` do `regions.json` assinado, como o de rota.
 
+
+## Relevo (0.19.0, época 9: é mundo)
+
+`build_relief.py --region <região> --epoch <época>` baixa os tiles `.hgt` do SRTMGL1 (1 segundo de arco, uns 30 m) do espelho público `elevation-tiles-prod` (skadi) para `cache/srtm/`, amostra a altura no centro de cada célula z20 da região, preenche os vazios, passa um filtro gaussiano (sigma de 1,2 amostra) e grava em decímetros (`REL1`, formato no cabeçalho do script). **O SHA-256 entra em `relief_packs` da época: o arquivo nunca é regerado por cima** (o script recusa se ele já existe).
+
+| Arquivo | Amostras | Alturas | Bytes | SHA-256 |
+| --- | --- | --- | --- | --- |
+| `app/assets/regions/campinas_e9_relief.bin` | 1169 x 1206 (z20) | 527,8 a 998,6 m | 1.373.573 | `1bb9c5acd6f6e09f49af449b7bd7f026cc30d237fa167bf4ac209278481e7d86` |
+
+São Paulo ainda não tem relevo: precisaria do arquivo gerado, listado numa época e publicado no feed assinado.
