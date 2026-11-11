@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 import '../../capture/eco_type.dart';
 import '../../core/astro.dart';
 import '../../core/weather.dart';
+import '../../world/climate_world.dart' show trafficResync;
 import '../../world/companion.dart';
 import '../../world/creature_wind.dart';
 import '../../core/tiles.dart';
@@ -415,7 +416,8 @@ class GameMapGame extends FlameGame {
     if (traffic) {
       final tc = rainFx() ? climateGround.trafficCover(wv.field.seed, climateShown(), wv.climate) : null; // barcos, dunas, gelo
       final walk = wv.climate.walkerMult == 1 ? null : _trafficUtc(walker: true);
-      _traffic.prepare(view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: _trafficUtc(), tWalkExact: walk, metersPerCell: mpc, light: light, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false, outfit: climateShown().outfit);
+      final clock = _trafficUtc(), rs = _trafficResync();
+      _traffic.prepare(view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: clock, tWalkExact: walk, tOld: rs?.old, mix: rs?.mix ?? 1, metersPerCell: mpc, light: light, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false, outfit: climateShown().outfit);
     } else {
       _traffic.lastDrawn = 0;
     }
@@ -532,6 +534,9 @@ class GameMapGame extends FlameGame {
     if (cw == null || !avatar.hasPosition) return t;
     final f = cw.forced();
     if (f != _forcedId) {
+      // O debug trocou o clima com o tráfego parado: quem estava parado se ressincroniza como no fim do Silêncio do mundo.
+      final stop = _forcedId == null ? null : cw.trafficStopAt(avatar.x, avatar.y, t - 1, sinceUtc: _forcedAt);
+      _debugStop = stop == null || t < stop.s ? null : (frozenAt: stop.s.toDouble(), endUtc: t);
       _forcedId = f;
       _forcedAt = t; // o clima do debug começa agora, só neste aparelho
     }
@@ -540,6 +545,18 @@ class GameMapGame extends FlameGame {
 
   String? _forcedId;
   double _forcedAt = 0;
+  ({double frozenAt, double endUtc})? _debugStop;
+
+  /// Depois do Silêncio (`trafficResync`): o relógio de quem estava parado e quanto do tráfego da hora já entrou. `null`
+  /// fora da ressincronização. Chame depois de [_trafficUtc] no quadro.
+  ({double old, double mix})? _trafficResync() {
+    final t = _exactUtc(), cw = worldView?.field.climate;
+    if (cw == null || !avatar.hasPosition) return null;
+    final b = climateBalance;
+    final stop = cw.trafficStopAt(avatar.x, avatar.y, t, sinceUtc: _forcedId == null ? null : _forcedAt), dbg = _debugStop;
+    return (stop == null ? null : trafficResync(frozenAt: stop.s.toDouble(), endUtc: stop.e.toDouble(), t: t, resyncS: b.trafficResyncS, speed: b.trafficResyncSpeed)) ??
+        (dbg == null ? null : trafficResync(frozenAt: dbg.frozenAt, endUtc: dbg.endUtc, t: t, resyncS: b.trafficResyncS, speed: b.trafficResyncSpeed));
+  }
 
   /// A Aura, o alcance de toque e os rastros: no chão, por baixo das criaturas.
   void _paintAura(Canvas canvas, Size view, MapCamera cam, Offset center) {

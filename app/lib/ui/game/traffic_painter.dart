@@ -130,6 +130,8 @@ class TrafficPainter {
     Object? coverKey,
     bool skid = false,
     String? outfit,
+    double? tOld,
+    double mix = 1,
   }) {
     lastDrawn = 0;
     lastBoats = 0;
@@ -140,7 +142,14 @@ class TrafficPainter {
     final t = tUtcExact ?? _timeFor(tUtc);
     final (l, top, r, b) = cam.visibleBounds(view.width, view.height);
     final m = trafficMarginM / metersPerCell;
-    final ghosts = _fieldFor(seed, coverKey, streetState).ghostsIn(t, l - m, top - m, r + m, b + m, maxGhosts: maxGhosts, tWalk: tWalkExact);
+    final field = _fieldFor(seed, coverKey, streetState);
+    // Depois do Silêncio ([tOld] não nulo): quem estava parado segue pelo relógio antigo e se desfaz, e o tráfego da hora
+    // entra com [mix]. Fora disso, só o tráfego da hora, inteiro.
+    final ghosts = [
+      if (tOld != null)
+        for (final g in field.ghostsIn(tOld, l - m, top - m, r + m, b + m, maxGhosts: maxGhosts)) g.faded(1 - mix),
+      for (final g in field.ghostsIn(t, l - m, top - m, r + m, b + m, maxGhosts: maxGhosts, tWalk: tWalkExact)) tOld == null ? g : g.faded(mix, forming: true),
+    ];
     for (final g in ghosts) {
       final (sx, sy) = cam.cellToScreen(g.x, g.y, view.width, view.height);
       if (sx < -40 || sy < -40 || sx > view.width + 40 || sy > view.height + 40) continue;

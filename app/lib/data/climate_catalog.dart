@@ -178,7 +178,7 @@ class ClimateTag {
 }
 
 class ClimateCatalog {
-  const ClimateCatalog({this.climates = const {}, this.pieces = const {}, this.tags = const {}, this.events = const {}, this.reasons = const {}, this.rainbowArc = const {}, this.procession = const {}});
+  const ClimateCatalog({this.climates = const {}, this.pieces = const {}, this.tags = const {}, this.events = const {}, this.reasons = const {}, this.rainbowArc = const {}, this.procession = const {}, this.calendarPending = const []});
 
   factory ClimateCatalog.fromJson(Map<String, dynamic>? j) => j == null
       ? const ClimateCatalog()
@@ -196,6 +196,10 @@ class ClimateCatalog {
           reasons: {for (final e in ((j['reasons'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as String},
           rainbowArc: (j['rainbow_arc'] as Map<String, dynamic>?) ?? const {},
           procession: (j['procession'] as Map<String, dynamic>?) ?? const {},
+          calendarPending: [
+            for (final e in ((j['calendar_pending'] as List<dynamic>?) ?? const []).cast<Map<String, dynamic>>())
+              (id: e['id'] as String, name: e['name'] as String, climates: (e['climates'] as List<dynamic>).cast<String>(), note: (e['note'] as String?) ?? 'Data a definir.'),
+          ],
         );
 
   /// O último catálogo lido do app (o menu de debug lista os climas daqui).
@@ -209,6 +213,10 @@ class ClimateCatalog {
   /// `debug`, `feed`).
   final Map<String, ({String name, String reason})> events;
   final Map<String, String> reasons;
+
+  /// Eventos do calendário do Véu que já têm nome e climas, mas ainda não têm data (a Noite das Fendas): o app Céu lista,
+  /// nada acontece no mundo. Quando a data sair, o evento entra no `calendar` de uma época nova e sai daqui.
+  final List<({String id, String name, List<String> climates, String note})> calendarPending;
 
   /// O desenho do arco-íris de pé no mapa (época 8): raio, faixas, cores, opacidade e esmaecer (`rainbow_painter.dart`).
   final Map<String, dynamic> rainbowArc;
@@ -240,6 +248,8 @@ class ClimateBalance {
     this.footprintEveryM = 3,
     this.footprintMax = 40,
     this.prismSearchM = 6000,
+    this.trafficResyncS = 60,
+    this.trafficResyncSpeed = 1.25,
     this.creatureWind = const CreatureWindBalance(),
   });
 
@@ -261,9 +271,16 @@ class ClimateBalance {
       footprintEveryM: d('footprint_every_m', 3),
       footprintMax: (j['footprint_max'] as num?)?.toInt() ?? 40,
       prismSearchM: d('prism_search_m', 6000),
+      trafficResyncS: d('traffic_resync_s', 60),
+      trafficResyncSpeed: d('traffic_resync_speed', 1.25),
       creatureWind: CreatureWindBalance.fromJson(j['creature_wind'] as Map<String, dynamic>?),
     );
   }
+
+  /// Depois do Silêncio: em quantos segundos o Tráfego do Véu volta à hora real, e quanto mais rápido anda quem estava
+  /// parado enquanto se desfaz (`trafficResync`).
+  final double trafficResyncS;
+  final double trafficResyncSpeed;
 
   /// Teto de partículas somando as camadas, e a fração delas no modo bolso.
   final int particleCap;

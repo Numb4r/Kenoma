@@ -95,6 +95,13 @@ class Ghost {
 
   GhostKind get kind => model.kind;
 
+  /// O mesmo fantasma com a opacidade multiplicada por [k], se desfazendo pela costura do Véu (ou se formando, com
+  /// [forming]): a troca de quem estava parado pelo tráfego da hora, depois do Silêncio.
+  Ghost faded(double k, {bool forming = false}) {
+    final a = (alpha * k).clamp(0.0, 1.0);
+    return Ghost(id: id, model: model, palette: palette, x: x, y: y, heading: heading, speedMps: speedMps, phase: forming ? GhostPhase.fadeIn : GhostPhase.fadeOut, phaseT: forming ? a : 1 - a, travelledM: travelledM, line: line);
+  }
+
   /// Opacidade de 0 a 1 implícita pela fase.
   double get alpha => switch (phase) { GhostPhase.alive => 1.0, GhostPhase.fadeIn => phaseT, GhostPhase.fadeOut => 1 - phaseT };
 }

@@ -155,6 +155,12 @@ class _SkyScreenState extends State<SkyScreen> {
             key: const Key('sky-next-event'),
             style: _body,
           ),
+          for (final p in widget.catalog.calendarPending)
+            Text(
+              '${p.name.toUpperCase()}: ${[for (final c in p.climates) widget.catalog.of(c).name.toUpperCase()].join(' E ')}. ${p.note.toUpperCase()}',
+              key: Key('sky-pending-${p.id}'),
+              style: _dim,
+            ),
         ],
         if (widget.usePrism != null && (prisms > 0 || _prism != null)) ...[
           const SectionTitle('Arco-íris'),

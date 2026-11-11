@@ -21,7 +21,7 @@ String abilityText(EcoSpecies sp, int level, List<(int, int)> bands) {
   return switch (a.kind) {
     'aura_bonus_m' => 'Aura +$v m',
     'spark_pickup_bonus_m' => 'Coleta +$v m',
-    'tracker_range_m' => 'Rastreador $v m',
+    'tracker_range_m' => 'Radar $v m',
     _ => a.kind,
   };
 }
@@ -71,7 +71,7 @@ class _CircleScreenState extends State<CircleScreen> {
               decoration: panelBox(),
               child: Text(
                 'EFEITO NO MAPA\nAURA +${a.auraBonusM.round()} M · COLETA +${a.pickupBonusM.round()} M · '
-                'RASTREADOR ${a.trackerRangeM > 0 ? '${a.trackerRangeM.round()} M' : 'PADRÃO'}',
+                'RADAR ${a.trackerRangeM > 0 ? '${a.trackerRangeM.round()} M' : 'PADRÃO'}',
                 style: const TextStyle(fontSize: 8, color: kText, height: 1.8),
               ),
             ),

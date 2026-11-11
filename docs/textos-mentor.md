@@ -21,7 +21,7 @@ O tutorial sai uma mensagem de cada vez, depois de alguns segundos de jogo com o
 | 7 | `m07` | 5 s | capture ≥ 1 | Você capturou? Não é bem capturar, é? É devolver o sinal a quem o perdeu. Guarde o Ectoplasma: tudo que se escuta deixa um resto. |
 | 8 | `m08` | 40 s | - | Abra a Bancada, no celular. Um selo simples é giz e ectoplasma, nada mais. Com duas Essências você faz um selo reforçado. De onde você acha que vem o giz? |
 | 9 | `m09` | 40 s | - | Um Eco que você já tem pode virar Essência: é a destilação. Parece cruel? A Essência não se perde, só muda de forma. Os que estão no seu Círculo não podem ser destilados, a menos que você os tire de lá. |
-| 10 | `m10` | 40 s | - | Escolha até três criaturas para o seu Círculo. Cada uma melhora o seu mapa: Aura maior, coleta mais longe, rastreador mais fundo. E um tipo forte facilita a sintonia contra o tipo que ele vence. Fogo vence quem mesmo? |
+| 10 | `m10` | 40 s | - | Escolha até três criaturas para o seu Círculo. Cada uma melhora o seu mapa: Aura maior, coleta mais longe, Radar mais fundo. E um tipo forte facilita a sintonia contra o tipo que ele vence. Fogo vence quem mesmo? |
 | 11 | `m11` | 40 s | - | Segure o dedo sobre um Eco dentro da Aura e o sinal dele fica preso por cinco minutos. Dá tempo de fazer outra coisa. Dá tempo de se arrepender. |
 | 12 | `m12` | 40 s | - | Existe um fórum, o Limen. Pedem coisas pequenas todos os dias. Faça o que pedirem, ou não. Quem pede sempre sabe o que quer? |
 | 13 | `m13` | 45 s | - | Por ora é só. Se o celular tremer sozinho, não atenda. Última pergunta: quem mais anda por aí com a mesma frequência que a sua? |

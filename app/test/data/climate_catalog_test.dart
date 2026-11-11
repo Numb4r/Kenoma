@@ -105,4 +105,20 @@ void main() {
     expect(catalog.tags['charged']!.tint, 0xFF5FD3C6);
     expect(catalog.tags['charged']!.name, 'Eco carregado');
   });
+
+  test('Noite das Fendas: no calendário do Véu sem data; Vento das Fendas e Tempestade de Ecos não têm regra em época nenhuma', () {
+    final p = catalog.calendarPending.singleWhere((e) => e.id == 'noite_das_fendas');
+    expect(p.name, 'Noite das Fendas');
+    expect(p.climates, ['rift_wind', 'echo_storm']);
+    expect(p.note, 'Data a definir.');
+    for (final c in p.climates) {
+      expect(catalog.climates, contains(c));
+    }
+    // Sem data, nada muda no mundo: nenhuma época tem regra de calendário para esses climas (só o debug os mostra).
+    final epochs = (loadJson('assets/data/epochs.json')['epochs'] as List<dynamic>).cast<Map<String, dynamic>>();
+    for (final e in epochs) {
+      final calendar = ((e['climate'] as Map<String, dynamic>?)?['calendar'] as List<dynamic>?) ?? const [];
+      expect([for (final r in calendar) (r as Map<String, dynamic>)['climate']], isNot(anyOf(contains('rift_wind'), contains('echo_storm'))), reason: 'época ${e['id']}');
+    }
+  });
 }

@@ -34,14 +34,38 @@ void main() {
     for (final h in [13.0, 14.5, 16.0, 17.99]) {
       expect(a.trafficClock(x, y, noon + (h - 12) * 3600), s0.toDouble(), reason: '$h h');
     }
-    // Acabou no fim da janela das 15 (18:00): anda a partir de onde parou, atrasado as 5 h da parada.
+    // Acabou no fim da janela das 15 (18:00): o relógio volta à hora real na hora, sem esperar a janela seguinte.
     final end = utc(2026, 12, 1, 18).toDouble();
-    expect(a.trafficClock(x, y, end), s0.toDouble());
-    expect(a.trafficClock(x, y, end + 0.5), closeTo(s0 + 0.5, 1e-6));
-    expect(a.trafficClock(x, y, end + 3000), closeTo(s0 + 3000, 1e-6));
-    // Na janela seguinte a ela (21:00), volta à hora real.
-    final late = utc(2026, 12, 1, 21, 30).toDouble();
-    expect(a.trafficClock(x, y, late), late);
+    expect(a.trafficClock(x, y, end - 0.5), s0.toDouble());
+    expect(a.trafficClock(x, y, end + 0.5), end + 0.5);
+    expect(a.trafficClock(x, y, end + 3000), end + 3000);
+    expect(a.trafficStopAt(x, y, end + 30), (s: s0, e: end.toInt()), reason: 'a parada que acabou ainda é conhecida');
+  });
+
+  test('depois do Silêncio, quem estava parado volta de onde parou, um pouco mais rápido, e a hora real entra em 1 minuto', () {
+    final a = device(), b = device();
+    final end = utc(2026, 12, 1, 18).toDouble();
+    ({double old, double mix})? at(ClimateWorld w, double t) {
+      final stop = w.trafficStopAt(x, y, t);
+      return stop == null ? null : trafficResync(frozenAt: stop.s.toDouble(), endUtc: stop.e.toDouble(), t: t, resyncS: 60, speed: 1.25);
+    }
+
+    expect(at(a, end - 1), isNull, reason: 'ainda parado');
+    final first = at(a, end)!;
+    expect(first.old, s0.toDouble(), reason: 'de onde parou, sem salto');
+    expect(first.mix, 0, reason: 'o tráfego da hora entra do zero');
+    // Contínuo: de um quadro para o outro, o relógio antigo anda 1,25 vez o tempo e a mistura sobe aos poucos.
+    var prev = first;
+    for (var i = 1; i < 1800; i++) {
+      final r = at(a, end + i / 30)!;
+      expect(r.old - prev.old, inInclusiveRange(0, 1.25 / 30 + 1e-6));
+      expect(r.mix - prev.mix, inInclusiveRange(0, 1 / 30 / 60 + 1e-6));
+      prev = r;
+    }
+    expect(prev.mix, closeTo(1, 0.01));
+    expect(at(a, end + 60), isNull, reason: 'em 1 minuto, só a hora real');
+    expect(a.trafficClock(x, y, end + 60), end + 60);
+    expect(at(b, end + 17.3), at(a, end + 17.3), reason: 'dois aparelhos veem a mesma ressincronização');
   });
 
   test('dois aparelhos veem o mesmo relógio do tráfego', () {

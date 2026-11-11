@@ -19,7 +19,7 @@ String abilityText(SpeciesAbility ability, int level, List<(int, int)> bands) {
   final effect = switch (ability.kind) {
     'aura_bonus_m' => 'Aura +$v m',
     'spark_pickup_bonus_m' => 'Coleta de Fagulhas e materiais +$v m',
-    'tracker_range_m' => 'Rastreador alcança $v m',
+    'tracker_range_m' => 'Radar alcança $v m',
     _ => '${ability.kind} $v',
   };
   final range = level > to ? 'a partir do nível $from' : (from == to ? 'nível $from' : 'níveis $from a $to'); // o Espírito passa do último intervalo

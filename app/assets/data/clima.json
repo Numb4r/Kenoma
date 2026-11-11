@@ -2045,6 +2045,14 @@
       "reason": "Noite Boreal: o céu ondula e o sinal falha."
     }
   },
+  "calendar_pending": [
+    {
+      "id": "noite_das_fendas",
+      "name": "Noite das Fendas",
+      "climates": ["rift_wind", "echo_storm"],
+      "note": "Data a definir."
+    }
+  ],
   "rainbow_arc": {
     "arc_m": 90,
     "band_m": 3,

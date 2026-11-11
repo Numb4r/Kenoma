@@ -87,6 +87,15 @@ class PlayerClimate {
   static const none = PlayerClimate();
 }
 
+/// A ressincronização do Tráfego do Véu depois de uma parada (o Silêncio) que congelou o relógio em [frozenAt] e acabou
+/// em [endUtc]: durante [resyncS] segundos, quem estava parado segue de onde parou pelo relógio `old`, [speed] vezes mais
+/// rápido, e vai se desfazendo, enquanto o tráfego da hora real entra com a opacidade `mix` (0 a 1). Sem saltos: ninguém
+/// muda de lugar de um quadro para o outro. `null` fora desse intervalo. Função só do tempo: igual em todos os aparelhos.
+({double old, double mix})? trafficResync({required double frozenAt, required double endUtc, required double t, required double resyncS, required double speed}) {
+  if (resyncS <= 0 || t < endUtc || t >= endUtc + resyncS) return null;
+  return (old: frozenAt + (t - endUtc) * speed, mix: (t - endUtc) / resyncS);
+}
+
 class ClimateWorld {
   ClimateWorld({
     required this.seed,
@@ -237,9 +246,10 @@ class ClimateWorld {
   /// O relógio do tráfego do Véu (só desenho) na posição (células z21) em [t]: o tempo real, mais lento com `traffic_mult`
   /// (contado do começo da janela, igual em todos os aparelhos) e parado nos climas de `traffic_mult` 0 (o Silêncio). A parada
   /// congela no instante em que o Silêncio começa ali (o começo das janelas seguidas dele, ou o `starts_utc` do evento do
-  /// feed, se for mais tarde) e acaba no fim delas (ou no `ends_utc`). Depois o tráfego volta a andar de onde parou: o
-  /// relógio fica atrasado a duração da parada até o fim da janela seguinte, quando volta à hora real. [sinceUtc]: o clima
-  /// foi forçado pelo debug neste instante (a parada não começa antes). Com [walker], o dos passantes (Geada forte).
+  /// feed, se for mais tarde) e acaba no fim delas (ou no `ends_utc`). Depois o relógio volta à hora real; quem estava
+  /// parado volta a andar de onde parou e se desfaz enquanto o tráfego da hora entra ([trafficStopAt], [trafficResync]):
+  /// ninguém fica atrasado até a janela seguinte. [sinceUtc]: o clima foi forçado pelo debug neste instante (a parada não
+  /// começa antes). Com [walker], o dos passantes (Geada forte).
   double trafficClock(double x21, double y21, double t, {bool walker = false, double? sinceUtc}) {
     final cx = x21.floor() >>> 4, cy = y21.floor() >>> 4;
     final d = _defAt17(cx, cy, t.floor());
@@ -247,20 +257,27 @@ class ClimateWorld {
     final ws = d.model.windowS, t0 = d.window * ws;
     final mov = d.def.movement;
     final mult = (mov?.trafficMult ?? 1) * (walker ? mov?.walkerMult ?? 1 : 1);
-    final key = (cx, cy, d.window, sinceUtc?.floor(), events);
-    if (key != _stopKey) {
-      _stopKey = key;
-      _stop = _trafficStop(cx, cy, d.window, ws, sinceUtc?.floor());
-    }
-    final stop = _stop;
-    if (stop != null && t >= stop.s) {
-      if (t < stop.e) return stop.s.toDouble();
-      final late = (stop.e - stop.s).toDouble();
-      if (stop.e > t0) return t - late; // acabou no meio desta janela (o fim do evento)
-      return t0 - late + (t - t0) * mult;
-    }
+    final stop = _stopFor(cx, cy, d.window, ws, sinceUtc);
+    if (stop != null && t >= stop.s && t < stop.e) return stop.s.toDouble();
     if (mult == 0) return t; // janela de Silêncio antes do começo do evento
     return mult == 1 ? t : t0 + (t - t0) * mult;
+  }
+
+  /// A parada do tráfego `[s, e)` (segundos UTC) que vale na posição (células z21) em [t]: a que está em curso ou a que
+  /// acabou nesta janela ou na anterior. `null`: nenhuma. Igual em todos os aparelhos.
+  ({int s, int e})? trafficStopAt(double x21, double y21, double t, {double? sinceUtc}) {
+    final cx = x21.floor() >>> 4, cy = y21.floor() >>> 4;
+    final d = _defAt17(cx, cy, t.floor());
+    return d == null ? null : _stopFor(cx, cy, d.window, d.model.windowS, sinceUtc);
+  }
+
+  ({int s, int e})? _stopFor(int cx, int cy, int window, int ws, double? sinceUtc) {
+    final key = (cx, cy, window, sinceUtc?.floor(), events);
+    if (key != _stopKey) {
+      _stopKey = key;
+      _stop = _trafficStop(cx, cy, window, ws, sinceUtc?.floor());
+    }
+    return _stop;
   }
 
   (int, int, int, int?, List<ClimateEvent>)? _stopKey;

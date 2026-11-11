@@ -62,9 +62,9 @@ void main() {
       expect(find.text('PULSO'), findsOneWidget);
     });
 
-    testWidgets('o nível 2 do scanner (nível 5 do Conjurador) aparece no texto', (tester) async {
+    testWidgets('o nível 2 do scanner (nível 8 do Conjurador) aparece no texto', (tester) async {
       await tall(tester);
-      final s = state()..levelOverride = 5;
+      final s = state()..levelOverride = 8;
       await tester.pumpWidget(MaterialApp(
           home: RadarScreen(state: s, street: street, nowUtc: () => t, onSweep: () => const RadarOutcome(traces: [], distortions: []), echoes: () => const [], rotation: () => 0)));
       expect(find.text('SCANNER NÍVEL 2'), findsOneWidget);

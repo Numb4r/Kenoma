@@ -24,7 +24,7 @@ void main() {
     expect(text('soot.spirit', 10), 'Aura +8 m (faixa 2 de 3: níveis 10 a 19)', reason: 'um degrau acima do Eco');
     expect(text('soot.spirit', 27), 'Aura +11 m (faixa 3 de 3: a partir do nível 20)');
     expect(text('frond.eco', 1), startsWith('Coleta de Fagulhas e materiais +'));
-    expect(text('rill.eco', 1), startsWith('Rastreador alcança '));
+    expect(text('rill.eco', 1), startsWith('Radar alcança '));
   });
 
   test('Traços: Eco 1/1 pela variante ou pelo Brilhante, comum 0/1', () {

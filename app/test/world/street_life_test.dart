@@ -348,15 +348,16 @@ void main() {
       expect(both.any((e) => e < -0.2), isTrue);
     });
 
-    test('a direção aponta para o Eco mais o erro; nível 1 sem tipo, nível 2 (nível 5 do Conjurador) com o tipo', () {
+    test('a direção aponta para o Eco mais o erro; nível 1 sem tipo (do nível 5 ao 7), nível 2 (nível 8 do Conjurador) com o tipo', () {
       final state1 = newState();
       final v1 = viewOf(state1, sch);
       v1.refresh(lat: lat0, lon: lon0, tUtc: t0);
       expect(v1.radar(t0).traces.every((t) => t.typeId == null), isTrue);
-      expect(scannerLevel(4, street), 1);
-      expect(scannerLevel(5, street), 2);
+      expect(scannerLevel(5, street), 1, reason: 'o Radar chega no nível 5 com o scanner nível 1');
+      expect(scannerLevel(7, street), 1);
+      expect(scannerLevel(8, street), 2);
 
-      final state2 = newState()..levelOverride = 5;
+      final state2 = newState()..levelOverride = 8;
       final v2 = viewOf(state2, sch);
       v2.refresh(lat: lat0, lon: lon0, tUtc: t0);
       final out2 = v2.radar(t0);
