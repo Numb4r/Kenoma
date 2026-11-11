@@ -489,6 +489,7 @@ class GameMapGame extends FlameGame {
         MapLayer.walkers: () => _traffic.paintWalkers(canvas),
         MapLayer.cars: () {
           _traffic.paintCars(canvas);
+          _traffic.paintBirds(canvas);
           if (overlayTraffic()) _traffic.paintDebug(canvas, view, cam, mpc);
         },
       },
