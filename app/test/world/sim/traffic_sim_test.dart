@@ -279,6 +279,43 @@ void main() {
     expect(us, lessThan(2000));
   });
 
+  test('semáforo de pedestre no meio da quadra: os carros param e o passante atravessa', () {
+    // Uma rua comprida com um caminho de pedestre que a cruza no meio, e um semáforo do OSM ali.
+    final lines = [
+      VisualLine(RoadClass.secondary, Int32List.fromList([200, 3200, 6200, 3200])),
+      VisualLine(RoadClass.pedestrian, Int32List.fromList([3200, 2000, 3200, 4400])),
+    ];
+    final tile = VisualTile(lines: lines, areas: const []);
+    final graph = TrafficGraph(loadTile: (x, y) => x == tx0 && y == ty0 ? tile : null, cellsPerTile: 64, extent: ext, stitch: true);
+    final s = TrafficSim(graph: graph, seed: 3, config: const TrafficSimConfig(radiusM: 300, warmupS: 10), points: TrafficPack.of([(kind: TrafficPointKind.signal, x: gx(32), y: gy(32))]))..forcedDensity = 3;
+    s.center(gx(32), gy(32), mpc, hour: 18);
+    final mid = s.lanes!.nodes.firstWhere((n) => (n.x - gx(32)).abs() < 0.1 && (n.y - gy(32)).abs() < 0.1);
+    expect(mid.signal, isTrue);
+    expect(mid.controlled, isFalse);
+    var stopped = 0, crossed = 0, passed = 0;
+    for (var i = 0; i < 6000; i++) {
+      s.step(0.1, hour: 18);
+      final red = mid.light(0, s.time, s.config) == SignalLight.red;
+      for (final link in mid.incoming) {
+        for (final lane in link.cars) {
+          for (final o in lane) {
+            final c = o as SimCar;
+            if (red && !c.reserved && c.v < 0.1 && link.length - c.s < 12) stopped++;
+            if (c.inJunction) passed++;
+          }
+        }
+      }
+      for (final w in s.walkers) {
+        if (w.mode != WalkerMode.crossing || w.edge.isPedestrian || w.tPos > 0.3) continue;
+        crossed++;
+        expect(red, isTrue, reason: 'passante começou a atravessar com os carros no verde');
+      }
+    }
+    expect(stopped, greaterThan(20));
+    expect(passed, greaterThan(20));
+    expect(crossed, greaterThan(0));
+  });
+
   test('pacote de pontos: lê o formato TRF1', () {
     expect(() => TrafficPack.parse(Uint8List.fromList([1, 2, 3, 4, 5])), throwsFormatException);
   });

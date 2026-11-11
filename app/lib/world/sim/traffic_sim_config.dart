@@ -9,8 +9,8 @@ class TrafficSimConfig {
     this.borderM = 60,
     this.rebuildM = 150,
     this.mergeM = 12,
-    this.maxCars = 280,
-    this.maxWalkers = 280,
+    this.maxCars = 400,
+    this.maxWalkers = 350,
     this.carsPer100m = const {'principal': 2.6, 'secondary': 1.8, 'local': 0.9},
     this.walkersPer100m = const {'principal': 0.7, 'secondary': 0.6, 'local': 0.45, 'pedestrian': 1.0},
     this.lanes = const {'principal': 2, 'secondary': 1, 'local': 1},
@@ -21,6 +21,7 @@ class TrafficSimConfig {
     this.minGapM = 2.0,
     this.turnMps = 3.5,
     this.greenS = 22,
+    this.pedGreenS = 10,
     this.yellowS = 3,
     this.allRedS = 2,
     this.gapS = 4.5,
@@ -59,6 +60,7 @@ class TrafficSimConfig {
       minGapM: n('min_gap_m', d.minGapM),
       turnMps: n('turn_mps', d.turnMps),
       greenS: n('green_s', d.greenS),
+      pedGreenS: n('ped_green_s', d.pedGreenS),
       yellowS: n('yellow_s', d.yellowS),
       allRedS: n('all_red_s', d.allRedS),
       gapS: n('gap_s', d.gapS),
@@ -99,6 +101,9 @@ class TrafficSimConfig {
 
   /// Semáforo: verde base, amarelo e vermelho geral, em segundos.
   final double greenS, yellowS, allRedS;
+
+  /// Quanto a faixa fica aberta num semáforo de pedestre no meio da quadra (s).
+  final double pedGreenS;
 
   /// Quem cede a vez entra se ninguém da preferencial chega em menos que isto (s).
   final double gapS;

@@ -1143,6 +1143,26 @@ Veículos e passantes fantasmas circulam pelas ruas reais numa pequena simulaç�
 
 Avenidas cheias favorecem tipos urbanos e ruas calmas favorecem espíritos. Pedestres andam nas calçadas, dos dois lados da rua, e nos caminhos de pedestre; carros andam na pista, na mão certa. Ninguém surge nem some na tela: o tráfego entra e sai pelas bordas, e quando uma troca de janela obriga alguém a aparecer ou sumir à vista, ele se desfaz ou se forma no Véu, com a costura violeta. Há variedade de carros e passantes por troca de paleta e alguns modelos diferentes.
 
+### Simulações do mundo
+
+O mapa ganha vida por simulações com uma regra fixa. O que muda o jogo (onde algo nasce, o que se coleta, onde está um Eco) é função da seed e do tempo, igual para amigos, mesmo quando se move. O que é só cenário pode ser simulação local de verdade, diferente entre aparelhos. Toda simulação tem um orçamento de tempo por quadro e roda mais devagar longe da vista.
+
+| Simulação | Tipo | O que faz |
+| --- | --- | --- |
+| Relevo (SRTM) | base | dá altura a cada ponto do mapa para água, neblina e vento |
+| Água da chuva | jogo | escorre morro abaixo; poças nas baixadas reais; o Dilúvio alaga as ruas que alagam de verdade |
+| Neblina | jogo | acumula em vales e perto de água, se desfaz com o sol da manhã |
+| Vento | jogo | campo canalizado pelas ruas; leva folhas, lixo, fumaça, fuligem e Fagulhas |
+| Dunas | jogo | andam com o vento durante a tempestade de areia |
+| Ciclo da água | jogo | neve derretida vira poça, poça congela de madrugada |
+| Tráfego | cenário | carros seguem o da frente, param no semáforo, entram e saem fora da vista |
+| Pedestres | cenário | atravessam na faixa, se abrigam sob marquises na chuva, esperam e entram no ônibus, sentam em praças, passeiam com cachorro, lotam comércio de dia e bares à noite, seguem a hora de escola e de trabalho, e caminham ao estádio em dia de jogo |
+| Bichos | cenário | pombos que levantam voo, gatos nos muros, morcegos à noite, maritacas nas árvores |
+| Ecos | jogo | movimento próprio pela seed: os de Água rondam poças, os de Sombra seguem a sombra do dia, voadores em bando |
+| Correntes do Véu | jogo | campo fixo da seed por onde as Fagulhas fluem e se juntam em redemoinhos |
+| Iluminação | cenário | postes, janelas e faróis acendem ao anoitecer; junto com os prédios com altura, na fase 3 |
+| Fendas e Corrompidas | jogo | espalham-se pelo mapa como um autômato; fase 3 |
+
 ### Fontes offline
 
 | Fonte | O que dá | Uso |

@@ -436,7 +436,7 @@ class TrafficSim {
       if (identical(oc.next, next) && oc.nextLane == c.nextLane) pending += oc.length + config.minGapM;
     }
     if (_tailRear(next, c.nextLane) - pending < c.length + config.minGapM) return false;
-    if (!node.controlled) return true;
+    if (!node.controlled && !node.signal) return true;
     if (node.signal) {
       final light = node.light(link.group, time, config);
       if (light == SignalLight.red) return false;
@@ -455,7 +455,7 @@ class TrafficSim {
         }
       }
     }
-    return _compatible(node, c);
+    return !node.controlled || _compatible(node, c);
   }
 
   void _enterJunction(SimCar c) {

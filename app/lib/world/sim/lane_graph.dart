@@ -513,7 +513,18 @@ class LaneGraph {
         // Com faixa mapeada por perto, só se atravessa nela; sem nenhuma, nas esquinas (e nunca no meio do quarteirão).
         a.crossable = a.edge.isPedestrian || (crossings.isEmpty ? nd.arms.length != 2 : crossings.any((p) => onEdge(p, a.edge)));
       }
-      if (!nd.controlled) continue;
+      if (!nd.controlled) {
+        // Semáforo de pedestre no meio da quadra: a rua (grupo 0) para enquanto a faixa abre (o tempo do grupo 1).
+        if (here.any((p) => p.kind == TrafficPointKind.signal) && nd.arms.any((a) => !a.edge.isPedestrian && a.crossable) && nd.incoming.isNotEmpty) {
+          final h = (seed ^ (nd.x * 64).round() * 0x9E3779B1 ^ (nd.y * 64).round() * 0x85EBCA6B) & 0x7fffffff;
+          nd
+            ..signal = true
+            ..green0 = c.greenS * 1.5
+            ..green1 = c.pedGreenS
+            ..offsetS = (h % 1000) / 1000 * (nd.green0 + nd.green1 + 2 * (c.yellowS + c.allRedS));
+        }
+        continue;
+      }
       final top = nd.arms.fold(0, (m, a) => math.max(m, _rank(a.edge.roadClass)));
       final big = nd.arms.where((a) => _rank(a.edge.roadClass) >= 2).length;
       nd.signal = !mapped ? (top == 3 && big >= 3) : here.any((p) => p.kind == TrafficPointKind.signal);
