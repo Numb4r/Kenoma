@@ -1126,7 +1126,7 @@ O jogo nunca recompensa dirigir. Em carro ou moto ele pergunta uma vez se o joga
 
 ### Tráfego do Véu
 
-Veículos e passantes fantasmas circulam pelas ruas reais, gerados pela seed, pela rua e pela janela de tempo, então o grupo vê o mesmo tráfego na mesma hora. O fluxo segue a hora real: cheio no rush, vazio de madrugada, mais estranho à noite.
+Veículos e passantes fantasmas circulam pelas ruas reais numa pequena simulação local em volta do jogador: cada carro segue o da frente, para nos semáforos e cruzamentos, e entra e sai do mundo só longe da vista. O tráfego comum é só cenário e pode diferir entre amigos; os veículos que importam para o jogo (Ônibus Espectral, Van do Mercador, Carroça de Essência, carro fugitivo, Procissão) seguem rotas da seed e são iguais para o grupo. O fluxo segue a hora real: cheio no rush, vazio de madrugada, mais estranho à noite.
 
 | Camada | Fonte | O que acrescenta |
 | --- | --- | --- |
