@@ -14,6 +14,7 @@ import 'access_pack.dart';
 import 'traffic_pack.dart';
 import 'nowalk_pack.dart';
 import 'region_pack.dart';
+import 'relief_pack.dart';
 import 'visual_pack.dart';
 
 enum RegionLoadErrorKind {
@@ -188,5 +189,28 @@ Future<TrafficPack?> loadTrafficPack({required String region, AssetBundle? bundl
     return TrafficPack.parse(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
   } catch (_) {
     return null;
+  }
+}
+
+/// Lê o relevo que [epoch] fixa para [region] (`relief_packs`) e confere o SHA-256. `null` se a época não lista relevo para
+/// a região (terreno plano); a mensagem de erro (String) se o arquivo falta, não bate ou está corrompido. Nunca lança.
+Future<Object?> loadReliefPack({required Epoch epoch, required String region, AssetBundle? bundle}) async {
+  final ref = epoch.reliefPacks[region];
+  if (ref == null) return null;
+  final Uint8List bytes;
+  try {
+    final data = await (bundle ?? rootBundle).load('assets/regions/${ref.file}');
+    bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+  } catch (e) {
+    return 'O relevo ${ref.file} não está no app: $e';
+  }
+  final actual = sha256Hex(bytes);
+  if (actual != ref.sha256.toLowerCase()) {
+    return 'O relevo ${ref.file} não é o da época ${epoch.id}.\nSHA-256 esperado: ${_short(ref.sha256)}\nSHA-256 lido: ${_short(actual)}';
+  }
+  try {
+    return ReliefPack.parse(bytes);
+  } catch (e) {
+    return 'O relevo ${ref.file} está corrompido: $e.';
   }
 }

@@ -109,6 +109,13 @@ List<DebugItem> mapItems(DebugEnv env) {
       builder: (_) => overlay('Grade das células de spawn (z20)', null, () => tools.showGrid20, (v) => tools.setOverlays(grid20: v)),
     ),
     DebugItem(
+      id: 'map.relief',
+      title: 'Relevo',
+      section: DebugSection.map,
+      keywords: const ['altura', 'srtm', 'mapa de calor', 'morro', 'vale', 'sobreposição', 'overlay'],
+      builder: (_) => overlay('Relevo como mapa de calor', 'Azul: baixo. Vermelho: alto, dentro do que está na tela. O número é a altura em metros.', () => tools.showRelief, tools.setRelief),
+    ),
+    DebugItem(
       id: 'map.radii',
       title: 'Raios lógicos',
       section: DebugSection.map,

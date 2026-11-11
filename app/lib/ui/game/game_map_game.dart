@@ -41,6 +41,8 @@ import '../../data/climate_catalog.dart';
 import 'street_label_painter.dart';
 import 'trace_painter.dart';
 import 'traffic_painter.dart';
+import 'relief_heat.dart';
+import '../../data/relief_pack.dart';
 import '../../data/traffic_pack.dart';
 import '../../world/sim/traffic_sim.dart' show TrafficSim, TrafficSimConfig;
 import '../travel/travel_layer.dart';
@@ -73,6 +75,8 @@ class GameMapGame extends FlameGame {
     this.trafficPoints,
     this.noCrossingAt,
     this.overlayTraffic = _off,
+    this.overlayRelief = _off,
+    this.relief,
     this.trafficDensity = _noDensity,
     this.rainFx = _off,
     this.climateShown = _clearInfo,
@@ -177,6 +181,10 @@ class GameMapGame extends FlameGame {
 
   /// Debug: desenha a área simulada e a fase dos semáforos; e força a densidade (`null`: a da hora e do clima).
   final bool Function() overlayTraffic;
+
+  /// O relevo (`null`: terreno plano) e o debug que o desenha como mapa de calor.
+  final ReliefSource? relief;
+  final bool Function() overlayRelief;
   final double? Function() trafficDensity;
   static double? _noDensity() => null;
 
@@ -458,6 +466,7 @@ class GameMapGame extends FlameGame {
         travelLayer?.paintGround(canvas, view, cam, mpc, utc: _exactUtc(), avatar: avatar);
         if (streetNames()) _labels.paint(canvas, view, cam);
         if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
+        if (overlayRelief() && relief != null) paintReliefHeat(canvas, view, cam, relief!);
       },
       if (wv != null && _hasFix) MapLayer.climateGround: () => _paintClimateGround(canvas, view, cam, wv),
       MapLayer.shadows: () {

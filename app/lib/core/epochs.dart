@@ -137,6 +137,7 @@ class Epoch {
     required this.regionPacks,
     required this.items,
     this.visualPacks = const {},
+    this.reliefPacks = const {},
     this.ecoV2,
     this.walkable,
     this.requiresFeature,
@@ -161,6 +162,10 @@ class Epoch {
               sha256: e.value['sha256'] as String,
             ),
         },
+        reliefPacks: {
+          for (final e in ((json['relief_packs'] as Map<String, dynamic>?) ?? const {}).entries)
+            e.key: RegionPackRef(file: (e.value as Map<String, dynamic>)['file'] as String, sha256: e.value['sha256'] as String),
+        },
         walkable: json['walkable'] == null ? null : Walkable.fromJson(json['walkable'] as Map<String, dynamic>),
         requiresFeature: json['requires_feature'] as String?,
         ecoV2: json['eco_v2'] == null ? null : EcoV2.fromJson(json['eco_v2'] as Map<String, dynamic>),
@@ -181,6 +186,10 @@ class Epoch {
   /// Pacote visual de cada região (ruas, água e verde, só desenho). Campo separado do pacote lógico: pode
   /// ser trocado sem nova época, porque não muda o mundo.
   final Map<String, RegionPackRef> visualPacks;
+
+  /// O relevo de cada região (SRTM, `build_relief.py`), da época 9 em diante. **É mundo:** a água da chuva, a neblina e o
+  /// vento saem dele. Região sem relevo na época: terreno plano.
+  final Map<String, RegionPackRef> reliefPacks;
 
   /// Os quatro itens fixos de uma célula, na ordem do índice.
   final List<SpawnItemDef> items;

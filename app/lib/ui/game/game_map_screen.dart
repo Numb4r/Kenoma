@@ -619,6 +619,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       overlayGrid20: () => tools.showGrid20,
       overlayRadii: () => tools.showRadii,
       overlayTraffic: () => tools.showTraffic,
+      overlayRelief: () => tools.showRelief,
+      relief: assets.relief,
       trafficDensity: () => tools.trafficDensity,
       trafficSim: assets.balance.trafficSim,
       trafficPoints: assets.trafficPoints,

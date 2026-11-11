@@ -44,6 +44,16 @@ class DevTools extends ChangeNotifier {
   /// Desenha o raio lógico da Aura e o alcance de 30 m por cima do mapa.
   bool get showRadii => _showRadii;
 
+  bool _showRelief = false;
+
+  /// Desenha o relevo como mapa de calor por cima do mapa do jogo, com a altura de cada célula.
+  bool get showRelief => _showRelief;
+
+  void setRelief(bool v) {
+    _showRelief = v;
+    notifyListeners();
+  }
+
   bool _showTraffic = false;
   double? _trafficDensity;
 
@@ -109,7 +119,7 @@ class DevTools extends ChangeNotifier {
 
   /// Algo forçado está ativo: simulador, relógio, nível, pedidos de spawn, clima ou sobreposições. Liga a etiqueta DEBUG.
   bool get anyForcing =>
-      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || _showBiomeGrid || _showGrid20 || _showRadii || _showTraffic || _trafficDensity != null;
+      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || _showBiomeGrid || _showGrid20 || _showRadii || _showRelief || _showTraffic || _trafficDensity != null;
 
   Future<void> setUseSimulator(bool value) async {
     if (value == _useSimulator) return;
