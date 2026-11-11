@@ -11,6 +11,7 @@ import '../../data/traffic_pack.dart';
 import '../../world/map_camera.dart';
 import '../../world/sim/birds.dart';
 import '../../world/sim/traffic_sim.dart';
+import '../../world/sim/wind_field.dart';
 import '../../world/street_cover.dart' show StreetState;
 import '../../world/veil_traffic.dart';
 import '../../world/visual_map.dart';
@@ -112,6 +113,8 @@ class TrafficPainter {
     Object? coverKey,
     bool skid = false,
     String? outfit,
+    String? climateId,
+    double windRad = 0,
   }) {
     lastDrawn = 0;
     lastBoats = 0;
@@ -138,6 +141,13 @@ class TrafficPainter {
     if (!paused) sim.step(dt.clamp(0.0, 0.1), hour: hour, density: density, speedMult: speedMult, walkMult: walkMult);
     if (!paused) birds.update(dt.clamp(0.0, 0.1), px, py, metersPerCell, (x, y) => x >= l - 1 && x <= r + 1 && y >= top - 1 && y <= b + 1);
     _birdFrame = (view: view, cam: cam, pxPerM: cam.pixelsPerCell / metersPerCell);
+    // O vento local: só nos climas de vento, na força de cada um.
+    final wind = config.windMps[climateId] ?? 0;
+    if (climateId != _windId) {
+      _windId = climateId;
+      leaves.start(sim.time);
+    }
+    if (!paused) leaves.update(dt.clamp(0.0, 0.1), lanes, windRad, wind, sim.time, metersPerCell, l, top, r, b);
     _refreshWear(sim);
     final m = trafficMarginM / metersPerCell;
     for (final c in sim.cars) {
@@ -178,6 +188,23 @@ class TrafficPainter {
     if (next.length == _wear.length && next.entries.every((e) => _wear[e.key] == e.value)) return;
     _wear = next;
     wearStamp++;
+  }
+
+  /// As folhas e os papéis que o vento local leva pelo chão (cenário).
+  late final WindLeaves leaves = WindLeaves(count: config.leaves);
+  String? _windId;
+
+  void paintLeaves(ui.Canvas canvas) {
+    final f = _birdFrame;
+    if (f == null || leaves.leaves.isEmpty) return;
+    final u = math.max(2.0, (f.pxPerM * 0.14).roundToDouble());
+    const colors = [0xFF6FA35A, 0xFFD08A3C, 0xFFE8E4F4, 0xFF8A6A4A];
+    for (final lf in leaves.leaves) {
+      final (sx, sy) = f.cam.cellToScreen(lf.x, lf.y, f.view.width, f.view.height);
+      if (sx < -10 || sy < -10 || sx > f.view.width + 10 || sy > f.view.height + 10) continue;
+      final flat = (lf.spin).floor().isEven; // gira: ora de lado, ora de frente
+      canvas.drawRect(ui.Rect.fromLTWH(sx.roundToDouble(), sy.roundToDouble(), flat ? u * 2 : u, u), _fill..color = ui.Color(colors[lf.kind]).withValues(alpha: 0.85));
+    }
   }
 
   /// Os pombos das praças (cenário local).

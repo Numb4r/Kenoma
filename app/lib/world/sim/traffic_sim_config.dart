@@ -38,6 +38,8 @@ class TrafficSimConfig {
     this.climateWalkerFloor = 0.3,
     this.shelterNearM = 20,
     this.runMult = 2.4,
+    this.windMps = const {'wind': 3, 'gale': 7, 'storm': 3, 'dry_dust': 3, 'sandstorm': 6, 'blizzard': 4, 'tornado': 8, 'rift_wind': 5},
+    this.leaves = 40,
   });
 
   factory TrafficSimConfig.fromJson(Map<String, dynamic>? j) {
@@ -79,6 +81,8 @@ class TrafficSimConfig {
       climateWalkerFloor: n('climate_walker_floor', d.climateWalkerFloor),
       shelterNearM: n('shelter_near_m', d.shelterNearM),
       runMult: n('run_mult', d.runMult),
+      windMps: m('wind_mps', d.windMps),
+      leaves: n('leaves', d.leaves.toDouble()).round(),
     );
   }
 
@@ -127,6 +131,10 @@ class TrafficSimConfig {
   /// Marquise ou ponto de ônibus a até isto (m) da esquina faz dela um abrigo; e quanto mais rápido corre quem foi pego
   /// pela chuva.
   final double shelterNearM, runMult;
+
+  /// A força do vento local (m/s) em cada clima de vento, e quantas folhas e papéis ele leva pela tela.
+  final Map<String, double> windMps;
+  final int leaves;
 
   double carDensityIn(double speedMult) => climateCarFloor + (1 - climateCarFloor) * speedMult.clamp(0.0, 1.0);
   double walkerDensityIn(double walkMult) => climateWalkerFloor + (1 - climateWalkerFloor) * walkMult.clamp(0.0, 1.0);

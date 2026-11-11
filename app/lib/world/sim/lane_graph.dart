@@ -489,6 +489,7 @@ class LaneGraph {
     }
     _control(seed, c, points);
     _deadEnds();
+    _indexDirs();
     // A distância (em esquinas) de cada nó ao abrigo mais próximo, pelas calçadas.
     var frontier = [for (final nd in nodes) if (nd.shelter) nd];
     for (final nd in frontier) {
@@ -588,6 +589,31 @@ class LaneGraph {
         }
       }
     }
+  }
+
+  // A direção da rua em cada célula por onde passa uma (a de classe mais alta), para o vento.
+  final Map<int, (double, double, int)> _dir = {};
+
+  void _indexDirs() {
+    for (final e in edges) {
+      final r = _rank(e.roadClass);
+      for (var i = 0; i + 1 < e.xs.length; i++) {
+        final dx = e.xs[i + 1] - e.xs[i], dy = e.ys[i + 1] - e.ys[i], len = math.sqrt(dx * dx + dy * dy);
+        if (len <= 0) continue;
+        final n = (len * 2).ceil();
+        for (var k = 0; k <= n; k++) {
+          final key = (e.xs[i] + dx * k / n).floor() * 4194304 + (e.ys[i] + dy * k / n).floor();
+          final old = _dir[key];
+          if (old == null || r > old.$3) _dir[key] = (dx / len, dy / len, r);
+        }
+      }
+    }
+  }
+
+  /// A direção (vetor unitário, sem sentido) da rua que passa pela célula de ([x], [y]), ou `null` fora das ruas.
+  (double, double)? streetDir(double x, double y) {
+    final d = _dir[x.floor() * 4194304 + y.floor()];
+    return d == null ? null : (d.$1, d.$2);
   }
 
   /// Aplica o clima das ruas: [state] diz se a rua fechou ou alagou.

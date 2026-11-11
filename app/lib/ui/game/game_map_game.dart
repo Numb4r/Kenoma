@@ -448,7 +448,7 @@ class GameMapGame extends FlameGame {
       final tc = rainFx() ? climateGround.trafficCover(wv.field.seed, climateShown(), wv.climate) : null; // barcos, dunas, gelo
       final mult = wv.climate.trafficMult <= 0 ? 1.0 : wv.climate.trafficMult; // 0 é o Silêncio: pausa, não lentidão
       _traffic.sim?.forcedDensity = trafficDensity();
-      _traffic.prepare(view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: _exactUtc(), lonDeg: _lon, metersPerCell: mpc, light: light, px: avatar.x, py: avatar.y, dt: _frameDt, paused: _trafficPaused(), speedMult: mult, walkMult: mult * wv.climate.walkerMult, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false, outfit: climateShown().outfit);
+      _traffic.prepare(view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: _exactUtc(), lonDeg: _lon, metersPerCell: mpc, light: light, px: avatar.x, py: avatar.y, dt: _frameDt, paused: _trafficPaused(), speedMult: mult, walkMult: mult * wv.climate.walkerMult, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false, outfit: climateShown().outfit, climateId: rainFx() ? climateShown().id : null, windRad: wv.climate.windHeadingRad);
       climateGround.cover
         ?..wearOf = _traffic.wearOf
         ..wearStamp = _traffic.wearStamp;
@@ -486,7 +486,10 @@ class GameMapGame extends FlameGame {
         MapLayer.materials: () => _paintSpawns(canvas, view, cam, wv, center, (s) => !s.isEco && !s.isSpark),
       },
       if (traffic) ...{
-        MapLayer.walkers: () => _traffic.paintWalkers(canvas),
+        MapLayer.walkers: () {
+          _traffic.paintLeaves(canvas); // no chão, por baixo de quem anda
+          _traffic.paintWalkers(canvas);
+        },
         MapLayer.cars: () {
           _traffic.paintCars(canvas);
           _traffic.paintBirds(canvas);
