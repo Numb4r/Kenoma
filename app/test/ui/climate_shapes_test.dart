@@ -85,26 +85,6 @@ void main() {
       expect(sigs.length, 6);
     });
 
-    test('a borda tem pontilhado dos dois lados e em volta das pontas, preso à rua', () {
-      final pts = [const ui.Offset(0, 0), const ui.Offset(30, 0), const ui.Offset(30, 20)];
-      final a = edgeDither(pts, 6, 0.5, 42), b = edgeDither(pts, 6, 0.5, 42);
-      expect(a, b);
-      expect(edgeDither(pts, 6, 0.5, 43), isNot(a));
-      var above = 0, below = 0, beyond = 0;
-      for (var i = 0; i + 1 < a.length; i += 2) {
-        final x = a[i], y = a[i + 1];
-        if (x < 0) beyond++; // antes do começo da rua: o pontilhado da ponta
-        if (x > 2 && x < 26 && y < -3) above++;
-        if (x > 2 && x < 26 && y > 3 && y < 6) below++;
-        // Sempre fora da faixa cheia, a no máximo 2,5 pixels dela.
-        final d = x <= 30 && y <= 0 ? y.abs() : math.min(y.abs() + (x > 30 ? x - 30 : 0), (x - 30).abs());
-        if (x >= 0 && x <= 24 && y.abs() < 10) expect(d, inInclusiveRange(3.0, 3 + 0.5 * 2.6));
-      }
-      expect(above, greaterThan(10));
-      expect(below, greaterThan(10));
-      expect(beyond, greaterThan(2));
-    });
-
     final visual = VisualMap(VisualPack.parse(Uint8List.fromList(File('assets/regions/campinas_e0_vis.bin').readAsBytesSync())), cacheTiles: 32);
     final catalog = ClimateCatalog.fromJson(loadJson('assets/data/clima.json'));
     final mpc = metersPerCell(-22.8174);
@@ -113,6 +93,18 @@ void main() {
     Future<Uint8List> render(String climate, double rotation, {String? out}) async {
       const view = ui.Size(360, 480);
       final g = ClimateGround(catalog: catalog, visual: visual);
+      final cam0 = MapCamera(centerX: cx, centerY: cy, pixelsPerCell: double.tryParse(Platform.environment['KENOMA_PPC'] ?? '') ?? 14, rotation: rotation);
+      // Os blocos do campo ficam prontos um por quadro e a imagem chega depois: desenha até todos estarem na tela.
+      ClimateCover.buildInline = true;
+      for (var k = 0, last = -1; k < 400; k++) {
+        final warm = ui.PictureRecorder();
+        g.paint(ui.Canvas(warm), view, cam0, mpc: mpc, exactUtc: 1900007200, seed: 7, shown: catalog.of(climate), c: PlayerClimate(id: climate, runStartUtc: 1900000000));
+        warm.endRecording().dispose();
+        await Future<void>.delayed(const Duration(milliseconds: 2));
+        final cover = g.cover!;
+        if (k > 3 && cover.fieldBuilds == last && cover.fieldDrawn >= cover.fieldBuilds) break;
+        last = cover.fieldBuilds;
+      }
       final rec = ui.PictureRecorder();
       final canvas = ui.Canvas(rec)..drawRect(ui.Offset.zero & view, ui.Paint()..color = const ui.Color(0xFF272A37));
       g.paint(canvas, view, MapCamera(centerX: cx, centerY: cy, pixelsPerCell: double.tryParse(Platform.environment['KENOMA_PPC'] ?? '') ?? 14, rotation: rotation), mpc: mpc, exactUtc: 1900007200, seed: 7, shown: catalog.of(climate), c: PlayerClimate(id: climate, runStartUtc: 1900000000));

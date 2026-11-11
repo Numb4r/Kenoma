@@ -9,6 +9,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import '../../core/fnv.dart';
+import '../../world/cover_field.dart' show coverDither;
 
 ui.Color _c(int argb, double a) => ui.Color(argb).withValues(alpha: a.clamp(0.0, 1.0));
 
@@ -31,9 +32,9 @@ double blobScaleOf(int h) => 0.75 + ((h >>> 56) & 0xff) / 255 * 0.55;
 /// O contorno procedural de uma marca no chão (poça, cratera, mancha, brasa, pingo de cera): as linhas, em pixels de
 /// arte, de uma forma de raio [n], com ruído no contorno. A [family] (por omissão, a do hash), a rotação, o alongamento e a
 /// irregularidade saem de [h]: iguais em todo aparelho (só hash), diferentes de marca para marca.
-List<PuddleRow> blobRows(int h, int n, {int? family}) {
+List<PuddleRow> blobRows(int h, int n, {int? family, bool dither = false}) {
   final f = (family ?? blobFamilyOf(h)) % blobFamilies;
-  final key = (f, h & 0xffffffffff, n);
+  final key = (dither ? f + blobFamilies : f, h & 0xffffffffff, n);
   final hit = _rowCache.remove(key);
   if (hit != null) return _rowCache[key] = hit;
   double u8(int shift) => ((h >>> shift) & 0xff) / 255;
@@ -42,31 +43,36 @@ List<PuddleRow> blobRows(int h, int n, {int? family}) {
   final rough = 0.10 + u8(32) * 0.14; // irregularidade do contorno
   final stretch = 0.85 + u8(12) * 0.3; // estica ou encolhe o eixo comprido
   double wobble(double th) => 1 + rough * math.sin(3 * th + a) + rough * 0.6 * math.sin(5 * th + b) + rough * 0.35 * math.sin(8 * th + c);
-  bool ell(double x, double y, double cx, double cy, double rx, double ry) {
+  // Cada forma é um campo: a distância (em raios) até o contorno, negativa dentro. Juntar duas é o mínimo; morder, o máximo.
+  double ell(double x, double y, double cx, double cy, double rx, double ry) {
     final ex = (x - cx) / rx, ey = (y - cy) / ry;
-    return math.sqrt(ex * ex + ey * ey) <= wobble(math.atan2(ey, ex));
+    return math.sqrt(ex * ex + ey * ey) - wobble(math.atan2(ey, ex));
   }
 
-  bool inside(double px, double py) {
+  double field(double px, double py) {
     final x = px * cr + py * sr, y = -px * sr + py * cr;
     switch (f) {
       case 1: // comprida
         return ell(x, y, 0, 0, n * 1.7 * stretch, n * 0.7);
       case 2: // dois lóbulos
-        return ell(x, y, -0.5 * n, 0, 0.85 * n, 0.75 * n) || ell(x, y, 0.6 * n * stretch, 0.1 * n, 0.6 * n, 0.55 * n);
+        return math.min(ell(x, y, -0.5 * n, 0, 0.85 * n, 0.75 * n), ell(x, y, 0.6 * n * stretch, 0.1 * n, 0.6 * n, 0.55 * n));
       case 3: // feijão: uma oval com uma mordida de lado
-        return ell(x, y, 0, 0, n * 1.4 * stretch, n * 0.95) && !ell(x, y, 0.15 * n, 1.05 * n, 0.75 * n, 0.6 * n);
+        return math.max(ell(x, y, 0, 0, n * 1.4 * stretch, n * 0.95), -ell(x, y, 0.15 * n, 1.05 * n, 0.75 * n, 0.6 * n));
       case 4: // três pontas
         final th = math.atan2(y, x);
-        return math.sqrt(x * x + y * y) <= n * (0.78 + 0.3 * math.cos(3 * th + a)) * wobble(th);
+        return math.sqrt(x * x + y * y) / (n * (0.78 + 0.3 * math.cos(3 * th + a))) - wobble(th);
       case 5: // respingada: a mancha e dois pingos soltos
-        return ell(x, y, 0, 0, n * 0.95 * stretch, n * 0.8) ||
-            ell(x, y, math.cos(b) * n * 1.35, math.sin(b) * n * 1.1, n * 0.32, n * 0.28) ||
-            ell(x, y, math.cos(b + 2.4 + c * 0.2) * n * 1.3, math.sin(b + 2.4 + c * 0.2) * n * 1.15, n * 0.24, n * 0.22);
+        return math.min(
+            ell(x, y, 0, 0, n * 0.95 * stretch, n * 0.8),
+            math.min(ell(x, y, math.cos(b) * n * 1.35, math.sin(b) * n * 1.1, n * 0.32, n * 0.28),
+                ell(x, y, math.cos(b + 2.4 + c * 0.2) * n * 1.3, math.sin(b + 2.4 + c * 0.2) * n * 1.15, n * 0.24, n * 0.22)));
       default: // redonda, um pouco larga
         return ell(x, y, 0, 0, n * 1.2 * stretch, n.toDouble());
     }
   }
+
+  // A borda é o limiar do campo; com [dither] (as poças), o pontilhado ordenado da cobertura por campo desfaz a beirada.
+  bool inside(double px, double py) => field(px, py) <= (dither ? (coverDither(px.round(), py.round()) - 0.5) * 0.32 : 0);
 
   final w = (n * 2.2).ceil() + 1;
   final rows = <PuddleRow>[];
@@ -90,7 +96,7 @@ List<PuddleRow> blobRows(int h, int n, {int? family}) {
 }
 
 /// As linhas da poça da família [variant] de raio [n] pixels de arte; [h] dá o contorno. Ver [blobRows].
-List<PuddleRow> puddleRows(int variant, int h, int n) => blobRows(h, n, family: variant);
+List<PuddleRow> puddleRows(int variant, int h, int n) => blobRows(h, n, family: variant, dither: true);
 
 /// Desenha as linhas de [blobRows] em [o], com o pixel de arte [q] (nas unidades do canvas).
 void paintBlobRows(ui.Canvas canvas, ui.Offset o, List<PuddleRow> rows, double q, ui.Color color) => _rows(canvas, o, rows, q, color);

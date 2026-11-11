@@ -663,7 +663,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       final sim = game.trafficSimState, g = sim?.lanes;
       if (sim == null || g == null) return 'A simulação ainda não começou (sem posição ou com o Tráfego do Véu desligado).';
       return '${sim.cars.length} carros, ${sim.walkers.length} passantes · passo ${sim.avgStepUs.round()} µs (último ${sim.lastStepUs} µs) · '
-          '${g.nodes.length} esquinas, ${g.nodes.where((n) => n.signal).length} semáforos, ${g.nodes.where((n) => n.entry).length} entradas · grafo em ${g.buildUs ~/ 1000} ms';
+          '${g.nodes.length} esquinas, ${g.nodes.where((n) => n.signal).length} semáforos, ${g.nodes.where((n) => n.entry).length} entradas · grafo em ${g.buildUs ~/ 1000} ms\n'
+          'Cobertura por campo: ${game.climateGround.cover?.fieldDrawn ?? 0} blocos na tela, ${game.climateGround.cover?.fieldBuilds ?? 0} refeitos, último em ${(game.climateGround.cover?.fieldLastMs ?? 0).toStringAsFixed(1)} ms (fora do quadro)';
     };
     final accessTol = data.travel.accessTolM / metersPerCell(game.playerLat);
     final travel = TravelSession(

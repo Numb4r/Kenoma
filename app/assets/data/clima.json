@@ -602,6 +602,9 @@
           "alpha": 0.9,
           "grow_s": 1800,
           "tracks": true,
+          "share": {
+            "local": 0.15
+          },
           "fade_s": 3600
         },
         {

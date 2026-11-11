@@ -206,7 +206,7 @@ class ClimateGround {
         final layer = (fnv1a64Bytes(info.id.codeUnits) & 0xffff) * 8 + i; // a mesma camada, as mesmas posições, formando ou secando
         switch (g.kind) {
           case 'streets' when ppc >= 2:
-            _streets(canvas, g, seed, c, amount, exactUtc, mpc, px, l, top, r, b, cam, at);
+            _streets(canvas, g, seed, c, amount, end == null ? amount : _amount(g, end - start, null), end != null, localHour, exactUtc, mpc, px, l, top, r, b, cam, at);
           case 'bands':
             _bands(canvas, g, exactUtc, amount, l, top, r, b, at);
           case 'scatter' when ppc >= 3:
@@ -298,9 +298,12 @@ class ClimateGround {
     _airOps.clear();
   }
 
-  void _streets(ui.Canvas canvas, ClimateLayer g, int seed, PlayerClimate c, double amount, double t, double mpc, double px, double l, double top, double r, double b, MapCamera cam, ui.Offset Function(double, double) at) {
+  /// A cobertura das ruas (debug e medição dos blocos do campo; o desgaste do tráfego local entra por ela).
+  ClimateCover? get cover => _cover;
+
+  void _streets(ui.Canvas canvas, ClimateLayer g, int seed, PlayerClimate c, double amount, double peak, bool melting, int hour, double t, double mpc, double px, double l, double top, double r, double b, MapCamera cam, ui.Offset Function(double, double) at) {
     _cover?.paint(canvas, StreetCover.fromLayer(g),
-        color: g.color(), alpha: g.val('alpha', 0.6), seed: seed, window: c.windWindowStart ~/ 10800, amount: amount, t: t, mpc: mpc, px: px, artPx: artPixelDp,
+        color: g.color(), alpha: g.val('alpha', 0.6), seed: seed, window: c.windWindowStart ~/ 10800, amount: amount, peak: peak, melting: melting, windRad: c.windHeadingRad, hour: hour, t: t, mpc: mpc, px: px, artPx: artPixelDp,
         l: l, top: top, r: r, b: b, camX: cam.centerX, camY: cam.centerY, at: at, placed: placed);
   }
 

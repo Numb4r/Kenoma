@@ -172,6 +172,11 @@ class TrafficSim {
     _stale = false;
     final fresh = LaneGraph.build(graph, cx: px, cy: py, mpc: mpc, seed: seed, config: config, points: points, roadWidthM: roadWidthM);
     lanes = fresh;
+    if (g != null) {
+      for (final e in fresh.edges) {
+        e.wear = g.byKey[e.key]?.wear ?? 0; // as trilhas na neve continuam
+      }
+    }
     _index(fresh);
     if (g == null) {
       _populate(fresh, hour, density, null);

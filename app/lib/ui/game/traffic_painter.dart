@@ -64,6 +64,7 @@ class TrafficPainter {
 
   Object? _coverKey;
   LaneGraph? _coverLanes;
+  double _coverAt = 0;
 
   /// Quantos carros viraram barco no último quadro (testes do Dilúvio).
   int lastBoats = 0;
@@ -124,12 +125,15 @@ class TrafficPainter {
     final density = sim.config.carDensityIn(speedMult);
     sim.center(px, py, metersPerCell, left: l, top: top, right: r, bottom: b, hour: hour, density: density);
     final lanes = sim.lanes!;
-    if (!identical(lanes, _coverLanes) || coverKey != _coverKey) {
-      _coverLanes = lanes; // o clima das ruas mudou, ou o grafo foi refeito
+    // O clima das ruas mudou, o grafo foi refeito, ou passou meio minuto (a água sobe, a duna cresce, a neve afunda).
+    if (!identical(lanes, _coverLanes) || coverKey != _coverKey || (streetState != null && sim.time - _coverAt > 30)) {
+      _coverLanes = lanes;
       _coverKey = coverKey;
+      _coverAt = sim.time;
       lanes.applyStreets(streetState == null ? null : (line) => streetState(line, t) == StreetState.blocked, streetState == null ? null : (line) => streetState(line, t) == StreetState.flooded);
     }
     if (!paused) sim.step(dt.clamp(0.0, 0.1), hour: hour, density: density, speedMult: speedMult, walkMult: walkMult);
+    _refreshWear(sim);
     final m = trafficMarginM / metersPerCell;
     for (final c in sim.cars) {
       if (c.x < l - m || c.x > r + m || c.y < top - m || c.y > b + m) continue;
@@ -147,6 +151,28 @@ class TrafficPainter {
     _walkers.sort((a, b) => a.$3.compareTo(b.$3));
     _cars.sort((a, b) => a.$3.compareTo(b.$3));
     _frame = (rotation: cam.rotation, pxPerM: cam.pixelsPerCell / metersPerCell, night: light.night, t: t, streetState: streetState, skid: skid, outfit: outfit);
+  }
+
+  // As trilhas na neve: quanto os carros deste aparelho já gastaram cada rua (0 a 1, em quatro degraus), revisto de
+  // tempos em tempos. O carimbo muda quando algum degrau muda, e a cobertura refaz os blocos.
+  Map<(int, int, int), double> _wear = const {};
+  double _wearAt = -1e9;
+  int wearStamp = 0;
+
+  double wearOf((int, int, int) key) => _wear[key] ?? 0;
+
+  void _refreshWear(TrafficSim sim) {
+    if (sim.time - _wearAt < 20) return;
+    _wearAt = sim.time;
+    final next = <(int, int, int), double>{};
+    for (final e in sim.lanes!.edges) {
+      if (e.wear < 3) continue;
+      final k = (e.key.$1, e.key.$2, e.key.$3), v = math.min(3, e.wear ~/ 3) / 3;
+      if (v > (next[k] ?? 0)) next[k] = v;
+    }
+    if (next.length == _wear.length && next.entries.every((e) => _wear[e.key] == e.value)) return;
+    _wear = next;
+    wearStamp++;
   }
 
   /// Debug: o raio simulado, as bordas, as entradas e a luz de cada semáforo (um ponto por acesso, na cor da fase).

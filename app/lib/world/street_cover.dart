@@ -78,8 +78,13 @@ class StreetCover {
     return (a + 0.175 - half, a + 0.175 + half);
   }
 
-  /// O estado da rua para o tráfego, [sinceS] segundos depois do começo do clima. Neve, gelo e fuligem não mudam a rota.
+  /// O estado da rua para o tráfego, [sinceS] segundos depois do começo do clima. Gelo e fuligem não mudam a rota.
   StreetState stateOf(int seed, (int, int, int) key, RoadClass cls, int window, double sinceS) {
+    if (kind == StreetCoverKind.snow) {
+      // Neve funda: no fim da nevasca, uma parte das ruas (`share`, pela seed e pela rua) fecha para os carros.
+      final (tx, ty, i) = key;
+      return amountAt(sinceS) >= 0.9 && _u([seed, tx, ty, i, _saltLow]) < (share[cls.name] ?? 0) ? StreetState.blocked : StreetState.normal;
+    }
     if (kind != StreetCoverKind.flood && kind != StreetCoverKind.sand) return StreetState.normal;
     final l = level(seed, key, cls, window, amountAt(sinceS));
     if (l <= 0) return StreetState.normal;
