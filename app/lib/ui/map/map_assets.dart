@@ -117,6 +117,7 @@ ClimateWorld climateWorldFor({required GameState state, required GameData data, 
       // Poças e zonas paradas da época 7 vão para a rua pelos mesmos caminhos dos spawns (o app e a Patrulha).
       snapper: assets.visual == null ? null : WalkPaths(assets.visual!, blocked: assets.noWalk),
       water: assets.waterFor,
+      relief: assets.relief,
       forced: forced,
       forcedPhase: forcedPhase,
     );

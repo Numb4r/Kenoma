@@ -4,6 +4,9 @@
 /// mapa) entra por [forced] e [debugDrops] e não vai para mais ninguém. Dart puro.
 library;
 
+import '../data/relief_pack.dart';
+import '../core/astro.dart' show sunAltitudeDeg;
+import '../core/tiles.dart';
 import 'water_field.dart';
 import 'dart:math' as math;
 
@@ -98,6 +101,7 @@ class ClimateWorld {
     this.snapper,
     this.itemSince,
     this.water,
+    this.relief,
     String? Function()? forced,
     this.forcedPhase,
   }) : forced = forced ?? _none;
@@ -128,6 +132,9 @@ class ClimateWorld {
 
   /// A água no relevo da época (`null` sem relevo ou em época sem `water`): onde as poças ficam.
   final WaterField? Function(Epoch epoch)? water;
+
+  /// O relevo (`null`: terreno plano, a neblina vale igual em todo lugar).
+  final ReliefSource? relief;
 
   /// Climas forçados por evento (`events.json` assinado). Trocados quando o feed chega.
   List<ClimateEvent> events = const [];
@@ -184,6 +191,26 @@ class ClimateWorld {
   /// A definição do clima na célula z20 em [t] (o mesmo da z17 que a contém).
   ClimateDef? defAt(int cx20, int cy20, int t) => _defAt17(cx20 >>> 3, cy20 >>> 3, t)?.def;
 
+  /// A neblina no lugar (células z21) em [t], da época 9 em diante e só nos climas de neblina: quão baixo é o lugar, a
+  /// densidade (0 a 1) e o multiplicador da visão dos Ecos. `null` sem relevo ali, fora desses climas ou em época sem `fog`.
+  ({double low, double density, double viewMult})? fogAt(double x21, double y21, int t, Epoch epoch, String climateId) {
+    final fog = epoch.fog, r = relief;
+    if (fog == null || r == null || !fog.climates.contains(climateId)) return null;
+    final cx = x21.floor(), cy = y21.floor(), k = fog.ringCells, kd = (k * 0.7071).round();
+    final h = r.h16At(cx, cy);
+    if (h == null) return null;
+    var ring = 0;
+    for (final (dx, dy) in [(k, 0), (-k, 0), (0, k), (0, -k), (kd, kd), (-kd, kd), (kd, -kd), (-kd, -kd)]) {
+      final v = r.h16At(cx + dx, cy + dy);
+      if (v == null) return null;
+      ring += v;
+    }
+    final low = fog.lowness(h, ring, water?.call(epoch)?.floodAt(cx, cy) ?? 0);
+    final (lat, lon) = tileFractionToLatLon(x21, y21, biomeZoom);
+    final sun = sunAltitudeDeg(lat, lon, t);
+    return (low: low, density: fog.density(low, sun), viewMult: fog.viewMult(low, sun));
+  }
+
   /// O que o clima da posição (células z21 fracionárias) faz com o jogador agora.
   PlayerClimate modsAt(double x21, double y21, int t) {
     final cx17 = x21.floor() >>> 4, cy17 = y21.floor() >>> 4;
@@ -208,7 +235,7 @@ class ClimateWorld {
     return PlayerClimate(
       id: d.def.id,
       auraAddM: mod?.auraAddM ?? 0,
-      viewMaxM: mod?.viewMaxM,
+      viewMaxM: mod?.viewMaxM == null ? null : mod!.viewMaxM! * (fogAt(x21, y21, t, d.epoch, d.def.id)?.viewMult ?? 1),
       toleranceMult: mod?.toleranceMult ?? 1,
       wanderMult: mod?.wanderMult ?? 1,
       immuneSchool: mod?.immuneSchool,

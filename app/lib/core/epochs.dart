@@ -1,6 +1,7 @@
 /// Épocas (epochs.json): pacote de região e tabelas de spawn de cada uma (docs/fase0-spec.md, seção 3).
 library;
 
+import 'fog_model.dart';
 import 'water_model.dart';
 import 'climate.dart';
 import 'features.dart';
@@ -140,6 +141,7 @@ class Epoch {
     this.visualPacks = const {},
     this.reliefPacks = const {},
     this.water,
+    this.fog,
     this.ecoV2,
     this.walkable,
     this.requiresFeature,
@@ -169,6 +171,7 @@ class Epoch {
             e.key: RegionPackRef(file: (e.value as Map<String, dynamic>)['file'] as String, sha256: e.value['sha256'] as String),
         },
         water: json['water'] == null ? null : WaterModel.fromJson(json['water'] as Map<String, dynamic>),
+        fog: json['fog'] == null ? null : FogModel.fromJson(json['fog'] as Map<String, dynamic>),
         walkable: json['walkable'] == null ? null : Walkable.fromJson(json['walkable'] as Map<String, dynamic>),
         requiresFeature: json['requires_feature'] as String?,
         ecoV2: json['eco_v2'] == null ? null : EcoV2.fromJson(json['eco_v2'] as Map<String, dynamic>),
@@ -197,6 +200,10 @@ class Epoch {
   /// A água da chuva que escorre pelo relevo (poças nas baixadas, Dilúvio no fundo dos vales), da época 9 em diante.
   /// `null`: poças e ruas alagadas sorteadas pela seed, como antes.
   final WaterModel? water;
+
+  /// A neblina que se acumula nas baixadas e muda a visão dos Ecos conforme o lugar, da época 9 em diante. `null`: a
+  /// visão do clima vale igual em todo lugar, como antes.
+  final FogModel? fog;
 
   /// Os quatro itens fixos de uma célula, na ordem do índice.
   final List<SpawnItemDef> items;
