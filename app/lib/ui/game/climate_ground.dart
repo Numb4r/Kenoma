@@ -155,7 +155,7 @@ class ClimateGround {
   /// A função de estado das ruas para o Tráfego do Véu com o clima [shown] (Dilúvio e areia), ou `null` se ele não mexe nas
   /// ruas; e a chave que muda quando ela muda (o tráfego refaz os caminhos).
   ({StreetState Function(GhostLine, double)? state, Object? key, bool skid}) trafficCover(int seed, ClimateInfo shown, PlayerClimate c) {
-    final cover = streetCoverOf(shown);
+    final cover = streetCoverOf(shown)?.withFloods(floods);
     if (cover == null) return (state: null, key: null, skid: false);
     final window = c.windWindowStart ~/ 10800, start = c.runStartUtc;
     return (
@@ -298,11 +298,14 @@ class ClimateGround {
     _airOps.clear();
   }
 
+  /// As ruas que alagam no Dilúvio pela água no relevo (época 9 em diante). `null`: o sorteio pela seed.
+  bool? Function((int, int, int) key)? floods;
+
   /// A cobertura das ruas (debug e medição dos blocos do campo; o desgaste do tráfego local entra por ela).
   ClimateCover? get cover => _cover;
 
   void _streets(ui.Canvas canvas, ClimateLayer g, int seed, PlayerClimate c, double amount, double peak, bool melting, int hour, double t, double mpc, double px, double l, double top, double r, double b, MapCamera cam, ui.Offset Function(double, double) at) {
-    _cover?.paint(canvas, StreetCover.fromLayer(g),
+    _cover?.paint(canvas, StreetCover.fromLayer(g).withFloods(floods),
         color: g.color(), alpha: g.val('alpha', 0.6), seed: seed, window: c.windWindowStart ~/ 10800, amount: amount, peak: peak, melting: melting, windRad: c.windHeadingRad, hour: hour, t: t, mpc: mpc, px: px, artPx: artPixelDp,
         l: l, top: top, r: r, b: b, camX: cam.centerX, camY: cam.centerY, at: at, placed: placed);
   }

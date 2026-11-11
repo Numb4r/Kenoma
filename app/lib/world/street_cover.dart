@@ -21,7 +21,13 @@ enum StreetCoverKind { flood, snow, sand, ice, soot }
 enum StreetState { normal, flooded, blocked }
 
 class StreetCover {
-  const StreetCover({required this.kind, this.share = const {}, this.growS = 0, this.tracks = false, this.skid = false});
+  const StreetCover({required this.kind, this.share = const {}, this.growS = 0, this.tracks = false, this.skid = false, this.floods});
+
+  /// A mesma cobertura com as ruas que alagam vindas da água no relevo ([floods], época 9 em diante) em vez do sorteio.
+  StreetCover withFloods(bool? Function((int, int, int) key)? floods) => floods == null ? this : StreetCover(kind: kind, share: share, growS: growS, tracks: tracks, skid: skid, floods: floods);
+
+  /// Dilúvio com relevo: se a rua (tile z15 e índice da linha) alaga. `null` para a rua: sem relevo ali, vale o sorteio.
+  final bool? Function((int, int, int) key)? floods;
 
   factory StreetCover.fromLayer(ClimateLayer l) => StreetCover(
         kind: StreetCoverKind.values.byName(l.str('cover') ?? 'flood'),
@@ -54,6 +60,9 @@ class StreetCover {
     final (tx, ty, i) = key;
     switch (kind) {
       case StreetCoverKind.flood:
+        // Com relevo, alaga o fundo dos vales e a beira dos córregos (menos os caminhos de pedestre, as calçadas altas).
+        final real = cls == RoadClass.pedestrian ? null : floods?.call(key);
+        if (real != null) return real ? amount : 0;
         return _u([seed, tx, ty, i, _saltLow]) < (share[cls.name] ?? 0) ? amount : 0;
       case StreetCoverKind.sand:
         return _u([seed, tx, ty, i, window, _saltDune]) < (share[cls.name] ?? 0) ? amount : 0;

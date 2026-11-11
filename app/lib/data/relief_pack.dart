@@ -11,6 +11,10 @@ import 'dart:typed_data';
 
 /// Quem entrega a altura do terreno. Sem relevo no lugar: `null` (terreno plano para quem pergunta).
 abstract interface class ReliefSource {
+  /// Altura no centro da célula z21 ([cx], [cy]) em 1/16 de decímetro, só com inteiros (a água da chuva usa esta: nenhum
+  /// arredondamento de ponto flutuante entre aparelhos). `null` fora da grade.
+  int? h16At(int cx, int cy);
+
   /// Altura em metros no ponto (células z21 fracionárias), ou `null` fora da grade.
   double? heightAt(double x21, double y21);
 }
@@ -41,6 +45,16 @@ class ReliefPack implements ReliefSource {
 
   /// Alturas em decímetros, linha por linha a partir do norte.
   final Int16List dm;
+
+  @override
+  int? h16At(int cx, int cy) {
+    assert(zoom == 20);
+    // O centro da célula z21 fica a 1/4 ou 3/4 do caminho entre duas amostras z20.
+    final ix = (cx.isEven ? cx ~/ 2 - 1 : (cx - 1) ~/ 2) - x0, iy = (cy.isEven ? cy ~/ 2 - 1 : (cy - 1) ~/ 2) - y0;
+    if (ix < 0 || iy < 0 || ix >= width - 1 || iy >= height - 1) return null;
+    final wx1 = cx.isEven ? 3 : 1, wy1 = cy.isEven ? 3 : 1, i = iy * width + ix;
+    return (4 - wy1) * ((4 - wx1) * dm[i] + wx1 * dm[i + 1]) + wy1 * ((4 - wx1) * dm[i + width] + wx1 * dm[i + width + 1]);
+  }
 
   @override
   double? heightAt(double x21, double y21) {

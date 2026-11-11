@@ -21,6 +21,7 @@ import '../../player/game_state.dart';
 import '../../world/debug_force.dart';
 import '../../world/spawn_field.dart';
 import '../../world/walk_paths.dart';
+import '../../world/water_field.dart';
 import '../../world/world_view.dart';
 import '../../net/signed_feed.dart';
 import '../../data/block_cache.dart';
@@ -53,6 +54,12 @@ class MapAssets {
 
   /// O relevo da região (da primeira época que o lista). `null`: terreno plano.
   final ReliefSource? relief;
+
+  final Map<int, WaterField> _water = {};
+
+  /// A água da chuva no relevo com os números de [epoch] (`water`), ou `null` se a época não a usa ou não há relevo.
+  WaterField? waterFor(Epoch epoch) =>
+      epoch.water == null || relief == null || visual == null ? null : _water[epoch.id] ??= WaterField(relief: relief!, visual: visual!, model: epoch.water!);
 
   /// Semáforos, faixas e entradas do OSM para a simulação local do tráfego (`null`: regra pela classe da rua).
   final TrafficPointSource? trafficPoints;
@@ -109,6 +116,7 @@ ClimateWorld climateWorldFor({required GameState state, required GameData data, 
       },
       // Poças e zonas paradas da época 7 vão para a rua pelos mesmos caminhos dos spawns (o app e a Patrulha).
       snapper: assets.visual == null ? null : WalkPaths(assets.visual!, blocked: assets.noWalk),
+      water: assets.waterFor,
       forced: forced,
       forcedPhase: forcedPhase,
     );

@@ -4,6 +4,7 @@
 /// mapa) entra por [forced] e [debugDrops] e não vai para mais ninguém. Dart puro.
 library;
 
+import 'water_field.dart';
 import 'dart:math' as math;
 
 import '../core/climate.dart';
@@ -96,6 +97,7 @@ class ClimateWorld {
     this.biomeAt,
     this.snapper,
     this.itemSince,
+    this.water,
     String? Function()? forced,
     this.forcedPhase,
   }) : forced = forced ?? _none;
@@ -124,6 +126,9 @@ class ClimateWorld {
   /// Os caminhos andáveis (o mesmo `WalkPaths` dos spawns): poças e zonas paradas da época 7 vão para a rua mais próxima.
   final PathSnapper? snapper;
 
+  /// A água no relevo da época (`null` sem relevo ou em época sem `water`): onde as poças ficam.
+  final WaterField? Function(Epoch epoch)? water;
+
   /// Climas forçados por evento (`events.json` assinado). Trocados quando o feed chega.
   List<ClimateEvent> events = const [];
 
@@ -134,7 +139,7 @@ class ClimateWorld {
 
   final _dropCache = <(int, int, int, int, int), List<ClimateDrop>>{};
   final _zoneCache = <(int, int, int, int, int), List<ClimateZone>>{};
-  final _spotCache = <(int, int, int, int), List<PuddleSpot>>{};
+  final _spotCache = <(int, int, int, int), List<({int index, double x, double y, double radiusM, double depth})>>{};
   final _arcCache = <(int, int, int, int, bool), RainbowArc?>{};
 
   /// O modelo e a época que valem em [t]: os da época; com o clima forçado pelo debug numa época sem modelo, o da época mais
@@ -481,6 +486,7 @@ class ClimateWorld {
       final PuddlePiece piece;
       final int wetWindow;
       final double size;
+      double? dried; // quanto já secou (só depois da chuva)
       final fp = forced() == null ? null : forcedPhase?.call();
       if (fp != null) {
         // O clima forçado começa do zero quando foi forçado, e o de antes seca a partir dali (só neste aparelho).
@@ -490,7 +496,8 @@ class ClimateWorld {
           size = cur.always ? 1.0 : math.min(1.0, fp.ageS / cur.growS);
         } else if (prev != null && !prev.always) {
           piece = prev;
-          size = math.min(1.0, fp.prevFormedS / prev.growS) - fp.prevSinceEndS / prev.dryS;
+          dried = fp.prevSinceEndS / prev.dryS;
+          size = math.min(1.0, fp.prevFormedS / prev.growS) - dried;
         } else {
           continue;
         }
@@ -505,16 +512,28 @@ class ClimateWorld {
         if (before == null || before.always) continue; // o gelo derrete junto com a Geada
         piece = before;
         wetWindow = d.window - 1;
-        size = 1 - (t - start) / before.dryS;
+        dried = (t - start) / before.dryS;
+        size = 1 - dried;
       }
-      if (size <= 0) continue;
+      if (size <= 0 && (dried == null || d.epoch.water == null)) continue;
       final epochId = d.epoch.id;
+      // Da época 9 em diante, com relevo: as poças ficam onde a água para de verdade; a mais funda é a maior. Sem relevo
+      // no lugar, os pontos sorteados pela seed de antes.
+      final wet = d.epoch.water == null ? null : water?.call(d.epoch)?.spots(cx, cy, piece.perCell);
+      final (rLo, rHi) = piece.radiusM;
       final spots = _spotCache.putIfAbsent((epochId, cx, cy, piece.perCell), () => [
-            for (final s in puddleSpots(seed, epochId, cx, cy, piece))
-              if (_toStreet(s.x, s.y) case final p?) (index: s.index, x: p.$1, y: p.$2, radiusM: s.radiusM),
+            for (final s in wet ?? const <WaterSpot>[])
+              if (_toStreet(s.x, s.y) case final p?) (index: s.index, x: p.$1, y: p.$2, radiusM: rLo + (rHi - rLo) * s.depth, depth: s.depth),
+            if (wet == null)
+              for (final s in puddleSpots(seed, epochId, cx, cy, piece))
+                if (_toStreet(s.x, s.y) case final p?) (index: s.index, x: p.$1, y: p.$2, radiusM: s.radiusM, depth: 0.0),
           ]);
+      final bonus = d.epoch.water?.dryDepthBonus ?? 0;
       for (final s in spots) {
-        out.add(Puddle(piece: piece, index: s.index, x: s.x, y: s.y, radiusM: s.radiusM, size: size, wet: cur != null, rolls: puddleRolls(seed, epochId, cx, cy, wetWindow, s.index)));
+        // Secando, as baixadas mais fundas duram mais.
+        final sz = dried == null ? size : size + dried * (1 - 1 / (1 + bonus * s.depth));
+        if (sz <= 0) continue;
+        out.add(Puddle(piece: piece, index: s.index, x: s.x, y: s.y, radiusM: s.radiusM, size: math.min(1.0, sz), wet: cur != null, rolls: puddleRolls(seed, epochId, cx, cy, wetWindow, s.index)));
       }
     }
     return out;

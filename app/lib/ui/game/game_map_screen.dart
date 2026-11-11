@@ -661,6 +661,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     );
     final tracker = PlayerTracker(source: tools.source);
     _bridgeLat = () => game.playerLat;
+    // Da época 9 em diante, com relevo: as ruas que o Dilúvio alaga saem da água no relevo.
+    game.climateGround.floods = (key) => assets.waterFor(data.schedule.select(tools.clock.nowUtc).epoch)?.lineFloods(key.$1, key.$2, key.$3);
     tools.trafficStats = () {
       final sim = game.trafficSimState, g = sim?.lanes;
       if (sim == null || g == null) return 'A simulação ainda não começou (sem posição ou com o Tráfego do Véu desligado).';

@@ -1,6 +1,7 @@
 /// Épocas (epochs.json): pacote de região e tabelas de spawn de cada uma (docs/fase0-spec.md, seção 3).
 library;
 
+import 'water_model.dart';
 import 'climate.dart';
 import 'features.dart';
 import 'weather.dart';
@@ -138,6 +139,7 @@ class Epoch {
     required this.items,
     this.visualPacks = const {},
     this.reliefPacks = const {},
+    this.water,
     this.ecoV2,
     this.walkable,
     this.requiresFeature,
@@ -166,6 +168,7 @@ class Epoch {
           for (final e in ((json['relief_packs'] as Map<String, dynamic>?) ?? const {}).entries)
             e.key: RegionPackRef(file: (e.value as Map<String, dynamic>)['file'] as String, sha256: e.value['sha256'] as String),
         },
+        water: json['water'] == null ? null : WaterModel.fromJson(json['water'] as Map<String, dynamic>),
         walkable: json['walkable'] == null ? null : Walkable.fromJson(json['walkable'] as Map<String, dynamic>),
         requiresFeature: json['requires_feature'] as String?,
         ecoV2: json['eco_v2'] == null ? null : EcoV2.fromJson(json['eco_v2'] as Map<String, dynamic>),
@@ -190,6 +193,10 @@ class Epoch {
   /// O relevo de cada região (SRTM, `build_relief.py`), da época 9 em diante. **É mundo:** a água da chuva, a neblina e o
   /// vento saem dele. Região sem relevo na época: terreno plano.
   final Map<String, RegionPackRef> reliefPacks;
+
+  /// A água da chuva que escorre pelo relevo (poças nas baixadas, Dilúvio no fundo dos vales), da época 9 em diante.
+  /// `null`: poças e ruas alagadas sorteadas pela seed, como antes.
+  final WaterModel? water;
 
   /// Os quatro itens fixos de uma célula, na ordem do índice.
   final List<SpawnItemDef> items;
