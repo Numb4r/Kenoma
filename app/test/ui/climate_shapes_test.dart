@@ -113,6 +113,23 @@ void main() {
       return (await img.toByteData())!.buffer.asUint8List();
     }
 
+    test('os blocos do campo ficam prontos fora da thread do desenho (isolate) e chegam à tela', () async {
+      const view = ui.Size(360, 480);
+      final g = ClimateGround(catalog: catalog, visual: visual);
+      final cam = MapCamera(centerX: cx, centerY: cy, pixelsPerCell: 100);
+      ClimateCover.buildInline = false;
+      for (var k = 0; k < 600 && g.cover!.fieldDrawn < 6; k++) {
+        final rec = ui.PictureRecorder();
+        g.paint(ui.Canvas(rec), view, cam, mpc: mpc, exactUtc: 1900007200, seed: 7, shown: catalog.of('snow'), c: const PlayerClimate(id: 'snow', runStartUtc: 1900000000));
+        rec.endRecording().dispose();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      expect(g.cover!.fieldBuilds, greaterThanOrEqualTo(6));
+      expect(g.cover!.fieldDrawn, greaterThanOrEqualTo(6));
+      // ignore: avoid_print
+      print('bloco pelo isolate: ${g.cover!.fieldLastMs.toStringAsFixed(1)} ms');
+    });
+
     test('neve, gelo, fuligem, Dilúvio e areia desenham sobre as ruas do Centro, em qualquer rotação', () async {
       final dir = Platform.environment['KENOMA_SHOTS'];
       for (final id in ['snow', 'freezing_rain', 'smog', 'deluge', 'sandstorm']) {

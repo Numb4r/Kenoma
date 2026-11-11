@@ -325,3 +325,44 @@ Segue o GDD rev 334 (a seção Instrumentos e canções é só especificação: 
 - **Depois do Silêncio:** o relógio do tráfego volta à hora real quando o Silêncio acaba. Durante 60 s (`climate.traffic_resync_s`), quem estava parado volta a andar de onde parou, 1,25 vez mais rápido (`climate.traffic_resync_speed`), e se desfaz pela costura do Véu enquanto o tráfego da hora entra. Ninguém salta de lugar nem fica atrasado até a janela seguinte. Função só do tempo do mundo: igual nos dois aparelhos. O mesmo vale quando o debug tira o Silêncio.
 - **Conferido no moto g54 (2026-11-11, GPS real, APK 0.17.2+28 com a chave de release, instalado por cima da 0.17.1, save mantido):** antes e depois na chuva e na neve a 60×. Na 0.17.1 a neve cobria passantes e carros e as vielas acabavam em corte quadrado; na 0.17.2 o passante aparece com as cores dele por cima da neve, o carro por cima da rua molhada, as vielas acabam redondas com a borda pontilhada, e a cratera da Chuva de meteoros tem contorno irregular. Tela de bloqueio conferida antes de cada captura. **Não visto no aparelho:** poças (não havia nenhuma perto na chuva forçada), várias crateras lado a lado, dunas, gelo, fuligem, Dilúvio, a ressincronização depois do Silêncio e a linha da Noite das Fendas no app Céu; esses estão cobertos por teste e, no caso das coberturas, por render fora da tela.
 - **Feed:** `docs/pages` não tinha nada a commitar: o feed assinado com as épocas 0 a 7 já está no commit `0281e0d`. A época 8 continua fora do feed até todo mundo estar na 0.17.1 ou mais nova.
+
+## Fase 1 · fatia 6 · Tráfego e neve simulados (0.18.0)
+
+Segue o GDD rev 335: o tráfego comum deixa de ser igual entre amigos. **Nada muda o mundo:** sem época nova, `epochs.json` intocado, save sem mudança de schema (continua 6). O tráfego comum nunca esteve em `epochs.json` (lá só há o `traffic_mult` de cada clima, que continua valendo como lentidão); o que saiu foi a geração pela seed (`TrafficField`, `traffic_route.dart`). A neve continua determinística pela seed e pelo tempo; só as trilhas do tráfego são locais.
+
+### Tráfego simulado (`app/lib/world/sim/`)
+
+- **Área:** raio de 400 m em volta do jogador (`traffic_sim.radius_m`; a tela no zoom mais aberto tem 80 m de largura). O grafo é refeito quando o jogador anda 150 m; quem está nas ruas que continuam fica onde está, e os trechos novos (a borda) já entram povoados.
+- **Grafo de faixas (`lane_graph.dart`):** do grafo de ruas da rota (`TrafficGraph` com corte nas esquinas e os viadutos do arquivo de rota). Cada trecho entre duas esquinas vira uma via com mão de direção (a mão única do pacote), faixas pela classe (2 por sentido na principal, 1 nas outras) e as duas calçadas. Esquinas ligadas por um trecho de menos de 12 m viram uma só. Onde duas ruas se juntam em ângulo raso, o recuo vai até onde elas se separam.
+- **Controle das esquinas:** do OSM, pelo arquivo novo `campinas_e0_traffic.bin` (`pipeline/build_traffic.py`, fora das épocas): 909 semáforos, 1.137 pare, 77 dê a preferência, 4.933 faixas de pedestre e 935 entradas (estacionamentos e garagens) em Campinas. Sem placa, cede a vez quem vem da rua menor; entre ruas iguais, todos param e entra quem chegou primeiro. Fora da área do arquivo (São Paulo, blocos do fallback), cruzamento de avenidas ganha semáforo.
+- **Semáforos:** dois grupos por esquina (o eixo da rua mais larga e o atravessado), verde de 22 s (20% a mais no eixo de avenida), amarelo de 3 s e vermelho geral de 2 s, com a fase pela seed e pela posição da esquina.
+- **Carros:** seguem o da frente pelo IDM (aceleração 1,5 m/s², freada 2 m/s², intervalo 1,2 s, folga 2 m), param na linha no vermelho (no amarelo, só passa quem não consegue mais parar), reservam a vez na esquina antes de entrar e só entram com lugar do outro lado. Dois movimentos só cabem juntos na esquina se forem a mesma faixa do mesmo acesso, lado a lado para a mesma rua, ou a mão contrária indo reto. A curva da esquina é uma Bézier da ponta de uma faixa ao começo da outra; a direção desenhada é suavizada. Perto da tela, quem tem outro carro logo à frente fora da sua fila freia por ele (ruas que se juntam).
+- **Passantes:** andam nas calçadas (1,5 m além do meio-fio) e nos caminhos de pedestre. Na ponta da calçada escolhem seguir, virar a esquina ou atravessar. Só atravessam onde há faixa do OSM perto da esquina; sem nenhuma faixa mapeada ali, nas esquinas (nunca no meio do quarteirão). No semáforo esperam os carros daquela rua ficarem no vermelho; sem semáforo, esperam ninguém vir chegando. Enquanto atravessam, os carros esperam antes da faixa. Quem vem de frente desvia cada um para a sua direita; quem alcança um mais lento passa pela esquerda.
+- **Nascer e sumir:** só na borda da área ou nas entradas do OSM, e sempre a mais de 25 m da tela. Ao abrir o app a área já está povoada e a simulação roda 30 s antes do primeiro quadro (as filas dos semáforos já existem). Um carro preso há mais de 2 min longe da tela some.
+- **Densidade:** a curva pela hora local de antes, vezes a classe da rua (`cars_per_100m`, `walkers_per_100m`), até 280 carros e 280 passantes. O clima reduz e freia (ver `docs/clima-auditoria.md`).
+- **Silêncio:** a simulação pausa e depois continua de onde parou. O crossfade da 0.17.2 saiu.
+- **Longe da tela:** além de 60 m da tela, os carros atualizam a cada 4 quadros e os passantes a cada 8, com o passo maior.
+- **Debug (seção Tráfego):** contador de agentes e custo do passo, área simulada e entradas desenhadas, a luz de cada acesso dos semáforos, densidade forçada (vazio, pouco, rush, lotado).
+- **Fora desta versão:** Ônibus Espectral, Van do Mercador, Carroça de Essência e carro fugitivo ainda não existem no código; quando entrarem, saem da seed, fora da simulação. A Procissão já é assim e não foi tocada. Os carros da simulação não desviam dela.
+
+### Neve e coberturas por campo
+
+Ver "Cobertura por campo (0.18.0)" em `docs/clima-auditoria.md`: máscara única das ruas por bloco, campo de profundidade em forma fechada, trilhas do tráfego local, bancos no meio-fio, derretimento inverso, bordas em pontilhado ordenado. A mesma técnica para gelo, fuligem e água do Dilúvio; as poças ganharam o mesmo tipo de borda, mas continuam desenhadas uma a uma.
+
+### Testes
+
+`test/world/sim/traffic_sim_test.dart` (cidade em grade): ninguém nasce nem some dentro da vista (600 s), carros não se atravessam nem andam de ré, ninguém reserva a esquina no vermelho, passante só atravessa na faixa e no semáforo só com os carros no vermelho, carro espera o passante, pausa do Silêncio, densidade pela hora e pelo clima, rua fechada, refazer a área sem salto, desempenho. `traffic_sim_campinas_test.dart`: as ruas de verdade do Centro, do Taquaral, de Barão Geraldo e do entroncamento da Norte-Sul, sem sobreposição perto da tela. `test/world/cover_field_test.dart`: máscara única sem sobreposição, um só nível de opacidade no cruzamento, profundidade igual para o mesmo tempo e na ordem das superfícies, trilhas, bancos nas bordas e do lado do vento, degelo, bordas em pixel, neve funda, desempenho. Suíte: 1652 passam, 4 pulados; `flutter analyze` limpo.
+
+### Medido no PC (não é o celular)
+
+- Passo da simulação com 60 carros e 80 passantes na grade: 7 a 11 µs. Nas ruas de Campinas com a densidade de rush: 30 a 140 µs com 150 a 280 carros e 100 a 280 passantes.
+- Montar o grafo de faixas: 20 a 50 ms depois de os tiles estarem lidos; 120 a 340 ms na primeira vez no Centro (inclui ler e cortar os tiles).
+- Montar um bloco da cobertura: 2 a 3 ms, fora da thread do desenho.
+
+### Limites conhecidos
+
+- Em entroncamentos muito picados, fora da tela, dois carros ainda podem se encostar (lá não há a rede de segurança e o passo é maior).
+- Não há troca de faixa no meio do quarteirão: a faixa é escolhida ao entrar na rua.
+- O arquivo de rota (ruas fechadas a motor) não é lido pela simulação: carros podem entrar em rua particular.
+- O desgaste da neve não diminui com o tempo nem zera quando começa outra nevasca na mesma sessão.
+- A primeira montagem do grafo pode custar alguns quadros no celular (ver a medição no aparelho).

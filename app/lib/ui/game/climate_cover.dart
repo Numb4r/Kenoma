@@ -6,10 +6,11 @@
 library;
 
 import 'dart:collection';
-import 'dart:isolate';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+
+import 'package:flutter/foundation.dart' show compute;
 
 import '../../core/fnv.dart';
 import '../../data/visual_pack.dart';
@@ -180,7 +181,8 @@ class ClimateCover {
     if (buildInline) {
       done(buildCover(input).rgba);
     } else {
-      Isolate.run(() => buildCover(input).rgba).then(done, onError: (Object _) => done(null));
+      // Função de topo e mensagem só com dados: nada do desenho (imagens, canvas) vai junto para o isolate.
+      compute(_coverRgba, input).then(done, onError: (Object _) => done(null));
     }
   }
 
@@ -351,6 +353,8 @@ List<ui.Offset> spanOf(List<ui.Offset> pts, (double, double) span) {
   }
   return out;
 }
+
+Uint8List _coverRgba(CoverInput input) => buildCover(input).rgba;
 
 class _FieldBlock {
   ui.Image? image;

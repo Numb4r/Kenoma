@@ -204,13 +204,31 @@ Toda marca no chão usa `blobRows(hash, raio)`: linhas em pixel de arte de um co
 | vela no chão | cera derretida irregular, toco alto ou baixo, chama às vezes torta |
 | duna na rua | `duneOutline`: afina nas pontas, lado do vento mais largo, borda ondulada |
 
-## Cobertura das ruas (0.17.2)
+## Cobertura por campo (0.18.0)
 
-A cobertura segue a linha da rua do pacote visual (largura da classe, curvas), nunca a grade de células. Pontas e esquinas redondas. A borda tem três degraus de largura (o degradê curto) e pontilhado em pixel dos dois lados e em volta das pontas (`edgeDither`, preso à rua pelo hash). Vale para neve, gelo, fuligem e água do Dilúvio, e para o recorte das ruas na neve do chão. Acima de 220 ruas na tela, só o degradê. O corte reto da 0.17.1 vinha das pontas quadradas e das esquinas em quina do traço, mais visíveis nas vielas sem saída.
+Substitui a "Cobertura das ruas" da 0.17.2 (os tubos com pontas redondas, os círculos claros nos cruzamentos e a borda pontilhada que parecia costura). Vale para neve, gelo, fuligem e água do Dilúvio. As dunas continuam sendo montes desenhados sobre trechos de rua.
 
-## Depois do Silêncio (0.17.2)
+- **Bloco:** o mapa é cortado em blocos de 4 células z21 de lado, cada um com 128 por 128 pixels (32 por célula, uns 0,55 m). `world/cover_field.dart` (Dart puro) monta o bloco; `ui/game/climate_cover.dart` o transforma em imagem e desenha com o mapa (gira e dá zoom com ele, sem filtro).
+- **Máscara única:** antes de qualquer cobertura, todas as ruas, calçadas e caminhos que tocam o bloco são rasterizados numa máscara só. Cada pixel guarda a menor distância à borda de qualquer rua (a união) e a maior classe que o cobre. Nada é desenhado por rua, então cruzamento e viela não têm ponta sobreposta nem círculo. Superfícies, na ordem em que a neve chega: grama, chão (com os telhados: o pacote não tem prédios), calçada (1,6 m além do meio-fio), caminho de pedestre, rua local, secundária, principal. Na água não acumula.
+- **Profundidade da neve:** forma fechada da fase do clima (`formAmount`, o tempo desde o começo, igual em todos os aparelhos). Cada superfície tem o seu trecho da fase (`snowStageOf`), mais um ruído preso ao chão que entorta a frente da neve. Montes baixos no chão e, com vento, faixas compridas na direção dele.
+- **Limpeza pelo tráfego:** dentro das ruas a profundidade cai nas faixas: duas trilhas nas avenidas (85% na principal, 65% na secundária), uma no meio das ruas locais (22%). Metade disso depende do desgaste local: a simulação do tráfego conta os carros que passaram em cada rua deste aparelho, em quatro degraus, revisto a cada 20 s. **É a única parte local da neve.**
+- **Bancos de neve:** parte do mesmo campo, sem objeto separado. Uma faixa de 2,2 m a partir do meio-fio (e 0,9 m para dentro da sarjeta) ganha profundidade quando as ruas já têm neve para o tráfego empurrar (fase acima de 0,56). O gradiente da distância à borda aponta para fora da rua: o banco do lado para onde o vento sopra (`windHeadingRad`) fica até 80% mais alto.
+- **Derreter:** a mesma função com a fase caindo: as avenidas limpam primeiro, depois as ruas, as calçadas e por último o chão. Os bancos usam o pico a que a neve chegou e são os últimos a sumir da beira da rua (sem salto na virada).
+- **Desenho:** a cor sai da profundidade em faixas: neve fina em pontilhado (deixa ver o chão), neve, neve funda clara; nas ruas, neve suja e, nas trilhas, neve suja escura. Sombra onde o vizinho do lado do sol é mais alto (o sol pela hora local: nasce a leste, passa ao norte). A borda é o limiar do campo com pontilhado ordenado 4x4 preso ao chão: cada pixel está coberto ou não, sem contorno, sem linha pontilhada, sem ponta redonda. A neve da calçada avança sobre a beirada da rua de forma irregular.
+- **Gelo, fuligem e água:** a mesma máscara. A cobertura de cada rua (`StreetCover.level`, pela seed e pela rua, como antes) entra como distância à borda da cobertura mais próxima, de novo em união; um ruído preso ao chão entorta a borda e o pontilhado a desfaz. Um pixel é pintado uma vez: as manchas claras do Dilúvio nos cruzamentos (duas faixas translúcidas somadas) acabaram. O brilho que corre na água e os pontos do gelo e da fuligem continuam por cima.
+- **Poças:** o contorno passou a ser o limiar de um campo (as seis famílias da 0.17.2 viraram distâncias, juntadas por mínimo e máximo) com o mesmo pontilhado ordenado na beirada. **Não entram na máscara do bloco:** continuam desenhadas uma a uma, com os reflexos e os anéis de gota de antes.
+- **Quando refaz:** a chave do bloco é a fase em 64 faixas, o pico, o vento em 16 direções, o lado do sol, o carimbo do desgaste e a revisão do pacote. O bloco só é refeito quando a chave muda, nunca a cada quadro: um bloco por quadro entra na fila (o mais perto do meio da tela), no máximo dois ao mesmo tempo, num isolate. A imagem antiga fica na tela até a nova chegar. Uma volta de blocos além da tela já fica pronta.
+- **Neve funda fecha ruas:** no fim da nevasca (fase acima de 0,9), 15% das ruas locais (`share.local` da camada no `clima.json`, pela seed e pela rua) fecham para os carros da simulação.
+- **Custo:** montar um bloco de Campinas leva 2 a 3 ms no PC (9 ruas por bloco em média), fora da thread do desenho. No quadro sobra desenhar as imagens (uns 20 a 30 blocos).
 
-`ClimateWorld.trafficClock` volta à hora real no fim da parada. `trafficResync` (função só do tempo) dá, por `traffic_resync_s` (60 s), o relógio de quem estava parado (de onde parou, `traffic_resync_speed` = 1,25 vez mais rápido) e a mistura de 0 a 1 do tráfego da hora. O desenho mostra os dois: os antigos se desfazem pela costura do Véu, os da hora se formam. Sem saltos.
+## Tráfego simulado e o clima (0.18.0)
+
+O tráfego comum deixou de sair da seed: é a simulação local de `world/sim/` (ver `docs/marcos.md`). O que o clima faz com ela:
+
+- **Lentidão:** `traffic_mult` do clima multiplica a velocidade de cruzeiro dos carros e, com `walker_mult`, a dos passantes. A densidade cai junto: sobram 40% dos carros e 30% dos passantes com o multiplicador em 0 (`climate_car_floor`, `climate_walker_floor`).
+- **Silêncio:** `traffic_mult` 0 é pausa, não lentidão. Enquanto `ClimateWorld.trafficStopAt` disser que a parada vale ali, o jogo não chama o passo da simulação: todos ficam onde estão e depois continuam de onde pararam. O crossfade da 0.17.2 (`trafficResync`, `traffic_resync_s`, `traffic_resync_speed`) saiu.
+- **Ruas:** o estado de cada rua (`StreetCover.stateOf`) é reaplicado a cada 30 s. Rua alagada: carro vira barco e o passante sai dela na primeira esquina e não volta. Rua com duna ou neve funda: nenhum carro entra; quem já estava sai.
+- **Trilhas:** os carros da simulação gastam a neve das ruas por onde passam (acima).
 
 ## Climas sem data (0.17.2)
 

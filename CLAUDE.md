@@ -26,6 +26,7 @@ Flutter stable, Dart 3, Flame no mapa e na sintonia, widgets no resto, Riverpod.
 - Código em inglês; UI, comentários de domínio e docs em português. Nomes próprios não se traduzem (Sootling, Ialprg).
 - Função nova é app do celular (`ui/menu/phone_apps.dart`, nível em `balance.json` `phone.apps`). HUD só com atalhos em zonas fixas (`ui/game/hud_layout.dart`, teste em 360×800, 412×915, 480×1000). Ajustes só guarda preferências.
 - Clima: a tela só desenha o que cai do céu ou cobre a vista; o chão vai no mapa em células z21 (`climate_ground.dart`), nunca em coordenadas de tela. Clima da rede é só visual; climas de outras regiões e místicos só por `events.json` assinado ou debug.
+- Simulações (GDD, "Simulações do mundo"): o que muda o jogo é função da seed e do tempo, igual para amigos; cenário pode ser simulação local. O tráfego comum é cenário (`world/sim/`, pontos do OSM em `*_traffic.bin`, fora das épocas); a cobertura do clima é um campo por bloco (`world/cover_field.dart`), refeito só quando a fase muda de faixa.
 - Menu de debug em toda build de teste, inclusive release dos amigos, nunca atrás de flag. Versão futura fica atrás de `streetLifeEnabled` (`core/features.dart`).
 - Patrulha do Véu nunca grava o save principal (`patrulha.jsonl`). Recomeçar mantém `player_id`, log de versões, certificados e Ajustes.
 - Sprite ausente vira placeholder gerado. Cores: Véu `#9b7bff`, sinal `#5fd3c6`, Essência `#ff7a45`, contorno `#1a1424` (nunca preto).

@@ -67,3 +67,13 @@ Total de 11,99 MB. O oráculo do fallback (`app/test/world/fallback/`, fixtures 
 
 No `regions.json` assinado, o de São Paulo entra em `route_files.access` da região (`file`, `url`, `sha256`, `bytes`, `sig`, como os de `files`), **nunca em `files`**: a 0.16 exige que todo arquivo de `files` esteja em `epochs.json` e recusaria a região inteira. A 0.17 baixa o arquivo de rota depois da região (também para quem já tem São Paulo), confere o SHA-256 do catálogo e a assinatura; sem ele, a rota funciona sem os bits de acesso.
 
+## Pontos do tráfego (0.18.0, fora das épocas)
+
+`build_traffic.py --region <região>` lê do mesmo extrato os nós `highway=traffic_signals|stop|give_way|crossing` e as entradas fora da rua (`amenity=parking|parking_entrance`, `building=garage|garages|parking`, `entrance=garage`; de uma área, o centro). Só a simulação local do tráfego lê: é cenário, difere entre aparelhos, não muda o mundo, não entra em época e pode ser regerado sem época nova. Formato no cabeçalho do script (`TRF1`); leitor em `app/lib/data/traffic_pack.dart`.
+
+| Arquivo | Pontos | Bytes | SHA-256 |
+| --- | --- | --- | --- |
+| `app/assets/regions/campinas_e0_traffic.bin` | 7.991 (semáforo 909, pare 1.137, preferência 77, faixa 4.933, entrada 935) | 29.069 | `842434de03967a5d9553216b4dd3870ecb12aa3ebdf75c20bcb7e34db66d89d0` |
+
+São Paulo e os blocos do fallback ainda não têm o arquivo: onde não há nenhum ponto em volta, a simulação põe semáforo nos cruzamentos de avenidas e faz a rua menor ceder a vez. Para São Paulo, o arquivo entraria em `route_files` do `regions.json` assinado, como o de rota.
+
