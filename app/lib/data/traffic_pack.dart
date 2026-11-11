@@ -8,7 +8,7 @@ import 'dart:io' show gzip;
 import 'dart:typed_data';
 
 /// A ordem é a do arquivo.
-enum TrafficPointKind { signal, stop, giveWay, crossing, entry }
+enum TrafficPointKind { signal, stop, giveWay, crossing, entry, busStop, shop, bar, school, square }
 
 typedef TrafficPoint = ({TrafficPointKind kind, double x, double y});
 
@@ -50,13 +50,14 @@ class TrafficPack implements TrafficPointSource {
     return TrafficPack.of([
       for (var i = 0; i < n; i++)
         () {
-          final kind = TrafficPointKind.values[body[pos++]];
+          final k = body[pos++];
+          final kind = k < TrafficPointKind.values.length ? TrafficPointKind.values[k] : null; // tipo de uma versão mais nova: ignora
           final dx = varint(), dy = varint();
           x += (dx >>> 1) ^ -(dx & 1);
           y += (dy >>> 1) ^ -(dy & 1);
-          return (kind: kind, x: x / 64, y: y / 64);
+          return kind == null ? null : (kind: kind, x: x / 64, y: y / 64);
         }(),
-    ]);
+    ].nonNulls);
   }
 
   /// Baldes de 16 células.

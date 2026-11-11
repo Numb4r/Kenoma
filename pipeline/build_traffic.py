@@ -4,6 +4,9 @@ comum é só cenário e difere entre aparelhos: este arquivo não muda o mundo e
 
 Tipos: 0 `highway=traffic_signals`, 1 `highway=stop`, 2 `highway=give_way`, 3 `highway=crossing`, 4 entrada
 (`amenity=parking|parking_entrance`, `building=garage|garages|parking`, `entrance=garage`; de uma área, o centro).
+Da 0.19.0, a vida urbana: 5 ponto de ônibus (`highway=bus_stop`), 6 comércio (`shop=*`), 7 bar ou restaurante
+(`amenity=bar|pub|restaurant|cafe|fast_food`), 8 escola (`amenity=school|kindergarten|college|university`), 9 praça ou
+parque (`leisure=park|garden`, `place=square`).
 
 Formato: `TRF1` + gzip(varint pontos; por ponto tipo u8 e x, y em 1/64 de célula z21, em deltas com zigzag, na ordem de
 (x, y, tipo)). Uso: .venv/bin/python build_traffic.py --region campinas"""
@@ -27,6 +30,16 @@ ENTRY = 4
 def kind_of(tags, is_node: bool):
     if is_node and tags.get("highway") in HIGHWAY:
         return HIGHWAY[tags.get("highway")]
+    if is_node and tags.get("highway") == "bus_stop":
+        return 5
+    if tags.get("shop") is not None:
+        return 6
+    if tags.get("amenity") in ("bar", "pub", "restaurant", "cafe", "fast_food"):
+        return 7
+    if tags.get("amenity") in ("school", "kindergarten", "college", "university"):
+        return 8
+    if tags.get("leisure") in ("park", "garden") or tags.get("place") == "square":
+        return 9
     if tags.get("amenity") in ("parking", "parking_entrance") or tags.get("entrance") == "garage":
         return ENTRY
     if not is_node and tags.get("building") in ("garage", "garages", "parking"):
@@ -44,7 +57,7 @@ def main() -> None:
     pbf = ensure_source(region["source"])
     min_lon, min_lat, max_lon, max_lat = region["bbox"]
     pts = set()
-    counts = [0] * 5
+    counts = [0] * 10
 
     def add(kind, lon, lat):
         if not (min_lon <= lon <= max_lon and min_lat <= lat <= max_lat):
@@ -55,7 +68,7 @@ def main() -> None:
             pts.add(p)
             counts[kind] += 1
 
-    fp = osmium.FileProcessor(str(pbf)).with_locations().with_filter(osmium.filter.KeyFilter("highway", "amenity", "building", "entrance"))
+    fp = osmium.FileProcessor(str(pbf)).with_locations().with_filter(osmium.filter.KeyFilter("highway", "amenity", "building", "entrance", "shop", "leisure", "place"))
     for obj in fp:
         if obj.is_node():
             kind = kind_of(obj.tags, True)
@@ -77,7 +90,8 @@ def main() -> None:
     out = args.out_dir / f"{args.region}_e{args.epoch}_traffic.bin"
     out.write_bytes(b"TRF1" + gzip.compress(bytes(body), compresslevel=9, mtime=0))
     print(f"{len(pts)} pontos (semáforo {counts[0]}, pare {counts[1]}, preferência {counts[2]}, faixa {counts[3]}, "
-          f"entrada {counts[4]}), {out.stat().st_size} bytes, sha256 {hashlib.sha256(out.read_bytes()).hexdigest()}")
+          f"entrada {counts[4]}, ônibus {counts[5]}, comércio {counts[6]}, bar {counts[7]}, escola {counts[8]}, "
+          f"praça {counts[9]}), {out.stat().st_size} bytes, sha256 {hashlib.sha256(out.read_bytes()).hexdigest()}")
 
 
 if __name__ == "__main__":

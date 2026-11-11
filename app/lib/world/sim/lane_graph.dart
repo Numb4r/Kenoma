@@ -248,6 +248,11 @@ class SimNode {
   /// Perto de um estacionamento ou garagem do OSM: entrada e saída fora da vista.
   bool entry = false;
 
+  /// Tem marquise ou ponto de ônibus por perto (comércio, bar, parada do OSM): onde o passante se abriga da chuva. E a
+  /// quantas esquinas fica o abrigo mais próximo (-1: nenhum ao alcance).
+  bool shelter = false;
+  int shelterHops = -1;
+
   /// Esquina de verdade (três ou mais ruas de carro): só entra um movimento por vez.
   bool controlled = false;
   bool signal = false;
@@ -484,6 +489,24 @@ class LaneGraph {
     }
     _control(seed, c, points);
     _deadEnds();
+    // A distância (em esquinas) de cada nó ao abrigo mais próximo, pelas calçadas.
+    var frontier = [for (final nd in nodes) if (nd.shelter) nd];
+    for (final nd in frontier) {
+      nd.shelterHops = 0;
+    }
+    for (var hops = 1; frontier.isNotEmpty && hops < 12; hops++) {
+      final next = <SimNode>[];
+      for (final nd in frontier) {
+        for (final a in nd.arms) {
+          final o = a.atA ? a.edge.b : a.edge.a;
+          if (o.shelterHops < 0) {
+            o.shelterHops = hops;
+            next.add(o);
+          }
+        }
+      }
+      frontier = next;
+    }
   }
 
   void _control(int seed, TrafficSimConfig c, TrafficPointSource? points) {
@@ -508,6 +531,7 @@ class LaneGraph {
     for (final nd in nodes) {
       final here = [for (final p in pts) if (d2(p, nd) <= near * near) p];
       nd.entry = here.any((p) => p.kind == TrafficPointKind.entry) || pts.any((p) => p.kind == TrafficPointKind.entry && d2(p, nd) <= math.pow(c.entryNearM / mpc, 2));
+      nd.shelter = here.any((p) => (p.kind == TrafficPointKind.busStop || p.kind == TrafficPointKind.shop || p.kind == TrafficPointKind.bar) && d2(p, nd) <= math.pow(c.shelterNearM / mpc, 2));
       final crossings = [for (final p in here) if (p.kind == TrafficPointKind.crossing) p];
       for (final a in nd.arms) {
         // Com faixa mapeada por perto, só se atravessa nela; sem nenhuma, nas esquinas (e nunca no meio do quarteirão).

@@ -132,6 +132,7 @@ class TrafficPainter {
       _coverAt = sim.time;
       lanes.applyStreets(streetState == null ? null : (line) => streetState(line, t) == StreetState.blocked, streetState == null ? null : (line) => streetState(line, t) == StreetState.flooded);
     }
+    sim.raining = outfit == 'rain'; // os climas de chuva: quem está na rua corre para a marquise
     if (!paused) sim.step(dt.clamp(0.0, 0.1), hour: hour, density: density, speedMult: speedMult, walkMult: walkMult);
     _refreshWear(sim);
     final m = trafficMarginM / metersPerCell;

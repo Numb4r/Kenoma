@@ -61,7 +61,7 @@ class SimCar extends SimCarRef {
   SimEdge get edge => link.edge;
 }
 
-enum WalkerMode { walking, waiting, corner, crossing }
+enum WalkerMode { walking, waiting, corner, crossing, sheltering }
 
 class SimWalker {
   SimWalker(this.id, this.model, this.palette, this.edge, this.side, this.dir, this.s, this.speed, this.latBase) : lat = latBase;
@@ -80,6 +80,9 @@ class SimWalker {
   double lat, latTarget = 0, v = 0;
 
   WalkerMode mode = WalkerMode.walking;
+
+  /// Pego pela chuva: corre para o abrigo mais próximo.
+  bool hurry = false;
 
   /// O que fez por último na esquina: 0 veio andando, 1 virou a esquina, 2 atravessou.
   int last = 0;
@@ -114,6 +117,29 @@ class TrafficSim {
 
   /// O relógio da simulação, em segundos: só anda em [step] (o Silêncio pausa e depois continua de onde parou).
   double time = 0;
+
+  bool _raining = false;
+
+  /// Chove (o clima do lugar). Quando começa, quem está na rua corre para a marquise ou o ponto de ônibus mais próximo e
+  /// fica lá; quando para, cada um segue o seu caminho.
+  bool get raining => _raining;
+  set raining(bool v) {
+    if (v == _raining) return;
+    _raining = v;
+    for (final w in walkers) {
+      if (v) {
+        w.hurry = w.mode != WalkerMode.sheltering && w.model != GhostModel.cyclist;
+      } else {
+        w.hurry = false;
+        if (w.mode == WalkerMode.sheltering) {
+          w
+            ..mode = WalkerMode.walking
+            ..last = 1
+            ..dir = w.atA ? 1 : -1;
+        }
+      }
+    }
+  }
 
   /// Debug: multiplica a densidade (`null`: a da hora e do clima).
   double? forcedDensity;
@@ -730,6 +756,39 @@ class TrafficSim {
     final wA = (w.last == 0 ? 0.05 : 3.0) * wet;
     final wB = w.last == 1 ? 0.0 : (adj.edge.flooded ? 0.01 : (n == 1 ? 1.0 : 3.0));
     final wC = (n > 1 && arm.crossable && w.last != 2 ? (w.last == 1 ? 1.0 : 1.5) : 0.0) * wet;
+    if (w.hurry) {
+      if (node.shelter) {
+        // Chegou: fica debaixo da marquise, encostado no lado de fora da calçada, cada um num canto.
+        w
+          ..hurry = false
+          ..mode = WalkerMode.sheltering
+          ..atA = atA
+          ..v = 0
+          ..s = (w.s + (atA ? 1 : -1) * (w.id % 5) * 0.45).clamp(0.0, e.walk(w.side).length)
+          ..lat = w.side * (0.4 + (w.id % 3) * 0.3);
+        _placeWalker(w);
+        return;
+      }
+      // Corre para o lado do abrigo mais próximo: pela rua vizinha, se ela leva para mais perto; senão atravessa ou segue.
+      final here = node.shelterHops, viaB = (adj.atA ? adj.edge.b : adj.edge.a).shelterHops, viaA = (atA ? e.b : e.a).shelterHops;
+      if (here > 0) {
+        if (w.last != 1 && viaB >= 0 && viaB < here) {
+          _startTransfer(w, adj.edge, adjSide, adj.atA, false);
+          return;
+        }
+        if (w.last != 0 && viaA >= 0 && viaA < here) {
+          w
+            ..dir = atA ? 1 : -1
+            ..last = 0
+            ..mode = WalkerMode.walking;
+          return;
+        }
+        if (wC > 0) {
+          _startTransfer(w, e, -w.side, atA, true);
+          return;
+        }
+      }
+    }
     final pick = _u() * (wA + wB + wC);
     if (pick < wB) {
       _startTransfer(w, adj.edge, adjSide, adj.atA, false);
@@ -744,8 +803,11 @@ class TrafficSim {
   }
 
   void _stepWalker(SimWalker w, double dt, double walkMult) {
-    final v = w.speed * walkMult;
+    final v = w.speed * walkMult * (w.hurry ? config.runMult : 1);
     switch (w.mode) {
+      case WalkerMode.sheltering:
+        w.v = 0;
+        return;
       case WalkerMode.walking:
         final len = w.edge.walk(w.side).length;
         w.v = v;

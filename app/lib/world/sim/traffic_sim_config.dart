@@ -36,6 +36,8 @@ class TrafficSimConfig {
     this.spawnPerS = 4,
     this.climateCarFloor = 0.4,
     this.climateWalkerFloor = 0.3,
+    this.shelterNearM = 20,
+    this.runMult = 2.4,
   });
 
   factory TrafficSimConfig.fromJson(Map<String, dynamic>? j) {
@@ -75,6 +77,8 @@ class TrafficSimConfig {
       spawnPerS: n('spawn_per_s', d.spawnPerS),
       climateCarFloor: n('climate_car_floor', d.climateCarFloor),
       climateWalkerFloor: n('climate_walker_floor', d.climateWalkerFloor),
+      shelterNearM: n('shelter_near_m', d.shelterNearM),
+      runMult: n('run_mult', d.runMult),
     );
   }
 
@@ -119,6 +123,10 @@ class TrafficSimConfig {
 
   /// Com o clima deixando o tráfego mais lento (multiplicador perto de 0), sobra esta fração dos carros e dos passantes.
   final double climateCarFloor, climateWalkerFloor;
+
+  /// Marquise ou ponto de ônibus a até isto (m) da esquina faz dela um abrigo; e quanto mais rápido corre quem foi pego
+  /// pela chuva.
+  final double shelterNearM, runMult;
 
   double carDensityIn(double speedMult) => climateCarFloor + (1 - climateCarFloor) * speedMult.clamp(0.0, 1.0);
   double walkerDensityIn(double walkMult) => climateWalkerFloor + (1 - climateWalkerFloor) * walkMult.clamp(0.0, 1.0);

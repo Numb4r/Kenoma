@@ -316,6 +316,60 @@ void main() {
     expect(crossed, greaterThan(0));
   });
 
+  test('quando a chuva começa os passantes correm para a marquise e esperam lá; quando para, seguem', () {
+    final s = TrafficSim(graph: city(), seed: 5, config: const TrafficSimConfig(radiusM: 300, warmupS: 20), points: TrafficPack.of([
+      (kind: TrafficPointKind.busStop, x: gx(26), y: gy(26)),
+      (kind: TrafficPointKind.shop, x: gx(38), y: gy(32)),
+      (kind: TrafficPointKind.bar, x: gx(32), y: gy(44)),
+    ]))
+      ..forcedDensity = 2.5;
+    center(s);
+    final g = s.lanes!;
+    expect(g.nodes.where((n) => n.shelter).length, 3);
+    expect(g.nodes.where((n) => n.shelterHops == 1).length, greaterThan(6));
+    for (var i = 0; i < 300; i++) {
+      s.step(0.1, hour: 18);
+    }
+    double meanSpeed() => s.walkers.where((w) => w.mode == WalkerMode.walking).fold(0.0, (a, w) => a + w.v) / s.walkers.where((w) => w.mode == WalkerMode.walking).length;
+    final dry = meanSpeed();
+    expect(s.walkers.where((w) => w.mode == WalkerMode.sheltering), isEmpty);
+    s.raining = true;
+    final caught = {for (final w in s.walkers) if (w.hurry) w.id};
+    expect(caught.length, greaterThan(s.walkers.length ~/ 2));
+    for (var i = 0; i < 20; i++) {
+      s.step(0.1, hour: 18);
+    }
+    final running = s.walkers.where((w) => w.hurry && w.mode == WalkerMode.walking && w.v > 0).toList();
+    expect(running.length, greaterThan(5));
+    expect(running.every((w) => w.v > w.speed * 2), isTrue, reason: 'correndo');
+    expect(dry, lessThan(2));
+    for (var i = 0; i < 1500; i++) {
+      s.step(0.1, hour: 18);
+    }
+    final sheltered = s.walkers.where((w) => w.mode == WalkerMode.sheltering).toList();
+    expect(sheltered.length, greaterThan(5), reason: 'em dois minutos e meio, vários já chegaram');
+    for (final w in sheltered) {
+      expect((w.atA ? w.edge.a : w.edge.b).shelter, isTrue, reason: 'abrigado num abrigo de verdade');
+      expect(w.v, 0);
+    }
+    final where = {for (final w in sheltered) w.id: (w.x, w.y)};
+    for (var i = 0; i < 300; i++) {
+      s.step(0.1, hour: 18);
+    }
+    for (final w in s.walkers) {
+      if (where.containsKey(w.id)) expect((w.x, w.y), where[w.id], reason: 'fica parado enquanto chove');
+    }
+    // Quem nasce durante a chuva (já de guarda-chuva) anda normal.
+    expect(s.walkers.where((w) => !caught.contains(w.id)).every((w) => !w.hurry), isTrue);
+    s.raining = false;
+    for (var i = 0; i < 100; i++) {
+      s.step(0.1, hour: 18);
+    }
+    expect(s.walkers.where((w) => w.mode == WalkerMode.sheltering), isEmpty);
+    expect(s.walkers.where((w) => where.containsKey(w.id) && (w.x, w.y) != where[w.id]).length, greaterThan(3), reason: 'voltaram a andar');
+    expect(s.goneInView, 0);
+  });
+
   test('pacote de pontos: lê o formato TRF1', () {
     expect(() => TrafficPack.parse(Uint8List.fromList([1, 2, 3, 4, 5])), throwsFormatException);
   });

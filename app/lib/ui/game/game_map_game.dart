@@ -42,6 +42,7 @@ import 'street_label_painter.dart';
 import 'trace_painter.dart';
 import 'traffic_painter.dart';
 import 'relief_heat.dart';
+import 'world_fx.dart';
 import '../../data/relief_pack.dart';
 import '../../data/traffic_pack.dart';
 import '../../world/sim/traffic_sim.dart' show TrafficSim, TrafficSimConfig;
@@ -476,7 +477,12 @@ class GameMapGame extends FlameGame {
       },
       if (here && wv != null) ...{
         MapLayer.creatures: () => _paintSpawns(canvas, view, cam, wv, center, (s) => s.isEco),
-        MapLayer.sparks: () => _paintSpawns(canvas, view, cam, wv, center, (s) => s.isSpark),
+        MapLayer.sparks: () {
+          // Os redemoinhos das Correntes do Véu ficam por baixo das Fagulhas que giram neles.
+          final cw = wv.field.climate;
+          if (cw != null) paintVortices(canvas, view, cam, wv.field.seed, cw.schedule.select(nowUtc()).epoch, _exactUtc(), mpc, balance.artPixelDp);
+          _paintSpawns(canvas, view, cam, wv, center, (s) => s.isSpark);
+        },
         MapLayer.materials: () => _paintSpawns(canvas, view, cam, wv, center, (s) => !s.isEco && !s.isSpark),
       },
       if (traffic) ...{
@@ -490,6 +496,9 @@ class GameMapGame extends FlameGame {
       MapLayer.air: () {
         if (_hasFix) rainbow.paint(canvas, view, cam, metersPerCell21: mpc, exactUtc: _exactUtc());
         climateGround.paintAir();
+        // A neblina presa ao mapa, mais densa nas baixadas (a camada leve da tela vem depois).
+        final cw = wv?.field.climate;
+        if (cw != null && _hasFix && rainFx()) paintFogVeil(canvas, view, cam, cw, cw.schedule.select(nowUtc()).epoch, climateShown().id, nowUtc());
         canvas.restore(); // fim do tremor: daqui para cima é tela
       },
       // O clima da tela por cima do mapa e de quem está nele, por igual, e por baixo do HUD: cobre a tela toda.
