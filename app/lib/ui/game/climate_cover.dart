@@ -2,6 +2,9 @@
 /// sobre as linhas e as áreas do pacote visual. Quanto de cada uma existe vem de [StreetCover.level] com a fase do clima
 /// (`climate_form.dart`): nada aparece pronto. O canvas já está na câmera (células z21, gira e dá zoom com o mapa).
 ///
+/// A cobertura acompanha a geometria da rua (largura e curvas), nunca a grade de células: pontas e esquinas redondas, e a
+/// borda se mistura com o chão por um degradê curto (três degraus) e por pontilhado em pixel ([_ribbon]).
+///
 /// Neve: primeiro a grama, o chão e os telhados (tudo fora das ruas e da água: o pacote não tem prédios, então "telhado" é o
 /// que sobra), em branco azulado com sombra e textura de pixel; as ruas por último, em neve suja com as trilhas do tráfego.
 library;
@@ -39,9 +42,32 @@ class ClimateCover {
   final _stroke = ui.Paint()
     ..style = ui.PaintingStyle.stroke
     ..isAntiAlias = false
-    ..strokeCap = ui.StrokeCap.square
-    ..strokeJoin = ui.StrokeJoin.miter;
+    ..strokeCap = ui.StrokeCap.round
+    ..strokeJoin = ui.StrokeJoin.round;
   final _fill = ui.Paint()..isAntiAlias = false;
+  final _dots = ui.Paint()
+    ..isAntiAlias = false
+    ..strokeCap = ui.StrokeCap.square;
+
+  /// Acima disto de ruas na tela (zoom muito aberto), a borda fica só com o degradê: o pontilhado nem se veria.
+  static const int ditherMaxStreets = 220;
+
+  /// A faixa de cobertura ao longo da rua: três degraus de largura (o degradê curto da borda) e, se [dither], pixels
+  /// soltos em volta da borda e das pontas, em lugares presos à rua ([h]). Com [blend] `dstOut`, recorta em vez de pintar.
+  void _ribbon(ui.Canvas canvas, ui.Path path, List<ui.Offset> pts, double w, double q, int color, double alpha, int h, {bool dither = true, ui.BlendMode blend = ui.BlendMode.srcOver}) {
+    if (alpha <= 0 || w <= 0) return;
+    _stroke.blendMode = blend;
+    // Somados no miolo, os três degraus dão perto de [alpha].
+    canvas.drawPath(path, _stroke..strokeWidth = w + 2 * q..color = _c(color, alpha * 0.3));
+    canvas.drawPath(path, _stroke..strokeWidth = w..color = _c(color, alpha * 0.45));
+    canvas.drawPath(path, _stroke..strokeWidth = math.max(q, w - 2 * q)..color = _c(color, alpha * 0.6));
+    _stroke.blendMode = ui.BlendMode.srcOver;
+    if (!dither) return;
+    final dots = edgeDither(pts, w, q, h);
+    if (dots.isEmpty) return;
+    canvas.drawRawPoints(ui.PointMode.points, dots, _dots..strokeWidth = q..color = _c(color, alpha * 0.55)..blendMode = blend);
+    _dots.blendMode = ui.BlendMode.srcOver;
+  }
 
   Int32List _boxesOf(VisualTile tile) => _boxes[tile] ??= () {
         final out = Int32List(tile.lines.length * 4);
@@ -121,6 +147,7 @@ class ClimateCover {
     if (amount <= 0) return;
     final streets = _streets(l, top, r, b, at);
     final q = artPx * px;
+    final dither = streets.length <= ditherMaxStreets;
     if (cover.kind == StreetCoverKind.snow) _snowGround(canvas, streets, amount, seed, q, mpc, l, top, r, b, camX, camY, at);
     for (final (tx, ty, i, line, pts0) in streets) {
       final lv = cover.level(seed, (tx, ty, i), line.roadClass, window, amount);
@@ -134,23 +161,25 @@ class ClimateCover {
       switch (cover.kind) {
         case StreetCoverKind.flood:
           // A água sobe: estreita e rala no começo, depois cobre a rua de borda a borda.
-          canvas.drawPath(path, _stroke..strokeWidth = w * (0.6 + 0.55 * lv)..color = _c(color, alpha * (0.4 + 0.6 * lv)));
+          _ribbon(canvas, path, pts, w * (0.6 + 0.55 * lv), q, color, alpha * (0.4 + 0.6 * lv), _h(seed, key), dither: dither);
           canvas.drawPath(path, _stroke..strokeWidth = math.max(q, w * 0.18)..color = _c(0xFFE8E4F4, 0.16 * lv * (0.6 + 0.4 * math.sin(t * 1.5 + i))));
         case StreetCoverKind.snow:
-          _snowStreet(canvas, path, pts, line.roadClass, lv, w, q, cover.tracks, seed, key);
+          _snowStreet(canvas, path, pts, line.roadClass, lv, w, q, cover.tracks, seed, key, dither);
         case StreetCoverKind.sand:
-          _dune(canvas, path, pts, lv, w, q, color, alpha);
+          _dune(canvas, pts, lv, w, q, color, alpha, _h(seed, key));
         case StreetCoverKind.ice:
-          canvas.drawPath(path, _stroke..strokeWidth = w..color = _c(color, alpha * lv));
+          _ribbon(canvas, path, pts, w, q, color, alpha * lv, _h(seed, key), dither: dither);
           _glints(canvas, pts, w, q, lv, t, seed, key, 0xFFFFFFFF);
         case StreetCoverKind.soot:
-          canvas.drawPath(path, _stroke..strokeWidth = w * 1.2..color = _c(color, alpha * lv));
+          _ribbon(canvas, path, pts, w * 1.2, q, color, alpha * lv, _h(seed, key), dither: dither);
           _glints(canvas, pts, w, q, lv * 0.7, 0, seed, key, 0xFF1A1424);
       }
       final unit = visual.cellsPerTile / visual.pack.extent;
       placed.add((kind: 'street_${cover.kind.name}', x: tx * visual.cellsPerTile + line.xy[0] * unit, y: ty * visual.cellsPerTile + line.xy[1] * unit));
     }
   }
+
+  static int _h(int seed, (int, int, int) key) => fnv1a64Of3(seed ^ key.$1, key.$2, key.$3);
 
   /// A neve fora das ruas: a grama primeiro, depois o chão e os telhados; as ruas e a água ficam de fora, com uma sombra
   /// azulada na borda. Textura de pixel presa ao chão (células e hash).
@@ -183,7 +212,8 @@ class ClimateCover {
         // Um monte de neve por célula: uma sombra azulada larga, em degraus de pixel, com o lado de cima claro.
         final dh = fnv1a64Of3(base, 99, 1);
         final dx = cx + ((dh >>> 40) & 0xffff) / 65536, dy = cy + ((dh >>> 24) & 0xffff) / 65536;
-        final len = (4 + ((dh >>> 8) & 0xff) / 64) / mpc, wid = len * 0.35;
+        if ((dh & 7) < 3) continue; // nem toda célula tem monte: sem grade aparente
+        final len = (2.5 + ((dh >>> 8) & 0xff) / 40) / mpc, wid = len * (0.22 + ((dh >>> 16) & 0xff) / 900);
         final d0 = at(dx, dy);
         for (var k = -len; k <= len; k += q) {
           final hw = (wid * math.sqrt(math.max(0, 1 - (k / len) * (k / len))) / q).floor() * q;
@@ -202,19 +232,22 @@ class ClimateCover {
       }
     }
     // As ruas ficam de fora (a neve delas vem por último): a borda da neve faz sombra.
-    for (final (_, _, _, line, pts) in streets) {
+    // O recorte segue a rua (pontas e esquinas redondas) e a borda se desfaz em degraus e pontilhado.
+    final dither = streets.length <= ditherMaxStreets;
+    for (final (tx, ty, i, line, pts) in streets) {
       final w = _w(line.roadClass, mpc);
       final path = ui.Path()..addPolygon(pts, false);
-      canvas.drawPath(path, _stroke..strokeWidth = w + 2 * q..color = _c(_snowShadow, 0.7 * cover));
-      canvas.drawPath(path, _stroke..strokeWidth = w..color = const ui.Color(0xFF000000)..blendMode = ui.BlendMode.dstOut);
+      canvas.drawPath(path, _stroke..strokeWidth = w + 4 * q..color = _c(_snowShadow, 0.35 * cover));
+      _ribbon(canvas, path, pts, w, q, 0xFF000000, 1, _h(seed, (tx, ty, i)) ^ 0x5A0, dither: dither, blend: ui.BlendMode.dstOut);
+      canvas.drawPath(path, _stroke..strokeWidth = math.max(q, w - 2 * q)..color = const ui.Color(0xFF000000)..blendMode = ui.BlendMode.dstOut);
       _stroke.blendMode = ui.BlendMode.srcOver;
     }
     canvas.restore();
   }
 
   /// Neve na rua: neve suja, mais escura onde o tráfego passa (duas trilhas nas avenidas, uma no meio das ruas locais).
-  void _snowStreet(ui.Canvas canvas, ui.Path path, List<ui.Offset> pts, RoadClass cls, double lv, double w, double q, bool tracks, int seed, (int, int, int) key) {
-    canvas.drawPath(path, _stroke..strokeWidth = w..color = _c(_slush, 0.9 * lv));
+  void _snowStreet(ui.Canvas canvas, ui.Path path, List<ui.Offset> pts, RoadClass cls, double lv, double w, double q, bool tracks, int seed, (int, int, int) key, bool dither) {
+    _ribbon(canvas, path, pts, w, q, _slush, 0.9 * lv, _h(seed, key), dither: dither);
     canvas.drawPath(path, _stroke..strokeWidth = math.max(q, w * 0.12)..color = _c(_snow, 0.5 * lv)); // o monte no meio
     if (!tracks || cls == RoadClass.pedestrian) return;
     final avenue = cls == RoadClass.principal || cls == RoadClass.secondary;
@@ -224,20 +257,37 @@ class ClimateCover {
     }
   }
 
-  /// A duna: borda que se mistura com a rua, crista com lado claro e lado sombreado, ondulações do vento.
-  void _dune(ui.Canvas canvas, ui.Path path, List<ui.Offset> pts, double lv, double w, double q, int color, double alpha) {
-    canvas.drawPath(path, _stroke..strokeWidth = w * 1.6..color = _c(color, alpha * 0.25 * lv)..strokeCap = ui.StrokeCap.round);
-    canvas.drawPath(path, _stroke..strokeWidth = w * 1.3..color = _c(color, alpha * 0.55 * lv));
-    canvas.drawPath(path, _stroke..strokeWidth = w * (0.7 + 0.5 * lv)..color = _c(color, alpha * lv));
-    _stroke.strokeCap = ui.StrokeCap.square;
-    canvas.drawPath(ui.Path()..addPolygon(offsetPolyline(pts, w * 0.22), false), _stroke..strokeWidth = w * 0.3..color = _c(_sandShadow, 0.5 * lv));
-    canvas.drawPath(ui.Path()..addPolygon(offsetPolyline(pts, -w * 0.08), false), _stroke..strokeWidth = math.max(q, w * 0.1)..color = _c(_sandLight, 0.8 * lv));
-    // Ondulações: riscos curtos de través, claro e sombra lado a lado, a cada ~2 m.
-    _along(pts, w * 0.6, (o, tx, ty) {
-      final nx = -ty, ny = tx, h = w * 0.35 * lv;
-      canvas.drawLine(o - ui.Offset(nx, ny) * h, o + ui.Offset(nx, ny) * h, _stroke..strokeWidth = q..color = _c(_sandLight, 0.6 * lv));
-      canvas.drawLine(o - ui.Offset(nx, ny) * h + ui.Offset(tx, ty) * q, o + ui.Offset(nx, ny) * h + ui.Offset(tx, ty) * q, _stroke..color = _c(_sandShadow, 0.5 * lv));
-    });
+  /// A duna: um monte comprido que afina nas pontas, com a borda ondulada pelo hash [h] (cada duna com a sua forma), franja
+  /// que se mistura com a rua, crista com lado claro e lado sombreado e ondulações do vento.
+  void _dune(ui.Canvas canvas, List<ui.Offset> pts, double lv, double w, double q, int color, double alpha, int h) {
+    final shape = duneOutline(pts, w, lv, h, step: math.max(q, w * 0.25));
+    if (shape.left.length < 2) return;
+    ui.Path poly(double k) => ui.Path()
+      ..addPolygon([
+        for (final (i, p) in shape.mid.indexed) p + (shape.left[i] - p) * k,
+        for (var i = shape.mid.length - 1; i >= 0; i--) shape.mid[i] + (shape.right[i] - shape.mid[i]) * k,
+      ], true);
+    canvas.drawPath(poly(1.3), _fill..color = _c(color, alpha * 0.25 * lv));
+    canvas.drawPath(poly(1.12), _fill..color = _c(color, alpha * 0.4 * lv));
+    canvas.drawPath(poly(1), _fill..color = _c(color, alpha * lv));
+    final dots = Float32List(shape.mid.length * 4);
+    for (final (i, p) in shape.mid.indexed) {
+      final u = 1.2 + ((fnv1a64Of3(h, i, 0xD07) >>> 32) & 0xff) / 255 * 0.5;
+      final a = p + (shape.left[i] - p) * u, b = p + (shape.right[i] - p) * u;
+      dots.setAll(i * 4, [a.dx, a.dy, b.dx, b.dy]);
+    }
+    canvas.drawRawPoints(ui.PointMode.points, dots, _dots..strokeWidth = q..color = _c(color, alpha * 0.6 * lv));
+    // A crista (claro) e o lado da sombra, seguindo o contorno.
+    canvas.drawPath(ui.Path()..addPolygon([for (final (i, p) in shape.mid.indexed) p + (shape.right[i] - p) * 0.55], false), _stroke..strokeWidth = math.max(q, w * 0.22)..color = _c(_sandShadow, 0.5 * lv));
+    canvas.drawPath(ui.Path()..addPolygon([for (final (i, p) in shape.mid.indexed) p + (shape.left[i] - p) * 0.15], false), _stroke..strokeWidth = math.max(q, w * 0.1)..color = _c(_sandLight, 0.8 * lv));
+    // Ondulações: riscos curtos de través, claro e sombra lado a lado, do tamanho da duna naquele ponto.
+    for (var i = 2; i + 2 < shape.mid.length; i += 3) {
+      final a = shape.mid[i] + (shape.left[i] - shape.mid[i]) * 0.6, b = shape.mid[i] + (shape.right[i] - shape.mid[i]) * 0.6;
+      final d = shape.mid[i + 1] - shape.mid[i], len = d.distance;
+      if (len <= 0) continue;
+      canvas.drawLine(a, b, _stroke..strokeWidth = q..color = _c(_sandLight, 0.6 * lv));
+      canvas.drawLine(a + d / len * q, b + d / len * q, _stroke..color = _c(_sandShadow, 0.5 * lv));
+    }
   }
 
   /// Pontos que brilham (gelo) ou sujam (fuligem) ao longo da rua, em lugares presos a ela.
@@ -250,6 +300,57 @@ class ClimateCover {
       canvas.drawRect(ui.Rect.fromCenter(center: o + ui.Offset(-ty, tx) * side, width: q, height: q), _fill..color = _c(color, a * lv));
     });
   }
+}
+
+/// Os pixels soltos da borda de uma faixa de largura [w] ao longo de [pts] (pares x, y): de cada lado, a cada pixel e meio,
+/// uns ficam e outros não, um pouco para fora da borda; e um punhado em volta de cada ponta. Presos à rua pelo hash [h].
+Float32List edgeDither(List<ui.Offset> pts, double w, double q, int h) {
+  if (pts.length < 2 || q <= 0) return Float32List(0);
+  final out = <double>[];
+  var k = 0;
+  _along(pts, q * 1.5, (o, tx, ty) {
+    final r = fnv1a64Of3(h, k++, 0xD17);
+    for (final (side, bits) in [(1.0, r >>> 32), (-1.0, r >>> 44)]) {
+      if ((bits & 3) == 0) continue; // três em quatro ficam
+      final d = w / 2 + q * (0.5 + ((bits >>> 2) & 0xff) / 255 * 2);
+      out..add(o.dx - ty * d * side)..add(o.dy + tx * d * side);
+    }
+  });
+  for (final (end, next, salt) in [(pts.first, pts[1], 1), (pts.last, pts[pts.length - 2], 2)]) {
+    final v = end - next, len = v.distance;
+    if (len <= 0) continue;
+    final base = math.atan2(v.dy, v.dx);
+    for (var i = 0; i < 7; i++) {
+      final r = fnv1a64Of3(h, i, 0xE0D + salt);
+      final a = base + (((r >>> 32) & 0xff) / 255 - 0.5) * math.pi, d = w / 2 + q * (0.5 + ((r >>> 40) & 0xff) / 255 * 2);
+      out..add(end.dx + math.cos(a) * d)..add(end.dy + math.sin(a) * d);
+    }
+  }
+  return Float32List.fromList(out);
+}
+
+/// O contorno de uma duna ao longo de [pts]: o eixo reamostrado a cada [step] e as duas bordas. A largura afina até zero
+/// nas pontas e ondula pelo hash [h] (cada lado com o seu ruído, o lado do vento mais largo).
+({List<ui.Offset> mid, List<ui.Offset> left, List<ui.Offset> right}) duneOutline(List<ui.Offset> pts, double w, double lv, int h, {required double step}) {
+  final mid = <ui.Offset>[], dir = <ui.Offset>[];
+  _along(pts, step, (o, tx, ty) {
+    mid.add(o);
+    dir.add(ui.Offset(tx, ty));
+  });
+  final left = <ui.Offset>[], right = <ui.Offset>[];
+  final n = mid.length;
+  double u8(int shift) => ((h >>> shift) & 0xff) / 255;
+  final pa = u8(0) * 6.28, pb = u8(8) * 6.28, fa = 2 + u8(16) * 4, fb = 2 + u8(24) * 4;
+  final skew = 0.6 + u8(32) * 0.8, peak = 0.3 + u8(40) * 0.4; // o lado do vento e onde a duna é mais gorda
+  for (var i = 0; i < n; i++) {
+    final s = n < 2 ? 0.5 : i / (n - 1);
+    final x = s < peak ? s / peak : (1 - s) / (1 - peak);
+    final body = math.pow(math.sin(x * math.pi / 2), 0.7) * w * (0.45 + 0.4 * lv);
+    final nrm = ui.Offset(-dir[i].dy, dir[i].dx);
+    left.add(mid[i] - nrm * (body * skew * (1 + 0.28 * math.sin(fa * s * 6.28 + pa))));
+    right.add(mid[i] + nrm * (body * (2 - skew) * (1 + 0.28 * math.sin(fb * s * 6.28 + pb))));
+  }
+  return (mid: mid, left: left, right: right);
 }
 
 /// Chama [f] a cada [step] (células) ao longo da polilinha, com a direção do trecho.

@@ -368,13 +368,7 @@ class ClimateGround {
           canvas.drawRect(ui.Rect.fromLTWH(o.dx + px, o.dy + px, px, px), _fill);
         case 'shadow':
           // Sombra invertida do Sol Negro: clara, comprida, com a borda em pixel (meio-tom).
-          final len = (3 + ph * 4) / mpc, wid = (1 + ph) / mpc, q = 3 * px;
-          for (var k = -len; k <= len; k += q) {
-            final f = 1 - (k / len) * (k / len);
-            final hw = (wid * math.sqrt(f) / q).floor() * q;
-            if (hw <= 0) continue;
-            canvas.drawRect(ui.Rect.fromLTRB(o.dx + k, o.dy - hw, o.dx + k + q, o.dy + hw), _fill);
-          }
+          paintBlobRows(canvas, o, blobRows(fnv1a64Of3((x * 64).round(), (y * 64).round(), layer), math.max(1, ((2 + ph * 3) / mpc / (3 * px)).round()), family: 1 + (ph * 977).floor() % 5), 3 * px, _fill.color);
         case 'pixel':
           if (((t * 4).floor() + (ph * 1000).floor()) % 3 == 0) continue; // falha: some e volta
           canvas.drawRect(ui.Rect.fromCenter(center: o, width: 2 * px, height: 2 * px), _fill);
@@ -456,15 +450,11 @@ class ClimateGround {
             raining: true, reflect: true, prism: false, night: 0, t: t);
       case 'shadow':
         // A sombra invertida do Sol Negro: uma mancha clara de borda em pixel, que aparece e some aos poucos.
-        final q = artPixelDp * px;
-        for (var k = -r; k <= r; k += q) {
-          final hw = (r * 0.55 * math.sqrt(math.max(0, 1 - (k / r) * (k / r))) / q).floor() * q;
-          if (hw > 0) canvas.drawRect(ui.Rect.fromLTRB(o.dx + k, o.dy - hw, o.dx + k + q, o.dy + hw), _fill..color = c);
-        }
+        _blob(canvas, o, r * 0.8, z.uidBase, px, c);
       case 'glow':
         final k = 0.7 + 0.3 * math.sin(t * 2);
-        canvas.drawCircle(o, r * k, _fill..color = c);
-        canvas.drawCircle(o, r * 0.3, _fill..color = _c(v.color, math.min(1, v.alpha * 1.6 * fade)));
+        _blob(canvas, o, r, z.uidBase, px, _c(v.color, v.alpha * fade * k));
+        _blob(canvas, o, r * 0.3, z.uidBase ^ 0x9E37, px, _c(v.color, math.min(1, v.alpha * 1.6 * fade)));
       case 'whirl':
         for (var i = 0; i < 5; i++) {
           final a = t * 4 + i * 1.2;
@@ -478,7 +468,7 @@ class ClimateGround {
         canvas.drawLine(o.translate(w / 2, -h / 2), o.translate(0, -h), _stroke);
       case 'rune':
         final k = 0.6 + 0.4 * math.sin(t * 2 + z.index);
-        canvas.drawCircle(o, r, _fill..color = _c(v.glow, 0.15 * fade));
+        _blob(canvas, o, r, z.uidBase, px, _c(v.glow, 0.15 * fade));
         canvas.drawLine(o.translate(0, -r * 0.7), o.translate(0, r * 0.7), _stroke..strokeWidth = 2 * px..color = _c(v.color, v.alpha * k * fade));
         canvas.drawLine(o.translate(-r * 0.4, -r * 0.2), o.translate(r * 0.4, r * 0.3), _stroke);
       case 'eye':
@@ -490,11 +480,21 @@ class ClimateGround {
         }
       case 'gaze':
         final k = 0.75 + 0.25 * math.sin(t * 1.8 + z.index);
-        canvas.drawCircle(o, r * k, _fill..color = c);
-        canvas.drawCircle(o, r * 0.35 * k, _fill..color = _c(v.glow, math.min(1, v.alpha * 1.5) * fade));
-      default: // zone: sombra de nuvem, fuligem, cinza, sombra do Sol Negro
-        canvas.drawCircle(o, r, _fill..color = c);
+        _blob(canvas, o, r, z.uidBase, px, _c(v.color, v.alpha * fade * k));
+        _blob(canvas, o, r * 0.35, z.uidBase ^ 0x9E37, px, _c(v.glow, math.min(1, v.alpha * 1.5) * fade * k));
+      default: // zone: sombra de nuvem, fuligem, cinza, duna, miragem
+        // A mancha com a borda em dois degraus (um degradê curto): o miolo e uma franja mais rala.
+        _blob(canvas, o, r * 1.08, z.uidBase, px, _c(v.color, v.alpha * fade * 0.45));
+        _blob(canvas, o, r * 0.9, z.uidBase, px, _c(v.color, v.alpha * fade * 0.55));
     }
+  }
+
+  /// Uma mancha de contorno procedural ([blobRows]) de raio [r] (células), com o hash [h] da marca. O pixel é o de arte, ou
+  /// maior nas manchas grandes (no máximo ~20 pixels de raio: a forma não muda com o zoom nem pesa no quadro).
+  void _blob(ui.Canvas canvas, ui.Offset o, double r, int h, double px, ui.Color color) {
+    if (r <= 0) return;
+    final q = math.max(artPixelDp * px, r / 20);
+    paintBlobRows(canvas, o, blobRows(h, math.max(1, (r / (q * 1.25)).round())), q, color);
   }
 
   /// A Procissão: a fila de figuras encapuzadas pela rota das ruas, em pé na tela, visível até [ProcessionLook.visibleM]. Sem
@@ -539,27 +539,30 @@ class ClimateGround {
     final o = at(d.x, d.y);
     final glowing = age < v.glowS;
     placed.add((kind: glowing ? '${v.mark}_glow' : v.mark!, x: d.x, y: d.y));
+    final q = artPixelDp * px, h = fnv1a64Of3(d.uid, d.index, 0xC4A7), size = blobScaleOf(h);
     switch (v.mark) {
       case 'crater':
-        // A cratera: um anel escuro que brilha por dentro por algumas horas e depois some aos poucos.
-        final r = math.max(6 * px, 5 / mpc);
+        // A cratera: um buraco escuro de borda irregular que brilha por dentro por algumas horas e depois some aos poucos.
+        final n = math.max(3, (math.max(6 * px, 5 / mpc) * size / q).round());
         final fade = glowing ? 1.0 : 1 - (age - v.glowS) / (v.markS - v.glowS);
-        canvas.drawOval(ui.Rect.fromCenter(center: o, width: r * 2.4, height: r * 1.6), _fill..color = _c(0xFF1A1424, 0.6 * fade));
-        canvas.drawOval(ui.Rect.fromCenter(center: o, width: r * 2.4, height: r * 1.6), _stroke..strokeWidth = 2 * px..color = _c(0xFFC9A46B, 0.5 * fade));
+        paintBlobRows(canvas, o, blobRows(h, n + 1), q, _c(0xFFC9A46B, 0.5 * fade)); // a terra revirada em volta
+        paintBlobRows(canvas, o, blobRows(h, n), q, _c(0xFF1A1424, 0.75 * fade));
         if (glowing) {
           final k = 0.7 + 0.3 * math.sin(t * 2 + d.index) - 0.3 * age / v.glowS;
-          canvas.drawOval(ui.Rect.fromCenter(center: o, width: r * 1.2, height: r * 0.8), _fill..color = _c(v.glow, 0.75 * k));
-          canvas.drawRect(ui.Rect.fromCenter(center: o, width: 3 * px, height: 3 * px), _fill..color = _c(v.color, 0.95));
+          paintBlobRows(canvas, o, blobRows(h ^ 0x51, math.max(1, n ~/ 2)), q, _c(v.glow, 0.75 * k));
+          canvas.drawRect(ui.Rect.fromCenter(center: o, width: q, height: q), _fill..color = _c(v.color, 0.95));
         }
       case 'ember' when glowing:
         final k = 0.6 + 0.4 * math.sin(t * 9 + d.index * 3);
-        canvas.drawRect(ui.Rect.fromCenter(center: o, width: 8 * px, height: 5 * px), _fill..color = _c(0xFF1A1424, 0.6));
-        canvas.drawRect(ui.Rect.fromCenter(center: o, width: 6 * px, height: 3 * px), _fill..color = _c(v.glow, 0.8 * k));
+        final n = size > 1.05 ? 2 : 1;
+        paintBlobRows(canvas, o, blobRows(h, n + 1), q, _c(0xFF1A1424, 0.6));
+        paintBlobRows(canvas, o, blobRows(h, n), q, _c(v.glow, 0.8 * k));
         canvas.drawRect(ui.Rect.fromCenter(center: o.translate(0, -3 * px - (t * 6 % 6) * px), width: px, height: px), _fill..color = _c(v.color, 0.7)); // fagulha subindo
       default: // marca queimada (raio, raio violeta, brasa apagada)
         final a = 0.55 * (1 - age / v.markS);
-        canvas.drawOval(ui.Rect.fromCenter(center: o, width: 18 * px, height: 9 * px), _fill..color = _c(0xFF1A1424, a));
-        canvas.drawRect(ui.Rect.fromCenter(center: o, width: 4 * px, height: 2 * px), _fill..color = _c(v.mark == 'burn_violet' ? 0xFF9B7BFF : 0xFFFF7A45, a * 0.6));
+        final n = math.max(2, (3.4 * size).round());
+        paintBlobRows(canvas, o, blobRows(h, n), q, _c(0xFF1A1424, a));
+        paintBlobRows(canvas, o, blobRows(h ^ 0x51, 1), q, _c(v.mark == 'burn_violet' ? 0xFF9B7BFF : 0xFFFF7A45, a * 0.6));
     }
   }
 }

@@ -7,7 +7,6 @@ import 'package:kenoma/core/tiles.dart';
 import 'package:kenoma/data/climate_catalog.dart';
 import 'package:kenoma/ui/game/climate_ground.dart';
 import 'package:kenoma/ui/game/draw_order.dart';
-import 'package:kenoma/world/climate_world.dart';
 import 'package:kenoma/world/map_camera.dart';
 
 import '../support/fixtures.dart';
@@ -59,13 +58,13 @@ void main() {
     const view = ui.Size(200, 300), x = 1548400.5, y = 2370520.25, t = 1900000000;
     const cam = MapCamera(centerX: x, centerY: y, pixelsPerCell: 16);
     ZonePiece zoneOf(String climate, String name) => e7.def(climate)!.pieces.whereType<ZonePiece>().firstWhere((p) => p.name == name);
-    ClimateZone zone(ZonePiece p, int uid) => ClimateZone(piece: p, pieceIndex: 0, index: 0, x0: x + 1, y0: y + 1, headingRad: 0, startUtc: t - 600, endUtc: t + 600, slots: const [], uidBase: uid);
+    ClimateZone zone(ZonePiece p, int uid, {int start = t - 600}) => ClimateZone(piece: p, pieceIndex: 0, index: 0, x0: x + 1, y0: y + 1, headingRad: 0, startUtc: start, endUtc: t + 600, slots: const [], uidBase: uid);
 
     test('marcas no chão em paint; olho do furacão e Procissão só em paintAir', () {
       final meteor = e7.def('meteor_shower')!.pieces.whereType<DropPiece>().single;
       final g = ClimateGround(catalog: catalog)
         ..marks = [ClimateDrop(piece: meteor, pieceIndex: 0, index: 0, tUtc: t, x: x, y: y, spawnRoll: 1, itemRoll: 1, pick: 0, uid: 1)]
-        ..zones = [zone(zoneOf('hurricane', 'hurricane_eye'), 2), zone(zoneOf('fog_procession', 'procession'), 3), zone(zoneOf('veil_ash', 'veil_ash_zone'), 4)];
+        ..zones = [zone(zoneOf('hurricane', 'hurricane_eye'), 2), zone(zoneOf('fog_procession', 'procession'), 3, start: t + 30), zone(zoneOf('veil_ash', 'veil_ash_zone'), 4)];
       final canvas = ui.Canvas(ui.PictureRecorder());
       g.paint(canvas, view, cam, mpc: mpc, exactUtc: t + 60.0, seed: 7, shown: catalog.of('clear'), playerX: x, playerY: y, layered: true);
       final ground = {for (final p in g.placed) p.kind};

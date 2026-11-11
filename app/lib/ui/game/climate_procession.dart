@@ -5,8 +5,10 @@ library;
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import '../../core/fnv.dart';
 import '../../world/procession.dart';
 import 'climate_ground.dart' show PlacedMark;
+import 'climate_puddle.dart';
 
 ui.Color _c(int argb, double a) => ui.Color(argb).withValues(alpha: a.clamp(0.0, 1.0));
 
@@ -74,9 +76,13 @@ void paintCandles(
       ..color = _c(_flame, 0.2 * life * k)
       ..maskFilter = ui.MaskFilter.blur(ui.BlurStyle.normal, 2 * q);
     canvas.drawCircle(o, 3 * q, _glow);
-    canvas.drawRect(ui.Rect.fromLTWH(o.dx - q, o.dy - q, 2 * q, 2 * q), _fill..color = _c(_outline, 0.8));
-    canvas.drawRect(ui.Rect.fromLTWH(o.dx - q / 2, o.dy - q, q, q), _fill..color = _c(_wax, 0.9));
-    if (life > 0) canvas.drawRect(ui.Rect.fromLTWH(o.dx - q / 2, o.dy - 2 * q, q, q), _fill..color = _c(_flame, life * k));
+    // Cada vela é uma: a cera derretida em volta com o seu contorno, o toco mais alto ou mais baixo, às vezes torto.
+    final h = fnv1a64Of3((c.x * 256).round(), (c.y * 256).round(), 0xCE7A);
+    final tall = (h & 3) == 0 ? 2 : 1, lean = ((h >>> 2) % 3 - 1) * q / 2;
+    paintBlobRows(canvas, o.translate(-q / 2, 0), blobRows(h, 1 + ((h >>> 4) & 1)), q, _c(_outline, 0.8));
+    paintBlobRows(canvas, o.translate(-q / 2, 0), blobRows(h ^ 0x51, 1), q, _c(_wax, 0.45));
+    canvas.drawRect(ui.Rect.fromLTWH(o.dx - q / 2, o.dy - tall * q, q, tall * q), _fill..color = _c(_wax, 0.9));
+    if (life > 0) canvas.drawRect(ui.Rect.fromLTWH(o.dx - q / 2 + lean, o.dy - (tall + 1) * q, q, q), _fill..color = _c(_flame, life * k));
     placed.add((kind: 'candle', x: c.x, y: c.y));
   }
 }

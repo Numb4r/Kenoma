@@ -1,6 +1,7 @@
 /// O desenho das poças (camada do mapa do clima): contorno irregular em pixel de arte, cor que parte do asfalto (mais
-/// escura e um pouco azulada, ou tingida pela peça), reflexo claro de leve, anéis de gota enquanto chove. Três variantes de
-/// tamanho e forma, escolhidas pelo índice da poça: redonda, comprida e de dois lóbulos. Nada de oval liso.
+/// escura e um pouco azulada, ou tingida pela peça), reflexo claro de leve, anéis de gota enquanto chove. O contorno é
+/// procedural ([blobRows]): seis famílias de forma, cada marca com rotação, tamanho e ruído do próprio hash. Nada de oval
+/// liso nem de duas iguais lado a lado. As outras marcas do chão (crateras, manchas, brasas) usam o mesmo contorno.
 library;
 
 import 'dart:collection';
@@ -11,50 +12,88 @@ import '../../core/fnv.dart';
 
 ui.Color _c(int argb, double a) => ui.Color(argb).withValues(alpha: a.clamp(0.0, 1.0));
 
-/// Uma linha da poça em pixels de arte: `y` e o trecho `[x0, x1]`.
+/// Um trecho de uma linha da marca em pixels de arte: `y` e o trecho `[x0, x1]`. Uma linha pode ter mais de um trecho
+/// (contornos com reentrância ou respingos soltos).
 typedef PuddleRow = (int y, int x0, int x1);
+
+/// Quantas famílias de contorno existem (redonda, comprida, dois lóbulos, feijão, três pontas, respingada). Cada marca
+/// ainda gira, estica e ondula pelo próprio hash: duas da mesma família não saem iguais.
+const int blobFamilies = 6;
 
 final LinkedHashMap<(int, int, int), List<PuddleRow>> _rowCache = LinkedHashMap();
 
-/// As linhas da poça [variant] (0 redonda, 1 comprida, 2 dois lóbulos) de raio [n] pixels de arte; [h] dá o contorno
-/// irregular. Iguais em todo aparelho (só hash).
-List<PuddleRow> puddleRows(int variant, int h, int n) {
-  final key = (variant % 3, h & 0xffff, n);
+/// A família de contorno que o hash [h] escolhe.
+int blobFamilyOf(int h) => ((h >>> 40) & 0xffff) % blobFamilies;
+
+/// O fator de tamanho (0,75 a 1,3) que o hash [h] dá à marca: só desenho.
+double blobScaleOf(int h) => 0.75 + ((h >>> 56) & 0xff) / 255 * 0.55;
+
+/// O contorno procedural de uma marca no chão (poça, cratera, mancha, brasa, pingo de cera): as linhas, em pixels de
+/// arte, de uma forma de raio [n], com ruído no contorno. A [family] (por omissão, a do hash), a rotação, o alongamento e a
+/// irregularidade saem de [h]: iguais em todo aparelho (só hash), diferentes de marca para marca.
+List<PuddleRow> blobRows(int h, int n, {int? family}) {
+  final f = (family ?? blobFamilyOf(h)) % blobFamilies;
+  final key = (f, h & 0xffffffffff, n);
   final hit = _rowCache.remove(key);
   if (hit != null) return _rowCache[key] = hit;
-  final a = (h & 0xff) / 255 * 6.28, b = ((h >>> 8) & 0xff) / 255 * 6.28;
-  double wobble(double th) => 1 + 0.16 * math.sin(3 * th + a) + 0.09 * math.sin(5 * th + b);
-  bool inside(double x, double y) {
-    switch (variant % 3) {
-      case 1: // comprida, ao longo da rua
-        final ex = x / 1.7, ey = y / 0.75;
-        return math.sqrt(ex * ex + ey * ey) <= n * wobble(math.atan2(ey, ex));
+  double u8(int shift) => ((h >>> shift) & 0xff) / 255;
+  final a = u8(0) * 6.28, b = u8(8) * 6.28, c = u8(16) * 6.28;
+  final rot = u8(24) * math.pi, cr = math.cos(rot), sr = math.sin(rot);
+  final rough = 0.10 + u8(32) * 0.14; // irregularidade do contorno
+  final stretch = 0.85 + u8(12) * 0.3; // estica ou encolhe o eixo comprido
+  double wobble(double th) => 1 + rough * math.sin(3 * th + a) + rough * 0.6 * math.sin(5 * th + b) + rough * 0.35 * math.sin(8 * th + c);
+  bool ell(double x, double y, double cx, double cy, double rx, double ry) {
+    final ex = (x - cx) / rx, ey = (y - cy) / ry;
+    return math.sqrt(ex * ex + ey * ey) <= wobble(math.atan2(ey, ex));
+  }
+
+  bool inside(double px, double py) {
+    final x = px * cr + py * sr, y = -px * sr + py * cr;
+    switch (f) {
+      case 1: // comprida
+        return ell(x, y, 0, 0, n * 1.7 * stretch, n * 0.7);
       case 2: // dois lóbulos
-        bool lobe(double cx, double r) => math.sqrt((x - cx) * (x - cx) / 1.2 + y * y) <= r * wobble(math.atan2(y, x - cx));
-        return lobe(-0.45 * n, 0.75 * n) || lobe(0.5 * n, 0.55 * n);
+        return ell(x, y, -0.5 * n, 0, 0.85 * n, 0.75 * n) || ell(x, y, 0.6 * n * stretch, 0.1 * n, 0.6 * n, 0.55 * n);
+      case 3: // feijão: uma oval com uma mordida de lado
+        return ell(x, y, 0, 0, n * 1.4 * stretch, n * 0.95) && !ell(x, y, 0.15 * n, 1.05 * n, 0.75 * n, 0.6 * n);
+      case 4: // três pontas
+        final th = math.atan2(y, x);
+        return math.sqrt(x * x + y * y) <= n * (0.78 + 0.3 * math.cos(3 * th + a)) * wobble(th);
+      case 5: // respingada: a mancha e dois pingos soltos
+        return ell(x, y, 0, 0, n * 0.95 * stretch, n * 0.8) ||
+            ell(x, y, math.cos(b) * n * 1.35, math.sin(b) * n * 1.1, n * 0.32, n * 0.28) ||
+            ell(x, y, math.cos(b + 2.4 + c * 0.2) * n * 1.3, math.sin(b + 2.4 + c * 0.2) * n * 1.15, n * 0.24, n * 0.22);
       default: // redonda, um pouco larga
-        final ex = x / 1.3;
-        return math.sqrt(ex * ex + y * y) <= n * wobble(math.atan2(y, ex));
+        return ell(x, y, 0, 0, n * 1.2 * stretch, n.toDouble());
     }
   }
 
-  final w = (n * 2.2).ceil();
+  final w = (n * 2.2).ceil() + 1;
   final rows = <PuddleRow>[];
-  for (var y = -n; y <= n; y++) {
-    int? x0, x1;
-    for (var x = -w; x <= w; x++) {
-      if (!inside(x.toDouble(), y.toDouble())) continue;
-      x0 ??= x;
-      x1 = x;
+  for (var y = -w; y <= w; y++) {
+    int? x0;
+    for (var x = -w; x <= w + 1; x++) {
+      final hit = x <= w && inside(x.toDouble(), y.toDouble());
+      if (hit) {
+        x0 ??= x;
+      } else if (x0 != null) {
+        rows.add((y, x0, x - 1));
+        x0 = null;
+      }
     }
-    if (x0 != null) rows.add((y, x0, x1!));
   }
   _rowCache[key] = rows;
-  while (_rowCache.length > 256) {
+  while (_rowCache.length > 512) {
     _rowCache.remove(_rowCache.keys.first);
   }
   return rows;
 }
+
+/// As linhas da poça da família [variant] de raio [n] pixels de arte; [h] dá o contorno. Ver [blobRows].
+List<PuddleRow> puddleRows(int variant, int h, int n) => blobRows(h, n, family: variant);
+
+/// Desenha as linhas de [blobRows] em [o], com o pixel de arte [q] (nas unidades do canvas).
+void paintBlobRows(ui.Canvas canvas, ui.Offset o, List<PuddleRow> rows, double q, ui.Color color) => _rows(canvas, o, rows, q, color);
 
 final _fill = ui.Paint()..isAntiAlias = false;
 
@@ -86,8 +125,8 @@ void paintPuddle(
   required double night,
   required double t,
 }) {
-  final n = math.max(1, (radius / q).round());
-  final variant = index % 3;
+  final n = math.max(1, (radius * blobScaleOf(hash) / q).round());
+  final variant = blobFamilyOf(hash);
   final wet = ui.Color.lerp(ui.Color(asphalt), const ui.Color(0xFF000000), 0.3)!;
   final body = ui.Color.lerp(ui.Color.lerp(ui.Color(asphalt), const ui.Color(0xFF0A0E1C), 0.35)!, ui.Color(tint), 0.3)!;
   final k = math.min(1.0, alpha / 0.35);
@@ -147,9 +186,9 @@ void paintPuddle(
 
 /// A poça congelada: a mesma forma, gelo claro com rachaduras de pixel e o cristal piscando.
 void paintIcePuddle(ui.Canvas canvas, ui.Offset o, {required double radius, required double q, required int index, required int hash, required int color, required int glow, required double alpha, required double t}) {
-  final n = math.max(1, (radius / q).round());
-  final rows = puddleRows(index % 3, hash, n);
-  _rows(canvas, o, puddleRows(index % 3, hash, n + 1), q, _c(0xFF1A1424, 0.35));
+  final n = math.max(1, (radius * blobScaleOf(hash) / q).round());
+  final rows = blobRows(hash, n);
+  _rows(canvas, o, blobRows(hash, n + 1), q, _c(0xFF1A1424, 0.35));
   _rows(canvas, o, rows, q, _c(color, alpha));
   for (var j = 1; j < rows.length - 1; j += 3) {
     final (y, x0, x1) = rows[j];
