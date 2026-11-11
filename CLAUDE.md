@@ -1,146 +1,36 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+**Kenoma: Veilbreakers** (repo `kenoma`): RPG mobile de exploração por GPS em pixel art 2D. A cidade real vira fantasia urbana; o Conjurador coleta materiais do ambiente, fabrica selos e captura criaturas sintonizando o sinal num dial. Não existe batalha (`docs/plano-b-batalha.md` só se pedido).
 
-**Kenoma: Veilbreakers** é um RPG mobile de exploração via GPS em pixel art 2D. A cidade real vira um mundo de fantasia urbana invadido pelos fragmentos de deuses mortos que vazam por Fendas no Véu. O jogador é um Conjurador que coleta materiais conforme o ambiente real, fabrica selos e captura criaturas sintonizando o sinal delas num dial, como um rádio. Não existe batalha.
+## Referências
+- `docs/GDD.md` é o norte, não o escopo. `docs/marcos.md` é o roadmap: um marco por vez. `docs/fase0-spec.md` é o escopo e a spec de hash, PRNG e células (seção 3). Algo do GDD fora da spec e dos marcos: pergunte antes.
+- Clima `docs/clima-auditoria.md`, chave e feed `docs/assinatura.md`, pacotes de região e SHAs `pipeline/README.md`, arte `docs/referencias-de-arte.md`, issues `docs/agents/`.
 
-Nome do repositório: `kenoma`.
-
-## Documentos de referência
-
-- `docs/GDD.md` é a visão completa do jogo, exportada do GDD. Serve de norte, **não** de escopo.
-- `docs/fase0-spec.md` é o escopo atual. Só implemente o que está nele.
-- `docs/marcos.md` é a ordem de implementação. Trabalhe um marco por vez.
-- `docs/referencias-de-arte.md` tem os prompts e descrições visuais das telas e criaturas.
-- `docs/dados-iniciais/` tem os JSONs iniciais. No M0, copie `biomes.json` para `shared/`, `regions.json` para `pipeline/` e os demais para `app/assets/data/`.
-
-Se uma tarefa tocar em algo que está no GDD mas não na spec da Fase 0, pare e pergunte antes de implementar.
-
-`docs/plano-b-batalha.md` guarda um sistema de batalha para o caso de a sintonia não funcionar. **Não implemente batalha** a menos que isso seja pedido explicitamente.
-
-## Stack
-
-- Flutter (stable) e Dart 3
-- Flame para o mapa e para a tela de sintonia
-- Widgets Flutter para toda interface fora do mapa e da sintonia (celular, bolsa, círculo, bestiário, bancada, configurações)
-- Riverpod para estado
-- `geolocator` para GPS
-- `path_provider` para o save, `share_plus` e `file_picker` para exportar e importar backup
-- `qr_flutter` e `mobile_scanner` para compartilhar a seed do grupo por QR code
-- `vibration` para os padrões de vibração da sintonia (o `HapticFeedback` não faz padrão)
-- Pipeline de mapa em Python 3.11+ com `osmium`, `shapely`, `pyproj`, `rasterio`, `numpy`
-- Plataforma alvo da Fase 0: Android. Web fora do escopo (inteiros de 64 bits).
-
-## Estrutura
-
-```
-app/                  # projeto Flutter
-  lib/
-    core/             # hash, PRNG, células, janelas, épocas (Dart puro, sem Flutter)
-    data/             # pacotes de região e JSONs de conteúdo
-    world/            # mapa, spawns, coleta, marcação
-    capture/          # lógica da sintonia (Dart puro, testável)
-    player/           # Conjurador, círculo, bolsa, bestiário, progressão
-    crafting/         # receitas, bancada, destilação
-    save/             # formato do save, migrações, backup
-    story/            # mentor (chat), diárias do fórum, avisos locais
-    ui/               # telas e widgets
-    dev/              # ferramentas de debug (simulador de GPS, relógio etc.)
-  assets/
-    data/             # creatures.json, items.json, recipes.json, balance.json, epochs.json
-    regions/          # pacotes de bioma (.bin)
-    sprites/
-  test/
-pipeline/             # scripts Python de geração de pacotes de região
-  regions.json        # bbox e fonte de cada região
-shared/
-  biomes.json         # biomas e regras OSM, fonte única para Python e Dart
-scripts/
-  sync_shared.sh      # copia shared/biomes.json para app/assets/data/
-docs/
-```
+## Stack e comandos
+Flutter stable, Dart 3, Flame no mapa e na sintonia, widgets no resto, Riverpod. Só Android. Pipeline em Python 3.11 via uv. Antes de `flutter`: `export PATH="$HOME/development/flutter/bin:$PATH" ANDROID_HOME=$HOME/Android/Sdk`.
+- Testes: `cd app && flutter analyze && flutter test` (um arquivo: `flutter test test/core/fnv_test.dart`; por nome: `--plain-name "FNV-1a"`). Nunca `dart format` (reescreve ~150 arquivos).
+- Biomas: edite `shared/biomes.json` e rode `./scripts/sync_shared.sh` (um teste compara as cópias).
+- Pipeline: `cd pipeline && .venv/bin/python build_region.py --region campinas` (e `build_visual.py`). Nunca regere por cima um `.bin` commitado: o extrato muda e o SHA em `epochs.json` é mundo.
+- Screenshot: só se `adb shell dumpsys window | grep isKeyguardShowing` der `false` e `grep mCurrentFocus` citar `com.numb4r.kenoma`; então `adb exec-out screencap -p > /tmp/kenoma-shots/<nome>.png`.
 
 ## Regras invioláveis
-
-1. **Determinismo.** Tudo que existe no mundo é derivado de `hash(seed_global, época, célula, janela)`. Dois aparelhos com a mesma seed e a mesma época, na mesma célula e na mesma janela, veem os mesmos spawns (existência, espécie, posição, quantidade). O nível do Eco e as capturas são individuais. A especificação exata do hash, do PRNG e dos vetores de teste está na seção 3 da spec.
-2. **Nunca use `Object.hashCode`, `String.hashCode` nem `dart:math Random` para lógica de mundo.** Use o hash e o PRNG próprios de `lib/core/` (FNV-1a 64 e PCG32 implementados à mão). Todo hash é u64: use `>>>`, nunca `>>`, e faça módulo sobre `h >>> 32`.
-3. **Tempo em UTC.** Janelas, épocas e registros usam segundos UTC desde a época Unix. Só a exibição converte para o horário local.
-4. **Offline.** Nada no Núcleo depende de rede. GPS e arquivos locais apenas.
-5. **Spawns individuais.** A seed é compartilhada, mas cada jogador tem a própria instância de cada criatura. Capturar não remove nada para os amigos.
-6. **Lógica separada de renderização.** `capture/`, `world/`, `player/` e `crafting/` têm lógica testável em Dart puro. Componentes Flame e widgets só desenham e repassam input.
-7. **Conteúdo é dado.** Criaturas, itens, receitas e parâmetros de balanceamento vivem em JSON em `assets/data/`. Nenhum número de balanceamento hardcoded.
-8. **Conteúdo que afeta o mundo muda só por época.** Tabelas de spawn, coleta e materiais, biomas e o pacote de região ficam em `epochs.json` e `biomes.json`. Nunca altere o que uma época publicada usa: crie a próxima época com data de início UTC. `balance.json` guarda só o que não muda o mundo.
-9. **IDs estáveis.** Espécies, itens e receitas têm IDs de texto (`soot.eco`, `item.chalk`). Nunca use índice numérico como identificador persistido.
-10. **Biomas têm fonte única** em `shared/biomes.json`. O Python lê direto; o app lê a cópia em `app/assets/data/`, feita por `scripts/sync_shared.sh`, e um teste falha se as duas cópias forem diferentes.
-
-## Sistema de células
-
-Coordenadas de tile Web Mercator (padrão slippy map), inteiras e determinísticas.
-
-- Grade de bioma: zoom 21 (~18 m por célula em Campinas)
-- Célula de spawn: zoom 20 (~35 m)
-- Célula de Fenda (futuro): zoom 15 (~1,1 km)
-
-Janelas de spawn têm 20 minutos, com deslocamento próprio por célula. Detalhes em `docs/fase0-spec.md`.
+1. Determinismo: o mundo deriva de `hash(seed_global, época, célula, janela)` com o FNV-1a 64 e o PCG32 de `app/lib/core/`. Nunca `hashCode` nem `dart:math Random`. Hash é u64: `>>>`, módulo sobre `h >>> 32`. Tempo em segundos UTC; só a exibição é local.
+2. Offline: nada no Núcleo depende de rede. Spawns individuais: capturar não tira nada dos amigos.
+3. Lógica em Dart puro e testável (`core/`, `capture/`, `world/`, `player/`, `crafting/`); Flame e widgets só desenham. Função de `core/` e `capture/` tem teste com vetores fixos.
+4. Conteúdo é dado em `app/assets/data/`, sem balanceamento no código. IDs de texto estáveis (`soot.eco`); o sufixo `.eco`, `.spirit`, `.ritual` decide a camada.
+5. O que muda o mundo vive só na época (`epochs.json`: spawns, coleta, `eco_v2`, `climate`; `shared/biomes.json`; pacotes de região, e o SHA do pacote visual desde a época 2), mesmo que o pedido diga `balance.json`, que é só por aparelho. Nunca altere época publicada: pergunte e crie a próxima com início UTC. `*_noaccess.bin` não é mundo e vai em `route_files`.
+6. Amigos já jogam: todo APK sai com a chave de release (`~/.kenoma-signing/`), nunca a de debug. Mudou o save: suba `saveSchemaVersion`, migração pura e teste com save antigo. Nunca grave a chave privada nem publique no GitHub Pages sem pedido; o feed só acrescenta épocas ou estende validade.
+7. Push só com autorização explícita, a cada vez. Commit só quando pedido, pequeno, um por passo de marco.
 
 ## Convenções
+- Código em inglês; UI, comentários de domínio e docs em português. Nomes próprios não se traduzem (Sootling, Ialprg).
+- Função nova é app do celular (`ui/menu/phone_apps.dart`, nível em `balance.json` `phone.apps`). HUD só com atalhos em zonas fixas (`ui/game/hud_layout.dart`, teste em 360×800, 412×915, 480×1000). Ajustes só guarda preferências.
+- Clima: a tela só desenha o que cai do céu ou cobre a vista; o chão vai no mapa em células z21 (`climate_ground.dart`), nunca em coordenadas de tela. Clima da rede é só visual; climas de outras regiões e místicos só por `events.json` assinado ou debug.
+- Menu de debug em toda build de teste, inclusive release dos amigos, nunca atrás de flag. Versão futura fica atrás de `streetLifeEnabled` (`core/features.dart`).
+- Patrulha do Véu nunca grava o save principal (`patrulha.jsonl`). Recomeçar mantém `player_id`, log de versões, certificados e Ajustes.
+- Sprite ausente vira placeholder gerado. Cores: Véu `#9b7bff`, sinal `#5fd3c6`, Essência `#ff7a45`, contorno `#1a1424` (nunca preto).
 
-- Código e identificadores em inglês. Textos da interface, comentários de domínio e docs em português.
-- Nomes de criaturas, deuses e do jogo são nomes próprios não traduzidos (Sootling, Ialprg, Shloshim).
-- Toda função de `core/` e `capture/` tem teste unitário com vetores fixos.
-- Commits pequenos, um por passo de marco.
-- Sprites ausentes usam placeholders gerados (forma simples na cor do tipo com a inicial do nome). Arte nunca bloqueia código.
-- **Nunca dar push sem autorização explícita** do usuário, mesmo que ele tenha autorizado outros pushes antes. Commitar só quando pedido.
-- **Nunca capturar a tela do celular** (`adb screencap` e similares) sem checar antes se ele está desbloqueado e com o app em primeiro plano: `adb shell dumpsys window | grep isKeyguardShowing` tem que dar `false` e `adb shell dumpsys window | grep mCurrentFocus` tem que citar `com.numb4r.kenoma`. A tela de bloqueio e os outros apps mostram conteúdo pessoal.
-- **O menu de debug fica acessível em todas as builds de teste, inclusive as de release que vão para os amigos, e nunca é removido por flag de build.** A regra de liberar só com certificado de desenvolvedor vale apenas para a versão pública e entra junto com as assinaturas. Ferramentas de dev (simulador de GPS, relógio, sintonia, mapa) moram nele.
-- **O que muda o mundo vive em `epochs.json`, mesmo que o pedido diga `balance.json`.** Pesos de comportamento, chances de variante e de Brilhante e o efeito do clima nos spawns estão no bloco `eco_v2` da época; o `balance.json` guarda só o que vale por aparelho (velocidades, Radar, tamanhos). O clima que pesa nos spawns é só o determinístico: o da rede (Open-Meteo) é visual.
-- **Clima em duas camadas** (`docs/clima-auditoria.md`). A tela (`clima.json` `layers`: `climate_painter.dart`, `climate_layers.dart`, `climate_fx.dart`) só tem o que cai do céu ou cobre a vista. O que está no chão vai para o mapa (`clima.json` `ground` e as peças da época: `climate_ground.dart`), em células z21 com a transformação da câmera e posições da seed. Nunca desenhe chão em coordenadas de tela.
-- **Geometria que decide posição é congelada por época.** Da época 2 em diante, Fagulhas, materiais e Ecos são projetados nos caminhos do pacote visual, então o SHA-256 do pacote em `epochs.json` é parte do mundo: trocar `campinas_e0_vis.bin` exige época nova (o desenho puro continua livre nas épocas 0 e 1). Não use `dart format` no repositório.
-- **Funcionalidade de versão futura fica atrás de `streetLifeEnabled`** (`app/lib/core/features.dart`, `--dart-define=STREET_LIFE=false` na 0.13.1). Épocas com `requires_feature` só existem com ela ligada. O menu de debug nunca fica atrás dessa flag.
-- **O sufixo do id decide a camada da espécie** (`.eco`, `.spirit`, `.ritual`, `core/species_ids.dart`); não renomeie ids. Nunca grave a chave privada de assinatura (`~/.kenoma-signing/publicacao_ed25519.pem`) nem publique no GitHub Pages sem pedido explícito; o feed assinado só acrescenta épocas ou estende a validade (regra 8).
-- **Já há amigos jogando.** Toda versão nova sai assinada com a mesma chave de release (`~/.kenoma-signing/`, ver `docs/assinatura.md`) e com a migração do save testada: quem atualiza instala por cima e não perde nada. Mudou o formato do save? Suba `saveSchemaVersion`, escreva a migração pura e o teste com um save antigo antes do APK. Nada de APK com a chave de debug. Mudança de época continua só por época nova (regra 8), e agora afeta quem já joga.
-- **O clima que muda o mundo mora no bloco `climate` da época** em `epochs.json`; `assets/data/clima.json` é só visual e textos. Climas de outras regiões e místicos só entram por `events.json` assinado ou debug, nunca pelo clima real.
-- **O serviço da Patrulha do Véu nunca grava o save principal.** Ele escreve `patrulha.jsonl` e o app incorpora pelo uid. Recomeçar do zero apaga o progresso e mantém `player_id`, log de versões, certificados e Ajustes do aparelho.
-- **Toda função nova é um app do celular do personagem** (`ui/menu/phone_apps.dart`, bloqueio por nível em `balance.json` `phone.apps`). O HUD só tem atalhos e o que precisa ser visto andando, em zonas fixas (`ui/game/hud_layout.dart`, com teste de não sobreposição em 360×800, 412×915 e 480×1000 dp). Ajustes só guarda preferências.
-- **O arquivo só de rotas (`*_noaccess.bin`) não entra em época** nem no pacote visual: ele não muda o mundo. No `regions.json` assinado vai em `route_files`, nunca em `files` (a 0.16 recusaria a região inteira).
-- Cores fixas: violeta `#9b7bff` é o Véu, ciano `#5fd3c6` é o sinal, laranja `#ff7a45` é Essência. Contorno `#1a1424`, nunca preto puro.
-
-## Comandos
-
-```
-# app
-cd app && flutter pub get
-cd app && flutter test
-cd app && flutter test test/core/fnv_test.dart             # um arquivo
-cd app && flutter test --plain-name "FNV-1a" test/core/     # testes pelo nome
-cd app && flutter analyze
-cd app && flutter run
-
-# biomas: rodar depois de editar shared/biomes.json
-./scripts/sync_shared.sh
-
-# pipeline (Python 3.11 via uv; ~3 min e ~4,5 GB de RAM; baixa o extrato da Geofabrik para pipeline/cache/)
-cd pipeline && uv venv --python 3.11 .venv && uv pip install --python .venv/bin/python -r requirements.txt
-cd pipeline && .venv/bin/python build_region.py --region campinas
-
-# pacote visual (ruas, água e verde, só desenho; usa o mesmo extrato em pipeline/cache/)
-cd pipeline && .venv/bin/python build_visual.py --region campinas
-```
-
-O pipeline grava `app/assets/regions/campinas_e0.bin` (versionado) e `pipeline/out/campinas_preview.png` (não versionado). O SHA-256 impresso vai para `region_packs.campinas.sha256` em `app/assets/data/epochs.json`. O extrato do OSM muda todo dia, então regerar dá outro SHA: o `.bin` commitado é a fonte da época 0 e não deve ser regerado por cima. O arquivo do pacote se chama `campinas_e0.bin`, como está em `epochs.json`. O M4 em `docs/marcos.md` diz `campinas.bin`, mas o nome certo é `campinas_e0.bin`.
-
-O `build_visual.py` grava `app/assets/regions/campinas_e0_vis.bin` (versionado) e `pipeline/out/campinas_vis_preview.png` (não versionado). O SHA-256 vai para `visual_packs.campinas.sha256` em `epochs.json`, em campo separado do pacote lógico: o arquivo é só desenho, então pode ser trocado sem época nova. Ele lê o mesmo extrato em `pipeline/cache/` (o da época 0 está registrado em `pipeline/README.md`) e, como o `.bin` lógico, não deve ser regerado por cima com outro extrato.
-
-## Agent skills
-
-### Issue tracker
-
-Issues e specs são arquivos markdown em `.scratch/<feature>/` (sem GitHub Issues). Ver `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Cinco papéis padrão, gravados na linha `Status:` de cada issue. Ver `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: `CONTEXT.md` e `docs/adr/` na raiz. Ver `docs/agents/domain.md`.
+## Agentes
+- `testador`: depois de mudar código, e no fim do marco com screenshot. `conteudo`: lotes grandes nos JSONs de `app/assets/data/` (o hook dele recusa `epochs.json` e outras pastas). `revisor`: só no fim do marco, contra GDD, spec e marcos.
+- O que leva poucas chamadas não se delega; bugs difíceis ficam na thread principal. Nunca dois agentes no mesmo arquivo. Os agentes globais (`code-reviewer`, `tdd-guide` etc.) não se usam neste repo.
+- Execução autônoma: screenshot só no fim de cada marco; depois de 2 tentativas falhas no mesmo critério, pare e reporte. O histórico fica nos commits: não escreva nem leia diário de bordo.
