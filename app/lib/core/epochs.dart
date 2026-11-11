@@ -2,6 +2,7 @@
 library;
 
 import 'fog_model.dart';
+import 'motion_model.dart';
 import 'water_model.dart';
 import 'climate.dart';
 import 'features.dart';
@@ -142,6 +143,7 @@ class Epoch {
     this.reliefPacks = const {},
     this.water,
     this.fog,
+    this.motion,
     this.ecoV2,
     this.walkable,
     this.requiresFeature,
@@ -172,6 +174,7 @@ class Epoch {
         },
         water: json['water'] == null ? null : WaterModel.fromJson(json['water'] as Map<String, dynamic>),
         fog: json['fog'] == null ? null : FogModel.fromJson(json['fog'] as Map<String, dynamic>),
+        motion: json['motion'] == null ? null : MotionModel.fromJson(json['motion'] as Map<String, dynamic>),
         walkable: json['walkable'] == null ? null : Walkable.fromJson(json['walkable'] as Map<String, dynamic>),
         requiresFeature: json['requires_feature'] as String?,
         ecoV2: json['eco_v2'] == null ? null : EcoV2.fromJson(json['eco_v2'] as Map<String, dynamic>),
@@ -204,6 +207,10 @@ class Epoch {
   /// A neblina que se acumula nas baixadas e muda a visão dos Ecos conforme o lugar, da época 9 em diante. `null`: a
   /// visão do clima vale igual em todo lugar, como antes.
   final FogModel? fog;
+
+  /// O movimento próprio de Ecos e Fagulhas (Passivos que andam, Ecos de Água que rondam a poça, Correntes do Véu), da
+  /// época 9 em diante. `null`: todos parados onde nascem, como antes.
+  final MotionModel? motion;
 
   /// Os quatro itens fixos de uma célula, na ordem do índice.
   final List<SpawnItemDef> items;

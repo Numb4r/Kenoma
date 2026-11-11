@@ -47,6 +47,7 @@ Map<String, List<int>> realAssets() => {
       'assets/regions/campinas_e0.bin': File('assets/regions/campinas_e0.bin').readAsBytesSync(),
       'assets/regions/campinas_e0_vis.bin': File('assets/regions/campinas_e0_vis.bin').readAsBytesSync(),
       'assets/regions/campinas_e2_nowalk.bin': File('assets/regions/campinas_e2_nowalk.bin').readAsBytesSync(),
+      'assets/regions/campinas_e9_relief.bin': File('assets/regions/campinas_e9_relief.bin').readAsBytesSync(),
     };
 
 final gameWidget = find.byWidgetPredicate((w) => w is GameWidget);

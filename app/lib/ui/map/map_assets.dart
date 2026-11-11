@@ -118,6 +118,7 @@ ClimateWorld climateWorldFor({required GameState state, required GameData data, 
       snapper: assets.visual == null ? null : WalkPaths(assets.visual!, blocked: assets.noWalk),
       water: assets.waterFor,
       relief: assets.relief,
+      typeOf: (id) => data.species(id)?.type.name,
       forced: forced,
       forcedPhase: forcedPhase,
     );

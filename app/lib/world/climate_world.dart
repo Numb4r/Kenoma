@@ -4,6 +4,7 @@
 /// mapa) entra por [forced] e [debugDrops] e não vai para mais ninguém. Dart puro.
 library;
 
+import '../core/behavior.dart';
 import '../data/relief_pack.dart';
 import '../core/astro.dart' show sunAltitudeDeg;
 import '../core/tiles.dart';
@@ -102,6 +103,7 @@ class ClimateWorld {
     this.itemSince,
     this.water,
     this.relief,
+    this.typeOf,
     String? Function()? forced,
     this.forcedPhase,
   }) : forced = forced ?? _none;
@@ -135,6 +137,13 @@ class ClimateWorld {
 
   /// O relevo (`null`: terreno plano, a neblina vale igual em todo lugar).
   final ReliefSource? relief;
+
+  /// O tipo da espécie (`water`...), para o movimento dos Ecos de Água.
+  final String? Function(String entryId)? typeOf;
+
+  /// O instante exato do quadro (UTC fracionário), para o movimento ficar contínuo entre dois segundos. O jogo preenche
+  /// antes de ler o mundo; sem ele vale o segundo inteiro.
+  double? motionTime;
 
   /// Climas forçados por evento (`events.json` assinado). Trocados quando o feed chega.
   List<ClimateEvent> events = const [];
@@ -342,6 +351,51 @@ class ClimateWorld {
 
   /// Níveis a mais nos Ecos da célula z20 (Tempestade de Ecos).
   int levelAddAt(int cx20, int cy20, int t) => defAt(cx20, cy20, t)?.modifier?.levelAdd ?? 0;
+
+  /// O movimento próprio do que nasceu no sorteio normal ou do clima (`motion` da época, da 9 em diante): o Eco Passivo
+  /// anda num raio pequeno, o de Água ronda a poça mais próxima, e a Fagulha desliza pela Corrente do Véu até o
+  /// redemoinho. Função da seed, do uid e do tempo. [windowStart]: o começo da janela da célula (a idade da Fagulha).
+  WorldSpawn move(WorldSpawn s, int windowStart, int t, double mpc) {
+    final epoch = schedule.select(t).epoch, m = epoch.motion;
+    if (m == null) return s;
+    final mt = motionTime, tt = mt != null && (mt - t).abs() < 2 ? mt : t.toDouble();
+    if (s.isSpark) {
+      final v = m.vortexFor(seed, epoch.id, s.x, s.y, mpc);
+      if (v == null) return s;
+      final p = m.current(s.uid, s.x, s.y, v, tt - windowStart, mpc);
+      return s.movedTo(p.$1, p.$2);
+    }
+    if (!s.isEco) return s;
+    if (typeOf?.call(s.entryId) == 'water') {
+      // A poça mais próxima: os pontos onde a água se junta na célula z17 do Eco e nas vizinhas. Sem relevo, a própria
+      // posição (o Eco que nasceu de uma poça ronda a dele).
+      var cx = s.x, cy = s.y, best = m.waterSeekM * m.waterSeekM, found = false;
+      final w = water?.call(epoch);
+      if (w != null) {
+        final c17x = s.x.floor() >>> 4, c17y = s.y.floor() >>> 4;
+        for (var dy = -1; dy <= 1; dy++) {
+          for (var dx = -1; dx <= 1; dx++) {
+            for (final sp in w.spots(c17x + dx, c17y + dy, 5) ?? const <WaterSpot>[]) {
+              final ex = (sp.x - s.x) * mpc, ey = (sp.y - s.y) * mpc, d = ex * ex + ey * ey;
+              if (d < best) {
+                best = d;
+                cx = sp.x;
+                cy = sp.y;
+                found = true;
+              }
+            }
+          }
+        }
+      }
+      if (found || s.tag != null || w == null) {
+        final o = m.orbit(s.uid, tt);
+        return s.movedTo(cx + o.$1 / mpc, cy + o.$2 / mpc);
+      }
+    }
+    if (s.behavior != EcoBehavior.passive) return s;
+    final o = m.wander(s.uid, tt);
+    return s.movedTo(s.x + o.$1 / mpc, s.y + o.$2 / mpc);
+  }
 
   /// A Fagulha do sorteio normal com o clima: deriva com o vento ou some depois do tempo de vida. [windowStart] é o começo da
   /// janela de 20 minutos da célula dela. `null`: sumiu.

@@ -413,6 +413,7 @@ class GameMapGame extends FlameGame {
     _refreshIn -= dt;
     if (_hasFix && worldView != null && _refreshIn <= 0) {
       _refreshIn = 0.25;
+      worldView!.field.climate?.motionTime = _exactUtc(); // o movimento de Ecos e Fagulhas, contínuo entre dois segundos
       // A lógica lê a MESMA posição que o desenho (o marcador suavizado), não a leitura crua do GPS: assim o que o círculo
       // mostra dentro é o que a coleta pega.
       final (lat, lon) = avatar.hasPosition ? tileFractionToLatLon(avatar.x, avatar.y, biomeZoom) : (_lat, _lon);

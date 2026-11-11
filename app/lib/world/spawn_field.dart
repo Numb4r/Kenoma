@@ -227,6 +227,8 @@ class SpawnField {
             variant: item.variantBiome,
             shiny: item.shiny,
           );
+          // O movimento próprio (época 9 em diante) antes do vento do clima: a deriva soma por cima da corrente.
+          if (climate != null) spawn = climate!.move(spawn, windowStart, tUtc, mpc);
           if (climate != null && spawn.isSpark) {
             final moved = climate!.adjustSpark(spawn, windowStart, tUtc, mpc);
             if (moved == null) continue; // evaporou (Onda de calor) ou subiu ao céu (Céu Invertido)
@@ -238,14 +240,18 @@ class SpawnField {
     }
     final c = climate;
     if (c != null) {
-      out.addAll(c.extras(
-        x21: px,
-        y21: py,
-        radiusM: radiusM,
-        t: tUtc,
-        metersPerCell21: mpc,
-        levelOf: (id, add, uid) => _levels.putIfAbsent(uid, () => (playerLevel + add + c.levelAddAt(px.floor() >>> 1, py.floor() >>> 1, tUtc)).clamp(1, levelCapOf?.call(id) ?? 20)),
-      ));
+      // Os Ecos do clima (o da poça, o do raio) também se movem; as Fagulhas do clima já têm o movimento delas.
+      out.addAll([
+        for (final s in c.extras(
+          x21: px,
+          y21: py,
+          radiusM: radiusM,
+          t: tUtc,
+          metersPerCell21: mpc,
+          levelOf: (id, add, uid) => _levels.putIfAbsent(uid, () => (playerLevel + add + c.levelAddAt(px.floor() >>> 1, py.floor() >>> 1, tUtc)).clamp(1, levelCapOf?.call(id) ?? 20)),
+        ))
+          s.isEco ? c.move(s, tUtc, tUtc, mpc) : s,
+      ]);
     }
     return out;
   }
