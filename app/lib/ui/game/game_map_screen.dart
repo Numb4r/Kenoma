@@ -142,6 +142,10 @@ class _Ready {
 class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserver {
   late final Future<Object> _loading = _load();
   _Ready? _ready;
+
+  // O teste de viaduto da simulação do tráfego: montado no primeiro uso, já com a latitude do jogador.
+  bool Function(double x, double y)? _bridge;
+  double Function() _bridgeLat = () => -22.9;
   LocationAccess? _access;
   int _pointers = 0;
   StreamSubscription<double>? _headingSub;
@@ -614,6 +618,11 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       overlayBiomes: () => tools.showBiomeGrid,
       overlayGrid20: () => tools.showGrid20,
       overlayRadii: () => tools.showRadii,
+      overlayTraffic: () => tools.showTraffic,
+      trafficDensity: () => tools.trafficDensity,
+      trafficSim: assets.balance.trafficSim,
+      trafficPoints: assets.trafficPoints,
+      noCrossingAt: assets.world == null ? null : (x, y) => (_bridge ??= bridgeTest(assets.world!, data.travel.accessTolM / metersPerCell(_bridgeLat())))(x, y),
       auraM: assets.balance.auraM,
       defaultWidthM: assets.balance.defaultWidthM,
       minWidthM: assets.balance.cameraMinWidthM,
@@ -649,6 +658,13 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       confirm: _confirmRegion,
     );
     final tracker = PlayerTracker(source: tools.source);
+    _bridgeLat = () => game.playerLat;
+    tools.trafficStats = () {
+      final sim = game.trafficSimState, g = sim?.lanes;
+      if (sim == null || g == null) return 'A simulação ainda não começou (sem posição ou com o Tráfego do Véu desligado).';
+      return '${sim.cars.length} carros, ${sim.walkers.length} passantes · passo ${sim.avgStepUs.round()} µs (último ${sim.lastStepUs} µs) · '
+          '${g.nodes.length} esquinas, ${g.nodes.where((n) => n.signal).length} semáforos, ${g.nodes.where((n) => n.entry).length} entradas · grafo em ${g.buildUs ~/ 1000} ms';
+    };
     final accessTol = data.travel.accessTolM / metersPerCell(game.playerLat);
     final travel = TravelSession(
       state: session.state,

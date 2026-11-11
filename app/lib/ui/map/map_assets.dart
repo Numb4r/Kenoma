@@ -26,6 +26,7 @@ import '../../net/signed_feed.dart';
 import '../../data/block_cache.dart';
 import '../../data/map_sources.dart';
 import '../../data/nowalk_pack.dart';
+import '../../data/traffic_pack.dart';
 import '../../data/visual_pack.dart';
 import '../../world/visual_map.dart';
 import '../../data/region_loader.dart';
@@ -47,7 +48,10 @@ import 'map_renderer.dart';
 const String kRegion = kBundledRegion;
 
 class MapAssets {
-  MapAssets({required this.map, required this.atlas, required this.balance, required this.stale, this.visual, this.noWalk, this.epoch, this.world, this.fallback, this.codec});
+  MapAssets({required this.map, required this.atlas, required this.balance, required this.stale, this.visual, this.noWalk, this.epoch, this.world, this.fallback, this.codec, this.trafficPoints});
+
+  /// Semáforos, faixas e entradas do OSM para a simulação local do tráfego (`null`: regra pela classe da rua).
+  final TrafficPointSource? trafficPoints;
 
   final RegionMap map;
 
@@ -225,6 +229,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
     VisualMap? visual;
     NoWalkPack? noWalk;
     LayeredWorld? world;
+    TrafficPack? trafficPoints;
     if (withVisual) {
       final pack = await loadVisualPack(region: kRegion, epoch: loaded.epoch, bundle: assets);
       if (pack is! VisualPack) return pack as String;
@@ -237,6 +242,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
         noWalk = nw as NoWalkPack?;
       }
       final access = await loadAccessPack(region: kRegion, bundle: assets);
+      trafficPoints = await loadTrafficPack(region: kRegion, bundle: assets);
       world = LayeredWorld(regions: [LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk, access: access)], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
       visual = VisualMap(world);
     }
@@ -252,6 +258,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       world: world,
       fallback: world == null ? null : MapFallbackBalance(balanceJson),
       codec: world == null ? null : fallbackCodec(biomesJson),
+      trafficPoints: trafficPoints,
     );
   } catch (e) {
     return 'Não consegui ler os dados do mapa: $e';

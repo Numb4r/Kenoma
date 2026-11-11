@@ -7,7 +7,9 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import '../../core/astro.dart' show DayLight;
+import '../../data/traffic_pack.dart';
 import '../../world/map_camera.dart';
+import '../../world/sim/traffic_sim.dart';
 import '../../world/street_cover.dart' show StreetState;
 import '../../world/veil_traffic.dart';
 import '../../world/visual_map.dart';
@@ -25,6 +27,9 @@ class TrafficPainter {
     this.cacheTiles = 96,
     this.maxGhosts = 160,
     this.roadWidthM,
+    this.config = const TrafficSimConfig(),
+    this.points,
+    this.noCrossingAt,
   });
 
   final VisualMap visual;
@@ -38,10 +43,18 @@ class TrafficPainter {
   /// Largura das vias por classe (`map.road_width_m`). Sem ela vale o padrão do campo.
   final Map<String, double>? roadWidthM;
 
+  /// Os números da simulação (`balance.json`, `traffic_sim`), os pontos do OSM (semáforos, faixas, entradas) e onde dois
+  /// trechos se cruzam sem esquina (viaduto).
+  final TrafficSimConfig config;
+  final TrafficPointSource? points;
+  final bool Function(double x, double y)? noCrossingAt;
+
   final GhostSprites sprites = GhostSprites();
-  TrafficField? _field;
-  TrafficGraph? _graph;
+  TrafficSim? _sim;
   int _revision = 0;
+
+  /// A simulação local (debug e testes). `null` antes do primeiro quadro.
+  TrafficSim? get sim => _sim;
 
   final ui.Paint _fill = ui.Paint()..isAntiAlias = false;
   final ui.Paint _layer = ui.Paint();
@@ -49,49 +62,36 @@ class TrafficPainter {
   /// Quantos fantasmas foram desenhados no último quadro (para conferir o teto).
   int lastDrawn = 0;
 
-  // Relógio contínuo: o jogo entrega segundos inteiros, e o fantasma anda por quadro.
-  final Stopwatch _sw = Stopwatch()..start();
-  double _t = -1e18;
-  int _lastElapsedUs = 0;
-
-  double _timeFor(int tUtc) {
-    final now = _sw.elapsedMicroseconds;
-    final dt = ((now - _lastElapsedUs) / 1e6).clamp(0.0, 0.25);
-    _lastElapsedUs = now;
-    final mid = tUtc + 0.5;
-    if ((_t - mid).abs() > 2.5) {
-      _t = mid; // primeiro quadro, ou o relógio pulou (debug)
-    } else {
-      _t += dt + (mid - _t) * 0.02;
-    }
-    return _t;
-  }
-
   Object? _coverKey;
+  LaneGraph? _coverLanes;
 
   /// Quantos carros viraram barco no último quadro (testes do Dilúvio).
   int lastBoats = 0;
 
-  TrafficField _fieldFor(int seed, Object? coverKey, StreetState Function(GhostLine, double)? streetState) {
-    if (visual.pack.revision != _revision) {
-      _revision = visual.pack.revision; // chegou bloco ou região: o grafo guarda tiles antigos
-      _graph = null;
-      _field = null;
+  TrafficGraph _graph() => TrafficGraph(loadTile: visual.tile, cellsPerTile: visual.cellsPerTile, extent: visual.pack.extent, cacheTiles: cacheTiles, stitch: true, noCrossingAt: noCrossingAt);
+
+  TrafficSim _simFor(int seed) {
+    final old = _sim;
+    if (old != null && old.seed == seed) {
+      if (visual.pack.revision != _revision) {
+        _revision = visual.pack.revision; // chegou bloco ou região: o grafo guarda tiles antigos
+        old.regraph(_graph());
+      }
+      return old;
     }
-    final graph = _graph ??= TrafficGraph(loadTile: visual.tile, cellsPerTile: visual.cellsPerTile, extent: visual.pack.extent, cacheTiles: cacheTiles);
-    final f = _field;
-    if (f != null && f.seed == seed && coverKey == _coverKey) return f;
-    _coverKey = coverKey; // o clima das ruas mudou: os caminhos guardados desviavam de outras ruas
-    final roadWidths = roadWidthM;
-    return _field = (roadWidths == null ? TrafficField(graph: graph, seed: seed) : TrafficField(graph: graph, seed: seed, roadWidthM: roadWidths))..streetState = streetState;
+    _revision = visual.pack.revision;
+    return _sim = TrafficSim(graph: _graph(), seed: seed, config: config, points: points, roadWidthM: roadWidthM ?? const {'principal': 12, 'secondary': 9, 'local': 6, 'pedestrian': 2}, carLengthM: carM);
   }
 
-  /// Desenha o tráfego. A cada quadro: passe `tUtc` (segundos inteiros) e, se tiver, `tUtcExact` (UTC fracionário, de
-  /// preferência do relógio do jogo) para o movimento ser contínuo. Não há nada a avisar numa troca de câmera: as
-  /// posições não dependem dela. `lonDeg` e `metersPerCell` ficam por compatibilidade: o campo usa a latitude e a
-  /// longitude do tile para que o grupo veja a mesma coisa.
-  void paint(
-    ui.Canvas canvas,
+  // O quadro preparado por [prepare]: quem está na tela, já ordenado, e o que o desenho precisa.
+  final _walkers = <(Ghost, double, double)>[], _cars = <(Ghost, double, double)>[];
+  ({double rotation, double pxPerM, double night, double t, StreetState Function(GhostLine, double)? streetState, bool skid, String? outfit})? _frame;
+
+  /// Avança a simulação local [dt] segundos em volta do jogador ([px], [py], células z21) e calcula quem aparece neste
+  /// quadro. O desenho vem depois, em duas camadas da ordem fixa (`draw_order.dart`): [paintWalkers] e, por cima,
+  /// [paintCars]. Com [paused] (o Silêncio), ninguém se mexe e depois todos continuam de onde pararam. [speedMult] e
+  /// [walkMult] são o clima: mais devagar e com menos gente na rua.
+  void prepare(
     ui.Size view,
     MapCamera cam, {
     required int seed,
@@ -99,39 +99,17 @@ class TrafficPainter {
     required double lonDeg,
     required double metersPerCell,
     required DayLight light,
+    required double px,
+    required double py,
+    double dt = 1 / 60,
+    bool paused = false,
+    double speedMult = 1,
+    double walkMult = 1,
     double? tUtcExact,
-    double? tWalkExact,
     StreetState Function(GhostLine line, double tUtc)? streetState,
     Object? coverKey,
     bool skid = false,
     String? outfit,
-  }) {
-    prepare(view, cam, seed: seed, tUtc: tUtc, metersPerCell: metersPerCell, light: light, tUtcExact: tUtcExact, tWalkExact: tWalkExact, streetState: streetState, coverKey: coverKey, skid: skid, outfit: outfit);
-    paintWalkers(canvas);
-    paintCars(canvas);
-  }
-
-  // O quadro preparado por [prepare]: quem está na tela, já ordenado, e o que o desenho precisa.
-  final _walkers = <(Ghost, double, double)>[], _cars = <(Ghost, double, double)>[];
-  ({double rotation, double pxPerM, double night, double t, StreetState Function(GhostLine, double)? streetState, bool skid, String? outfit})? _frame;
-
-  /// Calcula quem aparece neste quadro. O desenho vem depois, em duas camadas da ordem fixa (`draw_order.dart`):
-  /// [paintWalkers] e, por cima, [paintCars].
-  void prepare(
-    ui.Size view,
-    MapCamera cam, {
-    required int seed,
-    required int tUtc,
-    required double metersPerCell,
-    required DayLight light,
-    double? tUtcExact,
-    double? tWalkExact,
-    StreetState Function(GhostLine line, double tUtc)? streetState,
-    Object? coverKey,
-    bool skid = false,
-    String? outfit,
-    double? tOld,
-    double mix = 1,
   }) {
     lastDrawn = 0;
     lastBoats = 0;
@@ -139,26 +117,61 @@ class TrafficPainter {
     _cars.clear();
     _frame = null;
     if (visual.pack.version < 2) return; // o pacote antigo não tem a mão única
-    final t = tUtcExact ?? _timeFor(tUtc);
+    final t = tUtcExact ?? tUtc.toDouble();
     final (l, top, r, b) = cam.visibleBounds(view.width, view.height);
+    final sim = _simFor(seed);
+    final hour = localHour(tUtc, lonDeg);
+    final density = sim.config.carDensityIn(speedMult);
+    sim.center(px, py, metersPerCell, left: l, top: top, right: r, bottom: b, hour: hour, density: density);
+    final lanes = sim.lanes!;
+    if (!identical(lanes, _coverLanes) || coverKey != _coverKey) {
+      _coverLanes = lanes; // o clima das ruas mudou, ou o grafo foi refeito
+      _coverKey = coverKey;
+      lanes.applyStreets(streetState == null ? null : (line) => streetState(line, t) == StreetState.blocked, streetState == null ? null : (line) => streetState(line, t) == StreetState.flooded);
+    }
+    if (!paused) sim.step(dt.clamp(0.0, 0.1), hour: hour, density: density, speedMult: speedMult, walkMult: walkMult);
     final m = trafficMarginM / metersPerCell;
-    final field = _fieldFor(seed, coverKey, streetState);
-    // Depois do Silêncio ([tOld] não nulo): quem estava parado segue pelo relógio antigo e se desfaz, e o tráfego da hora
-    // entra com [mix]. Fora disso, só o tráfego da hora, inteiro.
-    final ghosts = [
-      if (tOld != null)
-        for (final g in field.ghostsIn(tOld, l - m, top - m, r + m, b + m, maxGhosts: maxGhosts)) g.faded(1 - mix),
-      for (final g in field.ghostsIn(t, l - m, top - m, r + m, b + m, maxGhosts: maxGhosts, tWalk: tWalkExact)) tOld == null ? g : g.faded(mix, forming: true),
-    ];
-    for (final g in ghosts) {
-      final (sx, sy) = cam.cellToScreen(g.x, g.y, view.width, view.height);
+    for (final c in sim.cars) {
+      if (c.x < l - m || c.x > r + m || c.y < top - m || c.y > b + m) continue;
+      final (sx, sy) = cam.cellToScreen(c.x, c.y, view.width, view.height);
       if (sx < -40 || sy < -40 || sx > view.width + 40 || sy > view.height + 40) continue;
-      (g.kind == GhostKind.car ? _cars : _walkers).add((g, sx, sy));
+      _cars.add((Ghost(id: c.id, model: c.model, palette: c.palette, x: c.x, y: c.y, heading: c.yaw, speedMps: c.v, phase: GhostPhase.alive, phaseT: 1, travelledM: c.odo, line: c.edge.line), sx, sy));
+    }
+    for (final w in sim.walkers) {
+      if (w.x < l - m || w.x > r + m || w.y < top - m || w.y > b + m) continue;
+      final (sx, sy) = cam.cellToScreen(w.x, w.y, view.width, view.height);
+      if (sx < -40 || sy < -40 || sx > view.width + 40 || sy > view.height + 40) continue;
+      _walkers.add((Ghost(id: w.id, model: w.model, palette: w.palette, x: w.x, y: w.y, heading: w.heading, speedMps: w.v, phase: GhostPhase.alive, phaseT: 1, travelledM: w.odo, line: w.edge.line), sx, sy));
     }
     // Dentro de cada camada, do mais ao norte ao mais ao sul da tela.
     _walkers.sort((a, b) => a.$3.compareTo(b.$3));
     _cars.sort((a, b) => a.$3.compareTo(b.$3));
     _frame = (rotation: cam.rotation, pxPerM: cam.pixelsPerCell / metersPerCell, night: light.night, t: t, streetState: streetState, skid: skid, outfit: outfit);
+  }
+
+  /// Debug: o raio simulado, as bordas, as entradas e a luz de cada semáforo (um ponto por acesso, na cor da fase).
+  void paintDebug(ui.Canvas canvas, ui.Size view, MapCamera cam, double metersPerCell) {
+    final sim = _sim, g = sim?.lanes;
+    if (sim == null || g == null) return;
+    final (cx, cy) = cam.cellToScreen(g.cx, g.cy, view.width, view.height);
+    final ring = ui.Paint()
+      ..style = ui.PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = kVeil;
+    canvas.drawCircle(ui.Offset(cx, cy), g.radiusM / metersPerCell * cam.pixelsPerCell, ring);
+    final dot = cam.pixelsPerCell / metersPerCell * 1.2;
+    for (final n in g.nodes) {
+      final (sx, sy) = cam.cellToScreen(n.x, n.y, view.width, view.height);
+      if (sx < -20 || sy < -20 || sx > view.width + 20 || sy > view.height + 20) continue;
+      if (n.entry) canvas.drawRect(ui.Rect.fromCenter(center: ui.Offset(sx, sy), width: dot * 2, height: dot * 2), _fill..color = kSignal);
+      if (!n.signal) continue;
+      for (final k in n.incoming) {
+        final tr = k.lanes[0], i = tr.xs.length - 1;
+        final (lx, ly) = cam.cellToScreen(tr.xs[i], tr.ys[i], view.width, view.height);
+        final light = n.light(k.group, sim.time, sim.config);
+        canvas.drawCircle(ui.Offset(lx, ly), dot, _fill..color = switch (light) { SignalLight.green => const ui.Color(0xFF4CD964), SignalLight.yellow => const ui.Color(0xFFFFD60A), SignalLight.red => const ui.Color(0xFFFF453A) });
+      }
+    }
   }
 
   /// Os passantes do quadro preparado.

@@ -11,6 +11,7 @@ import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 import '../core/epochs.dart';
 import '../net/signed_feed.dart';
 import 'access_pack.dart';
+import 'traffic_pack.dart';
 import 'nowalk_pack.dart';
 import 'region_pack.dart';
 import 'visual_pack.dart';
@@ -173,6 +174,18 @@ Future<AccessPack?> loadAccessPack({required String region, AssetBundle? bundle}
   try {
     final data = await (bundle ?? rootBundle).load('assets/regions/${region}_e0_noaccess.bin');
     return AccessPack.parse(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Os pontos do tráfego da região embutida (`build_traffic.py`): semáforos, placas, faixas e entradas do OSM. Só a simulação
+/// local do tráfego lê (cenário, fora das épocas): falta ou defeito deixam as esquinas com a regra pela classe da rua
+/// (`null`), sem aviso. Nunca lança.
+Future<TrafficPack?> loadTrafficPack({required String region, AssetBundle? bundle}) async {
+  try {
+    final data = await (bundle ?? rootBundle).load('assets/regions/${region}_e0_traffic.bin');
+    return TrafficPack.parse(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
   } catch (_) {
     return null;
   }

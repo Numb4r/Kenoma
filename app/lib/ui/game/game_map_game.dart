@@ -11,7 +11,6 @@ import 'package:flutter/foundation.dart' show ValueNotifier;
 import '../../capture/eco_type.dart';
 import '../../core/astro.dart';
 import '../../core/weather.dart';
-import '../../world/climate_world.dart' show trafficResync;
 import '../../world/companion.dart';
 import '../../world/creature_wind.dart';
 import '../../core/tiles.dart';
@@ -42,6 +41,8 @@ import '../../data/climate_catalog.dart';
 import 'street_label_painter.dart';
 import 'trace_painter.dart';
 import 'traffic_painter.dart';
+import '../../data/traffic_pack.dart';
+import '../../world/sim/traffic_sim.dart' show TrafficSim, TrafficSimConfig;
 import '../travel/travel_layer.dart';
 import 'tracker_painter.dart';
 import 'player_painter.dart';
@@ -68,6 +69,11 @@ class GameMapGame extends FlameGame {
     this.worldView,
     this.streetNames = _off,
     this.veilTraffic = _off,
+    this.trafficSim = const TrafficSimConfig(),
+    this.trafficPoints,
+    this.noCrossingAt,
+    this.overlayTraffic = _off,
+    this.trafficDensity = _noDensity,
     this.rainFx = _off,
     this.climateShown = _clearInfo,
     this.climateCatalog = const ClimateCatalog(),
@@ -110,7 +116,7 @@ class GameMapGame extends FlameGame {
   final bool Function() overlayRadii;
   late final ArtRenderer _art = ArtRenderer(visual: visual, style: style, balance: balance, floorTile: floorTile, floorGridCells: floorGridCells);
   late final StreetLabelPainter _labels = StreetLabelPainter(visual);
-  late final TrafficPainter _traffic = TrafficPainter(visual, carM: balance.ghostCarM, pedestrianM: balance.ghostPedestrianM, roadWidthM: balance.roadWidthM);
+  late final TrafficPainter _traffic = TrafficPainter(visual, carM: balance.ghostCarM, pedestrianM: balance.ghostPedestrianM, roadWidthM: balance.roadWidthM, config: trafficSim, points: trafficPoints, noCrossingAt: noCrossingAt);
   final TracePainter _trace = TracePainter();
   late final ClimatePainter _climate = ClimatePainter(cap: climateBalance.particleCap, pocketRate: climateBalance.pocketRate);
 
@@ -163,6 +169,20 @@ class GameMapGame extends FlameGame {
 
   /// Se o tráfego do Véu está ligado nos Ajustes (lido a cada quadro).
   final bool Function() veilTraffic;
+
+  /// A simulação local do tráfego: os números (`balance.json`), os pontos do OSM e os viadutos.
+  final TrafficSimConfig trafficSim;
+  final TrafficPointSource? trafficPoints;
+  final bool Function(double x, double y)? noCrossingAt;
+
+  /// Debug: desenha a área simulada e a fase dos semáforos; e força a densidade (`null`: a da hora e do clima).
+  final bool Function() overlayTraffic;
+  final double? Function() trafficDensity;
+  static double? _noDensity() => null;
+
+  /// A simulação do tráfego (debug: contador de agentes e custo do passo). `null` antes do primeiro quadro com tráfego.
+  TrafficSim? get trafficSimState => _traffic.sim;
+  double _frameDt = 1 / 60;
 
   /// Os spawns e o que o jogador alcança. `null` nos testes que só querem o mapa.
   final WorldView? worldView;
@@ -366,6 +386,7 @@ class GameMapGame extends FlameGame {
   @override
   void update(double dt) {
     super.update(dt);
+    _frameDt = dt;
     avatar.update(dt);
     _animate(dt);
     if (avatar.hasPosition) {
@@ -415,9 +436,9 @@ class GameMapGame extends FlameGame {
     final traffic = veilTraffic() && _hasFix && wv != null;
     if (traffic) {
       final tc = rainFx() ? climateGround.trafficCover(wv.field.seed, climateShown(), wv.climate) : null; // barcos, dunas, gelo
-      final walk = wv.climate.walkerMult == 1 ? null : _trafficUtc(walker: true);
-      final clock = _trafficUtc(), rs = _trafficResync();
-      _traffic.prepare(view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: clock, tWalkExact: walk, tOld: rs?.old, mix: rs?.mix ?? 1, metersPerCell: mpc, light: light, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false, outfit: climateShown().outfit);
+      final mult = wv.climate.trafficMult <= 0 ? 1.0 : wv.climate.trafficMult; // 0 é o Silêncio: pausa, não lentidão
+      _traffic.sim?.forcedDensity = trafficDensity();
+      _traffic.prepare(view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: _exactUtc(), lonDeg: _lon, metersPerCell: mpc, light: light, px: avatar.x, py: avatar.y, dt: _frameDt, paused: _trafficPaused(), speedMult: mult, walkMult: mult * wv.climate.walkerMult, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false, outfit: climateShown().outfit);
     } else {
       _traffic.lastDrawn = 0;
     }
@@ -447,7 +468,10 @@ class GameMapGame extends FlameGame {
       },
       if (traffic) ...{
         MapLayer.walkers: () => _traffic.paintWalkers(canvas),
-        MapLayer.cars: () => _traffic.paintCars(canvas),
+        MapLayer.cars: () {
+          _traffic.paintCars(canvas);
+          if (overlayTraffic()) _traffic.paintDebug(canvas, view, cam, mpc);
+        },
       },
       if (here) MapLayer.player: () => _paintPlayer(canvas, view, cam, center),
       MapLayer.air: () {
@@ -527,36 +551,22 @@ class GameMapGame extends FlameGame {
         layered: true,
       );
 
-  /// O relógio do tráfego do Véu com o clima (`ClimateWorld.trafficClock`): mais lento no Dilúvio, parado no Silêncio desde
-  /// o instante em que ele começou, igual em todos os aparelhos. Com [walker], o dos passantes (Geada forte).
-  double _trafficUtc({bool walker = false}) {
+  /// O Silêncio (clima de `traffic_mult` 0) vale aqui e agora: a simulação do tráfego não anda, e quando ele acaba todos
+  /// continuam de onde pararam. Com o clima forçado pelo debug, a parada começa no instante em que ele foi forçado.
+  bool _trafficPaused() {
     final t = _exactUtc(), cw = worldView?.field.climate;
-    if (cw == null || !avatar.hasPosition) return t;
+    if (cw == null || !avatar.hasPosition) return false;
     final f = cw.forced();
     if (f != _forcedId) {
-      // O debug trocou o clima com o tráfego parado: quem estava parado se ressincroniza como no fim do Silêncio do mundo.
-      final stop = _forcedId == null ? null : cw.trafficStopAt(avatar.x, avatar.y, t - 1, sinceUtc: _forcedAt);
-      _debugStop = stop == null || t < stop.s ? null : (frozenAt: stop.s.toDouble(), endUtc: t);
       _forcedId = f;
-      _forcedAt = t; // o clima do debug começa agora, só neste aparelho
+      _forcedAt = t;
     }
-    return cw.trafficClock(avatar.x, avatar.y, t, walker: walker, sinceUtc: f == null ? null : _forcedAt);
+    final stop = cw.trafficStopAt(avatar.x, avatar.y, t, sinceUtc: f == null ? null : _forcedAt);
+    return stop != null && t >= stop.s && t < stop.e;
   }
 
   String? _forcedId;
   double _forcedAt = 0;
-  ({double frozenAt, double endUtc})? _debugStop;
-
-  /// Depois do Silêncio (`trafficResync`): o relógio de quem estava parado e quanto do tráfego da hora já entrou. `null`
-  /// fora da ressincronização. Chame depois de [_trafficUtc] no quadro.
-  ({double old, double mix})? _trafficResync() {
-    final t = _exactUtc(), cw = worldView?.field.climate;
-    if (cw == null || !avatar.hasPosition) return null;
-    final b = climateBalance;
-    final stop = cw.trafficStopAt(avatar.x, avatar.y, t, sinceUtc: _forcedId == null ? null : _forcedAt), dbg = _debugStop;
-    return (stop == null ? null : trafficResync(frozenAt: stop.s.toDouble(), endUtc: stop.e.toDouble(), t: t, resyncS: b.trafficResyncS, speed: b.trafficResyncSpeed)) ??
-        (dbg == null ? null : trafficResync(frozenAt: dbg.frozenAt, endUtc: dbg.endUtc, t: t, resyncS: b.trafficResyncS, speed: b.trafficResyncSpeed));
-  }
 
   /// A Aura, o alcance de toque e os rastros: no chão, por baixo das criaturas.
   void _paintAura(Canvas canvas, Size view, MapCamera cam, Offset center) {

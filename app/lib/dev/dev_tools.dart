@@ -44,6 +44,22 @@ class DevTools extends ChangeNotifier {
   /// Desenha o raio lógico da Aura e o alcance de 30 m por cima do mapa.
   bool get showRadii => _showRadii;
 
+  bool _showTraffic = false;
+  double? _trafficDensity;
+
+  /// Tráfego simulado: desenha a área, as entradas e a fase dos semáforos; e força a densidade (`null`: hora e clima).
+  bool get showTraffic => _showTraffic;
+  double? get trafficDensity => _trafficDensity;
+
+  void setTraffic({bool? show, double? density, bool clearDensity = false}) {
+    _showTraffic = show ?? _showTraffic;
+    _trafficDensity = clearDensity ? null : density ?? _trafficDensity;
+    notifyListeners();
+  }
+
+  /// O que a simulação do tráfego diz de si (quem desenha o mapa do jogo preenche): agentes e custo do passo.
+  String Function()? trafficStats;
+
   void setOverlays({bool? biomes, bool? grid20, bool? radii}) {
     _showRadii = radii ?? _showRadii;
     _showBiomeGrid = biomes ?? _showBiomeGrid;
@@ -93,7 +109,7 @@ class DevTools extends ChangeNotifier {
 
   /// Algo forçado está ativo: simulador, relógio, nível, pedidos de spawn, clima ou sobreposições. Liga a etiqueta DEBUG.
   bool get anyForcing =>
-      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || _showBiomeGrid || _showGrid20 || _showRadii;
+      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || _showBiomeGrid || _showGrid20 || _showRadii || _showTraffic || _trafficDensity != null;
 
   Future<void> setUseSimulator(bool value) async {
     if (value == _useSimulator) return;

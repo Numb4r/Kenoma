@@ -1,11 +1,14 @@
 /// Raios do mapa lidos de `balance.json` (chave `map`), em metros. Nenhum número vive no código.
 library;
 
-class MapBalance {
-  MapBalance(Map<String, dynamic> balance) : this._(balance['map'] as Map<String, dynamic>);
+import 'sim/traffic_sim_config.dart';
 
-  MapBalance._(Map<String, dynamic> m)
-      : auraM = (m['aura_m'] as num).toDouble(),
+class MapBalance {
+  MapBalance(Map<String, dynamic> balance) : this._(balance['map'] as Map<String, dynamic>, balance['traffic_sim'] as Map<String, dynamic>?);
+
+  MapBalance._(Map<String, dynamic> m, Map<String, dynamic>? sim)
+      : trafficSim = TrafficSimConfig.fromJson(sim),
+        auraM = (m['aura_m'] as num).toDouble(),
         touchRangeM = (m['touch_range_m'] as num).toDouble(),
         touchRingShowM = (m['touch_ring_show_m'] as num).toDouble(),
         viewM = (m['view_m'] as num).toDouble(),
@@ -24,6 +27,9 @@ class MapBalance {
         roadWidthM = {for (final e in (m['road_width_m'] as Map<String, dynamic>).entries) e.key: (e.value as num).toDouble()},
         cameraMinWidthM = (m['camera_min_width_m'] as num).toDouble(),
         cameraMaxWidthM = (m['camera_max_width_m'] as num).toDouble();
+
+  /// A simulação local do tráfego (`traffic_sim`).
+  final TrafficSimConfig trafficSim;
 
   /// Raio da Aura: só dentro dela o jogador interage.
   final double auraM;

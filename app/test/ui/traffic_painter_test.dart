@@ -113,18 +113,23 @@ void main() {
     pic.dispose();
   });
 
-  test('paint desenha fantasmas de Campinas no rush, dentro do teto, e nenhum com o pacote sem tráfego', () {
+  test('desenha o tráfego simulado de Campinas no rush e nada com o pacote sem mão única', () {
     final painter = make();
     final cam = MapCamera(centerX: 12092 * 64.0 + 32, centerY: 18513 * 64.0 + 32, pixelsPerCell: 360 * 17.6 / 50);
     const light = DayLight(night: 0, warm: 0);
     var best = 0;
-    for (var k = 0; k < 40; k++) {
+    for (var k = 0; k < 600; k++) {
       final rec = ui.PictureRecorder();
-      painter.paint(ui.Canvas(rec), const ui.Size(360, 780), cam, seed: 0x6ebe19ac6345175f, tUtc: 1790035200 + 21 * 3600 + k, lonDeg: -47.06, metersPerCell: 17.6, light: light);
+      painter.prepare(const ui.Size(360, 780), cam, seed: 0x6ebe19ac6345175f, tUtc: 1790035200 + 21 * 3600, lonDeg: -47.06, metersPerCell: 17.6, light: light, px: cam.centerX, py: cam.centerY, dt: 0.1);
+      final canvas = ui.Canvas(rec);
+      painter.paintWalkers(canvas);
+      painter.paintCars(canvas);
       rec.endRecording().dispose();
       if (painter.lastDrawn > best) best = painter.lastDrawn;
     }
     expect(best, greaterThan(0));
-    expect(best, lessThanOrEqualTo(160));
+    expect(painter.sim!.cars.length, lessThanOrEqualTo(painter.config.maxCars));
+    expect(painter.sim!.bornInView, 0);
+    expect(painter.sim!.goneInView, 0);
   });
 }

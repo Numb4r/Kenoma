@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/world/sim/traffic_sim.dart';
 import 'package:kenoma/core/astro.dart' show DayLight;
 import 'package:kenoma/core/climate.dart';
 import 'package:kenoma/core/tiles.dart';
@@ -84,26 +85,36 @@ void main() {
     final flood = streetCoverOf(catalog.of('deluge'))!;
     StreetState state(GhostLine l, double t) => flood.stateOf(seed, l.key, l.roadClass, 0, 1e6);
 
-    test('carros das ruas baixas viram barcos e canoas; passantes não andam nas ruas alagadas', () {
-      final field = TrafficField(graph: TrafficGraph(loadTile: visual.tile, cellsPerTile: visual.cellsPerTile, extent: visual.pack.extent), seed: seed)..streetState = state;
-      final ghosts = field.ghostsIn(rush.toDouble(), center.$1 - 40, center.$2 - 40, center.$1 + 40, center.$2 + 40, maxGhosts: 2000);
-      final walkers = ghosts.where((g) => g.kind == GhostKind.pedestrian).toList();
-      final boats = ghosts.where((g) => g.kind == GhostKind.car && g.line != null && state(g.line!, 0) == StreetState.flooded);
-      expect(walkers, isNotEmpty);
-      for (final g in walkers) {
-        expect(state(g.line!, 0), isNot(StreetState.flooded), reason: 'calçada alta');
-      }
-      expect(boats, isNotEmpty);
-      final dry = TrafficField(graph: TrafficGraph(loadTile: visual.tile, cellsPerTile: visual.cellsPerTile, extent: visual.pack.extent), seed: seed);
-      final before = dry.ghostsIn(rush.toDouble(), center.$1 - 40, center.$2 - 40, center.$1 + 40, center.$2 + 40, maxGhosts: 2000);
-      expect(before.where((g) => g.kind == GhostKind.pedestrian && state(g.line!, 0) == StreetState.flooded), isNotEmpty, reason: 'sem o Dilúvio, havia passantes ali');
-
+    test('carros das ruas baixas viram barcos e canoas; passantes saem das ruas alagadas', () {
+      const light = DayLight(night: 0, warm: 0);
       final painter = TrafficPainter(visual, carM: 4.5, pedestrianM: 1.7);
       final cam = MapCamera(centerX: center.$1, centerY: center.$2, pixelsPerCell: 6);
-      painter.paint(ui.Canvas(ui.PictureRecorder()), const ui.Size(400, 800), cam, seed: seed, tUtc: rush, tUtcExact: rush.toDouble(), lonDeg: -47.06, metersPerCell: mpc, light: const DayLight(night: 0, warm: 0), streetState: state, coverKey: 'deluge');
-      expect(painter.lastBoats, greaterThan(0));
-      painter.paint(ui.Canvas(ui.PictureRecorder()), const ui.Size(400, 800), cam, seed: seed, tUtc: rush, tUtcExact: rush.toDouble(), lonDeg: -47.06, metersPerCell: mpc, light: const DayLight(night: 0, warm: 0));
+      void frame({StreetState Function(GhostLine, double)? st, Object? key}) => painter.prepare(const ui.Size(400, 800), cam,
+          seed: seed, tUtc: rush, lonDeg: -47.06, metersPerCell: mpc, light: light, px: center.$1, py: center.$2, dt: 0.1, streetState: st, coverKey: key);
+      frame();
+      final sim = painter.sim!;
+      expect(sim.walkers.where((w) => state(w.edge.line, 0) == StreetState.flooded), isNotEmpty, reason: 'sem o Dilúvio, havia passantes ali');
+      void draw() {
+        final canvas = ui.Canvas(ui.PictureRecorder());
+        painter.paintWalkers(canvas);
+        painter.paintCars(canvas);
+      }
+
+      draw();
       expect(painter.lastBoats, 0, reason: 'sem clima, nada de barco');
+      // A água sobe: em alguns minutos os passantes saem das ruas alagadas e não entram mais.
+      var boats = 0;
+      for (var i = 0; i < 6000; i++) {
+        frame(st: state, key: 'deluge');
+        if (i % 50 == 0) {
+          draw();
+          boats += painter.lastBoats;
+        }
+      }
+      expect(sim.lanes!.edges.where((e) => e.flooded), isNotEmpty);
+      expect(boats, greaterThan(0));
+      final wet = sim.walkers.where((w) => w.edge.flooded && w.mode == WalkerMode.walking).length;
+      expect(wet, lessThan(sim.walkers.length ~/ 10 + 1), reason: 'calçada alta: quase ninguém fica na rua alagada');
     });
 
     test('a água desenhada sobre as ruas baixas é a mesma para a mesma seed', () {

@@ -87,15 +87,6 @@ class PlayerClimate {
   static const none = PlayerClimate();
 }
 
-/// A ressincronização do Tráfego do Véu depois de uma parada (o Silêncio) que congelou o relógio em [frozenAt] e acabou
-/// em [endUtc]: durante [resyncS] segundos, quem estava parado segue de onde parou pelo relógio `old`, [speed] vezes mais
-/// rápido, e vai se desfazendo, enquanto o tráfego da hora real entra com a opacidade `mix` (0 a 1). Sem saltos: ninguém
-/// muda de lugar de um quadro para o outro. `null` fora desse intervalo. Função só do tempo: igual em todos os aparelhos.
-({double old, double mix})? trafficResync({required double frozenAt, required double endUtc, required double t, required double resyncS, required double speed}) {
-  if (resyncS <= 0 || t < endUtc || t >= endUtc + resyncS) return null;
-  return (old: frozenAt + (t - endUtc) * speed, mix: (t - endUtc) / resyncS);
-}
-
 class ClimateWorld {
   ClimateWorld({
     required this.seed,
@@ -247,8 +238,7 @@ class ClimateWorld {
   /// (contado do começo da janela, igual em todos os aparelhos) e parado nos climas de `traffic_mult` 0 (o Silêncio). A parada
   /// congela no instante em que o Silêncio começa ali (o começo das janelas seguidas dele, ou o `starts_utc` do evento do
   /// feed, se for mais tarde) e acaba no fim delas (ou no `ends_utc`). Depois o relógio volta à hora real; quem estava
-  /// parado volta a andar de onde parou e se desfaz enquanto o tráfego da hora entra ([trafficStopAt], [trafficResync]):
-  /// ninguém fica atrasado até a janela seguinte. [sinceUtc]: o clima foi forçado pelo debug neste instante (a parada não
+  /// parado volta a andar de onde parou ([trafficStopAt]: a simulação local só pausa). [sinceUtc]: o clima foi forçado pelo debug neste instante (a parada não
   /// começa antes). Com [walker], o dos passantes (Geada forte).
   double trafficClock(double x21, double y21, double t, {bool walker = false, double? sinceUtc}) {
     final cx = x21.floor() >>> 4, cy = y21.floor() >>> 4;

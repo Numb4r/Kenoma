@@ -151,14 +151,15 @@ void main() {
   });
 
   testWidgets('seção sem itens diz "sem itens ainda" e um item registrado depois aparece nela', (tester) async {
-    final reg = buildDefaultRegistry(newEnv());
+    final reg = DebugRegistry();
     final prefs = DebugPrefs(defaultOpen: true);
     await pumpMenu(tester, prefs, registry: reg);
-    expect(find.text('sem itens ainda'), findsOneWidget, reason: 'Tráfego');
+    final empty = tester.widgetList(find.text('sem itens ainda')).length;
+    expect(empty, greaterThan(0));
     reg.add(DebugItem(id: 'traffic.test', title: 'Item novo', section: DebugSection.traffic, keywords: const ['novo'], builder: (_) => const Text('corpo do item novo')));
     await pumpMenu(tester, prefs, registry: reg);
     expect(find.text('corpo do item novo'), findsOneWidget);
-    expect(find.text('sem itens ainda'), findsNothing);
+    expect(find.text('sem itens ainda'), findsNWidgets(empty - 1), reason: 'a seção Tráfego deixou de estar vazia');
   });
 
   group('apagar save', () {
