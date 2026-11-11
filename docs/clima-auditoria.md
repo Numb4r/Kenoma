@@ -172,6 +172,54 @@ No debug, o clima forçado começa do zero no instante em que é forçado; troca
 - **Debug.** "Efeito do clima no toque" > Procissão faz uma fila nascer no ponto tocado, só neste aparelho; como na do mundo, ela pode sair da névoa já no meio da rota.
 - **Época 8 (parâmetro para quem monta a época).** `"street_route": true` na peça `procession` do clima `fog_procession`: o Eco do fim nasce no ponto de rua mais perto do fim (o fim da rota e das velas) e fica `spawn.ttl_s` depois de aparecer, mesmo com a zona acabada.
 
+## Ordem de desenho (0.17.2)
+
+A ordem é fixa e mora em `ui/game/draw_order.dart` (`MapLayer`); o mapa do jogo só pinta por `paintLayers`. De baixo para cima:
+
+| Camada | O que tem |
+| --- | --- |
+| `base` | ruas, verde, água, a luz do dia, a rota do Modo Viagem, nomes das ruas |
+| `climateGround` | cobertura das ruas (neve, gelo, fuligem, água, dunas), poças, crateras, marcas queimadas, brasas, velas no chão, manchas, runas, pegadas, enfeites do chão |
+| `shadows` | pares de sombra da Lua Dupla, Aura, alcance de toque, rastros do Radar |
+| `creatures`, `sparks`, `materials` | Ecos e Espíritos; Fagulhas; materiais |
+| `walkers`, `cars` | passantes e ciclistas; carros e barcos |
+| `player` | Familiar, Conjurador (ou o carro do Modo Viagem), retorno visual |
+| `air` | arco-íris, olho do furacão, redemoinho, prédios da Maré, vultos da Neblina, Procissão em pé |
+| `climateScreen` | raios e quedas, gotas, flocos, o tom de cor, véu nas bordas |
+| `hud` | marcas do Radar na borda (o resto do HUD é widget) |
+
+O tom de cor do clima é da camada de tela: cobre o mapa e quem está nele por igual. Nada do clima pinta só as entidades nem as deixa de fora. `ClimateGround.paint` desenha o chão e deixa as sombras e o que é do ar para `paintShadows` e `paintAir`. Zona nova: se for alta, o estilo entra em `airZoneStyles`.
+
+## Formas das marcas (0.17.2)
+
+Toda marca no chão usa `blobRows(hash, raio)`: linhas em pixel de arte de um contorno com ruído. O hash da marca (uid e índice, ou a posição) escolhe a família (6), a rotação, o alongamento, a irregularidade e o tamanho. Só desenho: o ponto, o raio de efeito e a duração continuam os do mundo.
+
+| Marca | Forma |
+| --- | --- |
+| poça, poça ácida, carmim, prismática, de gelo, água da zona do Dilúvio | `blobRows` com o tamanho do hash; pontos molhados no começo |
+| cratera | buraco irregular, terra revirada em volta, brilho irregular por dentro |
+| marca queimada (raio, raio violeta), brasa | mancha irregular pequena; miolo com outro hash |
+| mancha de cinza, fuligem, sombra de nuvem, duna-zona, miragem | mancha irregular com franja mais rala (dois degraus) |
+| sombra do Sol Negro, brilho, olhar, runa | mancha irregular no lugar do círculo |
+| vela no chão | cera derretida irregular, toco alto ou baixo, chama às vezes torta |
+| duna na rua | `duneOutline`: afina nas pontas, lado do vento mais largo, borda ondulada |
+
+## Cobertura das ruas (0.17.2)
+
+A cobertura segue a linha da rua do pacote visual (largura da classe, curvas), nunca a grade de células. Pontas e esquinas redondas. A borda tem três degraus de largura (o degradê curto) e pontilhado em pixel dos dois lados e em volta das pontas (`edgeDither`, preso à rua pelo hash). Vale para neve, gelo, fuligem e água do Dilúvio, e para o recorte das ruas na neve do chão. Acima de 220 ruas na tela, só o degradê. O corte reto da 0.17.1 vinha das pontas quadradas e das esquinas em quina do traço, mais visíveis nas vielas sem saída.
+
+## Depois do Silêncio (0.17.2)
+
+`ClimateWorld.trafficClock` volta à hora real no fim da parada. `trafficResync` (função só do tempo) dá, por `traffic_resync_s` (60 s), o relógio de quem estava parado (de onde parou, `traffic_resync_speed` = 1,25 vez mais rápido) e a mistura de 0 a 1 do tráfego da hora. O desenho mostra os dois: os antigos se desfazem pela costura do Véu, os da hora se formam. Sem saltos.
+
+## Climas sem data (0.17.2)
+
+| Clima | Quando |
+| --- | --- |
+| Sol Negro, Chuva Carmim | só nos eclipses visíveis (raro de propósito) |
+| Lua Dupla | pela astronomia (lua cheia no perigeu) |
+| Vento das Fendas, Tempestade de Ecos | Noite das Fendas, no calendário do Véu com data a definir (`clima.json` `calendar_pending`); até lá, só pelo debug |
+
 ## Efeitos sem alvo
 
 Espécies Elétrica, Terra, Sombra, Espectral, Feérica, Luz, Metal, Digital, Dracônica, Carmesim e Antiga; rumores do fórum; Exposição ao Véu; microfendas; Fendas; Corrompidas; escavação; INPE; NOAA; temporadas de panteão; puxar Fagulhas no tornado.
