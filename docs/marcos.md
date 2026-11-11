@@ -421,3 +421,17 @@ Segue o GDD rev 336 ("Simulações do mundo"; o texto entrou no commit `f726cd7`
 ### Medido no PC
 
 - Campo de água: 6 a 8 ms por tile z15 (uma vez por tile, guardado). Montar o relevo: uma leitura de 1,4 MB ao abrir.
+
+### Conferido no moto g54 (2026-11-11, APK 0.19.0+30 com a chave de release, instalado por cima da 0.18.0, save mantido)
+
+Com o simulador de GPS (Taquaral e Centro de Campinas), climas forçados pelo debug.
+
+- **Relevo no debug:** o mapa de calor no Taquaral, de 715 m no alto da tela a 708 m embaixo, com a altura de cada célula.
+- **Dilúvio (Taquaral):** a rua ao lado do lago alaga (com um carro virado barco), com a borda irregular do campo; as ruas mais altas em volta ficam secas.
+- **Chuva e abrigo (Centro, densidade "lotado"):** vídeo de 30 s: ao abrir o mapa na chuva, os passantes correm pela calçada e param na esquina do comércio; os carros seguem. Passantes parados no abrigo também numa captura.
+- **Pombos (praça no Centro):** o bando aparece no gramado e levanta voo quando o avatar chega; no vídeo eles são pequenos (uns 12 por 6 pixels de tela), mesmo depois de aumentados.
+- **Eco de Água** visto perto de uma esquina na chuva.
+- **Orçamento:** passo da simulação do tráfego com 302 carros e uns 320 passantes: 421 µs em média (último 262 µs). O teto somado de 4 ms vale com folga para o que foi medido. **Não medidos no aparelho:** o campo de água (uma vez por tile; 6 a 8 ms no PC), o véu da neblina por quadro, pombos e folhas.
+- **Corrigido durante a conferência:** a densidade forçada do debug não valia para a primeira leva de agentes ao abrir o mapa.
+- **Não visto no aparelho:** a neblina num vale de manhã (o relógio do aparelho estava no meio da tarde, com o sol alto, e não mexi no relógio do debug), poças formando nas baixadas (na chuva forçada não havia nenhuma na tela nos dois lugares), o movimento de um Eco Passivo e de uma Fagulha até o redemoinho acompanhados de perto, as folhas ao vento num clima de vento, e a comparação com um lugar que alaga de verdade (a rua alagada no Taquaral fica ao lado do lago; a Av. Norte-Sul não foi visitada). Estão cobertos por teste.
+- Tela de bloqueio e app em primeiro plano conferidos antes de cada captura e durante as gravações.

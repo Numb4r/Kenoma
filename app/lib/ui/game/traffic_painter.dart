@@ -115,6 +115,7 @@ class TrafficPainter {
     String? outfit,
     String? climateId,
     double windRad = 0,
+    double? forcedDensity,
   }) {
     lastDrawn = 0;
     lastBoats = 0;
@@ -125,7 +126,7 @@ class TrafficPainter {
     if (visual.pack.version < 2) return; // o pacote antigo não tem a mão única
     final t = tUtcExact ?? tUtc.toDouble();
     final (l, top, r, b) = cam.visibleBounds(view.width, view.height);
-    final sim = _simFor(seed);
+    final sim = _simFor(seed)..forcedDensity = forcedDensity; // antes de povoar: a primeira leva já vem na densidade do debug
     final hour = localHour(tUtc, lonDeg);
     final density = sim.config.carDensityIn(speedMult);
     sim.center(px, py, metersPerCell, left: l, top: top, right: r, bottom: b, hour: hour, density: density);
@@ -215,7 +216,7 @@ class TrafficPainter {
   void paintBirds(ui.Canvas canvas) {
     final f = _birdFrame;
     if (f == null) return;
-    final u = math.max(2.0, (f.pxPerM * 0.16).roundToDouble());
+    final u = math.max(3.0, (f.pxPerM * 0.3).roundToDouble()); // maior que o pombo de verdade: senão some no chão
     for (final flock in birds.flocks.values) {
       for (final b in flock.birds) {
         final (sx, sy) = f.cam.cellToScreen(b.x, b.y, f.view.width, f.view.height);
@@ -224,12 +225,12 @@ class TrafficPainter {
         if (b.height > 0) {
           canvas.drawRect(ui.Rect.fromLTWH(x - u, sy.roundToDouble(), u * 2, u), _fill..color = kOutline.withValues(alpha: 0.25));
           final up = (b.phase * 9).floor().isEven;
-          canvas.drawRect(ui.Rect.fromLTWH(x - u * 2, y + (up ? -u : 0), u, u), _fill..color = const ui.Color(0xFFC9CEDD));
+          canvas.drawRect(ui.Rect.fromLTWH(x - u * 2, y + (up ? -u : 0), u, u), _fill..color = const ui.Color(0xFFFFFFFF));
           canvas.drawRect(ui.Rect.fromLTWH(x + u, y + (up ? -u : 0), u, u), _fill);
         }
         final peck = b.height == 0 && (b.phase * 3).floor() % 4 == 0;
-        canvas.drawRect(ui.Rect.fromLTWH(x - u, y - u, u * 2, u), _fill..color = const ui.Color(0xFF9AA0B4));
-        canvas.drawRect(ui.Rect.fromLTWH(x + (dir > 0 ? u : -u * 2), y - (peck ? u : u * 2), u, u), _fill..color = const ui.Color(0xFF6F7690));
+        canvas.drawRect(ui.Rect.fromLTWH(x - u, y - u, u * 2, u), _fill..color = const ui.Color(0xFFC9CEDD));
+        canvas.drawRect(ui.Rect.fromLTWH(x + (dir > 0 ? u : -u * 2), y - (peck ? u : u * 2), u, u), _fill..color = const ui.Color(0xFF5E6478));
       }
     }
   }
