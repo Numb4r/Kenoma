@@ -763,6 +763,35 @@ Medidor tipo sanidade que sobe com tempo em Fendas, jogo noturno, magias e proxi
 
 Coleção principal do personagem. Cada grimório é um livro com páginas espalhadas por Fendas, dungeons, rumores e invasões. Páginas soltas ensinam receitas ou fragmentos de lore, e o livro completo libera um ritual, uma magia ou uma especialização avançada. Há grimórios temáticos por panteão.
 
+### Instrumentos e canções
+
+O Conjurador toca instrumentos do Véu, no espírito da Canção das Tempestades de Ocarina of Time. Cada instrumento tem cinco notas, tocadas em cinco botões grandes que aparecem na tela, e a canção certa é uma sequência de seis a oito notas. Tocou certo, a melodia completa toca de volta e o efeito acontece; errou, nada acontece além do som. Também dá para tocar livre, sem objetivo.
+
+Instrumentos são achados ou fabricados e entram como app do celular, que vira o instrumento na tela. Exemplos: um apito de barro, primeiro instrumento, achado no início; um berimbau, ligado ao Xamã Urbano; um diapasão, ligado ao Tecnomante; uma flauta de osso, ligada ao Selador. As canções valem em qualquer instrumento, mas cada escola toca melhor a sua: duração maior ou espera menor.
+
+Canções são aprendidas, nunca compradas: o mentor ensina algumas, rumores do fórum apontam lugares de memória onde uma melodia está escrita, Lendas e Guardiões de Lugar ensinam a deles, e presenciar um clima raro deixa o jogador "ouvir" a canção dele e anotá-la no Grimório.
+
+| Canção | Efeito |
+| --- | --- |
+| Canção da Chuva | chama chuva em volta do jogador |
+| Canção do Sol | limpa o céu em volta do jogador |
+| Canção do Vento | chama vento e empurra as Fagulhas na direção do jogador |
+| Canção da Calma | Ariscos param de fugir e Agressivos se acalmam por alguns minutos |
+| Canção do Despertar | acorda Ocultos a até 60 m, sem precisar do Radar |
+| Canção do Caminho | aponta o pé do arco-íris ou o evento de clima mais próximo |
+| Canção de Ninar | a próxima sintonia começa com a resistência mais fraca |
+| Canções de ritual | revelam um espaço ??? ou acalmam a fase de pressão |
+| Duetos | dois jogadores juntos tocam metades da mesma canção, por Bluetooth, para efeitos que um só não alcança |
+
+Regras do clima tocado:
+
+- O clima chamado por canção é uma bolha pessoal: só o jogador que tocou o vê, num raio de cerca de 150 m e por uma janela de 20 a 30 minutos. Como os spawns já são individuais, isso não quebra o determinismo entre amigos; num dueto a bolha vale para os dois.
+- Só climas nativos podem ser chamados por canção comum. Climas de outras regiões e místicos pedem canções raras, aprendidas em eventos, e algumas só funcionam na data do evento.
+- Uma canção de clima por dia, com espera longa. Nenhuma canção substitui um clima forçado por evento.
+- Tocar chama a atenção: cada canção sobe um pouco a Exposição ao Véu, e as canções místicas sobem muito. Algumas melodias em Aklo são proibidas e atraem Os Que Escutam.
+
+Fase 2, com um primeiro recorte de um instrumento e três canções (Chuva, Calma e Despertar) antes do resto. O áudio dos instrumentos é instrumental, sem letra.
+
 ### Rituais de mundo
 
 Diferentes do ritual de captura, são ações com preparação e materiais (giz, velas, sal) que alteram o mundo localmente por um tempo. Exemplos incluem invocar uma espécie, banir Ecos corrompidos após colapso de Fenda, inverter dia e noite num raio pequeno e acalmar uma Fenda para ela não crescer.
