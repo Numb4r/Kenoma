@@ -36,6 +36,10 @@ class WindLeaves {
 
   double _u() => _rng.nextFloat();
 
+  /// O que o vento leva agora: `leaf` (folhas e papéis), `smoke` (fumaça), `soot` (fuligem, que nasce nas avenidas) ou
+  /// `sand` (areia).
+  String style = 'leaf';
+
   void update(double dt, LaneGraph? streets, double headingRad, double speed, double t, double mpc, double l, double top, double r, double b) {
     if (speed <= 0) {
       leaves.clear();
@@ -48,7 +52,18 @@ class WindLeaves {
       final lf = Leaf()
         ..kind = _rng.nextInt(4)
         ..life = 6 + _u() * 10;
-      if (first) {
+      if (style == 'soot' && streets != null) {
+        // A fuligem nasce nas avenidas (até seis tentativas de achar uma na tela) e o vento a leva.
+        lf
+          ..x = l + _u() * w
+          ..y = top + _u() * h;
+        for (var k = 0; k < 6 && streets.streetRank(lf.x, lf.y) < 2; k++) {
+          lf
+            ..x = l + _u() * w
+            ..y = top + _u() * h;
+        }
+        lf.life = 3 + _u() * 5;
+      } else if (first) {
         lf
           ..x = l + _u() * w
           ..y = top + _u() * h;

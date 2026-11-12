@@ -212,6 +212,7 @@ class ClimateCover {
     bool melting = false,
     double windRad = 0,
     int hour = 12,
+    double duneMps = 0.02,
   }) {
     if (amount <= 0) return;
     final streets = _streets(l, top, r, b, at);
@@ -225,7 +226,18 @@ class ClimateCover {
       final w = _w(line.roadClass, mpc);
       final key = (tx, ty, i);
       var pts = pts0;
-      if (cover.kind == StreetCoverKind.sand) pts = spanOf(pts, cover.duneSpan(seed, key, window, lv));
+      if (cover.kind == StreetCoverKind.sand) {
+        // A duna anda devagar pela rua, para o lado do vento, enquanto o clima dura; no fim da rua ela se amontoa.
+        final span = cover.duneSpan(seed, key, window, lv);
+        var len = 0.0;
+        for (var k = 1; k < pts0.length; k++) {
+          len += (pts0[k] - pts0[k - 1]).distance;
+        }
+        final along = (pts0.last.dx - pts0.first.dx) * math.sin(windRad) - (pts0.last.dy - pts0.first.dy) * math.cos(windRad);
+        final shift = (along >= 0 ? 1 : -1) * duneMps * math.max(0.0, t - window * 10800.0) / math.max(1.0, len * mpc);
+        final wSpan = span.$2 - span.$1, a = (span.$1 + shift).clamp(0.0, 1 - wSpan);
+        pts = spanOf(pts, (a, a + wSpan));
+      }
       if (pts.length < 2) continue;
       switch (cover.kind) {
         case StreetCoverKind.flood:

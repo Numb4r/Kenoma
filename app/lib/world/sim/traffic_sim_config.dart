@@ -38,7 +38,9 @@ class TrafficSimConfig {
     this.climateWalkerFloor = 0.3,
     this.shelterNearM = 20,
     this.runMult = 2.4,
-    this.windMps = const {'wind': 3, 'gale': 7, 'storm': 3, 'dry_dust': 3, 'sandstorm': 6, 'blizzard': 4, 'tornado': 8, 'rift_wind': 5},
+    this.windMps = const {'wind': 3, 'gale': 7, 'storm': 3, 'dry_dust': 3, 'sandstorm': 6, 'blizzard': 4, 'tornado': 8, 'rift_wind': 5, 'smoke': 1.5, 'smog': 1.5},
+    this.windStyle = const {'smoke': 'smoke', 'smog': 'soot', 'sandstorm': 'sand', 'dry_dust': 'sand'},
+    this.duneMps = 0.02,
     this.leaves = 40,
     this.loiter = const {'shop': 3, 'bar': 4, 'school': 6, 'square': 2, 'bus': 2},
     this.busShare = 0.04,
@@ -87,6 +89,8 @@ class TrafficSimConfig {
       shelterNearM: n('shelter_near_m', d.shelterNearM),
       runMult: n('run_mult', d.runMult),
       windMps: m('wind_mps', d.windMps),
+      windStyle: {...d.windStyle, for (final e in ((j['wind_style'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as String},
+      duneMps: n('dune_mps', d.duneMps),
       leaves: n('leaves', d.leaves.toDouble()).round(),
       loiter: m('loiter', d.loiter),
       busShare: n('bus_share', d.busShare),
@@ -145,6 +149,10 @@ class TrafficSimConfig {
   /// A força do vento local (m/s) em cada clima de vento, e quantas folhas e papéis ele leva pela tela.
   final Map<String, double> windMps;
   final int leaves;
+
+  /// O que o vento leva em cada clima (`smoke`, `soot`, `sand`; o resto leva folhas), e a que velocidade as dunas andam.
+  final Map<String, String> windStyle;
+  final double duneMps;
 
   /// Quanta gente fica parada em cada tipo de lugar na hora dele: comércio de dia, bar à noite, escola na entrada e na
   /// saída, sentada na praça, esperando no ponto de ônibus.

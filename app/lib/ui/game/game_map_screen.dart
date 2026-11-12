@@ -668,6 +668,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       if (sim == null || g == null) return 'A simulação ainda não começou (sem posição ou com o Tráfego do Véu desligado).';
       return '${sim.cars.length} carros, ${sim.walkers.length} passantes · passo ${sim.avgStepUs.round()} µs (último ${sim.lastStepUs} µs) · '
           '${g.nodes.length} esquinas, ${g.nodes.where((n) => n.signal).length} semáforos, ${g.nodes.where((n) => n.entry).length} entradas · grafo em ${g.buildUs ~/ 1000} ms\n'
+          '${() {
+            final w = assets.waterFor(data.schedule.select(tools.clock.nowUtc).epoch);
+            return 'Água no relevo: ${w?.builds ?? 0} tiles calculados, último em ${(w?.lastBuildMs ?? 0).toStringAsFixed(1)} ms (uma vez por tile)';
+          }()} · Véu da neblina: ${game.fogUs.round()} µs por quadro · Bichos e vento: ${game.lifeUs.round()} µs por quadro\n'
           'Cobertura por campo: ${game.climateGround.cover?.fieldDrawn ?? 0} blocos na tela, ${game.climateGround.cover?.fieldBuilds ?? 0} refeitos, último em ${(game.climateGround.cover?.fieldLastMs ?? 0).toStringAsFixed(1)} ms (fora do quadro)';
     };
     final accessTol = data.travel.accessTolM / metersPerCell(game.playerLat);

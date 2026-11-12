@@ -193,6 +193,10 @@ class GameMapGame extends FlameGame {
   TrafficSim? get trafficSimState => _traffic.sim;
   double _frameDt = 1 / 60;
 
+  /// O custo médio por quadro do véu da neblina e dos bichos e do vento (debug), em microssegundos.
+  double fogUs = 0;
+  double get lifeUs => _traffic.lifeUs;
+
   /// Os spawns e o que o jogador alcança. `null` nos testes que só querem o mapa.
   final WorldView? worldView;
 
@@ -501,7 +505,11 @@ class GameMapGame extends FlameGame {
         climateGround.paintAir();
         // A neblina presa ao mapa, mais densa nas baixadas (a camada leve da tela vem depois).
         final cw = wv?.field.climate;
-        if (cw != null && _hasFix && rainFx()) paintFogVeil(canvas, view, cam, cw, cw.schedule.select(nowUtc()).epoch, climateShown().id, nowUtc());
+        if (cw != null && _hasFix && rainFx()) {
+          final sw = Stopwatch()..start();
+          paintFogVeil(canvas, view, cam, cw, cw.schedule.select(nowUtc()).epoch, climateShown().id, nowUtc());
+          fogUs = fogUs * 0.95 + sw.elapsedMicroseconds * 0.05;
+        }
         canvas.restore(); // fim do tremor: daqui para cima é tela
       },
       // O clima da tela por cima do mapa e de quem está nele, por igual, e por baixo do HUD: cobre a tela toda.

@@ -646,6 +646,9 @@ class LaneGraph {
     return d == null ? null : (d.$1, d.$2);
   }
 
+  /// A classe da rua na célula (0 caminho, 1 local, 2 secundária, 3 principal), ou -1 fora das ruas.
+  int streetRank(double x, double y) => _dir[x.floor() * 4194304 + y.floor()]?.$3 ?? -1;
+
   /// Aplica o clima das ruas: [state] diz se a rua fechou ou alagou.
   void applyStreets(bool Function(GhostLine)? closed, bool Function(GhostLine)? flooded) {
     for (final e in edges) {

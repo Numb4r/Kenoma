@@ -38,6 +38,10 @@ class WaterField {
   final int cacheTiles;
   final LinkedHashMap<(int, int), WaterTile?> _tiles = LinkedHashMap();
 
+  /// Quantos tiles já foram calculados e quanto levou o último (ms): cada tile é calculado uma vez e guardado.
+  int builds = 0;
+  double lastBuildMs = 0;
+
   /// O campo do tile z15 ([tx], [ty]), ou `null` onde não há relevo (lá vale o sorteio antigo pela seed).
   WaterTile? tile(int tx, int ty) {
     final key = (tx, ty);
@@ -45,7 +49,10 @@ class WaterField {
       final t = _tiles.remove(key);
       return _tiles[key] = t;
     }
+    final sw = Stopwatch()..start();
     final t = _build(tx, ty);
+    builds++;
+    lastBuildMs = sw.elapsedMicroseconds / 1000;
     _tiles[key] = t;
     while (_tiles.length > cacheTiles) {
       _tiles.remove(_tiles.keys.first);

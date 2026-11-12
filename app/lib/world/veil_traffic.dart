@@ -49,7 +49,13 @@ class Ghost {
     required this.phaseT,
     required this.travelledM,
     this.line,
+    this.sitting = false,
+    this.dog = false,
+    this.bus = false,
   });
+
+  /// Vida urbana (só desenho): sentado na praça, passeando com cachorro, e o carro que é ônibus.
+  final bool sitting, dog, bus;
 
   /// Identidade estável: a mesma nos dois aparelhos e em todos os quadros.
   final int id;

@@ -61,6 +61,43 @@ void main() {
     expect(b.takeoffs, 1, reason: 'longe do avatar, não espantam de novo');
   });
 
+  test('gatos nas garagens, morcegos à noite nas praças, maritacas de manhã e no fim da tarde', () {
+    final pts = TrafficPack.of([
+      (kind: TrafficPointKind.square, x: 1000.0, y: 2000.0),
+      for (var i = 0; i < 30; i++) (kind: TrafficPointKind.entry, x: 995.0 + i * 0.37, y: 1996.0 + i * 0.29),
+    ]);
+    final b = BirdFlocks(points: pts);
+    void tick(double hour, double time) => b.updateCritters(0.1, time, hour, 1000, 2000, mpc, 997, 1995, 1003, 2005);
+    tick(12, 0);
+    expect(b.cats.length, inInclusiveRange(4, 16), reason: 'um a cada três entradas');
+    expect(b.bats, isEmpty, reason: 'de dia não há morcego');
+    expect(b.parrots, isEmpty);
+    tick(22, 10);
+    expect(b.bats.length, 3);
+    final at = b.bats.first;
+    tick(22, 10.1);
+    final d = math.sqrt(math.pow((b.bats.first.$1 - at.$1) * mpc, 2) + math.pow((b.bats.first.$2 - at.$2) * mpc, 2));
+    expect(d, inExclusiveRange(0, 3), reason: 'voam, sem pular de lugar');
+    for (final p in b.bats) {
+      expect(math.sqrt(math.pow((p.$1 - 1000) * mpc, 2) + math.pow((p.$2 - 2000) * mpc, 2)), lessThan(20), reason: 'em volta da praça');
+    }
+    // Maritacas às 7 h: o bando nasce fora da tela, cruza e some do outro lado.
+    var seen = 0, bornOut = true;
+    for (var i = 0; i < 900; i++) {
+      final had = b.parrots.isEmpty;
+      tick(7, 20 + i * 0.1);
+      if (had && b.parrots.isNotEmpty) bornOut = b.parrots.every((p) => p.x < 997 || p.x > 1003 || p.y < 1995 || p.y > 2005);
+      if (b.parrots.any((p) => p.x > 997 && p.x < 1003 && p.y > 1995 && p.y < 2005)) seen++;
+    }
+    expect(bornOut, isTrue);
+    expect(seen, greaterThan(5), reason: 'cruzaram a tela');
+    b.parrots.clear();
+    for (var i = 0; i < 900; i++) {
+      tick(12, 200 + i * 0.1);
+    }
+    expect(b.parrots, isEmpty, reason: 'ao meio-dia não passam');
+  });
+
   test('bando não nasce na vista; o que ficou longe some fora dela', () {
     final b = BirdFlocks(points: squares);
     b.update(0.1, 5000, 5000, mpc, nowhere); // longe das praças

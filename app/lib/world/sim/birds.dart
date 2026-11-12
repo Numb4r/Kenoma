@@ -124,4 +124,74 @@ class BirdFlocks {
   }
 
   bool _started = false;
+
+  // ---------------------------------------------------------------- gatos, morcegos e maritacas
+
+  /// Os gatos nos muros: um a cada três entradas de garagem do OSM por perto, sentado ao lado. Fixos; só nascem e somem
+  /// fora da vista.
+  final Map<(int, int), (double, double)> cats = {};
+
+  /// As maritacas: um bando que atravessa a tela de manhã cedo e no fim da tarde. Posição (células) e velocidade (m/s).
+  final List<Bird> parrots = [];
+  double _pvx = 0, _pvy = 0, _parrotIn = 6;
+
+  /// Os morcegos de agora (posição em células): à noite, em volta das praças e parques. Função do tempo, sem estado.
+  final List<(double, double)> bats = [];
+
+  /// Avança os outros bichos: [hour] é a hora local; ([l], [t], [r], [b]) é a tela em células.
+  void updateCritters(double dt, double time, double hour, double px, double py, double mpc, double l, double t, double r, double b) {
+    final src = points;
+    if (src == null) return;
+    bool seen(double x, double y) => x >= l - 1 && x <= r + 1 && y >= t - 1 && y <= b + 1;
+    final range = rangeM / mpc;
+    final near = src.pointsIn(px - range, py - range, px + range, py + range);
+    for (final p in near) {
+      if (p.kind != TrafficPointKind.entry) continue;
+      final key = ((p.x * 64).round(), (p.y * 64).round());
+      if ((key.$1 * 31 + key.$2) % 3 != 0 || cats.containsKey(key) || (_catsStarted && seen(p.x, p.y))) continue;
+      cats[key] = (p.x + 2.5 / mpc, p.y - 1.5 / mpc);
+    }
+    _catsStarted = true;
+    cats.removeWhere((_, c) => ((c.$1 - px).abs() > range * 1.3 || (c.$2 - py).abs() > range * 1.3) && !seen(c.$1, c.$2));
+    // Morcegos: três por praça, em voltas tortas de 6 a 14 m, das 19 h às 5 h.
+    bats.clear();
+    if (hour >= 19 || hour < 5) {
+      for (final p in near) {
+        if (p.kind != TrafficPointKind.square) continue;
+        for (var k = 0; k < 3; k++) {
+          final ph = (p.x * 7 + p.y * 3 + k * 2.1) % 6.28, rr = (6 + 4 * k + 2 * math.sin(time * 0.7 + ph)) / mpc;
+          bats.add((p.x + rr * math.cos(time * (0.9 + 0.2 * k) + ph), p.y + rr * math.sin(time * (1.3 + 0.15 * k) + ph * 2)));
+        }
+      }
+    }
+    // Maritacas: das 6 às 8 h e das 16 às 18 h, um bando cruza a tela de tempos em tempos, de fora a fora.
+    final parrotHour = (hour >= 6 && hour < 8) || (hour >= 16 && hour < 18);
+    if (parrots.isEmpty) {
+      _parrotIn -= dt;
+      if (parrotHour && _parrotIn <= 0) {
+        _parrotIn = 25 + _u() * 30;
+        final a = _u() * 2 * math.pi, cx = (l + r) / 2, cy = (t + b) / 2, d = math.sqrt((r - l) * (r - l) + (b - t) * (b - t)) / 2 + 2;
+        _pvx = math.cos(a) * 9;
+        _pvy = math.sin(a) * 9;
+        for (var i = 0; i < 6 + _rng.nextInt(4); i++) {
+          // Em V frouxo atrás do primeiro.
+          final back = (i + 1) ~/ 2 * 1.6 / mpc, side = (i.isEven ? 1 : -1) * ((i + 1) ~/ 2) * 1.2 / mpc;
+          parrots.add(Bird(cx - math.cos(a) * (d + back) - math.sin(a) * side, cy - math.sin(a) * (d + back) + math.cos(a) * side, _u() * 6)
+            ..height = 1
+            ..left = _pvx < 0);
+        }
+      }
+    } else {
+      for (final p in parrots) {
+        p
+          ..x += _pvx * dt / mpc
+          ..y += _pvy * dt / mpc
+          ..phase += dt;
+      }
+      final far = math.sqrt((r - l) * (r - l) + (b - t) * (b - t)) + 6;
+      if (parrots.every((p) => (p.x - (l + r) / 2).abs() + (p.y - (t + b) / 2).abs() > far)) parrots.clear();
+    }
+  }
+
+  bool _catsStarted = false;
 }

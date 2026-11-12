@@ -139,29 +139,37 @@ class TrafficPainter {
       lanes.applyStreets(streetState == null ? null : (line) => streetState(line, t) == StreetState.blocked, streetState == null ? null : (line) => streetState(line, t) == StreetState.flooded);
     }
     sim.raining = outfit == 'rain'; // os climas de chuva: quem está na rua corre para a marquise
+    sim.matchDay = config.matchAt(tUtc);
     if (!paused) sim.step(dt.clamp(0.0, 0.1), hour: hour, density: density, speedMult: speedMult, walkMult: walkMult);
-    if (!paused) birds.update(dt.clamp(0.0, 0.1), px, py, metersPerCell, (x, y) => x >= l - 1 && x <= r + 1 && y >= top - 1 && y <= b + 1);
+    final lifeSw = Stopwatch()..start();
+    if (!paused) {
+      birds.update(dt.clamp(0.0, 0.1), px, py, metersPerCell, (x, y) => x >= l - 1 && x <= r + 1 && y >= top - 1 && y <= b + 1);
+      birds.updateCritters(dt.clamp(0.0, 0.1), sim.time, hour, px, py, metersPerCell, l, top, r, b);
+    }
     _birdFrame = (view: view, cam: cam, pxPerM: cam.pixelsPerCell / metersPerCell);
+    _birdT = sim.time;
     // O vento local: só nos climas de vento, na força de cada um.
     final wind = config.windMps[climateId] ?? 0;
     if (climateId != _windId) {
       _windId = climateId;
       leaves.start(sim.time);
     }
+    leaves.style = config.windStyle[climateId] ?? 'leaf';
     if (!paused) leaves.update(dt.clamp(0.0, 0.1), lanes, windRad, wind, sim.time, metersPerCell, l, top, r, b);
+    lifeUs = lifeUs * 0.95 + lifeSw.elapsedMicroseconds * 0.05;
     _refreshWear(sim);
     final m = trafficMarginM / metersPerCell;
     for (final c in sim.cars) {
       if (c.x < l - m || c.x > r + m || c.y < top - m || c.y > b + m) continue;
       final (sx, sy) = cam.cellToScreen(c.x, c.y, view.width, view.height);
       if (sx < -40 || sy < -40 || sx > view.width + 40 || sy > view.height + 40) continue;
-      _cars.add((Ghost(id: c.id, model: c.model, palette: c.palette, x: c.x, y: c.y, heading: c.yaw, speedMps: c.v, phase: GhostPhase.alive, phaseT: 1, travelledM: c.odo, line: c.edge.line), sx, sy));
+      _cars.add((Ghost(id: c.id, model: c.model, palette: c.palette, x: c.x, y: c.y, heading: c.yaw, speedMps: c.v, phase: GhostPhase.alive, phaseT: 1, travelledM: c.odo, line: c.edge.line, bus: c.bus), sx, sy));
     }
     for (final w in sim.walkers) {
       if (w.x < l - m || w.x > r + m || w.y < top - m || w.y > b + m) continue;
       final (sx, sy) = cam.cellToScreen(w.x, w.y, view.width, view.height);
       if (sx < -40 || sy < -40 || sx > view.width + 40 || sy > view.height + 40) continue;
-      _walkers.add((Ghost(id: w.id, model: w.model, palette: w.palette, x: w.x, y: w.y, heading: w.heading, speedMps: w.v, phase: GhostPhase.alive, phaseT: 1, travelledM: w.odo, line: w.edge.line), sx, sy));
+      _walkers.add((Ghost(id: w.id, model: w.model, palette: w.palette, x: w.x, y: w.y, heading: w.heading, speedMps: w.v, phase: GhostPhase.alive, phaseT: 1, travelledM: w.odo, line: w.edge.line, sitting: w.sitting, dog: w.loiter == null && w.model == GhostModel.adult && w.id % 13 == 0), sx, sy));
     }
     // Dentro de cada camada, do mais ao norte ao mais ao sul da tela.
     _walkers.sort((a, b) => a.$3.compareTo(b.$3));
@@ -191,6 +199,42 @@ class TrafficPainter {
     wearStamp++;
   }
 
+  /// O ônibus fantasma: comprido, com a faixa de janelas, visto de cima e girando com a rua.
+  void _bus(ui.Canvas canvas, Ghost g, double sx, double sy, double rotation, double pxPerM, double night) {
+    final len = carM * 2.2 * pxPerM, wid = 2.6 * pxPerM, u = math.max(2.0, (pxPerM * 0.3).roundToDouble());
+    canvas.save();
+    canvas.translate(sx, sy);
+    canvas.rotate(g.heading + rotation);
+    canvas.drawRect(ui.Rect.fromCenter(center: ui.Offset.zero, width: len + u, height: wid + u), _fill..color = kOutline);
+    canvas.drawRect(ui.Rect.fromCenter(center: ui.Offset.zero, width: len, height: wid), _fill..color = const ui.Color(0xFF5B4BA8));
+    canvas.drawRect(ui.Rect.fromCenter(center: ui.Offset.zero, width: len - 2 * u, height: wid - 2 * u), _fill..color = const ui.Color(0xFF7B6BD0));
+    for (var x = -len / 2 + 2 * u; x < len / 2 - 3 * u; x += 3 * u) {
+      canvas.drawRect(ui.Rect.fromLTWH(x, -wid / 2 + u, 2 * u, u), _fill..color = kSignal.withValues(alpha: night > 0.5 ? 0.95 : 0.6));
+      canvas.drawRect(ui.Rect.fromLTWH(x, wid / 2 - 2 * u, 2 * u, u), _fill);
+    }
+    canvas.drawRect(ui.Rect.fromLTWH(len / 2 - 2 * u, -wid / 2 + u, u, wid - 2 * u), _fill..color = const ui.Color(0xFFE8E4F4).withValues(alpha: 0.8));
+    canvas.restore();
+    if (night > 0.5) {
+      final a = g.heading + rotation;
+      canvas.drawCircle(ui.Offset(sx + math.cos(a) * len * 0.55, sy + math.sin(a) * len * 0.55), u * 2, _fill..color = kSignal.withValues(alpha: 0.35));
+    }
+  }
+
+  /// O cachorro do passeio: um corpinho de quatro pixels atrás do dono, do lado para onde ele anda, com a guia.
+  void _dog(ui.Canvas canvas, Ghost g, double sx, double sy, double rotation, double pxPerM) {
+    final u = math.max(2.0, (pxPerM * 0.2).roundToDouble()), a = g.heading + rotation;
+    final dx = (sx - math.cos(a) * pxPerM * 1.1 - math.sin(a) * pxPerM * 0.5).roundToDouble(), dy = (sy - math.sin(a) * pxPerM * 1.1 + math.cos(a) * pxPerM * 0.5).roundToDouble();
+    final step = (g.travelledM / 0.3).floor().isEven ? 0.0 : u, right = math.cos(a) >= 0;
+    canvas.drawLine(ui.Offset(sx, sy - pedestrianM * pxPerM * 0.45), ui.Offset(dx, dy - u * 2), ui.Paint()..color = kOutline.withValues(alpha: 0.6)..strokeWidth = 1);
+    canvas.drawRect(ui.Rect.fromLTWH(dx - u * 1.5, dy - u * 2, u * 3, u), _fill..color = const ui.Color(0xFFB8875A));
+    canvas.drawRect(ui.Rect.fromLTWH(dx + (right ? u * 1.5 : -u * 2.5), dy - u * 3, u, u * 2), _fill);
+    canvas.drawRect(ui.Rect.fromLTWH(dx - u * 1.5 + step, dy - u, u, u), _fill..color = const ui.Color(0xFF7A5536));
+    canvas.drawRect(ui.Rect.fromLTWH(dx + u * 0.5 - step, dy - u, u, u), _fill);
+  }
+
+  /// O custo médio dos bichos e do vento por quadro (atualizar e desenhar), em microssegundos.
+  double lifeUs = 0;
+
   /// As folhas e os papéis que o vento local leva pelo chão (cenário).
   late final WindLeaves leaves = WindLeaves(count: config.leaves);
   String? _windId;
@@ -199,40 +243,95 @@ class TrafficPainter {
     final f = _birdFrame;
     if (f == null || leaves.leaves.isEmpty) return;
     final u = math.max(2.0, (f.pxPerM * 0.14).roundToDouble());
-    const colors = [0xFF6FA35A, 0xFFD08A3C, 0xFFE8E4F4, 0xFF8A6A4A];
+    const leaf = [0xFF6FA35A, 0xFFD08A3C, 0xFFE8E4F4, 0xFF8A6A4A], smoke = [0xFF8E8A9A, 0xFFA9A5B5, 0xFF75717F, 0xFF9B97A8];
+    const soot = [0xFF1A1424, 0xFF2A2236, 0xFF1A1424, 0xFF3A3248], sand = [0xFFE0C27A, 0xFFF2DCA4, 0xFFC9A862, 0xFFE0C27A];
+    final style = leaves.style;
+    final colors = switch (style) { 'smoke' => smoke, 'soot' => soot, 'sand' => sand, _ => leaf };
     for (final lf in leaves.leaves) {
       final (sx, sy) = f.cam.cellToScreen(lf.x, lf.y, f.view.width, f.view.height);
       if (sx < -10 || sy < -10 || sx > f.view.width + 10 || sy > f.view.height + 10) continue;
       final flat = (lf.spin).floor().isEven; // gira: ora de lado, ora de frente
-      canvas.drawRect(ui.Rect.fromLTWH(sx.roundToDouble(), sy.roundToDouble(), flat ? u * 2 : u, u), _fill..color = ui.Color(colors[lf.kind]).withValues(alpha: 0.85));
+      final x = sx.roundToDouble(), y = sy.roundToDouble(), c = ui.Color(colors[lf.kind]);
+      switch (style) {
+        case 'smoke': // um tufo: três pixels grandes que se abrem enquanto somem
+          final a = (lf.life / 8).clamp(0.0, 0.5);
+          canvas.drawRect(ui.Rect.fromLTWH(x, y, u * 3, u * 2), _fill..color = c.withValues(alpha: a));
+          canvas.drawRect(ui.Rect.fromLTWH(x + u, y - u, u * 2, u), _fill);
+        case 'soot':
+          canvas.drawRect(ui.Rect.fromLTWH(x, y, u, u), _fill..color = c.withValues(alpha: 0.8));
+        case 'sand':
+          canvas.drawRect(ui.Rect.fromLTWH(x, y, flat ? u * 3 : u * 2, u), _fill..color = c.withValues(alpha: 0.7));
+        default:
+          canvas.drawRect(ui.Rect.fromLTWH(x, y, flat ? u * 2 : u, u), _fill..color = c.withValues(alpha: 0.85));
+      }
     }
   }
 
   /// Os pombos das praças (cenário local).
   late final BirdFlocks birds = BirdFlocks(points: points);
   ({ui.Size view, MapCamera cam, double pxPerM})? _birdFrame;
+  double _birdT = 0;
 
   /// Os pombos do quadro preparado: no chão, um corpinho cinza que cisca; no ar, as asas batendo e a sombra embaixo.
   void paintBirds(ui.Canvas canvas) {
     final f = _birdFrame;
     if (f == null) return;
-    final u = math.max(3.0, (f.pxPerM * 0.3).roundToDouble()); // maior que o pombo de verdade: senão some no chão
+    final sw = Stopwatch()..start();
+    final u = math.max(4.0, (f.pxPerM * 0.5).roundToDouble()); // bem maior que o pombo de verdade: senão some no chão
+    bool off(double sx, double sy) => sx < -40 || sy < -40 || sx > f.view.width + 40 || sy > f.view.height + 40;
+    void bird(Bird b, int body, int wing, double unit, {bool always = false}) {
+      final (sx, sy) = f.cam.cellToScreen(b.x, b.y, f.view.width, f.view.height);
+      if (off(sx, sy)) return;
+      final lift = b.height * unit * 7, x = sx.roundToDouble(), y = (sy - lift).roundToDouble();
+      // A sombra fica no chão: embaixo do bicho parado, para trás e menor quando ele sobe.
+      canvas.drawRect(ui.Rect.fromLTWH(x - unit, sy.roundToDouble(), unit * (b.height > 0.5 ? 1.5 : 2), unit * 0.5), _fill..color = kOutline.withValues(alpha: 0.3));
+      if (b.height > 0 || always) {
+        // Bater de asas: três quadros (para cima, abertas, para baixo).
+        final k = (b.phase * 12).floor() % 3, wy = k == 0 ? -unit : (k == 1 ? 0.0 : unit * 0.5);
+        canvas.drawRect(ui.Rect.fromLTWH(x - unit * 2, y - unit + wy, unit, unit), _fill..color = ui.Color(wing));
+        canvas.drawRect(ui.Rect.fromLTWH(x + unit, y - unit + wy, unit, unit), _fill);
+        if (k == 1) {
+          canvas.drawRect(ui.Rect.fromLTWH(x - unit * 3, y - unit, unit, unit * 0.5), _fill);
+          canvas.drawRect(ui.Rect.fromLTWH(x + unit * 2, y - unit, unit, unit * 0.5), _fill);
+        }
+      }
+      final peck = b.height == 0 && (b.phase * 3).floor() % 4 == 0;
+      canvas.drawRect(ui.Rect.fromLTWH(x - unit, y - unit, unit * 2, unit), _fill..color = ui.Color(body));
+      canvas.drawRect(ui.Rect.fromLTWH(x + (b.left ? -unit * 2 : unit), y - (peck ? unit : unit * 2), unit, unit), _fill..color = const ui.Color(0xFF5E6478));
+    }
+
     for (final flock in birds.flocks.values) {
       for (final b in flock.birds) {
-        final (sx, sy) = f.cam.cellToScreen(b.x, b.y, f.view.width, f.view.height);
-        if (sx < -30 || sy < -30 || sx > f.view.width + 30 || sy > f.view.height + 30) continue;
-        final lift = b.height * u * 7, x = sx.roundToDouble(), y = (sy - lift).roundToDouble(), dir = b.left ? -1.0 : 1.0;
-        if (b.height > 0) {
-          canvas.drawRect(ui.Rect.fromLTWH(x - u, sy.roundToDouble(), u * 2, u), _fill..color = kOutline.withValues(alpha: 0.25));
-          final up = (b.phase * 9).floor().isEven;
-          canvas.drawRect(ui.Rect.fromLTWH(x - u * 2, y + (up ? -u : 0), u, u), _fill..color = const ui.Color(0xFFFFFFFF));
-          canvas.drawRect(ui.Rect.fromLTWH(x + u, y + (up ? -u : 0), u, u), _fill);
-        }
-        final peck = b.height == 0 && (b.phase * 3).floor() % 4 == 0;
-        canvas.drawRect(ui.Rect.fromLTWH(x - u, y - u, u * 2, u), _fill..color = const ui.Color(0xFFC9CEDD));
-        canvas.drawRect(ui.Rect.fromLTWH(x + (dir > 0 ? u : -u * 2), y - (peck ? u : u * 2), u, u), _fill..color = const ui.Color(0xFF5E6478));
+        bird(b, 0xFFC9CEDD, 0xFFFFFFFF, u);
       }
     }
+    // Maritacas: verdes, sempre batendo asa, mais alto.
+    for (final p in birds.parrots) {
+      bird(p, 0xFF4FA83A, 0xFF7ED957, u * 0.8, always: true);
+    }
+    // Gatos: sentados, com as orelhas e o rabo que balança de vez em quando.
+    for (final c in birds.cats.entries) {
+      final (sx, sy) = f.cam.cellToScreen(c.value.$1, c.value.$2, f.view.width, f.view.height);
+      if (off(sx, sy)) continue;
+      final x = sx.roundToDouble(), y = sy.roundToDouble(), k = c.key.$1 & 3, flick = ((f.pxPerM + (_birdT * 1.3 + k)).floor() % 5 == 0) ? -u : 0.0;
+      final fur = const [0xFF2A2236, 0xFFD08A3C, 0xFFE8E4F4, 0xFF75717F][k];
+      canvas.drawRect(ui.Rect.fromLTWH(x - u, y, u * 2.5, u * 0.5), _fill..color = kOutline.withValues(alpha: 0.3));
+      canvas.drawRect(ui.Rect.fromLTWH(x - u, y - u * 2, u * 2, u * 2), _fill..color = ui.Color(fur));
+      canvas.drawRect(ui.Rect.fromLTWH(x - u, y - u * 3, u * 0.7, u), _fill);
+      canvas.drawRect(ui.Rect.fromLTWH(x + u * 0.3, y - u * 3, u * 0.7, u), _fill);
+      canvas.drawRect(ui.Rect.fromLTWH(x + u, y - u + flick, u, u * 0.6), _fill);
+      canvas.drawRect(ui.Rect.fromLTWH(x - u * 0.6, y - u * 1.6, u * 0.4, u * 0.4), _fill..color = kSignal);
+    }
+    // Morcegos: um V escuro que abre e fecha.
+    for (final (i, m) in birds.bats.indexed) {
+      final (sx, sy) = f.cam.cellToScreen(m.$1, m.$2, f.view.width, f.view.height);
+      if (off(sx, sy)) continue;
+      final x = sx.roundToDouble(), y = sy.roundToDouble(), open = ((_birdT * 10).floor() + i).isEven, w = u * 0.8;
+      canvas.drawRect(ui.Rect.fromLTWH(x - w * 0.5, y, w, w), _fill..color = const ui.Color(0xFF1A1424));
+      canvas.drawRect(ui.Rect.fromLTWH(x - w * (open ? 2.5 : 1.5), y - (open ? w : 0), w * (open ? 2 : 1), w * 0.6), _fill);
+      canvas.drawRect(ui.Rect.fromLTWH(x + w * 0.5, y - (open ? w : 0), w * (open ? 2 : 1), w * 0.6), _fill);
+    }
+    lifeUs += sw.elapsedMicroseconds * 0.05;
   }
 
   /// Debug: o raio simulado, as bordas, as entradas e a luz de cada semáforo (um ponto por acesso, na cor da fase).
@@ -277,7 +376,20 @@ class TrafficPainter {
       } else {
         // Gelo (Chuva congelante): o carro derrapa, balançando a frente.
         final wobble = f.skid && g.kind == GhostKind.car ? math.sin(f.t * 2.3 + (g.id & 0xff)) * 0.35 : 0.0;
-        drawGhost(canvas, g, sx, sy, f.rotation + wobble, f.pxPerM, f.night, outfit: f.outfit);
+        if (g.bus) {
+          _bus(canvas, g, sx, sy, f.rotation, f.pxPerM, f.night);
+        } else if (g.sitting) {
+          // Sentado: só o tronco aparece, mais baixo, com o banco embaixo.
+          final u = math.max(2.0, f.pxPerM * 0.25);
+          canvas.drawRect(ui.Rect.fromLTWH(sx - u * 2.5, sy - u, u * 5, u), _fill..color = kOutline.withValues(alpha: 0.5));
+          canvas.save();
+          canvas.clipRect(ui.Rect.fromLTWH(sx - 60, sy - 200, 120, 200 - u));
+          drawGhost(canvas, g, sx, sy + pedestrianM * f.pxPerM * 0.3, f.rotation, f.pxPerM, f.night, outfit: f.outfit);
+          canvas.restore();
+        } else {
+          drawGhost(canvas, g, sx, sy, f.rotation + wobble, f.pxPerM, f.night, outfit: f.outfit);
+          if (g.dog) _dog(canvas, g, sx, sy, f.rotation, f.pxPerM);
+        }
       }
       lastDrawn++;
     }

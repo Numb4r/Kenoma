@@ -14,8 +14,8 @@ import 'dart:typed_data';
 import 'climate_form.dart';
 import 'street_cover.dart' show StreetCoverKind;
 
-/// Pixels do campo por célula z21 (~0,55 m cada) e o lado do bloco, em células e em pixels.
-const int coverRes = 32, coverBlockCells = 4, coverSize = coverRes * coverBlockCells;
+/// Pixels do campo por célula z21 (~0,37 m cada, perto do pixel de arte) e o lado do bloco, em células e em pixels.
+const int coverRes = 48, coverBlockCells = 4, coverSize = coverRes * coverBlockCells;
 
 /// As superfícies da máscara, na ordem em que a neve chega: a grama e o chão (com os telhados) primeiro, depois as
 /// calçadas, os caminhos, as ruas locais e por último as avenidas. Na água não acumula nada.
