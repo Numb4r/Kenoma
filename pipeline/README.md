@@ -56,6 +56,18 @@ Mesmo extrato da época 0 (MD5 acima), mesmas regras de bioma. Município inteir
 
 Total de 11,99 MB. O oráculo do fallback (`app/test/world/fallback/`, fixtures de `export_fixture.py`) compara a grade do Dart com os pacotes de Campinas e de São Paulo.
 
+## Campinas com os biomas Iluminado e Sagrado (época 11)
+
+Mesmo extrato da época 0 (MD5 `d4778499e2017add7ee7879dd3b64b3c`, conferido em 2026-11-12). `shared/biomes.json` ganhou dois biomas com `since_epoch: 11`: Iluminado (id 5: avenidas `primary` e `secondary` com 14 m de cada lado, `landuse` e `building` de comércio, `amenity=marketplace` e as áreas de `shop=mall|supermarket|department_store`; mesma prioridade do Urbano e pintado depois dele) e Sagrado (id 6: `amenity=place_of_worship|grave_yard`, `landuse=cemetery|religious` e os prédios de igreja, capela, catedral e templo; a maior prioridade). O `build_region.py --epoch N` só usa os biomas com `since_epoch` até N: `--epoch 0` continua dando o `campinas_e0.bin` byte a byte (SHA-256 `559f3551…`, conferido numa pasta à parte antes de gerar o novo).
+
+| Arquivo | Bytes | SHA-256 |
+| --- | --- | --- |
+| `app/assets/regions/campinas_e11.bin` | 439.957 | `52a09041894f7301209cc707ae759fe241e9a09c09f50856ddafa7d996367244` |
+
+Na grade inteira: Vazio 53,6%, Verde 30,6%, Residencial 6,8%, Urbano 5,2% (era 7,1%), Iluminado 2,0%, Água 1,6%, Sagrado 0,1%. O pacote visual não muda (as ruas são as mesmas).
+
+**Fora desta época:** São Paulo segue com `sao_paulo_e5.bin` (sem Iluminado nem Sagrado) até um `sao_paulo_e11.bin` ser gerado e publicado no `regions.json` assinado; os blocos do fallback (Overpass) ignoram os biomas com `since_epoch` e seguem com os cinco de sempre em todas as épocas.
+
 ## Arquivo de rota (0.17.0, fora das épocas)
 
 `build_noaccess.py --region <região>` lê do mesmo extrato da época 0 (MD5 `d4778499e2017add7ee7879dd3b64b3c`, conferido em 2026-11-09) as vias do pacote visual (as mesmas de `highway_class`) com `access`, `foot`, `bicycle`, `vehicle` ou `motor_vehicle` em `no` ou `private`, as escadas e calçadas sem `bicycle=yes|designated|permissive`, e os viadutos (`bridge`). Só a rota do Modo Viagem lê: é individual, não muda o mundo, não entra em época e pode ser regerado sem época nova. O pacote visual continua o mesmo (o SHA dele é mundo desde a época 2). Regras e formato no cabeçalho do script; o fallback tira os mesmos bits das tags da Overpass (`accessMask` em `osm_rules.dart`).

@@ -15,17 +15,17 @@ O que o GDD não define e foi escolhido aqui foi aprovado na revisão da 0.17.0.
 | --- | --- | --- | --- | --- | --- |
 | Limpo (`clear`) | nada | reflexos de sol no chão de dia; poças de chuva anterior secando | reflexos de sol | rastros do Radar duram 1,25× | — |
 | Sol forte (`strong_sun`) | tom lavado | miragens; asfalto tremendo em faixas presas ao chão | miragem | Ecos de Fogo nascem nas miragens | — |
-| Nublado (`cloudy`) | tom cinza | sombras de nuvem andando (antes na tela) | sombra de nuvem | Ecos de Sombra nascem nas sombras (Sombra sem espécie: sem alvo) | — |
+| Nublado (`cloudy`) | tom cinza | sombras de nuvem andando (antes na tela) | sombra de nuvem | Ecos de Sombra nascem nas sombras (da época 11: o Umbrel) | — |
 | Garoa (`drizzle`) | gotas finas | poças pequenas nas ruas, formando aos poucos | poças pequenas (pixel, três variantes) | poças pequenas dão água pura | — |
 | Chuva (`rain`) | chuva, tom azul | poças nas ruas; brilho no chão (antes na tela) | poças em pixel (redonda, comprida, dois lóbulos), da cor do asfalto mais escura e azulada: pontos molhados que crescem em 30 min, reflexo claro de leve, anéis de gota enquanto chove, secam em até 1 h depois | poças dão água pura e fazem nascer Ecos de Água | — |
-| Tempestade (`storm`) | chuva inclinada, clarão | raio, marca queimada que fica 30 min; poças | marca queimada | Eco carregado no ponto do raio, sem aviso (só a faísca em volta dele no mapa) | — |
+| Tempestade (`storm`) | chuva inclinada, clarão | raio, marca queimada que fica 30 min; poças | marca queimada | Eco carregado no ponto do raio, sem aviso (só a faísca em volta dele no mapa): da época 11 é o Humoth; até a 10, um Sootling | — |
 | Granizo (`hail`) | pedras quicando | pedrinhas brancas espalhadas no chão | granizo no chão | cristal de gelo coletável (época 8; até a 7, água pura) | — |
-| Arco-íris (`rainbow`) | só um tom claro (o arco saiu da tela) | da época 8: o arco de pé num ponto do mapa, girando com ele, e o pé brilhando | pé do arco | Fragmento de luz no pé e chance de Feérico (Feérico sem espécie: sem alvo); o Prisma de orvalho aponta o pé | depois da chuva, por sorteio (ver Arco-íris) |
+| Arco-íris (`rainbow`) | só um tom claro (o arco saiu da tela) | da época 8: o arco de pé num ponto do mapa, girando com ele, e o pé brilhando | pé do arco | Fragmento de luz no pé e chance de Feérico (da época 11: o Sprigglet); o Prisma de orvalho aponta o pé | depois da chuva, por sorteio (ver Arco-íris) |
 | Neblina (`fog`) | véu branco nas bordas | vultos parados no chão, longe do jogador (antes na tela) | vultos | visão dos Ecos até 60 m | — |
 | Frio (`cold`) | sopro | geada nas áreas do mapa de manhã | geada (pontos brancos de manhã) | rastros duram 2× | — |
 | Vento (`wind`) | folhas cruzando | folhas paradas no chão | folhas no chão | Fagulhas derivam com o vento | — |
 | Vendaval (`gale`) | lixo voando | galhos e papéis no chão | galhos e papéis | Fagulhas derivam mais; papéis coletáveis viram rumores (rumores: sem alvo) | — |
-| Poeira seca (`dry_dust`) | partículas amarelas | redemoinhos andando pela rua | redemoinho e trilha de poeira | Ecos de Terra no caminho (Terra sem espécie: sem alvo) | — |
+| Poeira seca (`dry_dust`) | partículas amarelas | redemoinhos andando pela rua | redemoinho e trilha de poeira | Ecos de Terra no caminho (da época 11: o Pebblet) | — |
 | Fumaça de queimada (`smoke`) | céu laranja, cinza caindo | zonas de cinza | zona de cinza | Ecos de Fogo nas zonas | INPE quando online: sem alvo |
 | Geada forte (`hard_frost`, novo) | tom frio, sopro | chão branco; poças viram gelo | poças congeladas | cristal de gelo em cada poça congelada; passantes fantasmas mais lentos | — |
 | Trovoada seca (`dry_thunder`, novo) | céu laranja, clarão, sem chuva | raio e brasa no ponto | brasa por 5 min, depois marca queimada | a brasa solta Fagulhas de Fogo por 5 min; Eco carregado como na Tempestade | — |
@@ -38,7 +38,7 @@ O que o GDD não define e foi escolhido aqui foi aprovado na revisão da 0.17.0.
 | Tornado (`tornado`) | tom escuro, folhas | funil andando (o funil saiu da tela) e trilha de destroços | trilha de destroços | destroços coletáveis pela trilha (sucata e ervas); puxar Fagulhas: sem alvo | events.json / debug |
 | Aurora (`aurora`) | céu ondulando | faixas verdes e violeta no chão | luz da aurora no chão | tolerância da sintonia 1,25× | NOAA: sem fonte (events.json) |
 | Chuva ácida (`acid_rain`) | gotas verdes | poças esverdeadas | poças verdes | sucata extra no Urbano | events.json / debug |
-| Chuva de meteoros (`meteor_shower`) | estrelas cadentes | risco termina num impacto: tremor leve, poeira e cratera | cratera que brilha 2 h e some aos poucos em mais 1 h | Fagulhas raras no impacto; material raro na cratera; chance de Dracônico (Dracônico sem espécie: sem alvo) | calendário de chuvas de meteoros |
+| Chuva de meteoros (`meteor_shower`) | estrelas cadentes | risco termina num impacto: tremor leve, poeira e cratera | cratera que brilha 2 h e some aos poucos em mais 1 h | Fagulhas raras no impacto; material raro na cratera; chance de Dracônico (da época 11: o Wyrmlet, só para o Conjurador de nível 10 em diante; a cratera também solta Fagulhas Dracônicas) | calendário de chuvas de meteoros |
 | Neve do Véu (`veil_snow`) | flocos violeta maiores e densos | brilho onde o floco tocou o chão | brilho do floco | o floco vira Pó de Essência por pouco tempo | — |
 | Chuva Carmim (`crimson_rain`) | gotas vermelhas | poças vermelhas | poças vermelhas | poças dão Essência carmesim (`item.essence.crimson`); Carmesins: sem alvo | Lua Carmim: eclipse lunar total visto do centro da região do clima (ver Eclipses) |
 | Chuva de Fagulhas (`spark_rain`) | brasas caindo | brasa apagando onde caiu | brasas no chão | Fagulhas caem do céu | Festa Junina |
@@ -46,11 +46,11 @@ O que o GDD não define e foi escolhido aqui foi aprovado na revisão da 0.17.0.
 | Estática (`static`) | glitch, pixels | pixels falhando no chão | pixels no chão | sintonia com ruído, menos ao Tecnomante | NOAA: sem fonte (events.json) |
 | Silêncio (`silence`) | cores sem saturação | o tráfego do Véu para no lugar | fantasmas parados (pendente: aguardando vídeo) | Ecos não fogem; Exposição ao Véu: sem alvo | Os Que Escutam (events.json) |
 | Cinzas do Véu (`veil_ash`) | cinza violeta caindo | manchas de cinza violeta | manchas de cinza | nas manchas nascem Ecos de nível +1 a +3 (provisório até existir a espécie ou o sistema: no lugar das Corrompidas) | — |
-| Procissão na névoa (`fog_procession`) | névoa, vinheta | fila de 12 a 20 figuras encapuzadas (tamanho de passante, túnica clara com contorno escuro, vela com luz fraca na mão) a 0,8 m/s pelas ruas, numa rota pelo grafo costurado até o Eco do fim; visível até 120 m | velas acesas no chão por onde a fila passou, por 30 min, e a trilha até o Eco | visão até 60 m; no fim do rastro nasce um Eco de nível alto (provisório até existir a espécie ou o sistema: Espectral sem espécie) | Finados |
+| Procissão na névoa (`fog_procession`) | névoa, vinheta | fila de 12 a 20 figuras encapuzadas (tamanho de passante, túnica clara com contorno escuro, vela com luz fraca na mão) a 0,8 m/s pelas ruas, numa rota pelo grafo costurado até o Eco do fim; visível até 120 m | velas acesas no chão por onde a fila passou, por 30 min, e a trilha até o Eco | visão até 60 m; no fim do rastro nasce um Eco de nível alto: da época 11, um Espectral (o Wisplet); até a 10, de qualquer tipo | Finados |
 | Vento das Fendas (`rift_wind`) | fiapos violeta | riscos violeta no chão na direção do vento | riscos no chão | Fagulhas derivam; apontar a Fenda: sem Fendas | Fenda crescendo: sem Fendas |
 | Céu Invertido (`inverted_sky`) | chuva subindo | sombras de coisas flutuando | sombras flutuando | Fagulhas somem no céu em 3 min | — |
 | Maré do Véu (`veil_tide`) | tom violeta leve | o chão ondula (antes na tela); prédios de outra era | prédios translúcidos | prédios dão Ectoplasma (provisório até existir a espécie ou o sistema); spawns antigos: sem alvo | — |
-| Sol Negro (`black_sun`) | dia escuro | sombras invertidas (antes na tela), formando em 10 min | sombras claras no chão (enfeite espalhado e as zonas do mundo, agora claras) | sombras dão Ectoplasma (provisório até existir a espécie ou o sistema); Sombra em dobro: sem alvo | eclipse solar visto do centro da região do clima, parcial conta (ver Eclipses) |
+| Sol Negro (`black_sun`) | dia escuro | sombras invertidas (antes na tela), formando em 10 min | sombras claras no chão (enfeite espalhado e as zonas do mundo, agora claras) | sombras dão Ectoplasma e, da época 11, Ecos de Sombra (o Umbrel, peso ×3 no clima); o Wyrmlet aparece debaixo do eclipse | eclipse solar visto do centro da região do clima, parcial conta (ver Eclipses) |
 | Garoa Prismática (`prismatic_drizzle`) | gotas coloridas | poças com reflexo em cores | poças prismáticas | chance de Brilhante 2× | — |
 | Chuva congelante (`freezing_rain`, novo) | gotas brancas | ruas brilhando de gelo; galhos caídos | gelo nas ruas | galhos coletáveis (madeira; sem o item: ervas); carros fantasmas derrapam e andam devagar | events.json / debug |
 | Furacão (`hurricane`, novo) | chuva forte | bandas girando em volta do olho; o olho atravessa o mapa | olho e bandas | dentro do olho nasce um Eco raro; tráfego do Véu mais lento | events.json |
@@ -122,7 +122,7 @@ O sorteio e o clima real só trazem os nativos. O calendário do Véu do GDD (re
 - **Quando.** Não sai mais do sorteio da estação (os pesos de `rainbow` e a regra `after` saíram da época 8). Na primeira janela de 3 h sem chuva depois de uma com chuva (`rain`, `storm`, `drizzle`, `hail`), na região do clima (tile z12), nasce um arco com 25% de chance, no começo da janela, e dura de 20 a 40 min. Sorteio por `hash(seed, época, região, janela)`. Com o clima Arco-íris forçado (feed ou debug), vale a janela inteira.
 - **Onde.** O pé fica num ponto da seed a até 400 m do centro da região, levado à rua mais próxima (até 35 m; tenta 8 pontos). É fixo enquanto o arco dura. Os números ficam na peça `rainbow` do clima `rainbow` da época 8 (`chance`, `duration_s`, `within_m`, `after`, `radius_m`): decidem o mundo, então não estão no `balance.json`.
 - **Desenho.** Objeto do mapa (`app/lib/ui/game/rainbow_painter.dart`), entre o chão e os spawns: a base vai de um pé ao outro na direção da seed, gira e dá zoom com o mapa, e a altura sobe na tela. Aparece em 90 s e some nos últimos 5 min. Raio, faixas, cores e esmaecer no `clima.json` (`rainbow_arc`), só desenho. A camada de tela `arc` saiu.
-- **Pé.** Uma zona de 8 m enquanto o arco dura: Fragmento de luz (`item.prism_shard`) e 30% de Feérico (sem espécie: sem alvo).
+- **Pé.** Uma zona de 8 m enquanto o arco dura: Fragmento de luz (`item.prism_shard`) e 30% de Feérico (da época 11, o Sprigglet; até a 10 o tipo não tinha espécie e nada nascia).
 - **Prisma de orvalho** (`item.dew_prism`). Bancada: 2 Água pura, 1 Fragmento de luz e 1 Cristal de gelo (`recipe.dew_prism`). No app Céu, "Usar Prisma de orvalho" mostra a distância e o rumo até o pé do arco ativo mais perto (até `prism_search_m`, 6 km, no `balance.json`) e gasta o prisma; sem arco ativo, não gasta. Código: `app/lib/world/dew_prism.dart`.
 - **Itens novos.** Cristal de gelo (`item.ice_crystal`: granizo e poças da Geada forte) e Fragmento de luz (`item.prism_shard`: pé do arco e, na época 8, as miragens do Sol forte, 25%). Os dois têm `since_epoch: 8` no `items.json`: nas épocas 6 e 7 as peças continuam com o fallback de antes (água pura, Ectoplasma), e o que essas épocas geram não muda.
 - **Debug.** "Efeito do clima no toque" > Arco-íris solta um arco com o pé no ponto tocado; "Ir até o pé do arco-íris" teleporta o GPS simulado até o pé ativo mais perto. Como o menu de debug fecha o mapa, o pedido fica guardado e o teleporte acontece quando o mapa abre de novo; os arcos soltos no toque sobrevivem a essa ida e volta (`DebugForce.tapArcs`).
@@ -248,4 +248,25 @@ O tráfego comum deixou de sair da seed: é a simulação local de `world/sim/` 
 
 ## Efeitos sem alvo
 
-Espécies Elétrica, Terra, Sombra, Espectral, Feérica, Luz, Metal, Digital, Dracônica, Carmesim e Antiga; rumores do fórum; Exposição ao Véu; microfendas; Fendas; Corrompidas; escavação; INPE; NOAA; temporadas de panteão; puxar Fagulhas no tornado.
+Espécies Carmesim e Antiga (as nove famílias da fase 1 entraram na época 11: ver abaixo); rumores do fórum; Exposição ao Véu; microfendas; Fendas; Corrompidas; escavação; INPE; NOAA; temporadas de panteão; puxar Fagulhas no tornado.
+
+## Famílias da fase 1 (época 11, 0.20.0)
+
+As nove famílias dão alvo aos efeitos por tipo que o clima já declarava. As espécies têm `since_epoch: 11` em `creatures.json`: nas épocas 6 a 10 as peças do clima continuam com o que geravam (o fallback do dado ou nada), e o mundo delas não muda. Na época 11 o dado chama o Feérico de `fae` (era `fairy`, sem espécie).
+
+| Família | Tipo | Onde o clima pesa (`climate.climates.*.spawn`, época 11) | Peças do clima que a geram |
+| --- | --- | --- | --- |
+| Hum | Elétrico | Tempestade e Trovoada seca ×2, Estática e Tornado ×1,3 | o Eco carregado do raio (Tempestade 8%, Trovoada seca 5%) |
+| Clod | Terra | Tempestade de areia ×2, Poeira seca ×1,8, Granizo ×1,3 | os redemoinhos da Poeira seca |
+| Rust | Metal | Chuva ácida ×2, Smog ×1,4, Chuva congelada ×1,3 | — |
+| Glare | Luz | Arco-íris e Aurora ×2, Sol forte ×1,8 (novo na 11), Chuva de meteoros ×1,3; Sol Negro ×0,6 | — |
+| Shade | Sombra | Sol Negro ×3, Nublado, Neve do Véu e Chuva de runas ×1,3 | as sombras de nuvem do Nublado e as sombras claras do Sol Negro |
+| Wisp | Espectral | Procissão ×3, Neblina, Nevasca e Neve do Véu ×2, Frio, Geada, Neve, Aurora, Silêncio, Vigília e Chuva de runas ×1,3 | o Eco do fim da Procissão |
+| Bit | Digital | Estática e Vigília ×2, Smog ×1,4 | — |
+| Sprig | Feérico | Céu Invertido ×2, Vendaval, Tornado e Furacão ×1,8, Arco-íris ×1,4, Vento ×1,3 | o pé do arco-íris (30%) |
+| Wyrm | Dracônico | só existe na tabela com Sol Negro, Chuva Carmim, Chuva de meteoros (peso cheio) e Vento das Fendas (metade) | a cratera do meteoro (30%) |
+
+Além do clima, a hora, a lua e o relevo mexem no peso de cada família (`eco_v2.conditions` da época 11, `core/spawn_conditions.dart`): Hum à noite ×3 (dia ×0,4), Glare de dia ×2 (noite ×0,1), Shade à noite ×3 (dia ×0,5), Sprig no crepúsculo real ×6 (fora dele ×0,15) e ×2,5 na lua cheia, Clod no alto de morro até ×3, Wisp no fundo de vale até ×2. O Wyrm só aparece para o Conjurador de nível 10 em diante.
+
+Ainda sem alvo depois da 0.20.0: os tipos `crimson` (Chuva Carmim) e `ancient` (Maré do Véu) do dado, que não são tipos do jogo; becos e marquises para a Shade (o OSM não os marca: vale o bioma Residencial e as sombras de nuvem); cicatrizes de Fenda para o Wyrm (não há Fendas).
+

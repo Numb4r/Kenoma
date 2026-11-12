@@ -486,3 +486,61 @@ Novos em `epoch9_world_test` (grupo "época 10": densidade das poças antes e de
 - **Medido no aparelho, por quadro:** tráfego 297 µs (120 carros, 70 passantes) e 113 µs (40 carros); véu da neblina 447 µs com neblina (14 µs sem); bichos e vento 73 a 87 µs. **Soma com neblina: menos de 1 ms**, contra o teto de 4 ms. Fora do quadro: bloco da cobertura (48 pixels por célula) 38,8 ms no isolate, 16 blocos na tela. **Uma vez por tile:** campo de água 12,9 a 30,1 ms, na thread do desenho (um tropeço de um ou dois quadros quando o jogador entra num tile z15 novo durante a chuva).
 - **Os Ecos Agressivos abrem a folha de encontro quando o avatar chega perto**; cancelei todas sem sintonizar. O que o simulador coletou entrou como debug, fora da Bolsa.
 - **Não visto:** as coisas novas de cenário desta versão (ônibus no ponto, gente no comércio e nos bares, gatos, morcegos, maritacas, fumaça, fuligem, areia, dunas andando) e os ciclistas nas ciclovias, que entraram depois das capturas.
+
+## Fase 1 · fatia 8 · Bestiário: nove famílias novas e a tela refeita (0.20.0)
+
+GDD rev 342. Versão 0.20.0+32, mesma chave de release. Save no schema 7.
+
+### O que muda o mundo (época 11, começa em 2026-11-12 16:00 UTC)
+
+- **Biomas Iluminado e Sagrado.** Não existiam nos pacotes de região (só Urbano, Verde, Água e Residencial). Entram em `shared/biomes.json` com `since_epoch: 11` e num pacote novo, `campinas_e11.bin`, gerado do mesmo extrato da época 0 (`pipeline/README.md`): Iluminado 2,0% da grade (avenidas e comércio), Sagrado 0,1% (igrejas e cemitérios). O `campinas_e0.bin` não foi tocado e sai byte a byte igual com `--epoch 0`.
+- **Nove famílias** (GDD, "Famílias da fase 1"), cada uma com Fagulha, Eco e Espírito: Hum (Elétrico), Clod (Terra), Rust (Metal), Glare (Luz), Shade (Sombra), Wisp (Espectral), Bit (Digital), Sprig (Feérico) e Wyrm (Dracônico). As espécies têm `since_epoch: 11`: o que as épocas 6 a 10 geram não muda.
+- **Tabelas por bioma:** nativas com peso 6 (Urbano: Soot, Hum, Rust; Verde: Frond, Clod, Sprig; Água: Rill; Residencial: Shade; Iluminado: Glare, Bit e Soot com 3; Sagrado: Wisp) e todas as outras com peso 1 em qualquer bioma. As Fagulhas seguem a mesma tabela, pelo tipo.
+- **Condições por família** (`eco_v2.conditions`, `core/spawn_conditions.dart`): a hora pelo sol (dia, noite, crepúsculo real a menos de 6° do horizonte), a lua cheia (90% da face), o relevo (alto de morro e fundo de vale, a medida da neblina) e o clima multiplicam o peso da família no sorteio, no começo da janela da célula. Os números estão em `docs/clima-auditoria.md`, "Famílias da fase 1". O Wyrm tem peso zero fora dos eclipses, da chuva de meteoros e do Vento das Fendas, e só aparece para o Conjurador de nível 10 em diante.
+- **Efeitos do clima que ganharam alvo:** o Eco carregado do raio é o Humoth, o do fim da Procissão é um Espectral, o pé do arco-íris dá Feérico, a cratera do meteoro dá Dracônico e Fagulhas Dracônicas; o Sol forte passa a pesar na Luz.
+- **Comportamentos:** só Passivo (92) e Oculto (8).
+
+### Sintonia
+
+- **12 tipos** (`capture/eco_type.dart`), com a tabela de vantagens do GDD na contenção (1,5 forte, 0,66 resistido) e na tolerância (o selo de tipo ganha contra todo tipo que o dele vence; cada forte do Círculo amplia o dial). Um selo de tipo para cada um dos 12, com receita.
+- **Padrões de resistência dos nove tipos novos** (`capture/type_patterns.dart`, números em `balance.json` `tuning.signal.phase1`): Terra com faixas pesadas no dial, Elétrico saltando entre 2 ou 3 frequências com arco, Metal com blindagem que só solta faísca, Luz com clarões e imagem residual, Sombra com a onda na tinta e o pulso fraco no dial, Espectral com a cópia cinza atrasada, Digital com cópias com glitch, Feérico invertendo o dial e trocando de padrão no meio, Dracônico somando um padrão a cada etapa. A mesma escala de intensidade, o mesmo teto de 20 s e as mesmas regras de lua e sobrenível dos três do MVP: com resistência forte (Conjurador 15 contra Eco 17) o jogador perfeito leva de 10 a 15 s em todos os 12 tipos.
+- **Debug:** a seção Captura lista as espécies por tipo; escolher uma abre a sintonia dela.
+
+### Bestiário
+
+- Tela refeita como no protótipo aprovado: por família (cartão com a linha de fusão, capturada, vista ou ???, e "Família ???" antes da primeira forma), grade por camada com filtro em folha (tipo, camada, estado, só pesquisa incompleta) e busca por nome, tipo e lugar.
+- **Detalhe da espécie** com quatro abas (Pesquisa, Sobre, Atributos, Sintonia), bolinhas de variante (bioma, Brilhante, Carmesim: preenchida, só contorno ou escura; tocar troca a arte), setas para a forma anterior e a seguinte, Marcar e Fundir.
+- **Pesquisa em cinco níveis** (`player/research.dart`, tarefas em `creatures.json`): capturar uma vez (Lore I), ver na hora ou no clima da família (Onde aparece), capturar em dois biomas (Atributos e Lore II), achar uma variante (tolerância ×1,05 na espécie, `balance.json` `research`), capturar cinco vezes (Lore III).
+- Os componentes (cartão de família, célula de espécie, folha de filtro, abas, etiqueta, botão) estão em `ui/menu/bestiary/bestiary_widgets.dart`, no tema do Design System. Os textos para revisão estão em `docs/textos-bestiario.md`.
+- **Sprites provisórios** desenhados no código (`ui/sprites/phase1_masks.dart` e `phase1_sprites.dart`): uma silhueta por forma das nove famílias (Eco e Espírito) e uma Fagulha para cada uma das 12, na cor do tipo.
+
+### Save
+
+Schema 7: o bestiário guarda quantas capturas, quando a espécie foi vista (hora e clima) e em que biomas foi capturada; as Fagulhas coletadas entram nele. A migração v6 para v7 é pura (`save/migrations.dart`) e foi testada num save gravado pelo código da 0.19.1 (`test/fixtures/save_v6_0191.json`): as capturadas entram com as que estão na coleção (pelo menos uma), as Fagulhas da Bolsa entram como coletadas, e a hora e os biomas dos encontros antigos começam do zero.
+
+### Restos da 0.19.1
+
+- **Água no relevo fora da thread do desenho:** no mapa do jogo o que pesa vai para um isolate; o bloco aparece sem água até o tile chegar, e nada derivado de um tile a caminho fica guardado. A Patrulha continua calculando na hora.
+- **Ciclovias desenhadas** a partir de `campinas_e0_cycle.bin`: linha de um pixel de arte, no ciano do sinal apagado (a ciclofaixa numa rua mais fraca que a ciclovia própria). Sem mudar o pacote visual nem a época.
+- **Sons no zero** e sem interruptor nos Ajustes até o desenho de som.
+- **Arisco e Agressivo saíram** (nas épocas antigas o sorteio é o mesmo e os dois valem como Passivo).
+
+### Do pedido, o que NÃO entrou nesta versão
+
+- **Habilidades de mapa sem efeito ainda** (o dado, as três faixas e o texto existem; na tela aparecem com "(em breve)"): Clod (material extra), Shade (visão à noite), Wisp (visão na neblina), Bit (Radar revela Ocultos) e Sprig (chance de variante). As de Hum (Radar), Rust (não gastar o selo na falha), Glare (tolerância de dia) e Wyrm (Essência extra) funcionam. A da Sprig mexe num sorteio do mundo (a variante sai de `hash(seed, época, célula, janela)`): do jeito que o GDD descreve, dois amigos veriam Ecos diferentes no mesmo lugar. Precisa de decisão.
+- **São Paulo e o fallback sem Iluminado e Sagrado:** São Paulo segue com o pacote da época 5 (um `sao_paulo_e11.bin` precisa ser gerado e publicado no `regions.json` assinado) e os blocos do fallback seguem com os cinco biomas.
+- **Becos e marquises** (Shade) e **cicatrizes de Fenda** (Wyrm): não há dado para isso.
+- **"Marcar" só marca:** a forma marcada fica destacada no Bestiário; ainda não puxa nada no mapa nem no Radar.
+- **A época 11 não está no feed assinado** (publicar é com o dono da chave).
+
+### Testes
+
+Novos: `capture/type_patterns_test` (um por padrão), `capture/eco_type_test` (a tabela dos 12 tipos na contenção e na tolerância), `core/spawn_conditions_test` (cada família nas condições dela, sem Wyrm antes do nível 10, épocas antigas iguais), `player/research_test` (pesquisa, estados, filtro, busca, bolinhas de variante), `ui/bestiary_screen_test` (as telas em 360×800, 412×915 e 480×1000), `save/migration_v7_test` e o grupo da água em fundo em `world/epoch9_world_test`.
+
+### No aparelho (2026-11-12, moto g54, APK 0.20.0+32 com a chave de release, instalado por cima da 0.19.1)
+
+- **Instalação:** `adb install -r` por cima da 0.19.1+31, sem desinstalar; o app abre.
+- **Debug, Captura:** a lista de espécies mostra as 27 (as nove famílias novas com os sprites provisórios); com Eco 17 e Conjurador 15 a resistência é 0,81.
+- **Sintonia do Humoth (Elétrico) pelo debug:** a mariposa, a onda e o arco do salto no ponto de leitura.
+- **Não conferido no aparelho:** o celular bloqueou no meio da sessão. Faltam as sintonias dos outros oito tipos, o Bestiário (famílias, grade com o filtro, as quatro abas do detalhe) e abrir o mapa para ver o save da 0.19.1 migrado, a água em fundo e as ciclovias. As telas do Bestiário e uma sintonia de cada tipo foram renderizadas no PC com as fontes do jogo para conferir o desenho.
+- Uma captura pegou um aviso de notificação de outro app por cima do Kenoma e foi apagada na hora; o script de captura agora descarta sozinho a captura que tiver um aviso por cima.
