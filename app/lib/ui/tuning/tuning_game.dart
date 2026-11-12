@@ -23,6 +23,7 @@ import '../colors.dart';
 import '../sprites/sprite_image.dart';
 import 'fx_painter.dart';
 import 'tuning_layout.dart';
+import '../../capture/type_patterns.dart';
 import 'tuning_painter.dart';
 import 'vibration_driver.dart';
 
@@ -161,6 +162,7 @@ class TuningGame extends FlameGame with DragCallbacks {
         showTarget: showTarget,
         hidden: hidden,
         fx: _fx(s),
+        typeFx: hidden ? TypeFx.none : s.signal.typeFxAt(s.t),
       ),
       hidden ? _neutral : _sprites[species.id],
     );
@@ -194,7 +196,8 @@ class TuningGame extends FlameGame with DragCallbacks {
     final last = _lastAngle;
     if (last == null) return;
     final angle = _layout.angleOf(Offset(event.canvasEndPosition.x, event.canvasEndPosition.y));
-    _dial = dialAfterTurn(_dial, angleDelta(last, angle));
+    // O Feérico inverte o sentido do dial de tempos em tempos.
+    _dial = dialAfterTurn(_dial, angleDelta(last, angle) * session.signal.pattern.dialSignAt(session.t));
     _lastAngle = angle;
   }
 

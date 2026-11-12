@@ -17,4 +17,13 @@ Color typeColor(EcoType t) => switch (t) {
       EcoType.fire => const Color(0xFFFF5A36),
       EcoType.water => const Color(0xFF4AA8FF),
       EcoType.plant => const Color(0xFF6BD36A),
+      EcoType.earth => const Color(0xFFC79A5B),
+      EcoType.electric => const Color(0xFFFFD84A),
+      EcoType.metal => const Color(0xFF9FB3C8),
+      EcoType.light => const Color(0xFFFFF3B0),
+      EcoType.shadow => const Color(0xFF6B5A8E),
+      EcoType.spectral => const Color(0xFFB8C4D6),
+      EcoType.digital => const Color(0xFF3DFFB0),
+      EcoType.fae => const Color(0xFFFF8FD8),
+      EcoType.draconic => const Color(0xFFD14B4B),
     };

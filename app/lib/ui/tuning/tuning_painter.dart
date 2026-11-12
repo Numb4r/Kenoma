@@ -10,10 +10,12 @@ import 'package:flutter/painting.dart' show TextAlign, TextPainter, TextSpan, Te
 import '../../capture/eco_type.dart';
 import '../../capture/fx/fx_params.dart';
 import '../../capture/fx/wave_geometry.dart';
+import '../../capture/type_patterns.dart';
 import '../colors.dart';
 import '../sprites/sprite_image.dart';
 import 'fx_painter.dart';
 import 'tuning_layout.dart';
+import 'type_fx_painter.dart';
 
 /// Foto do estado da sintonia, no instante de desenhar.
 class TuningView {
@@ -33,6 +35,7 @@ class TuningView {
     required this.showTarget,
     this.hidden = false,
     this.fx,
+    this.typeFx = TypeFx.none,
   });
 
   final double dial;
@@ -61,6 +64,9 @@ class TuningView {
 
   /// Efeitos da onda temática e do dial. `null` num teste que só confere o resto.
   final TuningFx? fx;
+
+  /// O padrão do tipo, nos nove da fase 1.
+  final TypeFx typeFx;
 }
 
 const String _font = 'Silkscreen';
@@ -172,8 +178,11 @@ void _waves(Canvas canvas, TuningLayout l, TuningView v) {
   final signalColor = v.hidden ? kDim : kSignal;
   final fx = v.fx;
   final split = v.hidden ? null : fx?.fire.split; // a onda partida entregaria o tipo
+  final tfx = v.hidden ? TypeFx.none : v.typeFx;
+  paintTypeUnder(canvas, r, tfx, v.type, (f) => wave((u) => waveTheta(f, u, scroll), triShape));
   if (split == null) {
-    canvas.drawPath(wave((u) => waveTheta(v.target, u, scroll), triShape), _stroke(signalColor, 3));
+    // O clarão da Luz apaga a onda real.
+    canvas.drawPath(wave((u) => waveTheta(v.target, u, scroll), triShape), _stroke(signalColor.withValues(alpha: 1 - tfx.flash), 3));
   } else {
     // O Fogo partiu a onda: a real fica à direita da queima e as iscas, cinza desde a queima, à
     // esquerda. A fronteira é uma linha vertical e rola com a onda.
@@ -191,6 +200,7 @@ void _waves(Canvas canvas, TuningLayout l, TuningView v) {
       }
     }
   }
+  if (!v.hidden) paintTypeOver(canvas, r, tfx, v.type, v.clock, aligned: v.aligned);
   canvas.drawPath(wave((u) => waveTheta(v.dial, u, scroll), math.sin), _stroke(kVeil, 3));
   // O tique do ponto de leitura: é aqui que o dial é comparado com a onda real.
   final readX = r.left + r.width * waveReadU;
@@ -224,6 +234,7 @@ void _dial(Canvas canvas, TuningLayout l, TuningView v) {
         _stroke(kSignal.withValues(alpha: 0.8), 6));
   }
 
+  if (!v.hidden) paintTypeDial(canvas, l, v.typeFx, v.target, v.clock);
   final fx = v.fx;
   if (fx != null) {
     paintRoots(canvas, l, fx.plant);

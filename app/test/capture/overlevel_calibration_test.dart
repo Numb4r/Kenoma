@@ -41,6 +41,7 @@ class Rates {
         EcoType.fire => fire,
         EcoType.water => water,
         EcoType.plant => plant,
+        _ => throw ArgumentError('a calibração do sobrenível é dos três do MVP'),
       };
 
   @override
@@ -79,14 +80,14 @@ void main() {
 
     test('sem diferença de nível, os dois selam sempre, em qualquer tipo', () {
       for (final player in ['típico', 'perfeito']) {
-        for (final t in EcoType.values) {
+        for (final t in EcoType.mvp) {
           expect(cell(player, 0).of(t), greaterThanOrEqualTo(99), reason: '$player ${t.name}');
         }
       }
     });
 
     test('até o gap 5 não há sobrenível: o jogador perfeito sela sempre', () {
-      for (final t in EcoType.values) {
+      for (final t in EcoType.mvp) {
         expect(cell('perfeito', 5).of(t), greaterThanOrEqualTo(99), reason: t.name);
       }
     });
@@ -135,7 +136,7 @@ void main() {
 
     test('o sucesso nunca sobe quando o gap sobe, para cada jogador e cada tipo', () {
       for (final player in ['típico', 'perfeito']) {
-        for (final t in EcoType.values) {
+        for (final t in EcoType.mvp) {
           var prev = 101.0;
           for (final gap in gaps) {
             final v = cell(player, gap).of(t);
@@ -148,7 +149,7 @@ void main() {
 
     test('o perfeito nunca vai pior que o típico, em nenhum tipo nem gap', () {
       for (final gap in gaps) {
-        for (final t in EcoType.values) {
+        for (final t in EcoType.mvp) {
           expect(cell('perfeito', gap).of(t), greaterThanOrEqualTo(cell('típico', gap).of(t)), reason: '${t.name} gap $gap');
         }
       }

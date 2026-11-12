@@ -89,6 +89,16 @@ VibePattern identityPattern(EcoType type) => switch (type) {
           VibeSegment(90, 75, 220),
           VibeSegment(90, 45, 220),
         ]),
+      // Os nove da fase 1: cada um com a sua assinatura curta.
+      EcoType.earth => const VibePattern([VibeSegment(0, 190, 255)]),
+      EcoType.electric => const VibePattern([VibeSegment(0, 20, 255), VibeSegment(35, 20, 255), VibeSegment(35, 20, 255)]),
+      EcoType.metal => const VibePattern([VibeSegment(0, 45, 255), VibeSegment(130, 45, 255)]),
+      EcoType.light => const VibePattern([VibeSegment(0, 15, 200), VibeSegment(60, 15, 200)]),
+      EcoType.shadow => const VibePattern([VibeSegment(0, 240, 60)]),
+      EcoType.spectral => const VibePattern([VibeSegment(0, 60, 130), VibeSegment(210, 60, 60)]),
+      EcoType.digital => const VibePattern([VibeSegment(0, 25, 180), VibeSegment(50, 25, 180), VibeSegment(50, 25, 180), VibeSegment(50, 25, 180)]),
+      EcoType.fae => const VibePattern([VibeSegment(0, 40, 90), VibeSegment(60, 40, 160), VibeSegment(60, 40, 240)]),
+      EcoType.draconic => const VibePattern([VibeSegment(0, 120, 255), VibeSegment(70, 210, 255)]),
     };
 
 /// Aviso curto antes de cada pico do Fogo.

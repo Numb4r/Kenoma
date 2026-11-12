@@ -257,7 +257,7 @@ class HiddenPrepare extends StatelessWidget {
               const SizedBox(height: 32),
               PixelButton(label: 'Sentir de novo', color: kDim, onTap: onFeelAgain),
               const SizedBox(height: 40),
-              for (final type in EcoType.values) ...[
+              for (final type in EcoType.mvp) ...[
                 SizedBox(width: double.infinity, child: PixelButton(label: typeLabel(type), onTap: () => onGuess(type))),
                 const SizedBox(height: 12),
               ],

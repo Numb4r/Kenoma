@@ -14,19 +14,19 @@ void main() {
   });
 
   test('os três tipos saem, com frequência parecida', () {
-    final counts = {for (final t in EcoType.values) t: 0};
+    final counts = {for (final t in EcoType.mvp) t: 0};
     const n = 3000;
     for (var seed = 0; seed < n; seed++) {
       counts[pickHiddenType(rng(seed))] = counts[pickHiddenType(rng(seed))]! + 1;
     }
-    for (final t in EcoType.values) {
+    for (final t in EcoType.mvp) {
       expect(counts[t]! / n, closeTo(1 / 3, 0.04), reason: t.name);
     }
   });
 
   test('sorteios seguidos do mesmo gerador variam', () {
     final r = rng(1);
-    expect({for (var i = 0; i < 60; i++) pickHiddenType(r)}, EcoType.values.toSet());
+    expect({for (var i = 0; i < 60; i++) pickHiddenType(r)}, EcoType.mvp.toSet());
   });
 
   group('pickHidden', () {
@@ -56,13 +56,13 @@ void main() {
 
     test('sem viés pela ordem do pool: cada tipo sai ~1/3, em qualquer ordem', () {
       for (final order in [pool, pool.reversed.toList(), [pool[1], pool[2], pool[0]]]) {
-        final counts = {for (final t in EcoType.values) t: 0};
+        final counts = {for (final t in EcoType.mvp) t: 0};
         const n = 3000;
         for (var seed = 0; seed < n; seed++) {
           final t = pickHidden(order, (x) => x, rng(seed));
           counts[t] = counts[t]! + 1;
         }
-        for (final t in EcoType.values) {
+        for (final t in EcoType.mvp) {
           expect(counts[t]! / n, closeTo(1 / 3, 0.04), reason: '$t em $order');
         }
       }

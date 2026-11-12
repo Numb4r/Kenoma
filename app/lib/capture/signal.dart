@@ -18,9 +18,10 @@ import 'fire_wave.dart';
 import 'plant_roots.dart';
 import 'signal_math.dart';
 import 'tuning_balance.dart';
+import 'type_patterns.dart';
 import 'vibe.dart';
 
-enum CueKind { fireWarning, waterSwell, plantPulse }
+enum CueKind { fireWarning, waterSwell, plantPulse, hop, flash }
 
 /// Vibração que a UI deve tocar no instante [at] (segundos desde o início da sintonia).
 class TuningCue {
@@ -88,6 +89,8 @@ class TargetSignal {
             final u = (at / s.plant.pulseOverS).clamp(0.0, 1.0);
             cues.add(TuningCue(at, CueKind.plantPulse, plantPulsePattern(lerpRange(s.plant.pulseMs, u).round())));
           }
+        default:
+          break; // os nove tipos da fase 1: o padrão deles é montado no fim (`type_patterns.dart`)
       }
     }
     // Sorteios novos, no fim da sequência.
@@ -128,6 +131,15 @@ class TargetSignal {
       );
     }
     if (type == EcoType.water && intensity > 0) cues.addAll(signal._waterCues(horizonS));
+    // Os nove tipos da fase 1: os sorteios deles vêm depois de todos os outros.
+    if (!EcoType.mvp.contains(type) && intensity > 0) {
+      final p = signal.pattern = TypePattern.generate(type: type, intensity: intensity, rng: rng, balance: s.phase1, horizonS: horizonS);
+      final warn = s.phase1.warnS;
+      cues
+        ..addAll([for (final at in p.hopTimes(horizonS)) TuningCue(math.max(0, at - warn), CueKind.hop, fireWarningPattern)])
+        ..addAll([for (final at in p.flashTimes) TuningCue(at, CueKind.flash, fireWarningPattern)])
+        ..sort((a, b) => a.at.compareTo(b.at));
+    }
     return signal;
   }
 
@@ -152,6 +164,12 @@ class TargetSignal {
   /// As raízes da Planta. Vazio fora da Planta.
   PlantRoots plantRoots = PlantRoots.none;
 
+  /// O padrão do tipo, nos nove da fase 1. Vazio nos três do MVP e sem resistência.
+  TypePattern pattern = TypePattern.none;
+
+  /// O que a tela desenha do padrão em [t].
+  TypeFx typeFxAt(double t) => pattern.fxAt(t, frequencyAt);
+
   /// Vibrações de resistência, em ordem de instante.
   final List<TuningCue> cues;
 
@@ -175,7 +193,7 @@ class TargetSignal {
   ///
   /// No Fogo, cada pico soma o salto dele à frequência com easing smoothstep durante [fireGlideS], e
   /// o salto não decai.
-  double frequencyAt(double t) => fold01(_baseAt(t) + waterOffsetAt(t) + plantOffsetAt(t) + fire.offsetAt(t));
+  double frequencyAt(double t) => fold01(_baseAt(t) + waterOffsetAt(t) + plantOffsetAt(t) + fire.offsetAt(t) + pattern.offsetAt(t));
 
   /// Frequência inicial mais a deriva lenta de base, que todas as ondas compartilham.
   double _baseAt(double t) {

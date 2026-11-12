@@ -173,7 +173,7 @@ void main() {
       await tester.pump();
       final screen = await start(tester);
       expect(screen.hidden, isTrue);
-      expect(screen.pool.map((s) => s.type).toSet(), EcoType.values.toSet());
+      expect(screen.pool.map((s) => s.type).toSet(), EcoType.mvp.toSet());
       expect(screen.pool, hasLength(3));
     });
 

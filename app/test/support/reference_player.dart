@@ -30,6 +30,10 @@ class ReferencePlayer {
     this.overshootFraction = 0.4,
     this.tremorRandomPhase = false,
     this.avoidsRoots = true,
+    this.inkExtraS = 0.35,
+    this.ghostLostS = 0.5,
+    this.decoyLostS = 0.3,
+    this.invertLostS = 0.4,
   });
 
   /// Tempo que o jogador leva para descobrir para que lado girar o dial no começo.
@@ -59,6 +63,10 @@ class ReferencePlayer {
   /// (ou de várias que se sobrepõem), mira o ponto livre mais perto dele e não fica sentado em cima.
   /// Atravessar uma raiz de passagem custa quase nada, então o dial não desvia delas no caminho.
   final bool avoidsRoots;
+
+  /// Os tipos da fase 1: o atraso a mais para ler o pulso da Sombra na tinta, e por quanto tempo segue a cópia do
+  /// Espectral, uma cópia do Digital depois de um pulo, e o sentido antigo do dial depois de o Feérico inverter.
+  final double inkExtraS, ghostLostS, decoyLostS, invertLostS;
   static const double dt = 1 / 60;
   static const double _rootMargin = 0.004;
 
@@ -102,8 +110,33 @@ class ReferencePlayer {
     double tremor(double t) => tremorRandomPhase
         ? tremorAmp * (0.6 * math.sin(2 * math.pi * 1.3 * t + phase1) + 0.4 * math.sin(2 * math.pi * 2.9 * t + phase2))
         : tremorAmp * math.sin(2 * math.pi * tremorHz * s.t);
+    final pattern = s.signal.pattern;
+    var lostUntil = -1.0, lostTo = 0.0, lastGlitch = 0, lastSign = 1.0, wrongUntil = -1.0;
     while (s.running) {
-      final seen = s.signal.frequencyAt(math.max(0, s.t - reactionS));
+      // O que os padrões da fase 1 fazem com quem joga: tudo o que ele vê chega com o atraso da reação.
+      final at = math.max(0.0, s.t - reactionS), fx = s.signal.typeFxAt(at);
+      var seen = s.signal.frequencyAt(at);
+      // Luz: no clarão só resta a imagem residual, parada onde a onda estava.
+      if (fx.flash > 0) seen = fx.afterimage!;
+      // Sombra: com a onda na tinta, lê o pulso fraco do dial, mais devagar.
+      if (fx.ink >= 0.5) seen = s.signal.frequencyAt(math.max(0.0, at - inkExtraS));
+      // Espectral: quando a cópia cruza a real, segue a cópia por um tempo antes de notar a cor.
+      final ghost = fx.ghost;
+      if (ghost != null && at > 1 && (ghost - seen).abs() < 0.01 && s.t > lostUntil + ghostLostS) lostUntil = s.t + ghostLostS;
+      if (ghost != null && s.t < lostUntil) seen = ghost;
+      // Digital: a cada pulo das cópias, vai na mais próxima até achar a que não tem glitch.
+      if (fx.decoys.isNotEmpty && fx.glitch != lastGlitch) {
+        lastGlitch = fx.glitch;
+        lostUntil = s.t + decoyLostS;
+        lostTo = fx.decoys.reduce((a, b) => (a - dial).abs() <= (b - dial).abs() ? a : b);
+      }
+      if (fx.decoys.isNotEmpty && s.t < lostUntil) seen = lostTo;
+      // Feérico: logo depois de o dial inverter, a mão ainda gira para o lado antigo.
+      final sign = pattern.dialSignAt(s.t);
+      if (sign != lastSign) {
+        lastSign = sign;
+        wrongUntil = s.t + invertLostS;
+      }
       if (s.t >= startDelayS) {
         if (retargetThreshold == 0 && overshootChance == 0) {
           aim = seen; // acompanha o sinal o tempo todo
@@ -126,7 +159,7 @@ class ReferencePlayer {
       if (s.t >= startDelayS) {
         final goal = avoidsRoots ? _freeAim(s, aim) : aim;
         final err = goal - dial;
-        dial += err.sign * math.min(err.abs() * 8, maxSpeed) * dt;
+        dial = (dial + (s.t < wrongUntil ? -1 : 1) * err.sign * math.min(err.abs() * 8, maxSpeed) * dt).clamp(0.0, 1.0);
       }
       final output = dial + tremor(s.t);
       onStep?.call(s.t, output);

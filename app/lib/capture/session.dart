@@ -71,7 +71,8 @@ class TuningSession {
     if (nowAligned) alignedTimeS += dt;
     if (_wasAligned && !nowAligned) alignmentLosses++;
     _wasAligned = nowAligned;
-    final rate = nowAligned ? balance.progressUpPerS * progressUpMult : -balance.progressDownPerS * _overlevelDown;
+    // Alinhado, o progresso sobe; a Terra (faixa pesada) o deixa lento e a blindagem do Metal o segura.
+    final rate = nowAligned ? balance.progressUpPerS * progressUpMult * signal.pattern.progressFactor(this.dial, t) : -balance.progressDownPerS * _overlevelDown;
     progress = (progress + rate * dt).clamp(0.0, 1.0);
     if (progress >= 1) {
       phase = TuningPhase.success;

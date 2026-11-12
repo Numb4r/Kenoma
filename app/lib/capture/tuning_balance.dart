@@ -154,7 +154,8 @@ class SignalBalance {
         wanderPeriodS = _d(j['wander_period_s']),
         fire = FireBalance(j['fire'] as Map<String, dynamic>),
         water = WaterBalance(j['water'] as Map<String, dynamic>),
-        plant = PlantBalance(j['plant'] as Map<String, dynamic>);
+        plant = PlantBalance(j['plant'] as Map<String, dynamic>),
+        phase1 = Phase1Balance(j['phase1'] as Map<String, dynamic>);
 
   /// Faixa da frequência inicial do sinal.
   final Range2 startRange;
@@ -165,6 +166,29 @@ class SignalBalance {
   final FireBalance fire;
   final WaterBalance water;
   final PlantBalance plant;
+
+  /// Os padrões dos nove tipos da fase 1 (`type_patterns.dart`).
+  final Phase1Balance phase1;
+}
+
+/// Os números dos padrões de resistência dos nove tipos da fase 1 (`tuning.signal.phase1`). Cada faixa `[a, b]` vai de
+/// `a` na intensidade 0 a `b` na intensidade 1, como as dos três do MVP.
+class Phase1Balance {
+  Phase1Balance(this._j)
+      : glideS = _d(_j['glide_s']),
+        warnS = _d(_j['warn_s']),
+        blendS = _d(_j['blend_s']);
+
+  final Map<String, dynamic> _j;
+
+  /// O deslize de um salto de frequência, a antecedência do aviso de salto e o tempo de entrada ou saída de uma deriva.
+  final double glideS, warnS, blendS;
+
+  /// O número [key] do tipo [type]. Falta no JSON: erro, não um valor inventado.
+  double v(String type, String key) => _d((_j[type] as Map<String, dynamic>)[key]);
+
+  /// A faixa [key] do tipo [type] na [intensity].
+  double at(String type, String key, double intensity) => lerpRange(_range((_j[type] as Map<String, dynamic>)[key]), intensity);
 }
 
 class TuningBalance {

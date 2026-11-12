@@ -99,7 +99,7 @@ void main() {
     final env = await open(tester, hidden: true);
     expect(find.text('Sinta o sinal'), findsOneWidget);
     expect(find.text('SENTIR DE NOVO'), findsOneWidget);
-    for (final t in EcoType.values) {
+    for (final t in EcoType.mvp) {
       expect(find.text(typeLabel(t).toUpperCase()), findsOneWidget);
     }
     expect(env.vibration.played, hasLength(1));
@@ -157,7 +157,7 @@ void main() {
   testWidgets('palpite errado: o resultado diz o que foi dito e o registro leva guess_correct 0', (tester) async {
     final env = await open(tester, hidden: true);
     final real = env.game.setup.type;
-    final wrong = EcoType.values.firstWhere((t) => t != real);
+    final wrong = EcoType.mvp.firstWhere((t) => t != real);
     await tester.tap(find.text(typeLabel(wrong).toUpperCase()));
     await tester.pump();
     await env.play(21);
