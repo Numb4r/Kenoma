@@ -63,8 +63,18 @@ class MapAssets {
   final Map<int, WaterField> _water = {};
 
   /// A água da chuva no relevo com os números de [epoch] (`water`), ou `null` se a época não a usa ou não há relevo.
-  WaterField? waterFor(Epoch epoch) =>
-      epoch.water == null || relief == null || visual == null ? null : _water[epoch.id] ??= WaterField(relief: relief!, visual: visual!, model: epoch.water!);
+  WaterField? waterFor(Epoch epoch) => epoch.water == null || relief == null || visual == null
+      ? null
+      : _water[epoch.id] ??= (WaterField(relief: relief!, visual: visual!, model: epoch.water!)
+        ..background = waterInBackground
+        ..onTile = () => onWaterTile?.call());
+
+  /// O mapa do jogo liga: a água de cada tile é calculada fora da thread do desenho e o bloco aparece sem água até ela
+  /// chegar. A Patrulha (que não desenha e anda rápido no tempo) deixa desligado e calcula na hora.
+  bool waterInBackground = false;
+
+  /// Um tile da água chegou do cálculo de fundo.
+  void Function()? onWaterTile;
 
   /// Semáforos, faixas e entradas do OSM para a simulação local do tráfego (`null`: regra pela classe da rua).
   final TrafficPointSource? trafficPoints;
@@ -110,6 +120,7 @@ ClimateWorld climateWorldFor({required GameState state, required GameData data, 
       seed: state.seed,
       schedule: data.schedule,
       speciesOfType: data.ecoOfType,
+      speciesOfTypeAt: data.ecoOfType,
       itemExists: data.itemNames.containsKey,
       itemSince: (id) => data.itemSinceEpoch[id],
       biomeAt: (cx, cy) {
@@ -151,6 +162,7 @@ WorldView worldViewFor({
         weatherAt: weatherAt,
         climate: climate ?? climateWorldFor(state: state, data: data, assets: assets),
         levelCapOf: data.progress.levelCapFor,
+        relief: assets.relief,
       ),
       state: state,
       street: data.street,

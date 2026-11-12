@@ -5,6 +5,8 @@ library;
 import 'dart:math' as math;
 
 import '../capture/eco_type.dart';
+import '../core/fnv.dart';
+import '../core/pcg32.dart';
 import '../data/game_data.dart';
 import '../data/tuning_data.dart';
 import 'game_state.dart';
@@ -14,7 +16,7 @@ const int circleSlots = 3;
 
 /// O efeito somado do Círculo no mapa. Habilidades iguais não se somam: vale a maior.
 class MapAbilities {
-  const MapAbilities({this.auraBonusM = 0, this.pickupBonusM = 0, this.trackerRangeM = 0});
+  const MapAbilities({this.auraBonusM = 0, this.pickupBonusM = 0, this.trackerRangeM = 0, this.values = const {}});
 
   static const none = MapAbilities();
 
@@ -26,7 +28,31 @@ class MapAbilities {
 
   /// Alcance do rastreador (absoluto: o rastreador usa o maior entre ele e o padrão). 0 se nenhum Rillet.
   final double trackerRangeM;
+
+  /// O maior valor de cada habilidade do Círculo, pela chave do dado (`radar_range_bonus_m`, `seal_save_pct`...).
+  final Map<String, double> values;
+
+  /// O valor da habilidade [kind] no Círculo, ou 0.
+  double of(String kind) => values[kind] ?? 0;
 }
+
+/// O texto curto de uma habilidade de mapa com o valor [v] ("Aura +5 m"). As que ainda não têm efeito no jogo levam
+/// "(em breve)": o dado e a faixa já existem, a regra entra numa versão seguinte.
+String abilityLabel(String kind, int v) => switch (kind) {
+      'aura_bonus_m' => 'Aura +$v m',
+      'spark_pickup_bonus_m' => 'Coleta +$v m',
+      'tracker_range_m' => 'Radar $v m',
+      'radar_range_bonus_m' => 'Radar +$v m',
+      'seal_save_pct' => '$v% de não gastar o selo na falha',
+      'day_tolerance_pct' => 'Tolerância de dia +$v%',
+      'distill_bonus' => 'Essência na destilação +$v',
+      'extra_material_pct' => 'Material extra +$v% (em breve)',
+      'night_view_bonus_m' => 'Visão à noite +$v m (em breve)',
+      'fog_view_bonus_m' => 'Visão na neblina +$v m (em breve)',
+      'radar_hidden_m' => 'Radar revela Ocultos a $v m (em breve)',
+      'variant_chance_pct' => 'Variante +$v% (em breve)',
+      _ => '$kind $v',
+    };
 
 /// A faixa (0, 1 ou 2) do nível [level]: a primeira cujo intervalo o contém.
 int abilityBandIndex(int level, List<(int, int)> bands) {
@@ -39,10 +65,12 @@ int abilityBandIndex(int level, List<(int, int)> bands) {
 /// Habilidades de mapa dos membros do Círculo.
 MapAbilities circleAbilities(List<({EcoSpecies species, int level})> members, List<(int, int)> bands) {
   var aura = 0.0, pickup = 0.0, tracker = 0.0;
+  final values = <String, double>{};
   for (final m in members) {
     final a = m.species.ability;
     if (a == null) continue;
     final v = a.bands[abilityBandIndex(m.level, bands).clamp(0, a.bands.length - 1)].toDouble();
+    values[a.kind] = math.max(values[a.kind] ?? 0, v);
     switch (a.kind) {
       case 'aura_bonus_m':
         aura = math.max(aura, v);
@@ -52,8 +80,12 @@ MapAbilities circleAbilities(List<({EcoSpecies species, int level})> members, Li
         tracker = math.max(tracker, v);
     }
   }
-  return MapAbilities(auraBonusM: aura, pickupBonusM: pickup, trackerRangeM: tracker);
+  return MapAbilities(auraBonusM: aura, pickupBonusM: pickup, trackerRangeM: tracker, values: values);
 }
+
+/// O Rustling no Círculo: na sintonia falha do Eco [uid] em [nowUtc], o selo não é gasto com [pct] por cento de chance.
+/// O sorteio sai do uid e do instante (FNV e PCG32 do núcleo): a mesma falha dá sempre o mesmo resultado.
+bool sealSaved(int uid, int nowUtc, double pct) => pct > 0 && Pcg32(fnv1a64([uid, nowUtc, salt('seal')]), saltKenoma).nextFloat() < pct / 100;
 
 /// Quantas criaturas do Círculo vencem o tipo [target]. A sintonia limita o bônus ao máximo do balanceamento.
 int circleStrongCount(Iterable<EcoType> memberTypes, EcoType target) => memberTypes.where((t) => t.beats(target)).length;

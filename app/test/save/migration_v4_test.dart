@@ -27,7 +27,7 @@ void main() {
     expect(out.containsKey('fog'), isFalse);
     expect(out[kVisitedCellsKey], isEmpty);
     expect(out['radar'], {'last_utc': 0, 'revealed': <String, dynamic>{}});
-    for (final k in real.keys.where((k) => k != 'schema_version')) {
+    for (final k in real.keys.where((k) => k != 'schema_version' && k != 'bestiary')) { // o bestiário ganha contagens na v7
       expect(out[k], real[k], reason: 'o campo $k passa sem mudar');
     }
   });

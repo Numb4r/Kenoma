@@ -1,13 +1,21 @@
 /// A Bancada (docs/fase0-spec.md, seção 7): receitas improvisadas e a destilação de Ecos em Essência. Dart puro.
 library;
 
+import '../capture/eco_type.dart';
 import '../core/species_ids.dart';
 import '../data/game_data.dart';
+import '../player/circle.dart';
 import '../player/game_state.dart';
 import '../player/progress_balance.dart';
 
-/// As três Essências, na ordem usada para desempatar.
-const List<String> essenceIds = ['item.essence.fire', 'item.essence.plant', 'item.essence.water'];
+/// As Essências de tipo, na ordem usada para desempatar: as três do MVP na ordem de sempre e depois as nove da fase 1.
+final List<String> essenceIds = [
+  'item.essence.fire',
+  'item.essence.plant',
+  'item.essence.water',
+  for (final t in EcoType.values)
+    if (!EcoType.mvp.contains(t)) 'item.essence.${t.name}',
+];
 
 int essenceTotal(GameState s) => essenceIds.fold(0, (sum, id) => sum + s.count(id));
 
@@ -39,6 +47,10 @@ bool craftRecipe(GameState s, Recipe r) {
 }
 
 /// Essência que um Eco de nível [level] rende: 3 do 1 ao 7, 4 do 8 ao 14, 5 do 15 ao 20.
+/// O que a destilação de um Eco de nível [level] rende agora: a faixa do nível mais o bônus do Círculo (o Wyrmlet).
+int distillQty(GameState s, int level, GameData data) =>
+    distillYield(level, s.balance) + circleAbilities(circleMembers(s, data), data.tuning.abilityBands).of('distill_bonus').round();
+
 int distillYield(int level, ProgressBalance b) {
   for (final band in b.distillYield) {
     if (level >= band.from && level <= band.to) return band.value;
@@ -60,7 +72,7 @@ String? distillBlocker(GameState s, String uid) {
   final c = s.creature(uid);
   final species = c == null ? null : data.species(c.speciesId);
   if (c == null || species == null || distillBlocker(s, uid) != null) return null;
-  final qty = distillYield(c.level, s.balance);
+  final qty = distillQty(s, c.level, data);
   s.removeCreature(uid);
   // A Brilhante rende Essência prismática; a variante de bioma, Essência com o traço do bioma; as outras, a do tipo.
   final id = c.shiny ? 'item.essence.prismatic' : (c.variant != null ? 'item.essence.trait.${c.variant}' : 'item.essence.${species.type.name}');

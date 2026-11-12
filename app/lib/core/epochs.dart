@@ -1,6 +1,7 @@
 /// Épocas (epochs.json): pacote de região e tabelas de spawn de cada uma (docs/fase0-spec.md, seção 3).
 library;
 
+import 'spawn_conditions.dart';
 import 'fog_model.dart';
 import 'motion_model.dart';
 import 'water_model.dart';
@@ -81,13 +82,14 @@ class SpawnItemDef {
 /// clima nos spawns. Entra num fluxo de sorteios separado (`v2`) e só vale em épocas que o trazem: nas outras os
 /// itens saem exatamente como antes.
 class EcoV2 {
-  const EcoV2({required this.behaviorWeights, required this.variantChance, required this.shinyChance, required this.weather});
+  const EcoV2({required this.behaviorWeights, required this.variantChance, required this.shinyChance, required this.weather, this.conditions});
 
   factory EcoV2.fromJson(Map<String, dynamic> j) => EcoV2(
         behaviorWeights: {for (final e in (j['behavior_weights'] as Map<String, dynamic>).entries) e.key: e.value as int},
         variantChance: (j['variant_chance'] as num).toDouble(),
         shinyChance: (j['shiny_chance'] as num).toDouble(),
         weather: WeatherModel.fromJson(j['weather'] as Map<String, dynamic>),
+        conditions: j['conditions'] == null ? null : SpawnConditions.fromJson(j['conditions'] as Map<String, dynamic>),
       );
 
   /// Peso de cada comportamento, na ordem de `EcoBehavior.drawOrder`. Da época 11 em diante só `passive` e `hidden`.
@@ -95,6 +97,9 @@ class EcoV2 {
   final double variantChance;
   final double shinyChance;
   final WeatherModel weather;
+
+  /// As condições das famílias (hora, lua, relevo, clima, nível), da época 11 em diante. `null`: só a tabela do bioma.
+  final SpawnConditions? conditions;
 }
 
 /// Épocas com posições sobre o que dá para andar: Fagulhas e materiais são projetados no caminho mais próximo da célula

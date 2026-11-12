@@ -125,8 +125,9 @@ void paintTypeDial(Canvas canvas, TuningLayout l, TypeFx fx, double target, doub
   if (fx.ink > 0) {
     // Com a onda na tinta, o pulso do sinal aparece fraco na borda do dial.
     final a = dialAngle(target), at = c + Offset(math.cos(a), math.sin(a)) * (rad + 1);
-    final alpha = fx.ink * (0.22 + 0.16 * math.sin(clock * 6));
-    canvas.drawCircle(at, 5, _fill(typeColor(EcoType.shadow).withValues(alpha: alpha.clamp(0.0, 1.0))));
+    // No ciano do sinal, fraco: é o que sobra para seguir (o roxo da Sombra some no fundo escuro do dial).
+    final alpha = fx.ink * (0.32 + 0.2 * math.sin(clock * 6));
+    canvas.drawCircle(at, 6, _fill(kSignal.withValues(alpha: alpha.clamp(0.0, 1.0))));
   }
   if (fx.inverted) canvas.drawCircle(c, rad + 10, _stroke(typeColor(EcoType.fae), 2));
   if (fx.armored) canvas.drawCircle(c, rad + 10, _stroke(typeColor(EcoType.metal), 3));

@@ -31,7 +31,7 @@ void main() {
     expect(c['talent_spent'], 0);
     expect(c['tests_offered'], false);
     expect(c.containsKey('school'), isFalse);
-    for (final k in real.keys.where((k) => k != 'schema_version' && k != 'fog')) { // a névoa sai na v6
+    for (final k in real.keys.where((k) => k != 'schema_version' && k != 'fog' && k != 'bestiary')) { // a névoa sai na v6; o bestiário ganha contagens na v7
       expect(out[k], real[k], reason: 'o campo $k passa sem mudar');
     }
   });

@@ -2,6 +2,8 @@
 /// JSONs de `assets/data/`. A sintonia usa [tuning].
 library;
 
+import '../player/bestiary.dart';
+import '../player/research.dart';
 import 'dart:convert';
 
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
@@ -54,6 +56,9 @@ class GameData {
     required this.schedule,
     required this.itemNames,
     this.itemSinceEpoch = const {},
+    this.families = const [],
+    this.lore = const {},
+    this.researchTolerance = 1,
     required this.startInventory,
     required this.recipes,
     required this.progress,
@@ -125,6 +130,9 @@ class GameData {
               tint: 0xFF000000 | int.parse((e.value['tint'] as String).substring(1), radix: 16),
             ),
         },
+        families: [for (final f in (creatures['families'] as List<dynamic>?) ?? const []) FamilyDef.fromJson(f as Map<String, dynamic>)],
+        lore: {for (final e in ((creatures['bestiary'] as Map<String, dynamic>?) ?? const {}).entries) e.key: SpeciesLore.fromJson(e.value as Map<String, dynamic>)},
+        researchTolerance: (((balance['research'] as Map<String, dynamic>?) ?? const {})['tolerance_mult'] as num?)?.toDouble() ?? 1,
         tuning: TuningData.fromJson(balance: balance, balanceVersion: balanceVersion, creatures: creatures, items: items),
         progress: ProgressBalance(balance),
         schedule: EpochSchedule.fromJson(epochs),
@@ -191,6 +199,19 @@ class GameData {
   /// As variantes: `urban`, `green`, `water`, `residential` e `shiny`.
   final Map<String, VariantInfo> variants;
 
+  /// As famílias do Bestiário (Fagulha, Eco, Espírito), na ordem de `creatures.json`, e o texto e a pesquisa de cada espécie.
+  final List<FamilyDef> families;
+  final Map<String, SpeciesLore> lore;
+
+  /// A tolerância da sintonia vezes isto para a espécie com a pesquisa no nível que libera `tolerance` (`balance.json`,
+  /// `research.tolerance_mult`).
+  final double researchTolerance;
+
+  double researchToleranceMult(Map<String, BestiaryEntry> bestiary, String speciesId) {
+    final l = lore[speciesId];
+    return l != null && researchUnlocks(l.research, speciesId, bestiary).contains('tolerance') ? researchTolerance : 1;
+  }
+
   /// A variante de um Eco: a Brilhante vale mais que a de bioma. `null` se é comum.
   VariantInfo? variantInfo({String? biome, bool shiny = false}) => variants[shiny ? 'shiny' : biome];
 
@@ -217,8 +238,11 @@ class GameData {
 
   /// Uma espécie de Eco (só a camada Eco) do tipo [type] (`any`: qualquer uma), escolhida por [pick] em `[0, 1)`. `null` se
   /// o jogo não tem espécie desse tipo (Elétrico, Espectral...): as peças do clima caem no fallback do dado.
-  String? ecoOfType(String type, double pick) {
-    final pool = [for (final s in tuning.species) if (s.id.endsWith('.eco') && (type == 'any' || s.type.name == type)) s.id];
+  ///
+  /// [epochId]: só as espécies que existem para o mundo nessa época (`since_epoch`). Sem ele, só as de sempre (as três
+  /// famílias do MVP): o que uma época antiga gera não muda quando o jogo ganha espécies.
+  String? ecoOfType(String type, double pick, [int? epochId]) {
+    final pool = [for (final s in tuning.species) if (s.id.endsWith('.eco') && s.sinceEpoch <= (epochId ?? 0) && (type == 'any' || s.type.name == type)) s.id];
     return pool.isEmpty ? null : pool[(pick * pool.length).floor().clamp(0, pool.length - 1)];
   }
 

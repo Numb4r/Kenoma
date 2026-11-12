@@ -5,6 +5,7 @@ import 'behavior.dart';
 import 'epochs.dart';
 import 'fnv.dart';
 import 'pcg32.dart';
+import 'spawn_conditions.dart';
 import 'walkable.dart';
 import 'weather.dart';
 
@@ -79,10 +80,11 @@ List<SpawnItem> generateCell({
   double variantMult = 1,
   String? Function(String entryId)? typeOf,
   PathSnapper? snapper,
+  SpawnContext? context,
 }) =>
     [
       for (final def in epoch.items)
-        _generateItem(seed, epoch, cellX, cellY, window, biomeKey, def, climateMult ?? (weather == Weather.clear ? null : epoch.ecoV2?.weather.spawnMultipliers[weather.id]), shinyMult, variantMult, typeOf, snapper),
+        _generateItem(seed, epoch, cellX, cellY, window, biomeKey, def, climateMult ?? (weather == Weather.clear ? null : epoch.ecoV2?.weather.spawnMultipliers[weather.id]), shinyMult, variantMult, typeOf, snapper, context),
     ];
 
 SpawnItem _generateItem(
@@ -98,6 +100,7 @@ SpawnItem _generateItem(
   double variantMult,
   String? Function(String entryId)? typeOf,
   PathSnapper? snapper,
+  SpawnContext? context,
 ) {
   final epochId = epoch.id;
   final rng = Pcg32(spawnHash(seed, epochId, cellX, cellY, window, def.index), saltKenoma);
@@ -163,11 +166,17 @@ SpawnItem _generateItem(
     // O clima mexe nos pesos por tipo. Com tempo limpo, ou sem regra para nenhuma espécie da tabela, a espécie é a original.
     // Até a época 5 os multiplicadores são os do clima de quatro estados (`eco_v2.weather`); da 6 em diante, os do clima
     // completo (`climate`), passados por quem chama.
-    if (typeOf != null && weatherMult != null) {
-      final mult = [for (final e in table) weatherMult[typeOf(e.id) ?? ''] ?? 1.0];
+    // Da época 11 em diante, as condições da família (hora, lua, relevo, clima) multiplicam o peso junto. Sem peso nenhum
+    // na tabela (só espécies fora de hora), a célula fica sem Eco.
+    final cond = context == null ? null : v2.conditions;
+    final byType = typeOf != null && weatherMult != null;
+    if (byType || cond != null) {
+      final mult = [for (final e in table) (byType ? weatherMult[typeOf(e.id) ?? ''] ?? 1.0 : 1.0) * (cond?.mult(e.id, context!) ?? 1.0)];
       if (mult.any((m) => m != 1.0)) {
         final adj = [for (var i = 0; i < table.length; i++) table[i].weight * mult[i]];
-        var target = speciesRoll * adj.fold(0.0, (a, b) => a + b);
+        final total = adj.fold(0.0, (a, b) => a + b);
+        if (total <= 0) exists = false;
+        var target = speciesRoll * total;
         entry = table.last;
         for (var i = 0; i < table.length; i++) {
           if (target < adj[i]) {

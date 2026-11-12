@@ -653,7 +653,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     );
     final tracker = PlayerTracker(source: tools.source);
     _bridgeLat = () => game.playerLat;
-    // Da época 9 em diante, com relevo: as ruas que o Dilúvio alaga saem da água no relevo.
+    // Da época 9 em diante, com relevo: as ruas que o Dilúvio alaga saem da água no relevo. No mapa do jogo a água de cada
+    // tile é calculada fora da thread do desenho: o bloco aparece sem água até ela chegar.
+    assets.waterInBackground = true;
+    game.waterRevision = () => assets.waterFor(data.schedule.select(tools.clock.nowUtc).epoch)?.revision ?? 0;
     game.climateGround.floods = (key) => assets.waterFor(data.schedule.select(tools.clock.nowUtc).epoch)?.lineFloods(key.$1, key.$2, key.$3);
     tools.trafficStats = () {
       final sim = game.trafficSimState, g = sim?.lanes;

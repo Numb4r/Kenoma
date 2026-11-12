@@ -5,6 +5,7 @@ library;
 import '../core/species_ids.dart';
 import '../data/game_data.dart';
 import '../data/tuning_data.dart';
+import 'circle.dart' show abilityLabel;
 import 'game_state.dart';
 
 /// Poder: cresce com o nível e com a camada (Espírito acima do Eco). Sem estabilidade ainda.
@@ -17,10 +18,9 @@ String abilityText(SpeciesAbility ability, int level, List<(int, int)> bands) {
   final v = ability.bands[band.clamp(0, ability.bands.length - 1)];
   final (from, to) = bands[band];
   final effect = switch (ability.kind) {
-    'aura_bonus_m' => 'Aura +$v m',
     'spark_pickup_bonus_m' => 'Coleta de Fagulhas e materiais +$v m',
     'tracker_range_m' => 'Radar alcança $v m',
-    _ => '${ability.kind} $v',
+    _ => abilityLabel(ability.kind, v),
   };
   final range = level > to ? 'a partir do nível $from' : (from == to ? 'nível $from' : 'níveis $from a $to'); // o Espírito passa do último intervalo
   return '$effect (faixa ${band + 1} de ${bands.length}: $range)';

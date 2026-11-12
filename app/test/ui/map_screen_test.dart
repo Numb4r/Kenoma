@@ -28,6 +28,8 @@ Map<String, List<int>> realAssets({Uint8List? bin}) => {
       'assets/data/biomes.json': File('assets/data/biomes.json').readAsBytesSync(),
       'assets/data/balance.json': File('assets/data/balance.json').readAsBytesSync(),
       'assets/regions/campinas_e0.bin': bin ?? File('assets/regions/campinas_e0.bin').readAsBytesSync(),
+      // Da época 11 em diante o pacote é outro (biomas Iluminado e Sagrado): o relógio do teste decide qual é lido.
+      'assets/regions/campinas_e11.bin': bin ?? File('assets/regions/campinas_e11.bin').readAsBytesSync(),
     };
 
 Future<void> pumpMap(WidgetTester tester, {Map<String, List<int>>? assets, double lat = -22.8174, double lon = -47.0697}) async {
@@ -208,7 +210,7 @@ void main() {
       'assets/data/balance.json': File('assets/data/balance.json').readAsBytesSync(),
     });
     expect(find.text('MAPA INDISPONÍVEL'), findsOneWidget);
-    expect(find.textContaining('campinas_e0.bin não está no app'), findsOneWidget);
+    expect(find.textContaining('.bin não está no app'), findsOneWidget);
   });
 
   testWidgets('relógio depois do fim da última época: o mapa abre e avisa que o mundo está desatualizado', (tester) async {

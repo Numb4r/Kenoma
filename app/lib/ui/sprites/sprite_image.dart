@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import '../../core/species_ids.dart';
+import 'phase1_sprites.dart';
 import 'sprite_data.dart';
 import 'sprite_downscale.dart';
 
@@ -57,7 +58,11 @@ Future<Uint8List> spriteToPng(List<String> rows) async {
 }
 
 /// A matriz do sprite da espécie. Espíritos usam o sprite do Eco da família (visual provisório; a arte final vai para o backlog).
+///
+/// As famílias da fase 1 (e as Fagulhas, `hum.mote`) têm o sprite provisório de `phase1_sprites.dart`, com a paleta de
+/// [spritePaletteOf].
 List<String> ecoSpriteRows(String speciesId) {
+  if (hasPhase1Sprite(speciesId)) return phase1Rows(speciesId);
   final rows = ecoSprites[speciesId] ?? ecoSprites['${speciesId.split('.').first}.eco'] ?? (throw StateError('Sem sprite para $speciesId'));
   return tierOfId(speciesId) == SpeciesTier.spirit && !ecoSprites.containsKey(speciesId) ? spiritRows(rows) : rows;
 }
@@ -78,6 +83,9 @@ List<String> spiritRows(List<String> eco) {
   ];
 }
 
+/// A paleta do sprite de [key]: a do tipo nos provisórios da fase 1, a fixa nos três do MVP.
+Map<String, int> spritePaletteOf(String key) => hasPhase1Sprite(key) ? phase1Palette(spriteTypeOf(key)) : spritePalette;
+
 /// Sprite de um Eco em duas versões: normal e com as costuras acesas.
 class EcoSprite {
   const EcoSprite(this.normal, this.bright);
@@ -85,17 +93,17 @@ class EcoSprite {
   final ui.Image normal;
   final ui.Image bright;
 
-  static Future<EcoSprite> load(String speciesId) => _from(ecoSpriteRows(speciesId));
+  static Future<EcoSprite> load(String speciesId) => _from(ecoSpriteRows(speciesId), spritePaletteOf(speciesId));
 
   /// Silhueta neutra, para o modo de tipo oculto.
   static Future<EcoSprite> loadNeutral() => _from(neutralSprite);
 
   /// O Eco redesenhado na grade do mapa ([mapEcoPx] pixels de lado), para o mapa de jogo.
   static Future<EcoSprite> loadMap(String speciesId) =>
-      _from(downscaleRows(ecoSpriteRows(speciesId), tierOfId(speciesId) == SpeciesTier.spirit ? mapSpiritPx : mapEcoPx));
+      _from(downscaleRows(ecoSpriteRows(speciesId), tierOfId(speciesId) == SpeciesTier.spirit ? mapSpiritPx : mapEcoPx), spritePaletteOf(speciesId));
 
-  static Future<EcoSprite> _from(List<String> rows) async =>
-      EcoSprite(await spriteToImage(rows), await spriteToImage(rows, brightSeams: true));
+  static Future<EcoSprite> _from(List<String> rows, [Map<String, int> palette = spritePalette]) async =>
+      EcoSprite(await spriteToImage(rows, palette: palette), await spriteToImage(rows, brightSeams: true, palette: palette));
 }
 
 /// Lado, em pixels, dos sprites do mapa: Ecos e Conjurador/Familiar. Com o pixel de arte em 2 dp (~0,44 m a 90 m de

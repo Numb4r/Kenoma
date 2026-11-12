@@ -6,7 +6,7 @@ import '../player/game_state.dart' show kVisitedCellsKey, saveSchemaVersion;
 
 typedef _Step = Map<String, dynamic> Function(Map<String, dynamic>);
 
-final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6};
+final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7};
 
 /// Leva [json] ao schema atual. Um save de versão futura passa sem mudar.
 Map<String, dynamic> migrateSave(Map<String, dynamic> json) {
@@ -92,5 +92,35 @@ Map<String, dynamic> _v5ToV6(Map<String, dynamic> j) {
   }
   cells.sort((a, b) => a[0] != b[0] ? a[0] - b[0] : a[1] - b[1]);
   out[kVisitedCellsKey] = cells;
+  return out;
+}
+
+/// v6 guardava no bestiário só `seen` e `captured`. A pesquisa (0.20.0) conta as capturas: cada espécie já capturada entra
+/// com as que estão na coleção agora (pelo menos uma; as que viraram Essência ou Espírito não dá para recontar). A hora,
+/// o clima e os biomas dos encontros antigos não foram guardados: essas tarefas começam do zero. As Fagulhas que estão na
+/// Bolsa entram como coletadas. O resto passa intacto.
+Map<String, dynamic> _v6ToV7(Map<String, dynamic> j) {
+  final out = {...j};
+  final owned = <String, int>{};
+  for (final c in (out['collection'] as List<dynamic>?) ?? const []) {
+    final m = c as Map<String, dynamic>;
+    if (m['debug'] == true) continue;
+    final id = m['species'] as String;
+    for (final k in [id, if (m['variant'] != null) '$id@${m['variant']}', if (m['shiny'] == true) '$id@shiny']) {
+      owned[k] = (owned[k] ?? 0) + 1;
+    }
+  }
+  // As Fagulhas também entram no Bestiário: as que estão na Bolsa contam como coletadas.
+  final dust = {
+    for (final e in ((out['inventory'] as Map<String, dynamic>?) ?? const {}).entries)
+      if (e.key.startsWith('item.dust.') && (e.value as int) > 0) e.key: <String, dynamic>{'seen': true, 'captured': true, 'captures': e.value},
+  };
+  out['bestiary'] = {
+    ...dust,
+    for (final e in ((out['bestiary'] as Map<String, dynamic>?) ?? const {}).entries)
+      e.key: (e.value as Map<String, dynamic>)['captured'] == true && (e.value as Map<String, dynamic>)['captures'] == null
+          ? {...e.value as Map<String, dynamic>, 'captures': (owned[e.key] ?? 0) < 1 ? 1 : owned[e.key]}
+          : e.value,
+  };
   return out;
 }

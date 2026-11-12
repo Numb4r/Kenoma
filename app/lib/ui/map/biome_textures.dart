@@ -38,6 +38,8 @@ _Style _styleOf(String key) => switch (key) {
       'urban' => const _Style(0.18, 0.20, 2, 2),
       'green' => const _Style(0.22, 0.14, 1, 1),
       'water' => const _Style(0.12, 0.20, 4, 1),
+      'lit' => const _Style(0.16, 0.26, 2, 1),
+      'sacred' => const _Style(0.20, 0.16, 1, 2),
       _ => const _Style(0.12, 0.12, 1, 1),
     };
 

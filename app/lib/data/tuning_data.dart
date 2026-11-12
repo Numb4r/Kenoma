@@ -20,7 +20,7 @@ class SpeciesAbility {
 }
 
 class EcoSpecies {
-  const EcoSpecies({required this.id, required this.name, required this.type, this.ability, this.family = '', this.tier = 'eco', this.ritualOnly = false});
+  const EcoSpecies({required this.id, required this.name, required this.type, this.ability, this.family = '', this.tier = 'eco', this.ritualOnly = false, this.sinceEpoch = 0});
 
   final String id;
   final String name;
@@ -31,6 +31,9 @@ class EcoSpecies {
   final String family;
   final String tier;
   final bool ritualOnly;
+
+  /// A primeira época em que a espécie existe para o mundo (`since_epoch`; 0: desde sempre).
+  final int sinceEpoch;
 
   bool get isSpirit => tier == 'spirit';
 }
@@ -65,6 +68,7 @@ class TuningData {
               family: (s['family'] as String?) ?? '',
               tier: s['tier'] as String,
               ritualOnly: (s['ritual_only'] as bool?) ?? false,
+              sinceEpoch: (s['since_epoch'] as int?) ?? 0,
               ability: s['ability'] == null
                   ? null
                   : SpeciesAbility(

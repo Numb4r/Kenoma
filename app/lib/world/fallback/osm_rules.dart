@@ -28,7 +28,9 @@ class OsmRules {
 
   factory OsmRules.fromJson(Map<String, dynamic> biomesJson) {
     final byTag = <String, Map<String, List<OsmMatch>>>{};
-    final biomes = (biomesJson['biomes'] as List).cast<Map<String, dynamic>>();
+    // Os biomas com `since_epoch` (Iluminado e Sagrado, época 11) só existem nos pacotes de região: os blocos do fallback
+    // seguem com os cinco de sempre, em todas as épocas.
+    final biomes = [for (final b in (biomesJson['biomes'] as List).cast<Map<String, dynamic>>()) if (b['since_epoch'] == null) b];
     var maxBuffer = 0.0;
     for (final biome in biomes) {
       for (final rule in (biome['osm'] as List).cast<Map<String, dynamic>>()) {

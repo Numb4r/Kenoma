@@ -10,3 +10,8 @@
   passeio real e num pedaço do simulador (conjunto `debug`), capturou um Eco com variante, ganhou Ectoplasma, desligou
   o tráfego e leu de volta o KSV1 gravado em disco. É a base de `test/save/migration_v6_test.dart` (névoa →
   `celulas_visitadas`).
+- `save_v6_0191.json`: save do schema 6 gravado pelo código real da 0.19.1 (commit b63dc4a, build 0.19.1+31), do mesmo
+  jeito: `git archive b63dc4a app shared` numa pasta temporária, e lá um teste descartável abriu `save_v5_0150.json`
+  numa `GameSession`, viu e capturou Ecos (comum, variante Urbana e Brilhante), viu um Espírito, pôs Fagulhas de Fogo e
+  de Água na Bolsa e gravou. É a base de `test/save/migration_v7_test.dart` (o bestiário ganha as contagens da pesquisa
+  e as Fagulhas).

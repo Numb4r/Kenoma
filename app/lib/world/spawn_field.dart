@@ -7,13 +7,16 @@ library;
 
 import 'dart:math' as math;
 
+import '../core/astro.dart';
 import '../core/behavior.dart';
 import '../core/epochs.dart';
 import '../core/spawn.dart';
+import '../core/spawn_conditions.dart';
 import '../core/tiles.dart';
 import '../core/walkable.dart';
 import '../core/weather.dart';
 import '../core/windows.dart';
+import '../data/relief_pack.dart';
 import 'climate_world.dart';
 import 'region_map.dart';
 
@@ -121,7 +124,7 @@ class WorldSpawn {
 }
 
 class SpawnField {
-  SpawnField({required this.seed, required this.schedule, required this.map, this.maxCached = 4000, this.weatherAt, this.typeOf, this.snapper, this.levelCapOf, this.climate});
+  SpawnField({required this.seed, required this.schedule, required this.map, this.maxCached = 4000, this.weatherAt, this.typeOf, this.snapper, this.levelCapOf, this.climate, this.relief});
 
   final int seed;
   final EpochSchedule schedule;
@@ -143,6 +146,29 @@ class SpawnField {
 
   /// O teto de nível de uma espécie (o Eco vai a 20, o Espírito a 30). `null`: 20 para todas.
   final int Function(String entryId)? levelCapOf;
+
+  /// O relevo, para as famílias que preferem morro ou vale (época 11 em diante). `null` ou fora da grade: plano.
+  final ReliefSource? relief;
+
+  /// O lugar e o instante da célula z20 para as condições das famílias: o sol e a lua do começo da janela, o relevo do
+  /// centro dela e o clima. `null` nas épocas sem `eco_v2.conditions`.
+  SpawnContext? contextOf(Epoch epoch, int cx, int cy, int windowStart, String weather) {
+    final cond = epoch.ecoV2?.conditions;
+    if (cond == null) return null;
+    final (lat, lon) = tileFractionToLatLon(cx * 2 + 1.0, cy * 2 + 1.0, biomeZoom);
+    var rise = 0.0;
+    final r = relief, x = cx * 2, y = cy * 2, k = cond.ringCells, kd = (k * 0.7071).round();
+    final h = r?.h16At(x, y);
+    if (r != null && h != null) {
+      int? ring = 0;
+      for (final (dx, dy) in [(k, 0), (-k, 0), (0, k), (0, -k), (kd, kd), (-kd, kd), (kd, -kd), (-kd, -kd)]) {
+        final v = r.h16At(x + dx, y + dy);
+        ring = v == null || ring == null ? null : ring + v;
+      }
+      if (ring != null) rise = cond.rise(h, ring);
+    }
+    return SpawnContext(sunAltDeg: sunAltitudeDeg(lat, lon, windowStart), moonIllum: moonIllumination(windowStart), rise: rise, climate: weather);
+  }
 
   final _cells = <(int, String, int, int, int), List<SpawnItem>>{};
   int _revision = 0;
@@ -187,6 +213,7 @@ class SpawnField {
       variantMult: def?.modifier?.variantMult ?? 1,
       typeOf: typeOf,
       snapper: snapper,
+      context: contextOf(epoch, cx, cy, windowStart, weather),
     );
   }
 
@@ -205,6 +232,7 @@ class SpawnField {
     final mpc = metersPerCell(lat);
     final r = radiusM / mpc; // em células z21
     final out = <WorldSpawn>[];
+    final cond = schedule.select(tUtc).epoch.ecoV2?.conditions;
     for (var cy = ((py - r) / 2).floor(); cy <= ((py + r) / 2).floor(); cy++) {
       for (var cx = ((px - r) / 2).floor(); cx <= ((px + r) / 2).floor(); cx++) {
         final window = windowIndex(seed, cx, cy, tUtc);
@@ -212,6 +240,8 @@ class SpawnField {
         final windowStart = window * windowSeconds - windowOffset(seed, cx, cy);
         for (final item in cellItems(cx, cy, tUtc)) {
           if (!item.exists) continue;
+          // Família com nível mínimo (o Wyrm): abaixo dele o Conjurador não a encontra.
+          if (item.kind == 'eco' && !(cond?.visibleTo(item.entryId, playerLevel) ?? true)) continue;
           var spawn = WorldSpawn(
             uid: item.uid,
             kind: item.kind,
@@ -250,7 +280,7 @@ class SpawnField {
           metersPerCell21: mpc,
           levelOf: (id, add, uid) => _levels.putIfAbsent(uid, () => (playerLevel + add + c.levelAddAt(px.floor() >>> 1, py.floor() >>> 1, tUtc)).clamp(1, levelCapOf?.call(id) ?? 20)),
         ))
-          s.isEco ? c.move(s, tUtc, tUtc, mpc) : s,
+          if (!s.isEco || (cond?.visibleTo(s.entryId, playerLevel) ?? true)) s.isEco ? c.move(s, tUtc, tUtc, mpc) : s,
       ]);
     }
     return out;

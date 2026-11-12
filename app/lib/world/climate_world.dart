@@ -101,6 +101,7 @@ class ClimateWorld {
     required this.seed,
     required this.schedule,
     required this.speciesOfType,
+    this.speciesOfTypeAt,
     required this.itemExists,
     this.biomeAt,
     this.snapper,
@@ -125,6 +126,10 @@ class ClimateWorld {
 
   /// A espécie de Eco de um tipo (`water`; `any` para qualquer), escolhida por [pick] em `[0, 1)`. `null`: não há.
   final String? Function(String type, double pick) speciesOfType;
+
+  /// O mesmo, com a época: as espécies com `since_epoch` só entram nas épocas delas (o que uma época antiga gera não muda
+  /// quando o jogo ganha espécies). `null`: vale [speciesOfType].
+  final String? Function(String type, double pick, int epochId)? speciesOfTypeAt;
   final bool Function(String itemId) itemExists;
 
   /// A primeira época em que o item existe para o mundo (`since_epoch` do `items.json`; `null`: sempre). Antes dela o
@@ -651,7 +656,10 @@ class ClimateWorld {
       final epochId = d.epoch.id;
       // Da época 9 em diante, com relevo: as poças ficam onde a água para de verdade; a mais funda é a maior. Sem relevo
       // no lugar, os pontos sorteados pela seed de antes.
-      final wet = d.epoch.water == null ? null : water?.call(d.epoch)?.spots(cx, cy, piece.perCell);
+      final field = d.epoch.water == null ? null : water?.call(d.epoch);
+      final wet = field?.spots(cx, cy, piece.perCell);
+      // O tile da água ainda está sendo calculado em fundo: o bloco fica sem poças por enquanto, e nada vai para o cache.
+      if (field?.pendingAt(cx >>> 2, cy >>> 2) ?? false) continue;
       final (rLo, rHi) = piece.radiusM;
       final spots = _spotCache.putIfAbsent((epochId, cx, cy, piece.perCell), () => [
             for (final s in wet ?? const <WaterSpot>[])
@@ -774,7 +782,7 @@ class ClimateWorld {
   }
 
   WorldSpawn? _eco(PieceSpawn spawn, double pick, double x, double y, int uid, int t, int Function(String, int, int) levelOf) {
-    final species = speciesOfType(spawn.type, pick) ?? spawn.fallbackSpecies;
+    final species = (speciesOfTypeAt?.call(spawn.type, pick, schedule.select(t).epoch.id) ?? speciesOfType(spawn.type, pick)) ?? spawn.fallbackSpecies;
     if (species == null) return null; // tipo sem espécie no jogo e sem fallback: o dado fica sem efeito
     final (lo, hi) = spawn.levelAdd;
     final add = lo + (pick * 1000).floor() % (hi - lo + 1);

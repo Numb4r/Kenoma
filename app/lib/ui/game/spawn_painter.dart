@@ -24,10 +24,14 @@ typedef VariantTintOf = int? Function(WorldSpawn spawn);
 /// Cor da Fagulha ou do material.
 ui.Color spawnColor(WorldSpawn s, EcoTypeOf typeOf) {
   if (s.isEco) return typeColor(typeOf(s.entryId) ?? EcoType.fire);
+  // A Fagulha tem a cor do tipo dela (`item.dust.<tipo>`).
+  if (s.entryId.startsWith('item.dust.')) {
+    final name = s.entryId.substring('item.dust.'.length);
+    for (final t in EcoType.values) {
+      if (t.name == name) return typeColor(t);
+    }
+  }
   return switch (s.entryId) {
-    'item.dust.fire' => typeColor(EcoType.fire),
-    'item.dust.plant' => typeColor(EcoType.plant),
-    'item.dust.water' => typeColor(EcoType.water),
     'item.scrap' => kDim,
     'item.chalk' => kText,
     'item.herbs' => typeColor(EcoType.plant),

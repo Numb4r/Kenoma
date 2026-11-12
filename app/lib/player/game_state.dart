@@ -20,7 +20,7 @@ import 'progression.dart';
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 6;
+const int saveSchemaVersion = 7;
 
 /// A chave das células z17 visitadas no save (schema 6).
 const String kVisitedCellsKey = 'celulas_visitadas';
@@ -106,6 +106,7 @@ class GameState extends ChangeNotifier {
     Map<String, int>? hiddenRevealed,
     Map<String, dynamic>? settings,
     this.lastSeenUtc = 0,
+    this.pinnedSpecies,
     Map<String, dynamic>? extra,
   })  : inventory = {...?inventory},
         collection = [...?collection],
@@ -127,7 +128,7 @@ class GameState extends ChangeNotifier {
 
   factory GameState.fromJson(Map<String, dynamic> j, ProgressBalance balance) {
     const known = {
-      'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'marks', 'saved_utc',
+      'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'bestiary_pin', 'marks', 'saved_utc',
       'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', kVisitedCellsKey, 'radar', 'conjurer',
     };
     final progress = PlayerProgress.fromJson(j['player'] as Map<String, dynamic>?, balance)..settleBanked();
@@ -144,6 +145,7 @@ class GameState extends ChangeNotifier {
         for (final e in ((j['bestiary'] as Map<String, dynamic>?) ?? const {}).entries) e.key: BestiaryEntry.fromJson(e.value as Map<String, dynamic>),
       },
       marks: [for (final m in (j['marks'] as List<dynamic>?) ?? const []) Mark.fromJson(m as Map<String, dynamic>)],
+      pinnedSpecies: j['bestiary_pin'] as String?,
       founder: j['founder'] == null ? null : Founder.fromJson(j['founder'] as Map<String, dynamic>),
       createdUtc: j['created_utc'] as int?,
       story: StoryState.fromJson(j['story'] as Map<String, dynamic>?),
@@ -208,6 +210,16 @@ class GameState extends ChangeNotifier {
   /// Uids das criaturas ativas no Círculo, no máximo 3.
   final List<String> circle;
   final Map<String, BestiaryEntry> bestiary;
+
+  /// A forma marcada no Bestiário como alvo de pesquisa (o id da espécie ou da Fagulha), ou `null`.
+  String? pinnedSpecies;
+
+  /// Marca ou desmarca [id] como alvo de pesquisa.
+  void togglePin(String id) {
+    pinnedSpecies = pinnedSpecies == id ? null : id;
+    notifyListeners();
+  }
+
   final List<Mark> marks;
 
   /// Registro de fundador (`player_id`, primeira versão e log de versões). `null` num jogo ainda sem registro.
@@ -398,6 +410,11 @@ class GameState extends ChangeNotifier {
   void add(String itemId, int n) {
     if (n <= 0) return;
     inventory[itemId] = count(itemId) + n;
+    // A Fagulha coletada entra no Bestiário (a primeira forma de cada família).
+    if (itemId.startsWith('item.dust.')) {
+      final e = bestiary[itemId] ?? const BestiaryEntry();
+      bestiary[itemId] = e.copyWith(captured: true, captures: e.captures + n);
+    }
     notifyListeners();
   }
 
@@ -456,12 +473,15 @@ class GameState extends ChangeNotifier {
 
   /// A espécie (e a variante ou o Brilhante, se for) apareceu na visão do jogador. A primeira variante e o primeiro
   /// Brilhante contam como eventos de jogo (o Familiar comenta no chat).
-  void markSeen(String speciesId, {String? variant, bool shiny = false}) {
+  ///
+  /// [tags]: quando foi vista (`seenTags`: a hora e o clima), para a pesquisa do Bestiário.
+  void markSeen(String speciesId, {String? variant, bool shiny = false, Set<String> tags = const {}}) {
     var changed = false;
     for (final k in bestiaryKeys(speciesId, variant: variant, shiny: shiny)) {
-      if (bestiary[k]?.seen ?? false) continue;
-      bestiary[k] = (bestiary[k] ?? const BestiaryEntry()).copyWith(seen: true);
-      changed = true;
+      final e = bestiary[k] ?? const BestiaryEntry();
+      if (e.seen && e.when.containsAll(tags)) continue;
+      bestiary[k] = e.copyWith(seen: true, when: {...e.when, ...tags});
+      if (!e.seen || k == speciesId) changed = true;
     }
     if (!changed) return;
     if (shiny && story.count('shiny_seen') == 0) story.events['shiny_seen'] = 1;
@@ -471,11 +491,12 @@ class GameState extends ChangeNotifier {
 
   /// A criatura entra na coleção e no bestiário, e o spawn some do registro de vivos.
   /// Com [debug] (criatura do "Criar criatura"), entra na coleção marcada e não toca no bestiário.
-  CreatureInstance capture({required int uid, required String speciesId, required int level, required int nowUtc, String? variant, bool shiny = false, bool debug = false}) {
+  CreatureInstance capture({required int uid, required String speciesId, required int level, required int nowUtc, String? variant, bool shiny = false, bool debug = false, String? biome}) {
     final c = CreatureInstance(uid: uidKey(uid), speciesId: speciesId, level: level, capturedUtc: nowUtc, variant: variant, shiny: shiny, debug: debug);
     collection.add(c);
     for (final k in debug ? const <String>[] : bestiaryKeys(speciesId, variant: variant, shiny: shiny)) {
-      bestiary[k] = (bestiary[k] ?? const BestiaryEntry()).copyWith(captured: true);
+      final e = bestiary[k] ?? const BestiaryEntry();
+      bestiary[k] = e.copyWith(captured: true, captures: e.captures + 1, biomes: {...e.biomes, ?biome});
     }
     markDone(uid, nowUtc);
     return c;
@@ -485,7 +506,8 @@ class GameState extends ChangeNotifier {
   void addCreature(CreatureInstance c) {
     collection.add(c);
     for (final k in c.debug ? const <String>[] : bestiaryKeys(c.speciesId, variant: c.variant, shiny: c.shiny)) {
-      bestiary[k] = (bestiary[k] ?? const BestiaryEntry()).copyWith(captured: true);
+      final e = bestiary[k] ?? const BestiaryEntry();
+      bestiary[k] = e.copyWith(captured: true, captures: e.captures + 1);
     }
     notifyListeners();
   }
@@ -578,6 +600,7 @@ class GameState extends ChangeNotifier {
         'collected': _collected,
         'circle': circle,
         'bestiary': {for (final e in bestiary.entries) e.key: e.value.toJson()},
+        if (pinnedSpecies != null) 'bestiary_pin': pinnedSpecies,
         'marks': [for (final m in marks) m.toJson()],
       };
 }

@@ -10,7 +10,7 @@ import '../type_label.dart';
 
 const String ritualUnknown = '???';
 
-const Map<String, String> _biomeNames = {'urban': 'Urbano', 'green': 'Verde', 'water': 'Água', 'residential': 'Residencial', 'void': 'Vazio'};
+const Map<String, String> _biomeNames = {'urban': 'Urbano', 'green': 'Verde', 'water': 'Água', 'residential': 'Residencial', 'void': 'Vazio', 'lit': 'Iluminado', 'sacred': 'Sagrado'};
 
 String conditionText(RitualCondition c) => switch (c.kind) {
       ConditionKind.hour => 'Entre ${c.from}h e ${c.to}h',

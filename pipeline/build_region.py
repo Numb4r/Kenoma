@@ -35,6 +35,8 @@ PREVIEW_COLORS = {
     2: (70, 150, 80),    # Verde
     3: (60, 110, 200),   # Água
     4: (215, 190, 140),  # Residencial
+    5: (255, 220, 120),  # Iluminado (época 11)
+    6: (170, 120, 230),  # Sagrado (época 11)
 }
 
 
@@ -44,6 +46,11 @@ def lonlat_to_tile(lon: np.ndarray, lat: np.ndarray, zoom: int) -> tuple[np.ndar
     x = (lon + 180.0) / 360.0 * n
     y = (1.0 - np.arcsinh(np.tan(np.radians(lat))) / math.pi) / 2.0 * n
     return x, y
+
+
+def biomes_of_epoch(biomes: dict, epoch: int) -> dict:
+    """Os biomas que existem na época: um bioma com `since_epoch` só entra nos pacotes dessa época em diante."""
+    return {**biomes, "biomes": [b for b in biomes["biomes"] if b.get("since_epoch", 0) <= epoch]}
 
 
 def load_rules(biomes: dict) -> tuple[dict, list[str]]:
@@ -164,7 +171,7 @@ def main() -> None:
     args = parser.parse_args()
 
     region = json.loads((PIPELINE / "regions.json").read_text())[args.region]
-    biomes = json.loads((ROOT / "shared" / "biomes.json").read_text())
+    biomes = biomes_of_epoch(json.loads((ROOT / "shared" / "biomes.json").read_text()), args.epoch)
     rules, keys = load_rules(biomes)
 
     pbf = ensure_source(region["source"])
@@ -184,7 +191,9 @@ def main() -> None:
     counts = np.bincount(grid.ravel(), minlength=len(PREVIEW_COLORS))
     names = {b["id"]: b["name"] for b in biomes["biomes"]}
     print(f"grade {grid.shape[1]}x{grid.shape[0]} em z{region['zoom']}, origem ({x0}, {y0})")
-    for biome_id, count in enumerate(counts[:len(names)]):
+    for biome_id, count in enumerate(counts):
+        if biome_id not in names:
+            continue
         print(f"  {names[biome_id]:<12} {100 * count / grid.size:5.1f}%")
     print(f"{bin_path}  {len(data) / 1e6:.2f} MB")
     print(f"{preview_path}")

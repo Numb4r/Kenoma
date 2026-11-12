@@ -81,6 +81,7 @@
     "shaman": { "aura_bonus_m": 2 },
     "sealer": { "progress_up_mult": 1.15 }
   },
+  "research": { "tolerance_mult": 1.05 },
   "fusion": { "eco_count": 5, "essence_cost": 5, "spirit_level_cap": 30, "eco_traits_max": 1, "spirit_traits_max": 2, "anim_s": 2 },
   "spirit": { "height_m": 9, "ability_steps": 1, "resistance_add": 0.25 },
   "power": { "base": { "eco": 10, "spirit": 40 }, "per_level": { "eco": 2, "spirit": 3 } },

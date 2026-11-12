@@ -7,13 +7,13 @@ import 'eco_type.dart';
 import 'tuning_balance.dart';
 
 class Seal {
-  const Seal({required this.id, required this.name, required this.tolerance, this.bonusVsType, this.bonusMultiplier = 1});
+  const Seal({required this.id, required this.name, required this.tolerance, this.type, this.bonusMultiplier = 1});
 
   factory Seal.fromJson(Map<String, dynamic> j) => Seal(
         id: j['id'] as String,
         name: j['name'] as String,
         tolerance: (j['tolerance'] as num).toDouble(),
-        bonusVsType: j['bonus_vs_type'] == null ? null : EcoType.parse(j['bonus_vs_type'] as String),
+        type: j['type'] == null ? null : EcoType.parse(j['type'] as String),
         bonusMultiplier: (j['bonus_multiplier'] as num?)?.toDouble() ?? 1,
       );
 
@@ -23,8 +23,8 @@ class Seal {
   /// Tolerância base. O selo de tipo vale como simples.
   final double tolerance;
 
-  /// Tipo contra o qual o selo de tipo ganha o multiplicador (o tipo que ele vence).
-  final EcoType? bonusVsType;
+  /// O tipo do selo de tipo: ganha o multiplicador contra todo tipo que este vence (a tabela de `EcoType`).
+  final EcoType? type;
   final double bonusMultiplier;
 }
 
@@ -56,7 +56,7 @@ double tuningTolerance({
   required TuningBalance balance,
   int circleStrong = 0,
 }) {
-  final typeBonus = seal.bonusVsType == target ? seal.bonusMultiplier : 1.0;
+  final typeBonus = (seal.type?.beats(target) ?? false) ? seal.bonusMultiplier : 1.0;
   final circle = math.pow(balance.circleStrongMultiplier, circleStrong.clamp(0, balance.circleStrongMax));
   return seal.tolerance * typeBonus * circle;
 }

@@ -10,7 +10,9 @@ import '../core/species_ids.dart';
 import '../crafting/ritual.dart';
 import '../crafting/ritual_data.dart';
 
+import '../core/astro.dart';
 import '../core/behavior.dart';
+import '../player/bestiary.dart' show seenTags;
 import '../core/tiles.dart';
 import '../player/conjurer_balance.dart' show School;
 import '../player/circle.dart' show MapAbilities;
@@ -104,7 +106,20 @@ class WorldView {
   PlayerClimate climate = PlayerClimate.none;
 
   /// Alcance do rastreador: o maior entre o padrão e o do Círculo.
-  double get trackerRangeM => math.max(trackerM, abilities().trackerRangeM);
+  ///
+  /// O bioma (chave de spawn) da célula z20, ou `null` fora do mapa: onde uma captura aconteceu, para a pesquisa.
+  String? biomeKeyOf(int cx, int cy) {
+    try {
+      return _biomeKeyAt(cx, cy);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Quando o jogador está vendo o mundo agora (`seenTags`: a hora pelo sol e o clima). Atualizado em [refresh].
+  Set<String> sightTags = const {};
+
+  double get trackerRangeM => math.max(trackerM, abilities().trackerRangeM) + abilities().of('radar_range_bonus_m'); // o Humoth soma por cima
 
   /// Até onde os spawns são gerados: a visão, ou o rastreador se ele vê mais longe.
   double get reachM => math.max(viewM, trackerRangeM);
@@ -227,6 +242,7 @@ class WorldView {
     _mpc = metersPerCell(lat);
     _hasPlayer = true;
     climate = field.climate?.modsAt(px, py, tUtc) ?? PlayerClimate.none;
+    sightTags = seenTags(sunAltDeg: sunAltitudeDeg(lat, lon, tUtc), climate: climate.id);
     syncRitualUnlock(state);
     traces = [for (final t in traces) if (t.untilUtc > tUtc) t];
     _resolveDistortions(tUtc);
@@ -257,7 +273,7 @@ class WorldView {
         continue;
       }
       if (s.isEco && distanceM(s) <= viewM) {
-        if (!isDebugUid(s.uid) && !sandbox()) state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny); // a de debug não entra no bestiário
+        if (!isDebugUid(s.uid) && !sandbox()) state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny, tags: sightTags); // a de debug não entra no bestiário
         if (ritual != null && isRitualOnlyId(s.entryId)) noteRitualSighting(state, ritual!, s.uid, s.entryId, _ritualSeen);
         if (s.shiny && _announced.add(s.uid)) onShiny?.call(s);
       }

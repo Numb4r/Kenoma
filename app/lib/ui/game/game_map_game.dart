@@ -9,6 +9,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import '../../capture/eco_type.dart';
+import '../colors.dart' show kCycleway;
 import '../../core/astro.dart';
 import '../../core/weather.dart';
 import '../../world/companion.dart';
@@ -181,6 +182,9 @@ class GameMapGame extends FlameGame {
   final TrafficSimConfig trafficSim;
   final TrafficPointSource? trafficPoints;
   final CyclePack? cycleways;
+
+  /// A revisão da água no relevo (sobe quando um tile chega do cálculo de fundo). A tela liga.
+  int Function() waterRevision = () => 0;
   final bool Function(double x, double y)? noCrossingAt;
 
   /// Debug: desenha a área simulada e a fase dos semáforos; e força a densidade (`null`: a da hora e do clima).
@@ -457,6 +461,7 @@ class GameMapGame extends FlameGame {
       climateGround.cover
         ?..wearOf = _traffic.wearOf
         ..wearStamp = _traffic.wearStamp;
+      climateGround.cover?.waterStamp = waterRevision();
     } else {
       _traffic.lastDrawn = 0;
     }
@@ -469,6 +474,7 @@ class GameMapGame extends FlameGame {
     paintLayers({
       MapLayer.base: () {
         _art.paint(canvas, view, cam, dpr: dpr, metersPerCell: mpc, coarse: coarse);
+        _paintCycleways(canvas, view, cam);
         _paintLight(canvas, view);
         travelLayer?.paintGround(canvas, view, cam, mpc, utc: _exactUtc(), avatar: avatar);
         if (streetNames()) _labels.paint(canvas, view, cam);
@@ -666,6 +672,28 @@ class GameMapGame extends FlameGame {
 
   /// A luz do dia sobre o desenho do mapa: à noite escurece e esfria (multiplica por um azul profundo), no nascer e
   /// no pôr do sol esquenta um pouco. Cobre só o mapa; Aura, spawns e Conjurador vêm depois, sem escurecer.
+  /// As ciclovias do arquivo `<região>_e0_cycle.bin` (fora das épocas e do pacote visual): uma linha fina e discreta, de um
+  /// pixel de arte, na cor da paleta. A ciclofaixa numa rua fica mais apagada que a ciclovia própria.
+  void _paintCycleways(Canvas canvas, Size view, MapCamera cam) {
+    final pack = cycleways;
+    if (pack == null) return;
+    final (l, t, r, b) = cam.visibleBounds(view.width, view.height);
+    final own = Path(), lane = Path();
+    for (final line in pack.linesIn(l, t, r, b)) {
+      final path = line.onRoad ? lane : own;
+      for (var i = 0; i + 1 < line.xy.length; i += 2) {
+        final (x, y) = cam.cellToScreen(line.xy[i], line.xy[i + 1], view.width, view.height);
+        i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+      }
+    }
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = balance.artPixelDp
+      ..isAntiAlias = false;
+    canvas.drawPath(lane, paint..color = kCycleway.withValues(alpha: 0.3));
+    canvas.drawPath(own, paint..color = kCycleway.withValues(alpha: 0.55));
+  }
+
   void _paintLight(Canvas canvas, Size view) {
     final rect = Offset.zero & view;
     if (light.night > 0.004) {

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/ui/sprites/phase1_masks.dart';
 import 'package:kenoma/ui/sprites/sprite_data.dart';
 import 'package:kenoma/ui/sprites/sprite_image.dart';
 
@@ -11,7 +12,13 @@ void main() {
 
   test('cada Eco de creatures.json tem sprite', () {
     final species = [for (final s in loadJson('assets/data/creatures.json')['species'] as List<dynamic>) if ((s as Map<String, dynamic>)['tier'] == 'eco') s['id']];
-    expect(ecoSprites.keys.toSet(), species.toSet());
+    // Os três do MVP têm arte própria; as famílias da fase 1, o sprite provisório de `phase1_sprites.dart`.
+    expect({...ecoSprites.keys, for (final k in phase1Masks.keys) if (k.endsWith('.eco')) k}, species.toSet());
+    for (final id in species) {
+      final rows = ecoSpriteRows(id as String);
+      expect(rows, hasLength(48), reason: id);
+      expect(rows.every((r) => r.length == 48 && r.split('').every((c) => c == '.' || spritePaletteOf(id).containsKey(c))), isTrue, reason: id);
+    }
   });
 
   test('os Espíritos usam o sprite do Eco da família (visual provisório)', () {

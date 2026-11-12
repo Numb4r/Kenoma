@@ -19679,6 +19679,5522 @@
           }
         ]
       }
+    },
+    {
+      "id": 11,
+      "starts_utc": "2026-11-12T16:00:00Z",
+      "valid_until_utc": "2027-02-10T16:00:00Z",
+      "region_packs": {
+        "campinas": {
+          "file": "campinas_e11.bin",
+          "sha256": "52a09041894f7301209cc707ae759fe241e9a09c09f50856ddafa7d996367244"
+        },
+        "sao_paulo": {
+          "file": "sao_paulo_e5.bin",
+          "sha256": "75fc763478409e6b6853ca859165b8b96fc7868b1c99014d71c068657b6cbd47"
+        }
+      },
+      "visual_packs": {
+        "campinas": {
+          "file": "campinas_e0_vis.bin",
+          "sha256": "e8491fa298a07beb4703cf4fe03d2694ed07490365efa8183d80963aab0c531b"
+        },
+        "sao_paulo": {
+          "file": "sao_paulo_e5_vis.bin",
+          "sha256": "9204f9ce5c6154878a8ac0c4f6b7e8e6aa7a598662bb2d0b2363d916b03e76b7"
+        }
+      },
+      "relief_packs": {
+        "campinas": {
+          "file": "campinas_e9_relief.bin",
+          "sha256": "1bb9c5acd6f6e09f49af449b7bd7f026cc30d237fa167bf4ac209278481e7d86"
+        },
+        "sao_paulo": {
+          "file": "sao_paulo_e10_relief.bin",
+          "sha256": "1c050f97ce36cdc2d27bdab33a31d9fadfaeb8fd7e07ee91a618b0f8c7bd33b9"
+        }
+      },
+      "water": {
+        "steps": 32,
+        "carve_dm": {
+          "pedestrian": 1,
+          "local": 2,
+          "secondary": 3,
+          "principal": 3
+        },
+        "drain_256": {
+          "pedestrian": 0,
+          "local": 5,
+          "secondary": 10,
+          "principal": 16
+        },
+        "pool_min": 2048,
+        "flood_flow": 60000,
+        "flood_full": 400000,
+        "stream_rise_dm": 12,
+        "dry_depth_bonus": 0.5,
+        "spot_spacing": 3,
+        "wet_per_cell": 2,
+        "wet_chance": 0.3,
+        "melt_climates": [
+          "snow",
+          "blizzard",
+          "veil_snow"
+        ],
+        "melt_as": "drizzle",
+        "melt_rise": 0.3,
+        "freeze_climates": [
+          "cold",
+          "hard_frost"
+        ],
+        "freeze_as": "hard_frost",
+        "freeze_from_h": 2,
+        "freeze_to_h": 7,
+        "freeze_max_size": 0.5
+      },
+      "fog": {
+        "climates": [
+          "fog",
+          "fog_procession"
+        ],
+        "ring_cells": 16,
+        "span_dm": 150,
+        "valley_view": 0.6,
+        "hill_view": 1.6,
+        "water_boost": 0.25,
+        "sun_start_deg": 8,
+        "sun_clear_deg": 30,
+        "clear_view": 2.5
+      },
+      "motion": {
+        "wander_m": 3.5,
+        "wander_period_s": 80,
+        "water_orbit_m": 4,
+        "water_orbit_period_s": 55,
+        "water_seek_m": 40,
+        "current_mps": 0.04,
+        "current_max_m": 60,
+        "vortex_share": 0.9,
+        "vortex_orbit_m": 1.5,
+        "vortex_period_s": 40
+      },
+      "wind": {
+        "street_gain": 1.35,
+        "cross_keep": 0.15,
+        "shelter": 0.5
+      },
+      "spawn": {
+        "items": [
+          {
+            "index": 0,
+            "kind": "eco",
+            "chance": {
+              "urban": 0.2475,
+              "green": 0.2475,
+              "water": 0.2475,
+              "residential": 0.198,
+              "lit": 0.2475,
+              "sacred": 0.198
+            },
+            "table": {
+              "urban": [
+                [
+                  "soot.eco",
+                  6
+                ],
+                [
+                  "hum.eco",
+                  6
+                ],
+                [
+                  "rust.eco",
+                  6
+                ],
+                [
+                  "frond.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ],
+                [
+                  "clod.eco",
+                  1
+                ],
+                [
+                  "glare.eco",
+                  1
+                ],
+                [
+                  "shade.eco",
+                  1
+                ],
+                [
+                  "wisp.eco",
+                  1
+                ],
+                [
+                  "bit.eco",
+                  1
+                ],
+                [
+                  "sprig.eco",
+                  1
+                ],
+                [
+                  "wyrm.eco",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "frond.eco",
+                  6
+                ],
+                [
+                  "clod.eco",
+                  6
+                ],
+                [
+                  "sprig.eco",
+                  6
+                ],
+                [
+                  "soot.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ],
+                [
+                  "hum.eco",
+                  1
+                ],
+                [
+                  "rust.eco",
+                  1
+                ],
+                [
+                  "glare.eco",
+                  1
+                ],
+                [
+                  "shade.eco",
+                  1
+                ],
+                [
+                  "wisp.eco",
+                  1
+                ],
+                [
+                  "bit.eco",
+                  1
+                ],
+                [
+                  "wyrm.eco",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "rill.eco",
+                  6
+                ],
+                [
+                  "soot.eco",
+                  1
+                ],
+                [
+                  "frond.eco",
+                  1
+                ],
+                [
+                  "hum.eco",
+                  1
+                ],
+                [
+                  "clod.eco",
+                  1
+                ],
+                [
+                  "rust.eco",
+                  1
+                ],
+                [
+                  "glare.eco",
+                  1
+                ],
+                [
+                  "shade.eco",
+                  1
+                ],
+                [
+                  "wisp.eco",
+                  1
+                ],
+                [
+                  "bit.eco",
+                  1
+                ],
+                [
+                  "sprig.eco",
+                  1
+                ],
+                [
+                  "wyrm.eco",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "shade.eco",
+                  6
+                ],
+                [
+                  "soot.eco",
+                  1
+                ],
+                [
+                  "frond.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ],
+                [
+                  "hum.eco",
+                  1
+                ],
+                [
+                  "clod.eco",
+                  1
+                ],
+                [
+                  "rust.eco",
+                  1
+                ],
+                [
+                  "glare.eco",
+                  1
+                ],
+                [
+                  "wisp.eco",
+                  1
+                ],
+                [
+                  "bit.eco",
+                  1
+                ],
+                [
+                  "sprig.eco",
+                  1
+                ],
+                [
+                  "wyrm.eco",
+                  1
+                ]
+              ],
+              "lit": [
+                [
+                  "glare.eco",
+                  6
+                ],
+                [
+                  "bit.eco",
+                  6
+                ],
+                [
+                  "soot.eco",
+                  3
+                ],
+                [
+                  "frond.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ],
+                [
+                  "hum.eco",
+                  1
+                ],
+                [
+                  "clod.eco",
+                  1
+                ],
+                [
+                  "rust.eco",
+                  1
+                ],
+                [
+                  "shade.eco",
+                  1
+                ],
+                [
+                  "wisp.eco",
+                  1
+                ],
+                [
+                  "sprig.eco",
+                  1
+                ],
+                [
+                  "wyrm.eco",
+                  1
+                ]
+              ],
+              "sacred": [
+                [
+                  "wisp.eco",
+                  6
+                ],
+                [
+                  "soot.eco",
+                  1
+                ],
+                [
+                  "frond.eco",
+                  1
+                ],
+                [
+                  "rill.eco",
+                  1
+                ],
+                [
+                  "hum.eco",
+                  1
+                ],
+                [
+                  "clod.eco",
+                  1
+                ],
+                [
+                  "rust.eco",
+                  1
+                ],
+                [
+                  "glare.eco",
+                  1
+                ],
+                [
+                  "shade.eco",
+                  1
+                ],
+                [
+                  "bit.eco",
+                  1
+                ],
+                [
+                  "sprig.eco",
+                  1
+                ],
+                [
+                  "wyrm.eco",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ],
+            "level_delta": [
+              -2,
+              2
+            ]
+          },
+          {
+            "index": 1,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.35,
+              "green": 0.35,
+              "water": 0.35,
+              "residential": 0.35,
+              "lit": 0.35,
+              "sacred": 0.35
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.electric",
+                  6
+                ],
+                [
+                  "item.dust.metal",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.earth",
+                  6
+                ],
+                [
+                  "item.dust.fae",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.shadow",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "lit": [
+                [
+                  "item.dust.light",
+                  6
+                ],
+                [
+                  "item.dust.digital",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  3
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "sacred": [
+                [
+                  "item.dust.spectral",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 2,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.35,
+              "green": 0.35,
+              "water": 0.35,
+              "residential": 0.35,
+              "lit": 0.35,
+              "sacred": 0.35
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.electric",
+                  6
+                ],
+                [
+                  "item.dust.metal",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.earth",
+                  6
+                ],
+                [
+                  "item.dust.fae",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.shadow",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "lit": [
+                [
+                  "item.dust.light",
+                  6
+                ],
+                [
+                  "item.dust.digital",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  3
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "sacred": [
+                [
+                  "item.dust.spectral",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 3,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.35,
+              "green": 0.35,
+              "water": 0.35,
+              "residential": 0.35,
+              "lit": 0.35,
+              "sacred": 0.35
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.electric",
+                  6
+                ],
+                [
+                  "item.dust.metal",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.earth",
+                  6
+                ],
+                [
+                  "item.dust.fae",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.shadow",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "lit": [
+                [
+                  "item.dust.light",
+                  6
+                ],
+                [
+                  "item.dust.digital",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  3
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "sacred": [
+                [
+                  "item.dust.spectral",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 4,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.35,
+              "green": 0.35,
+              "water": 0.35,
+              "residential": 0.35,
+              "lit": 0.35,
+              "sacred": 0.35
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.electric",
+                  6
+                ],
+                [
+                  "item.dust.metal",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.earth",
+                  6
+                ],
+                [
+                  "item.dust.fae",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.shadow",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "lit": [
+                [
+                  "item.dust.light",
+                  6
+                ],
+                [
+                  "item.dust.digital",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  3
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "sacred": [
+                [
+                  "item.dust.spectral",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 5,
+            "kind": "spark",
+            "chance": {
+              "urban": 0.35,
+              "green": 0.35,
+              "water": 0.35,
+              "residential": 0.35,
+              "lit": 0.35,
+              "sacred": 0.35
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.dust.fire",
+                  6
+                ],
+                [
+                  "item.dust.electric",
+                  6
+                ],
+                [
+                  "item.dust.metal",
+                  6
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.dust.plant",
+                  6
+                ],
+                [
+                  "item.dust.earth",
+                  6
+                ],
+                [
+                  "item.dust.fae",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.dust.water",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.dust.shadow",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "lit": [
+                [
+                  "item.dust.light",
+                  6
+                ],
+                [
+                  "item.dust.digital",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  3
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.spectral",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ],
+              "sacred": [
+                [
+                  "item.dust.spectral",
+                  6
+                ],
+                [
+                  "item.dust.fire",
+                  1
+                ],
+                [
+                  "item.dust.plant",
+                  1
+                ],
+                [
+                  "item.dust.water",
+                  1
+                ],
+                [
+                  "item.dust.electric",
+                  1
+                ],
+                [
+                  "item.dust.earth",
+                  1
+                ],
+                [
+                  "item.dust.metal",
+                  1
+                ],
+                [
+                  "item.dust.light",
+                  1
+                ],
+                [
+                  "item.dust.shadow",
+                  1
+                ],
+                [
+                  "item.dust.digital",
+                  1
+                ],
+                [
+                  "item.dust.fae",
+                  1
+                ],
+                [
+                  "item.dust.draconic",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ]
+          },
+          {
+            "index": 6,
+            "kind": "material",
+            "chance": {
+              "urban": 0.2,
+              "green": 0.2,
+              "water": 0.2,
+              "residential": 0.2,
+              "lit": 0.2,
+              "sacred": 0.2
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.scrap",
+                  3
+                ],
+                [
+                  "item.chalk",
+                  3
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.herbs",
+                  4
+                ],
+                [
+                  "item.chalk",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.pure_water",
+                  4
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.chalk",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.scrap",
+                  2
+                ],
+                [
+                  "item.chalk",
+                  2
+                ],
+                [
+                  "item.herbs",
+                  2
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "lit": [
+                [
+                  "item.scrap",
+                  3
+                ],
+                [
+                  "item.chalk",
+                  3
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "sacred": [
+                [
+                  "item.scrap",
+                  2
+                ],
+                [
+                  "item.chalk",
+                  2
+                ],
+                [
+                  "item.herbs",
+                  2
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              3
+            ]
+          },
+          {
+            "index": 7,
+            "kind": "material",
+            "chance": {
+              "urban": 0.2,
+              "green": 0.2,
+              "water": 0.2,
+              "residential": 0.2,
+              "lit": 0.2,
+              "sacred": 0.2
+            },
+            "table": {
+              "urban": [
+                [
+                  "item.scrap",
+                  3
+                ],
+                [
+                  "item.chalk",
+                  3
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "item.herbs",
+                  4
+                ],
+                [
+                  "item.chalk",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "item.pure_water",
+                  4
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.chalk",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "item.scrap",
+                  2
+                ],
+                [
+                  "item.chalk",
+                  2
+                ],
+                [
+                  "item.herbs",
+                  2
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "lit": [
+                [
+                  "item.scrap",
+                  3
+                ],
+                [
+                  "item.chalk",
+                  3
+                ],
+                [
+                  "item.herbs",
+                  1
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ],
+              "sacred": [
+                [
+                  "item.scrap",
+                  2
+                ],
+                [
+                  "item.chalk",
+                  2
+                ],
+                [
+                  "item.herbs",
+                  2
+                ],
+                [
+                  "item.pure_water",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              3
+            ]
+          },
+          {
+            "index": 8,
+            "kind": "eco",
+            "chance": {
+              "urban": 0.006,
+              "green": 0.006,
+              "water": 0.006,
+              "residential": 0.006,
+              "lit": 0.006,
+              "sacred": 0.006
+            },
+            "table": {
+              "urban": [
+                [
+                  "soot.spirit",
+                  6
+                ],
+                [
+                  "hum.spirit",
+                  6
+                ],
+                [
+                  "rust.spirit",
+                  6
+                ],
+                [
+                  "frond.spirit",
+                  1
+                ],
+                [
+                  "rill.spirit",
+                  1
+                ],
+                [
+                  "clod.spirit",
+                  1
+                ],
+                [
+                  "glare.spirit",
+                  1
+                ],
+                [
+                  "shade.spirit",
+                  1
+                ],
+                [
+                  "wisp.spirit",
+                  1
+                ],
+                [
+                  "bit.spirit",
+                  1
+                ],
+                [
+                  "sprig.spirit",
+                  1
+                ],
+                [
+                  "wyrm.spirit",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "frond.spirit",
+                  6
+                ],
+                [
+                  "clod.spirit",
+                  6
+                ],
+                [
+                  "sprig.spirit",
+                  6
+                ],
+                [
+                  "soot.spirit",
+                  1
+                ],
+                [
+                  "rill.spirit",
+                  1
+                ],
+                [
+                  "hum.spirit",
+                  1
+                ],
+                [
+                  "rust.spirit",
+                  1
+                ],
+                [
+                  "glare.spirit",
+                  1
+                ],
+                [
+                  "shade.spirit",
+                  1
+                ],
+                [
+                  "wisp.spirit",
+                  1
+                ],
+                [
+                  "bit.spirit",
+                  1
+                ],
+                [
+                  "wyrm.spirit",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "rill.spirit",
+                  6
+                ],
+                [
+                  "soot.spirit",
+                  1
+                ],
+                [
+                  "frond.spirit",
+                  1
+                ],
+                [
+                  "hum.spirit",
+                  1
+                ],
+                [
+                  "clod.spirit",
+                  1
+                ],
+                [
+                  "rust.spirit",
+                  1
+                ],
+                [
+                  "glare.spirit",
+                  1
+                ],
+                [
+                  "shade.spirit",
+                  1
+                ],
+                [
+                  "wisp.spirit",
+                  1
+                ],
+                [
+                  "bit.spirit",
+                  1
+                ],
+                [
+                  "sprig.spirit",
+                  1
+                ],
+                [
+                  "wyrm.spirit",
+                  1
+                ]
+              ],
+              "residential": [
+                [
+                  "shade.spirit",
+                  6
+                ],
+                [
+                  "soot.spirit",
+                  1
+                ],
+                [
+                  "frond.spirit",
+                  1
+                ],
+                [
+                  "rill.spirit",
+                  1
+                ],
+                [
+                  "hum.spirit",
+                  1
+                ],
+                [
+                  "clod.spirit",
+                  1
+                ],
+                [
+                  "rust.spirit",
+                  1
+                ],
+                [
+                  "glare.spirit",
+                  1
+                ],
+                [
+                  "wisp.spirit",
+                  1
+                ],
+                [
+                  "bit.spirit",
+                  1
+                ],
+                [
+                  "sprig.spirit",
+                  1
+                ],
+                [
+                  "wyrm.spirit",
+                  1
+                ]
+              ],
+              "lit": [
+                [
+                  "glare.spirit",
+                  6
+                ],
+                [
+                  "bit.spirit",
+                  6
+                ],
+                [
+                  "soot.spirit",
+                  3
+                ],
+                [
+                  "frond.spirit",
+                  1
+                ],
+                [
+                  "rill.spirit",
+                  1
+                ],
+                [
+                  "hum.spirit",
+                  1
+                ],
+                [
+                  "clod.spirit",
+                  1
+                ],
+                [
+                  "rust.spirit",
+                  1
+                ],
+                [
+                  "shade.spirit",
+                  1
+                ],
+                [
+                  "wisp.spirit",
+                  1
+                ],
+                [
+                  "sprig.spirit",
+                  1
+                ],
+                [
+                  "wyrm.spirit",
+                  1
+                ]
+              ],
+              "sacred": [
+                [
+                  "wisp.spirit",
+                  6
+                ],
+                [
+                  "soot.spirit",
+                  1
+                ],
+                [
+                  "frond.spirit",
+                  1
+                ],
+                [
+                  "rill.spirit",
+                  1
+                ],
+                [
+                  "hum.spirit",
+                  1
+                ],
+                [
+                  "clod.spirit",
+                  1
+                ],
+                [
+                  "rust.spirit",
+                  1
+                ],
+                [
+                  "glare.spirit",
+                  1
+                ],
+                [
+                  "shade.spirit",
+                  1
+                ],
+                [
+                  "bit.spirit",
+                  1
+                ],
+                [
+                  "sprig.spirit",
+                  1
+                ],
+                [
+                  "wyrm.spirit",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ],
+            "level_delta": [
+              -2,
+              2
+            ]
+          },
+          {
+            "index": 9,
+            "kind": "eco",
+            "chance": {
+              "urban": 0.003,
+              "green": 0.003,
+              "water": 0.003,
+              "residential": 0.003,
+              "lit": 0.003,
+              "sacred": 0.003
+            },
+            "table": {
+              "urban": [
+                [
+                  "soot.ritual",
+                  6
+                ],
+                [
+                  "frond.ritual",
+                  1
+                ],
+                [
+                  "rill.ritual",
+                  1
+                ]
+              ],
+              "green": [
+                [
+                  "soot.ritual",
+                  1
+                ],
+                [
+                  "frond.ritual",
+                  6
+                ],
+                [
+                  "rill.ritual",
+                  1
+                ]
+              ],
+              "water": [
+                [
+                  "soot.ritual",
+                  1
+                ],
+                [
+                  "frond.ritual",
+                  1
+                ],
+                [
+                  "rill.ritual",
+                  6
+                ]
+              ],
+              "residential": [
+                [
+                  "soot.ritual",
+                  1
+                ],
+                [
+                  "frond.ritual",
+                  1
+                ],
+                [
+                  "rill.ritual",
+                  1
+                ]
+              ],
+              "lit": [
+                [
+                  "soot.ritual",
+                  6
+                ],
+                [
+                  "frond.ritual",
+                  1
+                ],
+                [
+                  "rill.ritual",
+                  1
+                ]
+              ],
+              "sacred": [
+                [
+                  "soot.ritual",
+                  1
+                ],
+                [
+                  "frond.ritual",
+                  1
+                ],
+                [
+                  "rill.ritual",
+                  1
+                ]
+              ]
+            },
+            "qty": [
+              1,
+              1
+            ],
+            "level_delta": [
+              -2,
+              2
+            ]
+          }
+        ]
+      },
+      "walkable": {
+        "eco_off_path_m": 15,
+        "max_dist_m": 35,
+        "ref_length_m": 25.0,
+        "max_factor": 1.0,
+        "exclude_pack": {
+          "file": "campinas_e2_nowalk.bin",
+          "sha256": "05c64cf5a9c29511bc0e32ec06863d5cd9a4a9de0e0e909d9c0c19a1acdaf625"
+        },
+        "exclude_packs": {
+          "sao_paulo": {
+            "file": "sao_paulo_e5_nowalk.bin",
+            "sha256": "74bcb43321a838cfec1c8cd927e65cd64daf8bb0f33d17fcb21654085376f582"
+          }
+        }
+      },
+      "requires_feature": "street_life",
+      "eco_v2": {
+        "behavior_weights": {
+          "passive": 92,
+          "hidden": 8
+        },
+        "variant_chance": 0.12,
+        "shiny_chance": 0.0025,
+        "weather": {
+          "window_s": 10800,
+          "probs": {
+            "summer": [
+              0.3,
+              0.25,
+              0.32,
+              0.13
+            ],
+            "autumn": [
+              0.45,
+              0.3,
+              0.2,
+              0.05
+            ],
+            "winter": [
+              0.65,
+              0.27,
+              0.07,
+              0.01
+            ],
+            "spring": [
+              0.4,
+              0.3,
+              0.2,
+              0.1
+            ]
+          },
+          "spawn_multipliers": {
+            "rain": {
+              "water": 1.6,
+              "fire": 0.55
+            },
+            "storm": {
+              "water": 1.4,
+              "electric": 2.0,
+              "fire": 0.4
+            }
+          }
+        },
+        "conditions": {
+          "twilight_deg": 6,
+          "full_moon_min": 0.9,
+          "ring_cells": 16,
+          "span_dm": 150,
+          "families": {
+            "hum": {
+              "night": 3.0,
+              "twilight": 1.5,
+              "day": 0.4
+            },
+            "clod": {
+              "hill": 3.0
+            },
+            "glare": {
+              "day": 2.0,
+              "twilight": 0.6,
+              "night": 0.1
+            },
+            "shade": {
+              "night": 3.0,
+              "twilight": 1.5,
+              "day": 0.5
+            },
+            "wisp": {
+              "valley": 2.0
+            },
+            "sprig": {
+              "twilight": 6.0,
+              "day": 0.15,
+              "night": 0.15,
+              "full_moon": 2.5
+            },
+            "wyrm": {
+              "base": 0.0,
+              "climates": {
+                "black_sun": 1.0,
+                "crimson_rain": 1.0,
+                "meteor_shower": 1.0,
+                "rift_wind": 0.5
+              },
+              "min_level": 10
+            }
+          }
+        }
+      },
+      "climate": {
+        "window_s": 10800,
+        "local_offset_h": -3,
+        "seasons": [
+          {
+            "months": [
+              12,
+              1,
+              2,
+              3
+            ],
+            "hours": [
+              13,
+              20
+            ],
+            "weights": {
+              "storm": 30,
+              "rain": 20,
+              "drizzle": 6,
+              "cloudy": 12,
+              "clear": 8,
+              "strong_sun": 6,
+              "hail": 3,
+              "gale": 3,
+              "wind": 4
+            }
+          },
+          {
+            "months": [
+              12,
+              1,
+              2,
+              3
+            ],
+            "hours": [
+              6,
+              13
+            ],
+            "weights": {
+              "clear": 26,
+              "strong_sun": 24,
+              "cloudy": 20,
+              "drizzle": 6,
+              "rain": 8,
+              "wind": 8,
+              "fog": 3
+            }
+          },
+          {
+            "months": [
+              12,
+              1,
+              2,
+              3
+            ],
+            "weights": {
+              "clear": 30,
+              "cloudy": 26,
+              "rain": 16,
+              "storm": 8,
+              "drizzle": 10,
+              "wind": 8,
+              "fog": 2
+            }
+          },
+          {
+            "months": [
+              6,
+              7,
+              8,
+              9
+            ],
+            "hours": [
+              5,
+              10
+            ],
+            "weights": {
+              "fog": 32,
+              "cold": 26,
+              "clear": 16,
+              "cloudy": 10,
+              "smoke": 6,
+              "dry_dust": 4,
+              "drizzle": 4,
+              "wind": 2,
+              "hard_frost": 8
+            }
+          },
+          {
+            "months": [
+              8,
+              9
+            ],
+            "hours": [
+              12,
+              20
+            ],
+            "weights": {
+              "clear": 28,
+              "dry_dust": 18,
+              "smoke": 14,
+              "cold": 10,
+              "cloudy": 10,
+              "wind": 10,
+              "gale": 3,
+              "strong_sun": 5,
+              "drizzle": 2,
+              "smog": 8,
+              "dry_thunder": 8
+            }
+          },
+          {
+            "months": [
+              6,
+              7,
+              8,
+              9
+            ],
+            "hours": [
+              10,
+              18
+            ],
+            "weights": {
+              "clear": 28,
+              "dry_dust": 18,
+              "smoke": 14,
+              "cold": 10,
+              "cloudy": 10,
+              "wind": 10,
+              "gale": 3,
+              "strong_sun": 5,
+              "drizzle": 2,
+              "smog": 8
+            }
+          },
+          {
+            "months": [
+              6,
+              7,
+              8,
+              9
+            ],
+            "weights": {
+              "cold": 30,
+              "clear": 26,
+              "smoke": 14,
+              "fog": 10,
+              "cloudy": 12,
+              "wind": 6,
+              "dry_dust": 2,
+              "hard_frost": 6,
+              "smog": 6
+            }
+          },
+          {
+            "months": [
+              4,
+              5
+            ],
+            "hours": [
+              6,
+              18
+            ],
+            "weights": {
+              "clear": 30,
+              "cloudy": 22,
+              "drizzle": 8,
+              "rain": 10,
+              "storm": 3,
+              "cold": 4,
+              "fog": 3,
+              "wind": 8,
+              "strong_sun": 4,
+              "dry_dust": 5
+            }
+          },
+          {
+            "months": [
+              4,
+              5
+            ],
+            "weights": {
+              "clear": 34,
+              "cloudy": 24,
+              "cold": 14,
+              "fog": 10,
+              "drizzle": 8,
+              "rain": 6,
+              "wind": 4
+            }
+          },
+          {
+            "months": [
+              10,
+              11
+            ],
+            "hours": [
+              13,
+              20
+            ],
+            "weights": {
+              "storm": 16,
+              "rain": 18,
+              "cloudy": 16,
+              "clear": 14,
+              "strong_sun": 10,
+              "drizzle": 6,
+              "wind": 8,
+              "gale": 3,
+              "hail": 3
+            }
+          },
+          {
+            "months": [
+              10,
+              11
+            ],
+            "hours": [
+              6,
+              13
+            ],
+            "weights": {
+              "clear": 30,
+              "strong_sun": 16,
+              "cloudy": 20,
+              "drizzle": 6,
+              "rain": 8,
+              "wind": 10,
+              "dry_dust": 6,
+              "smoke": 4
+            }
+          },
+          {
+            "months": [
+              10,
+              11
+            ],
+            "weights": {
+              "clear": 32,
+              "cloudy": 26,
+              "rain": 14,
+              "storm": 8,
+              "drizzle": 8,
+              "wind": 8,
+              "smoke": 4
+            }
+          }
+        ],
+        "after": {},
+        "climates": {
+          "clear": {
+            "category": "native",
+            "pieces": [
+              {
+                "piece": "trails",
+                "name": "trails",
+                "trace_time_mult": 1.25
+              }
+            ]
+          },
+          "strong_sun": {
+            "category": "native",
+            "spawn": {
+              "fire": 1.4,
+              "light": 1.8
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "mirage",
+                "per_cell": 1,
+                "radius_m": 20,
+                "duration_s": 900,
+                "spawn": {
+                  "type": "fire",
+                  "chance": 0.6
+                },
+                "item": {
+                  "ids": [
+                    "item.prism_shard"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.25
+                }
+              }
+            ]
+          },
+          "cloudy": {
+            "category": "native",
+            "spawn": {
+              "shadow": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "cloud_shadow",
+                "per_cell": 2,
+                "radius_m": 60,
+                "duration_s": 1200,
+                "speed_mps": 1.5,
+                "spawn": {
+                  "type": "shadow",
+                  "chance": 0.5
+                }
+              }
+            ]
+          },
+          "drizzle": {
+            "category": "native",
+            "spawn": {
+              "water": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "puddles",
+                "name": "puddle_small",
+                "per_cell": 2,
+                "radius_m": [
+                  2,
+                  5
+                ],
+                "grow_s": 2400,
+                "dry_s": 1800,
+                "item": {
+                  "ids": [
+                    "item.pure_water"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.3
+                }
+              }
+            ]
+          },
+          "rain": {
+            "category": "native",
+            "spawn": {
+              "water": 1.8,
+              "fire": 0.6
+            },
+            "pieces": [
+              {
+                "piece": "puddles",
+                "name": "puddle",
+                "per_cell": 5,
+                "radius_m": [
+                  4,
+                  10
+                ],
+                "grow_s": 1800,
+                "dry_s": 3600,
+                "spawn": {
+                  "type": "water",
+                  "chance": 0.25
+                },
+                "item": {
+                  "ids": [
+                    "item.pure_water"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5
+                }
+              }
+            ]
+          },
+          "storm": {
+            "category": "native",
+            "spawn": {
+              "electric": 2.0,
+              "water": 1.4,
+              "fire": 0.4
+            },
+            "pieces": [
+              {
+                "piece": "impact",
+                "name": "lightning",
+                "every_s": [
+                  20,
+                  60
+                ],
+                "spawn": {
+                  "type": "electric",
+                  "tag": "charged",
+                  "chance": 0.08,
+                  "level_add": [
+                    0,
+                    2
+                  ],
+                  "ttl_s": 600
+                }
+              },
+              {
+                "piece": "puddles",
+                "name": "puddle",
+                "per_cell": 5,
+                "radius_m": [
+                  4,
+                  10
+                ],
+                "grow_s": 1800,
+                "dry_s": 3600,
+                "spawn": {
+                  "type": "water",
+                  "chance": 0.15
+                },
+                "item": {
+                  "ids": [
+                    "item.pure_water"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.4
+                }
+              }
+            ]
+          },
+          "hail": {
+            "category": "native",
+            "spawn": {
+              "earth": 1.3,
+              "water": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "collectible",
+                "name": "hail",
+                "every_s": [
+                  8,
+                  20
+                ],
+                "item": {
+                  "ids": [
+                    "item.ice_crystal"
+                  ],
+                  "fallback": "item.pure_water",
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.25,
+                  "ttl_s": 180
+                }
+              }
+            ]
+          },
+          "rainbow": {
+            "category": "native",
+            "spawn": {
+              "light": 2.0,
+              "fae": 1.4
+            },
+            "pieces": [
+              {
+                "piece": "rainbow",
+                "name": "rainbow",
+                "chance": 0.25,
+                "duration_s": [
+                  1200,
+                  2400
+                ],
+                "within_m": 400,
+                "after": [
+                  "rain",
+                  "storm",
+                  "drizzle",
+                  "hail"
+                ],
+                "radius_m": 8,
+                "spawn": {
+                  "type": "fae",
+                  "chance": 0.3
+                },
+                "item": {
+                  "ids": [
+                    "item.prism_shard"
+                  ],
+                  "fallback": "item.ectoplasm",
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 1.0
+                }
+              }
+            ]
+          },
+          "fog": {
+            "category": "native",
+            "spawn": {
+              "spectral": 2.0
+            },
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "view_max_m": 60,
+                "effects": [
+                  "Espectrais aparecem e somem a até 40 m"
+                ]
+              }
+            ]
+          },
+          "cold": {
+            "category": "native",
+            "spawn": {
+              "spectral": 1.3,
+              "fire": 0.7
+            },
+            "pieces": [
+              {
+                "piece": "trails",
+                "name": "trails",
+                "trace_time_mult": 2.0
+              }
+            ]
+          },
+          "wind": {
+            "category": "native",
+            "spawn": {
+              "fae": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "movement",
+                "name": "movement",
+                "spark_drift_mps": 0.05,
+                "drift_max_m": 12
+              }
+            ]
+          },
+          "gale": {
+            "category": "native",
+            "spawn": {
+              "fae": 1.8
+            },
+            "pieces": [
+              {
+                "piece": "movement",
+                "name": "movement",
+                "spark_drift_mps": 0.12,
+                "drift_max_m": 25
+              },
+              {
+                "piece": "collectible",
+                "name": "papers",
+                "every_s": [
+                  30,
+                  90
+                ]
+              }
+            ]
+          },
+          "dry_dust": {
+            "category": "native",
+            "spawn": {
+              "earth": 1.8,
+              "fire": 1.2,
+              "plant": 0.7
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "dust_devil",
+                "per_cell": 1,
+                "radius_m": 10,
+                "duration_s": 600,
+                "speed_mps": 2.0,
+                "spawn": {
+                  "type": "earth",
+                  "chance": 0.5,
+                  "per_zone": 2
+                }
+              }
+            ]
+          },
+          "smoke": {
+            "category": "native",
+            "spawn": {
+              "fire": 1.7,
+              "plant": 0.6
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "ash_zone",
+                "per_cell": 1,
+                "radius_m": 30,
+                "duration_s": 1800,
+                "spawn": {
+                  "type": "fire",
+                  "chance": 0.5,
+                  "per_zone": 2
+                }
+              }
+            ]
+          },
+          "snow": {
+            "category": "other_region",
+            "spawn": {
+              "water": 1.3,
+              "spectral": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "trails",
+                "name": "trails",
+                "player": true,
+                "eco_tracks_m": 30
+              }
+            ]
+          },
+          "blizzard": {
+            "category": "other_region",
+            "spawn": {
+              "spectral": 2.0
+            },
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "view_max_m": 40,
+                "aura_add_m": -2
+              }
+            ]
+          },
+          "sandstorm": {
+            "category": "other_region",
+            "spawn": {
+              "earth": 2.0
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "dune",
+                "per_cell": 2,
+                "radius_m": 15,
+                "duration_s": 2400,
+                "snap": true,
+                "item": {
+                  "ids": [
+                    "item.scrap",
+                    "item.chalk"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5,
+                  "reveal_m": 15
+                }
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "dunas escondem materiais que só aparecem cavando: não há escavação"
+                ]
+              }
+            ]
+          },
+          "deluge": {
+            "category": "other_region",
+            "spawn": {
+              "water": 2.6
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "flood",
+                "per_cell": 4,
+                "radius_m": 25,
+                "duration_s": 3600,
+                "spawn": {
+                  "type": "water",
+                  "chance": 0.5,
+                  "per_zone": 2
+                }
+              },
+              {
+                "piece": "movement",
+                "name": "movement",
+                "traffic_mult": 0.5
+              }
+            ]
+          },
+          "heat_wave": {
+            "category": "other_region",
+            "spawn": {
+              "fire": 2.6
+            },
+            "pieces": [
+              {
+                "piece": "movement",
+                "name": "movement",
+                "spark_ttl_s": 120
+              }
+            ]
+          },
+          "tornado": {
+            "category": "other_region",
+            "spawn": {
+              "fae": 1.8,
+              "electric": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "funnel",
+                "per_cell": 1,
+                "radius_m": 15,
+                "duration_s": 900,
+                "speed_mps": 4.0,
+                "item": {
+                  "ids": [
+                    "item.scrap",
+                    "item.herbs"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.7,
+                  "ttl_s": 3600,
+                  "per_zone": 6
+                }
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "puxa Fagulhas no caminho e as solta adiante"
+                ]
+              }
+            ]
+          },
+          "aurora": {
+            "category": "other_region",
+            "spawn": {
+              "light": 2.0,
+              "spectral": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "tolerance_mult": 1.25
+              }
+            ]
+          },
+          "acid_rain": {
+            "category": "other_region",
+            "spawn": {
+              "metal": 2.0
+            },
+            "pieces": [
+              {
+                "piece": "collectible",
+                "name": "scrap",
+                "every_s": [
+                  40,
+                  120
+                ],
+                "item": {
+                  "ids": [
+                    "item.scrap"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 0.6,
+                  "ttl_s": 600,
+                  "biomes": [
+                    "urban"
+                  ]
+                }
+              },
+              {
+                "piece": "puddles",
+                "name": "acid_puddle",
+                "per_cell": 3,
+                "radius_m": [
+                  3,
+                  8
+                ],
+                "grow_s": 1800,
+                "dry_s": 3600
+              }
+            ]
+          },
+          "meteor_shower": {
+            "category": "other_region",
+            "spawn": {
+              "light": 1.3,
+              "draconic": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "impact",
+                "name": "meteor",
+                "every_s": [
+                  600,
+                  1800
+                ],
+                "spawn": {
+                  "type": "draconic",
+                  "chance": 0.3,
+                  "level_add": [
+                    1,
+                    3
+                  ],
+                  "ttl_s": 7200
+                },
+                "item": {
+                  "ids": [
+                    "item.dust.fire",
+                    "item.dust.plant",
+                    "item.dust.water",
+                    "item.dust.draconic",
+                    "item.dust.draconic",
+                    "item.dust.earth",
+                    "item.dust.metal",
+                    "item.dust.light"
+                  ],
+                  "kind": "spark",
+                  "qty": [
+                    3,
+                    5
+                  ],
+                  "chance": 1.0,
+                  "ttl_s": 600
+                },
+                "item2": {
+                  "ids": [
+                    "item.meteorite"
+                  ],
+                  "fallback": "item.ectoplasm",
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.6,
+                  "ttl_s": 7200
+                }
+              }
+            ]
+          },
+          "veil_snow": {
+            "category": "mystic",
+            "spawn": {
+              "spectral": 2.0,
+              "shadow": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "collectible",
+                "name": "veil_flake",
+                "every_s": [
+                  10,
+                  25
+                ],
+                "item": {
+                  "ids": [
+                    "item.dust.fire",
+                    "item.dust.plant",
+                    "item.dust.water"
+                  ],
+                  "kind": "spark",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5,
+                  "ttl_s": 120
+                }
+              }
+            ]
+          },
+          "crimson_rain": {
+            "category": "mystic",
+            "pieces": [
+              {
+                "piece": "puddles",
+                "name": "crimson_puddle",
+                "per_cell": 4,
+                "radius_m": [
+                  4,
+                  10
+                ],
+                "grow_s": 1800,
+                "dry_s": 3600,
+                "spawn": {
+                  "type": "crimson",
+                  "chance": 0.4
+                },
+                "item": {
+                  "ids": [
+                    "item.essence.crimson"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5
+                }
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "variantes Carmesim ++: não há variante Carmesim"
+                ]
+              }
+            ]
+          },
+          "spark_rain": {
+            "category": "mystic",
+            "pieces": [
+              {
+                "piece": "collectible",
+                "name": "spark_fall",
+                "every_s": [
+                  3,
+                  8
+                ],
+                "item": {
+                  "ids": [
+                    "item.dust.fire",
+                    "item.dust.plant",
+                    "item.dust.water"
+                  ],
+                  "kind": "spark",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 1.0,
+                  "ttl_s": 180
+                }
+              }
+            ]
+          },
+          "echo_storm": {
+            "category": "mystic",
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "level_add": 3,
+                "effects": [
+                  "raios violeta abrem microfendas: não há microfendas"
+                ]
+              },
+              {
+                "piece": "impact",
+                "name": "violet_bolt",
+                "every_s": [
+                  30,
+                  90
+                ],
+                "spawn": {
+                  "type": "any",
+                  "chance": 0.15,
+                  "level_add": [
+                    3,
+                    6
+                  ],
+                  "ttl_s": 600
+                }
+              }
+            ]
+          },
+          "static": {
+            "category": "mystic",
+            "spawn": {
+              "digital": 2.0,
+              "electric": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "wander_mult": 1.6,
+                "immune_school": "technomancer"
+              }
+            ]
+          },
+          "silence": {
+            "category": "mystic",
+            "spawn": {
+              "spectral": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "calm": true,
+                "effects": [
+                  "a Exposição ao Véu sobe: não há Exposição",
+                  "os Que Escutam estão ouvindo"
+                ]
+              },
+              {
+                "piece": "movement",
+                "name": "movement",
+                "traffic_mult": 0.0
+              }
+            ]
+          },
+          "veil_ash": {
+            "category": "mystic",
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "Corrompidas +: não há Corrompidas"
+                ]
+              },
+              {
+                "piece": "zone",
+                "name": "veil_ash_zone",
+                "per_cell": 1,
+                "radius_m": 20,
+                "duration_s": 1800,
+                "spawn": {
+                  "type": "any",
+                  "chance": 0.4,
+                  "level_add": [
+                    1,
+                    3
+                  ]
+                }
+              }
+            ]
+          },
+          "fog_procession": {
+            "category": "mystic",
+            "spawn": {
+              "spectral": 3.0
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "procession",
+                "per_cell": 1,
+                "radius_m": 6,
+                "duration_s": 1200,
+                "speed_mps": 0.8,
+                "slot_at": 0.95,
+                "spawn": {
+                  "type": "spectral",
+                  "chance": 0.6,
+                  "level_add": [
+                    2,
+                    4
+                  ],
+                  "ttl_s": 1200
+                },
+                "street_route": true
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "view_max_m": 60,
+                "effects": [
+                  "seguir as figuras até o fim leva a um Espectral raro"
+                ]
+              }
+            ]
+          },
+          "rift_wind": {
+            "category": "mystic",
+            "spawn": {
+              "draconic": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "movement",
+                "name": "movement",
+                "spark_drift_mps": 0.1,
+                "drift_max_m": 20
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "a deriva aponta a Fenda mais próxima: não há Fendas, vale o vento da região"
+                ]
+              }
+            ]
+          },
+          "inverted_sky": {
+            "category": "mystic",
+            "spawn": {
+              "fae": 2.0
+            },
+            "pieces": [
+              {
+                "piece": "movement",
+                "name": "movement",
+                "spark_ttl_s": 180
+              }
+            ]
+          },
+          "veil_tide": {
+            "category": "mystic",
+            "pieces": [
+              {
+                "piece": "ghost",
+                "name": "ghost_building",
+                "per_cell": 2,
+                "radius_m": 30,
+                "duration_s": 2400,
+                "spawn": {
+                  "type": "ancient",
+                  "chance": 0.3
+                },
+                "item": {
+                  "ids": [
+                    "item.ectoplasm"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.4
+                }
+              }
+            ]
+          },
+          "black_sun": {
+            "category": "mystic",
+            "spawn": {
+              "shadow": 3.0,
+              "light": 0.6
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "inverted_shadow",
+                "per_cell": 2,
+                "radius_m": 30,
+                "duration_s": 1800,
+                "spawn": {
+                  "type": "shadow",
+                  "chance": 0.5,
+                  "per_zone": 2
+                },
+                "item": {
+                  "ids": [
+                    "item.ectoplasm"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.3
+                }
+              }
+            ]
+          },
+          "prismatic_drizzle": {
+            "category": "mystic",
+            "spawn": {
+              "water": 1.2
+            },
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "shiny_mult": 2.0
+              },
+              {
+                "piece": "puddles",
+                "name": "prism_puddle",
+                "per_cell": 3,
+                "radius_m": [
+                  3,
+                  7
+                ],
+                "grow_s": 1800,
+                "dry_s": 3600,
+                "item": {
+                  "ids": [
+                    "item.pure_water"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.3
+                }
+              }
+            ]
+          },
+          "hard_frost": {
+            "category": "native",
+            "spawn": {
+              "spectral": 1.3,
+              "water": 0.7
+            },
+            "pieces": [
+              {
+                "piece": "puddles",
+                "name": "ice_puddle",
+                "per_cell": 4,
+                "radius_m": [
+                  3,
+                  7
+                ],
+                "grow_s": 1800,
+                "dry_s": 3600,
+                "frozen": true,
+                "always": true,
+                "item": {
+                  "ids": [
+                    "item.ice_crystal"
+                  ],
+                  "fallback": "item.pure_water",
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.5
+                }
+              },
+              {
+                "piece": "movement",
+                "name": "movement",
+                "walker_mult": 0.6
+              }
+            ]
+          },
+          "dry_thunder": {
+            "category": "native",
+            "spawn": {
+              "electric": 2.0,
+              "fire": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "impact",
+                "name": "dry_bolt",
+                "every_s": [
+                  40,
+                  120
+                ],
+                "spawn": {
+                  "type": "electric",
+                  "tag": "charged",
+                  "chance": 0.05,
+                  "level_add": [
+                    0,
+                    2
+                  ],
+                  "ttl_s": 600
+                },
+                "item": {
+                  "ids": [
+                    "item.dust.fire"
+                  ],
+                  "kind": "spark",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 1.0,
+                  "ttl_s": 300
+                }
+              }
+            ]
+          },
+          "smog": {
+            "category": "native",
+            "spawn": {
+              "metal": 1.4,
+              "digital": 1.4
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "soot_zone",
+                "per_cell": 2,
+                "radius_m": 25,
+                "duration_s": 2400,
+                "snap": true,
+                "item": {
+                  "ids": [
+                    "item.scrap"
+                  ],
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 0.6,
+                  "per_zone": 2
+                }
+              }
+            ]
+          },
+          "freezing_rain": {
+            "category": "other_region",
+            "spawn": {
+              "water": 1.3,
+              "metal": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "collectible",
+                "name": "branch",
+                "every_s": [
+                  60,
+                  180
+                ],
+                "item": {
+                  "ids": [
+                    "item.wood"
+                  ],
+                  "fallback": "item.herbs",
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    2
+                  ],
+                  "chance": 0.5,
+                  "ttl_s": 900
+                }
+              },
+              {
+                "piece": "movement",
+                "name": "movement",
+                "traffic_mult": 0.5
+              }
+            ]
+          },
+          "hurricane": {
+            "category": "other_region",
+            "spawn": {
+              "fae": 1.8,
+              "water": 1.8
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "hurricane_eye",
+                "per_cell": 1,
+                "radius_m": 70,
+                "duration_s": 1800,
+                "speed_mps": 5.0,
+                "spawn": {
+                  "type": "any",
+                  "chance": 0.5,
+                  "level_add": [
+                    3,
+                    5
+                  ]
+                }
+              },
+              {
+                "piece": "movement",
+                "name": "movement",
+                "traffic_mult": 0.6
+              }
+            ]
+          },
+          "rune_rain": {
+            "category": "mystic",
+            "spawn": {
+              "spectral": 1.3,
+              "shadow": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "rune",
+                "per_cell": 3,
+                "radius_m": 4,
+                "duration_s": 900,
+                "snap": true,
+                "item": {
+                  "ids": [
+                    "item.rune"
+                  ],
+                  "fallback": "item.chalk",
+                  "kind": "material",
+                  "qty": [
+                    1,
+                    1
+                  ],
+                  "chance": 0.8,
+                  "tag": "rune_bonus"
+                }
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "tocar uma runa dá Giz e guarda um bônus: o próximo ritual aberto revela um espaço ???"
+                ]
+              }
+            ]
+          },
+          "double_moon": {
+            "category": "mystic",
+            "pieces": [
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "variant_mult": 2.0
+              }
+            ]
+          },
+          "vigil": {
+            "category": "mystic",
+            "spawn": {
+              "digital": 2.0,
+              "spectral": 1.3
+            },
+            "pieces": [
+              {
+                "piece": "zone",
+                "name": "gaze",
+                "per_cell": 1,
+                "radius_m": 18,
+                "duration_s": 900,
+                "speed_mps": 1.2,
+                "spawn": {
+                  "type": "any",
+                  "chance": 0.5,
+                  "level_add": [
+                    2,
+                    4
+                  ]
+                }
+              },
+              {
+                "piece": "modifier",
+                "name": "modifier",
+                "effects": [
+                  "a Exposição ao Véu sobe no olhar: não há Exposição"
+                ]
+              }
+            ]
+          }
+        },
+        "calendar": [
+          {
+            "id": "ano_novo",
+            "climate": "spark_rain",
+            "month": 1,
+            "days": [
+              1,
+              1
+            ]
+          },
+          {
+            "id": "carnaval",
+            "climate": "prismatic_drizzle",
+            "anchor": "easter",
+            "offset_days": [
+              -48,
+              -47
+            ]
+          },
+          {
+            "id": "cinzas",
+            "climate": "veil_ash",
+            "anchor": "easter",
+            "offset_days": [
+              -46,
+              -46
+            ]
+          },
+          {
+            "id": "dia_do_avesso",
+            "climate": "inverted_sky",
+            "month": 4,
+            "days": [
+              1,
+              1
+            ]
+          },
+          {
+            "id": "runas_marco",
+            "climate": "rune_rain",
+            "anchor": "march_equinox",
+            "hours": [
+              18,
+              24
+            ]
+          },
+          {
+            "id": "runas_setembro",
+            "climate": "rune_rain",
+            "anchor": "september_equinox",
+            "hours": [
+              18,
+              24
+            ]
+          },
+          {
+            "id": "noite_branca",
+            "climate": "veil_snow",
+            "anchor": "june_solstice",
+            "hours": [
+              18,
+              24
+            ]
+          },
+          {
+            "id": "mare_da_cidade",
+            "climate": "veil_tide",
+            "month": 7,
+            "days": [
+              14,
+              14
+            ]
+          },
+          {
+            "id": "sexta_dos_olhos",
+            "climate": "vigil",
+            "weekday": 5,
+            "days": [
+              13,
+              13
+            ]
+          },
+          {
+            "id": "noite_calada",
+            "climate": "silence",
+            "month": 10,
+            "days": [
+              31,
+              31
+            ],
+            "hours": [
+              18,
+              24
+            ]
+          },
+          {
+            "id": "finados",
+            "climate": "fog_procession",
+            "month": 11,
+            "days": [
+              2,
+              2
+            ]
+          },
+          {
+            "id": "sao_joao",
+            "climate": "spark_rain",
+            "month": 6,
+            "days": [
+              23,
+              24
+            ],
+            "hours": [
+              18,
+              24
+            ]
+          },
+          {
+            "id": "festa_junina",
+            "climate": "spark_rain",
+            "month": 6,
+            "hours": [
+              18,
+              24
+            ],
+            "chance": 0.25
+          },
+          {
+            "id": "quadrantids",
+            "climate": "meteor_shower",
+            "month": 1,
+            "days": [
+              3,
+              4
+            ],
+            "hours": [
+              0,
+              6
+            ],
+            "chance": 0.5
+          },
+          {
+            "id": "lyrids",
+            "climate": "meteor_shower",
+            "month": 4,
+            "days": [
+              21,
+              23
+            ],
+            "hours": [
+              0,
+              6
+            ],
+            "chance": 0.5
+          },
+          {
+            "id": "eta_aquariids",
+            "climate": "meteor_shower",
+            "month": 5,
+            "days": [
+              4,
+              7
+            ],
+            "hours": [
+              0,
+              6
+            ],
+            "chance": 0.7
+          },
+          {
+            "id": "perseids",
+            "climate": "meteor_shower",
+            "month": 8,
+            "days": [
+              11,
+              13
+            ],
+            "hours": [
+              0,
+              6
+            ],
+            "chance": 0.5
+          },
+          {
+            "id": "orionids",
+            "climate": "meteor_shower",
+            "month": 10,
+            "days": [
+              20,
+              22
+            ],
+            "hours": [
+              0,
+              6
+            ],
+            "chance": 0.5
+          },
+          {
+            "id": "geminids",
+            "climate": "meteor_shower",
+            "month": 12,
+            "days": [
+              13,
+              15
+            ],
+            "hours": [
+              0,
+              6
+            ],
+            "chance": 0.7
+          },
+          {
+            "id": "aguas_do_veu",
+            "climates": [
+              "deluge",
+              "deluge",
+              "deluge",
+              "hurricane"
+            ],
+            "months": [
+              2,
+              3
+            ]
+          },
+          {
+            "id": "semana_fuligem",
+            "climates": [
+              "acid_rain",
+              "smog",
+              "acid_rain",
+              "smog",
+              "acid_rain",
+              "smog",
+              "acid_rain"
+            ],
+            "month": 5,
+            "consecutive": true
+          },
+          {
+            "id": "inverno_do_veu",
+            "climates": [
+              "snow",
+              "snow",
+              "blizzard",
+              "freezing_rain"
+            ],
+            "month": 7
+          },
+          {
+            "id": "estacao_seca",
+            "climates": [
+              "sandstorm",
+              "sandstorm",
+              "heat_wave",
+              "heat_wave",
+              "tornado"
+            ],
+            "months": [
+              8,
+              9
+            ]
+          },
+          {
+            "id": "noite_boreal",
+            "climates": [
+              "aurora",
+              "aurora",
+              "static"
+            ],
+            "month": 12,
+            "hours": [
+              18,
+              24
+            ]
+          }
+        ],
+        "astro": [
+          {
+            "id": "super_full_moon",
+            "climate": "double_moon",
+            "full_min": 0.985,
+            "distance_max_km": 358000,
+            "hours": [
+              18,
+              6
+            ],
+            "chance": 0.5
+          }
+        ],
+        "eclipses": [
+          {
+            "id": "solar_eclipse",
+            "climate": "black_sun",
+            "kind": "solar",
+            "source": "https://eclipse.gsfc.nasa.gov/JSEX/SE2001.js (elementos besselianos do Five Millennium Canon of Solar Eclipses, Espenak e Meeus, NASA/TP-2006-214141)",
+            "events": [
+              {
+                "date": "2026-02-17",
+                "elements": [
+                  2461089.009095,
+                  12.0,
+                  -4.0,
+                  4.0,
+                  75.1,
+                  75.1,
+                  0.321954,
+                  0.4827224,
+                  -3.14e-05,
+                  -6.37e-06,
+                  -0.926971,
+                  0.2355394,
+                  0.0001169,
+                  -3.27e-06,
+                  -11.8793001,
+                  0.014049,
+                  2e-06,
+                  356.5144043,
+                  15.0019827,
+                  0.0,
+                  0.55772,
+                  -0.0001181,
+                  -1.11e-05,
+                  0.011524,
+                  -0.0001175,
+                  -1.11e-05,
+                  0.0047321,
+                  0.0047085
+                ]
+              },
+              {
+                "date": "2026-08-12",
+                "elements": [
+                  2461265.241039,
+                  18.0,
+                  -4.0,
+                  4.0,
+                  75.4,
+                  75.4,
+                  0.475514,
+                  0.5189249,
+                  -7.73e-05,
+                  -8.04e-06,
+                  0.771183,
+                  -0.230168,
+                  -0.0001246,
+                  3.77e-06,
+                  14.79667,
+                  -0.012065,
+                  -3e-06,
+                  88.7477875,
+                  15.0030899,
+                  0.0,
+                  0.537955,
+                  9.39e-05,
+                  -1.21e-05,
+                  -0.008142,
+                  9.35e-05,
+                  -1.21e-05,
+                  0.0046141,
+                  0.0045911
+                ]
+              },
+              {
+                "date": "2027-02-06",
+                "elements": [
+                  2461443.167219,
+                  16.0,
+                  -4.0,
+                  4.0,
+                  75.7,
+                  75.7,
+                  0.111676,
+                  0.4664952,
+                  -3.37e-05,
+                  -5.27e-06,
+                  -0.273293,
+                  0.2031856,
+                  0.0001025,
+                  -2.46e-06,
+                  -15.5479403,
+                  0.012383,
+                  4e-06,
+                  56.4930687,
+                  15.0005093,
+                  0.0,
+                  0.571928,
+                  -6.53e-05,
+                  -1.01e-05,
+                  0.025662,
+                  -6.5e-05,
+                  -1e-05,
+                  0.0047426,
+                  0.004719
+                ]
+              },
+              {
+                "date": "2027-08-02",
+                "elements": [
+                  2461619.922108,
+                  10.0,
+                  -4.0,
+                  4.0,
+                  76.0,
+                  76.0,
+                  -0.019772,
+                  0.5447123,
+                  -4.46e-05,
+                  -9.22e-06,
+                  0.160061,
+                  -0.2111582,
+                  -0.0001217,
+                  3.76e-06,
+                  17.7624702,
+                  -0.010181,
+                  -4e-06,
+                  328.4225464,
+                  15.0020962,
+                  0.0,
+                  0.530596,
+                  1.38e-05,
+                  -1.28e-05,
+                  -0.015464,
+                  1.37e-05,
+                  -1.28e-05,
+                  0.0046064,
+                  0.0045834
+                ]
+              },
+              {
+                "date": "2028-01-26",
+                "elements": [
+                  2461797.131236,
+                  15.0,
+                  -4.0,
+                  4.0,
+                  76.3,
+                  76.3,
+                  -0.205283,
+                  0.474257,
+                  -3.9e-05,
+                  -5.27e-06,
+                  0.34028,
+                  0.1738587,
+                  9.68e-05,
+                  -2.09e-06,
+                  -18.7282505,
+                  0.010074,
+                  5e-06,
+                  41.8912811,
+                  14.9989634,
+                  0.0,
+                  0.574117,
+                  4.2e-05,
+                  -9.9e-06,
+                  0.02784,
+                  4.18e-05,
+                  -9.9e-06,
+                  0.0047501,
+                  0.0047264
+                ]
+              },
+              {
+                "date": "2028-07-22",
+                "elements": [
+                  2461974.62268,
+                  3.0,
+                  -4.0,
+                  4.0,
+                  76.6,
+                  76.6,
+                  -0.154409,
+                  0.5449892,
+                  -2.14e-05,
+                  -8.69e-06,
+                  -0.586424,
+                  -0.1746085,
+                  -0.0001021,
+                  2.96e-06,
+                  20.1823101,
+                  -0.007974,
+                  -5e-06,
+                  223.3786774,
+                  15.0010176,
+                  0.0,
+                  0.535237,
+                  -8.59e-05,
+                  -1.23e-05,
+                  -0.010846,
+                  -8.54e-05,
+                  -1.22e-05,
+                  0.0046016,
+                  0.0045786
+                ]
+              },
+              {
+                "date": "2029-01-14",
+                "elements": [
+                  2462151.217911,
+                  17.0,
+                  -4.0,
+                  4.0,
+                  76.9,
+                  76.9,
+                  -0.407444,
+                  0.5081525,
+                  -3.93e-05,
+                  -6.46e-06,
+                  0.981055,
+                  0.1455283,
+                  9.21e-05,
+                  -1.99e-06,
+                  -21.1630096,
+                  0.007241,
+                  6e-06,
+                  72.6928864,
+                  14.997632,
+                  0.0,
+                  0.562666,
+                  0.0001189,
+                  -1.09e-05,
+                  0.016446,
+                  0.0001183,
+                  -1.08e-05,
+                  0.0047541,
+                  0.0047304
+                ]
+              },
+              {
+                "date": "2029-06-12",
+                "elements": [
+                  2462299.670984,
+                  4.0,
+                  -4.0,
+                  4.0,
+                  77.2,
+                  77.2,
+                  -0.010799,
+                  0.5247606,
+                  1.04e-05,
+                  -6.54e-06,
+                  1.295413,
+                  -0.0176365,
+                  -0.0002057,
+                  2.9e-07,
+                  23.1593208,
+                  0.002591,
+                  -5e-06,
+                  240.0355835,
+                  14.9991999,
+                  0.0,
+                  0.556662,
+                  -0.0001027,
+                  -1.04e-05,
+                  0.010472,
+                  -0.0001022,
+                  -1.03e-05,
+                  0.0046048,
+                  0.0045819
+                ]
+              },
+              {
+                "date": "2029-07-11",
+                "elements": [
+                  2462329.150914,
+                  16.0,
+                  -4.0,
+                  4.0,
+                  77.2,
+                  77.2,
+                  -0.137347,
+                  0.5252634,
+                  -9.6e-06,
+                  -7.1e-06,
+                  -1.4271491,
+                  -0.1280417,
+                  -7.69e-05,
+                  1.89e-06,
+                  22.0024509,
+                  -0.005423,
+                  -5e-06,
+                  58.6025696,
+                  15.0000067,
+                  0.0,
+                  0.548756,
+                  -0.0001269,
+                  -1.1e-05,
+                  0.002605,
+                  -0.0001263,
+                  -1.09e-05,
+                  0.0045994,
+                  0.0045765
+                ]
+              },
+              {
+                "date": "2029-12-05",
+                "elements": [
+                  2462476.127754,
+                  15.0,
+                  -4.0,
+                  4.0,
+                  77.5,
+                  77.5,
+                  -0.063833,
+                  0.5766353,
+                  -2.7e-06,
+                  -9.51e-06,
+                  -1.059666,
+                  -0.0140165,
+                  0.0002295,
+                  1.1e-07,
+                  -22.4454498,
+                  -0.005054,
+                  6e-06,
+                  47.3098488,
+                  14.9971743,
+                  0.0,
+                  0.540642,
+                  6.99e-05,
+                  -1.28e-05,
+                  -0.005469,
+                  6.95e-05,
+                  -1.28e-05,
+                  0.0047446,
+                  0.0047209
+                ]
+              },
+              {
+                "date": "2030-06-01",
+                "elements": [
+                  2462653.770288,
+                  6.0,
+                  -4.0,
+                  4.0,
+                  77.8,
+                  77.8,
+                  -0.269391,
+                  0.5056371,
+                  1.82e-05,
+                  -5.68e-06,
+                  0.551977,
+                  0.021015,
+                  -0.0001586,
+                  -1.6e-07,
+                  22.0613003,
+                  0.005581,
+                  -5e-06,
+                  270.5398254,
+                  14.9997025,
+                  0.0,
+                  0.56615,
+                  -1.3e-05,
+                  -9.7e-06,
+                  0.019912,
+                  -1.29e-05,
+                  -9.7e-06,
+                  0.004612,
+                  0.004589
+                ]
+              },
+              {
+                "date": "2030-11-25",
+                "elements": [
+                  2462830.785843,
+                  7.0,
+                  -4.0,
+                  4.0,
+                  78.1,
+                  78.1,
+                  0.04415,
+                  0.5787798,
+                  1.77e-05,
+                  -9.78e-06,
+                  -0.39266,
+                  -0.0551891,
+                  0.0001744,
+                  8.3e-07,
+                  -20.7609997,
+                  -0.007989,
+                  5e-06,
+                  288.2745972,
+                  14.9983616,
+                  0.0,
+                  0.538213,
+                  -3.79e-05,
+                  -1.3e-05,
+                  -0.007885,
+                  -3.77e-05,
+                  -1.3e-05,
+                  0.0047361,
+                  0.0047125
+                ]
+              },
+              {
+                "date": "2031-05-21",
+                "elements": [
+                  2463007.802827,
+                  7.0,
+                  -4.0,
+                  4.0,
+                  78.5,
+                  78.5,
+                  -0.114781,
+                  0.5112392,
+                  7.2e-06,
+                  -6.03e-06,
+                  -0.211248,
+                  0.057933,
+                  -0.0001182,
+                  -6.1e-07,
+                  20.1591492,
+                  0.008339,
+                  -5e-06,
+                  285.8511353,
+                  15.0006208,
+                  0.0,
+                  0.562405,
+                  8.06e-05,
+                  -1e-05,
+                  0.016186,
+                  8.02e-05,
+                  -1e-05,
+                  0.0046208,
+                  0.0045978
+                ]
+              },
+              {
+                "date": "2031-11-14",
+                "elements": [
+                  2463185.380216,
+                  21.0,
+                  -4.0,
+                  4.0,
+                  78.8,
+                  78.8,
+                  -0.019869,
+                  0.550944,
+                  3.66e-05,
+                  -8.24e-06,
+                  0.314971,
+                  -0.0890652,
+                  0.0001046,
+                  1.24e-06,
+                  -18.3368092,
+                  -0.010534,
+                  4e-06,
+                  138.8939819,
+                  14.9997644,
+                  0.0,
+                  0.547774,
+                  -0.0001068,
+                  -1.2e-05,
+                  0.001628,
+                  -0.0001063,
+                  -1.19e-05,
+                  0.004726,
+                  0.0047025
+                ]
+              },
+              {
+                "date": "2032-05-09",
+                "elements": [
+                  2463362.060213,
+                  13.0,
+                  -4.0,
+                  4.0,
+                  79.1,
+                  79.1,
+                  -0.07436,
+                  0.5359546,
+                  5.2e-06,
+                  -7.44e-06,
+                  -0.965451,
+                  0.0954058,
+                  -7.02e-05,
+                  -1.26e-06,
+                  17.5929108,
+                  0.010694,
+                  -4e-06,
+                  15.8891001,
+                  15.0017376,
+                  0.0,
+                  0.548853,
+                  0.0001272,
+                  -1.12e-05,
+                  0.002702,
+                  0.0001266,
+                  -1.12e-05,
+                  0.004631,
+                  0.0046079
+                ]
+              },
+              {
+                "date": "2032-11-03",
+                "elements": [
+                  2463539.732093,
+                  6.0,
+                  -4.0,
+                  4.0,
+                  79.5,
+                  79.5,
+                  0.449239,
+                  0.5120192,
+                  1.7e-05,
+                  -6.39e-06,
+                  0.990836,
+                  -0.1128683,
+                  4.52e-05,
+                  1.33e-06,
+                  -15.2399197,
+                  -0.012633,
+                  3e-06,
+                  274.1191101,
+                  15.0012302,
+                  0.0,
+                  0.562605,
+                  -0.0001127,
+                  -1.06e-05,
+                  0.016385,
+                  -0.0001121,
+                  -1.06e-05,
+                  0.0047141,
+                  0.0046906
+                ]
+              },
+              {
+                "date": "2033-03-30",
+                "elements": [
+                  2463687.251802,
+                  18.0,
+                  -4.0,
+                  4.0,
+                  79.7,
+                  79.7,
+                  -0.318851,
+                  0.5554244,
+                  2.27e-05,
+                  -9.42e-06,
+                  0.924667,
+                  0.175661,
+                  -8.01e-05,
+                  -2.89e-06,
+                  4.0936799,
+                  0.015719,
+                  -1e-06,
+                  88.9280777,
+                  15.0044537,
+                  0.0,
+                  0.534943,
+                  2.76e-05,
+                  -1.29e-05,
+                  -0.011139,
+                  2.75e-05,
+                  -1.29e-05,
+                  0.0046807,
+                  0.0046574
+                ]
+              },
+              {
+                "date": "2033-09-23",
+                "elements": [
+                  2463864.079528,
+                  14.0,
+                  -4.0,
+                  4.0,
+                  80.1,
+                  80.1,
+                  -0.309996,
+                  0.4815448,
+                  8.7e-06,
+                  -5.41e-06,
+                  -1.117005,
+                  -0.1545441,
+                  4.78e-05,
+                  1.67e-06,
+                  -0.33982,
+                  -0.015845,
+                  0.0,
+                  31.9424591,
+                  15.0048037,
+                  0.0,
+                  0.568897,
+                  3.18e-05,
+                  -9.8e-06,
+                  0.022646,
+                  3.16e-05,
+                  -9.7e-06,
+                  0.0046607,
+                  0.0046375
+                ]
+              },
+              {
+                "date": "2034-03-20",
+                "elements": [
+                  2464041.929689,
+                  10.0,
+                  -4.0,
+                  4.0,
+                  80.4,
+                  80.4,
+                  -0.259609,
+                  0.5481629,
+                  2.34e-05,
+                  -8.97e-06,
+                  0.220752,
+                  0.175579,
+                  -8e-06,
+                  -2.79e-06,
+                  -0.05513,
+                  0.016042,
+                  0.0,
+                  328.1391296,
+                  15.0043993,
+                  0.0,
+                  0.538631,
+                  -6.65e-05,
+                  -1.27e-05,
+                  -0.007469,
+                  -6.62e-05,
+                  -1.26e-05,
+                  0.0046952,
+                  0.0046718
+                ]
+              },
+              {
+                "date": "2034-09-12",
+                "elements": [
+                  2464218.18018,
+                  16.0,
+                  -4.0,
+                  4.0,
+                  80.7,
+                  80.7,
+                  -0.280906,
+                  0.5028342,
+                  -1.07e-05,
+                  -6.35e-06,
+                  -0.324339,
+                  -0.1577845,
+                  -8e-07,
+                  1.92e-06,
+                  3.97191,
+                  -0.015534,
+                  -1e-06,
+                  60.9496994,
+                  15.0049019,
+                  0.0,
+                  0.557801,
+                  0.0001188,
+                  -1.06e-05,
+                  0.011605,
+                  0.0001182,
+                  -1.05e-05,
+                  0.0046461,
+                  0.004623
+                ]
+              },
+              {
+                "date": "2035-03-09",
+                "elements": [
+                  2464396.462425,
+                  23.0,
+                  -4.0,
+                  4.0,
+                  81.1,
+                  81.1,
+                  0.079469,
+                  0.5205739,
+                  5e-06,
+                  -7.28e-06,
+                  -0.432832,
+                  0.1630945,
+                  5.32e-05,
+                  -2.19e-06,
+                  -4.2733402,
+                  0.01592,
+                  1e-06,
+                  162.3961334,
+                  15.0039034,
+                  0.0,
+                  0.552623,
+                  -0.0001219,
+                  -1.14e-05,
+                  0.006453,
+                  -0.0001213,
+                  -1.14e-05,
+                  0.0047095,
+                  0.0046861
+                ]
+              },
+              {
+                "date": "2035-09-02",
+                "elements": [
+                  2464572.581092,
+                  2.0,
+                  -4.0,
+                  4.0,
+                  81.4,
+                  81.4,
+                  0.134282,
+                  0.5377735,
+                  -3.6e-05,
+                  -8.12e-06,
+                  0.349009,
+                  -0.1584651,
+                  -5.95e-05,
+                  2.32e-06,
+                  8.0177097,
+                  -0.014783,
+                  -2e-06,
+                  210.0299835,
+                  15.0046396,
+                  0.0,
+                  0.54192,
+                  0.0001103,
+                  -1.19e-05,
+                  -0.004197,
+                  0.0001098,
+                  -1.18e-05,
+                  0.0046328,
+                  0.0046097
+                ]
+              }
+            ]
+          },
+          {
+            "id": "crimson_moon",
+            "climate": "crimson_rain",
+            "kind": "lunar",
+            "source": "https://eclipse.gsfc.nasa.gov/JLEX/LE2001.js (Lunar Eclipse Elements, Espenak e Meeus, 2007); só os totais",
+            "events": [
+              {
+                "date": "2026-03-03",
+                "elements": [
+                  2461102.982548,
+                  12.0,
+                  75.1,
+                  2.184,
+                  1.151,
+                  1.0,
+                  22.75188,
+                  0.95519,
+                  0.26027,
+                  -3.23982,
+                  -2.14568,
+                  -0.90522,
+                  -0.41886,
+                  0.06675,
+                  1.30709,
+                  2.40387,
+                  164.2699291,
+                  0.49497,
+                  -0.000458,
+                  6.2929402,
+                  -0.25912,
+                  -0.000122
+                ]
+              },
+              {
+                "date": "2028-12-31",
+                "elements": [
+                  2462137.203647,
+                  17.0,
+                  76.9,
+                  2.274,
+                  1.246,
+                  1.0,
+                  23.70953,
+                  0.96786,
+                  0.26372,
+                  -2.91514,
+                  -1.85225,
+                  -0.70662,
+                  -0.11246,
+                  0.48234,
+                  1.62816,
+                  2.68857,
+                  101.603845,
+                  0.61258,
+                  -0.000188,
+                  23.3160989,
+                  -0.0978,
+                  -0.001232
+                ]
+              },
+              {
+                "date": "2029-06-26",
+                "elements": [
+                  2462313.641232,
+                  3.0,
+                  77.2,
+                  2.827,
+                  1.844,
+                  1.0,
+                  21.30183,
+                  0.97907,
+                  0.26677,
+                  -2.40235,
+                  -1.4401,
+                  -0.45963,
+                  0.38958,
+                  1.23848,
+                  2.21873,
+                  3.18312,
+                  275.0152993,
+                  0.63098,
+                  -0.000616,
+                  -23.3642398,
+                  0.07392,
+                  0.001234
+                ]
+              },
+              {
+                "date": "2029-12-20",
+                "elements": [
+                  2462491.446665,
+                  23.0,
+                  77.5,
+                  2.201,
+                  1.117,
+                  1.0,
+                  4.98723,
+                  0.91793,
+                  0.25012,
+                  -3.26363,
+                  -2.05698,
+                  -0.72696,
+                  -0.28005,
+                  0.16748,
+                  1.49772,
+                  2.70244,
+                  89.4015755,
+                  0.5567,
+                  -2.2e-05,
+                  23.0726198,
+                  -0.04518,
+                  -0.000988
+                ]
+              },
+              {
+                "date": "2032-04-25",
+                "elements": [
+                  2463348.135308,
+                  15.0,
+                  79.1,
+                  2.219,
+                  1.191,
+                  1.0,
+                  5.27865,
+                  0.94595,
+                  0.25775,
+                  -2.60682,
+                  -1.51198,
+                  -0.29838,
+                  0.24739,
+                  0.7939,
+                  2.00783,
+                  3.10028,
+                  213.4425646,
+                  0.54468,
+                  0.000538,
+                  -13.8021799,
+                  -0.13295,
+                  0.000545
+                ]
+              },
+              {
+                "date": "2032-10-18",
+                "elements": [
+                  2463524.294216,
+                  19.0,
+                  79.4,
+                  2.083,
+                  1.103,
+                  1.0,
+                  20.85453,
+                  1.00194,
+                  0.273,
+                  -2.56668,
+                  -1.57194,
+                  -0.33173,
+                  0.06117,
+                  0.45345,
+                  1.69357,
+                  2.69017,
+                  23.9130711,
+                  0.597,
+                  0.000122,
+                  10.4143292,
+                  0.16884,
+                  -0.00061
+                ]
+              },
+              {
+                "date": "2033-04-14",
+                "elements": [
+                  2463702.301289,
+                  19.0,
+                  79.8,
+                  2.171,
+                  1.094,
+                  1.0,
+                  8.55088,
+                  0.90582,
+                  0.24682,
+                  -2.77948,
+                  -1.56046,
+                  -0.17891,
+                  0.23093,
+                  0.64118,
+                  2.02279,
+                  3.2403,
+                  203.29248,
+                  0.48716,
+                  0.000285,
+                  -9.35367,
+                  -0.13909,
+                  0.000306
+                ]
+              },
+              {
+                "date": "2033-10-08",
+                "elements": [
+                  2463878.955818,
+                  11.0,
+                  80.1,
+                  2.306,
+                  1.35,
+                  1.0,
+                  12.15961,
+                  1.02419,
+                  0.27907,
+                  -2.66564,
+                  -1.74715,
+                  -0.71713,
+                  -0.06038,
+                  0.59637,
+                  1.62631,
+                  2.54468,
+                  14.3819793,
+                  0.61173,
+                  0.000214,
+                  5.8215098,
+                  0.19027,
+                  -0.000327
+                ]
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

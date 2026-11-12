@@ -8,6 +8,7 @@
 library;
 
 import 'dart:collection';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import '../core/water_model.dart';
@@ -42,6 +43,25 @@ class WaterField {
   int builds = 0;
   double lastBuildMs = 0;
 
+  /// Calcular fora da thread do desenho (o app liga): [tile] devolve um bloco sem água enquanto o tile não fica pronto, e
+  /// [revision] sobe quando ele chega. Desligado (os testes e a Patrulha), [tile] calcula na hora.
+  bool background = false;
+
+  /// Sobe a cada tile que chega do cálculo de fundo: quem guarda algo derivado da água confere este número.
+  int revision = 0;
+
+  /// Chamado quando um tile de fundo chega.
+  void Function()? onTile;
+
+  final Map<(int, int), Future<void>> _pending = {};
+  static final WaterTile _dry = WaterTile(Int32List(_n * _n), Int32List(_n * _n), Uint8List(_n * _n));
+
+  /// O tile ainda está sendo calculado em fundo: por enquanto [tile] devolve um bloco sem água.
+  bool pendingAt(int tx, int ty) => _pending.containsKey((tx, ty));
+
+  /// Termina quando todos os tiles pedidos até agora chegaram (para os testes).
+  Future<void> get settled => Future.wait(_pending.values.toList());
+
   /// O campo do tile z15 ([tx], [ty]), ou `null` onde não há relevo (lá vale o sorteio antigo pela seed).
   WaterTile? tile(int tx, int ty) {
     final key = (tx, ty);
@@ -49,18 +69,39 @@ class WaterField {
       final t = _tiles.remove(key);
       return _tiles[key] = t;
     }
+    if (_pending.containsKey(key)) return _dry;
     final sw = Stopwatch()..start();
-    final t = _build(tx, ty);
+    final input = _prepare(tx, ty);
+    if (input != null && background) {
+      // O que pesa (a água escorrendo passo a passo) vai para um isolate; o bloco aparece sem água até ele voltar.
+      _pending[key] = _inIsolate(input).then((t) {
+        _pending.remove(key);
+        _store(key, t, sw);
+        revision++;
+        onTile?.call();
+      });
+      return _dry;
+    }
+    final t = input == null ? null : simulateWater(input);
+    _store(key, t, sw);
+    return t;
+  }
+
+  void _store((int, int) key, WaterTile? t, Stopwatch sw) {
     builds++;
     lastBuildMs = sw.elapsedMicroseconds / 1000;
     _tiles[key] = t;
     while (_tiles.length > cacheTiles) {
       _tiles.remove(_tiles.keys.first);
     }
-    return t;
   }
 
-  WaterTile? _build(int tx, int ty) {
+  // O fecho só captura [input] (tudo listas de inteiros): nada do campo vai para o isolate.
+  static Future<WaterTile> _inIsolate(WaterInput input) => Isolate.run(() => simulateWater(input));
+
+  /// O que o cálculo precisa do tile: as alturas com as ruas já escavadas, a classe da rua e os rios e lagos de cada
+  /// célula do domínio (o tile mais a margem de [WaterModel.steps] células). `null` sem relevo.
+  WaterInput? _prepare(int tx, int ty) {
     assert(visual.cellsPerTile == _n);
     final k = model.steps, w = _n + 2 * k, x0 = tx * _n - k, y0 = ty * _n - k;
     final h = Int32List(w * w), rank = Int8List(w * w)..fillRange(0, w * w, -1), sink = Uint8List(w * w);
@@ -101,87 +142,7 @@ class WaterField {
     for (var i = 0; i < w * w; i++) {
       if (rank[i] >= 0) h[i] -= carve[rank[i]];
     }
-    // Para onde cada célula escoa: a vizinha mais baixa das oito (na ordem fixa N, L, S, O, NE, SE, SO, NO); -1 se nenhuma.
-    final to = Int32List(w * w);
-    const dxs = [0, 1, 0, -1, 1, 1, -1, -1], dys = [-1, 0, 1, 0, -1, 1, 1, -1];
-    for (var y = 0; y < w; y++) {
-      for (var x = 0; x < w; x++) {
-        final i = y * w + x;
-        var best = h[i], at = -1;
-        for (var d = 0; d < 8; d++) {
-          final nx = x + dxs[d], ny = y + dys[d];
-          if (nx < 0 || ny < 0 || nx >= w || ny >= w) continue;
-          final j = ny * w + nx;
-          if (h[j] < best) {
-            best = h[j];
-            at = j;
-          }
-        }
-        to[i] = at;
-      }
-    }
-    var cur = Int32List(w * w)..fillRange(0, w * w, _rain), next = Int32List(w * w);
-    final through = Int32List(w * w);
-    for (var s = 0; s < k; s++) {
-      next.fillRange(0, w * w, 0);
-      for (var i = 0; i < w * w; i++) {
-        var v = cur[i];
-        if (v == 0) continue;
-        if (sink[i] != 0) continue; // rio ou lago: leva embora
-        if (rank[i] > 0) v -= v * drain[rank[i]] >>> 8; // bueiro
-        final j = to[i];
-        if (j < 0) {
-          next[i] += v; // baixada: fica
-        } else {
-          final half = v >>> 1; // metade segue, metade ainda está a caminho
-          next[j] += half;
-          next[i] += v - half;
-          through[j] += half;
-        }
-      }
-      final t = cur;
-      cur = next;
-      next = t;
-    }
-    final pool = Int32List(_n * _n), flow = Int32List(_n * _n);
-    final flood = Uint8List(_n * _n);
-    final rise = model.streamRiseDm * 16;
-    for (var y = 0; y < _n; y++) {
-      for (var x = 0; x < _n; x++) {
-        final i = (y + k) * w + x + k, o = y * _n + x;
-        // Onde a água se junta: a baixada (nenhuma vizinha mais baixa) ou o ponto com mais água que as 8 células em redor
-        // (o pé de uma ladeira, a sarjeta no ponto baixo da rua). As poças de cada célula z17 são os maiores destes.
-        var v = sink[i] == 0 ? cur[i] : 0;
-        if (v > 0 && to[i] >= 0 && model.spotSpacing == 0) {
-          for (var dy = -1; dy <= 1 && v > 0; dy++) {
-            for (var dx = -1; dx <= 1; dx++) {
-              final j = i + dy * w + dx;
-              if (cur[j] > v || (cur[j] == v && j < i)) {
-                v = 0;
-                break;
-              }
-            }
-          }
-        }
-        pool[o] = v;
-        flow[o] = through[i];
-        var f = through[i] <= model.floodFlow ? 0 : ((through[i] - model.floodFlow) * 255 ~/ (model.floodFull - model.floodFlow)).clamp(0, 255);
-        // A margem: até três células de um rio ou lago e pouco acima dele.
-        if (f < 255 && sink[i] == 0) {
-          for (var dy = -3; dy <= 3 && f < 255; dy++) {
-            for (var dx = -3; dx <= 3; dx++) {
-              final j = i + dy * w + dx;
-              if (sink[j] != 0 && h[i] - h[j] <= rise) {
-                f = 255;
-                break;
-              }
-            }
-          }
-        }
-        flood[o] = f;
-      }
-    }
-    return WaterTile(pool, flow, flood);
+    return WaterInput(h: h, rank: rank, sink: sink, w: w, k: k, drain: drain, floodFlow: model.floodFlow, floodFull: model.floodFull, rise: model.streamRiseDm * 16, spotSpacing: model.spotSpacing);
   }
 
   /// Marca em [out] as células cujo centro cai dentro dos anéis (par-ímpar), por varredura.
@@ -226,7 +187,10 @@ class WaterField {
 
   /// A rua (tile z15 e índice da linha no pacote visual) alaga no Dilúvio: pelo menos um terço dela passa por células
   /// alagadas. `null` sem relevo no lugar (vale o sorteio antigo pela seed).
-  bool? lineFloods(int tx, int ty, int i) => _lineFlood.putIfAbsent((tx, ty, i), () {
+  bool? lineFloods(int tx, int ty, int i) {
+    tile(tx, ty); // pede o tile; a caminho, a rua aparece seca e nada é guardado
+    if (_pending.isNotEmpty) return false;
+    return _lineFlood.putIfAbsent((tx, ty, i), () {
         final line = visual.tile(tx, ty)?.lines.elementAtOrNull(i);
         if (line == null || line.xy.length < 4) return false;
         final unit = _n / visual.pack.extent;
@@ -244,6 +208,7 @@ class WaterField {
         }
         return wet * 3 >= all;
       });
+  }
 
   /// As [n] poças da célula z17 ([cx17], [cy17]): onde mais água parou, da mais funda para a mais rasa (empate: a ordem das
   /// células). `depth` vai de 0 a 1 em relação à mais funda. `null` sem relevo; vazia se a água não para em lugar nenhum.
@@ -277,4 +242,104 @@ class WaterField {
         (index: i, x: cx17 * 16 + (at & 15) + 0.5, y: cy17 * 16 + (at >>> 4) + 0.5, depth: v / found.first.$1),
     ];
   }
+}
+
+/// O que [simulateWater] recebe: só listas de inteiros e números, para atravessar a fronteira de um isolate.
+class WaterInput {
+  const WaterInput({required this.h, required this.rank, required this.sink, required this.w, required this.k, required this.drain, required this.floodFlow, required this.floodFull, required this.rise, required this.spotSpacing});
+
+  final Int32List h;
+  final Int8List rank;
+  final Uint8List sink;
+  final int w, k;
+  final List<int> drain;
+  final int floodFlow, floodFull, rise, spotSpacing;
+}
+
+/// A água escorrendo no domínio de [input], em passos fixos e só com inteiros: o mesmo resultado em qualquer aparelho e em
+/// qualquer thread.
+WaterTile simulateWater(WaterInput input) {
+  final h = input.h, rank = input.rank, sink = input.sink, w = input.w, k = input.k, drain = input.drain;
+  final floodFlow = input.floodFlow, floodFull = input.floodFull, rise = input.rise, spotSpacing = input.spotSpacing;
+  // Para onde cada célula escoa: a vizinha mais baixa das oito (na ordem fixa N, L, S, O, NE, SE, SO, NO); -1 se nenhuma.
+  final to = Int32List(w * w);
+  const dxs = [0, 1, 0, -1, 1, 1, -1, -1], dys = [-1, 0, 1, 0, -1, 1, 1, -1];
+  for (var y = 0; y < w; y++) {
+    for (var x = 0; x < w; x++) {
+      final i = y * w + x;
+      var best = h[i], at = -1;
+      for (var d = 0; d < 8; d++) {
+        final nx = x + dxs[d], ny = y + dys[d];
+        if (nx < 0 || ny < 0 || nx >= w || ny >= w) continue;
+        final j = ny * w + nx;
+        if (h[j] < best) {
+          best = h[j];
+          at = j;
+        }
+      }
+      to[i] = at;
+    }
+  }
+  var cur = Int32List(w * w)..fillRange(0, w * w, _rain), next = Int32List(w * w);
+  final through = Int32List(w * w);
+  for (var s = 0; s < k; s++) {
+    next.fillRange(0, w * w, 0);
+    for (var i = 0; i < w * w; i++) {
+      var v = cur[i];
+      if (v == 0) continue;
+      if (sink[i] != 0) continue; // rio ou lago: leva embora
+      if (rank[i] > 0) v -= v * drain[rank[i]] >>> 8; // bueiro
+      final j = to[i];
+      if (j < 0) {
+        next[i] += v; // baixada: fica
+      } else {
+        final half = v >>> 1; // metade segue, metade ainda está a caminho
+        next[j] += half;
+        next[i] += v - half;
+        through[j] += half;
+      }
+    }
+    final t = cur;
+    cur = next;
+    next = t;
+  }
+  final pool = Int32List(_n * _n), flow = Int32List(_n * _n);
+  final flood = Uint8List(_n * _n);
+  for (var y = 0; y < _n; y++) {
+    for (var x = 0; x < _n; x++) {
+      final i = (y + k) * w + x + k, o = y * _n + x;
+      // Onde a água se junta: a baixada (nenhuma vizinha mais baixa) ou o ponto com mais água que as 8 células em redor
+      // (o pé de uma ladeira, a sarjeta no ponto baixo da rua). As poças de cada célula z17 são os maiores destes.
+      var v = sink[i] == 0 ? cur[i] : 0;
+      if (v > 0 && to[i] >= 0 && spotSpacing == 0) {
+        for (var dy = -1; dy <= 1 && v > 0; dy++) {
+          for (var dx = -1; dx <= 1; dx++) {
+            final j = i + dy * w + dx;
+            if (cur[j] > v || (cur[j] == v && j < i)) {
+              v = 0;
+              break;
+            }
+          }
+        }
+      }
+      pool[o] = v;
+      flow[o] = through[i];
+      var f = through[i] <= floodFlow ? 0 : ((through[i] - floodFlow) * 255 ~/ (floodFull - floodFlow)).clamp(0, 255);
+      // A margem: até três células de um rio ou lago e pouco acima dele.
+      if (f < 255 && sink[i] == 0) {
+        for (var dy = -3; dy <= 3 && f < 255; dy++) {
+          for (var dx = -3; dx <= 3; dx++) {
+            final j = i + dy * w + dx;
+            if (sink[j] != 0 && h[i] - h[j] <= rise) {
+              f = 255;
+              break;
+            }
+          }
+        }
+      }
+      flood[o] = f;
+    }
+  }
+  return WaterTile(pool, flow, flood);
+
 }

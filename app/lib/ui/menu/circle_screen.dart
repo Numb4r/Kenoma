@@ -18,12 +18,7 @@ String abilityText(EcoSpecies sp, int level, List<(int, int)> bands) {
   final a = sp.ability;
   if (a == null) return '';
   final v = a.bands[abilityBandIndex(level, bands).clamp(0, a.bands.length - 1)];
-  return switch (a.kind) {
-    'aura_bonus_m' => 'Aura +$v m',
-    'spark_pickup_bonus_m' => 'Coleta +$v m',
-    'tracker_range_m' => 'Radar $v m',
-    _ => a.kind,
-  };
+  return abilityLabel(a.kind, v);
 }
 
 class CircleScreen extends StatefulWidget {

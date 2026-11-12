@@ -107,13 +107,13 @@ void main() {
 
     test('v1 vira v2: o nível do debug vira override, o nível real começa em 1 e o bestiário vem da coleção', () {
       final out = migrateSave(v1);
-      expect(out['schema_version'], 6);
+      expect(out['schema_version'], 7);
       expect(out.containsKey('player_level'), isFalse);
       expect(out['level_override'], 6);
       expect(out['player'], {'level': 1, 'xp': 0, 'banked_xp': 0});
       expect(out['circle'], isEmpty);
       expect(out['marks'], isEmpty);
-      expect(out['bestiary'], {'rill.eco': {'seen': true, 'captured': true}});
+      expect(out['bestiary'], {'rill.eco': {'seen': true, 'captured': true, 'captures': 1}}, reason: 'a v7 põe a contagem da pesquisa');
       expect(out['inventory'], v1['inventory'], reason: 'o resto passa intacto');
       expect(out['future_field'], {'x': 1}, reason: 'campos desconhecidos são preservados');
     });
@@ -136,7 +136,7 @@ void main() {
       final s = session.state;
       expect((s.groupCode, s.count('item.chalk'), s.collection.single.speciesId, s.isDone(42)), ('AAAAA-BBBBB', 3, 'rill.eco', true));
       expect((s.playerLevel, s.progress.level, s.levelOverride), (6, 1, 6));
-      expect(store.json!['schema_version'], 6);
+      expect(store.json!['schema_version'], 7);
       expect(store.json!['future_field'], {'x': 1});
     });
 

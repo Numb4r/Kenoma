@@ -139,6 +139,10 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: BestiaryScreen(state: s, data: data)));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
+    // O Espírito de ritual é a quarta forma do cartão da família; a pesquisa dele abre no detalhe.
+    await tester.tap(find.byKey(const Key('form-soot.ritual')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byKey(const Key('ritual-research-soot.ritual')), findsOneWidget);
     expect(find.text('Condição: Entre 18h e 23h'), findsOneWidget);
     expect(find.text('Material: 2× Sucata'), findsOneWidget);

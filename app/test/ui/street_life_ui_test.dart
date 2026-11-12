@@ -156,11 +156,21 @@ void main() {
       s.markSeen('soot.eco', shiny: true);
       await tester.pumpWidget(MaterialApp(home: BestiaryScreen(state: s, data: data)));
       await tester.pump();
-      expect(find.byKey(const Key('bestiary-soot.eco@urban')), findsOneWidget);
-      expect(find.text('URBANA: VISTA'), findsOneWidget);
-      expect(find.text('VERDE: CAPTURADA'), findsOneWidget);
-      expect(find.text('BRILHANTE: VISTA'), findsOneWidget);
-      expect(find.byKey(const Key('bestiary-soot.eco@water')), findsNothing, reason: 'não vista: não aparece');
+      // As variantes são as bolinhas no canto da arte, no detalhe da espécie: tocar numa já vista troca a arte.
+      await tester.tap(find.byKey(const Key('form-soot.eco')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      for (final k in ['base', 'urban', 'green', 'water', 'shiny', 'crimson']) {
+        expect(find.byKey(Key('dot-$k')), findsOneWidget, reason: k);
+      }
+      expect(find.byKey(const Key('hero-soot.eco-')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('dot-green')));
+      await tester.pump();
+      expect(find.byKey(const Key('hero-soot.eco-green')), findsOneWidget);
+      expect(find.text('VERDE'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('dot-water')));
+      await tester.pump();
+      expect(find.byKey(const Key('hero-soot.eco-green')), findsOneWidget, reason: 'a não vista não troca a arte');
     });
 
     test('capturar uma variante marca a espécie e a variante; ver o Brilhante conta para o Familiar', () {

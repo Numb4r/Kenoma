@@ -66,7 +66,7 @@ void main() {
     final biomes = loadBiomes();
 
     test('cada bioma tem 3 tons, do mais escuro ao mais claro', () {
-      expect(biomes.all.map((b) => b.key), ['void', 'urban', 'green', 'water', 'residential']);
+      expect(biomes.all.map((b) => b.key), ['void', 'urban', 'green', 'water', 'residential', 'lit', 'sacred']);
       for (final b in biomes.all) {
         expect(b.palette, hasLength(3), reason: b.key);
         final luma = [for (final c in b.palette) _luma(c)];
@@ -75,7 +75,7 @@ void main() {
       }
     });
 
-    test('regra de arte: nada saturado, tudo frio, e os cinco biomas se distinguem', () {
+    test('regra de arte: nada saturado, tudo frio, e os biomas se distinguem', () {
       for (final b in biomes.all) {
         for (final c in b.palette) {
           expect(_saturation(c), lessThan(0.35), reason: '${b.key} #${c.toRadixString(16)} é saturado demais');
@@ -106,7 +106,7 @@ void main() {
     });
 
     test('os nomes da interface vêm de biomes.json', () {
-      expect([for (final b in biomes.all) b.name], ['Vazio', 'Urbano', 'Verde', 'Água', 'Residencial']);
+      expect([for (final b in biomes.all) b.name], ['Vazio', 'Urbano', 'Verde', 'Água', 'Residencial', 'Iluminado', 'Sagrado']);
     });
 
     test('cor inválida em biomes.json é erro de dados', () {

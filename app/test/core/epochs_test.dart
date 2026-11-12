@@ -35,14 +35,17 @@ void main() {
     expect(e0.items[1].hasLevelDelta, isFalse);
   });
 
-  test('toda tabela de spawn tem os quatro biomas e pesos positivos', () {
-    for (final item in loadEpochs().epochs.expand((e) => e.items)) {
-      expect(item.chance.keys.toSet(), {'urban', 'green', 'water', 'residential'});
-      expect(item.table.keys.toSet(), {'urban', 'green', 'water', 'residential'});
+  test('toda tabela de spawn tem os biomas da época (quatro até a 10, seis da 11 em diante) e pesos positivos', () {
+    for (final epoch in loadEpochs().epochs) {
+     for (final item in epoch.items) {
+      final keys = {'urban', 'green', 'water', 'residential', if (epoch.id >= 11) ...{'lit', 'sacred'}};
+      expect(item.chance.keys.toSet(), keys, reason: 'época ${epoch.id}');
+      expect(item.table.keys.toSet(), keys, reason: 'época ${epoch.id}');
       for (final entries in item.table.values) {
         expect(entries, isNotEmpty);
         expect(entries.every((e) => e.weight > 0), isTrue);
       }
+     }
     }
   });
 

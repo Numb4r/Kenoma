@@ -100,6 +100,10 @@ class ClimateCover {
   double Function((int, int, int) key)? wearOf;
   int wearStamp = 0;
 
+  /// Sobe quando um tile da água no relevo chega do cálculo de fundo: os blocos do Dilúvio são refeitos com as ruas que
+  /// alagam de verdade.
+  int waterStamp = 0;
+
   /// Refaz os blocos na hora, sem isolate (testes e exportação de imagens).
   static bool buildInline = false;
 
@@ -117,7 +121,7 @@ class ClimateCover {
     final snow = cover.kind == StreetCoverKind.snow;
     final wind = (windRad / (math.pi / 8)).round() % 16;
     // A fase em faixas: o bloco só é refeito quando ela muda de faixa.
-    final key = (seed, window, (amount * 64).round(), melting, (peak * 16).round(), snow ? wind : 0, snow ? ((sunX * 2).round(), (sunY * 2).round()) : null, snow && cover.tracks ? wearStamp : 0, visual.pack.revision, color, (alpha * 100).round());
+    final key = (seed, window, (amount * 64).round(), melting, (peak * 16).round(), snow ? wind : 0, snow ? ((sunX * 2).round(), (sunY * 2).round()) : null, snow && cover.tracks ? wearStamp : 0, cover.floods == null ? 0 : waterStamp, visual.pack.revision, color, (alpha * 100).round());
     const n = coverBlockCells;
     final cx = (l + r) / 2, cy = (top + b) / 2;
     fieldDrawn = 0;

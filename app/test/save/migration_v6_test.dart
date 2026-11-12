@@ -28,7 +28,7 @@ void main() {
 
   test('v5 vira v6: a névoa sai, os blocos z17 reais viram celulas_visitadas, o debug não entra e o resto passa intacto', () {
     final out = migrateSave(real);
-    expect(out['schema_version'], 6);
+    expect(out['schema_version'], 7, reason: 'o schema atual: a v6 tira a névoa e a v7 mexe só no bestiário');
     expect(out.containsKey('fog'), isFalse);
     final visited = visitedOf(out);
     expect(visited, cells.keys.toSet());
@@ -37,7 +37,7 @@ void main() {
     for (final k in debugOnly) {
       expect(visited.contains(k), isFalse, reason: 'o caminho do simulador ($k) não é célula visitada');
     }
-    for (final k in real.keys.where((k) => k != 'schema_version' && k != 'fog')) {
+    for (final k in real.keys.where((k) => k != 'schema_version' && k != 'fog' && k != 'bestiary')) {
       expect(out[k], real[k], reason: 'o campo $k passa sem mudar');
     }
   });
@@ -49,7 +49,7 @@ void main() {
     expect(migrateSave(out), out);
   });
 
-  test('abrir o save da 0.15.0: o jogo é o mesmo, as células visitadas vêm da névoa e grava no schema 6', () async {
+  test('abrir o save da 0.15.0: o jogo é o mesmo, as células visitadas vêm da névoa e grava no schema atual', () async {
     final store = MemorySaveStore()..json = jsonDecode(jsonEncode(real)) as Map<String, dynamic>;
     final session = await GameSession.open(store: store, startInventory: {}, balance: loadProgressBalance(), nowUtc: () => 1793000000, nextInt: (n) => 0, appVersion: '0.16.0+25');
     await session.flush();
@@ -61,7 +61,7 @@ void main() {
     expect(s.visitedCells.length, cells.length);
     expect(s.founder!.chainValid, isTrue);
     expect(s.founder!.versionsSeen.map((e) => e.version).last, '0.16.0+25');
-    expect(store.json!['schema_version'], 6);
+    expect(store.json!['schema_version'], 7);
     expect(store.json!.containsKey('fog'), isFalse);
     expect(visitedOf(store.json!), cells.keys.toSet());
     expect(s.markVisited(1, 2), isTrue);

@@ -77,7 +77,10 @@ Future<void> runEncounter(
           seal: prep.seal,
           tonic: tonic,
           circleStrong: strongInCircle(state, data, species.type),
-          toleranceMult: state.cb.toleranceMultFor(state.conjurer.school) * world.climate.toleranceMult, // Aurora
+          toleranceMult: state.cb.toleranceMultFor(state.conjurer.school) *
+              world.climate.toleranceMult * // Aurora
+              data.researchToleranceMult(state.bestiary, species.id) * // pesquisa do Bestiário, nível 4
+              (world.sightTags.contains('day') ? 1 + world.abilities().of('day_tolerance_pct') / 100 : 1), // Glimlet no Círculo, de dia
           progressUpMult: state.cb.progressUpMultFor(state.conjurer.school),
           intensityAdd: species.isSpirit ? state.cb.spiritResistanceAdd : 0, // Espírito: resistência forte do tipo
           wanderScale: switch (eco.behavior) {
@@ -107,7 +110,7 @@ Future<void> runEncounter(
     }
     if (o.success) {
       final first = !state.hasCaptured(species.id);
-      state.capture(uid: eco.uid, speciesId: species.id, level: level, nowUtc: nowUtc(), variant: eco.variant, shiny: eco.shiny);
+      state.capture(uid: eco.uid, speciesId: species.id, level: level, nowUtc: nowUtc(), variant: eco.variant, shiny: eco.shiny, biome: world.biomeKeyOf(eco.cellX, eco.cellY));
       state.add('item.ectoplasm', o.ectoplasm);
       state.recordEvent('capture', species.type.name, 1);
       final b = state.balance;
@@ -120,6 +123,11 @@ Future<void> runEncounter(
       if (notes.isNotEmpty) onMessage?.call(notes.join(' · '));
       world.remove(eco);
       return;
+    }
+    // Rustling no Círculo: na falha, uma chance de o selo não ser gasto.
+    if (!o.success && sealSaved(eco.uid, nowUtc(), world.abilities().of('seal_save_pct'))) {
+      state.add(prep.seal.id, 1);
+      onMessage?.call('${prep.seal.name} não foi gasto');
     }
     // Xamã Urbano: o Eco não foge depois de uma sintonia falha.
     if (o.fled && state.conjurer.school != School.shaman) {

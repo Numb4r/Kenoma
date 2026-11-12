@@ -22,6 +22,7 @@ int utc(int y, int m, int d, [int h = 0]) => DateTime.utc(y, m, d, h).millisecon
 /// A época 9: relevo, água que escorre, neblina nas baixadas e movimento de Ecos e Fagulhas. Tudo o que muda o jogo tem de
 /// sair igual em dois aparelhos.
 void main() {
+  waterBackgroundTests();
   final seed = seedGlobal('KENOMA-TESTE');
   final data = loadGameData();
   final e9 = loadEpochs().epochs.firstWhere((e) => e.id == 9);
@@ -30,6 +31,7 @@ void main() {
   final mpc = metersPerCell(lat);
 
   /// Um aparelho: lê tudo do zero (nada compartilhado na memória com o outro).
+  // `upTo`: a última época do calendário do aparelho (as datas dos testes caem depois do começo da 11).
   ClimateWorld device({String? forced, int? upTo = 9}) {
     final visual = VisualMap(VisualPack.parse(Uint8List.fromList(File('assets/regions/campinas_e0_vis.bin').readAsBytesSync())), cacheTiles: 64);
     final relief = ReliefPack.parse(File('assets/regions/campinas_e9_relief.bin').readAsBytesSync());
@@ -164,12 +166,12 @@ void main() {
       print('poças por célula z17 no Centro (teto 5): época 9 ${before.toStringAsFixed(2)}, época 10 ${after.toStringAsFixed(2)}');
       expect(before, lessThan(1.6));
       expect(after, inInclusiveRange(2.0, 3.0));
-      final a = device(forced: 'rain', upTo: null), b = device(forced: 'rain', upTo: null);
+      final a = device(forced: 'rain', upTo: 10), b = device(forced: 'rain', upTo: 10);
       expect([for (final p in a.puddlesNear(x21, y21, 40, t10 + 3000)) (p.x, p.y, p.rolls.uid)], [for (final p in b.puddlesNear(x21, y21, 40, t10 + 3000)) (p.x, p.y, p.rolls.uid)]);
     });
 
     test('na chuva, trecho de rua molhado gera Eco de Água mesmo sem poça; fora da chuva não', () {
-      final rain = device(forced: 'rain', upTo: null), dry = device(forced: 'clear', upTo: null), old = device(forced: 'rain');
+      final rain = device(forced: 'rain', upTo: 10), dry = device(forced: 'clear', upTo: 10), old = device(forced: 'rain');
       List<WorldSpawn> ecos(ClimateWorld w) => [for (final s in w.extras(x21: x21, y21: y21, radiusM: 400, t: t10, metersPerCell21: mpc, levelOf: (id, add, uid) => 5)) if (s.isEco) s];
       final puddles = rain.puddlesNear(x21, y21, 400 / mpc, t10);
       final wet = [for (final s in ecos(rain)) if (puddles.every((p) => s.distanceM(p.x, p.y, mpc) > 1)) s];
@@ -177,12 +179,12 @@ void main() {
       expect(wet.every((s) => data.species(s.entryId)?.type.name == 'water'), isTrue);
       expect(ecos(dry), isEmpty);
       expect(ecos(old).length, lessThan(ecos(rain).length), reason: 'na época 9 só as poças geram');
-      final again = device(forced: 'rain', upTo: null);
+      final again = device(forced: 'rain', upTo: 10);
       expect([for (final s in ecos(again)) s.uid], [for (final s in ecos(rain)) s.uid], reason: 'igual em dois aparelhos');
     });
 
     test('a deriva das Fagulhas segue o vento local: canalizada pela rua, menor atrás da quadra', () {
-      final a = device(forced: 'gale', upTo: null), b = device(forced: 'gale', upTo: null), old = device(forced: 'gale');
+      final a = device(forced: 'gale', upTo: 10), b = device(forced: 'gale', upTo: 10), old = device(forced: 'gale');
       final streets = a.streets!;
       // Uma célula de rua e uma fora de rua perto do Centro.
       (int, int)? on, off;
@@ -225,7 +227,7 @@ void main() {
         speciesOfType: data.ecoOfType,
         itemExists: data.itemNames.containsKey,
         relief: ReliefPack.parse(File('assets/regions/campinas_e9_relief.bin').readAsBytesSync()),
-        water: device(upTo: null).water,
+        water: device(upTo: 10).water,
         forced: () => 'cold',
         forcedPhase: () => phase(since),
       );
@@ -275,5 +277,48 @@ void main() {
     expect(a.modsAt(lo.$1, lo.$2, noon).viewMaxM!, greaterThan(valley * 2), reason: 'com o sol alto a neblina se desfez');
     expect(a.fogAt(lo.$1, lo.$2, noon, e9, 'fog')!.density, 0);
     expect(a.fogAt(lo.$1, lo.$2, night, e9, 'rain'), isNull, reason: 'só nos climas de neblina');
+  });
+}
+
+/// 0.20.0: no mapa do jogo a água de cada tile é calculada num isolate.
+void waterBackgroundTests() {
+  group('água no relevo fora da thread do desenho', () {
+    final (x21, y21) = latLonToTileFraction(-22.9056, -47.0608, 21);
+    final tx = x21.floor() >>> 6, ty = y21.floor() >>> 6;
+    WaterField field({bool background = false}) {
+      final visual = VisualMap(VisualPack.parse(Uint8List.fromList(File('assets/regions/campinas_e0_vis.bin').readAsBytesSync())), cacheTiles: 32);
+      final relief = ReliefPack.parse(Uint8List.fromList(File('assets/regions/campinas_e9_relief.bin').readAsBytesSync()));
+      return WaterField(relief: relief, visual: visual, model: loadEpochs().epochs.firstWhere((e) => e.id == 10).water!)..background = background;
+    }
+
+    test('enquanto o tile não chega o bloco fica sem água; quando chega é igual ao calculado na hora, e a revisão sobe', () async {
+      final now = field(), later = field(background: true);
+      var arrived = 0;
+      later.onTile = () => arrived++;
+      final want = now.tile(tx, ty)!;
+      expect(want.pool.any((v) => v > 0), isTrue, reason: 'o Centro tem baixadas');
+      final first = later.tile(tx, ty)!;
+      expect(later.pendingAt(tx, ty), isTrue);
+      expect(first.pool.every((v) => v == 0) && first.flood.every((v) => v == 0), isTrue, reason: 'sem água até ficar pronto');
+      expect(later.spots((x21.floor() >>> 4), (y21.floor() >>> 4), 5), isEmpty);
+      expect(later.lineFloods(tx, ty, 0), isFalse);
+      expect(later.revision, 0);
+      await later.settled;
+      expect(later.pendingAt(tx, ty), isFalse);
+      expect((later.revision, arrived, later.builds), (1, 1, 1));
+      final got = later.tile(tx, ty)!;
+      expect(got.pool, want.pool);
+      expect(got.flow, want.flow);
+      expect(got.flood, want.flood);
+      expect(later.spots((x21.floor() >>> 4), (y21.floor() >>> 4), 5), now.spots((x21.floor() >>> 4), (y21.floor() >>> 4), 5));
+      expect(later.lineFloods(tx, ty, 0), now.lineFloods(tx, ty, 0));
+    });
+
+    test('sem relevo no lugar não há nada a calcular: null na hora, nos dois modos', () {
+      expect(field().tile(1, 1), isNull);
+      final bg = field(background: true);
+      expect(bg.tile(1, 1), isNull);
+      expect(bg.pendingAt(1, 1), isFalse);
+    });
   });
 }

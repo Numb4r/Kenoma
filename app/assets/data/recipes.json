@@ -5,6 +5,15 @@
     { "id": "recipe.seal.fire", "out": ["item.seal.fire", 1], "in": [["item.seal.simple", 1], ["item.dust.fire", 3]] },
     { "id": "recipe.seal.plant", "out": ["item.seal.plant", 1], "in": [["item.seal.simple", 1], ["item.dust.plant", 3]] },
     { "id": "recipe.seal.water", "out": ["item.seal.water", 1], "in": [["item.seal.simple", 1], ["item.dust.water", 3]] },
+    { "id": "recipe.seal.earth", "out": ["item.seal.earth", 1], "in": [["item.seal.simple", 1], ["item.dust.earth", 3]] },
+    { "id": "recipe.seal.electric", "out": ["item.seal.electric", 1], "in": [["item.seal.simple", 1], ["item.dust.electric", 3]] },
+    { "id": "recipe.seal.metal", "out": ["item.seal.metal", 1], "in": [["item.seal.simple", 1], ["item.dust.metal", 3]] },
+    { "id": "recipe.seal.light", "out": ["item.seal.light", 1], "in": [["item.seal.simple", 1], ["item.dust.light", 3]] },
+    { "id": "recipe.seal.shadow", "out": ["item.seal.shadow", 1], "in": [["item.seal.simple", 1], ["item.dust.shadow", 3]] },
+    { "id": "recipe.seal.spectral", "out": ["item.seal.spectral", 1], "in": [["item.seal.simple", 1], ["item.dust.spectral", 3]] },
+    { "id": "recipe.seal.digital", "out": ["item.seal.digital", 1], "in": [["item.seal.simple", 1], ["item.dust.digital", 3]] },
+    { "id": "recipe.seal.fae", "out": ["item.seal.fae", 1], "in": [["item.seal.simple", 1], ["item.dust.fae", 3]] },
+    { "id": "recipe.seal.draconic", "out": ["item.seal.draconic", 1], "in": [["item.seal.simple", 1], ["item.dust.draconic", 3]] },
     { "id": "recipe.tonic.focus", "out": ["item.tonic.focus", 1], "in": [["item.herbs", 1], ["item.pure_water", 1]] },
     { "id": "recipe.dew_prism", "out": ["item.dew_prism", 1], "in": [["item.pure_water", 2], ["item.prism_shard", 1], ["item.ice_crystal", 1]] }
   ]

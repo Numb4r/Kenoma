@@ -45,6 +45,7 @@ class _Bundle extends CachingAssetBundle {
 Map<String, List<int>> realAssets() => {
       for (final f in ['epochs', 'biomes', 'balance', 'creatures', 'items', 'recipes', 'mentor', 'forum', 'rituals', 'clima']) 'assets/data/$f.json': File('assets/data/$f.json').readAsBytesSync(),
       'assets/regions/campinas_e0.bin': File('assets/regions/campinas_e0.bin').readAsBytesSync(),
+      'assets/regions/campinas_e11.bin': File('assets/regions/campinas_e11.bin').readAsBytesSync(), // da época 11 em diante
       'assets/regions/campinas_e0_vis.bin': File('assets/regions/campinas_e0_vis.bin').readAsBytesSync(),
       'assets/regions/campinas_e2_nowalk.bin': File('assets/regions/campinas_e2_nowalk.bin').readAsBytesSync(),
       'assets/regions/campinas_e9_relief.bin': File('assets/regions/campinas_e9_relief.bin').readAsBytesSync(),
@@ -638,8 +639,10 @@ void main() {
       tester.view.devicePixelRatio = 2.625;
       addTearDown(tester.view.reset);
       final files = realAssets();
-      final bin = Uint8List.fromList(files['assets/regions/campinas_e0.bin']!)..[3000] ^= 0xff;
-      files['assets/regions/campinas_e0.bin'] = bin;
+      // O relógio aqui é o real: adultera o pacote de todas as épocas, para valer antes e depois do começo da 11.
+      for (final k in ['assets/regions/campinas_e0.bin', 'assets/regions/campinas_e11.bin']) {
+        files[k] = Uint8List.fromList(files[k]!)..[3000] ^= 0xff;
+      }
       final tools = DevTools(realSource: FakeGps());
       await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: FakeGateway(), bundle: _Bundle(files))));
       for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {

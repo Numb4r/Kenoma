@@ -84,7 +84,7 @@ void main() {
   test('o atlas tem uma linha por id de bioma e uma coluna por variante', () async {
     TestWidgetsFlutterBinding.ensureInitialized();
     final image = await buildBiomeAtlas(biomes);
-    expect((image.width, image.height), (16 * textureVariants, 16 * 5));
+    expect((image.width, image.height), (16 * textureVariants, 16 * biomes.all.length));
     image.dispose();
   });
 }

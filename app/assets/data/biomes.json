@@ -203,6 +203,107 @@
           "geometry": "area"
         }
       ]
+    },
+    {
+      "id": 5,
+      "key": "lit",
+      "name": "Iluminado",
+      "priority": 2,
+      "since_epoch": 11,
+      "palette": [
+        "#666a82",
+        "#70748c",
+        "#7c8098"
+      ],
+      "osm": [
+        {
+          "tag": "highway",
+          "values": [
+            "primary",
+            "primary_link",
+            "secondary",
+            "secondary_link"
+          ],
+          "geometry": "line",
+          "buffer_m": 14
+        },
+        {
+          "tag": "landuse",
+          "values": [
+            "commercial",
+            "retail"
+          ],
+          "geometry": "area"
+        },
+        {
+          "tag": "amenity",
+          "values": [
+            "marketplace"
+          ],
+          "geometry": "area"
+        },
+        {
+          "tag": "building",
+          "values": [
+            "commercial",
+            "retail",
+            "supermarket"
+          ],
+          "geometry": "area"
+        },
+        {
+          "tag": "shop",
+          "values": [
+            "mall",
+            "supermarket",
+            "department_store"
+          ],
+          "geometry": "area"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "key": "sacred",
+      "name": "Sagrado",
+      "priority": 5,
+      "since_epoch": 11,
+      "palette": [
+        "#4a4560",
+        "#504b68",
+        "#5a5474"
+      ],
+      "osm": [
+        {
+          "tag": "amenity",
+          "values": [
+            "place_of_worship",
+            "grave_yard"
+          ],
+          "geometry": "area"
+        },
+        {
+          "tag": "landuse",
+          "values": [
+            "cemetery",
+            "religious"
+          ],
+          "geometry": "area"
+        },
+        {
+          "tag": "building",
+          "values": [
+            "church",
+            "chapel",
+            "cathedral",
+            "temple",
+            "mosque",
+            "synagogue",
+            "shrine"
+          ],
+          "geometry": "area"
+        }
+      ]
     }
   ]
 }

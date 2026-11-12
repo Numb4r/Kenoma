@@ -72,7 +72,7 @@ class CaptureDebug extends ChangeNotifier {
     final nav = Navigator.of(context);
     await nav.push(MaterialPageRoute<void>(
       builder: (_) => TuningScreen(
-        pool: hidden ? [for (final x in d.species) if (!x.isSpirit) x] : [species!],
+        pool: hidden ? [for (final x in d.species) if (!x.isSpirit && EcoType.mvp.contains(x.type)) x] : [species!], // o modo oculto é dos três do MVP
         buildSetup: (s) => setupFor(d, s),
         balance: d.balance,
         balanceVersion: d.balanceVersion,
@@ -112,7 +112,7 @@ List<DebugItem> captureItems(CaptureDebug c) {
       id: 'cap.species',
       title: 'Espécie',
       section: DebugSection.capture,
-      keywords: const ['eco', 'criatura', 'sintonia', 'sootling', 'rillet', 'frondling'],
+      keywords: const ['eco', 'criatura', 'sintonia', 'tipo', 'sootling', 'rillet', 'frondling', 'humoth', 'pebblet', 'rustling', 'glimlet', 'umbrel', 'wisplet', 'bitling', 'sprigglet', 'wyrmlet'],
       builder: (_) => when((d) => Wrap(spacing: 6, runSpacing: 6, children: [for (final s in d.species) _speciesTile(c, s)])),
     ),
     DebugItem(

@@ -12,6 +12,9 @@ const Color kPanelLine = Color(0xFF3D3357);
 const Color kText = Color(0xFFE8E4F4);
 const Color kDim = Color(0xFF8A8FA3);
 
+/// As ciclovias no mapa: o ciano do sinal, apagado (linha fina e discreta).
+const Color kCycleway = Color(0xFF5FD3C6);
+
 /// Cor do tipo do Eco (docs/referencias-de-arte.md): fogo em brasa, água em azul, planta em verde.
 Color typeColor(EcoType t) => switch (t) {
       EcoType.fire => const Color(0xFFFF5A36),
