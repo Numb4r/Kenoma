@@ -73,7 +73,7 @@ No `regions.json` assinado, o de São Paulo entra em `route_files.access` da reg
 
 | Arquivo | Pontos | Bytes | SHA-256 |
 | --- | --- | --- | --- |
-| `app/assets/regions/campinas_e0_traffic.bin` (0.19.0, com a vida urbana) | 14.967 (semáforo 909, pare 1.137, preferência 77, faixa 4.933, entrada 934, ônibus 1.258, comércio 2.536, bar 1.026, escola 582, praça 1.575) | 56.231 | `c82bfdac97252ad6f9ca2bc05c53b531ff0119cb5872223d09be13e423fb186c` |
+| `app/assets/regions/campinas_e0_traffic.bin` (0.19.0, com a vida urbana; regerado na 0.19.1 com os estádios, tipo 10) | 14.967 (semáforo 909, pare 1.137, preferência 77, faixa 4.933, entrada 934, ônibus 1.258, comércio 2.536, bar 1.026, escola 582, praça 1.575) | 56.231 | `c82bfdac97252ad6f9ca2bc05c53b531ff0119cb5872223d09be13e423fb186c` |
 
 São Paulo e os blocos do fallback ainda não têm o arquivo: onde não há nenhum ponto em volta, a simulação põe semáforo nos cruzamentos de avenidas e faz a rua menor ceder a vez. Para São Paulo, o arquivo entraria em `route_files` do `regions.json` assinado, como o de rota.
 
@@ -91,3 +91,11 @@ São Paulo ainda não tem relevo: precisaria do arquivo gerado, listado numa ép
 | `out/regions/sao_paulo_e10_relief.bin` (`--epoch 10 --out-dir out/regions`, não embarcado, época 10) | 1373 x 2103 (z20) | -11,3 a 1214,6 m | 2.989.059 | `1c050f97ce36cdc2d27bdab33a31d9fadfaeb8fd7e07ee91a618b0f8c7bd33b9` |
 
 No `regions.json` assinado, o relevo de São Paulo entra em `files.relief` da região. O app (0.19.1 em diante) o trata como opcional: sem o arquivo no disco a região abre com o terreno plano.
+
+## Ciclovias (0.19.1, fora das épocas)
+
+`build_cycle.py --region <região>` lê do mesmo extrato as ciclovias (`highway=cycleway`) e as vias do pacote visual com ciclofaixa (`cycleway`, `cycleway:left`, `cycleway:right`, `cycleway:both`). **Não entra no pacote visual**, cujo SHA é mundo: é um arquivo ao lado, só para os ciclistas da simulação local. Formato `CYC1` no cabeçalho do script; leitor em `app/lib/data/cycle_pack.dart`.
+
+| Arquivo | Linhas | Bytes | SHA-256 |
+| --- | --- | --- | --- |
+| `app/assets/regions/campinas_e0_cycle.bin` | 665 (ciclovia 339, 134,9 km; ciclofaixa 326, 161,6 km) | 17.169 | `a9fb9657752b0eec699f47b6739b1fea16e35d1205a151bbd4c352cc63a4ccc2` |

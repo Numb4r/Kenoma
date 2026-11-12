@@ -60,5 +60,9 @@ class ClimateDriver {
   Future<void> loadEvents() async {
     final list = await loadSignedEvents();
     world.events = [for (final e in list) ?ClimateEvent.tryParse(e)];
+    matchUtc = matchStartsOf(list);
   }
+
+  /// Os jogos do `events.json` assinado (inícios, UTC): dia de jogo no cenário.
+  List<int> matchUtc = const [];
 }

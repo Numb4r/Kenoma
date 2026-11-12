@@ -277,7 +277,7 @@ class TrafficSim {
 
   SimWalker _newWalker(SimEdge e, int side, int dir, double s) {
     final d = _u();
-    final m = e.isPedestrian && d > 0.8 ? GhostModel.cyclist : d < 0.5 ? GhostModel.adult : d < 0.7 ? GhostModel.childPair : GhostModel.elder;
+    final m = e.isPedestrian && footpathCyclists && d > 0.8 ? GhostModel.cyclist : d < 0.5 ? GhostModel.adult : d < 0.7 ? GhostModel.childPair : GhostModel.elder;
     final base = switch (m) { GhostModel.cyclist => 3.2, GhostModel.elder => 0.65, GhostModel.childPair => 0.8, _ => 1.0 } * config.walkMps;
     final w = SimWalker(_nextId++, m, _rng.nextInt(m.paletteCount), e, side, dir, s, base * (0.85 + 0.3 * _u()), (_u() - 0.5) * 0.6);
     walkers.add(w);
@@ -995,6 +995,10 @@ class TrafficSim {
       }
     }
   }
+
+  /// Sem o arquivo de ciclovias, alguns ciclistas andam nos caminhos de pedestre (como antes). Com ele, só nas ciclovias
+  /// (`Cyclists`).
+  bool footpathCyclists = true;
 
   /// Dia de jogo (o calendário do `balance.json`): os passantes tendem para o estádio.
   bool matchDay = false;

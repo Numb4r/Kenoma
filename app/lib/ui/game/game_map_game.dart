@@ -44,6 +44,7 @@ import 'traffic_painter.dart';
 import 'relief_heat.dart';
 import 'world_fx.dart';
 import '../../data/relief_pack.dart';
+import '../../data/cycle_pack.dart';
 import '../../data/traffic_pack.dart';
 import '../../world/sim/traffic_sim.dart' show TrafficSim, TrafficSimConfig;
 import '../travel/travel_layer.dart';
@@ -77,6 +78,7 @@ class GameMapGame extends FlameGame {
     this.noCrossingAt,
     this.overlayTraffic = _off,
     this.overlayRelief = _off,
+    this.cycleways,
     this.relief,
     this.trafficDensity = _noDensity,
     this.rainFx = _off,
@@ -121,7 +123,7 @@ class GameMapGame extends FlameGame {
   final bool Function() overlayRadii;
   late final ArtRenderer _art = ArtRenderer(visual: visual, style: style, balance: balance, floorTile: floorTile, floorGridCells: floorGridCells);
   late final StreetLabelPainter _labels = StreetLabelPainter(visual);
-  late final TrafficPainter _traffic = TrafficPainter(visual, carM: balance.ghostCarM, pedestrianM: balance.ghostPedestrianM, roadWidthM: balance.roadWidthM, config: trafficSim, points: trafficPoints, noCrossingAt: noCrossingAt);
+  late final TrafficPainter _traffic = TrafficPainter(visual, carM: balance.ghostCarM, pedestrianM: balance.ghostPedestrianM, roadWidthM: balance.roadWidthM, config: trafficSim, points: trafficPoints, noCrossingAt: noCrossingAt, cycleways: cycleways);
   final TracePainter _trace = TracePainter();
   late final ClimatePainter _climate = ClimatePainter(cap: climateBalance.particleCap, pocketRate: climateBalance.pocketRate);
 
@@ -178,6 +180,7 @@ class GameMapGame extends FlameGame {
   /// A simulação local do tráfego: os números (`balance.json`), os pontos do OSM e os viadutos.
   final TrafficSimConfig trafficSim;
   final TrafficPointSource? trafficPoints;
+  final CyclePack? cycleways;
   final bool Function(double x, double y)? noCrossingAt;
 
   /// Debug: desenha a área simulada e a fase dos semáforos; e força a densidade (`null`: a da hora e do clima).
@@ -192,6 +195,9 @@ class GameMapGame extends FlameGame {
   /// A simulação do tráfego (debug: contador de agentes e custo do passo). `null` antes do primeiro quadro com tráfego.
   TrafficSim? get trafficSimState => _traffic.sim;
   double _frameDt = 1 / 60;
+
+  /// Os jogos do feed (dia de jogo no cenário).
+  set matchUtc(List<int> v) => _traffic.matchUtc = v;
 
   /// O custo médio por quadro do véu da neblina e dos bichos e do vento (debug), em microssegundos.
   double fogUs = 0;

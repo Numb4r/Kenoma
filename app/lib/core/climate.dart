@@ -425,6 +425,15 @@ class SeasonRule {
   }
 }
 
+/// Os jogos do `events.json` assinado: entradas `{"kind": "match", "starts_utc": "..."}` (o início do jogo em casa da
+/// Ponte Preta ou do Guarani). Só cenário: nas horas antes, a multidão anda para o estádio. Devolve os inícios (segundos
+/// UTC); o que não é jogo ou está malformado fica de fora, e o app antigo ignora o tipo que não conhece.
+List<int> matchStartsOf(Iterable<Map<String, dynamic>> events) => [
+      for (final j in events)
+        if (j['kind'] == 'match')
+          if (DateTime.tryParse(j['starts_utc'] is String ? j['starts_utc'] as String : '') case final t? when t.isUtc) t.millisecondsSinceEpoch ~/ 1000,
+    ];
+
 /// Um clima forçado por evento (`events.json` assinado): vale nas janelas cujo meio cai em `[startsUtc, endsUtc)`.
 class ClimateEvent {
   const ClimateEvent({required this.climate, required this.startsUtc, required this.endsUtc, this.id, this.reason, this.skipsCalendar = false});

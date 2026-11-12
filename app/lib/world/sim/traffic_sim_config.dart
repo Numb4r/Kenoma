@@ -165,7 +165,9 @@ class TrafficSimConfig {
   final List<int> matchUtc;
   final double matchBeforeS;
 
-  bool matchAt(int utc) => matchUtc.any((k) => utc >= k - matchBeforeS && utc < k);
+  /// Dia de jogo em [utc]: algum jogo começa nas próximas [matchBeforeS]. [extra]: os do `events.json` assinado (o
+  /// `match_utc` do `balance.json` fica vazio; é só para teste local).
+  bool matchAt(int utc, [List<int> extra = const []]) => matchUtc.followedBy(extra).any((k) => utc >= k - matchBeforeS && utc < k);
 
   /// Quantos ficam parados num lugar do tipo [kind] na [hour] local.
   int loiterAt(String kind, double hour) {

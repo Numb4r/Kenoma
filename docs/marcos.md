@@ -468,8 +468,21 @@ Com o simulador de GPS (Taquaral e Centro de Campinas), climas forçados pelo de
 
 ### Testes
 
-Novos em `epoch9_world_test` (grupo "época 10": densidade das poças antes e depois, rua molhada, deriva pelo vento local, degelo e congelamento), em `traffic_sim_test` (grupo "vida urbana": lugares pela hora, ônibus e embarque, dia de jogo) e em `birds_test` (gatos, morcegos, maritacas). Suíte: 1693 passam, 4 pulados; `flutter analyze` limpo.
+Novos em `epoch9_world_test` (grupo "época 10": densidade das poças antes e depois, rua molhada, deriva pelo vento local, degelo e congelamento), em `traffic_sim_test` (grupo "vida urbana": lugares pela hora, ônibus e embarque, dia de jogo) e em `birds_test` (gatos, morcegos, maritacas). Suíte: 1699 passam, 4 pulados (com os testes de ciclistas e de jogos do feed); `flutter analyze` limpo.
 
-### No aparelho
+### Depois do pedido de 2026-11-12
 
-APK 0.19.1+31 com a chave de release instalado por cima da 0.19.0 no moto g54. **As capturas com o relógio de debug (neblina num vale de manhã, poças se formando, Eco de Água rondando a poça, Av. Norte-Sul no Dilúvio) e a medição no aparelho de água, neblina, pombos e folhas ainda não foram feitas:** o celular estava bloqueado. **O push também não foi feito:** o pedido da 0.19.1 não o autorizou.
+- **Ciclovias:** entram num arquivo ao lado, `campinas_e0_cycle.bin` (`pipeline/build_cycle.py`: `highway=cycleway` e as vias com `cycleway`, `cycleway:left`, `cycleway:right` ou `cycleway:both`; 339 ciclovias com 134,9 km e 326 ciclofaixas com 161,6 km; 17.169 bytes), **e não dentro do pacote visual**: o SHA do `campinas_e0_vis.bin` está fixado em todas as épocas desde a 2, então mexer nele pediria época nova e faria os apps antigos recusarem o mapa. O arquivo é cenário, fora das épocas, como o de rota e o de pontos do tráfego. Com ele, os ciclistas (`world/sim/cyclists.dart`) pedalam só nas ciclovias, pela direita, e saem dos caminhos de pedestre; nascem e somem fora da vista. As ciclovias ainda não são desenhadas no mapa.
+- **Dia de jogo:** o `match_utc` do `balance.json` fica vazio. O app lê os jogos do `events.json` assinado: entradas `{"kind": "match", "starts_utc": "2026-11-21T19:00:00Z"}` (o início do jogo em casa). Nas 2 h antes, os passantes tendem para o estádio do OSM. Os apps antigos ignoram o tipo que não conhecem.
+- **Relevo do fallback: decidido que fica plano.** Os blocos baixados da Overpass fora das regiões com pacote não têm relevo: poças e ruas alagadas saem do sorteio pela seed, e a neblina vale igual em todo lugar.
+- **Push:** regra nova no `CLAUDE.md` (push no fim de cada versão com testes passando e analyze limpo; publicar feed, `regions.json` e `docs/pages` continua pedindo autorização).
+
+### No aparelho (2026-11-12, moto g54, APK 0.19.1+31, simulador de GPS e relógio de debug)
+
+- **Neblina num vale de manhã:** relógio em 2026-11-13 08:50 UTC (5h50 locais), Neblina forçada, junto do lago no Taquaral: o véu preso ao mapa, em degraus de tom.
+- **Poças se formando:** Chuva forçada a 10x numa esquina do Centro (o ponto baixo que o campo de água indica, 53 m a leste e 171 m ao sul do ponto do simulador): quatro capturas, do chão seco à poça cheia com a borda pontilhada, e os Ecos de Água em cima dela no fim.
+- **Eco de Água na poça:** vídeo de 15 s no mesmo lugar.
+- **Dilúvio no vale da Norte-Sul:** de bicicleta simulada do Centro até perto da Norte-Sul com a Orosimbo Maia (posição por estimativa, uns 1,3 km): a avenida ao lado alagada, com a borda do campo.
+- **Medido no aparelho, por quadro:** tráfego 297 µs (120 carros, 70 passantes) e 113 µs (40 carros); véu da neblina 447 µs com neblina (14 µs sem); bichos e vento 73 a 87 µs. **Soma com neblina: menos de 1 ms**, contra o teto de 4 ms. Fora do quadro: bloco da cobertura (48 pixels por célula) 38,8 ms no isolate, 16 blocos na tela. **Uma vez por tile:** campo de água 12,9 a 30,1 ms, na thread do desenho (um tropeço de um ou dois quadros quando o jogador entra num tile z15 novo durante a chuva).
+- **Os Ecos Agressivos abrem a folha de encontro quando o avatar chega perto**; cancelei todas sem sintonizar. O que o simulador coletou entrou como debug, fora da Bolsa.
+- **Não visto:** as coisas novas de cenário desta versão (ônibus no ponto, gente no comércio e nos bares, gatos, morcegos, maritacas, fumaça, fuligem, areia, dunas andando) e os ciclistas nas ciclovias, que entraram depois das capturas.

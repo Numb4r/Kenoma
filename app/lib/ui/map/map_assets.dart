@@ -27,6 +27,7 @@ import '../../world/world_view.dart';
 import '../../net/signed_feed.dart';
 import '../../data/block_cache.dart';
 import '../../data/map_sources.dart';
+import '../../data/cycle_pack.dart';
 import '../../data/nowalk_pack.dart';
 import '../../data/relief_pack.dart';
 import '../../data/traffic_pack.dart';
@@ -51,7 +52,10 @@ import 'map_renderer.dart';
 const String kRegion = kBundledRegion;
 
 class MapAssets {
-  MapAssets({required this.map, required this.atlas, required this.balance, required this.stale, this.visual, this.noWalk, this.epoch, this.world, this.fallback, this.codec, this.trafficPoints, this.relief});
+  MapAssets({required this.map, required this.atlas, required this.balance, required this.stale, this.visual, this.noWalk, this.epoch, this.world, this.fallback, this.codec, this.trafficPoints, this.relief, this.cycleways});
+
+  /// As ciclovias do OSM para os ciclistas da simulação local (`null`: ficam nos caminhos de pedestre).
+  final CyclePack? cycleways;
 
   /// O relevo da região (da primeira época que o lista). `null`: terreno plano.
   final ReliefSource? relief;
@@ -246,6 +250,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
     NoWalkPack? noWalk;
     LayeredWorld? world;
     TrafficPack? trafficPoints;
+    CyclePack? cycleways;
     ReliefPack? relief;
     
     if (withVisual) {
@@ -268,6 +273,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       }
       final access = await loadAccessPack(region: kRegion, bundle: assets);
       trafficPoints = await loadTrafficPack(region: kRegion, bundle: assets);
+      cycleways = await loadCyclePack(region: kRegion, bundle: assets);
       world = LayeredWorld(regions: [LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk, access: access, relief: relief)], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
       visual = VisualMap(world);
     }
@@ -284,6 +290,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       fallback: world == null ? null : MapFallbackBalance(balanceJson),
       codec: world == null ? null : fallbackCodec(biomesJson),
       trafficPoints: trafficPoints,
+      cycleways: cycleways,
       relief: world ?? relief, // com as regiões baixadas: o relevo de cada uma
     );
   } catch (e) {

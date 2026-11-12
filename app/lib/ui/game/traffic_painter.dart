@@ -7,9 +7,11 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import '../../core/astro.dart' show DayLight;
+import '../../data/cycle_pack.dart';
 import '../../data/traffic_pack.dart';
 import '../../world/map_camera.dart';
 import '../../world/sim/birds.dart';
+import '../../world/sim/cyclists.dart';
 import '../../world/sim/traffic_sim.dart';
 import '../../world/sim/wind_field.dart';
 import '../../world/street_cover.dart' show StreetState;
@@ -32,6 +34,7 @@ class TrafficPainter {
     this.config = const TrafficSimConfig(),
     this.points,
     this.noCrossingAt,
+    this.cycleways,
   });
 
   final VisualMap visual;
@@ -50,6 +53,13 @@ class TrafficPainter {
   final TrafficSimConfig config;
   final TrafficPointSource? points;
   final bool Function(double x, double y)? noCrossingAt;
+
+  /// As ciclovias do OSM: com elas, os ciclistas pedalam nelas e saem dos caminhos de pedestre.
+  final CyclePack? cycleways;
+  late final Cyclists cyclists = Cyclists(pack: cycleways);
+
+  /// Os jogos do `events.json` assinado (inícios, UTC).
+  List<int> matchUtc = const [];
 
   final GhostSprites sprites = GhostSprites();
   TrafficSim? _sim;
@@ -126,7 +136,9 @@ class TrafficPainter {
     if (visual.pack.version < 2) return; // o pacote antigo não tem a mão única
     final t = tUtcExact ?? tUtc.toDouble();
     final (l, top, r, b) = cam.visibleBounds(view.width, view.height);
-    final sim = _simFor(seed)..forcedDensity = forcedDensity; // antes de povoar: a primeira leva já vem na densidade do debug
+    final sim = _simFor(seed)
+      ..footpathCyclists = cycleways == null
+      ..forcedDensity = forcedDensity; // antes de povoar: a primeira leva já vem na densidade do debug
     final hour = localHour(tUtc, lonDeg);
     final density = sim.config.carDensityIn(speedMult);
     sim.center(px, py, metersPerCell, left: l, top: top, right: r, bottom: b, hour: hour, density: density);
@@ -139,7 +151,7 @@ class TrafficPainter {
       lanes.applyStreets(streetState == null ? null : (line) => streetState(line, t) == StreetState.blocked, streetState == null ? null : (line) => streetState(line, t) == StreetState.flooded);
     }
     sim.raining = outfit == 'rain'; // os climas de chuva: quem está na rua corre para a marquise
-    sim.matchDay = config.matchAt(tUtc);
+    sim.matchDay = config.matchAt(tUtc, matchUtc);
     if (!paused) sim.step(dt.clamp(0.0, 0.1), hour: hour, density: density, speedMult: speedMult, walkMult: walkMult);
     final lifeSw = Stopwatch()..start();
     if (!paused) {
@@ -153,6 +165,14 @@ class TrafficPainter {
     if (climateId != _windId) {
       _windId = climateId;
       leaves.start(sim.time);
+    }
+    if (!paused) {
+      cyclists.update(dt.clamp(0.0, 0.1), px, py, metersPerCell, (forcedDensity ?? pedestrianDensity(hour) * sim.config.walkerDensityIn(walkMult)).clamp(0.0, 1.5), (x, y) => x >= l - 1 && x <= r + 1 && y >= top - 1 && y <= b + 1);
+    }
+    for (final rd in cyclists.riders) {
+      if (rd.x < l - 1 || rd.x > r + 1 || rd.y < top - 1 || rd.y > b + 1) continue;
+      final (sx, sy) = cam.cellToScreen(rd.x, rd.y, view.width, view.height);
+      _walkers.add((Ghost(id: rd.id, model: GhostModel.cyclist, palette: rd.palette, x: rd.x, y: rd.y, heading: rd.heading, speedMps: rd.speed, phase: GhostPhase.alive, phaseT: 1, travelledM: rd.odo), sx, sy));
     }
     leaves.style = config.windStyle[climateId] ?? 'leaf';
     if (!paused) leaves.update(dt.clamp(0.0, 0.1), lanes, windRad, wind, sim.time, metersPerCell, l, top, r, b);

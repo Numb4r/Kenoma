@@ -624,6 +624,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       trafficDensity: () => tools.trafficDensity,
       trafficSim: assets.balance.trafficSim,
       trafficPoints: assets.trafficPoints,
+      cycleways: assets.cycleways,
       noCrossingAt: assets.world == null ? null : (x, y) => (_bridge ??= bridgeTest(assets.world!, data.travel.accessTolM / metersPerCell(_bridgeLat())))(x, y),
       auraM: assets.balance.auraM,
       defaultWidthM: assets.balance.defaultWidthM,
@@ -725,7 +726,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _climate = ClimateDriver(data: data, world: climate, online: () => session.state.setting('weather_online'));
     tools.force.rainbowFoot = () => _ready == null ? null : _rainbowFoot(_ready!);
     climate.debugArcs.addAll(tools.force.tapArcs);
-    unawaited(_climate!.loadEvents());
+    unawaited(_climate!.loadEvents().then((_) => game.matchUtc = _climate!.matchUtc));
     game.climateFx
       .onThunder = _scheduleThunder;
     session.state.onNotice = _toast;
