@@ -89,7 +89,7 @@ void main() {
     expect(find.textContaining('DESATUALIZADO'), findsNothing);
   });
 
-  testWidgets('só preferências: a Patrulha e o modo bolso moram no app Patrulha; o som tem interruptor', (tester) async {
+  testWidgets('só preferências: a Patrulha e o modo bolso moram no app Patrulha; sem interruptor de som até a sonoplastia', (tester) async {
     final s = await session(MemorySaveStore());
     await pump(tester, s);
     expect(find.text('Modo bolso'), findsNothing);
@@ -97,12 +97,9 @@ void main() {
     for (final t in ['TELA E SOM', 'PERMISSÕES', 'DADOS']) {
       expect(find.text(t), findsOneWidget, reason: t);
     }
-    expect(s.state.settingOr('sound', true), isTrue);
-    await tester.tap(find.byKey(const Key('sound-switch')));
-    await tester.pump();
-    expect(s.state.setting('sound'), isFalse);
-    expect(soundOn.value, isFalse);
-    soundOn.value = true;
+    expect(find.byKey(const Key('sound-switch')), findsNothing);
+    expect(find.text('Sons'), findsNothing);
+    expect(kSoundVolume, 0, reason: 'efeitos e música em zero');
   });
 
   testWidgets('depois do fim da última época avisa que o mundo está desatualizado', (tester) async {

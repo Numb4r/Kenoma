@@ -3,7 +3,6 @@
 /// viagem, Radar, clima) mora no app dele no celular.
 library;
 
-import '../chime.dart';
 import '../flashes.dart';
 import '../../core/features.dart';
 import 'package:flutter/material.dart';
@@ -311,18 +310,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (v) {
                 widget.onFollowHeading(v);
                 setState(() {});
-              },
-            ),
-            SwitchListTile(
-              key: const Key('sound-switch'),
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Sons', style: TextStyle(fontSize: 8)),
-              subtitle: const Text('O aviso do Brilhante e o trovão. A vibração da sintonia continua', style: TextStyle(fontSize: 8, color: kDim)),
-              value: s.settingOr(kSoundSetting, true),
-              activeThumbColor: kSignal,
-              onChanged: (v) {
-                s.setSetting(kSoundSetting, v);
-                soundOn.value = v;
               },
             ),
             const SectionTitle('Permissões'),
