@@ -248,6 +248,13 @@ class SimNode {
   /// Perto de um estacionamento ou garagem do OSM: entrada e saída fora da vista.
   bool entry = false;
 
+  /// O que há do OSM junto da esquina: ponto de ônibus, comércio, bar ou restaurante, escola, praça. Quem fica por ali
+  /// depende da hora (`TrafficSim`).
+  bool busStop = false, shop = false, bar = false, school = false, square = false;
+
+  /// A quantas esquinas fica o estádio mais próximo (-1: nenhum ao alcance): para onde anda a multidão em dia de jogo.
+  int stadiumHops = -1;
+
   /// Tem marquise ou ponto de ônibus por perto (comércio, bar, parada do OSM): onde o passante se abriga da chuva. E a
   /// quantas esquinas fica o abrigo mais próximo (-1: nenhum ao alcance).
   bool shelter = false;
@@ -490,6 +497,21 @@ class LaneGraph {
     _control(seed, c, points);
     _deadEnds();
     _indexDirs();
+    // O mesmo para o estádio, sem limite de alcance dentro da área.
+    var crowd = [for (final nd in nodes) if (nd.stadiumHops == 0) nd];
+    for (var hops = 1; crowd.isNotEmpty; hops++) {
+      final next = <SimNode>[];
+      for (final nd in crowd) {
+        for (final a in nd.arms) {
+          final o = a.atA ? a.edge.b : a.edge.a;
+          if (o.stadiumHops < 0) {
+            o.stadiumHops = hops;
+            next.add(o);
+          }
+        }
+      }
+      crowd = next;
+    }
     // A distância (em esquinas) de cada nó ao abrigo mais próximo, pelas calçadas.
     var frontier = [for (final nd in nodes) if (nd.shelter) nd];
     for (final nd in frontier) {
@@ -533,6 +555,14 @@ class LaneGraph {
       final here = [for (final p in pts) if (d2(p, nd) <= near * near) p];
       nd.entry = here.any((p) => p.kind == TrafficPointKind.entry) || pts.any((p) => p.kind == TrafficPointKind.entry && d2(p, nd) <= math.pow(c.entryNearM / mpc, 2));
       nd.shelter = here.any((p) => (p.kind == TrafficPointKind.busStop || p.kind == TrafficPointKind.shop || p.kind == TrafficPointKind.bar) && d2(p, nd) <= math.pow(c.shelterNearM / mpc, 2));
+      bool close(TrafficPointKind k, double m) => here.any((p) => p.kind == k && d2(p, nd) <= math.pow(m / mpc, 2));
+      nd
+        ..busStop = close(TrafficPointKind.busStop, c.shelterNearM)
+        ..shop = close(TrafficPointKind.shop, c.shelterNearM)
+        ..bar = close(TrafficPointKind.bar, c.shelterNearM)
+        ..school = close(TrafficPointKind.school, c.controlNearM)
+        ..square = close(TrafficPointKind.square, c.controlNearM);
+      if (pts.any((p) => p.kind == TrafficPointKind.stadium && d2(p, nd) <= math.pow(80 / mpc, 2))) nd.stadiumHops = 0;
       final crossings = [for (final p in here) if (p.kind == TrafficPointKind.crossing) p];
       for (final a in nd.arms) {
         // Com faixa mapeada por perto, só se atravessa nela; sem nenhuma, nas esquinas (e nunca no meio do quarteirão).

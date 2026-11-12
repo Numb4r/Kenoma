@@ -8,7 +8,7 @@ import 'dart:io' show gzip;
 import 'dart:typed_data';
 
 /// A ordem é a do arquivo.
-enum TrafficPointKind { signal, stop, giveWay, crossing, entry, busStop, shop, bar, school, square }
+enum TrafficPointKind { signal, stop, giveWay, crossing, entry, busStop, shop, bar, school, square, stadium }
 
 typedef TrafficPoint = ({TrafficPointKind kind, double x, double y});
 

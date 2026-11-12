@@ -55,13 +55,17 @@ class SimCar extends SimCarRef {
   double waitS = 0;
   bool gone = false;
 
+  /// Ônibus: para no ponto e espera os passantes embarcarem. [dwell]: quanto falta de parada neste ponto (-1: já parou).
+  bool bus = false;
+  double dwell = 0;
+
   /// Outro carro logo à frente fora da fila (ruas que se juntam ou se separam): a folga até ele e a velocidade dele.
   double blockGap = double.infinity, blockV = 0;
 
   SimEdge get edge => link.edge;
 }
 
-enum WalkerMode { walking, waiting, corner, crossing, sheltering }
+enum WalkerMode { walking, waiting, corner, crossing, sheltering, loitering, boarding }
 
 class SimWalker {
   SimWalker(this.id, this.model, this.palette, this.edge, this.side, this.dir, this.s, this.speed, this.latBase) : lat = latBase;
@@ -83,6 +87,11 @@ class SimWalker {
 
   /// Pego pela chuva: corre para o abrigo mais próximo.
   bool hurry = false;
+
+  /// Parado num lugar (`shop`, `bar`, `school`, `square`, `bus`) e em que esquina; na praça, sentado.
+  String? loiter;
+  SimNode? loiterAt;
+  bool get sitting => loiter == 'square';
 
   /// O que fez por último na esquina: 0 veio andando, 1 virou a esquina, 2 atravessou.
   int last = 0;
@@ -128,7 +137,7 @@ class TrafficSim {
     _raining = v;
     for (final w in walkers) {
       if (v) {
-        w.hurry = w.mode != WalkerMode.sheltering && w.model != GhostModel.cyclist;
+        w.hurry = w.mode != WalkerMode.sheltering && w.mode != WalkerMode.loitering && w.mode != WalkerMode.boarding && w.model != GhostModel.cyclist;
       } else {
         w.hurry = false;
         if (w.mode == WalkerMode.sheltering) {
@@ -206,6 +215,7 @@ class TrafficSim {
     _index(fresh);
     if (g == null) {
       _populate(fresh, hour, density, null);
+      _loiter(hour, force: true);
       // Roda um pouco antes do primeiro quadro: as filas dos semáforos já existem quando o app abre.
       final view = _hasView;
       _hasView = false;
@@ -233,8 +243,11 @@ class TrafficSim {
     for (final k in g.links) {
       if (k.from.border && !k.to.border) _carSources.add(k);
     }
+    _places.clear();
+    _loiterers.clear();
     for (final n in g.nodes) {
       if (n.entry && !n.border && n.outgoing.isNotEmpty) _entries.add(n);
+      if (!n.border && (n.shop || n.bar || n.school || n.square || n.busStop)) _places.add(n);
     }
   }
 
@@ -252,6 +265,12 @@ class TrafficSim {
       ..s = s
       ..v = v
       ..length = m == GhostModel.moto ? carLengthM * 0.5 : carLengthM;
+    // Nas avenidas, de vez em quando um ônibus (no máximo três na área).
+    if (link.roadClass != RoadClass.local && m != GhostModel.moto && _u() < config.busShare && cars.where((o) => o.bus).length < 3) {
+      c
+        ..bus = true
+        ..length = carLengthM * 2.2;
+    }
     cars.add(c);
     return c;
   }
@@ -356,6 +375,17 @@ class TrafficSim {
       }
     }
     for (final w in walkers) {
+      if (w.loiterAt != null) {
+        // Quem estava parado num lugar fica onde está, ligado à esquina nova (ou some se ela saiu da área).
+        final e2 = g.byKey[w.edge.key];
+        final n2 = e2 == null ? null : (w.atA ? e2.a : e2.b);
+        if (n2 == null || n2.border) {
+          w.gone = true;
+          continue;
+        }
+        w.loiterAt = n2;
+        if (w.mode == WalkerMode.loitering) _loiterers[n2] = (_loiterers[n2] ?? 0) + 1;
+      }
       final e = g.byKey[w.edge.key], te = w.tEdge == null ? null : g.byKey[w.tEdge!.key];
       if (e == null || (w.tEdge != null && te == null)) {
         w.gone = true;
@@ -550,6 +580,22 @@ class TrafficSim {
     if (!c.inJunction) {
       final dEnd = len - c.s;
       if (!c.chosen) _choose(c);
+      // O ônibus encosta no ponto antes da esquina, espera os passantes embarcarem e segue.
+      if (c.bus && link.to.busStop && c.dwell >= 0 && dEnd < 30) {
+        final g = dEnd - c.length / 2 - 3;
+        if (g < gap) {
+          gap = g;
+          leadV = 0;
+        }
+        if (c.v < 0.2 && g < 4) {
+          if (c.dwell == 0) {
+            c.dwell = config.busDwellS;
+            _board(link.to, c);
+          }
+          c.dwell -= dt;
+          if (c.dwell <= 0) c.dwell = -1;
+        }
+      }
       final leadInside = lead == null || lead.s > len;
       // Decidiu sumir num estacionamento, mas a esquina entrou na vista: segue viagem.
       if (c.next == null && !link.to.border && dEnd < 40 && _inView(link.to.x, link.to.y, hiddenMarginM)) {
@@ -639,6 +685,7 @@ class TrafficSim {
         ..reserved = false
         ..holds = false
         ..chosen = false
+        ..dwell = 0
         ..next = null;
       // Entra atrás de quem já está na faixa.
       final list = next.cars[c.lane];
@@ -789,6 +836,19 @@ class TrafficSim {
         }
       }
     }
+    if (matchDay && node.stadiumHops > 0 && _u() < 0.8) {
+      // Dia de jogo: a multidão anda para o estádio.
+      final here = node.stadiumHops, viaB = (adj.atA ? adj.edge.b : adj.edge.a).stadiumHops;
+      if (w.last != 1 && viaB >= 0 && viaB < here) {
+        _startTransfer(w, adj.edge, adjSide, adj.atA, false);
+        return;
+      }
+      // A rua deste lado não leva para lá: atravessa e tenta pela do outro lado.
+      if (wC > 0 && w.last == 0) {
+        _startTransfer(w, e, -w.side, atA, true);
+        return;
+      }
+    }
     final pick = _u() * (wA + wB + wC);
     if (pick < wB) {
       _startTransfer(w, adj.edge, adjSide, adj.atA, false);
@@ -806,7 +866,22 @@ class TrafficSim {
     final v = w.speed * walkMult * (w.hurry ? config.runMult : 1);
     switch (w.mode) {
       case WalkerMode.sheltering:
+      case WalkerMode.loitering:
         w.v = 0;
+        return;
+      case WalkerMode.boarding:
+        // Anda até a porta do ônibus e entra.
+        w.v = v;
+        w.tPos += v * dt;
+        if (w.tPos >= w.tLen) {
+          w.gone = true;
+          return;
+        }
+        final k = w.tLen <= 0 ? 1.0 : w.tPos / w.tLen;
+        w
+          ..x = w.fx + (w.tx - w.fx) * k
+          ..y = w.fy + (w.ty - w.fy) * k
+          ..odo += v * dt;
         return;
       case WalkerMode.walking:
         final len = w.edge.walk(w.side).length;
@@ -921,6 +996,92 @@ class TrafficSim {
     }
   }
 
+  /// Dia de jogo (o calendário do `balance.json`): os passantes tendem para o estádio.
+  bool matchDay = false;
+
+  final List<SimNode> _places = [];
+  final Map<SimNode, int> _loiterers = {};
+  double _loiterIn = 0;
+
+  static const _kinds = ['shop', 'bar', 'school', 'square', 'bus'];
+
+  bool _is(SimNode n, String kind) => switch (kind) { 'shop' => n.shop, 'bar' => n.bar, 'school' => n.school, 'square' => n.square, _ => n.busStop };
+
+  /// Quanta gente o lugar [n] pede agora: o maior entre os tipos que ele tem.
+  (int, String) _wanted(SimNode n, double hour) {
+    var best = 0, kind = 'shop';
+    for (final k in _kinds) {
+      if (!_is(n, k)) continue;
+      final v = config.loiterAt(k, hour);
+      if (v > best) {
+        best = v;
+        kind = k;
+      }
+    }
+    return (best, kind);
+  }
+
+  /// A vida parada da rua: gente no comércio de dia, nos bares à noite, na porta da escola na entrada e na saída, sentada
+  /// na praça, esperando no ponto. Entra e sai só com o lugar fora da vista ([force]: a primeira leva, ao abrir).
+  void _loiter(double hour, {bool force = false}) {
+    if (_places.isEmpty) return;
+    for (var k = force ? _places.length * 6 : 3; k > 0; k--) {
+      final n = force ? _places[k % _places.length] : _places[_rng.nextInt(_places.length)];
+      final (want, kind) = _wanted(n, hour);
+      final have = _loiterers[n] ?? 0;
+      if (have == want || n.arms.isEmpty || (!force && _inView(n.x, n.y, hiddenMarginM))) continue;
+      if (have < want) {
+        final arm = n.arms[_rng.nextInt(n.arms.length)], side = _u() < 0.5 ? 1 : -1, e = arm.edge, len = e.walk(side).length;
+        final back = math.min(len, 0.6 + _u() * 3.5);
+        final w = _newWalker(e, side, arm.atA ? 1 : -1, arm.atA ? back : len - back)
+          ..mode = WalkerMode.loitering
+          ..loiter = kind
+          ..loiterAt = n
+          ..atA = arm.atA
+          ..lat = side * (0.3 + _u() * 0.8);
+        _placeWalker(w);
+        w.heading = _u() * 2 * math.pi;
+        _loiterers[n] = have + 1;
+      } else {
+        for (final w in walkers) {
+          if (identical(w.loiterAt, n) && w.mode == WalkerMode.loitering && !w.gone) {
+            w.gone = true;
+            _loiterers[n] = have - 1;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  /// O ônibus [bus] parou no ponto [n]: quem esperava ali anda até ele e embarca.
+  void _board(SimNode n, SimCar bus) {
+    for (final w in walkers) {
+      if (!identical(w.loiterAt, n) || w.loiter != 'bus' || w.mode != WalkerMode.loitering) continue;
+      w
+        ..mode = WalkerMode.boarding
+        ..fx = w.x
+        ..fy = w.y
+        ..tx = bus.x
+        ..ty = bus.y
+        ..tPos = 0
+        ..tLen = math.sqrt((bus.x - w.x) * (bus.x - w.x) + (bus.y - w.y) * (bus.y - w.y)) * lanes!.mpc - 1.2;
+      _loiterers[n] = (_loiterers[n] ?? 1) - 1;
+      boarded++;
+    }
+  }
+
+  int get _loitering {
+    var n = 0;
+    for (final v in _loiterers.values) {
+      n += v;
+    }
+    return n;
+  }
+
+  /// Quantos passantes já embarcaram num ônibus (testes e debug).
+  int boarded = 0;
+
   // ---------------------------------------------------------------- nascer
 
   bool _inflowClear(SimLink link) {
@@ -956,7 +1117,7 @@ class TrafficSim {
           if (_inView(c.x, c.y, 0)) bornInView++;
         }
       }
-      if (walkers.length < wantWalk && (_walkSources.isNotEmpty || _entries.isNotEmpty)) {
+      if (walkers.length - _loitering < wantWalk * (matchDay ? 1.5 : 1) && (_walkSources.isNotEmpty || _entries.isNotEmpty)) {
         final SimEdge e;
         final bool atA;
         if (_walkSources.isEmpty || (_entries.isNotEmpty && _u() < 0.3)) {
@@ -1023,6 +1184,11 @@ class TrafficSim {
       }
     }
     if (spawn) _spawn(dt, hour, density);
+    _loiterIn -= dt;
+    if (spawn && _loiterIn <= 0) {
+      _loiterIn = 0.5;
+      _loiter(hour);
+    }
     lastStepUs = sw.elapsedMicroseconds;
     avgStepUs = avgStepUs == 0 ? lastStepUs.toDouble() : avgStepUs * 0.95 + lastStepUs * 0.05;
   }

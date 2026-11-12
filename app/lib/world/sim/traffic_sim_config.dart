@@ -40,6 +40,11 @@ class TrafficSimConfig {
     this.runMult = 2.4,
     this.windMps = const {'wind': 3, 'gale': 7, 'storm': 3, 'dry_dust': 3, 'sandstorm': 6, 'blizzard': 4, 'tornado': 8, 'rift_wind': 5},
     this.leaves = 40,
+    this.loiter = const {'shop': 3, 'bar': 4, 'school': 6, 'square': 2, 'bus': 2},
+    this.busShare = 0.04,
+    this.busDwellS = 7,
+    this.matchUtc = const [],
+    this.matchBeforeS = 7200,
   });
 
   factory TrafficSimConfig.fromJson(Map<String, dynamic>? j) {
@@ -83,6 +88,11 @@ class TrafficSimConfig {
       runMult: n('run_mult', d.runMult),
       windMps: m('wind_mps', d.windMps),
       leaves: n('leaves', d.leaves.toDouble()).round(),
+      loiter: m('loiter', d.loiter),
+      busShare: n('bus_share', d.busShare),
+      busDwellS: n('bus_dwell_s', d.busDwellS),
+      matchUtc: [for (final t in (j['match_utc'] as List<dynamic>?) ?? const []) DateTime.parse(t as String).millisecondsSinceEpoch ~/ 1000],
+      matchBeforeS: n('match_before_s', d.matchBeforeS),
     );
   }
 
@@ -135,6 +145,33 @@ class TrafficSimConfig {
   /// A força do vento local (m/s) em cada clima de vento, e quantas folhas e papéis ele leva pela tela.
   final Map<String, double> windMps;
   final int leaves;
+
+  /// Quanta gente fica parada em cada tipo de lugar na hora dele: comércio de dia, bar à noite, escola na entrada e na
+  /// saída, sentada na praça, esperando no ponto de ônibus.
+  final Map<String, double> loiter;
+
+  /// A fração dos carros de avenida que é ônibus, e quanto ele fica parado no ponto.
+  final double busShare, busDwellS;
+
+  /// Os jogos em casa da Ponte Preta e do Guarani (início, UTC): nas [matchBeforeS] antes, a multidão anda para o estádio.
+  final List<int> matchUtc;
+  final double matchBeforeS;
+
+  bool matchAt(int utc) => matchUtc.any((k) => utc >= k - matchBeforeS && utc < k);
+
+  /// Quantos ficam parados num lugar do tipo [kind] na [hour] local.
+  int loiterAt(String kind, double hour) {
+    final n = loiter[kind] ?? 0;
+    final on = switch (kind) {
+      'shop' => hour >= 9 && hour < 19,
+      'bar' => hour >= 19 || hour < 2 || (hour >= 11.5 && hour < 14),
+      'school' => (hour >= 6.5 && hour < 7.5) || (hour >= 11.5 && hour < 12.5) || (hour >= 17 && hour < 18.5),
+      'square' => hour >= 8 && hour < 18,
+      'bus' => hour >= 6 && hour < 23,
+      _ => false,
+    };
+    return on ? (kind == 'bar' && hour >= 11.5 && hour < 14 ? n / 2 : n).round() : 0;
+  }
 
   double carDensityIn(double speedMult) => climateCarFloor + (1 - climateCarFloor) * speedMult.clamp(0.0, 1.0);
   double walkerDensityIn(double walkMult) => climateWalkerFloor + (1 - climateWalkerFloor) * walkMult.clamp(0.0, 1.0);

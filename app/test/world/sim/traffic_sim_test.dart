@@ -370,6 +370,106 @@ void main() {
     expect(s.goneInView, 0);
   });
 
+  group('vida urbana', () {
+    TrafficSim town({TrafficSimConfig config = const TrafficSimConfig(radiusM: 300, warmupS: 10)}) => TrafficSim(graph: city(), seed: 9, config: config, points: TrafficPack.of([
+          (kind: TrafficPointKind.shop, x: gx(26), y: gy(26)),
+          (kind: TrafficPointKind.bar, x: gx(38), y: gy(26)),
+          (kind: TrafficPointKind.school, x: gx(26), y: gy(38)),
+          (kind: TrafficPointKind.square, x: gx(38), y: gy(38)),
+          (kind: TrafficPointKind.busStop, x: gx(32), y: gy(20)),
+          (kind: TrafficPointKind.stadium, x: gx(50), y: gy(32)),
+        ]));
+    Map<String, int> standing(TrafficSim s) {
+      final out = <String, int>{};
+      for (final w in s.walkers) {
+        if (w.mode == WalkerMode.loitering) out[w.loiter!] = (out[w.loiter!] ?? 0) + 1;
+      }
+      return out;
+    }
+
+    test('comércio cheio de dia, bar à noite, escola na hora da saída, gente sentada na praça', () {
+      final day = town()..center(gx(32), gy(32), mpc, hour: 15);
+      expect(standing(day)['shop'], 3);
+      expect(standing(day)['square'], 2);
+      expect(day.walkers.where((w) => w.sitting).length, 2);
+      expect(standing(day)['bar'], isNull);
+      expect(standing(day)['school'], isNull);
+      final night = town()..center(gx(32), gy(32), mpc, hour: 21);
+      expect(standing(night)['bar'], 4);
+      expect(standing(night)['shop'], isNull);
+      expect(standing(night)['square'], isNull);
+      final out = town()..center(gx(32), gy(32), mpc, hour: 17.5);
+      expect(standing(out)['school'], 6);
+      // Parados onde estão, junto do lugar deles.
+      final w = day.walkers.firstWhere((w) => w.loiter == 'shop');
+      final at = (w.x, w.y);
+      for (var i = 0; i < 200; i++) {
+        day.step(0.1, hour: 15);
+      }
+      expect((w.x, w.y), at);
+      expect(((w.x - gx(26)).abs() + (w.y - gy(26)).abs()) * mpc, lessThan(20));
+      // A hora muda: o comércio esvazia e o bar enche, só fora da vista.
+      for (var i = 0; i < 3000; i++) {
+        day.step(0.1, hour: 21);
+      }
+      expect(standing(day)['shop'], isNull);
+      expect(standing(day)['bar'], 4);
+      expect(day.goneInView, 0);
+    });
+
+    test('o ônibus para no ponto e quem esperava embarca', () {
+      final s = town(config: const TrafficSimConfig(radiusM: 300, warmupS: 10, busShare: 1))..forcedDensity = 1.5;
+      s.center(gx(32), gy(32), mpc, hour: 10);
+      expect(s.cars.where((c) => c.bus), isNotEmpty);
+      expect(s.cars.where((c) => c.bus).length, lessThanOrEqualTo(3));
+      var dwelled = 0, waiting = 0;
+      for (var i = 0; i < 12000 && (s.boarded == 0 || dwelled < 40); i++) {
+        s.step(0.1, hour: 10);
+        if (s.cars.any((c) => c.bus && c.dwell > 0 && c.v < 0.2)) dwelled++;
+        waiting = math.max(waiting, standing(s)['bus'] ?? 0);
+      }
+      expect(waiting, 2, reason: 'gente esperando no ponto');
+      expect(dwelled, greaterThan(20), reason: 'o ônibus ficou parado no ponto');
+      expect(s.boarded, greaterThan(0));
+      final b = s.walkers.where((w) => w.mode == WalkerMode.boarding).toList();
+      expect(b, isNotEmpty);
+      for (var i = 0; i < 400; i++) {
+        s.step(0.1, hour: 10);
+      }
+      expect(b.every((w) => w.gone), isTrue, reason: 'entraram no ônibus');
+    });
+
+    test('dia de jogo: os passantes chegam mais perto do estádio', () {
+      double meanHops(TrafficSim s) {
+        var sum = 0, n = 0;
+        for (final w in s.walkers) {
+          if (w.mode == WalkerMode.loitering) continue;
+          final h = math.min(w.edge.a.stadiumHops, w.edge.b.stadiumHops);
+          if (h >= 0) {
+            sum += h;
+            n++;
+          }
+        }
+        return sum / n;
+      }
+
+      final normal = town()..forcedDensity = 2;
+      final match = town()
+        ..forcedDensity = 2
+        ..matchDay = true;
+      for (final s in [normal, match]) {
+        s.center(gx(32), gy(32), mpc, hour: 15);
+        for (var i = 0; i < 4000; i++) {
+          s.step(0.1, hour: 15);
+        }
+      }
+      expect(match.lanes!.nodes.where((n) => n.stadiumHops == 0), isNotEmpty);
+      expect(meanHops(match), lessThan(meanHops(normal) - 0.5));
+      const c = TrafficSimConfig(matchUtc: [1000000], matchBeforeS: 7200);
+      expect((c.matchAt(1000000 - 7200), c.matchAt(999999), c.matchAt(1000000), c.matchAt(1000000 - 7201)), (true, true, false, false));
+    });
+  });
+
   test('pacote de pontos: lê o formato TRF1', () {
     expect(() => TrafficPack.parse(Uint8List.fromList([1, 2, 3, 4, 5])), throwsFormatException);
   });

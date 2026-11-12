@@ -6,7 +6,7 @@ Tipos: 0 `highway=traffic_signals`, 1 `highway=stop`, 2 `highway=give_way`, 3 `h
 (`amenity=parking|parking_entrance`, `building=garage|garages|parking`, `entrance=garage`; de uma área, o centro).
 Da 0.19.0, a vida urbana: 5 ponto de ônibus (`highway=bus_stop`), 6 comércio (`shop=*`), 7 bar ou restaurante
 (`amenity=bar|pub|restaurant|cafe|fast_food`), 8 escola (`amenity=school|kindergarten|college|university`), 9 praça ou
-parque (`leisure=park|garden`, `place=square`).
+parque (`leisure=park|garden`, `place=square`). Da 0.19.1: 10 estádio (`leisure=stadium`).
 
 Formato: `TRF1` + gzip(varint pontos; por ponto tipo u8 e x, y em 1/64 de célula z21, em deltas com zigzag, na ordem de
 (x, y, tipo)). Uso: .venv/bin/python build_traffic.py --region campinas"""
@@ -38,6 +38,8 @@ def kind_of(tags, is_node: bool):
         return 7
     if tags.get("amenity") in ("school", "kindergarten", "college", "university"):
         return 8
+    if tags.get("leisure") == "stadium":
+        return 10
     if tags.get("leisure") in ("park", "garden") or tags.get("place") == "square":
         return 9
     if tags.get("amenity") in ("parking", "parking_entrance") or tags.get("entrance") == "garage":
@@ -57,7 +59,7 @@ def main() -> None:
     pbf = ensure_source(region["source"])
     min_lon, min_lat, max_lon, max_lat = region["bbox"]
     pts = set()
-    counts = [0] * 10
+    counts = [0] * 11
 
     def add(kind, lon, lat):
         if not (min_lon <= lon <= max_lon and min_lat <= lat <= max_lat):
@@ -91,7 +93,7 @@ def main() -> None:
     out.write_bytes(b"TRF1" + gzip.compress(bytes(body), compresslevel=9, mtime=0))
     print(f"{len(pts)} pontos (semáforo {counts[0]}, pare {counts[1]}, preferência {counts[2]}, faixa {counts[3]}, "
           f"entrada {counts[4]}, ônibus {counts[5]}, comércio {counts[6]}, bar {counts[7]}, escola {counts[8]}, "
-          f"praça {counts[9]}), {out.stat().st_size} bytes, sha256 {hashlib.sha256(out.read_bytes()).hexdigest()}")
+          f"praça {counts[9]}, estádio {counts[10]}), {out.stat().st_size} bytes, sha256 {hashlib.sha256(out.read_bytes()).hexdigest()}")
 
 
 if __name__ == "__main__":
