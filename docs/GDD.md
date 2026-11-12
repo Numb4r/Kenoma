@@ -72,7 +72,7 @@ O tutorial é a história da primeira noite, contada pelo próprio celular. Não
 | 5 | o mentor pede um lugar seguro | mentor | definição da casa |
 | 6 a 10 | primeiro ritual, Círculo completo, primeira Constelação | mentor e fórum | ritual básico, Círculo, Constelações |
 
-Os três testes do nível 3 são curtos e feitos no mapa. No do Tecnomante o jogador estabiliza um sinal com um gadget improvisado, no do Xamã acalma uma criatura arisca até ela se aproximar, e no do Selador desenha um sigilo para prender um Eco. O Familiar comenta em qual teste o jogador foi melhor, mas a escolha é livre. Os testes são cenas roteirizadas e não dependem dos sistemas completos de gadget e sigilo.
+Os três testes do nível 3 são curtos e feitos no mapa. No do Tecnomante o jogador estabiliza um sinal com um gadget improvisado, no do Xamã fica parado perto de um Eco até ele se aproximar sozinho, e no do Selador desenha um sigilo para prender um Eco. O Familiar comenta em qual teste o jogador foi melhor, mas a escolha é livre. Os testes são cenas roteirizadas e não dependem dos sistemas completos de gadget e sigilo.
 
 ## Fundação: o ciclo da Essência
 
@@ -356,6 +356,22 @@ Três famílias com Fagulha e Eco, em triângulo de Fogo, Planta e Água. Todo b
 
 Na fase 0 o Eco vai até o nível 20. O Poder é derivado da espécie e do nível e só ganha uso com o ritual na fase 1. A destilação segue a tabela da fundação.
 
+### Famílias da fase 1
+
+Uma família curta para cada tipo que faltava, com Fagulha, Eco e Espírito. Os nomes são provisórios. Cada uma nasce ligada a um lugar e a um clima do mundo, além do bioma.
+
+| Família | Tipo | Fagulha | Eco | Espírito | Onde e quando | Habilidade de mapa |
+| --- | --- | --- | --- | --- | --- | --- |
+| Hum | Elétrico | Arc Mote, faísca perto de poste | Humoth, mariposa de faísca que ronda postes e letreiros | Coilkin, feito de fios desencapados | Urbano, à noite; nasce onde o raio cai | alcance do Radar +20, +40 e +60 m |
+| Clod | Terra | Grit Mote, cascalho que rola | Pebblet, bicho de cascalho que se fecha em bola | Bouldkin, pedra com musgo que anda devagar | Verde e morros (relevo alto); poeira seca | chance de material extra na coleta +5, +10 e +15% |
+| Rust | Metal | Filing Mote, limalha que se junta | Rustling, ferrugem viva em grades e portões | Gratekin, grade retorcida com olhos de parafuso | Urbano; chuva ácida e smog | chance de não gastar o selo na falha 5, 10 e 15% |
+| Glare | Luz | Glint Mote, reflexo solto | Glimlet, reflexo vivo em vitrines e faróis | Prismkin, prisma que separa a luz em cores | Iluminado, de dia; sol forte e arco-íris | tolerância da sintonia de dia +3, +5 e +8% |
+| Shade | Sombra | Dusk Mote, pedaço de sombra solto | Umbrel, a sombra que fica quando a pessoa vai embora | Shadekin, vulto alto de braços longos | Residencial, becos e marquises, à noite; sombras de nuvem e Sol Negro | Ecos visíveis de mais longe à noite +10, +20 e +30 m |
+| Wisp | Espectral | Chill Mote, frio que se vê | Wisplet, vulto de névoa | Hollowkin, manto vazio com uma vela dentro | Sagrado; neblina dos vales, Procissão | visão na neblina +10, +20 e +30 m |
+| Bit | Digital | Static Mote, pixel solto | Bitling, glitch que vive em letreiros e telas | Glitchkin, criatura feita de quadros repetidos | Iluminado e comércio; Estática | o pulso do Radar revela Ocultos a 70, 80 e 90 m |
+| Sprig | Feérico | Pollen Mote, pólen que brilha | Sprigglet, fada pequena do crepúsculo | Fairkin, fada de asas de folha seca | Verde no crepúsculo real, lua cheia; arco-íris e vento | chance de variante +2, +4 e +6% |
+| Wyrm | Dracônico | Scale Mote, escama viva | Wyrmlet, brasa que respira | Wyrmkin, filhote de dragão ainda sem forma inteira | crateras de meteoro, cicatrizes de Fenda e eclipses; raro, a partir do nível 10 | Essência extra na destilação +1, +1 e +2 |
+
 ### Tipos
 
 Feérico e Dracônico não pertencem a um bioma. Fadas aparecem em áreas verdes no crepúsculo real (nascer e pôr do sol) e com mais frequência na lua cheia. Dragões são as entidades mais antigas e as que mais se fragmentaram ao atravessar o Véu, então seus Ecos quase não parecem dragões (uma escama viva, uma brasa que respira). Aparecem raramente perto de cicatrizes de Fenda e em eclipses. Reconstituir um dragão por fusão é a linha de progressão mais longa do jogo. Panteões externos reforçam os dois tipos (dragões nórdicos e chineses, fadas celtas).
@@ -498,8 +514,6 @@ Cada espécie aceita um ou mais métodos, e o bestiário mostra quais conforme a
 | Comportamento | Como inicia | Efeito |
 | --- | --- | --- |
 | Passivo | toque com o Eco a até 30 m | sinal normal |
-| Arisco | foge se o jogador se aproximar rápido demais | sinal instável |
-| Agressivo | inicia a sintonia sozinho ao entrar no raio, o celular vibra | resistência mais forte |
 | Oculto | só aparece após seguir rastros ou usar o scanner | sinal mais estável |
 
 ### Sintonia
@@ -647,7 +661,7 @@ A escola é escolhida cedo, no nível 3 do tutorial, e define o estilo de jogo d
 | Escola | Criaturas | Modificação | Captura | Mapa |
 | --- | --- | --- | --- | --- |
 | Tecnomante | fabrica Artificiais (autômatos e golens) | Implantes, módulos tecnomágicos instaláveis em qualquer criatura | tolerância maior na sintonia, gadgets que estabilizam o sinal | Sentinelas, balizas fixas em células que revelam Ecos ocultos e detectam rastros à distância |
-| Xamã Urbano | Guardiões de Lugar, espíritos de lugares reais frequentados | Vínculo ampliado, vincula criaturas que para os outros só aceitam selo, inclusive agressivas | afinidade em dobro no vínculo, Incorporação amplia a sintonia | conversa com criaturas, ariscas não fogem e a Aura é maior |
+| Xamã Urbano | Guardiões de Lugar, espíritos de lugares reais frequentados | Vínculo ampliado, vincula criaturas que para os outros só aceitam selo | afinidade em dobro no vínculo, Incorporação amplia a sintonia | conversa com criaturas, Ecos não fogem depois de uma sintonia falha e a Aura é maior |
 | Selador | Quimeras, duas criaturas de famílias diferentes num mesmo selo | Relicários, sela uma criatura num objeto e cria equipamento com a habilidade dela | mais tempo e sigilos avançados na fase de pressão do ritual | armadilhas de selo que capturam Ecos sozinhas na ausência |
 
 Guardiões de Lugar crescem conforme o Xamã visita o lugar e ficam muito mais fortes em rituais e contenção perto dele, com limite de três ativos. Implantes e Relicários funcionam como contrapartes, um adiciona tecnologia a criaturas vivas, o outro transforma criaturas em equipamento. Sentinelas e armadilhas são as duas formas de agir no mapa à distância.
@@ -776,7 +790,7 @@ Canções são aprendidas, nunca compradas: o mentor ensina algumas, rumores do 
 | Canção da Chuva | chama chuva em volta do jogador |
 | Canção do Sol | limpa o céu em volta do jogador |
 | Canção do Vento | chama vento e empurra as Fagulhas na direção do jogador |
-| Canção da Calma | Ariscos param de fugir e Agressivos se acalmam por alguns minutos |
+| Canção da Calma | a próxima sintonia falha não faz o Eco fugir, por alguns minutos |
 | Canção do Despertar | acorda Ocultos a até 60 m, sem precisar do Radar |
 | Canção do Caminho | aponta o pé do arco-íris ou o evento de clima mais próximo |
 | Canção de Ninar | a próxima sintonia começa com a resistência mais fraca |
