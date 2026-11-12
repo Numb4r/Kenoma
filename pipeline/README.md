@@ -87,3 +87,7 @@ São Paulo e os blocos do fallback ainda não têm o arquivo: onde não há nenh
 | `app/assets/regions/campinas_e9_relief.bin` | 1169 x 1206 (z20) | 527,8 a 998,6 m | 1.373.573 | `1bb9c5acd6f6e09f49af449b7bd7f026cc30d237fa167bf4ac209278481e7d86` |
 
 São Paulo ainda não tem relevo: precisaria do arquivo gerado, listado numa época e publicado no feed assinado.
+
+| `out/regions/sao_paulo_e10_relief.bin` (`--epoch 10 --out-dir out/regions`, não embarcado, época 10) | 1373 x 2103 (z20) | -11,3 a 1214,6 m | 2.989.059 | `1c050f97ce36cdc2d27bdab33a31d9fadfaeb8fd7e07ee91a618b0f8c7bd33b9` |
+
+No `regions.json` assinado, o relevo de São Paulo entra em `files.relief` da região. O app (0.19.1 em diante) o trata como opcional: sem o arquivo no disco a região abre com o terreno plano.

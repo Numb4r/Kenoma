@@ -435,3 +435,41 @@ Com o simulador de GPS (Taquaral e Centro de Campinas), climas forçados pelo de
 - **Corrigido durante a conferência:** a densidade forçada do debug não valia para a primeira leva de agentes ao abrir o mapa.
 - **Não visto no aparelho:** a neblina num vale de manhã (o relógio do aparelho estava no meio da tarde, com o sol alto, e não mexi no relógio do debug), poças formando nas baixadas (na chuva forçada não havia nenhuma na tela nos dois lugares), o movimento de um Eco Passivo e de uma Fagulha até o redemoinho acompanhados de perto, as folhas ao vento num clima de vento, e a comparação com um lugar que alaga de verdade (a rua alagada no Taquaral fica ao lado do lago; a Av. Norte-Sul não foi visitada). Estão cobertos por teste.
 - Tela de bloqueio e app em primeiro plano conferidos antes de cada captura e durante as gravações.
+
+## Fase 1 · fatia 7b · Completando a 0.19.0 (0.19.1)
+
+**Muda o mundo: época 10**, início 2026-11-11T19:00:00Z, válida até 2027-02-09. É a época 9 mais os números e as regras abaixo; as épocas 0 a 9 não foram tocadas (conferido ao acrescentar). Save sem mudança de schema (6). **Fora do feed assinado**, como a 9.
+
+### Mundo (época 10)
+
+- **Poças (medido antes e depois):** no Centro, de 1,40 para **2,41 poças por célula z17** em média (teto de 5 do clima). Só baixar `pool_min` não bastava: na época 9 só valia o ponto com mais água que os oito em volta, e isso limita a contagem. Na 10, qualquer célula com água parada acima de `pool_min` (2048) pode ser poça, desde que fique a 3 células de outra maior (`spot_spacing`).
+- **Rua molhada:** enquanto chove (climas com poça que gera Eco: chuva, tempestade, chuva carmim), cada célula z17 sorteia 2 trechos de rua por janela do clima (`wet_per_cell`) e em cada um nasce o Eco da poça com 30% de chance (`wet_chance`), mesmo sem poça ali.
+- **Neve derretida:** depois de neve, nevasca ou neve do Véu, aparecem nas mesmas baixadas as poças pequenas da garoa (`melt_as`): crescem nos primeiros 30% do tempo de secar e depois secam, as mais fundas por último. Não geram Eco (não está chovendo); o item da poça sim.
+- **Poça que congela:** no Frio e na Geada, das 2 às 7 h locais, a poça com até metade do tamanho vira a poça de gelo da Geada (com o item dela), no mesmo lugar; de dia volta a ser água.
+- **Vento local (`wind`):** a deriva das Fagulhas passa a seguir o vento do lugar: na rua, 1,35 vez o que sopra ao longo dela mais 15% do vento do clima; fora das ruas, metade. A direção da rua em cada célula sai do pacote visual da época (`world/street_dirs.dart`), não da simulação local.
+- **Relevo de São Paulo:** `sao_paulo_e10_relief.bin` (1373 x 2103 amostras, de -11,3 a 1214,6 m, 2.989.059 bytes, SHA-256 `1c050f97…33b9`) listado em `relief_packs`. Fica em `pipeline/out/regions/` (fora do git, como os outros de São Paulo). O app aceita o tipo `relief` nos arquivos da região baixada e, sem ele, abre a região com o terreno plano. **Para chegar aos aparelhos falta publicar:** o arquivo no Pages e a entrada no `regions.json` assinado (o que só o dono da chave faz).
+
+### Cenário
+
+- **Vento:** fumaça (`smoke`), fuligem do smog (nasce nas avenidas) e areia (`sandstorm`, `dry_dust`) seguem o campo local, no lugar das folhas. As dunas andam a 0,02 m/s pela rua para o lado do vento e se amontoam no fim dela. As criaturas se inclinam e são empurradas pelo vento do lugar.
+- **Vida urbana:** comércio com gente de dia (9 às 19 h), bares à noite (19 às 2 h, e metade no almoço), porta de escola na entrada e nas saídas, gente sentada nas praças de dia, gente esperando no ponto de ônibus. Entram e saem só com o lugar fora da vista. Ônibus (4% dos carros de avenida, no máximo três) encostam no ponto por 7 s e quem esperava anda até ele e embarca. Um em cada treze adultos passeia com cachorro. Em dia de jogo (`traffic_sim.match_utc` no `balance.json`, nas 2 h antes), os passantes tendem para o estádio do OSM.
+- **Bichos:** pombos com o dobro do tamanho, três quadros de bater de asas e sombra no chão; gatos sentados junto de um terço das garagens; morcegos à noite em volta das praças; maritacas em bando cruzando a tela das 6 às 8 h e das 16 às 18 h.
+- **Neve:** o pixel do campo passou de 0,55 m para 0,37 m (`coverRes` 48), perto do pixel de arte. Aplicado porque o que foi medido das simulações fica muito abaixo de 4 ms (421 µs o tráfego no aparelho); o bloco é montado fora da thread do desenho.
+- **Debug:** a linha da simulação do tráfego mostra também o custo da água (por tile), do véu da neblina e dos bichos e do vento por quadro.
+- **Pontos do OSM:** `campinas_e0_traffic.bin` regerado com os estádios.
+
+### O que NÃO entrou
+
+- **Relevo dos blocos do fallback:** não foi feito. O recorte do SRTM vem em tiles de 1 grau com 7 a 12 MB cada, e a altura é mundo: o app teria de refazer no aparelho, bit a bit, a amostragem e o filtro do `build_relief.py`. Os blocos do fallback continuam com terreno plano.
+- **Calendário de jogos:** `match_utc` está vazio. O mecanismo está pronto e testado, mas as datas dos jogos da Ponte Preta e do Guarani precisam vir de quem as conhece.
+- **Ciclistas na ciclovia:** o pacote visual não guarda a tag de ciclovia; os ciclistas continuam só nos caminhos de pedestre.
+- **Horário de trabalho:** só a curva de densidade pela hora que já existia (rush das 8 e das 18 h); não há gente indo e voltando de um lugar de trabalho.
+- **As poças ainda fora da máscara única dos blocos.**
+
+### Testes
+
+Novos em `epoch9_world_test` (grupo "época 10": densidade das poças antes e depois, rua molhada, deriva pelo vento local, degelo e congelamento), em `traffic_sim_test` (grupo "vida urbana": lugares pela hora, ônibus e embarque, dia de jogo) e em `birds_test` (gatos, morcegos, maritacas). Suíte: 1693 passam, 4 pulados; `flutter analyze` limpo.
+
+### No aparelho
+
+APK 0.19.1+31 com a chave de release instalado por cima da 0.19.0 no moto g54. **As capturas com o relógio de debug (neblina num vale de manhã, poças se formando, Eco de Água rondando a poça, Av. Norte-Sul no Dilúvio) e a medição no aparelho de água, neblina, pombos e folhas ainda não foram feitas:** o celular estava bloqueado. **O push também não foi feito:** o pedido da 0.19.1 não o autorizou.
