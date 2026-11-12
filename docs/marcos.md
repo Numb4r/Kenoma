@@ -539,8 +539,10 @@ Novos: `capture/type_patterns_test` (um por padrão), `capture/eco_type_test` (a
 
 ### No aparelho (2026-11-12, moto g54, APK 0.20.0+32 com a chave de release, instalado por cima da 0.19.1)
 
-- **Instalação:** `adb install -r` por cima da 0.19.1+31, sem desinstalar; o app abre.
-- **Debug, Captura:** a lista de espécies mostra as 27 (as nove famílias novas com os sprites provisórios); com Eco 17 e Conjurador 15 a resistência é 0,81.
-- **Sintonia do Humoth (Elétrico) pelo debug:** a mariposa, a onda e o arco do salto no ponto de leitura.
-- **Não conferido no aparelho:** o celular bloqueou no meio da sessão. Faltam as sintonias dos outros oito tipos, o Bestiário (famílias, grade com o filtro, as quatro abas do detalhe) e abrir o mapa para ver o save da 0.19.1 migrado, a água em fundo e as ciclovias. As telas do Bestiário e uma sintonia de cada tipo foram renderizadas no PC com as fontes do jogo para conferir o desenho.
+- **Instalação:** `adb install -r` por cima da 0.19.1+31, sem desinstalar. O mapa abre com o save de antes (Conjurador no nível 13), já no schema 7.
+- **Bestiário com o save real migrado:** Soot 33%, Frond 25% e Rill 25%, com as Fagulhas da Bolsa como coletadas, os Ecos e o Cinderkin capturados e os Espíritos de ritual vistos; as nove famílias novas como "Família ???" com as silhuetas; pesquisa total 7%. No detalhe do Sootling: "Capturada ×19" (os que estão na coleção), nível de pesquisa 2 de 5 ("Ver de dia" marcou na hora, com o mapa aberto), bolinhas de variante preenchidas e só com contorno, "Fundir 19/5". As quatro abas abrem.
+- **Grade com o filtro:** a folha abre; com Fogo, Elétrico e Eco o botão diz "Ver 2 formas" e a grade fica com o Sootling e a silhueta do Humoth.
+- **Uma sintonia de cada tipo novo pelo debug** (Captura, Eco 17 contra Conjurador 15, resistência 0,81), só capturas paradas: Humoth com o arco do salto; Pebblet com as faixas pesadas no dial; Rustling com as placas de blindagem e a faísca; Glimlet com o clarão e a imagem residual; Umbrel com a onda na tinta e o pulso fraco na borda do dial; Wisplet com a cópia cinza atrasada; Bitling com as cópias com glitch; Sprigglet com o aro do dial invertido e o pó; Wyrmlet com as escamas e a blindagem.
+- **Não conferido no aparelho:** as ciclovias desenhadas e a água em fundo no mapa (não capturei o mapa, que mostra o lugar real do jogador), e nenhuma das famílias novas nascendo no mundo (a época 11 começou às 16:00 UTC, depois da sessão).
 - Uma captura pegou um aviso de notificação de outro app por cima do Kenoma e foi apagada na hora; o script de captura agora descarta sozinho a captura que tiver um aviso por cima.
+- A tecla voltar do Android não sai da tela de sintonia aberta pelo debug (só o "<" e o botão Menu do resultado saem).
