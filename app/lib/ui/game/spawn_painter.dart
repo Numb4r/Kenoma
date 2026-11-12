@@ -148,26 +148,13 @@ void _motes(ui.Canvas canvas, ui.Offset c, List<WindMote> motes, ui.Offset dir, 
   }
 }
 
-/// O ícone do comportamento, pequeno, no canto de cima à direita do Eco: dois chevrons (Arisco), um ponto de exclamação
-/// (Agressivo) ou um olho (Oculto revelado).
+/// O ícone do comportamento, pequeno, no canto de cima à direita do Eco: um olho (Oculto revelado).
 void _behaviorIcon(ui.Canvas canvas, ui.Offset c, EcoBehavior b, double size) {
   final o = c.translate(size * 0.42, -size * 0.5);
   final box = ui.Rect.fromCenter(center: o, width: 13, height: 13);
   canvas.drawRect(box.inflate(1.5), _flat..color = kOutline);
   canvas.drawRect(box, _flat..color = kPanel);
   switch (b) {
-    case EcoBehavior.skittish:
-      _flat.color = kSignal;
-      for (final dx in [-3.0, 1.0]) {
-        canvas.drawRect(ui.Rect.fromLTWH(o.dx + dx, o.dy - 4, 2, 2), _flat);
-        canvas.drawRect(ui.Rect.fromLTWH(o.dx + dx + 2, o.dy - 2, 2, 2), _flat);
-        canvas.drawRect(ui.Rect.fromLTWH(o.dx + dx + 2, o.dy, 2, 2), _flat);
-        canvas.drawRect(ui.Rect.fromLTWH(o.dx + dx, o.dy + 2, 2, 2), _flat);
-      }
-    case EcoBehavior.aggressive:
-      _flat.color = kEssence;
-      canvas.drawRect(ui.Rect.fromLTWH(o.dx - 1, o.dy - 5, 2, 6), _flat);
-      canvas.drawRect(ui.Rect.fromLTWH(o.dx - 1, o.dy + 2, 2, 2), _flat);
     case EcoBehavior.hidden:
       _flat.color = kVeil;
       canvas.drawRect(ui.Rect.fromLTWH(o.dx - 4, o.dy - 1, 8, 2), _flat);

@@ -24,6 +24,7 @@ class SpawnItem {
     required this.uid,
     this.levelDelta,
     this.behavior = EcoBehavior.passive,
+    this.behaviorDraw = 0,
     this.variantBiome,
     this.shiny = false,
   });
@@ -35,6 +36,11 @@ class SpawnItem {
   /// Espécie, tipo da Fagulha ou material sorteado. Existindo ou não, o sorteio acontece.
   final String entryId;
   final int quantity;
+
+  /// O que o sorteio do comportamento deu, pelo índice em `EcoBehavior.drawOrder` (0 Passivo, 1 Arisco, 2 Agressivo, 3
+  /// Oculto). Arisco e Agressivo saíram do jogo e valem como Passivo em [behavior]; o índice fica para provar que o sorteio
+  /// das épocas antigas não mudou.
+  final int behaviorDraw;
 
   /// Delta de nível do Eco. `null` nos itens sem delta.
   final int? levelDelta;
@@ -135,16 +141,18 @@ SpawnItem _generateItem(
   // Épocas com o fluxo v2: comportamento, variante, Brilhante e o clima nos pesos. Tudo sai de um gerador separado,
   // que sempre consome os mesmos sorteios, existindo o Eco ou não, e não toca nos sorteios acima.
   var behavior = EcoBehavior.passive;
+  var behaviorDraw = 0;
   String? variantBiome;
   var shiny = false;
   final v2 = epoch.ecoV2;
   if (v2 != null && def.kind == 'eco') {
     final r2 = Pcg32(fnv1a64([seed, epochId, cellX, cellY, window, def.index, saltV2]), saltKenoma);
-    final weights = [for (final b in EcoBehavior.values) v2.behaviorWeights[b.id] ?? 0];
+    final weights = [for (final id in EcoBehavior.drawOrder) v2.behaviorWeights[id] ?? 0];
     var bp = r2.nextInt(weights.fold(0, (a, b) => a + b));
     for (var i = 0; i < weights.length; i++) {
       if (bp < weights[i]) {
-        behavior = EcoBehavior.values[i];
+        behavior = EcoBehavior.parse(EcoBehavior.drawOrder[i]);
+        behaviorDraw = i;
         break;
       }
       bp -= weights[i];
@@ -183,6 +191,7 @@ SpawnItem _generateItem(
     py: py,
     uid: spawnUid(seed, epochId, cellX, cellY, window, def.index),
     behavior: behavior,
+    behaviorDraw: behaviorDraw,
     variantBiome: variantBiome,
     shiny: shiny,
   );

@@ -20,7 +20,7 @@ void main() {
 
   group('o formulário vira criaturas', () {
     test('nascem dentro da Aura, cada uma num ponto, com uid da faixa de debug, e somem em 20 minutos', () {
-      final c = DebugCreatures()..request(const DebugCreatureSpec(speciesId: 'rill.eco', level: 33, shiny: true, behavior: EcoBehavior.skittish, variant: DebugVariant.crimson, count: 10), ['rill.eco']);
+      final c = DebugCreatures()..request(const DebugCreatureSpec(speciesId: 'rill.eco', level: 33, shiny: true, behavior: EcoBehavior.hidden, variant: DebugVariant.crimson, count: 10), ['rill.eco']);
       expect(c.pending, 10);
       final live = c.around(px: px, py: py, metersPerCell21: mpc, radiusM: 12, tUtc: t0);
       expect(live.length, 10);
@@ -30,7 +30,7 @@ void main() {
       for (final s in live) {
         expect(isDebugUid(s.uid), isTrue);
         expect(dist(s), lessThanOrEqualTo(12));
-        expect((s.entryId, s.level, s.shiny, s.behavior, s.variant, s.isEco), ('rill.eco', 33, true, EcoBehavior.skittish, 'crimson', true));
+        expect((s.entryId, s.level, s.shiny, s.behavior, s.variant, s.isEco), ('rill.eco', 33, true, EcoBehavior.hidden, 'crimson', true));
       }
       expect(c.around(px: px, py: py, metersPerCell21: mpc, radiusM: 12, tUtc: t0 + kDebugCreatureS - 1).length, 10);
       expect(c.around(px: px, py: py, metersPerCell21: mpc, radiusM: 12, tUtc: t0 + kDebugCreatureS), isEmpty);

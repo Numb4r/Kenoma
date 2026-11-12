@@ -117,8 +117,9 @@ class TechnoTest {
   int get score => (100 * inBandS / b.durationS).round().clamp(0, 100);
 }
 
-/// Xamã Urbano: aproximar-se devagar de um Eco arisco. Acima da velocidade calma o Eco se assusta e foge um salto; o teste
-/// acaba quando ele para (a distância chega em [ShamanBalance.stopM]) ou no tempo limite.
+/// Xamã Urbano: ficar parado perto de um Eco até ele se aproximar sozinho. Com o dedo firme na faixa calma (abaixo da
+/// linha), o Eco chega perto na velocidade calma; soltar o dedo o faz parar onde está, e passar da linha (um movimento
+/// brusco) o assusta e ele se afasta um salto. O teste acaba quando ele chega ([ShamanBalance.stopM]) ou no tempo limite.
 class ShamanTest {
   ShamanTest(this.b) : distanceM = b.startM;
 
@@ -131,7 +132,7 @@ class ShamanTest {
 
   bool get done => stopped || t >= b.timeoutS;
 
-  /// [speed01] (0 a 1) é a fração da velocidade máxima; o dedo mais alto anda mais rápido.
+  /// [speed01] (0 a 1) é o quanto o Conjurador se mexe: 0 é o dedo fora da faixa, o alto da faixa é o movimento brusco.
   void step(double dt, double speed01) {
     if (done) return;
     t += dt;
@@ -142,7 +143,9 @@ class ShamanTest {
       _cooldown = b.spookCooldownS;
       distanceM += b.spookJumpM;
     }
-    distanceM = (distanceM - speed * dt).clamp(0.0, b.startM * 1.5);
+    // Parado e atento (o dedo na faixa calma): o Eco vem sozinho.
+    if (speed > 0 && speed <= b.calmSpeedMps) distanceM -= b.calmSpeedMps * dt;
+    distanceM = distanceM.clamp(0.0, b.startM * 1.5);
     if (distanceM <= b.stopM) stopped = true;
   }
 

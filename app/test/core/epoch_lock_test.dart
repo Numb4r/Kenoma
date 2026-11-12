@@ -21,7 +21,7 @@ int fullFingerprint(Epoch e, Weather weather) {
           for (final it in generateCell(seed: seed, epoch: e, cellX: cx, cellY: cy, window: w, biomeKey: biome, weather: weather, typeOf: _typeOf)) {
             parts.addAll([
               it.index, it.exists ? 1 : 0, fnv1a64Bytes(utf8.encode(it.entryId)), it.quantity, it.levelDelta ?? -99,
-              (it.px * 1e6).round(), (it.py * 1e6).round(), it.uid, it.behavior.index, fnv1a64Bytes(utf8.encode(it.variantBiome ?? '-')), it.shiny ? 1 : 0,
+              (it.px * 1e6).round(), (it.py * 1e6).round(), it.uid, it.behaviorDraw, fnv1a64Bytes(utf8.encode(it.variantBiome ?? '-')), it.shiny ? 1 : 0,
             ]);
           }
         }
@@ -56,7 +56,8 @@ void main() {
   });
 }
 
-/// Valores tirados com o `spawn.dart` de antes do clima completo (0.15.1) e conferidos de novo depois da mudança.
+/// Valores tirados com o `spawn.dart` de antes do clima completo (0.15.1) e conferidos de novo depois da mudança. Na
+/// 0.20.0 Arisco e Agressivo saíram do jogo: o sorteio é o mesmo (`behaviorDraw`), só o que ele vale mudou.
 const _locked = <int, List<int>>{
   3: [5207940006108082115, 5207940006108082115, 5018513371915077700, 8133888879088649275],
   4: [2946721170008908634, 2946721170008908634, 6102919310607052129, 7025128431824203446],

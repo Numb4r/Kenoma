@@ -12,6 +12,7 @@ import '../../capture/tuning_setup.dart';
 import '../../data/game_data.dart';
 import '../../data/tuning_data.dart';
 import '../../player/circle.dart';
+import '../../player/conjurer_balance.dart' show School;
 import '../../player/game_state.dart';
 import '../../player/progression.dart' show tuningXp;
 import '../../world/debug_creatures.dart' show isDebugUid;
@@ -78,9 +79,8 @@ Future<void> runEncounter(
           circleStrong: strongInCircle(state, data, species.type),
           toleranceMult: state.cb.toleranceMultFor(state.conjurer.school) * world.climate.toleranceMult, // Aurora
           progressUpMult: state.cb.progressUpMultFor(state.conjurer.school),
-          intensityAdd: (eco.behavior == EcoBehavior.aggressive ? data.street.aggressiveIntensityAdd : 0) + (species.isSpirit ? state.cb.spiritResistanceAdd : 0), // Espírito: resistência forte do tipo
+          intensityAdd: species.isSpirit ? state.cb.spiritResistanceAdd : 0, // Espírito: resistência forte do tipo
           wanderScale: switch (eco.behavior) {
-                EcoBehavior.skittish => data.street.skittishWanderScale,
                 EcoBehavior.hidden => data.street.hiddenWanderScale,
                 _ => 1.0,
               } *
@@ -121,7 +121,8 @@ Future<void> runEncounter(
       world.remove(eco);
       return;
     }
-    if (o.fled) {
+    // Xamã Urbano: o Eco não foge depois de uma sintonia falha.
+    if (o.fled && state.conjurer.school != School.shaman) {
       state.markDone(eco.uid, nowUtc()); // a fuga entra no registro
       world.remove(eco);
       return;
@@ -222,7 +223,5 @@ class _PrepSheetState extends State<PrepSheet> {
 /// O que o comportamento faz, em uma frase, para a folha de preparo.
 String behaviorHint(EcoBehavior b) => switch (b) {
       EcoBehavior.passive => 'sinal normal',
-      EcoBehavior.skittish => 'foge se você chegar correndo; o sinal oscila mais',
-      EcoBehavior.aggressive => 'resistência mais forte',
       EcoBehavior.hidden => 'só aparece com o Radar; o sinal é mais estável',
     };

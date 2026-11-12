@@ -90,7 +90,7 @@ class EcoV2 {
         weather: WeatherModel.fromJson(j['weather'] as Map<String, dynamic>),
       );
 
-  /// Peso de cada comportamento (`passive`, `skittish`, `aggressive`, `hidden`), na ordem de [EcoBehavior].
+  /// Peso de cada comportamento, na ordem de `EcoBehavior.drawOrder`. Da época 11 em diante só `passive` e `hidden`.
   final Map<String, int> behaviorWeights;
   final double variantChance;
   final double shinyChance;

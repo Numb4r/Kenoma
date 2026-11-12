@@ -106,14 +106,14 @@ void main() {
             seals: data.tuning.seals,
             count: (_) => 3,
             tonics: 0,
-            behavior: EcoBehavior.skittish,
+            behavior: EcoBehavior.hidden,
             variant: data.variantInfo(biome: 'green'),
           ),
         ),
       ));
       expect(find.byKey(const Key('prep-behavior')), findsOneWidget);
-      expect(find.textContaining('ARISCO'), findsOneWidget);
-      expect(find.textContaining('FOGE'), findsOneWidget);
+      expect(find.textContaining('OCULTO'), findsOneWidget);
+      expect(find.textContaining('RADAR'), findsOneWidget);
       expect(find.byKey(const Key('prep-variant')), findsOneWidget);
       expect(find.textContaining('VARIANTE VERDE'), findsOneWidget);
     });

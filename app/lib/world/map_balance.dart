@@ -34,7 +34,7 @@ class MapBalance {
   /// Raio da Aura: só dentro dela o jogador interage.
   final double auraM;
 
-  /// Até onde um Eco responde ao toque (e o Arisco foge, o Agressivo dispara): fixo, sem círculo desenhado.
+  /// Até onde um Eco responde ao toque: fixo, sem círculo desenhado.
   final double touchRangeM;
 
   /// Com um Eco a até esta distância, o anel fino do alcance de toque aparece em volta do avatar.

@@ -86,15 +86,16 @@ void main() {
       }
     });
 
-    test('os comportamentos seguem os pesos da época: maioria passivo, e os outros três aparecem', () {
+    test('os comportamentos seguem os pesos da época; Arisco e Agressivo saíram do jogo e viraram Passivo, sem mexer no Oculto', () {
       final all = ecos();
       final counts = {for (final b in EcoBehavior.values) b: all.where((i) => i.behavior == b).length};
       final w = e3.ecoV2!.behaviorWeights;
       final total = w.values.fold(0, (a, b) => a + b);
-      for (final b in EcoBehavior.values) {
-        expect(counts[b]! / all.length, closeTo(w[b.id]! / total, 0.03), reason: b.id);
-      }
-      expect(counts[EcoBehavior.passive]!, greaterThan(counts[EcoBehavior.skittish]! * 3));
+      expect(EcoBehavior.values, [EcoBehavior.passive, EcoBehavior.hidden]);
+      expect(counts[EcoBehavior.hidden]! / all.length, closeTo(w['hidden']! / total, 0.03), reason: 'o mesmo sorteio de antes');
+      expect(counts[EcoBehavior.passive]! / all.length, closeTo((w['passive']! + w['skittish']! + w['aggressive']!) / total, 0.03));
+      expect(EcoBehavior.parse('skittish'), EcoBehavior.passive);
+      expect(EcoBehavior.parse('aggressive'), EcoBehavior.passive);
     });
 
     test('a variante carrega o bioma da célula, na chance da época; a Brilhante é raríssima e vale em qualquer bioma', () {

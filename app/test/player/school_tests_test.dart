@@ -56,7 +56,7 @@ void main() {
     });
   });
 
-  group('Xamã Urbano: devagar e rápido', () {
+  group('Xamã Urbano: parado até o Eco chegar', () {
     ShamanTest play(double Function(double t) speedMps) {
       final t = ShamanTest(b.shaman);
       while (!t.done) {
@@ -65,14 +65,14 @@ void main() {
       return t;
     }
 
-    test('passo calmo chega, o Eco para sem se assustar e a nota é 100', () {
+    test('parado e atento (o dedo firme na faixa calma), o Eco chega sozinho sem se assustar e a nota é 100', () {
       final t = play((_) => b.shaman.calmSpeedMps * 0.99);
       expect(t.stopped, isTrue);
       expect(t.spooks, 0);
       expect(t.score, 100);
     });
 
-    test('correr assusta o Eco o tempo todo: não chega e a nota fica no teto de quem não terminou', () {
+    test('mexer-se assusta o Eco o tempo todo: não chega e a nota fica no teto de quem não terminou', () {
       final t = play((_) => b.shaman.maxSpeedMps);
       expect(t.stopped, isFalse);
       expect(t.spooks, greaterThan(10));
@@ -86,12 +86,13 @@ void main() {
       expect(spooked.spooks, greaterThanOrEqualTo(1));
       expect(spooked.score, lessThan(100));
       expect(spooked.score, greaterThan(0));
-      final slower = play((_) => b.shaman.calmSpeedMps * 0.5);
+      // Soltar o dedo metade do tempo: o Eco para de vir e a espera passa do par.
+      final slower = play((t) => t.floor().isEven ? b.shaman.calmSpeedMps * 0.5 : 0);
       expect(slower.stopped, isTrue);
       expect(slower.score, lessThan(100), reason: 'passou do tempo de par');
     });
 
-    test('parado, o tempo acaba com nota 0', () {
+    test('sem o dedo na faixa o Eco não vem: o tempo acaba com nota 0', () {
       final t = play((_) => 0);
       expect(t.stopped, isFalse);
       expect(t.score, 0);

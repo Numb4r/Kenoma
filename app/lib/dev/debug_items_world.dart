@@ -25,7 +25,7 @@ List<DebugItem> spawnItems(DebugEnv env) {
       id: 'spawn.behavior',
       title: 'Forçar comportamento',
       section: DebugSection.spawns,
-      keywords: const ['eco', 'arisco', 'agressivo', 'passivo', 'próximo spawn'],
+      keywords: const ['eco', 'oculto', 'passivo', 'próximo spawn'],
       builder: (_) => listen(() => DebugColumn([
             const DebugNote('ATENÇÃO: o que for forçado e capturado fica no seu save como se fosse de verdade.', color: KCores.brasaLaranja),
             const DebugNote('Próximo Eco novo à vista.'),

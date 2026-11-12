@@ -1,5 +1,6 @@
-/// Teste do Xamã Urbano: aproximar-se devagar de um Eco arisco até ele parar de fugir. A faixa da direita é a velocidade:
-/// quanto mais alto o dedo, mais rápido o passo; acima da linha calma o Eco se assusta e se afasta. Nota: `ShamanTest`.
+/// Teste do Xamã Urbano: ficar parado perto de um Eco até ele se aproximar sozinho. A faixa da direita é o quanto o
+/// Conjurador se mexe: o dedo firme abaixo da linha calma deixa o Eco vir; acima dela ele se assusta e se afasta; solto,
+/// ele para. Nota: `ShamanTest`.
 library;
 
 import 'package:flutter/material.dart';
@@ -19,8 +20,8 @@ class ShamanTestScreen extends StatelessWidget {
   Widget build(BuildContext context) => SchoolTestShell(
         school: School.shaman,
         title: 'Teste da calma',
-        intro: 'Um Eco arisco foge de quem anda rápido. Segure o dedo na faixa da direita: quanto mais alto, mais rápido o passo. '
-            'Fique abaixo da linha e chegue perto até ele parar.',
+        intro: 'Fique parado e deixe o Eco chegar perto sozinho. Segure o dedo firme na faixa da direita, abaixo da linha: '
+            'se soltar, ele para; se passar da linha, ele se assusta e se afasta.',
         scene: (finish) => ShamanScene(balance: balance, onDone: finish),
       );
 }
@@ -118,7 +119,7 @@ class _ShamanPainter extends CustomPainter {
     final bottom = size.height - 48;
     final ecoY = bottom - (bottom - top) * (distance / (start * 1.5)).clamp(0.0, 1.0);
     canvas.drawRect(Rect.fromLTRB(x - 1, ecoY, x + 1, bottom), px..color = KCores.superficie2);
-    // O Conjurador (base) e o Eco arisco.
+    // O Conjurador (base) e o Eco que se aproxima.
     canvas.drawRect(Rect.fromCenter(center: Offset(x, bottom), width: 20, height: 20), px..color = KCores.veuVioleta);
     canvas.drawRect(Rect.fromCenter(center: Offset(x, ecoY), width: 28, height: 28), px..color = spooked ? KCores.falha : KCores.brasaLaranja);
     canvas.drawRect(Rect.fromCenter(center: Offset(x, ecoY), width: 28, height: 28), px..style = PaintingStyle.stroke..strokeWidth = 3..color = KCores.contorno);

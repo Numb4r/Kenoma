@@ -29,14 +29,14 @@ Future<void> openSchoolFlow(BuildContext context, GameState state, GameData data
 
 String schoolTestName(School s) => switch (s) {
       School.technomancer => 'Estabilizar um sinal',
-      School.shaman => 'Acalmar um Eco arisco',
+      School.shaman => 'Esperar um Eco chegar perto',
       School.sealer => 'Traçar um sigilo',
     };
 
 /// A descrição curta de cada escola, com os números do `balance.json`.
 String schoolBlurb(School s, ConjurerBalance cb) => switch (s) {
       School.technomancer => 'Trabalha com o sinal. A tolerância da sintonia fica ${_pct(cb.techToleranceMult)} maior. Mais tarde fabrica Artificiais e instala Implantes.',
-      School.shaman => 'Conversa com os lugares. Ecos Ariscos não fogem de você e a Aura ganha +${_m(cb.shamanAuraBonusM)} m. Mais tarde vincula Guardiões de Lugar.',
+      School.shaman => 'Conversa com os lugares. O Eco não foge depois de uma sintonia falha e a Aura ganha +${_m(cb.shamanAuraBonusM)} m. Mais tarde vincula Guardiões de Lugar.',
       School.sealer => 'Costura o Véu. O progresso da sintonia sobe ${_pct(cb.sealerProgressMult)} mais rápido. Mais tarde cria Quimeras e Relicários.',
     };
 

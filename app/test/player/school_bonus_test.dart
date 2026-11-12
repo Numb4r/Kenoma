@@ -7,10 +7,8 @@ import 'package:kenoma/capture/tuning_setup.dart';
 import 'package:kenoma/core/epochs.dart';
 import 'package:kenoma/core/pcg32.dart';
 import 'package:kenoma/core/seed.dart';
-import 'package:kenoma/core/tiles.dart';
 import 'package:kenoma/player/conjurer_balance.dart';
 import 'package:kenoma/player/game_state.dart';
-import 'package:kenoma/world/places.dart';
 import 'package:kenoma/world/region_map.dart';
 import 'package:kenoma/world/spawn_field.dart';
 import 'package:kenoma/world/world_view.dart';
@@ -86,7 +84,7 @@ void main() {
       final e = (j['epochs'] as List).cast<Map<String, dynamic>>().firstWhere((e) => e['id'] == 3);
       e['starts_utc'] = '2026-01-01T00:00:00Z';
       e['valid_until_utc'] = '2027-12-31T00:00:00Z';
-      (e['eco_v2'] as Map<String, dynamic>)['behavior_weights'] = {'passive': 0, 'skittish': 100, 'aggressive': 0, 'hidden': 0};
+      (e['eco_v2'] as Map<String, dynamic>)['behavior_weights'] = {'passive': 100, 'skittish': 0, 'aggressive': 0, 'hidden': 0};
       return EpochSchedule([Epoch.fromJson(e)]);
     }();
 
@@ -109,27 +107,6 @@ void main() {
       expect(cb.shamanAuraBonusM, 2);
       expect(view(state(School.sealer)).auraRadiusM, base);
       expect(view(state(School.technomancer)).auraRadiusM, base);
-    });
-
-    bool fledAtRunning(School? school) {
-      const t0 = 1790040000;
-      final probe = view(state(null));
-      final eco = probe.field.around(lat: kCentroCampinas.$1, lon: kCentroCampinas.$2, tUtc: t0, radiusM: 500, playerLevel: 1).firstWhere((x) => x.isEco);
-      final (la, lo) = tileFractionToLatLon(eco.x, eco.y, biomeZoom);
-      final s = state(school);
-      final v = view(s);
-      var d = 70.0, t = t0;
-      while (d > 5) {
-        v.refresh(lat: la - d / 111320, lon: lo, tUtc: t++);
-        d -= 6; // 6 m/s, bem acima dos 2,5 m/s do Arisco
-      }
-      return s.isDone(eco.uid);
-    }
-
-    test('o Arisco foge de quem corre, menos do Xamã', () {
-      expect(fledAtRunning(null), isTrue);
-      expect(fledAtRunning(School.sealer), isTrue);
-      expect(fledAtRunning(School.shaman), isFalse);
     });
   });
 }

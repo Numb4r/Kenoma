@@ -33,7 +33,7 @@ class TuningSetup {
   /// Criaturas do Círculo fortes contra o tipo do alvo (até 3).
   final int circleStrong;
 
-  /// Um degrau a mais de resistência (o Eco agressivo) e a escala da deriva do sinal (o Arisco 1,6; o Oculto 0,5).
+  /// Um degrau a mais de resistência (o Espírito) e a escala da deriva do sinal (o Oculto 0,5).
   final double intensityAdd;
   final double wanderScale;
 

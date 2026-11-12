@@ -64,160 +64,6 @@ WorldView viewOf(GameState s, EpochSchedule sch, {DebugForce? force, List<String
 (double, double) south(double lat, double lon, double meters) => (lat - meters / 111320, lon);
 
 void main() {
-  group('Arisco', () {
-    final sch = schedule({'skittish': 100});
-
-    /// Chega do sul até o Eco a [speed] m/s, uma leitura por segundo, e diz se ele fugiu.
-    bool fledWhenApproaching(double speed) {
-      final (eco, la, lo) = anEco(sch);
-      final state = newState();
-      final msgs = <String>[];
-      final v = viewOf(state, sch, msgs: msgs);
-      var d = 70.0, t = t0;
-      while (d > 5) {
-        final (pla, plo) = south(la, lo, d);
-        v.refresh(lat: pla, lon: plo, tUtc: t);
-        d -= speed;
-        t++;
-      }
-      final fled = state.isDone(eco.uid);
-      if (fled) expect(msgs.any((m) => m.contains('arisco')), isTrue);
-      return fled;
-    }
-
-    test('foge se o jogador entra na Aura acima de 2,5 m/s, e fica se vem devagar', () {
-      expect(fledWhenApproaching(1.4), isFalse, reason: 'andando');
-      expect(fledWhenApproaching(2.4), isFalse, reason: 'quase correndo');
-      expect(fledWhenApproaching(3.0), isTrue, reason: 'correndo');
-      expect(fledWhenApproaching(6.0), isTrue, reason: 'de bicicleta');
-    });
-
-    test('a velocidade é a média dos últimos 5 s: um arranque curto não conta', () {
-      final (eco, la, lo) = anEco(sch);
-      final state = newState();
-      final v = viewOf(state, sch);
-      var t = t0;
-      // 10 s devagar (1 m/s), depois 1 s a 5 m/s ao entrar na Aura: a média dos últimos 5 s fica baixa.
-      var d = 40.0;
-      for (var i = 0; i < 10; i++) {
-        final (pla, plo) = south(la, lo, d);
-        v.refresh(lat: pla, lon: plo, tUtc: t++);
-        d -= 1;
-      }
-      final (pla, plo) = south(la, lo, 24);
-      v.refresh(lat: pla, lon: plo, tUtc: t); // 6 m no último segundo: a média dos 5 s é 2 m/s
-      expect(v.playerSpeedMps, closeTo(2.0, 0.2));
-      expect(v.playerSpeedMps, lessThan(2.5));
-      expect(state.isDone(eco.uid), isFalse);
-    });
-
-    test('a velocidade do Arisco vem do GPS cru: o marcador suavizado, mais lento, não o esconde', () {
-      final (eco, la, lo) = anEco(sch);
-      final state = newState();
-      final v = viewOf(state, sch);
-      var t = t0, raw = 70.0, smooth = 70.0;
-      while (raw > 5) {
-        final (rla, rlo) = south(la, lo, raw);
-        v.noteGps(lat: rla, lon: rlo, tUtc: t); // o GPS anda a 4 m/s
-        final (pla, plo) = south(la, lo, smooth);
-        v.refresh(lat: pla, lon: plo, tUtc: t); // o marcador anda a 1 m/s (lógica de coleta)
-        raw -= 4;
-        smooth = (smooth - 1).clamp(0, 100).toDouble();
-        t++;
-      }
-      expect(v.playerSpeedMps, closeTo(4.0, 0.3));
-    });
-
-    test('quem já estava dentro da Aura não foge de novo: só a entrada conta', () {
-      final (eco, la, lo) = anEco(sch);
-      final state = newState();
-      final v = viewOf(state, sch);
-      final (pla, plo) = south(la, lo, 10);
-      v.refresh(lat: pla, lon: plo, tUtc: t0);
-      v.refresh(lat: pla, lon: plo, tUtc: t0 + 1);
-      expect(state.isDone(eco.uid), isFalse);
-      expect(v.spawns.any((s) => s.uid == eco.uid), isTrue);
-    });
-
-    test('a fuga entra no registro e o Eco não volta', () {
-      final (eco, la, lo) = anEco(sch);
-      final state = newState();
-      final v = viewOf(state, sch);
-      var d = 70.0, t = t0;
-      while (d > 5) {
-        final (pla, plo) = south(la, lo, d);
-        v.refresh(lat: pla, lon: plo, tUtc: t++);
-        d -= 5;
-      }
-      expect(state.isDone(eco.uid), isTrue);
-      final (pla, plo) = south(la, lo, 8);
-      v.refresh(lat: pla, lon: plo, tUtc: t + 100);
-      expect(v.spawns.any((s) => s.uid == eco.uid), isFalse);
-    });
-  });
-
-  group('Agressivo', () {
-    final sch = schedule({'aggressive': 100});
-
-    test('ao entrar na Aura avisa uma vez só, mesmo saindo e entrando de novo', () {
-      final (eco, la, lo) = anEco(sch);
-      final v = viewOf(newState(), sch);
-      final fired = <int>[];
-      v.onAggressive = (s) {
-        fired.add(s.uid);
-        return true;
-      };
-      var t = t0;
-      void at(double d) {
-        final (pla, plo) = south(la, lo, d);
-        v.refresh(lat: pla, lon: plo, tUtc: t++);
-      }
-
-      at(60);
-      expect(fired, isEmpty);
-      at(20);
-      expect(fired, contains(eco.uid));
-      at(60);
-      at(20);
-      expect(fired.where((u) => u == eco.uid).length, 1);
-    });
-
-    test('tela ocupada: a chance não se gasta e tenta de novo no quadro seguinte', () {
-      final (eco, la, lo) = anEco(sch);
-      final v = viewOf(newState(), sch);
-      var busy = true;
-      final opened = <int>[];
-      v.onAggressive = (s) {
-        if (busy) return false;
-        opened.add(s.uid);
-        return true;
-      };
-      final (pla, plo) = south(la, lo, 10);
-      v.refresh(lat: pla, lon: plo, tUtc: t0);
-      expect(opened, isEmpty);
-      busy = false;
-      v.refresh(lat: pla, lon: plo, tUtc: t0 + 1);
-      expect(opened, contains(eco.uid));
-    });
-
-    test('Passivo e Oculto não disparam a folha sozinhos', () {
-      for (final b in ['passive', 'hidden']) {
-        final sch2 = schedule({b: 100});
-        final (eco, la, lo) = anEco(sch2);
-        final v = viewOf(newState(), sch2);
-        var fired = 0;
-        v.onAggressive = (_) {
-          fired++;
-          return true;
-        };
-        final (pla, plo) = south(la, lo, 10);
-        v.refresh(lat: pla, lon: plo, tUtc: t0);
-        expect(fired, 0, reason: b);
-        expect(eco, isNotNull);
-      }
-    });
-  });
-
   group('Oculto e Radar', () {
     final sch = schedule({'hidden': 100});
 
@@ -412,10 +258,10 @@ void main() {
     final sch = schedule({'passive': 100});
 
     test('o pedido vai para o primeiro Eco novo, uma vez só, e o forçado continua forçado', () {
-      final force = DebugForce()..set(behavior: EcoBehavior.aggressive, shiny: true);
+      final force = DebugForce()..set(behavior: EcoBehavior.hidden, shiny: true);
       final v = viewOf(newState(), sch, force: force);
       v.refresh(lat: lat0, lon: lon0, tUtc: t0);
-      final forced = v.allEcos.where((e) => e.behavior == EcoBehavior.aggressive && e.shiny).toList();
+      final forced = v.allEcos.where((e) => e.behavior == EcoBehavior.hidden && e.shiny).toList();
       expect(forced, hasLength(1));
       expect(force.pendingEco, isFalse, reason: 'o pedido foi gasto');
       v.refresh(lat: lat0, lon: lon0, tUtc: t0 + 1);

@@ -201,7 +201,7 @@ void main() {
       final tools = await pumpTag(tester);
       expect(tag, findsNothing);
 
-      tools.force.set(behavior: EcoBehavior.skittish);
+      tools.force.set(behavior: EcoBehavior.hidden);
       await tester.pump();
       expect(tag, findsOneWidget);
       expect(find.text('DEBUG'), findsOneWidget);
@@ -240,12 +240,12 @@ void main() {
     testWidgets('os chips forçam comportamento, variante, Brilhante e clima, e limpar zera os pedidos', (tester) async {
       final tools = DevTools(realSource: FakeGps());
       await pumpMenu(tester, DebugPrefs(defaultOpen: true), env: newEnv(tools: tools));
-      for (final t in ['ARISCO', 'VARIANTE DE BIOMA', 'BRILHANTE', 'CHUVA']) {
+      for (final t in ['OCULTO', 'VARIANTE DE BIOMA', 'BRILHANTE', 'CHUVA']) {
         await tester.ensureVisible(find.text(t));
         await tester.tap(find.text(t));
       }
       await tester.pump();
-      expect((tools.force.nextBehavior, tools.force.nextVariant, tools.force.nextShiny, tools.force.weather), (EcoBehavior.skittish, true, true, 'rain'));
+      expect((tools.force.nextBehavior, tools.force.nextVariant, tools.force.nextShiny, tools.force.weather), (EcoBehavior.hidden, true, true, 'rain'));
       await tester.ensureVisible(find.text('LIMPAR PEDIDOS'));
       await tester.tap(find.text('LIMPAR PEDIDOS'));
       await tester.ensureVisible(find.text('REAL'));

@@ -492,15 +492,6 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     }
   }
 
-  /// Um Eco agressivo entrou na Aura: o celular vibra uma vez e a folha de preparo abre sozinha (dá para fechar).
-  bool _onAggressive(WorldSpawn eco) {
-    // Só com o mapa à vista: com o celular, a Bancada ou os Ajustes abertos a folha não pula por cima. A chance não se gasta.
-    if (_busy || !mounted || ModalRoute.of(context)?.isCurrent != true) return false;
-    HapticFeedback.heavyImpact();
-    unawaited(_startEncounter(eco));
-    return true;
-  }
-
   /// Abre o encontro com [spawn]: a folha de selo e a sintonia.
   Future<void> _startEncounter(WorldSpawn spawn) async {
     final r = _ready;
@@ -717,10 +708,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     });
     game.onFollowHeading = _setFollowHeading;
     game.onWalked = _onWalked;
-    world.onAggressive = _onAggressive;
     world.onRitualTarget = _startRitual;
     world.onCollected = game.onCollected;
-    world.onFled = game.onEcoFled;
     world.onShiny = _onShiny;
     world.onEnteredRange = _onEnteredRange;
     _climate = ClimateDriver(data: data, world: climate, online: () => session.state.setting('weather_online'));

@@ -124,30 +124,6 @@ void main() {
     expect(e2.fix(at(la, lo, t0), t0).rare.first.text, endsWith('por perto'));
   });
 
-  group('Arisco', () {
-    final sch = schedule({'skittish': 100});
-
-    test('acima de 2,5 m/s ele foge e não é marcado; a fuga vai para o diário', () {
-      final (eco, la, lo) = find(sch, 'eco');
-      final (e, s) = engineOf(sch);
-      final (fla, flo) = north(la, lo, 200);
-      e.fix(at(fla, flo, t0, speed: 3), t0);
-      final out = e.fix(at(la, lo, t0 + 10, speed: 3), t0 + 10);
-      expect(out.lines.where((l) => l['k'] == 'mark' && l['uid'] == GameState.uidKey(eco.uid)), isEmpty);
-      expect(out.lines.where((l) => l['k'] == 'fled' && l['uid'] == GameState.uidKey(eco.uid)), hasLength(1));
-      expect(s.isDone(eco.uid), isTrue);
-    });
-
-    test('andando devagar ele é marcado', () {
-      final (eco, la, lo) = find(sch, 'eco');
-      final (e, _) = engineOf(sch);
-      final (fla, flo) = north(la, lo, 200);
-      e.fix(at(fla, flo, t0, speed: 1), t0);
-      final out = e.fix(at(la, lo, t0 + 10, speed: 1), t0 + 10);
-      expect(out.lines.where((l) => l['k'] == 'mark' && l['uid'] == GameState.uidKey(eco.uid)), hasLength(1));
-    });
-  });
-
   group('regra de passageiro', () {
     test('carro detectado pergunta uma vez; até responder nada rende', () {
       final (_, la, lo) = find(passive, 'eco');

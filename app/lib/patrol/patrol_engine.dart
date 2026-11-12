@@ -7,8 +7,8 @@
 /// grava no save é o app, ao incorporar o diário (`patrol_journal.dart`).
 ///
 /// Regras: Fagulhas e materiais na Aura são coletados; Ecos a até `mark_m` são marcados, com o limite de marcas de sempre,
-/// e o celular vibra (outro padrão para Brilhante, variante e Espírito, com aviso). Ariscos fogem de quem passa acima de
-/// 2,5 m/s, como no app. Acima da caminhada valem as regras do Modo Viagem; em carro ou moto a pergunta sai UMA vez, e até
+/// e o celular vibra (outro padrão para Brilhante, variante e Espírito, com aviso). Acima da
+/// caminhada valem as regras do Modo Viagem; em carro ou moto a pergunta sai UMA vez, e até
 /// a resposta nada rende. Quem dirige só tem a viagem gravada: sem coleta, sem marcas, sem vibração.
 library;
 
@@ -91,8 +91,6 @@ class PatrolEngine {
     this.recordCells = true,
   }) {
     world.quiet = () => mode != PatrolMode.walking;
-    world.speedOverride = () => _speedMps;
-    world.onFled = (s) => _pending?.lines.add({'k': 'fled', 'uid': GameState.uidKey(s.uid), 't': _now});
     world.onCollected = (s) => _pending?.lines.add({'k': s.kind, 'uid': GameState.uidKey(s.uid), 't': _now, 'item': s.entryId, 'q': s.quantity});
   }
 

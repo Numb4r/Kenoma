@@ -135,7 +135,7 @@ class TargetSignal {
   final double intensity;
   final TuningBalance balance;
 
-  /// Quanto a deriva de base é maior (Arisco) ou menor (Oculto) que a normal. 1 nos outros.
+  /// Quanto a deriva de base é menor (Oculto) que a normal. 1 nos outros.
   final double wanderScale;
   final double start;
   final double wanderPhase;

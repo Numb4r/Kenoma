@@ -68,7 +68,7 @@ class ConjurerBalance {
   /// Metros a mais na Aura só por ter chegado ao [level] (níveis 10 e 20).
   double auraBonusFor(int level) => _auraBonus.where((e) => level >= e.$1).fold(0.0, (sum, e) => sum + e.$2);
 
-  /// Tecnomante: a tolerância da sintonia vezes isto. Xamã Urbano: Aura +m e Ariscos não fogem. Selador: o progresso sobe vezes isto.
+  /// Tecnomante: a tolerância da sintonia vezes isto. Xamã Urbano: Aura +m e o Eco não foge depois de uma sintonia falha. Selador: o progresso sobe vezes isto.
   final double techToleranceMult;
   final double shamanAuraBonusM;
   final double sealerProgressMult;

@@ -12,11 +12,7 @@ class StreetLifeBalance {
         );
 
   StreetLifeBalance._(Map<String, dynamic> b, Map<String, dynamic> r, Map<String, dynamic> fam, Map<String, dynamic> w)
-      : skittishFleeSpeedMps = _d((b['skittish'] as Map<String, dynamic>)['flee_speed_mps']),
-        skittishSpeedWindowS = _d((b['skittish'] as Map<String, dynamic>)['speed_window_s']),
-        skittishWanderScale = _d((b['skittish'] as Map<String, dynamic>)['wander_scale']),
-        aggressiveIntensityAdd = _d((b['aggressive'] as Map<String, dynamic>)['intensity_add']),
-        hiddenWanderScale = _d((b['hidden'] as Map<String, dynamic>)['wander_scale']),
+      : hiddenWanderScale = _d((b['hidden'] as Map<String, dynamic>)['wander_scale']),
         radarCooldownS = _d(r['cooldown_s']),
         radarRadiusM = _d(r['radius_m']),
         traceRangeM = _d(r['trace_range_m']),
@@ -36,14 +32,6 @@ class StreetLifeBalance {
 
   static double _d(Object? v) => (v as num).toDouble();
 
-  /// Arisco: foge se o jogador entra na Aura acima desta velocidade (m/s), medida na média dos últimos
-  /// [skittishSpeedWindowS] segundos. A deriva do sinal dele é [skittishWanderScale] vezes a normal.
-  final double skittishFleeSpeedMps;
-  final double skittishSpeedWindowS;
-  final double skittishWanderScale;
-
-  /// Agressivo: a resistência sobe este tanto de intensidade (um degrau).
-  final double aggressiveIntensityAdd;
 
   /// Oculto: sinal mais estável.
   final double hiddenWanderScale;

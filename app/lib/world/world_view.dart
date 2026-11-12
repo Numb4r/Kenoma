@@ -77,7 +77,7 @@ class WorldView {
   /// As habilidades de mapa do Círculo de agora (Aura maior, coleta mais longe, rastreador mais longe).
   final MapAbilities Function() abilities;
 
-  /// Modo Viagem: em moto, carro e ônibus o mundo fica calado (nada de coleta, fuga, vibração nem folha do Agressivo).
+  /// Modo Viagem: em moto, carro e ônibus o mundo fica calado (nada de coleta nem vibração).
   /// Quem é passageiro recebe pelo baú; quem dirige não recebe nada.
   bool Function() quiet = _never;
 
@@ -131,15 +131,8 @@ class WorldView {
   /// O último pulso: quando e de onde (células z21) a onda partiu. Só desenho.
   ({int t, double x, double y})? pulse;
 
-  /// Um Agressivo entrou na Aura: a tela abre a folha de preparo sozinha (e o celular vibra).
-  /// Devolve `true` se abriu; com `false` (tela ocupada) a chance não se gasta e ele tenta de novo no próximo quadro.
-  bool Function(WorldSpawn eco)? onAggressive;
-
   /// Uma Fagulha ou um material foi coletado (sozinho pela Aura ou por toque): a tela mostra o item voando até o Conjurador.
   void Function(WorldSpawn item)? onCollected;
-
-  /// Um Eco arisco fugiu: a tela o desfaz em pixels onde estava.
-  void Function(WorldSpawn eco)? onFled;
 
   /// Um Eco Brilhante apareceu à vista (uma vez por Eco): a tela toca um som curto e avisa.
   void Function(WorldSpawn eco)? onShiny;
@@ -148,7 +141,7 @@ class WorldView {
   void Function(WorldSpawn eco)? onRitualTarget;
   final _ritualSeen = <int>{};
 
-  /// Um Eco passou a estar a até `touchRangeM` (uma vez por entrada; não chama se ele fugiu). O modo bolso vibra aqui.
+  /// Um Eco passou a estar a até `touchRangeM` (uma vez por entrada). O modo bolso vibra aqui.
   void Function(WorldSpawn eco)? onEnteredRange;
   final _announced = <int>{};
 
@@ -156,46 +149,6 @@ class WorldView {
   final _known = <int>{};
   final _forced = <int, ({EcoBehavior behavior, bool variant, bool shiny, bool spirit, bool ritual})>{};
   final _inAura = <int>{};
-  final _aggroFired = <int>{};
-
-  /// O percurso recente do jogador, para a velocidade média dos últimos segundos (o Arisco foge de quem chega correndo).
-  final _track = <({int t, double x, double y})>[];
-
-  /// A velocidade média do jogador na janela do Arisco, em m/s: o deslocamento do primeiro ao último ponto dividido pelo
-  /// tempo (o caminho inteiro somaria o tremor do GPS). 0 com menos de 3 s de percurso.
-  double get playerSpeedMps {
-    final o = speedOverride;
-    if (o != null) return o();
-    // A fuga do Arisco usa a velocidade do GPS cru (a que o jogador de fato anda); sem leituras cruas, a do marcador.
-    final raw = _gpsTrack.length >= 2;
-    final track = raw ? _gpsTrack : _track;
-    if (track.length < 2) return 0;
-    final span = track.last.t - track.first.t;
-    if (span < 3) return 0;
-    final dx = track.last.x - track.first.x, dy = track.last.y - track.first.y;
-    return math.sqrt(dx * dx + dy * dy) * (raw ? _gpsMpc : _mpc) / span;
-  }
-
-  /// A Patrulha lê o GPS a cada ~10 s, mais espaçado que a janela do Arisco: ela mede a velocidade entre leituras e a passa
-  /// aqui. `null`: a janela de sempre.
-  double Function()? speedOverride;
-
-  /// O percurso do GPS cru, só para a velocidade do Arisco: a coleta e a Aura seguem a posição suavizada do marcador.
-  final _gpsTrack = <({int t, double x, double y})>[];
-  double _gpsMpc = 1;
-
-  /// Uma leitura nova do GPS, antes de qualquer suavização.
-  void noteGps({required double lat, required double lon, required int tUtc}) {
-    final (x, y) = latLonToTileFraction(lat, lon, biomeZoom);
-    _gpsMpc = metersPerCell(lat);
-    if (_gpsTrack.isNotEmpty) {
-      final jx = x - _gpsTrack.last.x, jy = y - _gpsTrack.last.y;
-      if (math.sqrt(jx * jx + jy * jy) * _gpsMpc > 25) _gpsTrack.clear(); // teleporte ou troca de fonte
-    }
-    _gpsTrack.add((t: tUtc, x: x, y: y));
-    _gpsTrack.removeWhere((p) => tUtc - p.t > street.skittishSpeedWindowS);
-  }
-
   double _px = 0, _py = 0, _mpc = 1;
   bool _hasPlayer = false;
 
@@ -266,7 +219,7 @@ class WorldView {
   }
 
   /// Recalcula os spawns em volta de ([lat], [lon]) em [tUtc], coleta as Fagulhas dentro do alcance e dispara o que a
-  /// entrada na Aura faz (o Arisco foge, o Agressivo abre a folha). Devolve as Fagulhas coletadas agora.
+  /// entrada na Aura faz. Devolve as Fagulhas coletadas agora.
   List<WorldSpawn> refresh({required double lat, required double lon, required int tUtc}) {
     final (px, py) = latLonToTileFraction(lat, lon, biomeZoom);
     _px = px;
@@ -275,13 +228,6 @@ class WorldView {
     _hasPlayer = true;
     climate = field.climate?.modsAt(px, py, tUtc) ?? PlayerClimate.none;
     syncRitualUnlock(state);
-    // Um salto de mais de 25 m entre duas leituras é teleporte ou troca de fonte: o percurso recomeça.
-    if (_track.isNotEmpty) {
-      final jx = px - _track.last.x, jy = py - _track.last.y;
-      if (math.sqrt(jx * jx + jy * jy) * _mpc > 25) _track.clear();
-    }
-    _track.add((t: tUtc, x: px, y: py));
-    _track.removeWhere((p) => tUtc - p.t > street.skittishSpeedWindowS);
     traces = [for (final t in traces) if (t.untilUtc > tUtc) t];
     _resolveDistortions(tUtc);
     // Os Espíritos só aparecem a partir do nível `spirit_spawn_level`. É individual: o mundo é o mesmo para todos.
@@ -317,14 +263,7 @@ class WorldView {
       }
       if (s.isEco && inTouchRange(s)) {
         inAuraNow.add(s.uid);
-        if (!_inAura.contains(s.uid)) {
-          if (_entered(s, tUtc)) {
-            onFled?.call(s);
-            continue; // fugiu
-          }
-          onEnteredRange?.call(s);
-        }
-        _tryAggressive(s);
+        if (!_inAura.contains(s.uid)) onEnteredRange?.call(s);
       }
       if (!s.isSpark || !canReach(s)) {
         visible.add(s);
@@ -344,28 +283,6 @@ class WorldView {
     spawns = visible;
     allEcos = [for (final s in allEcos) if (!state.isDone(s.uid)) s]; // o que fugiu ou foi pego neste quadro sai
     return collected;
-  }
-
-  /// O Agressivo dentro da Aura abre a folha uma vez por Eco. Se a tela estava ocupada, tenta de novo no próximo quadro.
-  void _tryAggressive(WorldSpawn s) {
-    if (s.behavior != EcoBehavior.aggressive || _aggroFired.contains(s.uid) || isRitualOnlyId(s.entryId) || climate.calm) return;
-    if (onAggressive?.call(s) ?? false) _aggroFired.add(s.uid);
-  }
-
-  /// Um Eco acabou de entrar na Aura. Devolve `true` se ele fugiu (Arisco e o jogador chegou acima da velocidade).
-  bool _entered(WorldSpawn s, int tUtc) {
-    switch (s.behavior) {
-      case EcoBehavior.skittish:
-        // O Xamã Urbano conversa com as criaturas: os Ariscos não fogem dele.
-        if (state.conjurer.school != School.shaman && !climate.calm && playerSpeedMps > street.skittishFleeSpeedMps) {
-          state.markDone(s.uid, tUtc); // a fuga entra no registro, como na falha
-          onMessage?.call('Um Eco arisco fugiu: você chegou rápido demais');
-          return true;
-        }
-      case EcoBehavior.aggressive || EcoBehavior.passive || EcoBehavior.hidden:
-        break; // o Agressivo é tratado a cada quadro em [_tryAggressive]
-    }
-    return false;
   }
 
   /// As distorções vencidas saem; as que o jogador alcançou viram Eco no mapa (o Oculto fica revelado por

@@ -284,9 +284,6 @@ class GameMapGame extends FlameGame {
   /// Uma Fagulha ou material foi coletado: voa até o Conjurador.
   void onCollected(WorldSpawn s) => fx.collected(s, spawnColor(s, typeOf));
 
-  /// Um Eco arisco fugiu: se desfaz onde estava.
-  void onEcoFled(WorldSpawn s) => fx.fled(s, sprites[s.entryId], variantTint?.call(s), ecoSizePx);
-
   int _utcSecond = -1;
   double _utcAnchor = 0;
 
@@ -329,7 +326,6 @@ class GameMapGame extends FlameGame {
     final first = !avatar.hasPosition;
     avatar.setTarget(x, y, metersPerCell: metersPerCell(p.lat), timeMs: p.timeMs);
     _countWalk(p.lat, p.lon);
-    worldView?.noteGps(lat: p.lat, lon: p.lon, tUtc: nowUtc());
     _lat = p.lat;
     _lon = p.lon;
     if (!_hasFix) _refreshIn = 0; // a primeira posição já mostra o mundo

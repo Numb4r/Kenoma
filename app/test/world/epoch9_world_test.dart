@@ -96,8 +96,8 @@ void main() {
     }
     expect(far, inInclusiveRange(1.5, 3.5 + 1e-6));
     expect(path, greaterThan(10));
-    // Arisco, Agressivo e Oculto ficam onde nasceram (têm o comportamento deles).
-    for (final bh in [EcoBehavior.skittish, EcoBehavior.aggressive, EcoBehavior.hidden]) {
+    // O Oculto fica onde nasceu.
+    for (final bh in [EcoBehavior.hidden]) {
       final s = eco(x21, y21, behavior: bh);
       expect(a.move(s, t0, t0 + 77, mpc).x, s.x);
     }
