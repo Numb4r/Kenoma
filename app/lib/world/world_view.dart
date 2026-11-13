@@ -20,6 +20,8 @@ import '../player/game_state.dart';
 import 'climate_world.dart';
 import 'debug_creatures.dart';
 import 'debug_force.dart';
+import 'personal_layer.dart';
+import '../player/personal_build.dart';
 import 'radar.dart';
 import 'spawn_field.dart';
 import 'street_life_balance.dart';
@@ -51,9 +53,14 @@ class WorldView {
     this.abilities = _noAbilities,
     this.onMessage,
     this.ritual,
+    this.personal,
   });
 
   final SpawnField field;
+
+  /// A camada pessoal de spawn por cima do [field] (o que as habilidades do Círculo acrescentam só para este jogador).
+  /// `null`: só o mundo base (testes).
+  final PersonalLayer? personal;
 
   /// As receitas de ritual, para a pesquisa por avistamento. `null`: sem pesquisa (testes).
   final RitualBook? ritual;
@@ -76,7 +83,7 @@ class WorldView {
   final double viewM;
   final double trackerM;
 
-  /// As habilidades de mapa do Círculo de agora (Aura maior, coleta mais longe, rastreador mais longe).
+  /// As habilidades de mapa do Círculo de agora (Aura maior, coleta mais longe e as da camada pessoal).
   final MapAbilities Function() abilities;
 
   /// Modo Viagem: em moto, carro e ônibus o mundo fica calado (nada de coleta nem vibração).
@@ -105,8 +112,6 @@ class WorldView {
   /// O que o clima de agora faz com o jogador (Aura, visão, calma, rastros, sintonia). Atualizado em [refresh].
   PlayerClimate climate = PlayerClimate.none;
 
-  /// Alcance do rastreador: o maior entre o padrão e o do Círculo.
-  ///
   /// O bioma (chave de spawn) da célula z20, ou `null` fora do mapa: onde uma captura aconteceu, para a pesquisa.
   String? biomeKeyOf(int cx, int cy) {
     try {
@@ -119,10 +124,18 @@ class WorldView {
   /// Quando o jogador está vendo o mundo agora (`seenTags`: a hora pelo sol e o clima). Atualizado em [refresh].
   Set<String> sightTags = const {};
 
-  double get trackerRangeM => math.max(trackerM, abilities().trackerRangeM) + abilities().of('radar_range_bonus_m'); // o Humoth soma por cima
+  /// Alcance do rastreador.
+  double get trackerRangeM => trackerM;
 
-  /// Até onde os spawns são gerados: a visão, ou o rastreador se ele vê mais longe.
-  double get reachM => math.max(viewM, trackerRangeM);
+  /// Até onde os spawns aparecem: a visão, ou o rastreador se ele vê mais longe.
+  double get baseReachM => math.max(viewM, trackerRangeM);
+
+  /// Até onde os spawns são gerados: com espécies marcadas no Bestiário, até o alcance do Radar (as marcadas aparecem
+  /// lá com destaque; o resto continua só até [baseReachM]).
+  double get reachM => state.pins.isEmpty ? baseReachM : math.max(baseReachM, street.traceRangeM);
+
+  /// O Eco é de uma espécie marcada no Bestiário.
+  bool isPinned(WorldSpawn s) => s.isEco && state.isPinned(s.entryId);
 
   /// Nome do item na interface.
   final String Function(String id) itemName;
@@ -179,17 +192,30 @@ class WorldView {
   List<SonarEcho> sonar() {
     if (!_hasPlayer) return const [];
     final byUid = {for (final s in allEcos) s.uid: s};
-    return sonarEchoes(traces: traces, distortions: distortions, ecoOf: (uid) => byUid[uid], playerX: _px, playerY: _py, metersPerCell: _mpc, balance: street);
+    return [
+      ...sonarEchoes(traces: traces, distortions: distortions, ecoOf: (uid) => byUid[uid], playerX: _px, playerY: _py, metersPerCell: _mpc, balance: street),
+      // As espécies marcadas no Bestiário aparecem no Radar sem pulso, dentro do alcance dele (as Ocultas, só reveladas).
+      for (final s in spawns)
+        if (isPinned(s) && distanceM(s) <= street.traceRangeM)
+          SonarEcho(uid: s.uid, angleRad: math.atan2(s.y - _py, s.x - _px), widthRad: 0, distanceM: distanceM(s), typeId: typeOf(s.entryId), shiny: s.shiny, pinned: true),
+    ];
   }
 
   /// As marcas da borda da tela em [nowUtc]: por `edge_marks_s` depois do último pulso, a direção de cada achado dele que
   /// não está na tela ([onScreen]). Sem pulso, nenhuma.
   List<EdgeMark> edgeMarksAt(double nowUtc, {required bool Function(WorldSpawn) onScreen}) {
+    if (!_hasPlayer) return const [];
+    final echoes = sonar();
+    final pinned = [
+      for (final e in echoes)
+        if (e.pinned)
+          if (spawns.where((s) => s.uid == e.uid).firstOrNull case final s? when !onScreen(s)) EdgeMark(uid: e.uid, angle: e.angleRad, alpha: 1, shiny: e.shiny, pinned: true),
+    ];
     final p = pulse;
-    if (!_hasPlayer || p == null || nowUtc - p.t >= street.edgeMarksS) return const [];
+    if (p == null || nowUtc - p.t >= street.edgeMarksS) return pinned;
     final byUid = {for (final s in allEcos) s.uid: s};
-    final finds = [for (final e in sonar()) if (byUid[e.uid] != null) (eco: byUid[e.uid]!, echo: e)];
-    return edgeMarks(finds: finds, pulseUtc: p.t, nowUtc: nowUtc, showS: street.edgeMarksS, pulseSpeedMps: street.pulseSpeedMps, onScreen: onScreen);
+    final finds = [for (final e in echoes) if (!e.pinned && byUid[e.uid] != null) (eco: byUid[e.uid]!, echo: e)];
+    return [...pinned, ...edgeMarks(finds: finds, pulseUtc: p.t, nowUtc: nowUtc, showS: street.edgeMarksS, pulseSpeedMps: street.pulseSpeedMps, onScreen: onScreen)];
   }
 
   bool inAura(WorldSpawn s) => _hasPlayer && distanceM(s) <= auraRadiusM;
@@ -253,9 +279,15 @@ class WorldView {
         !s.isEco || tierOfId(s.entryId) == SpeciesTier.eco || (isRitualOnlyId(s.entryId) ? ritualsOn : spiritsOn);
     // Neblina e Nevasca: os Ecos só aparecem até a visão do clima (nem no rastreador).
     final viewCap = climate.viewMaxM;
+    final p = personal;
+    if (p != null) noteBuild(state.builds, abilities().values, tUtc, keepS: p.balance.buildKeepS); // a troca vale na próxima janela
+    final base = baseReachM;
     final all = [
-      for (final s in field.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel))
-        if (visibleTier(s) && (viewCap == null || !s.isEco || distanceM(s) <= viewCap)) _withForce(s),
+      for (final s in [
+        ...field.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel),
+        ...?p?.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel),
+      ])
+        if (visibleTier(s) && (viewCap == null || !s.isEco || distanceM(s) <= viewCap) && (distanceM(s) <= base || isPinned(s))) _withForce(s),
       // As do "Criar criatura": fora do mundo, valem em qualquer nível.
       ...?force?.creatures.around(px: px, py: py, metersPerCell21: _mpc, radiusM: auraRadiusM, tUtc: tUtc, biomeAt: _biomeKeyAt),
     ];
@@ -324,7 +356,8 @@ class WorldView {
       tUtc: tUtc,
       playerLevel: state.playerLevel,
       balance: street,
-      showS: (street.traceShowS * climate.traceTimeMult).round(), // o Frio guarda os rastros por mais tempo
+      // O Frio guarda os rastros por mais tempo; o Wisp no Círculo também.
+      showS: (street.traceShowS * climate.traceTimeMult * (abilities().of(kFogEco) > 0 ? personal?.balance.wispTraceMult ?? 1 : 1)).round(),
     );
     state.recordSweep(tUtc, const [], tUtc);
     traces = out.traces;
@@ -345,15 +378,16 @@ class WorldView {
     if (s.isEco && state.markOf(s.uid) != null) return TouchResult.encounter;
     if (!canReach(s)) return TouchResult.tooFar;
     if (s.isEco) return TouchResult.encounter;
+    final qty = s.quantity + (personal?.extraMaterial(s, tUtc) ?? 0); // o Clod: às vezes uma unidade a mais
     if (!sandbox()) {
-      state.add(s.entryId, s.quantity); // GPS simulado sem recompensa: nada entra na Bolsa
+      state.add(s.entryId, qty); // GPS simulado sem recompensa: nada entra na Bolsa
       if (s.tag == 'rune_bonus') state.conjurer.runeBonus++; // a runa guarda o bônus do próximo ritual
     }
     state.markDone(s.uid, tUtc);
     _gainXp(state.balance.material, tUtc);
-    _record('material', s.entryId, s.quantity);
+    _record('material', s.entryId, qty);
     spawns = [for (final o in spawns) if (o.uid != s.uid) o];
-    onMessage?.call('+${s.quantity} ${itemName(s.entryId)}${sandbox() ? ' (debug, fora da Bolsa)' : ''}');
+    onMessage?.call('+$qty ${itemName(s.entryId)}${sandbox() ? ' (debug, fora da Bolsa)' : ''}');
     onCollected?.call(s);
     return TouchResult.collected;
   }

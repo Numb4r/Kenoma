@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/player/game_session.dart';
-import 'package:kenoma/player/game_state.dart' show kVisitedCellsKey;
+import 'package:kenoma/player/game_state.dart' show kVisitedCellsKey, saveSchemaVersion;
 import 'package:kenoma/save/migrations.dart';
 import 'package:kenoma/save/save_store.dart';
 
@@ -28,7 +28,7 @@ void main() {
 
   test('v5 vira v6: a névoa sai, os blocos z17 reais viram celulas_visitadas, o debug não entra e o resto passa intacto', () {
     final out = migrateSave(real);
-    expect(out['schema_version'], 7, reason: 'o schema atual: a v6 tira a névoa e a v7 mexe só no bestiário');
+    expect(out['schema_version'], saveSchemaVersion, reason: 'o schema atual: a v6 tira a névoa, a v7 mexe só no bestiário e a v8 só na marca');
     expect(out.containsKey('fog'), isFalse);
     final visited = visitedOf(out);
     expect(visited, cells.keys.toSet());
@@ -61,7 +61,7 @@ void main() {
     expect(s.visitedCells.length, cells.length);
     expect(s.founder!.chainValid, isTrue);
     expect(s.founder!.versionsSeen.map((e) => e.version).last, '0.16.0+25');
-    expect(store.json!['schema_version'], 7);
+    expect(store.json!['schema_version'], saveSchemaVersion);
     expect(store.json!.containsKey('fog'), isFalse);
     expect(visitedOf(store.json!), cells.keys.toSet());
     expect(s.markVisited(1, 2), isTrue);

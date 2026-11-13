@@ -60,7 +60,7 @@ void main() {
       expect(find.text('ECOS ESCOLHIDOS 5/5'), findsOneWidget);
       expect(find.textContaining('NÍVEL MÉDIO 7'), findsOneWidget);
       expect(find.textContaining('TRAÇOS 1/2'), findsOneWidget);
-      expect(find.textContaining('Aura +5 m (faixa 1 de 3'), findsOneWidget);
+      expect(find.textContaining('A Aura pega Fagulhas e materiais 5 m mais longe. Faixa 1 de 3'), findsOneWidget);
       expect(find.byKey(const Key('fusion-circle-warning')), findsNothing);
 
       await tester.tap(find.byKey(const Key('fusion-button')));
@@ -141,8 +141,8 @@ void main() {
       expect(find.byKey(const Key('power-a')), findsOneWidget);
       expect(find.text('PODER 30'), findsOneWidget);
       expect(find.text('PODER 76'), findsOneWidget);
-      expect(find.text('HABILIDADE AURA +5 M (FAIXA 2 DE 3: NÍVEIS 10 A 19)'), findsOneWidget);
-      expect(find.text('HABILIDADE AURA +8 M (FAIXA 2 DE 3: NÍVEIS 10 A 19)'), findsOneWidget);
+      expect(find.textContaining('HABILIDADE A AURA PEGA FAGULHAS E MATERIAIS 5 M MAIS LONGE. FAIXA 2 DE 3 (NÍVEIS 10 A 19)'), findsOneWidget);
+      expect(find.textContaining('HABILIDADE A AURA PEGA FAGULHAS E MATERIAIS 8 M MAIS LONGE. FAIXA 2 DE 3 (NÍVEIS 10 A 19)'), findsOneWidget);
       expect(find.text('TRAÇOS 1/1'), findsOneWidget);
       expect(find.text('TRAÇOS 2/2'), findsOneWidget);
       expect(find.byKey(const Key('variant-a')), findsOneWidget);

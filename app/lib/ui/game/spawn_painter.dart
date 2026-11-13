@@ -60,6 +60,7 @@ void paintSpawns(
   required EcoTypeOf typeOf,
   required bool Function(WorldSpawn) inAura,
   bool Function(WorldSpawn)? marked,
+  bool Function(WorldSpawn)? pinned,
   VariantTintOf? tintOf,
   double Function(int uid)? hopOf,
   double Function(int uid)? appearOf,
@@ -112,6 +113,7 @@ void paintSpawns(
       if (s.behavior != EcoBehavior.passive) _behaviorIcon(canvas, center, s.behavior, size);
       if (s.tag == 'charged') _chargedSparks(canvas, center, size, time + s.uid % 5);
       if (marked?.call(s) ?? false) _markRing(canvas, center, size);
+      if (pinned?.call(s) ?? false) _pinMarker(canvas, center, size, time);
     } else if (s.isSpark) {
       _leaning(canvas, center.translate(0, sparkSize / 2), lean, () => _spark(canvas, center, spawnColor(s, typeOf), sparkSize, dpr, near, time + s.uid % 7));
       if (blow) _motes(canvas, center, wind.motes(s.uid, time), windDir, sparkSize * 1.5, spawnColor(s, typeOf));
@@ -185,6 +187,29 @@ void _chargedSparks(ui.Canvas canvas, ui.Offset c, double size, double time) {
 void _markRing(ui.Canvas canvas, ui.Offset c, double size) {
   final r = ui.Rect.fromCenter(center: c, width: size * 0.9, height: size * 0.9);
   canvas.drawRect(r, ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 2..color = kVeil..isAntiAlias = false);
+}
+
+/// Espécie marcada no Bestiário: cantos em ciano do sinal em volta do Eco e uma seta acima, pulsando.
+void _pinMarker(ui.Canvas canvas, ui.Offset c, double size, double time) {
+  final pulse = 0.6 + 0.4 * math.sin(time * 5);
+  final h = size * 0.62, k = size * 0.22;
+  final line = ui.Paint()
+    ..style = ui.PaintingStyle.stroke
+    ..strokeWidth = 3
+    ..isAntiAlias = false;
+  for (final (sx, sy) in const [(-1.0, -1.0), (1.0, -1.0), (-1.0, 1.0), (1.0, 1.0)]) {
+    final corner = ui.Path()
+      ..moveTo(c.dx + sx * h, c.dy + sy * (h - k))
+      ..lineTo(c.dx + sx * h, c.dy + sy * h)
+      ..lineTo(c.dx + sx * (h - k), c.dy + sy * h);
+    canvas.drawPath(corner, line..color = kOutline);
+    canvas.drawPath(corner, line..strokeWidth = 2..color = kSignal.withValues(alpha: pulse));
+    line.strokeWidth = 3;
+  }
+  final top = c.dy - h - 6 - 3 * pulse;
+  final arrow = ui.Path()..moveTo(c.dx - 6, top - 6)..lineTo(c.dx + 6, top - 6)..lineTo(c.dx, top)..close();
+  canvas.drawPath(arrow, ui.Paint()..color = kSignal..isAntiAlias = false);
+  canvas.drawPath(arrow, ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 1..color = kOutline..isAntiAlias = false);
 }
 
 void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double size, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid, {int? tint, double lean = 0}) {

@@ -132,8 +132,8 @@ void main() {
     expect(find.text('FUNDIR 1/5'), findsOneWidget);
     await tester.tap(find.byKey(const Key('detail-pin')));
     await tester.pump();
-    expect(s.pinnedSpecies, 'hum.eco');
-    expect(find.text('MARCADA'), findsOneWidget);
+    expect(s.pins, ['hum.eco']);
+    expect(find.text('DESMARCAR'), findsOneWidget);
     // As setas: a forma anterior é a Fagulha e a seguinte, o Espírito (ainda ???).
     expect(find.text('< ARC MOTE'), findsOneWidget);
     expect(find.text('??? >'), findsOneWidget);
@@ -160,9 +160,17 @@ void main() {
     expect(find.text('NÍVEL DE PESQUISA 3 DE 5'), findsOneWidget);
     await tester.tap(find.byKey(const Key('tab-2')));
     await tester.pump();
-    expect(find.text('Níveis 1 a 9: Radar +20 m'), findsOneWidget);
-    expect(find.text('Níveis 10 a 19: Radar +40 m'), findsOneWidget);
-    expect(find.text('Níveis 20+: Radar +60 m'), findsOneWidget);
+    expect(find.text('Níveis 1 a 9: Elétricos nos postes 10%'), findsOneWidget);
+    expect(find.text('Níveis 10 a 19: Elétricos nos postes 15%'), findsOneWidget);
+    expect(find.text('Níveis 20+: Elétricos nos postes 20%'), findsOneWidget);
+    // O efeito por extenso, com a faixa atual (a do Humoth de maior nível na coleção) e a próxima, sem "em breve".
+    final ability = tester.widget<Text>(find.byKey(const Key('species-ability'))).data!;
+    expect(ability, startsWith('À noite e na tempestade, '));
+    expect(ability, contains('Próxima, no nível'));
+    expect(ability, isNot(contains('em breve')));
+    // O trabalho da família na Casa, que entra na fase 2.
+    await tester.dragUntilVisible(find.byKey(const Key('species-work')), find.byKey(const Key('pane-2')), const Offset(0, -200));
+    expect(find.text('Trabalho: antena e oficina (em breve)'), findsOneWidget);
     expect(find.text('FUNDIR 2/5'), findsOneWidget);
   });
 

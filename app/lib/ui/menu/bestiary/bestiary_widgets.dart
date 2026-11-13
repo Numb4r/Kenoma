@@ -176,7 +176,7 @@ class FormArt extends StatelessWidget {
 /// O cartão de uma família: nome, tipo, pesquisa em porcentagem e a linha de fusão, com o estado de cada forma. Antes de
 /// a primeira forma ser vista, é "Família ???".
 class FamilyCard extends StatelessWidget {
-  const FamilyCard({required this.family, required this.forms, required this.states, required this.percent, required this.sprites, required this.onTap, this.known = true, this.pinnedId, super.key});
+  const FamilyCard({required this.family, required this.forms, required this.states, required this.percent, required this.sprites, required this.onTap, this.known = true, this.pinned = const [], super.key});
 
   final FamilyDef family;
   final List<BestiaryForm> forms;
@@ -185,7 +185,8 @@ class FamilyCard extends StatelessWidget {
   final Map<String, EcoSprite> sprites;
   final void Function(BestiaryForm form) onTap;
   final bool known;
-  final String? pinnedId;
+  /// As formas marcadas no Bestiário (até 3).
+  final List<String> pinned;
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +219,7 @@ class FamilyCard extends StatelessWidget {
               child: Pressable(
                 onTap: () => onTap(forms[i]),
                 child: Column(key: Key('form-${forms[i].id}'), children: [
-                  FormArt(sprite: sprites[forms[i].spriteKey], state: states[i], pinned: pinnedId == forms[i].id),
+                  FormArt(sprite: sprites[forms[i].spriteKey], state: states[i], pinned: pinned.contains(forms[i].id)),
                   const SizedBox(height: 4),
                   Text(
                     states[i] == FormStatus.unknown ? '???' : forms[i].name,

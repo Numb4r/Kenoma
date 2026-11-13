@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/player/game_state.dart' show saveSchemaVersion;
 import 'package:kenoma/player/bestiary_view.dart';
 import 'package:kenoma/player/game_session.dart';
 import 'package:kenoma/player/research.dart';
@@ -31,7 +32,7 @@ void main() {
 
   test('v6 vira v7: cada espécie capturada ganha a contagem (as que estão na coleção, pelo menos uma), as Fagulhas da Bolsa entram, e o resto passa intacto', () {
     final out = migrateSave(real);
-    expect(out['schema_version'], 7);
+    expect(out['schema_version'], saveSchemaVersion);
     final b = out['bestiary'] as Map<String, dynamic>;
     for (final e in oldBestiary.entries) {
       final was = e.value as Map<String, dynamic>, now = b[e.key] as Map<String, dynamic>;
@@ -70,7 +71,7 @@ void main() {
     expect(s.founder!.chainValid, isTrue);
     expect(s.founder!.playerId, (real['founder'] as Map)['player_id'], reason: 'o player_id não muda');
     expect(s.founder!.versionsSeen.map((e) => e.version).last, '0.20.0+32');
-    expect(store.json!['schema_version'], 7);
+    expect(store.json!['schema_version'], saveSchemaVersion);
     // O Bestiário novo lê o save antigo: capturadas com nível 1 de pesquisa, vistas como vistas, Fagulhas coletadas.
     expect(formState('soot.eco', s.bestiary), FormStatus.captured);
     expect(formState('soot.spirit', s.bestiary), FormStatus.seen);

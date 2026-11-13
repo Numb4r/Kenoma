@@ -5,9 +5,11 @@ library;
 import 'package:flutter/material.dart' hide FormState;
 
 import '../../../capture/eco_type.dart';
+import '../../../core/species_ids.dart' show familyOfId;
 import '../../../data/game_data.dart';
 import '../../../player/bestiary.dart';
 import '../../../player/bestiary_view.dart';
+import '../../../player/attributes.dart' show abilityText;
 import '../../../player/circle.dart' show abilityLabel;
 import '../../../player/game_state.dart';
 import '../../../player/research.dart';
@@ -162,9 +164,15 @@ class _SpeciesDetailScreenState extends State<SpeciesDetailScreen> {
                 Expanded(
                   child: KButton(
                     key: const Key('detail-pin'),
-                    label: widget.state.pinnedSpecies == form.id ? 'Marcada' : 'Marcar',
+                    label: widget.state.isPinned(form.id) ? 'Desmarcar' : 'Marcar',
                     primary: false,
-                    onTap: known ? () => widget.state.togglePin(form.id) : null,
+                    onTap: known
+                        ? () {
+                            if (!widget.state.togglePin(form.id)) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Até 3 espécies marcadas. Desmarque uma antes.')));
+                            }
+                          }
+                        : null,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -218,7 +226,7 @@ class _SpeciesDetailScreenState extends State<SpeciesDetailScreen> {
     );
   }
 
-  Widget _line(String text, {Color color = KCores.texto}) => Padding(padding: const EdgeInsets.only(bottom: 6), child: Text(text, style: KTexto.corpoPequeno.copyWith(color: color)));
+  Widget _line(String text, {Color color = KCores.texto, Key? key}) => Padding(padding: const EdgeInsets.only(bottom: 6), child: Text(text, key: key, style: KTexto.corpoPequeno.copyWith(color: color)));
 
   Widget _loreBox(String text, String label) => Container(
         margin: const EdgeInsets.only(bottom: 8),
@@ -345,14 +353,26 @@ class _SpeciesDetailScreenState extends State<SpeciesDetailScreen> {
     final cb = widget.state.cb, tier = species.isSpirit ? 'spirit' : 'eco', cap = widget.state.balance.levelCapFor(species.id);
     final ability = species.ability;
     final bands = widget.data.tuning.abilityBands;
+    // A faixa atual é a da criatura desta espécie de nível mais alto na coleção (sem nenhuma, a do nível 1).
+    final owned = [for (final c in widget.state.collection) if (c.speciesId == species.id && !c.debug) c.level];
+    final best = owned.isEmpty ? null : owned.reduce((a, b) => a > b ? a : b);
+    final family = widget.data.families.where((f) => f.id == familyOfId(species.id)).firstOrNull;
     return [
       const KSection('Poder'),
       _line('${cb.power(tier, 1)} no nível 1 · ${cb.power(tier, cap)} no nível $cap'),
       const KSection('Habilidade de mapa'),
       if (ability == null)
         _line('Nenhuma.', color: KCores.textoMudo)
-      else
-        for (var k = 0; k < ability.bands.length && k < bands.length; k++) _line('Níveis ${bands[k].$1}${k + 1 == bands.length ? '+' : ' a ${bands[k].$2}'}: ${abilityLabel(ability.kind, ability.bands[k])}'),
+      else ...[
+        _line(abilityText(ability, best ?? 1, bands), key: const Key('species-ability')),
+        _line(best == null ? 'Nenhuma na coleção: a faixa do nível 1.' : 'Pela sua de nível $best.', color: KCores.textoMudo),
+        for (var k = 0; k < ability.bands.length && k < bands.length; k++) _line('Níveis ${bands[k].$1}${k + 1 == bands.length ? '+' : ' a ${bands[k].$2}'}: ${abilityLabel(ability.kind, ability.bands[k])}', color: KCores.textoMudo),
+      ],
+      if (family != null && family.workTitle.isNotEmpty) ...[
+        const KSection('Trabalho'),
+        _line('Trabalho: ${family.workTitle} (em breve)', key: const Key('species-work')),
+        _line(family.workAbout, color: KCores.textoMudo),
+      ],
       const KSection('Traços'),
       for (final d in variantDots(form.id, widget.data, b))
         if (d.key.isNotEmpty && d.state != FormStatus.unknown) _line('${widget.data.variants[d.key]!.name}: ${widget.data.variants[d.key]!.trait}'),

@@ -166,8 +166,17 @@ class SonarPainter extends CustomPainter {
     final waveM = pulseAge() * balance.pulseSpeedMps;
     if (waveM <= balance.traceRangeM) canvas.drawCircle(c, waveM * scale, line..strokeWidth = 3..color = kSignal);
     for (final e in echoes()) {
-      if (e.distanceM > waveM) continue; // a onda ainda não voltou daqui
       final a = e.angleRad + rot;
+      if (e.pinned) {
+        // Espécie marcada no Bestiário: um losango no ponto, sem esperar o pulso.
+        final at = c + Offset(math.cos(a), math.sin(a)) * math.min(e.distanceM * scale, r - 6);
+        final d = Path()..moveTo(at.dx, at.dy - 7)..lineTo(at.dx + 7, at.dy)..lineTo(at.dx, at.dy + 7)..lineTo(at.dx - 7, at.dy)..close();
+        canvas.drawPath(d, p..color = kOutline..style = PaintingStyle.fill);
+        canvas.drawPath(d.shift(Offset.zero), line..strokeWidth = 2..color = kSignal);
+        canvas.drawRect(Rect.fromCenter(center: at, width: 4, height: 4), p..color = e.typeId == null ? kSignal : typeColor(EcoType.parse(e.typeId!)));
+        continue;
+      }
+      if (e.distanceM > waveM) continue; // a onda ainda não voltou daqui
       if (e.distortion) {
         paintDistortion(canvas, (c.dx + math.cos(a) * e.distanceM * scale, c.dy + math.sin(a) * e.distanceM * scale), 10, _spin.value * 8, p);
         continue;

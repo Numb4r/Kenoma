@@ -110,7 +110,17 @@ Future<void> runEncounter(
     }
     if (o.success) {
       final first = !state.hasCaptured(species.id);
-      state.capture(uid: eco.uid, speciesId: species.id, level: level, nowUtc: nowUtc(), variant: eco.variant, shiny: eco.shiny, biome: world.biomeKeyOf(eco.cellX, eco.cellY));
+      state.capture(
+        uid: eco.uid,
+        speciesId: species.id,
+        level: level,
+        nowUtc: nowUtc(),
+        variant: eco.variant,
+        shiny: eco.shiny,
+        biome: world.biomeKeyOf(eco.cellX, eco.cellY),
+        personal: eco.personal,
+        hidden: eco.behavior == EcoBehavior.hidden,
+      );
       state.add('item.ectoplasm', o.ectoplasm);
       state.recordEvent('capture', species.type.name, 1);
       final b = state.balance;

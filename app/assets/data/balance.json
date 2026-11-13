@@ -9,6 +9,7 @@
   "behavior": {
     "hidden": { "wander_scale": 0.5 }
   },
+  "personal_layer": { "night_sun_deg": -6, "storm_climates": ["storm", "dry_thunder", "echo_storm", "hurricane"], "fog_climates": ["fog", "fog_procession"], "fog_biomes": ["sacred"], "pole_points": ["signal", "busStop"], "marquee_points": ["shop", "bar"], "wisp_trace_mult": 1.5, "hidden_essence_bonus": 2, "build_keep_s": 86400 },
   "radar": { "cooldown_s": 120, "radius_m": 60, "trace_range_m": 250, "trace_error_deg": 30, "trace_hide_within_m": 40, "level2_player_level": 8, "hidden_reveal_s": 900, "arc_near_deg": 24, "arc_far_deg": 90, "hidden_resolve_m": 20, "pulse_speed_mps": 125, "trace_show_s": 300, "edge_marks_s": 120 },
   "familiar": { "pickup_bonus_m": 2, "follow_offset_m": 6 },
   "weather": { "rain_particles": 70 },

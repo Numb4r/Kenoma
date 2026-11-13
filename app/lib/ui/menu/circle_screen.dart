@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/game_data.dart';
 import '../../data/tuning_data.dart';
+import '../../player/attributes.dart' as attr;
 import '../../player/circle.dart';
 import '../../player/game_state.dart';
 import '../colors.dart';
@@ -14,7 +15,7 @@ import '../type_label.dart';
 import 'screen_frame.dart';
 
 /// Texto curto da habilidade de uma espécie no nível dado ("Aura +5 m").
-String abilityText(EcoSpecies sp, int level, List<(int, int)> bands) {
+String abilityShort(EcoSpecies sp, int level, List<(int, int)> bands) {
   final a = sp.ability;
   if (a == null) return '';
   final v = a.bands[abilityBandIndex(level, bands).clamp(0, a.bands.length - 1)];
@@ -48,7 +49,6 @@ class _CircleScreenState extends State<CircleScreen> {
       listenable: widget.state,
       builder: (context, _) {
         final s = widget.state;
-        final a = abilitiesOf(s, widget.data);
         final bands = widget.data.tuning.abilityBands;
         return ScreenFrame(
           title: 'Círculo',
@@ -64,11 +64,21 @@ class _CircleScreenState extends State<CircleScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: panelBox(),
-              child: Text(
-                'EFEITO NO MAPA\nAURA +${a.auraBonusM.round()} M · COLETA +${a.pickupBonusM.round()} M · '
-                'RADAR ${a.trackerRangeM > 0 ? '${a.trackerRangeM.round()} M' : 'PADRÃO'}',
-                style: const TextStyle(fontSize: 8, color: kText, height: 1.8),
-              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('EFEITO NO MAPA', style: TextStyle(fontSize: 8, color: kText, height: 1.8)),
+                if (!s.circle.any((uid) => s.creature(uid) != null && widget.data.species(s.creature(uid)!.speciesId)?.ability != null))
+                  const Text('Nenhuma habilidade ativa.', style: TextStyle(fontSize: 10, color: kDim, height: 1.6)),
+                for (final uid in s.circle)
+                  if (s.creature(uid) case final c? when widget.data.species(c.speciesId)?.ability != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        '${widget.data.species(c.speciesId)!.name} nv ${c.level}: ${attr.abilityText(widget.data.species(c.speciesId)!.ability!, c.level, bands)}',
+                        key: Key('circle-effect-${c.uid}'),
+                        style: const TextStyle(fontSize: 10, color: kText, height: 1.6),
+                      ),
+                    ),
+              ]),
             ),
             const SectionTitle('Coleção'),
             if (s.collection.isEmpty) const Text('NENHUMA CRIATURA AINDA.', style: TextStyle(fontSize: 8, color: kDim)),
@@ -101,7 +111,7 @@ class _Slot extends StatelessWidget {
           : Column(children: [
               SpeciesImage(sprite: sprites[c.speciesId], size: 56),
               Text('NV ${c.level}', style: const TextStyle(fontSize: 8, color: kText)),
-              Text(abilityText(sp, c.level, bands).toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal), textAlign: TextAlign.center),
+              Text(abilityShort(sp, c.level, bands).toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal), textAlign: TextAlign.center),
             ]),
     );
   }
@@ -144,7 +154,7 @@ class _Tile extends StatelessWidget {
                 '${creature.level >= state.balance.levelCapFor(creature.speciesId) ? '' : ' · XP ${creature.xp}/$next'}',
                 style: const TextStyle(fontSize: 8, color: kDim),
               ),
-              if (sp != null) Text(abilityText(sp, creature.level, bands).toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal)),
+              if (sp != null) Text(abilityShort(sp, creature.level, bands).toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal)),
             ]),
           ),
           Text(active ? 'ATIVO' : 'TOCAR', style: TextStyle(fontSize: 8, color: active ? kSignal : kDim)),

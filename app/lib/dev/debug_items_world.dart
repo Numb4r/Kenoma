@@ -57,6 +57,35 @@ List<DebugItem> spawnItems(DebugEnv env) {
           ])),
     ),
     DebugItem(
+      id: 'spawn.personal',
+      title: 'Camada pessoal de spawn',
+      section: DebugSection.spawns,
+      keywords: const ['pessoal', 'círculo', 'habilidade', 'base', 'build', 'rill', 'hum', 'shade', 'wisp', 'sprig', 'bit', 'clod'],
+      builder: (_) => ListenableBuilder(
+        listenable: env.tools,
+        builder: (_, _) => DebugColumn([
+          const DebugNote('O que as habilidades do Círculo acrescentam só para você. Escondida, o mapa mostra só o mundo base, igual para todos.'),
+          DebugSwitch(title: 'Esconder a camada pessoal', subtitle: null, value: env.tools.hidePersonal, onChanged: env.tools.setHidePersonal),
+          DebugNote('Nesta sessão: ${env.tools.personalStats?.call() ?? 'abra o mapa do jogo'}', key: const Key('debug-personal-stats')),
+          const DebugNote('Círculo de teste (só no mapa, nível 10, o save não muda). A troca vale a partir da janela seguinte de cada célula.'),
+          DebugWrap([
+            DebugChip('Círculo real', on: env.tools.testCircle == null, onTap: () => env.tools.setTestCircle(null)),
+            DebugChip('Círculo vazio', on: env.tools.testCircle?.isEmpty ?? false, onTap: () => env.tools.setTestCircle(const [])),
+            for (final f in const ['rill', 'hum', 'clod', 'shade', 'wisp', 'bit', 'sprig'])
+              DebugChip(
+                f,
+                on: env.tools.testCircle?.contains('$f.eco') ?? false,
+                onTap: () {
+                  final now = [...?env.tools.testCircle];
+                  if (!now.remove('$f.eco') && now.length < 3) now.add('$f.eco');
+                  env.tools.setTestCircle(now);
+                },
+              ),
+          ]),
+        ]),
+      ),
+    ),
+    DebugItem(
       id: 'spawn.clear',
       title: 'Pedidos forçados',
       section: DebugSection.spawns,

@@ -37,6 +37,7 @@ class WorldSpawn {
     this.variant,
     this.shiny = false,
     this.tag,
+    this.personal = false,
   });
 
   final int uid;
@@ -68,10 +69,13 @@ class WorldSpawn {
   /// Marca de quem nasceu de uma peça do clima (`charged`: o Eco do raio). Só no mapa: não vai para o save.
   final String? tag;
 
+  /// Veio da camada pessoal de spawn (`personal_layer.dart`): só este jogador vê. No mapa é igual aos outros.
+  final bool personal;
+
   /// Cópia em outra posição (a Fagulha que deriva com o vento).
   WorldSpawn movedTo(double x, double y) => WorldSpawn(
         uid: uid, kind: kind, entryId: entryId, quantity: quantity, x: x, y: y, cellX: cellX, cellY: cellY, window: window,
-        level: level, behavior: behavior, variant: variant, shiny: shiny, tag: tag,
+        level: level, behavior: behavior, variant: variant, shiny: shiny, tag: tag, personal: personal,
       );
 
   /// Cópia com a espécie e o nível trocados (o debug força um Espírito no lugar do Eco).
@@ -90,6 +94,7 @@ class WorldSpawn {
         variant: variant,
         shiny: shiny,
         tag: tag,
+        personal: personal,
       );
 
   /// Cópia com o comportamento, a variante e o Brilhante trocados (o debug força o próximo spawn).
@@ -108,6 +113,7 @@ class WorldSpawn {
         variant: variant,
         shiny: shiny,
         tag: tag,
+        personal: personal,
       );
 
   /// Se é um Eco raro: variante, Brilhante ou Oculto (ou, com [playerLevel], de nível acima do jogador). Só os raros

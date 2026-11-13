@@ -24,7 +24,7 @@ import 'spawn_field.dart';
 /// Uma poça agora (época 7): centro (células z21, já na rua), raio em metros, tamanho de 0 a 1 (cresce na chuva, encolhe
 /// secando), se ainda chove ([wet]) e os sorteios da janela de chuva dela.
 class Puddle {
-  const Puddle({required this.piece, required this.index, required this.x, required this.y, required this.radiusM, required this.size, required this.wet, required this.rolls});
+  const Puddle({required this.piece, required this.index, required this.x, required this.y, required this.radiusM, required this.size, required this.wet, required this.rolls, this.personal = false});
 
   final PuddlePiece piece;
   final int index;
@@ -33,6 +33,9 @@ class Puddle {
   final double size;
   final bool wet;
   final ({double itemRoll, double spawnRoll, double pick, int uid}) rolls;
+
+  /// Poça da camada pessoal (o Rill): só este jogador vê.
+  final bool personal;
 
   bool get frozen => piece.frozen;
 }
@@ -130,6 +133,13 @@ class ClimateWorld {
   /// O mesmo, com a época: as espécies com `since_epoch` só entram nas épocas delas (o que uma época antiga gera não muda
   /// quando o jogo ganha espécies). `null`: vale [speciesOfType].
   final String? Function(String type, double pick, int epochId)? speciesOfTypeAt;
+
+  /// A espécie do tipo [type] sorteada por [pick] na época de [t].
+  String? speciesOfTypeIn(String type, double pick, int t) => speciesOfTypeAt?.call(type, pick, schedule.select(t).epoch.id) ?? speciesOfType(type, pick);
+
+  /// As poças a mais da camada pessoal (`PersonalLayer.puddlesAt`): a chave dos sorteios e quantas, por célula z17 e janela
+  /// de chuva. `null`: só as do mundo.
+  ({int key, int count})? Function(int cx17, int cy17, int wetWindow, int t)? personalPuddles;
   final bool Function(String itemId) itemExists;
 
   /// A primeira época em que o item existe para o mundo (`since_epoch` do `items.json`; `null`: sempre). Antes dela o
@@ -672,13 +682,33 @@ class ClimateWorld {
       final wm = d.epoch.water;
       final hour = ((t + d.model.localOffsetH * 3600) % 86400) ~/ 3600;
       final iced = wm != null && !piece.frozen && wm.freezeClimates.contains(d.def.id) && hour >= wm.freezeFromH && hour < wm.freezeToH ? d.model.def(wm.freezeAs)?.puddles : null;
-      for (final s in spots) {
+      // A camada pessoal: as poças a mais do Rill, sorteadas pelo jogador e pela chuva, levadas à rua como as outras.
+      final pp = piece.always ? null : personalPuddles?.call(cx, cy, wetWindow, t);
+      final mine = <({int index, double x, double y, double radiusM, double depth})>[];
+      if (pp != null) {
+        final rng = Pcg32(fnv1a64([pp.key, epochId, cx, cy, wetWindow]), saltKenoma);
+        for (var k = 0; k < pp.count; k++) {
+          final x = (cx + rng.nextFloat()) * 16, y = (cy + rng.nextFloat()) * 16, r = rLo + (rHi - rLo) * rng.nextFloat();
+          if (_toStreet(x, y) case final p?) mine.add((index: 1000 + k, x: p.$1, y: p.$2, radiusM: r, depth: 0.0));
+        }
+      }
+      for (final (s, own) in [for (final s in spots) (s, false), for (final s in mine) (s, true)]) {
         // Secando, as baixadas mais fundas duram mais.
         final sz = dried == null ? size : size + dried * (1 - 1 / (1 + bonus * s.depth));
         if (sz <= 0) continue;
         // Poça rasa congela de madrugada no Frio e na Geada (época 10 em diante): vira a poça de gelo, no mesmo lugar.
         final shown = iced != null && sz <= d.epoch.water!.freezeMaxSize ? iced : piece;
-        out.add(Puddle(piece: shown, index: s.index, x: s.x, y: s.y, radiusM: s.radiusM, size: math.min(1.0, sz), wet: cur != null && identical(shown, piece), rolls: puddleRolls(seed, epochId, cx, cy, wetWindow, s.index)));
+        out.add(Puddle(
+          piece: shown,
+          index: s.index,
+          x: s.x,
+          y: s.y,
+          radiusM: s.radiusM,
+          size: math.min(1.0, sz),
+          wet: cur != null && identical(shown, piece),
+          rolls: puddleRolls(own ? pp!.key : seed, epochId, cx, cy, wetWindow, s.index),
+          personal: own,
+        ));
       }
     }
     return out;
@@ -759,11 +789,11 @@ class ClimateWorld {
     for (final pd in puddlesNear(x21, y21, r21, t)) {
       final spawn = pd.piece.spawn, item = pd.piece.item, r = pd.rolls;
       if (spawn != null && pd.wet && r.spawnRoll < spawn.chance) {
-        final s = _eco(spawn, r.pick, pd.x, pd.y, fnv1a64([r.uid, 1]), t, levelOf);
+        final s = _eco(spawn, r.pick, pd.x, pd.y, fnv1a64([r.uid, 1]), t, levelOf, personal: pd.personal);
         if (s != null) out.add(s);
       }
       if (item != null && pd.size >= 0.3 && r.itemRoll < item.chance) {
-        final s = _item(item, r.pick, pd.x + 0.3, pd.y + 0.3, fnv1a64([r.uid, 2]), t);
+        final s = _item(item, r.pick, pd.x + 0.3, pd.y + 0.3, fnv1a64([r.uid, 2]), t, personal: pd.personal);
         if (s != null) out.add(s);
       }
     }
@@ -781,8 +811,8 @@ class ClimateWorld {
     return m;
   }
 
-  WorldSpawn? _eco(PieceSpawn spawn, double pick, double x, double y, int uid, int t, int Function(String, int, int) levelOf) {
-    final species = (speciesOfTypeAt?.call(spawn.type, pick, schedule.select(t).epoch.id) ?? speciesOfType(spawn.type, pick)) ?? spawn.fallbackSpecies;
+  WorldSpawn? _eco(PieceSpawn spawn, double pick, double x, double y, int uid, int t, int Function(String, int, int) levelOf, {bool personal = false}) {
+    final species = speciesOfTypeIn(spawn.type, pick, t) ?? spawn.fallbackSpecies;
     if (species == null) return null; // tipo sem espécie no jogo e sem fallback: o dado fica sem efeito
     final (lo, hi) = spawn.levelAdd;
     final add = lo + (pick * 1000).floor() % (hi - lo + 1);
@@ -799,6 +829,7 @@ class ClimateWorld {
       window: windowIndex(seed, cx20, cy20, t),
       level: levelOf(species, add, uid),
       tag: spawn.tag,
+      personal: personal,
     );
   }
 
@@ -809,7 +840,7 @@ class ClimateWorld {
     return since == null || schedule.select(t).epoch.id >= since;
   }
 
-  WorldSpawn? _item(PieceItem item, double pick, double x, double y, int uid, int t) {
+  WorldSpawn? _item(PieceItem item, double pick, double x, double y, int uid, int t, {bool personal = false}) {
     final cx20 = x.floor() >>> 1, cy20 = y.floor() >>> 1;
     if (item.biomes != null && !item.biomes!.contains(biomeAt?.call(cx20, cy20))) return null;
     var id = item.ids[(pick * item.ids.length).floor().clamp(0, item.ids.length - 1)];
@@ -830,6 +861,7 @@ class ClimateWorld {
       cellY: cy20,
       window: 0,
       tag: item.tag,
+      personal: personal,
     );
   }
 

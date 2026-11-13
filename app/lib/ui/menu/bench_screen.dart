@@ -46,7 +46,7 @@ class _BenchScreenState extends State<BenchScreen> {
     final d = widget.data;
     final sp = d.species(c.speciesId);
     if (sp == null) return;
-    final qty = distillQty(widget.state, c.level, widget.data);
+    final qty = distillQty(widget.state, c.level, widget.data, hidden: c.hidden);
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(

@@ -5,25 +5,23 @@ library;
 import '../core/species_ids.dart';
 import '../data/game_data.dart';
 import '../data/tuning_data.dart';
-import 'circle.dart' show abilityLabel;
+import 'circle.dart' show abilityBandIndex, abilityEffect, abilityLabel;
 import 'game_state.dart';
 
 /// Poder: cresce com o nível e com a camada (Espírito acima do Eco). Sem estabilidade ainda.
 int powerOf(CreatureInstance c, GameData data) => data.progress.conjurer.power(tierOfId(c.speciesId).name, c.level);
 
-/// O texto de uma habilidade de mapa no [level], com a faixa por extenso: "Aura +5 m (faixa 2 de 3: níveis 10 a 19)".
+/// O texto de uma habilidade de mapa no [level], por extenso, com a faixa atual e a próxima: "A Aura pega... Faixa 2 de 3
+/// (níveis 10 a 19). Próxima, no nível 20: Aura +8 m."
 String abilityText(SpeciesAbility ability, int level, List<(int, int)> bands) {
-  final i = bands.indexWhere((b) => level >= b.$1 && level <= b.$2);
-  final band = i < 0 ? (level < bands.first.$1 ? 0 : bands.length - 1) : i;
+  final band = abilityBandIndex(level, bands);
   final v = ability.bands[band.clamp(0, ability.bands.length - 1)];
   final (from, to) = bands[band];
-  final effect = switch (ability.kind) {
-    'spark_pickup_bonus_m' => 'Coleta de Fagulhas e materiais +$v m',
-    'tracker_range_m' => 'Radar alcança $v m',
-    _ => abilityLabel(ability.kind, v),
-  };
   final range = level > to ? 'a partir do nível $from' : (from == to ? 'nível $from' : 'níveis $from a $to'); // o Espírito passa do último intervalo
-  return '$effect (faixa ${band + 1} de ${bands.length}: $range)';
+  final next = band + 1 < bands.length && band + 1 < ability.bands.length
+      ? 'Próxima, no nível ${bands[band + 1].$1}: ${abilityLabel(ability.kind, ability.bands[band + 1])}.'
+      : 'É a última faixa.';
+  return '${abilityEffect(ability.kind, v)} Faixa ${band + 1} de ${bands.length} ($range). $next';
 }
 
 /// Um traço: a chave (`urban`, `shiny`), o nome e o que ele faz.

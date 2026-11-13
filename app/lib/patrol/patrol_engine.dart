@@ -89,6 +89,7 @@ class PatrolEngine {
     required this.maxDurationS,
     this.streetAt,
     this.recordCells = true,
+    this.speciesName,
   }) {
     world.quiet = () => mode != PatrolMode.walking;
     world.onCollected = (s) => _pending?.lines.add({'k': s.kind, 'uid': GameState.uidKey(s.uid), 't': _now, 'item': s.entryId, 'q': s.quantity});
@@ -107,6 +108,12 @@ class PatrolEngine {
 
   /// O nome da rua perto de um ponto em células z21, ou `null`.
   final String? Function(double x21, double y21)? streetAt;
+
+  /// O nome de uma espécie, para o aviso das marcadas no Bestiário.
+  final String Function(String speciesId)? speciesName;
+
+  /// As espécies marcadas que já foram avisadas (uma vez por Eco).
+  final _pinNoticed = <int>{};
 
   PatrolMode mode = PatrolMode.walking;
   bool? _passenger;
@@ -167,7 +174,10 @@ class PatrolEngine {
         if (s.isMaterial && world.inAura(s) && world.touch(s, nowUtc) == TouchResult.collected) materials += s.quantity;
       }
     }
-    if (mode == PatrolMode.walking || mode == PatrolMode.passenger) _mark(nowUtc, out);
+    if (mode == PatrolMode.walking || mode == PatrolMode.passenger) {
+      _mark(nowUtc, out);
+      _pinned(out);
+    }
     if (!jump) {
       if (mode == PatrolMode.walking) {
         _walkAcc += moved;
@@ -254,6 +264,17 @@ class PatrolEngine {
       final rare = isPatrolRare(s);
       out.vibrations.add(rare ? balance.vibrateRareMs : balance.vibrateMs);
       if (rare) out.rare.add((uid: s.uid, text: 'Algo raro passou a ${d.round()} m, ${streetPhrase(streetAt?.call(s.x, s.y))}'));
+    }
+  }
+
+  /// Uma espécie marcada no Bestiário entrou no alcance do Radar: aviso e vibração de raro, uma vez por Eco.
+  void _pinned(PatrolOutput out) {
+    for (final s in world.spawns) {
+      if (!world.isPinned(s) || state.isDone(s.uid)) continue;
+      final d = world.distanceM(s);
+      if (d > world.street.traceRangeM || !_pinNoticed.add(s.uid)) continue;
+      out.vibrations.add(balance.vibrateRareMs);
+      out.rare.add((uid: s.uid, text: 'Marcada no Bestiário: ${speciesName?.call(s.entryId) ?? 'uma espécie'} a ${d.round()} m, ${streetPhrase(streetAt?.call(s.x, s.y))}'));
     }
   }
 

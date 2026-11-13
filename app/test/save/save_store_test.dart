@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart' show sha256;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/player/game_state.dart' show saveSchemaVersion;
 import 'package:kenoma/player/game_session.dart';
 import 'package:kenoma/save/ksv1.dart';
 import 'package:kenoma/save/ksv_save_store.dart';
@@ -159,7 +160,7 @@ void main() {
       expect((s.groupCode, s.count('item.chalk'), s.count('item.seal.simple'), s.collection.single.speciesId, s.isDone(42)), ('AAAAA-BBBBB', 3, 2, 'rill.eco', true));
       expect(s.levelOverride, 4);
       final disk = decodeKsv(copyBytes(store.current));
-      expect(disk['schema_version'], 7);
+      expect(disk['schema_version'], saveSchemaVersion);
       expect(disk['group_code'], 'AAAAA-BBBBB');
       expect(File('${dir.path}/save.json.migrated').existsSync(), isTrue);
     });

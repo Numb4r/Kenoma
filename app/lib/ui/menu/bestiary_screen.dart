@@ -151,7 +151,7 @@ class _BestiaryScreenState extends State<BestiaryScreen> {
         percent: familyPercent(f, data, b),
         sprites: _sprites,
         known: familyKnown(f, data, b),
-        pinnedId: widget.state.pinnedSpecies,
+        pinned: widget.state.pins,
         onTap: _open,
       ));
     }
@@ -175,7 +175,7 @@ class _BestiaryScreenState extends State<BestiaryScreen> {
           crossAxisSpacing: 7,
           childAspectRatio: 0.92,
           children: [
-            for (final f in list) SpeciesCell(form: f, state: formState(f.id, b), sprite: _sprites[f.spriteKey], pinned: widget.state.pinnedSpecies == f.id, onTap: () => _open(f)),
+            for (final f in list) SpeciesCell(form: f, state: formState(f.id, b), sprite: _sprites[f.spriteKey], pinned: widget.state.isPinned(f.id), onTap: () => _open(f)),
           ],
         ));
     }

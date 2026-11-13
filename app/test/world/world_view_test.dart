@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/core/behavior.dart';
 import 'package:kenoma/core/seed.dart';
 import 'package:kenoma/core/tiles.dart';
 import 'package:kenoma/player/circle.dart';
@@ -40,6 +41,31 @@ void main() {
     final (la, lo) = tileFractionToLatLon(s.x, s.y, biomeZoom);
     return (la, lo, s);
   }
+
+  test('espécie marcada: aparece no mapa e no Radar até o alcance dele (o resto não passa da visão), com marca na borda fora da tela', () {
+    final (probe, _, _) = make();
+    final far = probe.field
+        .around(lat: lat, lon: lon, tUtc: t0, radiusM: 240, playerLevel: 1)
+        .where((s) => s.isEco && s.behavior != EcoBehavior.hidden)
+        .toList();
+    final (view, state, _) = make();
+    view.refresh(lat: lat, lon: lon, tUtc: t0);
+    final target = far.firstWhere((s) => view.distanceM(s) > 150 && view.distanceM(s) < 240);
+    expect(view.spawns.any((s) => s.uid == target.uid), isFalse, reason: 'sem marca, além da visão não aparece');
+    expect(state.togglePin(target.entryId), isTrue);
+    view.refresh(lat: lat, lon: lon, tUtc: t0);
+    expect(view.spawns.any((s) => s.uid == target.uid), isTrue, reason: 'marcada, aparece até o alcance do Radar');
+    expect(view.spawns.where((s) => view.distanceM(s) > view.baseReachM).every(view.isPinned), isTrue, reason: 'só as marcadas passam da visão');
+    final echo = view.sonar().firstWhere((e) => e.uid == target.uid);
+    expect((echo.pinned, echo.widthRad), (true, 0.0));
+    expect(echo.distanceM, closeTo(view.distanceM(target), 0.01));
+    final marks = view.edgeMarksAt(t0.toDouble(), onScreen: (_) => false);
+    expect(marks.any((m) => m.uid == target.uid && m.pinned), isTrue, reason: 'fora da tela, sem pulso: a marca da borda');
+    expect(view.edgeMarksAt(t0.toDouble(), onScreen: (_) => true).where((m) => m.pinned), isEmpty);
+    state.togglePin(target.entryId);
+    view.refresh(lat: lat, lon: lon, tUtc: t0);
+    expect(view.sonar().where((e) => e.pinned), isEmpty, reason: 'desmarcar no mesmo botão');
+  });
 
   test('Fagulha dentro da Aura é coletada sozinha, uma vez só', () {
     final hit = find('spark');
@@ -188,12 +214,12 @@ void main() {
       }
     });
 
-    test('alcance de coleta do Círculo pega Fagulhas de mais longe, e o rastreador alarga a área gerada', () {
-      final v = viewWith(fresh(), abilities: () => const MapAbilities(pickupBonusM: 10, trackerRangeM: 200));
+    test('alcance de coleta do Círculo pega Fagulhas de mais longe; espécie marcada alarga a área gerada até o Radar', () {
+      final v = viewWith(fresh(), abilities: () => const MapAbilities(pickupBonusM: 10));
       expect(v.auraRadiusM, 10 + 10 + 2, reason: 'Aura 10 + coleta do Círculo 10 + Familiar 2');
-      expect(v.trackerRangeM, 200);
-      expect(v.reachM, 200);
-      expect(viewWith(fresh(), abilities: () => const MapAbilities(trackerRangeM: 90)).trackerRangeM, 120, reason: 'nunca abaixo do padrão');
+      expect((v.trackerRangeM, v.reachM), (120, 120));
+      v.state.togglePin('soot.eco');
+      expect(v.reachM, v.street.traceRangeM, reason: 'com marcadas, até o alcance do Radar');
     });
 
     test('Eco marcado abre o encontro de qualquer distância', () {

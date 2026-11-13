@@ -3,6 +3,7 @@
 /// que já tinha. Dart puro.
 library;
 
+import '../core/behavior.dart';
 import '../world/spawn_field.dart';
 
 class Mark {
@@ -17,6 +18,8 @@ class Mark {
     required this.window,
     required this.markedUtc,
     required this.expiresUtc,
+    this.personal = false,
+    this.hidden = false,
   });
 
   factory Mark.of(WorldSpawn eco, {required int nowUtc, required int durationS}) => Mark(
@@ -30,6 +33,8 @@ class Mark {
         window: eco.window,
         markedUtc: nowUtc,
         expiresUtc: nowUtc + durationS,
+        personal: eco.personal,
+        hidden: eco.behavior == EcoBehavior.hidden,
       );
 
   factory Mark.fromJson(Map<String, dynamic> j) => Mark(
@@ -43,6 +48,8 @@ class Mark {
         window: j['window'] as int,
         markedUtc: j['marked_utc'] as int,
         expiresUtc: j['expires_utc'] as int,
+        personal: (j['personal'] as bool?) ?? false,
+        hidden: (j['hidden'] as bool?) ?? false,
       );
 
   /// Uid do spawn, em texto (como na coleção).
@@ -58,6 +65,10 @@ class Mark {
   final int window;
   final int markedUtc;
   final int expiresUtc;
+
+  /// O Eco veio da camada pessoal / era Oculto (a origem vai junto até a captura).
+  final bool personal;
+  final bool hidden;
 
   bool activeAt(int nowUtc) => nowUtc < expiresUtc;
 
@@ -75,6 +86,8 @@ class Mark {
         cellY: cellY,
         window: window,
         level: level,
+        behavior: hidden ? EcoBehavior.hidden : EcoBehavior.passive,
+        personal: personal,
       );
 
   Map<String, dynamic> toJson() => {
@@ -88,5 +101,7 @@ class Mark {
         'window': window,
         'marked_utc': markedUtc,
         'expires_utc': expiresUtc,
+        if (personal) 'personal': true,
+        if (hidden) 'hidden': true,
       };
 }

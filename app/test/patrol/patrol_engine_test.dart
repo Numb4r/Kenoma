@@ -72,6 +72,24 @@ GeoFix at(double lat, double lon, int t, {double? speed}) => GeoFix(lat: lat, lo
 List<String> kinds(PatrolOutput o) => [for (final l in o.lines) l['k'] as String];
 
 void main() {
+  test('espécie marcada no Bestiário dentro do alcance do Radar: aviso e vibração de raro, uma vez por Eco', () {
+    final (eco, la, lo) = find(passive, 'eco');
+    final (e, s) = engineOf(passive, street: (_, _) => 'R. Barão de Jaguara');
+    final (nla, nlo) = north(la, lo, 200); // longe da marcação (30 m), dentro do Radar (250 m)
+    final quiet = e.fix(at(nla, nlo, t0), t0);
+    expect(quiet.rare.where((r) => r.uid == eco.uid), isEmpty, reason: 'sem marca, nada');
+    s.togglePin(eco.entryId);
+    final (e2, s2) = engineOf(passive, street: (_, _) => 'R. Barão de Jaguara');
+    s2.togglePin(eco.entryId);
+    final out = e2.fix(at(nla, nlo, t0), t0);
+    final hit = out.rare.where((r) => r.uid == eco.uid).toList();
+    expect(hit, hasLength(1));
+    expect(hit.single.text, startsWith('Marcada no Bestiário: '));
+    expect(hit.single.text, endsWith(', na R. Barão de Jaguara'));
+    expect(out.vibrations, contains(balance.vibrateRareMs));
+    expect(e2.fix(at(nla, nlo, t0 + 5), t0 + 5).rare.where((r) => r.uid == eco.uid), isEmpty, reason: 'uma vez só');
+  });
+
   test('Fagulha na Aura vira linha do diário, uma vez só', () {
     final (spark, la, lo) = find(passive, 'spark');
     final (e, s) = engineOf(passive);

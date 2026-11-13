@@ -51,6 +51,7 @@ import '../../world/player_tracker.dart';
 import '../../data/geolocator_source.dart';
 import '../colors.dart';
 import '../map/map_assets.dart';
+import '../../player/circle.dart' show abilitiesOf, circleAbilities;
 import '../tuning/tuning_screen.dart' show PixelButton;
 import '../menu/phone_menu.dart';
 import '../menu/phone_shell.dart';
@@ -599,7 +600,13 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       climate: climate,
       force: tools.force,
       onMessage: _toast,
+      personalHidden: () => tools.hidePersonal,
+      abilities: () => switch (tools.testCircle) {
+        null => abilitiesOf(session.state, data),
+        final ids => circleAbilities([for (final id in ids) if (data.species(id) case final sp?) (species: sp, level: 10)], data.tuning.abilityBands),
+      },
     );
+    tools.personalStats = () => world.personal!.stats;
     final game = GameMapGame(
       renderer: assets.makeRenderer(),
       visual: assets.visual!,

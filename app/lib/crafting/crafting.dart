@@ -1,6 +1,7 @@
 /// A Bancada (docs/fase0-spec.md, seção 7): receitas improvisadas e a destilação de Ecos em Essência. Dart puro.
 library;
 
+import '../world/personal_layer.dart' show kHiddenChance;
 import '../capture/eco_type.dart';
 import '../core/species_ids.dart';
 import '../data/game_data.dart';
@@ -47,9 +48,12 @@ bool craftRecipe(GameState s, Recipe r) {
 }
 
 /// Essência que um Eco de nível [level] rende: 3 do 1 ao 7, 4 do 8 ao 14, 5 do 15 ao 20.
-/// O que a destilação de um Eco de nível [level] rende agora: a faixa do nível mais o bônus do Círculo (o Wyrmlet).
-int distillQty(GameState s, int level, GameData data) =>
-    distillYield(level, s.balance) + circleAbilities(circleMembers(s, data), data.tuning.abilityBands).of('distill_bonus').round();
+/// O que a destilação de um Eco de nível [level] rende agora: a faixa do nível mais o bônus do Círculo (o Wyrmlet) e, se
+/// ele era Oculto ([hidden]) e há um Bit no Círculo, a Essência a mais do Bit.
+int distillQty(GameState s, int level, GameData data, {bool hidden = false}) {
+  final a = circleAbilities(circleMembers(s, data), data.tuning.abilityBands);
+  return distillYield(level, s.balance) + a.of('distill_bonus').round() + (hidden && a.of(kHiddenChance) > 0 ? data.personal.hiddenEssenceBonus : 0);
+}
 
 int distillYield(int level, ProgressBalance b) {
   for (final band in b.distillYield) {
@@ -72,7 +76,7 @@ String? distillBlocker(GameState s, String uid) {
   final c = s.creature(uid);
   final species = c == null ? null : data.species(c.speciesId);
   if (c == null || species == null || distillBlocker(s, uid) != null) return null;
-  final qty = distillQty(s, c.level, data);
+  final qty = distillQty(s, c.level, data, hidden: c.hidden);
   s.removeCreature(uid);
   // A Brilhante rende Essência prismática; a variante de bioma, Essência com o traço do bioma; as outras, a do tipo.
   final id = c.shiny ? 'item.essence.prismatic' : (c.variant != null ? 'item.essence.trait.${c.variant}' : 'item.essence.${species.type.name}');

@@ -32,12 +32,12 @@ Map<String, List<int>> realAssets({Uint8List? bin}) => {
       'assets/regions/campinas_e11.bin': bin ?? File('assets/regions/campinas_e11.bin').readAsBytesSync(),
     };
 
-Future<void> pumpMap(WidgetTester tester, {Map<String, List<int>>? assets, double lat = -22.8174, double lon = -47.0697}) async {
+Future<void> pumpMap(WidgetTester tester, {Map<String, List<int>>? assets, double lat = -22.8174, double lon = -47.0697, int? nowUtc}) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 2.625;
   addTearDown(tester.view.reset);
   addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
-  await tester.pumpWidget(MaterialApp(home: MapScreen(lat: lat, lon: lon, bundle: _Bundle(assets ?? realAssets()))));
+  await tester.pumpWidget(MaterialApp(home: MapScreen(lat: lat, lon: lon, nowUtc: nowUtc, bundle: _Bundle(assets ?? realAssets()))));
   for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pump();
@@ -194,7 +194,8 @@ void main() {
 
   testWidgets('pacote adulterado: mostra o erro claro com os hashes, sem derrubar o app, e o botão volta', (tester) async {
     final bad = Uint8List.fromList(File('assets/regions/campinas_e0.bin').readAsBytesSync())..[2000] ^= 0xff;
-    await pumpMap(tester, assets: realAssets(bin: bad));
+    // Um instante da época 10, a última com o campinas_e0.bin (da 11 em diante vale o campinas_e11.bin).
+    await pumpMap(tester, assets: realAssets(bin: bad), nowUtc: DateTime.utc(2026, 11, 1).millisecondsSinceEpoch ~/ 1000);
     expect(find.text('MAPA INDISPONÍVEL'), findsOneWidget);
     final message = tester.widgetList<Text>(find.byType(Text)).map((w) => w.data ?? '').firstWhere((t) => t.contains('SHA-256 esperado'));
     expect(message, contains('campinas_e0.bin'));

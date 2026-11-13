@@ -15,3 +15,7 @@
   numa `GameSession`, viu e capturou Ecos (comum, variante Urbana e Brilhante), viu um Espírito, pôs Fagulhas de Fogo e
   de Água na Bolsa e gravou. É a base de `test/save/migration_v7_test.dart` (o bestiário ganha as contagens da pesquisa
   e as Fagulhas).
+- `save_v7_0200.json`: save do schema 7 gravado pelo código real da 0.20.0 (commit a70e6f7, build 0.20.0+32), do mesmo
+  jeito: `git archive a70e6f7 app shared` numa pasta temporária, e lá um teste descartável abriu `save_v6_0191.json`
+  numa `GameSession`, capturou um Humoth, viu um Umbrel à noite, marcou o Umbrel no Bestiário (`bestiary_pin`) e gravou.
+  É a base de `test/save/migration_v8_test.dart` (a marca única vira a lista `bestiary_pins`).

@@ -189,13 +189,17 @@ void main() {
     });
   });
 
-  test('marcar uma forma como alvo: uma só, e marcar de novo desmarca', () {
-    final s = state()..togglePin('hum.eco');
-    expect(s.pinnedSpecies, 'hum.eco');
-    s.togglePin('clod.eco');
-    expect(s.pinnedSpecies, 'clod.eco');
-    expect(GameState.fromJson(s.toJson(t), data.progress).pinnedSpecies, 'clod.eco');
-    s.togglePin('clod.eco');
-    expect(s.pinnedSpecies, isNull);
+  test('marcar formas: até 3, a quarta é recusada, marcar de novo desmarca, e vai para o save', () {
+    final s = state();
+    for (final id in ['hum.eco', 'clod.eco', 'wisp.eco']) {
+      expect(s.togglePin(id), isTrue);
+    }
+    expect(s.togglePin('bit.eco'), isFalse);
+    expect(s.pins, ['hum.eco', 'clod.eco', 'wisp.eco']);
+    expect(GameState.fromJson(s.toJson(t), data.progress).pins, ['hum.eco', 'clod.eco', 'wisp.eco']);
+    expect(s.togglePin('clod.eco'), isTrue);
+    expect(s.pins, ['hum.eco', 'wisp.eco']);
+    expect(s.togglePin('bit.eco'), isTrue);
+    expect(s.isPinned('bit.eco'), isTrue);
   });
 }

@@ -18,13 +18,22 @@ void main() {
 
   test('o texto da Habilidade traz o efeito da faixa por extenso', () {
     String text(String id, int level) => attributesOf(c(id, level), data).ability!;
-    expect(text('soot.eco', 4), 'Aura +3 m (faixa 1 de 3: níveis 1 a 9)');
-    expect(text('soot.eco', 10), 'Aura +5 m (faixa 2 de 3: níveis 10 a 19)');
-    expect(text('soot.eco', 20), 'Aura +8 m (faixa 3 de 3: nível 20)');
-    expect(text('soot.spirit', 10), 'Aura +8 m (faixa 2 de 3: níveis 10 a 19)', reason: 'um degrau acima do Eco');
-    expect(text('soot.spirit', 27), 'Aura +11 m (faixa 3 de 3: a partir do nível 20)');
-    expect(text('frond.eco', 1), startsWith('Coleta de Fagulhas e materiais +'));
-    expect(text('rill.eco', 1), startsWith('Radar alcança '));
+    expect(text('soot.eco', 4), 'A Aura pega Fagulhas e materiais 3 m mais longe. Faixa 1 de 3 (níveis 1 a 9). Próxima, no nível 10: Aura +5 m.');
+    expect(text('soot.eco', 10), 'A Aura pega Fagulhas e materiais 5 m mais longe. Faixa 2 de 3 (níveis 10 a 19). Próxima, no nível 20: Aura +8 m.');
+    expect(text('soot.eco', 20), 'A Aura pega Fagulhas e materiais 8 m mais longe. Faixa 3 de 3 (nível 20). É a última faixa.');
+    expect(text('soot.spirit', 10), startsWith('A Aura pega Fagulhas e materiais 8 m'), reason: 'um degrau acima do Eco');
+    expect(text('soot.spirit', 27), 'A Aura pega Fagulhas e materiais 11 m mais longe. Faixa 3 de 3 (a partir do nível 20). É a última faixa.');
+    expect(text('frond.eco', 1), startsWith('Coleta Fagulhas e materiais 3 m mais longe.'));
+    expect(text('rill.eco', 1), startsWith('Na chuva, 1 poça a mais'));
+    // Nenhuma habilidade de mapa fica sem texto por extenso nem diz "em breve".
+    for (final sp in data.tuning.species.where((s) => s.ability != null)) {
+      for (final lv in [1, 10, 20]) {
+        final t = text(sp.id, lv);
+        expect(t, isNot(contains('em breve')), reason: sp.id);
+        expect(t, isNot(startsWith(sp.ability!.kind)), reason: '${sp.id}: sem texto para ${sp.ability!.kind}');
+        expect(t, contains('Faixa ${lv < 10 ? 1 : (lv < 20 ? 2 : 3)} de 3'), reason: '${sp.id} nv $lv');
+      }
+    }
   });
 
   test('Traços: Eco 1/1 pela variante ou pelo Brilhante, comum 0/1', () {

@@ -12,13 +12,16 @@ import 'spawn_field.dart';
 /// Uma marca da borda: a direção no mundo ([angle], radianos, x leste e y sul como `atan2(dy, dx)`; a tela soma a rotação
 /// do mapa), se é distorção ou Brilhante e a opacidade de 0 a 1 (some nos últimos segundos).
 class EdgeMark {
-  const EdgeMark({required this.uid, required this.angle, required this.alpha, this.distortion = false, this.shiny = false});
+  const EdgeMark({required this.uid, required this.angle, required this.alpha, this.distortion = false, this.shiny = false, this.pinned = false});
 
   final int uid;
   final double angle;
   final double alpha;
   final bool distortion;
   final bool shiny;
+
+  /// Espécie marcada no Bestiário fora da tela, dentro do alcance do Radar: fica enquanto ela estiver lá, sem pulso.
+  final bool pinned;
 }
 
 /// As marcas em [nowUtc] do pulso de [pulseUtc] (`null`: nenhum pulso): uma por achado de [finds] que a onda já alcançou

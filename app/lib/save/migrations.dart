@@ -6,7 +6,7 @@ import '../player/game_state.dart' show kVisitedCellsKey, saveSchemaVersion;
 
 typedef _Step = Map<String, dynamic> Function(Map<String, dynamic>);
 
-final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7};
+final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8};
 
 /// Leva [json] ao schema atual. Um save de versão futura passa sem mudar.
 Map<String, dynamic> migrateSave(Map<String, dynamic> json) {
@@ -122,5 +122,14 @@ Map<String, dynamic> _v6ToV7(Map<String, dynamic> j) {
           ? {...e.value as Map<String, dynamic>, 'captures': (owned[e.key] ?? 0) < 1 ? 1 : owned[e.key]}
           : e.value,
   };
+  return out;
+}
+
+/// v7 guardava uma forma marcada no Bestiário (`bestiary_pin`). A 0.20.1 marca até 3 (`bestiary_pins`). As builds da camada
+/// pessoal e a origem dos spawns são campos novos, opcionais: ficam vazios. O resto passa intacto.
+Map<String, dynamic> _v7ToV8(Map<String, dynamic> j) {
+  final out = {...j};
+  final pin = out.remove('bestiary_pin');
+  if (pin is String) out['bestiary_pins'] = [pin];
   return out;
 }

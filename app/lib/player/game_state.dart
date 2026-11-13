@@ -14,13 +14,14 @@ import 'bestiary.dart';
 import 'conjurer.dart';
 import 'conjurer_balance.dart';
 import 'mark.dart';
+import 'personal_build.dart';
 import 'progress_balance.dart';
 import 'progression.dart';
 
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 7;
+const int saveSchemaVersion = 8;
 
 /// A chave das células z17 visitadas no save (schema 6).
 const String kVisitedCellsKey = 'celulas_visitadas';
@@ -37,11 +38,13 @@ class CreatureInstance {
     this.shiny = false,
     this.traits = const [],
     this.debug = false,
+    this.personal = false,
+    this.hidden = false,
   });
 
   /// Cópia com [level] e [xp] novos.
-  CreatureInstance advanced({required int level, required int xp}) =>
-      CreatureInstance(uid: uid, speciesId: speciesId, level: level, capturedUtc: capturedUtc, xp: xp, variant: variant, shiny: shiny, traits: traits, debug: debug);
+  CreatureInstance advanced({required int level, required int xp}) => CreatureInstance(
+      uid: uid, speciesId: speciesId, level: level, capturedUtc: capturedUtc, xp: xp, variant: variant, shiny: shiny, traits: traits, debug: debug, personal: personal, hidden: hidden);
 
   factory CreatureInstance.fromJson(Map<String, dynamic> j) => CreatureInstance(
         uid: j['uid'] as String,
@@ -53,6 +56,8 @@ class CreatureInstance {
         shiny: (j['shiny'] as bool?) ?? false,
         traits: [for (final t in (j['traits'] as List<dynamic>?) ?? const []) t as String],
         debug: (j['debug'] as bool?) ?? false,
+        personal: (j['personal'] as bool?) ?? false,
+        hidden: (j['hidden'] as bool?) ?? false,
       );
 
   /// Uid do spawn, em texto (o inteiro de 64 bits com sinal, em decimal).
@@ -72,6 +77,11 @@ class CreatureInstance {
   /// Nasceu pelo "Criar criatura" do menu de debug: não conta para o bestiário nem para as estatísticas.
   final bool debug;
 
+  /// De onde o Eco veio: da camada pessoal de spawn (só deste jogador) e se era Oculto. O Bit rende Essência a mais na
+  /// destilação dos que eram Ocultos.
+  final bool personal;
+  final bool hidden;
+
   Map<String, dynamic> toJson() => {
         'uid': uid,
         'species': speciesId,
@@ -82,6 +92,8 @@ class CreatureInstance {
         if (shiny) 'shiny': true,
         if (traits.isNotEmpty) 'traits': traits,
         if (debug) 'debug': true,
+        if (personal) 'personal': true,
+        if (hidden) 'hidden': true,
       };
 }
 
@@ -106,7 +118,8 @@ class GameState extends ChangeNotifier {
     Map<String, int>? hiddenRevealed,
     Map<String, dynamic>? settings,
     this.lastSeenUtc = 0,
-    this.pinnedSpecies,
+    List<String>? pins,
+    List<BuildEntry>? builds,
     Map<String, dynamic>? extra,
   })  : inventory = {...?inventory},
         collection = [...?collection],
@@ -120,6 +133,8 @@ class GameState extends ChangeNotifier {
         _visited = {...?visitedCells},
         conjurer = conjurer ?? ConjurerState(),
         hiddenRevealed = {...?hiddenRevealed},
+        pins = [...?pins],
+        builds = [...?builds],
         _extra = {...?extra};
 
   /// Jogo novo: seed nova e o inventário inicial do `balance.json`.
@@ -128,7 +143,7 @@ class GameState extends ChangeNotifier {
 
   factory GameState.fromJson(Map<String, dynamic> j, ProgressBalance balance) {
     const known = {
-      'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'bestiary_pin', 'marks', 'saved_utc',
+      'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'bestiary_pins', 'personal_builds', 'marks', 'saved_utc',
       'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', kVisitedCellsKey, 'radar', 'conjurer',
     };
     final progress = PlayerProgress.fromJson(j['player'] as Map<String, dynamic>?, balance)..settleBanked();
@@ -145,7 +160,8 @@ class GameState extends ChangeNotifier {
         for (final e in ((j['bestiary'] as Map<String, dynamic>?) ?? const {}).entries) e.key: BestiaryEntry.fromJson(e.value as Map<String, dynamic>),
       },
       marks: [for (final m in (j['marks'] as List<dynamic>?) ?? const []) Mark.fromJson(m as Map<String, dynamic>)],
-      pinnedSpecies: j['bestiary_pin'] as String?,
+      pins: [for (final p in (j['bestiary_pins'] as List<dynamic>?) ?? const []) p as String],
+      builds: [for (final b in (j['personal_builds'] as List<dynamic>?) ?? const []) BuildEntry.fromJson(b as Map<String, dynamic>)],
       founder: j['founder'] == null ? null : Founder.fromJson(j['founder'] as Map<String, dynamic>),
       createdUtc: j['created_utc'] as int?,
       story: StoryState.fromJson(j['story'] as Map<String, dynamic>?),
@@ -211,14 +227,25 @@ class GameState extends ChangeNotifier {
   final List<String> circle;
   final Map<String, BestiaryEntry> bestiary;
 
-  /// A forma marcada no Bestiário como alvo de pesquisa (o id da espécie ou da Fagulha), ou `null`.
-  String? pinnedSpecies;
+  /// As formas marcadas no Bestiário (ids de espécie ou de Fagulha), até [maxPins]. As espécies marcadas aparecem com
+  /// destaque no mapa e no Radar dentro do alcance dele, e a Patrulha avisa.
+  final List<String> pins;
+  static const int maxPins = 3;
 
-  /// Marca ou desmarca [id] como alvo de pesquisa.
-  void togglePin(String id) {
-    pinnedSpecies = pinnedSpecies == id ? null : id;
+  bool isPinned(String id) => pins.contains(id);
+
+  /// Marca ou desmarca [id]. `false` se já há [maxPins] marcadas (nada muda).
+  bool togglePin(String id) {
+    if (!pins.remove(id)) {
+      if (pins.length >= maxPins) return false;
+      pins.add(id);
+    }
     notifyListeners();
+    return true;
   }
+
+  /// As builds do jogador pelo tempo, para a camada pessoal de spawn (`personal_build.dart`).
+  final List<BuildEntry> builds;
 
   final List<Mark> marks;
 
@@ -491,8 +518,19 @@ class GameState extends ChangeNotifier {
 
   /// A criatura entra na coleção e no bestiário, e o spawn some do registro de vivos.
   /// Com [debug] (criatura do "Criar criatura"), entra na coleção marcada e não toca no bestiário.
-  CreatureInstance capture({required int uid, required String speciesId, required int level, required int nowUtc, String? variant, bool shiny = false, bool debug = false, String? biome}) {
-    final c = CreatureInstance(uid: uidKey(uid), speciesId: speciesId, level: level, capturedUtc: nowUtc, variant: variant, shiny: shiny, debug: debug);
+  CreatureInstance capture({
+    required int uid,
+    required String speciesId,
+    required int level,
+    required int nowUtc,
+    String? variant,
+    bool shiny = false,
+    bool debug = false,
+    String? biome,
+    bool personal = false,
+    bool hidden = false,
+  }) {
+    final c = CreatureInstance(uid: uidKey(uid), speciesId: speciesId, level: level, capturedUtc: nowUtc, variant: variant, shiny: shiny, debug: debug, personal: personal, hidden: hidden);
     collection.add(c);
     for (final k in debug ? const <String>[] : bestiaryKeys(speciesId, variant: variant, shiny: shiny)) {
       final e = bestiary[k] ?? const BestiaryEntry();
@@ -600,7 +638,8 @@ class GameState extends ChangeNotifier {
         'collected': _collected,
         'circle': circle,
         'bestiary': {for (final e in bestiary.entries) e.key: e.value.toJson()},
-        if (pinnedSpecies != null) 'bestiary_pin': pinnedSpecies,
+        if (pins.isNotEmpty) 'bestiary_pins': pins,
+        if (builds.isNotEmpty) 'personal_builds': [for (final b in builds) b.toJson()],
         'marks': [for (final m in marks) m.toJson()],
       };
 }

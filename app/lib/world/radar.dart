@@ -112,7 +112,7 @@ double arcWidthRad(double distanceM, StreetLifeBalance b) {
 /// Um eco do sonar: um arco (rastro) ou uma distorção (Oculto), visto do jogador agora. [angleRad] é a direção no mundo
 /// (x leste, y sul, como `atan2(dy, dx)`); a tela soma a rotação do mapa.
 class SonarEcho {
-  const SonarEcho({required this.uid, required this.angleRad, required this.widthRad, required this.distanceM, this.typeId, this.shiny = false, this.distortion = false});
+  const SonarEcho({required this.uid, required this.angleRad, required this.widthRad, required this.distanceM, this.typeId, this.shiny = false, this.distortion = false, this.pinned = false});
 
   final int uid;
   final double angleRad;
@@ -125,6 +125,9 @@ class SonarEcho {
   final String? typeId;
   final bool shiny;
   final bool distortion;
+
+  /// Espécie marcada no Bestiário: aparece sem pulso, no ponto certo.
+  final bool pinned;
 }
 
 /// O arco do rastro [t] com o jogador em ([playerX], [playerY]) e o Eco em ([ecoX], [ecoY]) (células z21). O centro é a

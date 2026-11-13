@@ -47,7 +47,7 @@ class SpeciesLore {
 
 /// Uma família: a linha Fagulha, Eco, Espírito.
 class FamilyDef {
-  const FamilyDef({required this.id, required this.name, required this.type, required this.sparkItem, required this.sparkName, required this.sparkAbout, required this.where, this.minLevel = 0});
+  const FamilyDef({required this.id, required this.name, required this.type, required this.sparkItem, required this.sparkName, required this.sparkAbout, required this.where, this.minLevel = 0, this.workTitle = '', this.workAbout = ''});
 
   factory FamilyDef.fromJson(Map<String, dynamic> j) {
     final spark = j['spark'] as Map<String, dynamic>;
@@ -60,6 +60,8 @@ class FamilyDef {
       sparkAbout: spark['about'] as String,
       where: {for (final e in (j['where'] as Map<String, dynamic>).entries) e.key: e.value as String},
       minLevel: (j['min_level'] as int?) ?? 0,
+      workTitle: ((j['work'] as Map<String, dynamic>?)?['title'] as String?) ?? '',
+      workAbout: ((j['work'] as Map<String, dynamic>?)?['about'] as String?) ?? '',
     );
   }
 
@@ -69,6 +71,9 @@ class FamilyDef {
   /// Onde aparece, para a tela: `biome`, `hour`, `climate`, `moon` e, em algumas, `place`.
   final Map<String, String> where;
   final int minLevel;
+
+  /// O trabalho da família na Casa (GDD, "Trabalho das criaturas"): só texto até a casa entrar, na fase 2.
+  final String workTitle, workAbout;
 
   String get ecoId => '$id.eco';
   String get spiritId => '$id.spirit';

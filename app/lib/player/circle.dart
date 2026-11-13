@@ -16,7 +16,7 @@ const int circleSlots = 3;
 
 /// O efeito somado do Círculo no mapa. Habilidades iguais não se somam: vale a maior.
 class MapAbilities {
-  const MapAbilities({this.auraBonusM = 0, this.pickupBonusM = 0, this.trackerRangeM = 0, this.values = const {}});
+  const MapAbilities({this.auraBonusM = 0, this.pickupBonusM = 0, this.values = const {}});
 
   static const none = MapAbilities();
 
@@ -26,32 +26,46 @@ class MapAbilities {
   /// Metros a mais no alcance de coleta de Fagulhas e materiais.
   final double pickupBonusM;
 
-  /// Alcance do rastreador (absoluto: o rastreador usa o maior entre ele e o padrão). 0 se nenhum Rillet.
-  final double trackerRangeM;
-
-  /// O maior valor de cada habilidade do Círculo, pela chave do dado (`radar_range_bonus_m`, `seal_save_pct`...).
+  /// O maior valor de cada habilidade do Círculo, pela chave do dado (`seal_save_pct`, `night_eco_pct`...).
   final Map<String, double> values;
 
   /// O valor da habilidade [kind] no Círculo, ou 0.
   double of(String kind) => values[kind] ?? 0;
 }
 
-/// O texto curto de uma habilidade de mapa com o valor [v] ("Aura +5 m"). As que ainda não têm efeito no jogo levam
-/// "(em breve)": o dado e a faixa já existem, a regra entra numa versão seguinte.
+/// O texto curto de uma habilidade de mapa com o valor [v] ("Aura +5 m").
 String abilityLabel(String kind, int v) => switch (kind) {
       'aura_bonus_m' => 'Aura +$v m',
       'spark_pickup_bonus_m' => 'Coleta +$v m',
-      'tracker_range_m' => 'Radar $v m',
-      'radar_range_bonus_m' => 'Radar +$v m',
-      'seal_save_pct' => '$v% de não gastar o selo na falha',
+      'rain_puddles' => 'Chuva: +$v poças',
+      'storm_night_eco_pct' => 'Elétricos nos postes $v%',
+      'extra_material_pct' => 'Material extra $v%',
+      'seal_save_pct' => 'Selo salvo na falha $v%',
       'day_tolerance_pct' => 'Tolerância de dia +$v%',
+      'night_eco_pct' => 'Eco nas marquises $v%',
+      'fog_eco_pct' => 'Espectrais na neblina $v%',
+      'hidden_chance_pct' => 'Oculto +$v%',
+      'variant_chance_pct' => 'Variante +$v%',
       'distill_bonus' => 'Essência na destilação +$v',
-      'extra_material_pct' => 'Material extra +$v% (em breve)',
-      'night_view_bonus_m' => 'Visão à noite +$v m (em breve)',
-      'fog_view_bonus_m' => 'Visão na neblina +$v m (em breve)',
-      'radar_hidden_m' => 'Radar revela Ocultos a $v m (em breve)',
-      'variant_chance_pct' => 'Variante +$v% (em breve)',
       _ => '$kind $v',
+    };
+
+/// O efeito por extenso de uma habilidade de mapa com o valor [v]. "Só para você": vem da camada pessoal de spawn, que
+/// acrescenta ao mundo de todos sem tirar nada dele.
+String abilityEffect(String kind, int v) => switch (kind) {
+      'aura_bonus_m' => 'A Aura pega Fagulhas e materiais $v m mais longe.',
+      'spark_pickup_bonus_m' => 'Coleta Fagulhas e materiais $v m mais longe.',
+      'rain_puddles' => 'Na chuva, $v ${v == 1 ? 'poça' : 'poças'} a mais a cada área de uns 300 m, só para você; cada uma pode ter um Eco de Água.',
+      'storm_night_eco_pct' => 'À noite e na tempestade, $v% de chance de um Eco Elétrico a mais junto de cada poste (semáforos e pontos de ônibus), só para você.',
+      'extra_material_pct' => '$v% de chance de levar uma unidade a mais de cada material coletado.',
+      'seal_save_pct' => '$v% de chance de não gastar o selo quando a sintonia falha.',
+      'day_tolerance_pct' => 'De dia, a tolerância da sintonia fica $v% maior.',
+      'night_eco_pct' => 'À noite, $v% de chance de um Eco a mais sob as marquises (comércio, bares e restaurantes), só para você.',
+      'fog_eco_pct' => 'Na neblina e no Sagrado, $v% de chance de um Eco Espectral a mais em cada trecho de rua, só para você. Os rastros do Radar duram mais.',
+      'hidden_chance_pct' => 'Os Ecos que só você vê têm $v% a mais de chance de ser Ocultos. Destilar um Eco que era Oculto rende Essência a mais.',
+      'variant_chance_pct' => 'Os Ecos que só você vê têm $v% a mais de chance de ser variante.',
+      'distill_bonus' => 'Destilar um Eco rende $v de Essência a mais.',
+      _ => abilityLabel(kind, v),
     };
 
 /// A faixa (0, 1 ou 2) do nível [level]: a primeira cujo intervalo o contém.
@@ -64,7 +78,7 @@ int abilityBandIndex(int level, List<(int, int)> bands) {
 
 /// Habilidades de mapa dos membros do Círculo.
 MapAbilities circleAbilities(List<({EcoSpecies species, int level})> members, List<(int, int)> bands) {
-  var aura = 0.0, pickup = 0.0, tracker = 0.0;
+  var aura = 0.0, pickup = 0.0;
   final values = <String, double>{};
   for (final m in members) {
     final a = m.species.ability;
@@ -76,11 +90,9 @@ MapAbilities circleAbilities(List<({EcoSpecies species, int level})> members, Li
         aura = math.max(aura, v);
       case 'spark_pickup_bonus_m':
         pickup = math.max(pickup, v);
-      case 'tracker_range_m':
-        tracker = math.max(tracker, v);
     }
   }
-  return MapAbilities(auraBonusM: aura, pickupBonusM: pickup, trackerRangeM: tracker, values: values);
+  return MapAbilities(auraBonusM: aura, pickupBonusM: pickup, values: values);
 }
 
 /// O Rustling no Círculo: na sintonia falha do Eco [uid] em [nowUtc], o selo não é gasto com [pct] por cento de chance.

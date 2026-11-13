@@ -2,6 +2,7 @@
 /// JSONs de `assets/data/`. A sintonia usa [tuning].
 library;
 
+import '../world/personal_layer.dart' show PersonalBalance;
 import '../player/bestiary.dart';
 import '../player/research.dart';
 import 'dart:convert';
@@ -74,6 +75,7 @@ class GameData {
     RitualBook? ritual,
     this.climates = const ClimateCatalog(),
     this.climateBalance = const ClimateBalance(),
+    this.personal = const PersonalBalance(),
   })  : ritual = ritual ?? RitualBook(balance: RitualBalance(const {})),
         ridePatterns = ridePatterns ?? RidePatterns.none();
 
@@ -121,6 +123,7 @@ class GameData {
         steps: StepsBalance.fromJson(balance),
         travel: TravelBalance(balance),
         patrol: PatrolBalance(balance),
+        personal: PersonalBalance.fromJson(balance['personal_layer'] as Map<String, dynamic>?),
         ridePatterns: ridePatterns == null ? null : RidePatterns.fromJson(ridePatterns),
         variants: {
           for (final e in ((creatures['variants'] as Map<String, dynamic>?) ?? const {}).entries)
@@ -195,6 +198,9 @@ class GameData {
   /// A Patrulha do Véu (`balance.json`, bloco `patrol`).
   final PatrolBalance patrol;
   final RidePatterns ridePatterns;
+
+  /// A camada pessoal de spawn (`balance.json`, bloco `personal_layer`).
+  final PersonalBalance personal;
 
   /// As variantes: `urban`, `green`, `water`, `residential` e `shiny`.
   final Map<String, VariantInfo> variants;

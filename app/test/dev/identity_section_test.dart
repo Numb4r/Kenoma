@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/player/game_state.dart' show saveSchemaVersion;
 import 'package:kenoma/dev/game_clock.dart';
 import 'package:kenoma/dev/identity_section.dart';
 import 'package:kenoma/player/game_session.dart';
@@ -19,13 +20,13 @@ void main() {
     }
     final r = IdentityReport.fromSave(store.json);
     expect(r.founder!.versionsSeen.map((e) => e.version), ['0.11.0+17', '0.12.0+18']);
-    expect((r.chainValid, r.savedEpoch, r.appVersion, r.schemaVersion), (true, 1, '0.12.0+18', 7));
+    expect((r.chainValid, r.savedEpoch, r.appVersion, r.schemaVersion), (true, 1, '0.12.0+18', saveSchemaVersion));
 
     final tampered = {...store.json!, 'founder': {...(store.json!['founder'] as Map<String, dynamic>), 'versions_seen': [(store.json!['founder'] as Map)['versions_seen'][1]]}};
     expect(IdentityReport.fromSave(tampered).chainValid, isFalse);
 
     final old = IdentityReport.fromSave({'schema_version': 1, 'group_code': 'AAAAA-BBBBB'});
-    expect((old.founder, old.chainValid, old.schemaVersion), (null, false, 7));
+    expect((old.founder, old.chainValid, old.schemaVersion), (null, false, saveSchemaVersion));
     expect(IdentityReport.fromSave(null).groupCode, isNull);
   });
 

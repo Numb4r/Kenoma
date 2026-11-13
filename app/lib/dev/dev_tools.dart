@@ -67,6 +67,30 @@ class DevTools extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _hidePersonal = false;
+
+  /// Esconde a camada pessoal de spawn (o que o Círculo acrescenta só para este jogador), para conferir o mundo base.
+  bool get hidePersonal => _hidePersonal;
+
+  void setHidePersonal(bool v) {
+    _hidePersonal = v;
+    notifyListeners();
+  }
+
+  List<String>? _testCircle;
+
+  /// Círculo de teste, só nesta sessão e só no mapa (as habilidades de mapa; o save não muda): as espécies, no nível 10.
+  /// `null`: o Círculo de verdade. Vazio: Círculo vazio.
+  List<String>? get testCircle => _testCircle;
+
+  void setTestCircle(List<String>? ids) {
+    _testCircle = ids == null ? null : [...ids.take(3)];
+    notifyListeners();
+  }
+
+  /// O que a camada pessoal acrescentou nesta sessão (quem monta o mapa do jogo preenche).
+  String Function()? personalStats;
+
   /// O que a simulação do tráfego diz de si (quem desenha o mapa do jogo preenche): agentes e custo do passo.
   String Function()? trafficStats;
 
@@ -119,7 +143,7 @@ class DevTools extends ChangeNotifier {
 
   /// Algo forçado está ativo: simulador, relógio, nível, pedidos de spawn, clima ou sobreposições. Liga a etiqueta DEBUG.
   bool get anyForcing =>
-      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || _showBiomeGrid || _showGrid20 || _showRadii || _showRelief || _showTraffic || _trafficDensity != null;
+      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || _hidePersonal || _testCircle != null || _showBiomeGrid || _showGrid20 || _showRadii || _showRelief || _showTraffic || _trafficDensity != null;
 
   Future<void> setUseSimulator(bool value) async {
     if (value == _useSimulator) return;

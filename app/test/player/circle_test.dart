@@ -38,7 +38,7 @@ void main() {
       final s = state();
       give(s, 'a', 'soot.eco', 5);
       expect(of(s).auraBonusM, 0);
-      expect(of(s).trackerRangeM, 0);
+      expect(of(s).values, isEmpty);
     });
 
     test('Sootling: Aura +3, +5, +8 m nas faixas 1–9, 10–19 e 20', () {
@@ -50,14 +50,14 @@ void main() {
       }
     });
 
-    test('Frondling: coleta +3, +5, +8 m; Rillet: rastreador 150, 170, 200 m', () {
+    test('Frondling: coleta +3, +5, +8 m; Rillet: poças a mais na chuva 1, 2, 3', () {
       final s = state();
       give(s, 'f', 'frond.eco', 10);
       give(s, 'r', 'rill.eco', 20);
       s.toggleCircle('f');
       s.toggleCircle('r');
       final a = of(s);
-      expect((a.pickupBonusM, a.trackerRangeM, a.auraBonusM), (5.0, 200.0, 0.0));
+      expect((a.pickupBonusM, a.of('rain_puddles'), a.auraBonusM), (5.0, 3.0, 0.0));
     });
 
     test('habilidades iguais não se somam: vale a maior', () {
@@ -79,7 +79,7 @@ void main() {
       expect(of(s).auraBonusM, 3);
       s.toggleCircle('a');
       s.toggleCircle('r');
-      expect((of(s).auraBonusM, of(s).trackerRangeM), (0.0, 150.0));
+      expect((of(s).auraBonusM, of(s).of('rain_puddles')), (0.0, 1.0));
     });
   });
 

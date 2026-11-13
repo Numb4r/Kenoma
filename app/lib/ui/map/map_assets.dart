@@ -16,9 +16,10 @@ import '../../core/epochs.dart';
 import '../../core/climate.dart' show ClimateEvent;
 import '../../world/climate_world.dart';
 import '../../data/game_data.dart';
-import '../../player/circle.dart' show abilitiesOf;
+import '../../player/circle.dart' show MapAbilities, abilitiesOf;
 import '../../player/game_state.dart';
 import '../../world/debug_force.dart';
+import '../../world/personal_layer.dart';
 import '../../world/spawn_field.dart';
 import '../../world/street_dirs.dart';
 import '../../world/walk_paths.dart';
@@ -151,32 +152,48 @@ WorldView worldViewFor({
   ClimateWorld? climate,
   DebugForce? force,
   void Function(String message)? onMessage,
-}) =>
-    WorldView(
-      field: SpawnField(
-        seed: state.seed,
-        schedule: data.schedule,
-        map: assets.map,
-        typeOf: (id) => data.species(id)?.type.name,
-        snapper: WalkPaths(assets.visual!, blocked: assets.noWalk),
-        weatherAt: weatherAt,
-        climate: climate ?? climateWorldFor(state: state, data: data, assets: assets),
-        levelCapOf: data.progress.levelCapFor,
-        relief: assets.relief,
-      ),
-      state: state,
-      street: data.street,
-      force: force,
-      typeOf: (id) => data.species(id)?.type.name,
-      auraM: assets.balance.auraM,
-      touchRangeM: assets.balance.touchRangeM,
-      viewM: assets.balance.viewM,
-      trackerM: assets.balance.trackerM,
-      abilities: () => abilitiesOf(state, data),
-      ritual: data.ritual,
-      itemName: data.itemName,
-      onMessage: onMessage,
-    );
+  bool Function()? personalHidden,
+  MapAbilities Function()? abilities,
+}) {
+  final cw = climate ?? climateWorldFor(state: state, data: data, assets: assets);
+  final field = SpawnField(
+    seed: state.seed,
+    schedule: data.schedule,
+    map: assets.map,
+    typeOf: (id) => data.species(id)?.type.name,
+    snapper: WalkPaths(assets.visual!, blocked: assets.noWalk),
+    weatherAt: weatherAt,
+    climate: cw,
+    levelCapOf: data.progress.levelCapFor,
+    relief: assets.relief,
+  );
+  // A camada pessoal: o que o Círculo acrescenta só para este jogador, por cima do mesmo mundo.
+  final personal = PersonalLayer(
+    field: field,
+    playerKey: playerKeyOf(state.founder?.playerId ?? state.groupCode),
+    builds: () => state.builds,
+    balance: data.personal,
+    points: assets.trafficPoints,
+    hidden: personalHidden ?? () => false,
+  );
+  cw.personalPuddles = personal.puddlesAt;
+  return WorldView(
+    field: field,
+    personal: personal,
+    state: state,
+    street: data.street,
+    force: force,
+    typeOf: (id) => data.species(id)?.type.name,
+    auraM: assets.balance.auraM,
+    touchRangeM: assets.balance.touchRangeM,
+    viewM: assets.balance.viewM,
+    trackerM: assets.balance.trackerM,
+    abilities: abilities ?? () => abilitiesOf(state, data),
+    ritual: data.ritual,
+    itemName: data.itemName,
+    onMessage: onMessage,
+  );
+}
 
 /// As funções do bloco com as regras do OSM ligadas.
 FallbackCodec fallbackCodec(Map<String, dynamic> biomesJson) {

@@ -525,7 +525,7 @@ class GameMapGame extends FlameGame {
         climateFx.paintSky(canvas, view, cam);
         _climate.paint(canvas, view, player: here ? center : null, sky: skyRects);
       },
-      if (wv != null && here && wv.pulse != null)
+      if (wv != null && here && (wv.pulse != null || wv.state.pins.isNotEmpty))
         MapLayer.hud: () {
           final off = ecoSizePx / 2;
           final marks = wv.edgeMarksAt(_exactUtc(), onScreen: (s) {
@@ -642,6 +642,7 @@ class GameMapGame extends FlameGame {
         typeOf: typeOf,
         inAura: w.canReach,
         marked: (s) => w.state.markOf(s.uid) != null,
+        pinned: w.isPinned,
         tintOf: variantTint,
         hopOf: (uid) => fx.hopOffset(uid, 8),
         appearOf: fx.appear,
