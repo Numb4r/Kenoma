@@ -631,6 +631,10 @@ GDD rev 350 (commit próprio). Versão 0.20.2+34, mesma chave de release. Save n
 
 Novos: `data/traffic_e12_test` (época 12, pontos iguais aos de antes mais os becos, a época escolhe o arquivo), grupo "pontos do OSM" em `net/region_manager_test` (com uma fixture assinada nova, `test/net/fixtures/region_traffic`, chave de teste descartada), Hum e Wisp por hora e Shade em becos em `world/personal_layer_test`.
 
-### No aparelho
+### No aparelho (2026-11-13, moto g54, APK 0.20.2+34 com a chave de release, instalado por cima da 0.20.1)
 
-Não conferido: o celular desconectou antes da instalação. Falta instalar a 0.20.2 e conferir, com o simulador: uma família nova nascendo, as ciclovias e a água no mapa, e as poças do Rill numa chuva.
+- **Instalação:** `adb install -r` por cima da 0.20.1+33; o save abriu igual (schema 8).
+- **Famílias novas nascendo** (época 11, simulador no Centro, Chuva forçada): um Eco de Terra nível 14 (o bicho de cascalho redondo) e outro de uma família nova, verde, nível 14.
+- **Ciclovias desenhadas:** a linha em ciano na margem da avenida, com os carros e os ônibus passando ao lado.
+- **Poças do Rill:** Círculo de teste com Rill e Hum, relógio de debug 34 min à frente (a troca vale na janela seguinte) e o clima a 60×. O contador do debug deu **18 poças da camada pessoal** na sessão, mas nenhuma caiu na tela em duas voltas de bicicleta simulada (são 2 por bloco de uns 300 m no nível 10, e a tela tem uns 50 m). **Não vi uma poça desenhada nem a água do relevo:** parei depois de duas tentativas, como pede o `CLAUDE.md`. Para conferir, falta um jeito de achar uma poça (por exemplo, uma marca de debug no mapa nas poças da camada pessoal).
+- O Hum não apareceu porque era dia (13h45 no relógio do jogo).
