@@ -1112,7 +1112,7 @@ A vara, a pá e o detector sobem pelas mesmas faixas, então cada metal novo mel
 
 ### Sítios
 
-A casa continua única. Com o nível, o jogador ancora sítios anexos em outras células reais que frequenta, cada um com função própria, tudo individual e offline.
+A casa continua única. Com o nível, o jogador ancora sítios anexos em outras células reais que frequenta, cada um com função própria, tudo individual e offline. Os sítios são um tipo de obra no mundo (ver Obras no mundo, logo abaixo).
 
 | Sítio | Função |
 | --- | --- |
@@ -1124,6 +1124,42 @@ A casa continua única. Com o nível, o jogador ancora sítios anexos em outras 
 Criaturas fora do Círculo trabalham nos sítios, como no Palworld. Cada família tem uma ou duas aptidões, como minerar, regar, acender, carregar, assombrar e pescar, o que dá uso a criaturas repetidas além da destilação. A produção acumula com o tempo, calculada ao abrir o app como os lures, e só é recolhida indo ao sítio.
 
 Figuras do fórum Limen passam a visitar a casa quando o jogador cumpre certas condições, como os NPCs do Terraria que se mudam quando há casa para eles. Cada uma traz ofertas e pedidos ligados a um ofício.
+
+### Obras no mundo
+
+O jogador muda o mundo construindo obras em lugares reais. Cada obra produz algo e, além disso, altera o entorno dela: o bioma, o clima, a luz, o tráfego e o que nasce em volta. Sítios, sentinelas do Tecnomante, armadilhas do Selador e altares permanentes passam a ser obras desse mesmo sistema.
+
+| Obra | Muda no mundo | Produz ou libera |
+| --- | --- | --- |
+| Horta ou estufa | o entorno vira Verde aos poucos, com canteiros e árvores no mapa; Planta e Feérico nascem ali | ervas, seiva, madeira |
+| Mina | boca de caverna e terra revirada; bioma de Terra num raio pequeno; veios que se esgotam e voltam | minérios e gemas da faixa do lugar |
+| Santuário | zona Sagrada onde não havia igreja nem cemitério; Espectrais nascem ali; a Exposição baixa | sal, cera, purificação de Corrompidas |
+| Represa ou cisterna | lagoa permanente, poças que não secam, Água o ano inteiro | água pura, aquário, pesca |
+| Ninho de dragão | cratera artificial que atrai Dracônicos | transmutação de materiais entre faixas |
+| Torre de nuvens | semeia chuva num raio por um tempo, gastando materiais | água de chuva engarrafada |
+| Forja ou fundição | coluna de fumaça visível de longe; o calor derrete a neve e esquenta o microclima; Fogo favorecido | refino e fundição |
+| Estação meteorológica | mostra o clima das próximas janelas com dias de antecedência e empurra o sorteio local para um clima nativo | previsão no app Céu |
+| Observatório | aumenta a chance de meteoro cair perto; Luz e Dracônicos à noite | previsão de chuvas de meteoros e eclipses, receitas astrais |
+| Toldo de sombra | sombra permanente; protege do sol forte; Sombra em dobro | tinta de Sombra |
+| Usina | acende o bairro à noite; Elétricos atraídos; energia para as obras no raio | energia |
+| Fábrica | smog local e caminhões fantasmas no tráfego; Metal e Elétrico em volta | selos e peças em lote |
+| Antena | estende o Radar na área, revela Ocultos e avisa quando algo raro nasce | componentes Digitais |
+| Farol do Véu | puxa Ecos de mais longe e aumenta a densidade no raio, mas chama Os Que Escutam e sobe a Exposição | densidade, por escolha e com risco |
+| Círculo de pedras | lugar fixo de ritual que fortalece a Ley que passa por ele | bônus nos rituais feitos ali |
+| Jardim do Véu | estica o crepúsculo localmente; mais variantes e Feéricos | pólen, qualidade na horta |
+
+Rede entre obras: obras ligadas por Ley Lines próprias se reforçam (uma horta perto de uma represa cresce mais rápido, uma fábrica perto de uma usina roda inteira), e a Ley que as liga vira uma corrente do Véu por onde as Fagulhas fluem, transformando a rota entre as obras no caminho de coleta do jogador.
+
+Regras:
+
+- Construir, manter e recolher exige ir até o lugar, o que cria a rotina de rodar pelas próprias obras.
+- A âncora da obra fica só em lugar público e caminhável (rua, praça, parque). O efeito alcança o entorno, mas o jogo nunca pede para entrar em terreno privado.
+- Cada obra tem raio (50 a 150 m), manutenção em material e criaturas trabalhando (ver Trabalho das criaturas) e um limite de quantidade que cresce com o nível.
+- A obra muda o mundo na camada pessoal; o mundo base continua igual para todos.
+- Amigos veem e sentem as obras compartilhadas por um código assinado (QR ou link), numa camada de grupo, sem servidor.
+- Fendas e invasões podem ameaçar obras, o que dá motivo para defendê-las.
+
+Fase 2, junto com a casa, começando por horta, mina, forja e observatório.
 
 ### Mecânicas de outros jogos
 
