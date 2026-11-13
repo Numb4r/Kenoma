@@ -66,7 +66,19 @@ Mesmo extrato da época 0 (MD5 `d4778499e2017add7ee7879dd3b64b3c`, conferido em 
 
 Na grade inteira: Vazio 53,6%, Verde 30,6%, Residencial 6,8%, Urbano 5,2% (era 7,1%), Iluminado 2,0%, Água 1,6%, Sagrado 0,1%. O pacote visual não muda (as ruas são as mesmas).
 
-**Fora desta época:** São Paulo segue com `sao_paulo_e5.bin` (sem Iluminado nem Sagrado) até um `sao_paulo_e11.bin` ser gerado e publicado no `regions.json` assinado; os blocos do fallback (Overpass) ignoram os biomas com `since_epoch` e seguem com os cinco de sempre em todas as épocas.
+**Fora desta época:** São Paulo segue com `sao_paulo_e5.bin` (sem Iluminado nem Sagrado) até o `sao_paulo_e11.bin` (abaixo) entrar numa época e no `regions.json` assinado; os blocos do fallback (Overpass) ignoram os biomas com `since_epoch` e seguem com os cinco de sempre em todas as épocas.
+
+### São Paulo com Iluminado e Sagrado (gerado em 2026-11-13, não publicado)
+
+Mesmo extrato (MD5 `d4778499e2017add7ee7879dd3b64b3c`, conferido de novo), mesma bbox da época 5. `build_region.py --region sao_paulo --epoch 11 --out-dir out/regions`, fora de `app/assets/`. O visual (`sao_paulo_e5_vis.bin`) e o de rota não mudam.
+
+| Arquivo | Bytes | SHA-256 |
+| --- | --- | --- |
+| `out/regions/sao_paulo_e11.bin` | 862.387 | `b59bff411f332636333408d5cd19c84aa9156b93901d23ab0dc3f6c000155050` |
+
+Na grade inteira (2739 × 4199 em z21): Vazio 45,4%, Verde 35,8%, Urbano 6,1%, Água 5,9%, Residencial 3,8%, Iluminado 2,7%, Sagrado 0,3%.
+
+**Para publicar** (nada disso foi feito): a época 11 já começou e não pode mudar, então o SHA entra em `region_packs.sao_paulo` de uma época nova (12, com início UTC e `valid_until_utc`, igual à 11 no resto); só então o arquivo vai para o `regions.json` assinado (`files.region` de São Paulo: `file`, `url`, `sha256`, `bytes`, `sig`), porque o app recusa a região se um arquivo de `files` não estiver em `epochs.json`. Quem ainda não tiver a época 12 continua com o `sao_paulo_e5.bin`.
 
 ## Arquivo de rota (0.17.0, fora das épocas)
 

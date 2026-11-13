@@ -546,3 +546,66 @@ Novos: `capture/type_patterns_test` (um por padrão), `capture/eco_type_test` (a
 - **Não conferido no aparelho:** as ciclovias desenhadas e a água em fundo no mapa (não capturei o mapa, que mostra o lugar real do jogador), e nenhuma das famílias novas nascendo no mundo (a época 11 começou às 16:00 UTC, depois da sessão).
 - Uma captura pegou um aviso de notificação de outro app por cima do Kenoma e foi apagada na hora; o script de captura agora descarta sozinho a captura que tiver um aviso por cima.
 - A tecla voltar do Android não sai da tela de sintonia aberta pelo debug (só o "<" e o botão Menu do resultado saem).
+
+## Fase 1 · fatia 8b · Camada pessoal de spawn e habilidades que mudam o jogo (0.20.1)
+
+GDD rev 342 no repositório: a rev 350 não veio anexada e as duas cópias em `~/Downloads` são mais antigas que a 342, então o commit "docs: GDD rev 350" não foi feito. Os textos de Trabalho e os números das habilidades abaixo saíram do pedido, não do GDD novo. Versão 0.20.1+33, mesma chave de release. Save no schema 8. Nenhuma época nova: nada aqui muda o mundo base.
+
+### Camada pessoal de spawn (`world/personal_layer.dart`)
+
+- **A base não muda.** `SpawnField`, `generateCell` e as épocas ficam como estavam: os mesmos Ecos, Fagulhas, materiais e poças para todos, com qualquer Círculo (teste com todas as habilidades no máximo, de dia, à noite, na tempestade, na neblina e na chuva).
+- **Por cima, só acréscimos:** Ecos (três vagas por célula z20 e janela: Hum, Shade, Wisp), poças do Rill, material a mais do Clod, chance de variante (Sprig) e de Oculto (Bit) nos Ecos da própria camada. Os uids são outros e nada da base sai.
+- **Estável:** os sorteios saem de `FNV(seed, player_id, época, célula, janela)` e sempre na mesma ordem, nasça algo ou não. A build só decide se cada vaga nasce e com que chance: a faixa maior de uma habilidade só acrescenta ao que a menor dava, e voltar a uma build dá o mesmo resultado. Decisão de implementação: a build não entra no hash (o pedido falava em "conta mais player_id e build"); assim trocar de build não sorteia de novo, que é o que a regra da janela seguinte protege.
+- **Troca de Círculo vale na janela seguinte** de cada célula: o save guarda as builds com o instante de início (`personal_builds`, as de mais de um dia saem) e cada célula usa a do começo da janela dela. A primeira build vale desde sempre.
+- **Postes e marquises** vêm dos pontos do OSM do tráfego (`campinas_e0_traffic.bin`, cenário, fora das épocas): semáforos e pontos de ônibus são postes; comércio, bares e restaurantes são marquises. Becos não estão no dado. Onde não há arquivo de pontos (São Paulo, fallback), Hum e Shade não acrescentam nada.
+- Números em `balance.json` `personal_layer` (noite com o sol abaixo de -6°, climas da tempestade e da neblina, o Sagrado, rastros do Wisp ×1,5, +2 de Essência do Bit) e as faixas em `creatures.json`.
+- **Marcados:** `WorldSpawn.personal`, e no save a criatura capturada e a marca guardam `personal` e `hidden`. No mapa são iguais aos outros.
+- **Debug** (Spawns, "Camada pessoal de spawn"): interruptor que esconde a camada (o mapa fica só com a base), o contador da sessão (Ecos, poças e materiais) e um Círculo de teste só no mapa (nível 10, sem mexer no save).
+
+### Habilidades de mapa (todas com efeito; nenhuma "em breve")
+
+| Família | Habilidade | Eco (faixas 1-9, 10-19, 20) | Espírito |
+| --- | --- | --- | --- |
+| Soot | Aura maior | 3, 5, 8 m | 5, 8, 11 m |
+| Frond | Coleta mais longe | 3, 5, 8 m | 5, 8, 11 m |
+| Rill | Na chuva, poças a mais por célula z17 (~300 m), com a chance de Eco de Água da poça | 1, 2, 3 | 2, 3, 4 |
+| Hum | À noite e na tempestade, Eco Elétrico a mais junto do poste | 10, 15, 20% | 15, 20, 25% |
+| Clod | Uma unidade a mais do material coletado | 5, 10, 15% | 10, 15, 20% |
+| Rust | Não gastar o selo na falha | 5, 10, 15% | 10, 15, 20% |
+| Glare | Tolerância de dia | 3, 5, 8% | 5, 8, 11% |
+| Shade | À noite, um Eco a mais sob a marquise (da tabela do bioma) | 10, 15, 20% | 15, 20, 25% |
+| Wisp | Na neblina e no Sagrado, Eco Espectral a mais; rastros do Radar ×1,5 | 10, 15, 20% | 15, 20, 25% |
+| Bit | Oculto a mais nos Ecos da camada pessoal; +2 Essência ao destilar um que era Oculto | +5, 10, 15% | +10, 15, 20% |
+| Sprig | Variante a mais nos Ecos da camada pessoal | +5, 10, 15% | +10, 15, 20% |
+| Wyrm | Essência na destilação | +1, 1, 2 | +1, 2, 2 |
+
+O Rill perdeu o alcance do rastreador e o Hum o do Radar (o Radar volta a ser só o padrão). O efeito aparece por extenso, com a faixa atual e a próxima, na aba Atributos do Bestiário (a faixa da criatura da espécie de nível mais alto na coleção) e no Círculo (um parágrafo por membro).
+
+### Trabalho das criaturas
+
+Só texto, na aba Atributos: "Trabalho: forja e fornalha (em breve)" e uma frase, por família (`creatures.json`, `families[].work`). **Os textos são provisórios** (escritos a partir das estações e altares do GDD rev 342): trocar pelos do GDD rev 350 quando ele chegar.
+
+### Marcar
+
+Até 3 espécies marcadas no Bestiário (`bestiary_pins`; a quarta é recusada com aviso; "Desmarcar" no mesmo botão). A marca aparece no cartão da família e no detalhe. No mapa, os Ecos marcados ganham cantos e uma seta em ciano; os spawns passam a ser gerados até o alcance do Radar (250 m) quando há marcadas, mas só as marcadas aparecem além da visão. Fora da tela, uma seta fica na borda apontando para elas, sem precisar de pulso. No Radar, um losango no ponto certo, também sem pulso. Na Patrulha, cada Eco marcado que entra no alcance do Radar dá um aviso ("Marcada no Bestiário: Humoth a 180 m, na R. ...") e a vibração de raro, uma vez por Eco. Os Ocultos marcados só aparecem depois de revelados.
+
+### São Paulo
+
+`sao_paulo_e11.bin` gerado com Iluminado (2,7%) e Sagrado (0,3%), SHA no `pipeline/README.md`. **Não publicado e não listado em nenhuma época:** a época 11 já começou, então ele só pode entrar numa época 12, que pede autorização.
+
+### Save
+
+Schema 8 (`save/migrations.dart`): a marca única `bestiary_pin` vira a lista `bestiary_pins`; as builds e a origem dos spawns são campos novos e opcionais. Testado com um save gravado pelo código da 0.20.0 (`test/fixtures/save_v7_0200.json`).
+
+### Testes
+
+Novos: `world/personal_layer_test` (base idêntica com e sem build, poças do mundo iguais com e sem Rill, estabilidade por jogador, build e janela, troca de Círculo só na janela seguinte, cada habilidade nas três faixas com cada faixa contendo a anterior, o interruptor e o contador), `save/migration_v8_test`, o grupo das marcadas em `world/world_view_test` (mapa, Radar, borda) e em `patrol/patrol_engine_test` (aviso uma vez por Eco). O teste do pacote adulterado em `ui/map_screen_test` fixa um instante da época 10 (falhava desde que a 11 começou, por usar o relógio de verdade). `ui/game_map_screen_test` "um Eco oculto forçado..." falha de vez em quando também na 0.20.0 (depende do relógio de verdade): ficou como estava.
+
+### No aparelho (2026-11-13, moto g54, APK 0.20.1+33 com a chave de release, instalado por cima da 0.20.0)
+
+- **Instalação:** `adb install -r` por cima da 0.20.0+32. O save migrou para o schema 8 e a marca que já existia (Ember Mote) continuou marcada.
+- **Camada pessoal:** simulador no Centro, relógio de debug em 2026-11-14 01:30 UTC (22h30 locais), clima real (Vigília), Círculo de teste com Shade, Wisp e Sprig. O contador do debug deu 6 Ecos acrescentados na primeira passada (8 depois de reabrir o mapa). Na mesma célula, com o interruptor ligado, o Eco roxo do canto some e o verde (da base) fica no mesmo lugar.
+- **Marcar:** Sootling e Frondling marcados (com o Ember Mote, três: as três marcas aparecem nos cartões, e o botão vira "Desmarcar"). No Radar, dois losangos sem pulso, a uns 190 m e 250 m. No mapa, setas na borda para os de fora da tela; de bicicleta simulada até um deles, os cantos e a seta em ciano em volta do Sootling. As duas marcas de teste foram tiradas no fim.
+- **Círculo:** o parágrafo por membro, com a faixa atual e a próxima (Rillet, Frondling, Cinderkin do save real).
+- **Não conferido no aparelho:** o aviso da Patrulha (só em teste), as poças do Rill (não choveu, e não forcei chuva) e o Hum (não estava no Círculo de teste). Também não conferi as pendências do pedido: uma família nova nascendo no mundo, as ciclovias desenhadas e a água fora da thread de desenho no mapa.
+- O APK instalado ainda chama os chips do Círculo de teste de "Real" e "Vazio". Depois do build, eles viraram "Círculo real" e "Círculo vazio" por causa de um teste.
