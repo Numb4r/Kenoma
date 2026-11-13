@@ -32,6 +32,9 @@ Flutter stable, Dart 3, Flame no mapa e na sintonia, widgets no resto, Riverpod.
 - Sprite ausente vira placeholder gerado. Cores: Véu `#9b7bff`, sinal `#5fd3c6`, Essência `#ff7a45`, contorno `#1a1424` (nunca preto).
 
 ## Agentes
-- `testador`: depois de mudar código, e no fim do marco com screenshot. `conteudo`: lotes grandes nos JSONs de `app/assets/data/` (o hook dele recusa `epochs.json` e outras pastas). `revisor`: só no fim do marco, contra GDD, spec e marcos.
-- O que leva poucas chamadas não se delega; bugs difíceis ficam na thread principal. Nunca dois agentes no mesmo arquivo. Os agentes globais (`code-reviewer`, `tdd-guide` etc.) não se usam neste repo.
+Fluxo do conteúdo: `creative` propõe, a thread principal decide, `conteudo` grava.
+- `tester`: depois de mudar código, e no fim do marco com screenshot.
+- `creative`: toda decisão criativa (nomes, lore, criaturas, mecânicas, valores iniciais, textos de UI e diálogo, prompts de arte, direção visual e sonora). Decisões criativas não são tomadas na thread principal; sempre delegue ao agente creative com um briefing fechado e depois registre a escolha.
+- `conteudo`: toda gravação em `app/assets/data/`, com a decisão aprovada passada por inteiro. A thread principal não edita esses arquivos, exceto `epochs.json` e a cópia de `biomes.json` que o `sync_shared.sh` grava.
+- O resto fica na thread principal, inclusive bugs difíceis. Nunca dois agentes no mesmo arquivo. Os agentes globais (`code-reviewer`, `tdd-guide` etc.) não se usam neste repo.
 - Execução autônoma: screenshot só no fim de cada marco; depois de 2 tentativas falhas no mesmo critério, pare e reporte. O histórico fica nos commits: não escreva nem leia diário de bordo.
