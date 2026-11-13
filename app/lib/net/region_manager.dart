@@ -2,6 +2,7 @@
 /// no disco ao abrir o app. Qualquer falha deixa o jogador no fallback ou no piso, com um aviso curto. Nunca lança.
 library;
 
+import '../data/traffic_pack.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
@@ -38,6 +39,7 @@ typedef RegionConfirm = Future<bool> Function(RegionEntry region, int totalBytes
 Future<RegionOpen> _openInIsolate(String id, List<RegionFileJob> jobs, String key) => Isolate.run(() => openRegionFiles(id, jobs, publicKeyHex: key));
 
 Future<AccessPack?> _openAccessInIsolate(RegionFileJob job, String key) => Isolate.run(() => openAccessFile(job, publicKeyHex: key));
+Future<TrafficPack?> _openTrafficInIsolate(RegionFileJob job, String key) => Isolate.run(() => openTrafficFile(job, publicKeyHex: key));
 
 class RegionManager extends ChangeNotifier {
   RegionManager({
@@ -133,24 +135,32 @@ class RegionManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// O arquivo de rota de uma região já instalada: do disco ou baixado, conferido pelo catálogo assinado. Falha não avisa e
-  /// não mexe na região: a rota segue sem ele.
+  /// Os arquivos de `route_files` de uma região já instalada (rota e, da época 12 em diante, pontos do OSM): do disco ou
+  /// baixados, conferidos pelo catálogo assinado. Falha não avisa e não mexe na região: ela segue sem eles.
   Future<void> _routeFiles(RegionEntry r) async {
-    final f = r.routeFiles[kKindAccess];
-    if (f == null || !world.hasRegion(r.id) || world.hasAccess(r.id) || !_routeTried.add(r.id)) return;
+    await _routeFile<AccessPack>(r, kKindAccess, has: world.hasAccess, open: (j) => _openAccessInIsolate(j, publicKeyHex), set: (p) => world.setAccess(r.id, p));
+    // Os pontos só valem se a época vigente lista o mesmo arquivo, com o mesmo SHA-256.
+    final ref = epochRefOf(schedule.select(nowUtc()).epoch, r.id, kKindTraffic), f = r.routeFiles[kKindTraffic];
+    if (ref == null || f == null || ref.file != f.file || ref.sha256.toLowerCase() != f.sha256.toLowerCase()) return;
+    await _routeFile<TrafficPack>(r, kKindTraffic, has: world.hasTraffic, open: (j) => _openTrafficInIsolate(j, publicKeyHex), set: (p) => world.setTraffic(r.id, p));
+  }
+
+  Future<void> _routeFile<T>(RegionEntry r, String kind, {required bool Function(String id) has, required Future<T?> Function(RegionFileJob job) open, required void Function(T pack) set}) async {
+    final f = r.routeFiles[kind];
+    if (f == null || !world.hasRegion(r.id) || has(r.id) || !_routeTried.add('${r.id}/$kind')) return;
     try {
       await dir.create(recursive: true);
       final dest = _dest(f);
       final fresh = !await dest.exists();
       if (fresh) await _fetchPart(f, Uri.parse(baseUrl()).resolve(f.url));
       final path = fresh ? _part(f).path : dest.path;
-      final pack = await _openAccessInIsolate(RegionFileJob(kind: kKindAccess, path: path, sha256: f.sha256, sigHex: fresh ? f.sig : null), publicKeyHex);
+      final pack = await open(RegionFileJob(kind: kind, path: path, sha256: f.sha256, sigHex: fresh ? f.sig : null));
       if (pack == null) {
         await File(path).delete();
         return;
       }
       if (fresh) await _part(f).rename(dest.path);
-      world.setAccess(r.id, pack);
+      set(pack);
     } catch (_) {
       // sem rede: na próxima sessão
     }

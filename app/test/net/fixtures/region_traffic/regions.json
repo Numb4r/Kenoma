@@ -1,0 +1,55 @@
+{
+  "format": 1,
+  "regions": [
+    {
+      "id": "test_city",
+      "name": "Cidade Teste",
+      "bbox": [
+        -46.68,
+        -23.6,
+        -46.580000000000005,
+        -23.5
+      ],
+      "epoch": 5,
+      "files": {
+        "logic": {
+          "file": "test_e5.bin",
+          "url": "test_e5.bin",
+          "sha256": "a0543006cfbe5cb8359bad14e7d0d8064e32dbffa582490b07985686f07a669e",
+          "bytes": 62,
+          "sig": "4ad1dab6bf6f276fe5a515fdc7ccad716b160c4044f8ba8ae824842f23d26dd748b42d75a085866a3449d7f76246a7672784e51cd2bbdad443a7f84d4268f101"
+        },
+        "visual": {
+          "file": "test_e5_vis.bin",
+          "url": "test_e5_vis.bin",
+          "sha256": "d8878dd49113b7c0a660929bfa5d96b8e793607669ebb17f510bc632b051663e",
+          "bytes": 58,
+          "sig": "f0e9f44678a67bc88f6b578492ccfc522941c02d5c0e8d0d344c8926b11ade64077b7c67cc3564d2c2a952b3e394c84e537cf7ce68296238e5450c013852b100"
+        },
+        "nowalk": {
+          "file": "test_e5_nowalk.bin",
+          "url": "test_e5_nowalk.bin",
+          "sha256": "64bd37c491717f473a28047423e46b4326e76f10cdbf39bf0a547d2ad1da8165",
+          "bytes": 37,
+          "sig": "6d5183d52e13a95105318eb279ebfde89b58fa3bb566b2be0f218ad1574367bbea3d32ac79b4d516376b11f9841438e228f62d0a974f5fe9f11c21cd5dbb1e00"
+        }
+      },
+      "route_files": {
+        "access": {
+          "file": "test_e5_noaccess.bin",
+          "url": "test_e5_noaccess.bin",
+          "sha256": "3a8dc07a0d32256725904a41d9502bb01b084a53b4d9be02d637cd367551df8e",
+          "bytes": 38,
+          "sig": "25229f4cc372ca7c667274555504f163a85154eb23103e9aad8dccbfb70277dc6e99c4f8d1e9eccc91398d0e5c9be66b3e08818ff57d34cdfba487af4543840a"
+        },
+        "traffic": {
+          "file": "test_e12_traffic.bin",
+          "url": "test_e12_traffic.bin",
+          "sha256": "35f85d9954fcf3f0a3f9dc2502c8bcc5d1c1f5b3c1e12dfbf111ec689434a5c8",
+          "bytes": 44,
+          "sig": "d6be40bda3e05b1d5df3e79465d6ad4f93623e611806b940224dd35f71dafca4eb8da7ec99daba787c85c261ca3ba4ac16a8a64fdf5db51f8f0eeddc09d1ce00"
+        }
+      }
+    }
+  ]
+}

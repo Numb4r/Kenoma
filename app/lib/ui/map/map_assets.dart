@@ -301,9 +301,9 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
         relief = rp as ReliefPack?;
       }
       final access = await loadAccessPack(region: kRegion, bundle: assets);
-      trafficPoints = await loadTrafficPack(region: kRegion, bundle: assets);
+      trafficPoints = await loadTrafficPack(region: kRegion, epoch: loaded.epoch, bundle: assets);
       cycleways = await loadCyclePack(region: kRegion, bundle: assets);
-      world = LayeredWorld(regions: [LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk, access: access, relief: relief)], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
+      world = LayeredWorld(regions: [LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk, access: access, relief: relief, traffic: trafficPoints)], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
       visual = VisualMap(world);
     }
     final atlas = withAtlas ? await buildBiomeAtlas(biomes) : null;
@@ -318,7 +318,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       world: world,
       fallback: world == null ? null : MapFallbackBalance(balanceJson),
       codec: world == null ? null : fallbackCodec(biomesJson),
-      trafficPoints: trafficPoints,
+      trafficPoints: world ?? trafficPoints, // com as regiões baixadas: os pontos de cada uma
       cycleways: cycleways,
       relief: world ?? relief, // com as regiões baixadas: o relevo de cada uma
     );

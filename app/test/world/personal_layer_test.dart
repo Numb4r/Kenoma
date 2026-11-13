@@ -70,6 +70,9 @@ void main() {
       );
 
   List<WorldSpawn> all(PersonalLayer l, int t, {int level = 10}) => [for (final (cx, cy) in cells) ...l.cell(cx, cy, t, level)];
+  // Os blocos z17 (uns 300 m) que o quadrado de células toca: o Hum e o Wisp contam por bloco e por hora.
+  final blocks = {for (final (cx, cy) in cells) (cx >>> 3, cy >>> 3)}.toList();
+  List<WorldSpawn> hourly(PersonalLayer l, int t) => [for (final (bx, by) in blocks) ...l.block(bx, by, t, 10)];
   Set<int> uids(Iterable<WorldSpawn> s) => {for (final x in s) x.uid};
   List<int> bands(String id) => data.species(id)!.ability!.bands;
 
@@ -77,7 +80,7 @@ void main() {
     final p = data.personal;
     expect(p.nightSunDeg, -6);
     expect(p.poleKinds, {TrafficPointKind.signal, TrafficPointKind.busStop});
-    expect(p.marqueeKinds, {TrafficPointKind.shop, TrafficPointKind.bar});
+    expect(p.shadeKinds, {TrafficPointKind.shop, TrafficPointKind.bar, TrafficPointKind.alley});
     expect(p.fogClimates, contains('fog'));
     expect(p.fogBiomes, {'sacred'});
     expect(epochsJson().toString(), isNot(contains('personal_layer')));
@@ -97,7 +100,7 @@ void main() {
 
         final empty = view(const {})..refresh(lat: lat, lon: lon, tUtc: t);
         final full = view(const {
-          kRainPuddles: 4, kStormNightEco: 100, kNightEco: 100, kFogEco: 100, kHiddenChance: 20, kVariantChance: 20, kExtraMaterial: 20,
+          kRainPuddles: 4, kStormNightEco: 4, kNightEco: 100, kFogEco: 4, kHiddenChance: 20, kVariantChance: 20, kExtraMaterial: 20,
         })..refresh(lat: lat, lon: lon, tUtc: t);
         String key(WorldSpawn s) => '${s.uid}|${s.entryId}|${s.x}|${s.y}|${s.variant}|${s.shiny}|${s.behavior}|${s.level}';
         final base = {for (final s in empty.allEcos) key(s)};
@@ -189,43 +192,62 @@ void main() {
       }
     }
 
-    test('Hum: Elétricos nos postes à noite e na tempestade, nada de dia com tempo limpo nem sem poste', () {
+    test('Hum: na faixa N, N Elétricos por hora em cada bloco, nos postes, à noite e na tempestade; nada de dia limpo nem sem poste', () {
       final b = bands('hum.eco');
-      final sets = [for (final v in b) uids(all(layerOf({kStormNightEco: v.toDouble()}), night))];
+      expect(b, [1, 2, 3], reason: 'GDD rev 350: +1, +2 e +3 por hora');
+      final sets = [for (final v in b) uids(hourly(layerOf({kStormNightEco: v.toDouble()}), night))];
       growing('Hum', sets);
-      expect(sets.last.length / cells.length, closeTo(b.last / 100, 0.05));
-      final eco = all(layerOf({kStormNightEco: 100}), night);
+      for (var i = 0; i < b.length; i++) {
+        expect(sets[i].length, b[i] * blocks.length, reason: 'faixa ${i + 1}: ${b[i]} por bloco');
+      }
+      final eco = hourly(layerOf({kStormNightEco: 3}), night);
       expect(eco.every((s) => data.species(s.entryId)!.type.name == 'electric'), isTrue);
       expect(eco.every((s) => (s.x - 0.5) % 2 == 0 && (s.y - 0.5) % 2 == 0), isTrue, reason: 'no poste');
-      expect(all(layerOf({kStormNightEco: 100}, weather: 'storm'), day), isNotEmpty, reason: 'tempestade de dia');
-      expect(all(layerOf({kStormNightEco: 100}), day), isEmpty, reason: 'dia limpo');
-      expect(all(layerOf({kStormNightEco: 100}, pts: TrafficPack.of(const [])), night), isEmpty, reason: 'sem poste');
+      expect(hourly(layerOf({kStormNightEco: 3}, weather: 'storm'), day), isNotEmpty, reason: 'tempestade de dia');
+      expect(hourly(layerOf({kStormNightEco: 3}), day), isEmpty, reason: 'dia limpo');
+      expect(hourly(layerOf({kStormNightEco: 3}, pts: TrafficPack.of(const [])), night), isEmpty, reason: 'sem poste');
     });
 
-    test('Shade: um Eco sob as marquises à noite, nada de dia nem sem marquise', () {
+    test('Hum e Wisp: os da hora valem a hora inteira, e a hora seguinte sorteia de novo', () {
+      final l = layerOf({kStormNightEco: 2});
+      final start = night - night % 3600;
+      expect(uids(hourly(l, start + 60)), uids(hourly(l, start + 3500)));
+      expect(uids(hourly(l, start + 3600 + 60)).intersection(uids(hourly(l, start + 60))), isEmpty);
+    });
+
+    test('Shade: na faixa, um Eco por célula e janela em becos e sob marquises à noite; nada de dia nem sem beco ou marquise', () {
       final b = bands('shade.eco');
+      expect(b, [5, 10, 15], reason: 'GDD rev 350');
       final sets = [for (final v in b) uids(all(layerOf({kNightEco: v.toDouble()}), night))];
       growing('Shade', sets);
-      expect(sets.last.length / cells.length, closeTo(b.last / 100, 0.05));
+      expect(sets.last.length / cells.length, closeTo(b.last / 100, 0.04));
       final eco = all(layerOf({kNightEco: 100}), night);
       expect(eco.every((s) => (s.x - 1.5) % 2 == 0 && (s.y - 1.5) % 2 == 0), isTrue, reason: 'na marquise');
       expect({for (final s in eco) s.entryId}.length, greaterThan(2), reason: 'da tabela do bioma, não de um tipo só');
       expect(all(layerOf({kNightEco: 100}), day), isEmpty);
       expect(all(layerOf({kNightEco: 100}, pts: TrafficPack.of(const [])), night), isEmpty);
+      // Só becos (os pontos do tipo 11 do arquivo da época 12): a Shade nasce neles.
+      final alleys = TrafficPack.of([for (final (cx, cy) in cells) (kind: TrafficPointKind.alley, x: cx * 2 + 1.0, y: cy * 2 + 1.0)]);
+      final inAlleys = all(layerOf({kNightEco: 100}, pts: alleys), night);
+      expect(inAlleys, hasLength(cells.length));
+      expect(inAlleys.every((s) => s.x % 2 == 1 && s.y % 2 == 1), isTrue, reason: 'no beco');
     });
 
-    test('Wisp: Espectrais na neblina, nada com tempo limpo fora do Sagrado; os rastros do Radar duram mais', () {
+    test('Wisp: na faixa N, N Espectrais por hora em cada bloco com neblina; nada com tempo limpo fora do Sagrado; rastros duram mais', () {
       final b = bands('wisp.eco');
-      final sets = [for (final v in b) uids(all(layerOf({kFogEco: v.toDouble()}, weather: 'fog'), day))];
+      expect(b, [1, 2, 3], reason: 'GDD rev 350: +1, +2 e +3 por hora');
+      final sets = [for (final v in b) uids(hourly(layerOf({kFogEco: v.toDouble()}, weather: 'fog'), day))];
       growing('Wisp', sets);
-      final eco = all(layerOf({kFogEco: 100}, weather: 'fog'), day);
+      expect(sets.last.length, b.last * blocks.length);
+      final eco = hourly(layerOf({kFogEco: 3}, weather: 'fog'), day);
       expect(eco.every((s) => data.species(s.entryId)!.type.name == 'spectral'), isTrue);
-      expect(all(layerOf({kFogEco: 100}), day), isEmpty, reason: 'sem neblina e sem Sagrado no pacote da época 0');
+      expect(hourly(layerOf({kFogEco: 3}), day), isEmpty, reason: 'sem neblina e sem Sagrado no pacote da época 0');
       expect(data.personal.wispTraceMult, greaterThan(1));
     });
 
     test('Sprig: mais variantes nos Ecos da camada pessoal, só acrescentando', () {
       final b = bands('sprig.eco');
+      expect(b, [2, 4, 6], reason: 'GDD rev 350');
       final base = all(layerOf({kNightEco: 100}), night);
       final sets = [
         for (final v in [0, ...b]) {for (final s in all(layerOf({kNightEco: 100, kVariantChance: v.toDouble()}), night)) if (s.variant != null) s.uid},

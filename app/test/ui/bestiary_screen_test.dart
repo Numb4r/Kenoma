@@ -160,9 +160,9 @@ void main() {
     expect(find.text('NÍVEL DE PESQUISA 3 DE 5'), findsOneWidget);
     await tester.tap(find.byKey(const Key('tab-2')));
     await tester.pump();
-    expect(find.text('Níveis 1 a 9: Elétricos nos postes 10%'), findsOneWidget);
-    expect(find.text('Níveis 10 a 19: Elétricos nos postes 15%'), findsOneWidget);
-    expect(find.text('Níveis 20+: Elétricos nos postes 20%'), findsOneWidget);
+    expect(find.text('Níveis 1 a 9: Elétricos nos postes +1/h'), findsOneWidget);
+    expect(find.text('Níveis 10 a 19: Elétricos nos postes +2/h'), findsOneWidget);
+    expect(find.text('Níveis 20+: Elétricos nos postes +3/h'), findsOneWidget);
     // O efeito por extenso, com a faixa atual (a do Humoth de maior nível na coleção) e a próxima, sem "em breve".
     final ability = tester.widget<Text>(find.byKey(const Key('species-ability'))).data!;
     expect(ability, startsWith('À noite e na tempestade, '));
@@ -170,7 +170,8 @@ void main() {
     expect(ability, isNot(contains('em breve')));
     // O trabalho da família na Casa, que entra na fase 2.
     await tester.dragUntilVisible(find.byKey(const Key('species-work')), find.byKey(const Key('pane-2')), const Offset(0, -200));
-    expect(find.text('Trabalho: antena e oficina (em breve)'), findsOneWidget);
+    expect(find.text('Trabalho: energia (em breve)'), findsOneWidget);
+    expect(find.text('Máquinas da fábrica e da mina só rodam em velocidade cheia com um Hum ligado.'), findsOneWidget);
     expect(find.text('FUNDIR 2/5'), findsOneWidget);
   });
 

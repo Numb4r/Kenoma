@@ -5,6 +5,7 @@
 /// mesmo com ou sem bloco, e Campinas não muda.
 library;
 
+import '../data/traffic_pack.dart';
 import '../data/relief_pack.dart';
 import 'dart:collection';
 
@@ -22,7 +23,13 @@ enum MapSourceKind { pack, overpass, floor }
 
 /// Um pacote de região já lido e conferido.
 class LoadedRegion {
-  const LoadedRegion({required this.id, required this.grid, required this.visual, this.noWalk, this.access, this.relief});
+  const LoadedRegion({required this.id, required this.grid, required this.visual, this.noWalk, this.access, this.relief, this.traffic});
+
+  /// Os pontos do OSM da região (postes, marquises, becos, semáforos). `null`: sem pontos.
+  final TrafficPack? traffic;
+
+  LoadedRegion copyWith({AccessPack? access, TrafficPack? traffic}) =>
+      LoadedRegion(id: id, grid: grid, visual: visual, noWalk: noWalk, access: access ?? this.access, relief: relief, traffic: traffic ?? this.traffic);
 
   /// O relevo da região (época 9 em diante). `null`: terreno plano.
   final ReliefPack? relief;
@@ -38,7 +45,13 @@ class LoadedRegion {
   bool contains(int x, int y) => x >= grid.x0 && y >= grid.y0 && x < grid.x0 + grid.width && y < grid.y0 + grid.height;
 }
 
-class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccessSource, ReliefSource {
+class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccessSource, ReliefSource, TrafficPointSource {
+  // Os pontos de todas as regiões (as áreas não se sobrepõem). Fora delas, nenhum.
+  @override
+  List<TrafficPoint> pointsIn(double left, double top, double right, double bottom) => [
+        for (final r in _regions) ...?r.traffic?.pointsIn(left, top, right, bottom),
+      ];
+
   // O relevo: o da primeira região que cobre o ponto. Fora delas (blocos do fallback), terreno plano.
   @override
   double? heightAt(double x21, double y21) {
@@ -83,8 +96,16 @@ class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccess
   void setAccess(String id, AccessPack access) {
     final i = _regions.indexWhere((r) => r.id == id);
     if (i < 0) return;
-    final r = _regions[i];
-    _regions[i] = LoadedRegion(id: r.id, grid: r.grid, visual: r.visual, noWalk: r.noWalk, access: access, relief: r.relief);
+    _regions[i] = _regions[i].copyWith(access: access);
+  }
+
+  /// A região [id] já tem os pontos do OSM.
+  bool hasTraffic(String id) => _regions.any((r) => r.id == id && r.traffic != null);
+
+  /// Os pontos do OSM de uma região que já está no mundo (baixados depois dela).
+  void setTraffic(String id, TrafficPack traffic) {
+    final i = _regions.indexWhere((r) => r.id == id);
+    if (i >= 0) _regions[i] = _regions[i].copyWith(traffic: traffic);
   }
 
   void addRegion(LoadedRegion region) {

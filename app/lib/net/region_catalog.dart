@@ -2,6 +2,7 @@
 /// o catálogo só diz onde baixar; o SHA-256 que vale é o de `epochs.json` (CLAUDE.md, regra 8). Dart puro.
 library;
 
+import '../data/traffic_pack.dart';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -21,6 +22,10 @@ const String kKindLogic = 'logic', kKindVisual = 'visual', kKindNoWalk = 'nowalk
 /// O arquivo de rota (`_noaccess.bin`), em `route_files`: fora das épocas, vale o SHA-256 do catálogo assinado. Fica fora de
 /// `files` porque a 0.16 exige que todo arquivo de lá esteja em `epochs.json` e recusaria a região inteira.
 const String kKindAccess = 'access';
+
+/// Os pontos do OSM da região (`_traffic.bin`), em `route_files`, da época 12 em diante: só vale o arquivo que a época
+/// vigente lista em `traffic_packs` (nome e SHA-256 iguais aos do catálogo).
+const String kKindTraffic = 'traffic';
 
 final _safeName = RegExp(r'^[A-Za-z0-9._-]+$');
 
@@ -91,6 +96,7 @@ RegionPackRef? epochRefOf(Epoch epoch, String id, String kind) => switch (kind) 
       kKindVisual => epoch.visualPacks[id],
       kKindNoWalk => epoch.walkable?.excludePacks[id],
       kKindRelief => epoch.reliefPacks[id],
+      kKindTraffic => epoch.trafficPacks[id],
       _ => null,
     };
 
@@ -160,6 +166,19 @@ RegionOpen openRegionFiles(String id, List<RegionFileJob> jobs, {String publicKe
   }
   if (logic == null || visual == null) return RegionOpen(error: '$id: faltam arquivos');
   return RegionOpen(region: LoadedRegion(id: id, grid: logic, visual: visual, noWalk: noWalk, relief: relief));
+}
+
+/// Lê e confere o arquivo de pontos: SHA-256 da época e, recém-baixado, a assinatura. `null` se não confere. Roda em Isolate.
+TrafficPack? openTrafficFile(RegionFileJob job, {String publicKeyHex = kFeedPublicKeyHex}) {
+  try {
+    final bytes = File(job.path).readAsBytesSync();
+    if (sha256Hex(bytes) != job.sha256.toLowerCase()) return null;
+    final sig = job.sigHex;
+    if (sig != null && !verifySigned(bytes, sig, publicKeyHex: publicKeyHex)) return null;
+    return TrafficPack.parse(bytes);
+  } catch (_) {
+    return null;
+  }
 }
 
 /// Lê e confere o arquivo de rota: SHA-256 do catálogo e, recém-baixado, a assinatura. `null` se não confere. Roda em Isolate.

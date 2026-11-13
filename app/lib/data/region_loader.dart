@@ -184,10 +184,14 @@ Future<AccessPack?> loadAccessPack({required String region, AssetBundle? bundle}
 /// Os pontos do tráfego da região embutida (`build_traffic.py`): semáforos, placas, faixas e entradas do OSM. Só a simulação
 /// local do tráfego lê (cenário, fora das épocas): falta ou defeito deixam as esquinas com a regra pela classe da rua
 /// (`null`), sem aviso. Nunca lança.
-Future<TrafficPack?> loadTrafficPack({required String region, AssetBundle? bundle}) async {
+Future<TrafficPack?> loadTrafficPack({required String region, Epoch? epoch, AssetBundle? bundle}) async {
+  // Da época 12 em diante a época diz qual arquivo vale (e o SHA-256 dele); antes, o da época 0.
+  final ref = epoch?.trafficPacks[region];
   try {
-    final data = await (bundle ?? rootBundle).load('assets/regions/${region}_e0_traffic.bin');
-    return TrafficPack.parse(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
+    final data = await (bundle ?? rootBundle).load('assets/regions/${ref?.file ?? '${region}_e0_traffic.bin'}');
+    final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    if (ref != null && sha256Hex(bytes) != ref.sha256.toLowerCase()) return null;
+    return TrafficPack.parse(bytes);
   } catch (_) {
     return null;
   }

@@ -66,19 +66,19 @@ Mesmo extrato da época 0 (MD5 `d4778499e2017add7ee7879dd3b64b3c`, conferido em 
 
 Na grade inteira: Vazio 53,6%, Verde 30,6%, Residencial 6,8%, Urbano 5,2% (era 7,1%), Iluminado 2,0%, Água 1,6%, Sagrado 0,1%. O pacote visual não muda (as ruas são as mesmas).
 
-**Fora desta época:** São Paulo segue com `sao_paulo_e5.bin` (sem Iluminado nem Sagrado) até o `sao_paulo_e11.bin` (abaixo) entrar numa época e no `regions.json` assinado; os blocos do fallback (Overpass) ignoram os biomas com `since_epoch` e seguem com os cinco de sempre em todas as épocas.
+**Fora desta época:** São Paulo segue com `sao_paulo_e5.bin` (sem Iluminado nem Sagrado) até a época 12, que lista o `sao_paulo_e12.bin` (abaixo); os blocos do fallback (Overpass) ignoram os biomas com `since_epoch` e seguem com os cinco de sempre em todas as épocas.
 
-### São Paulo com Iluminado e Sagrado (gerado em 2026-11-13, não publicado)
+### São Paulo com Iluminado e Sagrado (época 12, gerado em 2026-11-13, não publicado)
 
-Mesmo extrato (MD5 `d4778499e2017add7ee7879dd3b64b3c`, conferido de novo), mesma bbox da época 5. `build_region.py --region sao_paulo --epoch 11 --out-dir out/regions`, fora de `app/assets/`. O visual (`sao_paulo_e5_vis.bin`) e o de rota não mudam.
+Mesmo extrato (MD5 `d4778499e2017add7ee7879dd3b64b3c`, conferido de novo), mesma bbox da época 5. `build_region.py --region sao_paulo --epoch 11 --out-dir out/regions` (os biomas até a época 11; a 12 não traz bioma novo), renomeado para o nome da época em que entra, fora de `app/assets/`. O visual (`sao_paulo_e5_vis.bin`), o de caminhos (`_nowalk`) e o de rota (`_noaccess`) não mudam.
 
 | Arquivo | Bytes | SHA-256 |
 | --- | --- | --- |
-| `out/regions/sao_paulo_e11.bin` | 862.387 | `b59bff411f332636333408d5cd19c84aa9156b93901d23ab0dc3f6c000155050` |
+| `out/regions/sao_paulo_e12.bin` | 862.387 | `b59bff411f332636333408d5cd19c84aa9156b93901d23ab0dc3f6c000155050` |
 
 Na grade inteira (2739 × 4199 em z21): Vazio 45,4%, Verde 35,8%, Urbano 6,1%, Água 5,9%, Residencial 3,8%, Iluminado 2,7%, Sagrado 0,3%.
 
-**Para publicar** (nada disso foi feito): a época 11 já começou e não pode mudar, então o SHA entra em `region_packs.sao_paulo` de uma época nova (12, com início UTC e `valid_until_utc`, igual à 11 no resto); só então o arquivo vai para o `regions.json` assinado (`files.region` de São Paulo: `file`, `url`, `sha256`, `bytes`, `sig`), porque o app recusa a região se um arquivo de `files` não estiver em `epochs.json`. Quem ainda não tiver a época 12 continua com o `sao_paulo_e5.bin`.
+A época 12 (`app/assets/data/epochs.json`) lista este arquivo em `region_packs.sao_paulo`. O rascunho do catálogo assinado está em `out/regions/rascunho-e12/` (`scripts/assinar_regioes.py sao_paulo 12 --out ...`); a publicação está em `docs/assinatura.md`, "Época 12".
 
 ## Arquivo de rota (0.17.0, fora das épocas)
 
@@ -98,6 +98,10 @@ No `regions.json` assinado, o de São Paulo entra em `route_files.access` da reg
 | Arquivo | Pontos | Bytes | SHA-256 |
 | --- | --- | --- | --- |
 | `app/assets/regions/campinas_e0_traffic.bin` (0.19.0, com a vida urbana; regerado na 0.19.1 com os estádios, tipo 10) | 14.967 (semáforo 909, pare 1.137, preferência 77, faixa 4.933, entrada 934, ônibus 1.258, comércio 2.536, bar 1.026, escola 582, praça 1.575) | 56.231 | `c82bfdac97252ad6f9ca2bc05c53b531ff0119cb5872223d09be13e423fb186c` |
+| `app/assets/regions/campinas_e12_traffic.bin` (`--epoch 12`, com os becos, tipo 11) | 17.821 (os 14.976 de antes, iguais, e 2.845 becos: 396 `service=alley` e 3.131 `footway`/`path`, entre 31.980 prédios) | 66.823 | `a83629433e75e0764ed85ef2dffb660688f59b897d6dd8aa71df3bacd8085fa5` |
+| `out/regions/sao_paulo_e12_traffic.bin` (`--epoch 12 --out-dir out/regions`, não embarcado) | 187.221 (semáforo 9.485, pare 3.163, preferência 336, faixa 55.450, entrada 8.780, ônibus 23.212, comércio 16.604, bar 6.583, escola 3.393, praça 8.991, estádio 40, beco 51.184: 7.331 `service=alley` e 20.375 `footway`/`path`, entre 2.183.297 prédios) | 674.764 | `e9185114b56ce436c2035a250ed29d8fad56e9a0d22fb067e04f317f70d71e55` |
+
+**Da época 12 em diante a época fixa o arquivo de pontos** (`traffic_packs`): não é mundo (só a simulação local e a camada pessoal de cada jogador leem), mas os becos da Shade entram por ele, e a época diz qual vale. O de Campinas vai no APK; o de São Paulo entra em `route_files.traffic` do `regions.json` assinado e o app só o aceita se a época vigente listar o mesmo nome e SHA-256. Antes da época 12 vale o `campinas_e0_traffic.bin`. Os tipos 0 a 10 do arquivo da época 12 saem iguais aos do da época 0 (um teste compara), e o app antigo ignora o tipo 11.
 
 São Paulo e os blocos do fallback ainda não têm o arquivo: onde não há nenhum ponto em volta, a simulação põe semáforo nos cruzamentos de avenidas e faz a rua menor ceder a vez. Para São Paulo, o arquivo entraria em `route_files` do `regions.json` assinado, como o de rota.
 

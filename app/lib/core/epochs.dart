@@ -147,6 +147,7 @@ class Epoch {
     required this.items,
     this.visualPacks = const {},
     this.reliefPacks = const {},
+    this.trafficPacks = const {},
     this.water,
     this.fog,
     this.motion,
@@ -179,6 +180,10 @@ class Epoch {
           for (final e in ((json['relief_packs'] as Map<String, dynamic>?) ?? const {}).entries)
             e.key: RegionPackRef(file: (e.value as Map<String, dynamic>)['file'] as String, sha256: e.value['sha256'] as String),
         },
+        trafficPacks: {
+          for (final e in ((json['traffic_packs'] as Map<String, dynamic>?) ?? const {}).entries)
+            e.key: RegionPackRef(file: (e.value as Map<String, dynamic>)['file'] as String, sha256: e.value['sha256'] as String),
+        },
         water: json['water'] == null ? null : WaterModel.fromJson(json['water'] as Map<String, dynamic>),
         fog: json['fog'] == null ? null : FogModel.fromJson(json['fog'] as Map<String, dynamic>),
         motion: json['motion'] == null ? null : MotionModel.fromJson(json['motion'] as Map<String, dynamic>),
@@ -207,6 +212,11 @@ class Epoch {
   /// O relevo de cada região (SRTM, `build_relief.py`), da época 9 em diante. **É mundo:** a água da chuva, a neblina e o
   /// vento saem dele. Região sem relevo na época: terreno plano.
   final Map<String, RegionPackRef> reliefPacks;
+
+  /// Os pontos do OSM de cada região (`build_traffic.py`), da época 12 em diante: postes, marquises e becos da camada
+  /// pessoal e a simulação do tráfego. Não é mundo (ninguém mais vê o que sai deles), mas a época fixa qual arquivo vale.
+  /// Sem a região aqui: o `<região>_e0_traffic.bin` embutido, ou nada.
+  final Map<String, RegionPackRef> trafficPacks;
 
   /// A água da chuva que escorre pelo relevo (poças nas baixadas, Dilúvio no fundo dos vales), da época 9 em diante.
   /// `null`: poças e ruas alagadas sorteadas pela seed, como antes.

@@ -4,7 +4,9 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/epochs.dart';
+import 'package:kenoma/core/tiles.dart';
 import 'package:kenoma/data/region_loader.dart' show sha256Hex;
+import 'package:kenoma/data/traffic_pack.dart';
 import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/net/map_http.dart';
 import 'package:kenoma/net/region_catalog.dart';
@@ -27,14 +29,15 @@ Map<String, dynamic> _fileOf(Map<String, dynamic> cat, String kind) =>
 Map<String, dynamic> _ref(Map<String, dynamic> f) => {'file': f['file'], 'sha256': f['sha256']};
 
 /// As épocas reais, com a última listando a região de teste como a época 5 vai listar.
-EpochSchedule _schedule({String? logicSha, bool listed = true}) {
+EpochSchedule _schedule({String? logicSha, bool listed = true, String fx = _fx, Map<String, dynamic>? traffic}) {
   final json = jsonDecode(jsonEncode(epochsJson())) as Map<String, dynamic>;
-  final cat = _catalog();
+  final cat = jsonDecode(File('$fx/regions.json').readAsStringSync()) as Map<String, dynamic>;
   final e = (json['epochs'] as List).last as Map<String, dynamic>;
   if (listed) {
     (e['region_packs'] as Map)['test_city'] = {..._ref(_fileOf(cat, 'logic')), 'sha256': ?logicSha};
     (e['visual_packs'] as Map)['test_city'] = _ref(_fileOf(cat, 'visual'));
     (e['walkable'] as Map)['exclude_packs'] = {'test_city': _ref(_fileOf(cat, 'nowalk'))};
+    if (traffic != null) e['traffic_packs'] = {'test_city': traffic};
   }
   return EpochSchedule.fromJson(json);
 }
@@ -287,6 +290,43 @@ void main() {
       final e = (json['epochs'] as List).last as Map<String, dynamic>;
       expect(epochPackFiles(e), isNot(contains('test_e5.bin')));
       expect(epochPackFiles(e), containsAll(['campinas_e11.bin', 'campinas_e0_vis.bin', 'campinas_e2_nowalk.bin']));
+    });
+  });
+
+  group('pontos do OSM (route_files.traffic, época 12)', () {
+    const fx = 'test/net/fixtures/region_traffic';
+    Map<String, dynamic> trafficRef() {
+      final f = (((jsonDecode(File('$fx/regions.json').readAsStringSync()) as Map)['regions'] as List).single as Map)['route_files']['traffic'] as Map<String, dynamic>;
+      return {'file': f['file'], 'sha256': f['sha256']};
+    }
+
+    test('a época vigente lista o arquivo: ele entra depois da região, e os becos aparecem nos pontos do mundo', () async {
+      final r = _Rig(fx: fx, schedule: _schedule(fx: fx, traffic: trafficRef()));
+      final m = r.open();
+      final entry = await _entryOf(m);
+      expect(entry.routeFiles.keys, containsAll([kKindAccess, kKindTraffic]));
+      expect(catalogMatchesEpoch(entry, r.schedule.epochs.last), isTrue, reason: 'fica fora de files');
+      expect(await m.download(entry), isTrue);
+      expect((r.world.hasAccess('test_city'), r.world.hasTraffic('test_city')), (true, true));
+      final (x, y) = latLonToTileFraction(lat, lon, 21);
+      final pts = r.world.pointsIn(x - 200, y - 200, x + 200, y + 200);
+      expect(pts.where((p) => p.kind == TrafficPointKind.alley), hasLength(3));
+      expect(pts.where((p) => p.kind == TrafficPointKind.signal), hasLength(1));
+      // Ao abrir o app de novo, volta do disco sem rede.
+      r.server.down = true;
+      final again = r.open();
+      await again.loadInstalled();
+      expect(r.world.hasTraffic('test_city'), isTrue);
+    });
+
+    test('a época não lista o arquivo (ou lista outro SHA): nada é baixado, e o de rota entra igual', () async {
+      for (final traffic in [null, {...trafficRef(), 'sha256': '00' * 32}]) {
+        final r = _Rig(fx: fx, schedule: _schedule(fx: fx, traffic: traffic));
+        final m = r.open();
+        expect(await m.download(await _entryOf(m)), isTrue);
+        expect((r.world.hasAccess('test_city'), r.world.hasTraffic('test_city')), (true, false), reason: '$traffic');
+        expect(r.names, isNot(contains('test_e12_traffic.bin')));
+      }
     });
   });
 

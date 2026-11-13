@@ -609,3 +609,28 @@ Novos: `world/personal_layer_test` (base idêntica com e sem build, poças do mu
 - **Círculo:** o parágrafo por membro, com a faixa atual e a próxima (Rillet, Frondling, Cinderkin do save real).
 - **Não conferido no aparelho:** o aviso da Patrulha (só em teste), as poças do Rill (não choveu, e não forcei chuva) e o Hum (não estava no Círculo de teste). Também não conferi as pendências do pedido: uma família nova nascendo no mundo, as ciclovias desenhadas e a água fora da thread de desenho no mapa.
 - O APK instalado ainda chama os chips do Círculo de teste de "Real" e "Vazio". Depois do build, eles viraram "Círculo real" e "Círculo vazio" por causa de um teste.
+
+## Fase 1 · fatia 8c · GDD rev 350, época 12 com São Paulo e becos (0.20.2)
+
+GDD rev 350 (commit próprio). Versão 0.20.2+34, mesma chave de release. Save no schema 8 (sem mudança).
+
+### Do GDD rev 350
+
+- **Habilidades com os números do GDD:** Rill +1, +2, +3 poças por célula z17 (como estava); **Hum e Wisp agora contam por hora**: N Ecos (Elétricos junto de postes, à noite e na tempestade; Espectrais numa célula com neblina ou no Sagrado) por bloco z17 (uns 300 m) e por hora UTC, cada um valendo a hora inteira; a faixa sai da build do começo da janela de 20 min do bloco (a troca do Círculo entra em até 20 min e a faixa maior só acrescenta vagas). **Shade** 5, 10 e 15% por célula e janela, em becos e sob marquises. **Sprig** de volta a +2, +4 e +6%. Bit e Clod como estavam. Os Espíritos ficam um degrau acima (`spirit.ability_steps`).
+- **Trabalho** com o texto da tabela do GDD ("Trabalho: forja e fornalha (em breve)" e a frase depois dos dois-pontos; Rill e Glare não têm dois-pontos e ficam só com o título).
+- A build continua fora do hash (aprovado).
+- Os dados foram gravados pelo agente `conteudo` (novo fluxo do `CLAUDE.md`).
+
+### Época 12 (pronta, não publicada; começa 2026-11-16 16:00 UTC)
+
+- A 11 com `sao_paulo_e12.bin` (Iluminado 2,7%, Sagrado 0,3%) e `traffic_packs` novos, os pontos do OSM com **becos** (tipo 11): `highway=service` + `service=alley` e `footway`/`path` com prédio dos dois lados a até 9 m. Campinas: 2.845 becos (`campinas_e12_traffic.bin`, no APK); São Paulo: 51.184 (`sao_paulo_e12_traffic.bin`, baixado por `route_files.traffic`). Os tipos 0 a 10 saem iguais aos da época 0. SHAs no `pipeline/README.md`.
+- O app: cada região leva os pontos dela (`LoadedRegion.traffic`, `LayeredWorld` como fonte de pontos), então a simulação do tráfego e a camada pessoal (Hum e Shade) passam a funcionar em São Paulo. O arquivo baixado só vale se a época vigente listar o mesmo nome e SHA-256.
+- `scripts/assinar_regioes.py` lê os nomes da época (a 12 reaproveita o visual, o de caminhos e o de rota da 5) e aceita `--out`. Rascunho assinado do catálogo em `pipeline/out/regions/rascunho-e12/`. Passos de publicação em `docs/assinatura.md`, "Época 12": **o feed, o catálogo, o release `regions-e12` e o APK precisam sair antes do início**, senão quem tem São Paulo cai no fallback e quem não tem a época vê outro mundo.
+
+### Testes
+
+Novos: `data/traffic_e12_test` (época 12, pontos iguais aos de antes mais os becos, a época escolhe o arquivo), grupo "pontos do OSM" em `net/region_manager_test` (com uma fixture assinada nova, `test/net/fixtures/region_traffic`, chave de teste descartada), Hum e Wisp por hora e Shade em becos em `world/personal_layer_test`.
+
+### No aparelho
+
+Não conferido: o celular desconectou antes da instalação. Falta instalar a 0.20.2 e conferir, com o simulador: uma família nova nascendo, as ciclovias e a água no mapa, e as poças do Rill numa chuva.

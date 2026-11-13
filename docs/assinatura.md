@@ -161,5 +161,16 @@ curl -sI https://numb4r.github.io/Kenoma/regions.json | head -1
 
 O GitHub Pages só serve a raiz ou `/docs` de uma branch, por isso a branch `gh-pages` com o conteúdo de `docs/pages/`. Os pacotes ficam em `pipeline/out/regions/`, fora do git: se forem apagados, o mesmo extrato (MD5 em `pipeline/README.md`) os regera byte a byte.
 
+### Época 12 (pronta, não publicada)
+
+A época 12 começa em **2026-11-16 16:00 UTC** (`starts_utc` em `app/assets/data/epochs.json`; mude antes de publicar se a data não servir) e traz o `sao_paulo_e12.bin` (Iluminado e Sagrado) e os pontos do OSM com os becos (`traffic_packs`). Como a época entra no hash de todo spawn, **o mundo muda para todos no início dela**, e quem estiver sem a época 12 vê outro mundo; e o `regions.json` publicado (época 5) deixa de bater com ela: sem o catálogo novo, quem tem São Paulo baixado cai no fallback da Overpass ali. Por isso tudo sai junto, antes do início:
+
+1. Os arquivos novos num release `regions-e12` (os de `regions-e5` continuam onde estão):
+   `gh release create regions-e12 --title "Regiões, época 12" pipeline/out/regions/sao_paulo_e12.bin pipeline/out/regions/sao_paulo_e12_traffic.bin`
+2. O feed com a época 12: `./scripts/assinar_publicacao.sh` (copia `app/assets/data/epochs.json` para `docs/pages/` e assina).
+3. O catálogo: copie `pipeline/out/regions/rascunho-e12/regions.json` e `.sig` para `docs/pages/` (ou rode `scripts/assinar_regioes.py sao_paulo 12` sem `--out`).
+4. `git subtree push --prefix docs/pages origin gh-pages` e confira `curl -s https://numb4r.github.io/Kenoma/regions.json | head`.
+5. O APK 0.20.2 (que já traz a época 12 e o `campinas_e12_traffic.bin`) para os amigos.
+
 Para testar sem publicar: gere um `regions.json` com `url` relativa, assine, sirva a pasta com `python3 -m http.server`, rode `adb reverse tcp:<porta> tcp:<porta>` e use o item "URL do feed de regiões" em Assinaturas no menu de debug. A assinatura continua obrigatória.
 

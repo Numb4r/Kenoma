@@ -371,7 +371,7 @@ class _SpeciesDetailScreenState extends State<SpeciesDetailScreen> {
       if (family != null && family.workTitle.isNotEmpty) ...[
         const KSection('Trabalho'),
         _line('Trabalho: ${family.workTitle} (em breve)', key: const Key('species-work')),
-        _line(family.workAbout, color: KCores.textoMudo),
+        if (family.workAbout.isNotEmpty) _line(family.workAbout, color: KCores.textoMudo),
       ],
       const KSection('Traços'),
       for (final d in variantDots(form.id, widget.data, b))
