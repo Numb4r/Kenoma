@@ -153,6 +153,8 @@ Tudo que existe no mundo sai de `hash(seed_global, época, célula, janela_de_te
 
 Spawns são individuais. Cada jogador tem a própria instância de cada criatura, então capturar não remove nada para os amigos e nenhuma recompensa é disputada, como no loot pessoal do Guild Wars 2.
 
+O mundo tem duas camadas de spawn. A camada base sai só da seed, da época, da célula e da janela, e é igual para todos: dois amigos lado a lado veem os mesmos Ecos, Fagulhas e materiais. Por cima dela vem a camada pessoal, que sai da mesma conta mais o `player_id` e a build do jogador (Círculo, escola, equipamento, canções): Ecos extras, chance de variante, Ocultos, poças e materiais a mais. A camada pessoal é estável, então reabrir o app não sorteia de novo, e nunca tira nada da camada base. É ela que faz valer a pena testar Constelações e builds diferentes.
+
 Cada janela dura 20 minutos, mas cada célula tem um deslocamento próprio tirado do hash dela, com `janela = floor((t_utc + deslocamento(célula)) / 1200)`. Assim o entorno se renova aos poucos, uma célula por vez, em vez de tudo sumir no mesmo minuto, e continua idêntico para todos os amigos. A posição do spawn dentro da célula também sai do hash, para as criaturas não aparecerem alinhadas numa grade. O z20, a janela de 20 minutos e a fórmula do deslocamento são fixos. As densidades ficam na tabela da época, porque mudam o mundo.
 
 | Parâmetro | Valor inicial | Resultado esperado |
@@ -352,7 +354,7 @@ Três famílias com Fagulha e Eco, em triângulo de Fogo, Planta e Água. Todo b
 | --- | --- | --- | --- | --- | --- |
 | Soot | Urbano | Fogo | Ember Mote, brasa de bituca e asfalto quente | Sootling, bicho de fuligem com brasa no peito que vive em bueiros | Aura maior, +3, +5 e +8 m por faixa de nível |
 | Frond | Verde | Planta | Seed Mote | Frondling, fronde fractal inspirada na Charnia que anda sobre raízes | coleta Fagulhas de mais longe, +3, +5 e +8 m |
-| Rill | Água | Água | Drip Mote | Rillet, gota que reflete o céu e faz um som de pingo | rastreador vê Ecos além da visão, 150, 170 e 200 m |
+| Rill | Água | Água | Drip Mote | Rillet, gota que reflete o céu e faz um som de pingo | na chuva, poças extras na camada pessoal, cada uma com chance de Eco de Água, +1, +2 e +3 por célula |
 
 Na fase 0 o Eco vai até o nível 20. O Poder é derivado da espécie e do nível e só ganha uso com o ritual na fase 1. A destilação segue a tabela da fundação.
 
@@ -362,14 +364,14 @@ Uma família curta para cada tipo que faltava, com Fagulha, Eco e Espírito. Os 
 
 | Família | Tipo | Fagulha | Eco | Espírito | Onde e quando | Habilidade de mapa |
 | --- | --- | --- | --- | --- | --- | --- |
-| Hum | Elétrico | Arc Mote, faísca perto de poste | Humoth, mariposa de faísca que ronda postes e letreiros | Coilkin, feito de fios desencapados | Urbano, à noite; nasce onde o raio cai | alcance do Radar +20, +40 e +60 m |
+| Hum | Elétrico | Arc Mote, faísca perto de poste | Humoth, mariposa de faísca que ronda postes e letreiros | Coilkin, feito de fios desencapados | Urbano, à noite; nasce onde o raio cai | à noite e na tempestade, Ecos Elétricos extras na camada pessoal perto de postes, +1, +2 e +3 por hora |
 | Clod | Terra | Grit Mote, cascalho que rola | Pebblet, bicho de cascalho que se fecha em bola | Bouldkin, pedra com musgo que anda devagar | Verde e morros (relevo alto); poeira seca | chance de material extra na coleta +5, +10 e +15% |
 | Rust | Metal | Filing Mote, limalha que se junta | Rustling, ferrugem viva em grades e portões | Gratekin, grade retorcida com olhos de parafuso | Urbano; chuva ácida e smog | chance de não gastar o selo na falha 5, 10 e 15% |
 | Glare | Luz | Glint Mote, reflexo solto | Glimlet, reflexo vivo em vitrines e faróis | Prismkin, prisma que separa a luz em cores | Iluminado, de dia; sol forte e arco-íris | tolerância da sintonia de dia +3, +5 e +8% |
-| Shade | Sombra | Dusk Mote, pedaço de sombra solto | Umbrel, a sombra que fica quando a pessoa vai embora | Shadekin, vulto alto de braços longos | Residencial, becos e marquises, à noite; sombras de nuvem e Sol Negro | Ecos visíveis de mais longe à noite +10, +20 e +30 m |
-| Wisp | Espectral | Chill Mote, frio que se vê | Wisplet, vulto de névoa | Hollowkin, manto vazio com uma vela dentro | Sagrado; neblina dos vales, Procissão | visão na neblina +10, +20 e +30 m |
-| Bit | Digital | Static Mote, pixel solto | Bitling, glitch que vive em letreiros e telas | Glitchkin, criatura feita de quadros repetidos | Iluminado e comércio; Estática | o pulso do Radar revela Ocultos a 70, 80 e 90 m |
-| Sprig | Feérico | Pollen Mote, pólen que brilha | Sprigglet, fada pequena do crepúsculo | Fairkin, fada de asas de folha seca | Verde no crepúsculo real, lua cheia; arco-íris e vento | chance de variante +2, +4 e +6% |
+| Shade | Sombra | Dusk Mote, pedaço de sombra solto | Umbrel, a sombra que fica quando a pessoa vai embora | Shadekin, vulto alto de braços longos | Residencial, becos e marquises, à noite; sombras de nuvem e Sol Negro | à noite, chance de um Eco extra na camada pessoal em becos e sob marquises, 5, 10 e 15% por célula e janela |
+| Wisp | Espectral | Chill Mote, frio que se vê | Wisplet, vulto de névoa | Hollowkin, manto vazio com uma vela dentro | Sagrado; neblina dos vales, Procissão | na neblina e no Sagrado, Ecos Espectrais extras na camada pessoal e rastros que duram mais, +1, +2 e +3 por hora |
+| Bit | Digital | Static Mote, pixel solto | Bitling, glitch que vive em letreiros e telas | Glitchkin, criatura feita de quadros repetidos | Iluminado e comércio; Estática | chance de Oculto na camada pessoal +5, +10 e +15%, e Ocultos rendem Essência extra |
+| Sprig | Feérico | Pollen Mote, pólen que brilha | Sprigglet, fada pequena do crepúsculo | Fairkin, fada de asas de folha seca | Verde no crepúsculo real, lua cheia; arco-íris e vento | chance de variante na camada pessoal +2, +4 e +6% |
 | Wyrm | Dracônico | Scale Mote, escama viva | Wyrmlet, brasa que respira | Wyrmkin, filhote de dragão ainda sem forma inteira | crateras de meteoro, cicatrizes de Fenda e eclipses; raro, a partir do nível 10 | Essência extra na destilação +1, +1 e +2 |
 
 ### Tipos
@@ -979,6 +981,27 @@ A casa é a base do jogador. Na rua ele coleta e captura, e à noite, em casa, o
 - Criaturas guardadas fora do Círculo ocupam espaço no santuário de selos do Armazém, que também se expande.
 
 Bolsa cheia não impede capturar, mas o excedente precisa ser destilado ou descartado no campo, o que alimenta o ciclo da Essência.
+
+### Trabalho das criaturas
+
+Além da habilidade de mapa, que vale na rua quando a criatura está no Círculo, toda família tem um trabalho na casa e nas produções: horta, mina, fábrica, forja, destilaria. Criaturas guardadas fora do Círculo são designadas a uma estação e produzem com o tempo real, com o app fechado, até o teto do depósito. O nível e os traços mudam a velocidade e a qualidade. Isso dá uso às criaturas que não estão no Círculo e liga a captura ao crafting.
+
+| Família | Tipo | Trabalho |
+| --- | --- | --- |
+| Soot | Fogo | forja e fornalha: refino e fundição mais rápidos |
+| Frond | Planta | horta e estufa: cultiva ervas, seiva e madeira |
+| Rill | Água | irrigação (acelera a horta) e destilaria de água pura |
+| Hum | Elétrico | energia: máquinas da fábrica e da mina só rodam em velocidade cheia com um Hum ligado |
+| Clod | Terra | mina: extrai minérios da faixa do bairro da casa |
+| Rust | Metal | fábrica: fabrica selos e peças em lote, a partir de receitas já conhecidas |
+| Glare | Luz | lapidação de gemas e estufa de luz, que faz a horta crescer à noite |
+| Shade | Sombra | adega: deixa a Essência guardada no escuro subir de qualidade com o tempo |
+| Wisp | Espectral | arquivo: avança a pesquisa do Bestiário aos poucos, sem sair de casa |
+| Bit | Digital | automação: mantém a fila de produção rodando e leva itens de uma estação para outra |
+| Sprig | Feérico | jardim do Véu: chance de qualidade e de variante nos itens da horta |
+| Wyrm | Dracônico | fornalha antiga: destilação em massa e transmutação de materiais entre faixas |
+
+As produções entram com a casa, na fase 2. Até lá, o trabalho aparece no Bestiário como "em breve".
 
 ### Bancada e decoração
 
