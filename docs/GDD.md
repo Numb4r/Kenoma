@@ -1540,6 +1540,7 @@ Sem servidor não há anti-cheat real. As proteções visam só o grupo de amigo
 - Tempo do GNSS em vez do relógio do sistema, e checagem de que o tempo nunca retrocede. Evita rolar spawns mudando a hora.
 - Checagem de velocidade entre leituras de GPS.
 - Detecção de mock location no Android.
+- Emulador de Android conta como GPS simulado: o jogo detecta o emulador e não dá recompensa, como o GPS simulado do debug, a menos que o interruptor de recompensas do debug esteja ligado.
 
 ### Save, segundo plano e tempo
 
