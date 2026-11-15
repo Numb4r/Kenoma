@@ -9,12 +9,13 @@ import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import '../../capture/eco_type.dart';
-import '../colors.dart' show kCycleway;
+import '../colors.dart' show kCycleway, kEssence, kOutline, kSignal;
 import '../../core/astro.dart';
 import '../../core/weather.dart';
 import '../../world/companion.dart';
 import '../../world/creature_wind.dart';
 import '../../core/tiles.dart';
+import '../../world/climate_world.dart' show Puddle;
 import '../../world/aura.dart';
 import '../../world/follow_camera.dart';
 import '../../world/map_camera.dart';
@@ -64,6 +65,7 @@ class GameMapGame extends FlameGame {
     this.overlayBiomes = _off,
     this.overlayGrid20 = _off,
     this.overlayRadii = _off,
+    this.overlayPuddles = _off,
     required this.auraM,
     required this.defaultWidthM,
     required this.minWidthM,
@@ -122,6 +124,9 @@ class GameMapGame extends FlameGame {
 
   /// Debug: desenha por cima o raio lógico da coleta (laranja) e o alcance de toque dos Ecos (ciano).
   final bool Function() overlayRadii;
+
+  /// Debug: marca as poças (as do Rill em laranja, as do mundo em ciano).
+  final bool Function() overlayPuddles;
   late final ArtRenderer _art = ArtRenderer(visual: visual, style: style, balance: balance, floorTile: floorTile, floorGridCells: floorGridCells);
   late final StreetLabelPainter _labels = StreetLabelPainter(visual);
   late final TrafficPainter _traffic = TrafficPainter(visual, carM: balance.ghostCarM, pedestrianM: balance.ghostPedestrianM, roadWidthM: balance.roadWidthM, config: trafficSim, points: trafficPoints, noCrossingAt: noCrossingAt, cycleways: cycleways);
@@ -627,6 +632,7 @@ class GameMapGame extends FlameGame {
       canvas.drawCircle(center, auraRadiusPx(auraM: w?.auraRadiusM ?? auraM, lat: _lat, pixelsPerCell: ppc), ring..color = const Color(0xFFFF7A45));
       canvas.drawCircle(center, auraRadiusPx(auraM: w?.touchRangeM ?? 30, lat: _lat, pixelsPerCell: ppc), ring..color = const Color(0xFF5FD3C6));
     }
+    if (overlayPuddles()) paintPuddleMarkers(canvas, view, cam, climateGround.puddles);
     if (w != null && (w.traces.isNotEmpty || w.distortions.isNotEmpty || w.pulse != null)) {
       _trace.paint(canvas, view, cam, world: w, playerX: avatar.x, playerY: avatar.y, metersPerCell: metersPerCell(_lat), exactUtc: _exactUtc());
     }
@@ -815,3 +821,22 @@ int _zero() => 0;
 
 bool _off() => false;
 ClimateInfo _clearInfo() => ClimateInfo.legacy(Weather.clear);
+
+/// Debug: um alvo em cada poça na tela. Laranja: as da camada pessoal (Rill). Ciano: as do mundo (água do relevo, ou o
+/// sorteio pela seed onde não há relevo). Devolve quantos alvos desenhou.
+int paintPuddleMarkers(Canvas canvas, Size view, MapCamera cam, List<Puddle> puddles) {
+  var n = 0;
+  final ring = Paint()..style = PaintingStyle.stroke..strokeWidth = 3..isAntiAlias = false;
+  final fill = Paint()..isAntiAlias = false;
+  for (final p in puddles) {
+    final (x, y) = cam.cellToScreen(p.x, p.y, view.width, view.height);
+    if (x < -20 || y < -20 || x > view.width + 20 || y > view.height + 20) continue;
+    final c = Offset(x, y), color = p.personal ? kEssence : kSignal;
+    canvas.drawCircle(c, 14, ring..color = kOutline..strokeWidth = 5);
+    canvas.drawCircle(c, 14, ring..color = color..strokeWidth = 3);
+    canvas.drawRect(Rect.fromCenter(center: c, width: 6, height: 6), fill..color = color);
+    canvas.drawRect(Rect.fromLTWH(c.dx - 1.5, c.dy - 34, 3, 18), fill..color = color);
+    n++;
+  }
+  return n;
+}

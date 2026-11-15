@@ -638,3 +638,19 @@ Novos: `data/traffic_e12_test` (época 12, pontos iguais aos de antes mais os be
 - **Ciclovias desenhadas:** a linha em ciano na margem da avenida, com os carros e os ônibus passando ao lado.
 - **Poças do Rill:** Círculo de teste com Rill e Hum, relógio de debug 34 min à frente (a troca vale na janela seguinte) e o clima a 60×. O contador do debug deu **18 poças da camada pessoal** na sessão, mas nenhuma caiu na tela em duas voltas de bicicleta simulada (são 2 por bloco de uns 300 m no nível 10, e a tela tem uns 50 m). **Não vi uma poça desenhada nem a água do relevo:** parei depois de duas tentativas, como pede o `CLAUDE.md`. Para conferir, falta um jeito de achar uma poça (por exemplo, uma marca de debug no mapa nas poças da camada pessoal).
 - O Hum não apareceu porque era dia (13h45 no relógio do jogo).
+
+## Fase 1 · fatia 8d · Poças do Rill por célula z18, marcador de poças e GDD rev 352 (0.20.3)
+
+GDD rev 352 (commit próprio; a seção nova, Obras no mundo, é da fase 2). Versão 0.20.3+35, mesma chave. Save no schema 8 (sem mudança). As mudanças de agentes (`CLAUDE.md`, `.claude/`) foram num commit separado.
+
+- **Rill:** as poças da camada pessoal agora são por **célula z18** (uns 150 m), **2, 4 e 6** por célula nas três faixas, com **25, 35 e 45%** de chance de Eco de Água em cada uma. Os números estão no `balance.json` (`personal_layer.rill_bands`); a habilidade guarda só a faixa (o Espírito, um degrau acima, fica na última). Cada poça tenta até 8 pontos da célula até um cair na rua ou na calçada (a máscara do que se anda); se nenhum cai, ela não nasce. Continua estável por jogador, build, célula e janela de chuva, e a faixa maior só acrescenta.
+- **Marcador de poças (debug, Spawns, "Poças no mapa"):** um alvo em cada poça na tela, laranja nas da camada pessoal (Rill) e ciano nas do mundo (água do relevo, ou o sorteio pela seed onde não há relevo). Botão **"Ir até a poça mais próxima"** (no item do debug e na folha do simulador): liga o GPS simulado sem recompensa e leva até a poça mais próxima a até 1 km.
+- **Água do relevo na chuva forçada:** o cálculo fora da thread do desenho foi conferido em teste com a chuva e o Dilúvio forçados (Taquaral, Centro e o vale da Norte-Sul): o bloco começa seco, o tile fica pronto, quem desenha é avisado (`onTile`, `revision`) e as poças saem iguais às do cálculo na hora. Nenhum bug encontrado no código; falta ver no aparelho com o marcador.
+
+### Testes
+
+Novos: Rill por célula z18 em `world/personal_layer_test` (contagem por célula, toda poça no caminho, cada faixa contendo a anterior, a chance de Eco de cada faixa, os números do `balance.json`), `world/water_rain_test` (chuva e Dilúvio forçados com o cálculo em fundo) e `dev/puddle_debug_test` (poça mais próxima, o botão, o marcador). Suíte: 1812 passam, 4 pulados; `flutter analyze` limpo.
+
+### No aparelho
+
+Pendente: o celular estava desconectado. Falta, com o marcador ligado e numa chuva forçada, capturar as poças pessoais e as do relevo (e o Dilúvio num lugar baixo), e o Hum à noite numa rua com postes, com tempestade forçada.

@@ -23,7 +23,7 @@ import '../player/personal_build.dart';
 import 'spawn_field.dart';
 
 /// As chaves das habilidades que mexem na camada pessoal (`creatures.json`, `ability.kind`).
-const kRainPuddles = 'rain_puddles'; // Rill: poças a mais na chuva
+const kRainPuddles = 'rain_puddles'; // Rill: a faixa (1, 2, 3) das poças a mais na chuva (`personal_layer.rill_bands`)
 const kStormNightEco = 'storm_night_ecos_per_hour'; // Hum: Elétricos por hora perto de postes, à noite e na tempestade
 const kExtraMaterial = 'extra_material_pct'; // Clod: material a mais na coleta
 const kNightEco = 'night_eco_pct'; // Shade: um Eco em becos e sob marquises à noite, por célula e janela
@@ -51,6 +51,7 @@ class PersonalBalance {
     this.wispTraceMult = 1.5,
     this.hiddenEssenceBonus = 2,
     this.buildKeepS = 86400,
+    this.rillBands = const [(puddles: 2, ecoChance: 0.25), (puddles: 4, ecoChance: 0.35), (puddles: 6, ecoChance: 0.45)],
   });
 
   factory PersonalBalance.fromJson(Map<String, dynamic>? j) {
@@ -67,6 +68,10 @@ class PersonalBalance {
       wispTraceMult: (j['wisp_trace_mult'] as num).toDouble(),
       hiddenEssenceBonus: j['hidden_essence_bonus'] as int,
       buildKeepS: j['build_keep_s'] as int,
+      rillBands: [
+        for (final b in j['rill_bands'] as List<dynamic>)
+          (puddles: (b as Map<String, dynamic>)['puddles'] as int, ecoChance: (b['eco_chance'] as num).toDouble()),
+      ],
     );
   }
 
@@ -87,6 +92,12 @@ class PersonalBalance {
 
   /// Por quanto tempo o save guarda as builds antigas.
   final int buildKeepS;
+
+  /// As faixas do Rill: poças a mais por célula z18 (uns 150 m) na chuva e a chance de Eco de Água em cada uma.
+  final List<({int puddles, double ecoChance})> rillBands;
+
+  /// A faixa [v] (1, 2, 3...) do Rill; acima da última, a última. `null` com 0.
+  ({int puddles, double ecoChance})? rill(num v) => v < 1 ? null : rillBands[(v.round() - 1).clamp(0, rillBands.length - 1)];
 }
 
 /// O `player_id` como número, para os hashes da camada pessoal.
@@ -271,15 +282,16 @@ class PersonalLayer {
     );
   }
 
-  /// As poças a mais do Rill na célula z17 `(cx17, cy17)` durante a chuva da janela [wetWindow]: a chave dos sorteios e
-  /// quantas. As posições e os sorteios dependem só do jogador e da chuva; a build (do começo da janela de 20 min da
-  /// célula) decide quantas, então a faixa maior só acrescenta poças. `null`: nenhuma.
-  ({int key, int count})? puddlesAt(int cx17, int cy17, int wetWindow, int t) {
+  /// As poças a mais do Rill na célula z18 `(cx18, cy18)` durante a chuva da janela [wetWindow]: a chave dos sorteios,
+  /// quantas e a chance de Eco de Água de cada uma (`rill_bands`). As posições e os sorteios dependem só do jogador e da
+  /// chuva; a build (do começo da janela de 20 min da célula) decide a faixa, então a maior só acrescenta poças. `null`:
+  /// nenhuma.
+  ({int key, int count, double ecoChance})? puddlesAt(int cx18, int cy18, int wetWindow, int t) {
     if (hidden()) return null;
-    final n = (buildFor(cx17, cy17, t)?.of(kRainPuddles) ?? 0).round();
-    if (n <= 0) return null;
-    _addedPuddles[(cx17, cy17, wetWindow)] = n;
-    return (key: fnv1a64([field.seed, playerKey, _saltPuddle]), count: n);
+    final band = balance.rill(buildFor(cx18, cy18, t)?.of(kRainPuddles) ?? 0);
+    if (band == null) return null;
+    _addedPuddles[(cx18, cy18, wetWindow)] = band.puddles;
+    return (key: fnv1a64([field.seed, playerKey, _saltPuddle]), count: band.puddles, ecoChance: band.ecoChance);
   }
 
   /// Unidades de material a mais na coleta de [s] (Clod): o sorteio é do jogador e do uid, e a chance é a da build do

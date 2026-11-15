@@ -24,7 +24,8 @@ void main() {
     expect(text('soot.spirit', 10), startsWith('A Aura pega Fagulhas e materiais 8 m'), reason: 'um degrau acima do Eco');
     expect(text('soot.spirit', 27), 'A Aura pega Fagulhas e materiais 11 m mais longe. Faixa 3 de 3 (a partir do nível 20). É a última faixa.');
     expect(text('frond.eco', 1), startsWith('Coleta Fagulhas e materiais 3 m mais longe.'));
-    expect(text('rill.eco', 1), startsWith('Na chuva, 1 poça a mais'));
+    expect(text('rill.eco', 1), startsWith('Na chuva, 2 poças a mais a cada área de uns 150 m, sempre na rua ou na calçada'));
+    expect(text('rill.eco', 20), contains('45% de chance de um Eco de Água'));
     // Nenhuma habilidade de mapa fica sem texto por extenso nem diz "em breve".
     for (final sp in data.tuning.species.where((s) => s.ability != null)) {
       for (final lv in [1, 10, 20]) {

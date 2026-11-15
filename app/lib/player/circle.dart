@@ -2,6 +2,7 @@
 /// a habilidade de mapa dela, dá bônus de tolerância se é forte contra o alvo e ganha XP por sintonia. Dart puro.
 library;
 
+import '../world/personal_layer.dart' show PersonalBalance;
 import 'dart:math' as math;
 
 import '../capture/eco_type.dart';
@@ -34,10 +35,10 @@ class MapAbilities {
 }
 
 /// O texto curto de uma habilidade de mapa com o valor [v] ("Aura +5 m").
-String abilityLabel(String kind, int v) => switch (kind) {
+String abilityLabel(String kind, int v, [PersonalBalance p = const PersonalBalance()]) => switch (kind) {
       'aura_bonus_m' => 'Aura +$v m',
       'spark_pickup_bonus_m' => 'Coleta +$v m',
-      'rain_puddles' => 'Chuva: +$v poças',
+      'rain_puddles' => 'Chuva: +${p.rill(v)?.puddles ?? 0} poças',
       'storm_night_ecos_per_hour' => 'Elétricos nos postes +$v/h',
       'extra_material_pct' => 'Material extra $v%',
       'seal_save_pct' => 'Selo salvo na falha $v%',
@@ -52,10 +53,10 @@ String abilityLabel(String kind, int v) => switch (kind) {
 
 /// O efeito por extenso de uma habilidade de mapa com o valor [v]. "Só para você": vem da camada pessoal de spawn, que
 /// acrescenta ao mundo de todos sem tirar nada dele.
-String abilityEffect(String kind, int v) => switch (kind) {
+String abilityEffect(String kind, int v, [PersonalBalance p = const PersonalBalance()]) => switch (kind) {
       'aura_bonus_m' => 'A Aura pega Fagulhas e materiais $v m mais longe.',
       'spark_pickup_bonus_m' => 'Coleta Fagulhas e materiais $v m mais longe.',
-      'rain_puddles' => 'Na chuva, $v ${v == 1 ? 'poça' : 'poças'} a mais a cada área de uns 300 m, só para você; cada uma pode ter um Eco de Água.',
+      'rain_puddles' => 'Na chuva, ${p.rill(v)?.puddles ?? 0} poças a mais a cada área de uns 150 m, sempre na rua ou na calçada, só para você; cada uma tem ${((p.rill(v)?.ecoChance ?? 0) * 100).round()}% de chance de um Eco de Água.',
       'storm_night_ecos_per_hour' => 'À noite e na tempestade, $v ${v == 1 ? 'Eco Elétrico' : 'Ecos Elétricos'} a mais por hora junto dos postes (semáforos e pontos de ônibus) de cada área de uns 300 m, só para você.',
       'extra_material_pct' => '$v% de chance de levar uma unidade a mais de cada material coletado.',
       'seal_save_pct' => '$v% de chance de não gastar o selo quando a sintonia falha.',
@@ -65,7 +66,7 @@ String abilityEffect(String kind, int v) => switch (kind) {
       'hidden_chance_pct' => 'Os Ecos que só você vê têm $v% a mais de chance de ser Ocultos. Destilar um Eco que era Oculto rende Essência a mais.',
       'variant_chance_pct' => 'Os Ecos que só você vê têm $v% a mais de chance de ser variante.',
       'distill_bonus' => 'Destilar um Eco rende $v de Essência a mais.',
-      _ => abilityLabel(kind, v),
+      _ => abilityLabel(kind, v, p),
     };
 
 /// A faixa (0, 1 ou 2) do nível [level]: a primeira cujo intervalo o contém.

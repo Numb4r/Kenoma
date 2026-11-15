@@ -86,6 +86,28 @@ List<DebugItem> spawnItems(DebugEnv env) {
       ),
     ),
     DebugItem(
+      id: 'spawn.puddles',
+      title: 'Poças no mapa',
+      section: DebugSection.spawns,
+      keywords: const ['poça', 'pocas', 'rill', 'água', 'relevo', 'marcador'],
+      builder: (context) => ListenableBuilder(
+        listenable: env.tools,
+        builder: (_, _) => DebugColumn([
+          const DebugNote('Alvo em cada poça na tela: laranja as da camada pessoal (Rill), ciano as do mundo (água do relevo).'),
+          DebugSwitch(title: 'Marcar as poças', subtitle: null, value: env.tools.showPuddles, onChanged: env.tools.setShowPuddles),
+          DebugButton(
+            label: 'Ir até a poça mais próxima',
+            onTap: () async {
+              final messenger = ScaffoldMessenger.maybeOf(context);
+              final msg = await env.tools.goToNearestPuddle();
+              messenger?.showSnackBar(SnackBar(content: Text(msg)));
+            },
+          ),
+          const DebugNote('Liga o GPS simulado sem recompensa e vai até a poça mais próxima a até 1 km (com o mapa do jogo aberto).'),
+        ]),
+      ),
+    ),
+    DebugItem(
       id: 'spawn.clear',
       title: 'Pedidos forçados',
       section: DebugSection.spawns,

@@ -2,6 +2,7 @@
 /// os números vêm do `balance.json` (bloco `power`) e dos dados das espécies. Dart puro.
 library;
 
+import '../world/personal_layer.dart' show PersonalBalance;
 import '../core/species_ids.dart';
 import '../data/game_data.dart';
 import '../data/tuning_data.dart';
@@ -13,15 +14,15 @@ int powerOf(CreatureInstance c, GameData data) => data.progress.conjurer.power(t
 
 /// O texto de uma habilidade de mapa no [level], por extenso, com a faixa atual e a próxima: "A Aura pega... Faixa 2 de 3
 /// (níveis 10 a 19). Próxima, no nível 20: Aura +8 m."
-String abilityText(SpeciesAbility ability, int level, List<(int, int)> bands) {
+String abilityText(SpeciesAbility ability, int level, List<(int, int)> bands, [PersonalBalance p = const PersonalBalance()]) {
   final band = abilityBandIndex(level, bands);
   final v = ability.bands[band.clamp(0, ability.bands.length - 1)];
   final (from, to) = bands[band];
   final range = level > to ? 'a partir do nível $from' : (from == to ? 'nível $from' : 'níveis $from a $to'); // o Espírito passa do último intervalo
   final next = band + 1 < bands.length && band + 1 < ability.bands.length
-      ? 'Próxima, no nível ${bands[band + 1].$1}: ${abilityLabel(ability.kind, ability.bands[band + 1])}.'
+      ? 'Próxima, no nível ${bands[band + 1].$1}: ${abilityLabel(ability.kind, ability.bands[band + 1], p)}.'
       : 'É a última faixa.';
-  return '${abilityEffect(ability.kind, v)} Faixa ${band + 1} de ${bands.length} ($range). $next';
+  return '${abilityEffect(ability.kind, v, p)} Faixa ${band + 1} de ${bands.length} ($range). $next';
 }
 
 /// Um traço: a chave (`urban`, `shiny`), o nome e o que ele faz.
@@ -68,7 +69,7 @@ CreatureAttributes attributesOf(CreatureInstance c, GameData data) {
   final sp = data.species(c.speciesId);
   return CreatureAttributes(
     power: powerOf(c, data),
-    ability: sp?.ability == null ? null : abilityText(sp!.ability!, c.level, data.tuning.abilityBands),
+    ability: sp?.ability == null ? null : abilityText(sp!.ability!, c.level, data.tuning.abilityBands, data.personal),
     traitsCounter: traitsCounter(c, data),
     traits: traitsOf(c, data),
   );

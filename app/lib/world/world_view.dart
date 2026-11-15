@@ -188,6 +188,9 @@ class WorldView {
   double get playerY => _py;
   double get metersPerCell21 => _mpc;
 
+  /// Já houve uma posição do jogador.
+  bool get hasPlayer => _hasPlayer;
+
   /// O que o sonar mostra agora: os arcos dos rastros e as distorções, vistos do jogador.
   List<SonarEcho> sonar() {
     if (!_hasPlayer) return const [];

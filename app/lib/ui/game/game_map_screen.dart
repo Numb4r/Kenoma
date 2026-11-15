@@ -14,6 +14,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
 import '../../core/tiles.dart';
+import '../../world/climate_world.dart' show nearestPuddle;
 import '../../core/weather.dart';
 import '../../core/astro.dart' show moonPhase;
 import '../../core/species_ids.dart' show isRitualOnlyId;
@@ -607,6 +608,12 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       },
     );
     tools.personalStats = () => world.personal!.stats;
+    tools.nearestPuddle = () {
+      // A até 1 km do jogador, as duas camadas de poça (a do Rill está no mesmo mundo do clima).
+      if (!world.hasPlayer) return null;
+      final p = nearestPuddle(climate.puddlesNear(world.playerX, world.playerY, 1000 / world.metersPerCell21, tools.clock.nowUtc), world.playerX, world.playerY);
+      return p == null ? null : tileFractionToLatLon(p.x, p.y, biomeZoom);
+    };
     final game = GameMapGame(
       renderer: assets.makeRenderer(),
       visual: assets.visual!,
@@ -616,6 +623,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       overlayBiomes: () => tools.showBiomeGrid,
       overlayGrid20: () => tools.showGrid20,
       overlayRadii: () => tools.showRadii,
+      overlayPuddles: () => tools.showPuddles,
       overlayTraffic: () => tools.showTraffic,
       overlayRelief: () => tools.showRelief,
       relief: assets.relief,

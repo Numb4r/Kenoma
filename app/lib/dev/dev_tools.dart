@@ -67,6 +67,29 @@ class DevTools extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _showPuddles = false;
+
+  /// Marca as poças no mapa do jogo: as da camada pessoal (Rill) numa cor e as do mundo (água do relevo) em outra.
+  bool get showPuddles => _showPuddles;
+
+  void setShowPuddles(bool v) {
+    _showPuddles = v;
+    notifyListeners();
+  }
+
+  /// A poça mais próxima do jogador a até 1 km (lat, lon), ou `null` (quem monta o mapa do jogo preenche).
+  (double, double)? Function()? nearestPuddle;
+
+  /// Vai até a poça mais próxima com o GPS simulado e sem recompensa (a regra do debug). Devolve o aviso para a tela.
+  Future<String> goToNearestPuddle() async {
+    final p = nearestPuddle?.call();
+    if (p == null) return nearestPuddle == null ? 'Abra o mapa do jogo antes' : 'Nenhuma poça a até 1 km (está chovendo?)';
+    setSimRewards(false);
+    await setUseSimulator(true);
+    simulator.teleport(p.$1, p.$2);
+    return 'Na poça mais próxima (GPS simulado, sem recompensa)';
+  }
+
   bool _hidePersonal = false;
 
   /// Esconde a camada pessoal de spawn (o que o Círculo acrescenta só para este jogador), para conferir o mundo base.
@@ -143,7 +166,7 @@ class DevTools extends ChangeNotifier {
 
   /// Algo forçado está ativo: simulador, relógio, nível, pedidos de spawn, clima ou sobreposições. Liga a etiqueta DEBUG.
   bool get anyForcing =>
-      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || _hidePersonal || _testCircle != null || _showBiomeGrid || _showGrid20 || _showRadii || _showRelief || _showTraffic || _trafficDensity != null;
+      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || _hidePersonal || _showPuddles || _testCircle != null || _showBiomeGrid || _showGrid20 || _showRadii || _showRelief || _showTraffic || _trafficDensity != null;
 
   Future<void> setUseSimulator(bool value) async {
     if (value == _useSimulator) return;

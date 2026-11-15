@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/behavior.dart';
 import 'package:kenoma/core/seed.dart';
@@ -12,6 +15,9 @@ import 'package:kenoma/world/personal_layer.dart';
 import 'package:kenoma/world/region_map.dart';
 import 'package:kenoma/world/spawn_field.dart';
 import 'package:kenoma/world/world_view.dart';
+import 'package:kenoma/world/walk_paths.dart';
+import 'package:kenoma/world/visual_map.dart';
+import 'package:kenoma/data/visual_pack.dart';
 
 import '../support/fixtures.dart';
 
@@ -265,20 +271,49 @@ void main() {
       expect(data.personal.hiddenEssenceBonus, greaterThan(0));
     });
 
-    test('Rill: na chuva, as poças a mais por célula z17 são as da faixa, e cada faixa contém a anterior', () {
+    test('Rill: na chuva, 2, 4 e 6 poças a mais por célula z18, sempre no que se anda, com 25, 35 e 45% de Eco de Água', () {
+      expect([for (final b in data.personal.rillBands) (b.puddles, b.ecoChance)], [(2, 0.25), (4, 0.35), (6, 0.45)], reason: 'os números do balance.json');
       final t = night + 3000;
+      final paths = WalkPaths(VisualMap(VisualPack.parse(Uint8List.fromList(File('assets/regions/campinas_e0_vis.bin').readAsBytesSync())), cacheTiles: 64));
       final sets = <Set<String>>[];
-      for (final v in bands('rill.eco')) {
-        final cw = climate(forced: 'rain')..personalPuddles = layerOf({kRainPuddles: v.toDouble()}).puddlesAt;
-        final mine = cw.puddlesNear(x21, y21, 1, t).where((p) => p.personal).toList();
-        expect(mine.length, v, reason: 'faixa com $v');
+      for (final (i, v) in bands('rill.eco').indexed) {
+        final cw = ClimateWorld(seed: seed, schedule: schedule, speciesOfType: data.ecoOfType, speciesOfTypeAt: data.ecoOfType, itemExists: data.itemNames.containsKey, typeOf: (id) => data.species(id)?.type.name, snapper: paths, forced: () => 'rain')
+          ..personalPuddles = layerOf({kRainPuddles: v.toDouble()}).puddlesAt;
+        final mine = cw.puddlesNear(x21, y21, 1, t).where((p) => p.personal).toList(); // a célula z17 do Centro: 4 células z18
+        final band = data.personal.rillBands[i];
+        final perCell = <(int, int), int>{};
+        for (final p in mine) {
+          perCell.update((p.x ~/ 8, p.y ~/ 8), (n) => n + 1, ifAbsent: () => 1);
+          expect(p.ecoChance, band.ecoChance);
+          // Na rua ou na calçada: o caminho mais perto passa pelo próprio ponto.
+          final (cx, cy) = (p.x.floor() >>> 1, p.y.floor() >>> 1);
+          final sn = paths.snap(cx, cy, p.x / 2 - cx, p.y / 2 - cy)!;
+          expect(((cx + sn.px) * 2 - p.x).abs() + ((cy + sn.py) * 2 - p.y).abs(), lessThan(1e-6), reason: 'poça fora do caminho em ${p.x}, ${p.y}');
+        }
+        expect(perCell.length, 4, reason: 'faixa ${i + 1}: as 4 células z18 do Centro têm rua');
+        expect(perCell.values.toSet(), {band.puddles}, reason: 'faixa ${i + 1}: ${band.puddles} por célula z18');
         sets.add({for (final p in mine) '${p.x}|${p.y}'});
+        // O Eco de Água de cada poça do Rill sai na chance da faixa (o sorteio da poça contra ela).
+        final ecos = cw.extras(x21: x21, y21: y21, radiusM: 400, t: t, metersPerCell21: metersPerCell(lat), levelOf: (_, _, _) => 5).where((e) => e.personal && e.isEco);
+        double distM(Puddle p) => math.sqrt((p.x - x21) * (p.x - x21) + (p.y - y21) * (p.y - y21)) * metersPerCell(lat);
+        final expected = cw.puddlesNear(x21, y21, 400 / metersPerCell(lat), t).where((p) => p.personal && p.rolls.spawnRoll < band.ecoChance && distM(p) <= 400).length;
+        expect(ecos.length, expected);
       }
       for (var i = 1; i < sets.length; i++) {
-        expect(sets[i].containsAll(sets[i - 1]), isTrue);
+        expect(sets[i].containsAll(sets[i - 1]), isTrue, reason: 'a faixa ${i + 1} contém a $i');
       }
       final dry = climate()..personalPuddles = layerOf({kRainPuddles: 3}).puddlesAt;
       expect(dry.puddlesNear(x21, y21, 1, day).where((p) => p.personal), isEmpty, reason: 'sem chuva, nada');
+    });
+
+    test('Rill: a chance de Eco de Água das poças pessoais fica perto da da faixa', () {
+      final t = night + 3000;
+      for (final (i, v) in bands('rill.eco').indexed) {
+        final cw = climate(forced: 'rain')..personalPuddles = layerOf({kRainPuddles: v.toDouble()}).puddlesAt;
+        final mine = cw.puddlesNear(x21, y21, 1200 / metersPerCell(lat), t).where((p) => p.personal).toList();
+        final hit = mine.where((p) => p.rolls.spawnRoll < p.ecoChance!).length / mine.length;
+        expect(hit, closeTo(data.personal.rillBands[i].ecoChance, 0.06), reason: 'faixa ${i + 1}, ${mine.length} poças');
+      }
     });
 
     test('Clod: material a mais na coleta, na chance da faixa, e cada faixa contém a anterior', () {
@@ -318,7 +353,7 @@ void main() {
     expect(l.around(lat: lat, lon: lon, tUtc: night, radiusM: 120, playerLevel: 10), isEmpty);
     expect(l.puddlesAt(1, 1, 1, night), isNull);
     hide = false;
-    expect(l.puddlesAt(1, 1, 1, night)!.count, 2);
-    expect(l.addedPuddles, 2);
+    expect(l.puddlesAt(1, 1, 1, night)!.count, 4, reason: 'faixa 2 do Rill: 4 poças por célula z18');
+    expect(l.addedPuddles, 4);
   });
 }

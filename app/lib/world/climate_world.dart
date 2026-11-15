@@ -24,7 +24,7 @@ import 'spawn_field.dart';
 /// Uma poça agora (época 7): centro (células z21, já na rua), raio em metros, tamanho de 0 a 1 (cresce na chuva, encolhe
 /// secando), se ainda chove ([wet]) e os sorteios da janela de chuva dela.
 class Puddle {
-  const Puddle({required this.piece, required this.index, required this.x, required this.y, required this.radiusM, required this.size, required this.wet, required this.rolls, this.personal = false});
+  const Puddle({required this.piece, required this.index, required this.x, required this.y, required this.radiusM, required this.size, required this.wet, required this.rolls, this.personal = false, this.ecoChance});
 
   final PuddlePiece piece;
   final int index;
@@ -36,6 +36,9 @@ class Puddle {
 
   /// Poça da camada pessoal (o Rill): só este jogador vê.
   final bool personal;
+
+  /// A chance de Eco de Água desta poça (as do Rill, pela faixa). `null`: a da peça do clima.
+  final double? ecoChance;
 
   bool get frozen => piece.frozen;
 }
@@ -99,6 +102,20 @@ class PlayerClimate {
 
 final int _saltWet = salt('WETST');
 
+/// A poça de [puddles] mais perto de ([x21], [y21]) (células z21), ou `null` sem nenhuma. Para o debug.
+Puddle? nearestPuddle(Iterable<Puddle> puddles, double x21, double y21) {
+  Puddle? best;
+  var d2 = double.infinity;
+  for (final p in puddles) {
+    final d = (p.x - x21) * (p.x - x21) + (p.y - y21) * (p.y - y21);
+    if (d < d2) (best, d2) = (p, d);
+  }
+  return best;
+}
+
+/// Quantos pontos da célula cada poça do Rill tenta até cair na rua ou na calçada (sempre os mesmos sorteios).
+const int _rillTries = 8;
+
 class ClimateWorld {
   ClimateWorld({
     required this.seed,
@@ -139,7 +156,7 @@ class ClimateWorld {
 
   /// As poças a mais da camada pessoal (`PersonalLayer.puddlesAt`): a chave dos sorteios e quantas, por célula z17 e janela
   /// de chuva. `null`: só as do mundo.
-  ({int key, int count})? Function(int cx17, int cy17, int wetWindow, int t)? personalPuddles;
+  ({int key, int count, double ecoChance})? Function(int cx18, int cy18, int wetWindow, int t)? personalPuddles;
   final bool Function(String itemId) itemExists;
 
   /// A primeira época em que o item existe para o mundo (`since_epoch` do `items.json`; `null`: sempre). Antes dela o
@@ -682,17 +699,27 @@ class ClimateWorld {
       final wm = d.epoch.water;
       final hour = ((t + d.model.localOffsetH * 3600) % 86400) ~/ 3600;
       final iced = wm != null && !piece.frozen && wm.freezeClimates.contains(d.def.id) && hour >= wm.freezeFromH && hour < wm.freezeToH ? d.model.def(wm.freezeAs)?.puddles : null;
-      // A camada pessoal: as poças a mais do Rill, sorteadas pelo jogador e pela chuva, levadas à rua como as outras.
-      final pp = piece.always ? null : personalPuddles?.call(cx, cy, wetWindow, t);
-      final mine = <({int index, double x, double y, double radiusM, double depth})>[];
-      if (pp != null) {
-        final rng = Pcg32(fnv1a64([pp.key, epochId, cx, cy, wetWindow]), saltKenoma);
-        for (var k = 0; k < pp.count; k++) {
-          final x = (cx + rng.nextFloat()) * 16, y = (cy + rng.nextFloat()) * 16, r = rLo + (rHi - rLo) * rng.nextFloat();
-          if (_toStreet(x, y) case final p?) mine.add((index: 1000 + k, x: p.$1, y: p.$2, radiusM: r, depth: 0.0));
+      // A camada pessoal: as poças a mais do Rill, por célula z18 (4 em cada z17), sorteadas pelo jogador e pela chuva e
+      // sempre na rua ou na calçada: cada poça tenta até [_rillTries] pontos da célula até um cair no que se anda.
+      final mine = <(({int index, double x, double y, double radiusM, double depth}), ({int key, double eco}))>[];
+      if (!piece.always && personalPuddles != null) {
+        for (var q = 0; q < 4; q++) {
+          final cx18 = cx * 2 + (q & 1), cy18 = cy * 2 + (q >>> 1);
+          final pp = personalPuddles!(cx18, cy18, wetWindow, t);
+          if (pp == null) continue;
+          final rng = Pcg32(fnv1a64([pp.key, epochId, cx18, cy18, wetWindow]), saltKenoma);
+          for (var k = 0; k < pp.count; k++) {
+            final r = rLo + (rHi - rLo) * rng.nextFloat();
+            (double, double)? at;
+            for (var i = 0; i < _rillTries; i++) {
+              final x = (cx18 + rng.nextFloat()) * 8, y = (cy18 + rng.nextFloat()) * 8;
+              at ??= _toStreet(x, y);
+            }
+            if (at != null) mine.add(((index: 1000 + q * 100 + k, x: at.$1, y: at.$2, radiusM: r, depth: 0.0), (key: pp.key, eco: pp.ecoChance)));
+          }
         }
       }
-      for (final (s, own) in [for (final s in spots) (s, false), for (final s in mine) (s, true)]) {
+      for (final (s, own) in [for (final s in spots) (s, null), ...mine]) {
         // Secando, as baixadas mais fundas duram mais.
         final sz = dried == null ? size : size + dried * (1 - 1 / (1 + bonus * s.depth));
         if (sz <= 0) continue;
@@ -706,8 +733,9 @@ class ClimateWorld {
           radiusM: s.radiusM,
           size: math.min(1.0, sz),
           wet: cur != null && identical(shown, piece),
-          rolls: puddleRolls(own ? pp!.key : seed, epochId, cx, cy, wetWindow, s.index),
-          personal: own,
+          rolls: puddleRolls(own?.key ?? seed, epochId, cx, cy, wetWindow, s.index),
+          personal: own != null,
+          ecoChance: own?.eco,
         ));
       }
     }
@@ -788,7 +816,7 @@ class ClimateWorld {
     // Poças: água pura (ou o cristal da poça congelada) enquanto têm água, e o Eco de Água enquanto chove.
     for (final pd in puddlesNear(x21, y21, r21, t)) {
       final spawn = pd.piece.spawn, item = pd.piece.item, r = pd.rolls;
-      if (spawn != null && pd.wet && r.spawnRoll < spawn.chance) {
+      if (spawn != null && pd.wet && r.spawnRoll < (pd.ecoChance ?? spawn.chance)) {
         final s = _eco(spawn, r.pick, pd.x, pd.y, fnv1a64([r.uid, 1]), t, levelOf, personal: pd.personal);
         if (s != null) out.add(s);
       }

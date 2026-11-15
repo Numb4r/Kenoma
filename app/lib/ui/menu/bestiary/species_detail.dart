@@ -364,9 +364,9 @@ class _SpeciesDetailScreenState extends State<SpeciesDetailScreen> {
       if (ability == null)
         _line('Nenhuma.', color: KCores.textoMudo)
       else ...[
-        _line(abilityText(ability, best ?? 1, bands), key: const Key('species-ability')),
+        _line(abilityText(ability, best ?? 1, bands, widget.data.personal), key: const Key('species-ability')),
         _line(best == null ? 'Nenhuma na coleção: a faixa do nível 1.' : 'Pela sua de nível $best.', color: KCores.textoMudo),
-        for (var k = 0; k < ability.bands.length && k < bands.length; k++) _line('Níveis ${bands[k].$1}${k + 1 == bands.length ? '+' : ' a ${bands[k].$2}'}: ${abilityLabel(ability.kind, ability.bands[k])}', color: KCores.textoMudo),
+        for (var k = 0; k < ability.bands.length && k < bands.length; k++) _line('Níveis ${bands[k].$1}${k + 1 == bands.length ? '+' : ' a ${bands[k].$2}'}: ${abilityLabel(ability.kind, ability.bands[k], widget.data.personal)}', color: KCores.textoMudo),
       ],
       if (family != null && family.workTitle.isNotEmpty) ...[
         const KSection('Trabalho'),

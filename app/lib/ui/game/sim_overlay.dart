@@ -43,5 +43,10 @@ class _SimChipsState extends State<SimChips> {
         _chip('Ir: Paulista', false, () => sim.teleport(kPaulista.$1, kPaulista.$2), color: kVeil),
         _chip('Ir: Bandeirantes', false, () => sim.teleport(kBandeirantes.$1, kBandeirantes.$2), color: kVeil),
         _chip('Ir: Jundiaí', false, () => sim.teleport(kJundiai.$1, kJundiai.$2), color: kVeil),
+        _chip('Ir até a poça mais próxima', false, () async {
+          final messenger = ScaffoldMessenger.maybeOf(context);
+          final msg = await widget.tools.goToNearestPuddle();
+          messenger?.showSnackBar(SnackBar(content: Text(msg)));
+        }, color: kEssence),
       ]);
 }

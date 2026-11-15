@@ -2,6 +2,7 @@
 /// habilidade de mapa, dá bônus de tolerância se vence o tipo do alvo e ganha XP por sintonia.
 library;
 
+import '../../world/personal_layer.dart' show PersonalBalance;
 import 'package:flutter/material.dart';
 
 import '../../data/game_data.dart';
@@ -15,11 +16,11 @@ import '../type_label.dart';
 import 'screen_frame.dart';
 
 /// Texto curto da habilidade de uma espécie no nível dado ("Aura +5 m").
-String abilityShort(EcoSpecies sp, int level, List<(int, int)> bands) {
+String abilityShort(EcoSpecies sp, int level, List<(int, int)> bands, [PersonalBalance p = const PersonalBalance()]) {
   final a = sp.ability;
   if (a == null) return '';
   final v = a.bands[abilityBandIndex(level, bands).clamp(0, a.bands.length - 1)];
-  return abilityLabel(a.kind, v);
+  return abilityLabel(a.kind, v, p);
 }
 
 class CircleScreen extends StatefulWidget {
@@ -73,7 +74,7 @@ class _CircleScreenState extends State<CircleScreen> {
                     Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
-                        '${widget.data.species(c.speciesId)!.name} nv ${c.level}: ${attr.abilityText(widget.data.species(c.speciesId)!.ability!, c.level, bands)}',
+                        '${widget.data.species(c.speciesId)!.name} nv ${c.level}: ${attr.abilityText(widget.data.species(c.speciesId)!.ability!, c.level, bands, widget.data.personal)}',
                         key: Key('circle-effect-${c.uid}'),
                         style: const TextStyle(fontSize: 10, color: kText, height: 1.6),
                       ),
@@ -111,7 +112,7 @@ class _Slot extends StatelessWidget {
           : Column(children: [
               SpeciesImage(sprite: sprites[c.speciesId], size: 56),
               Text('NV ${c.level}', style: const TextStyle(fontSize: 8, color: kText)),
-              Text(abilityShort(sp, c.level, bands).toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal), textAlign: TextAlign.center),
+              Text(abilityShort(sp, c.level, bands, data.personal).toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal), textAlign: TextAlign.center),
             ]),
     );
   }
@@ -154,7 +155,7 @@ class _Tile extends StatelessWidget {
                 '${creature.level >= state.balance.levelCapFor(creature.speciesId) ? '' : ' · XP ${creature.xp}/$next'}',
                 style: const TextStyle(fontSize: 8, color: kDim),
               ),
-              if (sp != null) Text(abilityShort(sp, creature.level, bands).toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal)),
+              if (sp != null) Text(abilityShort(sp, creature.level, bands, data.personal).toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal)),
             ]),
           ),
           Text(active ? 'ATIVO' : 'TOCAR', style: TextStyle(fontSize: 8, color: active ? kSignal : kDim)),
