@@ -654,3 +654,8 @@ Novos: Rill por célula z18 em `world/personal_layer_test` (contagem por célula
 ### No aparelho
 
 Pendente: o celular estava desconectado. Falta, com o marcador ligado e numa chuva forçada, capturar as poças pessoais e as do relevo (e o Dilúvio num lugar baixo), e o Hum à noite numa rua com postes, com tempestade forçada.
+
+### Depois do pedido de 2026-11-15
+
+- **Época 12 adiada** para **2026-12-07 16:00 UTC** (era 2026-11-16), sem publicar nada. O `valid_until_utc` continua 2027-02-14.
+- O celular sai do desenvolvimento por algumas versões: os testes da 0.20.3 no aparelho vão para o checklist da versão seguinte.

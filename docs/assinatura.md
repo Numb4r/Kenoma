@@ -163,7 +163,7 @@ O GitHub Pages só serve a raiz ou `/docs` de uma branch, por isso a branch `gh-
 
 ### Época 12 (pronta, não publicada)
 
-A época 12 começa em **2026-11-16 16:00 UTC** (`starts_utc` em `app/assets/data/epochs.json`; mude antes de publicar se a data não servir) e traz o `sao_paulo_e12.bin` (Iluminado e Sagrado) e os pontos do OSM com os becos (`traffic_packs`). Como a época entra no hash de todo spawn, **o mundo muda para todos no início dela**, e quem estiver sem a época 12 vê outro mundo; e o `regions.json` publicado (época 5) deixa de bater com ela: sem o catálogo novo, quem tem São Paulo baixado cai no fallback da Overpass ali. Por isso tudo sai junto, antes do início:
+A época 12 começa em **2026-12-07 16:00 UTC** (adiada de 2026-11-16) (`starts_utc` em `app/assets/data/epochs.json`; mude antes de publicar se a data não servir) e traz o `sao_paulo_e12.bin` (Iluminado e Sagrado) e os pontos do OSM com os becos (`traffic_packs`). Como a época entra no hash de todo spawn, **o mundo muda para todos no início dela**, e quem estiver sem a época 12 vê outro mundo; e o `regions.json` publicado (época 5) deixa de bater com ela: sem o catálogo novo, quem tem São Paulo baixado cai no fallback da Overpass ali. Por isso tudo sai junto, antes do início:
 
 1. Os arquivos novos num release `regions-e12` (os de `regions-e5` continuam onde estão):
    `gh release create regions-e12 --title "Regiões, época 12" pipeline/out/regions/sao_paulo_e12.bin pipeline/out/regions/sao_paulo_e12_traffic.bin`
