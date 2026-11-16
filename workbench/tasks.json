@@ -1,15 +1,11 @@
 {
  "owner": null,
- "doing": [
-  {
-   "t": "Seção 6: fechamento da 0.20.4",
-   "why": "testes, marcos, commit e push"
-  }
- ],
+ "doing": [],
  "queue": [
   "Release 0.20.4 no PC e instalação no moto g54 (checklist do celular)"
  ],
  "done": [
+  "Seção 6: 0.20.4 fechada (1818 testes, analyze limpo, push 9791fc9)",
   "Seção 5: checklist do celular (docs/checklist-celular.md e aba Checklist)",
   "Seção 4: workbench (catálogo com 255 formas, 44 climas, 7 biomas, 5 clipes, números medidos, notas pelo Tailscale)",
   "Seção 2: agentes testador, criativo e conteudista (commit separado)",
