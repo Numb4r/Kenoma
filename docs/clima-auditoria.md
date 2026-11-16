@@ -227,21 +227,25 @@ No debug, o clima forçado começa do zero no instante em que é forçado; troca
 - **Debug.** "Efeito do clima no toque" > Procissão faz uma fila nascer no ponto tocado, só neste aparelho; como na do mundo, ela pode sair da névoa já no meio da rota.
 - **Época 8 (parâmetro para quem monta a época).** `"street_route": true` na peça `procession` do clima `fog_procession`: o Eco do fim nasce no ponto de rua mais perto do fim (o fim da rota e das velas) e fica `spawn.ttl_s` depois de aparecer, mesmo com a zona acabada.
 
-## Ordem de desenho (0.17.2)
+## Ordem de desenho (0.17.2; 0.22.0)
 
 A ordem é fixa e mora em `ui/game/draw_order.dart` (`MapLayer`); o mapa do jogo só pinta por `paintLayers`. De baixo para cima:
 
 | Camada | O que tem |
 | --- | --- |
-| `base` | ruas, verde, água, a luz do dia, a rota do Modo Viagem, nomes das ruas |
+| `base` | o chão (no Completo, os blocos de cache: chão do bioma, ruas, calçada, faixas, sombras e a luz da hora; no Simplificado, o chão de antes e a luz do dia), ciclovias, a rota do Modo Viagem, nomes das ruas |
 | `climateGround` | cobertura das ruas (neve, gelo, fuligem, água, dunas), poças, crateras, marcas queimadas, brasas, velas no chão, manchas, runas, pegadas, enfeites do chão |
-| `shadows` | pares de sombra da Lua Dupla, Aura, alcance de toque, rastros do Radar |
+| `shadows` | pares de sombra da Lua Dupla |
+| `walkers`, `cars` | passantes e ciclistas; carros e barcos (passam por baixo dos telhados) |
+| `buildings` | só no Completo: paredes e telhados, janelas, props de telhado, árvores, postes, ponto de ônibus, banca, a neve nos telhados e a faixa do céu com a névoa; o telhado ou a copa sobre algo do jogo fica translúcido |
+| `reach` | Aura, alcance de toque, rastros do Radar |
 | `creatures`, `sparks`, `materials` | Ecos e Espíritos; Fagulhas; materiais |
-| `walkers`, `cars` | passantes e ciclistas; carros e barcos |
 | `player` | Familiar, Conjurador (ou o carro do Modo Viagem), retorno visual |
 | `air` | arco-íris, olho do furacão, redemoinho, prédios da Maré, vultos da Neblina, Procissão em pé |
-| `climateScreen` | raios e quedas, gotas, flocos, o tom de cor, véu nas bordas |
+| `climateScreen` | raios e quedas, gotas, flocos, o tom de cor, véu nas bordas (em meia resolução desde a 0.22.0) |
 | `hud` | marcas do Radar na borda (o resto do HUD é widget) |
+
+Desde a 0.22.0 o que é do jogo (Ecos, Fagulhas, materiais, o alcance e o Conjurador) vem depois dos prédios e do tráfego: nada do cenário o esconde. As partículas de tela têm um orçamento só (`particle_cap`), dividido entre o clima e os dois eventos na proporção do que cada camada pede; o Simplificado usa metade.
 
 O tom de cor do clima é da camada de tela: cobre o mapa e quem está nele por igual. Nada do clima pinta só as entidades nem as deixa de fora. `ClimateGround.paint` desenha o chão e deixa as sombras e o que é do ar para `paintShadows` e `paintAir`. Zona nova: se for alta, o estilo entra em `airZoneStyles`.
 

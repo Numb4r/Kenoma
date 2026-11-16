@@ -748,3 +748,53 @@ Novos: `test/core/climate_layers_test` (Vigília e Tempestade juntas na sexta-fe
 
 - Fotos do workbench: os que se movem (funil do tornado, Procissão, Vigília, Maré do Véu) foram capturados em GIF no Centro, mas a peça que anda nem sempre cai no quadro; o arco-íris é a captura com o GPS simulado levado ao pé. A Chuva de meteoros ficou de dia: o relógio do debug não pegou nas duas tentativas do script.
 - O Céu e o calendário mostram o modelo da época vigente: até 7/dez, a 11, onde os eventos ainda são climas.
+
+## Fase 1 · fatia 9 · O estilo do laboratório vira o mapa (0.22.0)
+
+GDD rev 358 (commit próprio: o requisito do Tornado, as cores do mundo e o parágrafo dos dois estilos gráficos depois da Câmera). Versão 0.22.0+38, mesma chave, save no schema 9 (só preferências novas nos Ajustes). Feita no notebook, com o emulador; o celular não estava ligado, então os números em profile foram para o checklist.
+
+### Sobras da 0.21.0
+
+- **Criativo com Aseprite e Blender:** as ferramentas dos dois servidores MCP (escopo do usuário, valem neste repositório; os dois respondem) estão na lista do `.claude/agents/criativo.md`, nomeadas uma a uma, mais o `ToolSearch` (as ferramentas MCP chegam adiadas). A definição do agente só é relida no começo da sessão: nesta, o `criativo` ainda não as via, e a arte saiu como dado de pixel em código. O addon do Blender está um protocolo atrás (15 contra 16): `uvx mcp-for-blender install-addon` e reiniciar o Blender.
+- **Olhos da Vigília vermelhos** (`#f02a3a`, escolha do `criativo`): a camada `eyes`, o chão do evento, o olhar (`gaze`) e o raio da Vigília. `docs/art/estilo-mapa.md`: o ciano é o sinal das ferramentas e o violeta é o jogador; nenhuma ameaça do Véu usa os dois.
+- **Tornado do calendário traz o Vendaval** pela duração dele (`calendar_climate` no evento; o calendário que pede o Tornado vira Vendaval no `resolve`). Pelo sorteio continua pedindo Tempestade ou Vendaval. Isso muda o mundo: entrou na **época 13** (cópia da 12 com essa regra, início 2026-12-14 16:00 UTC). A 12 não mudou; como a Estação Seca do Véu é em agosto e setembro, as duas só diferem a partir de agosto de 2027.
+- **Auréola da Sagrada:** o `criativo` baixou o corpo de 9 sprites (2 a 5 px) e redesenhou o Frondling (4 linhas a menos de folha); 10 formas não cabem sem redesenhar a máscara e ficaram com auréola fina de 1 px.
+- **Workbench:** item de debug "Câmera segue a peça" (a câmera do mapa vai até a peça do clima que anda mais perto e a acompanha); `workbench/capture/eventos.py` liga o item nos GIFs. O relógio da Chuva de meteoros não era do app: o script tocava antes de o menu da build de debug abrir. Agora ele espera o menu e confere o "(OVERRIDE)" antes de seguir.
+
+### O estilo novo (com o `criativo`)
+
+- `app/lib/ui/sprites/map_style.dart`: paredes sempre mais escuras que o telhado (escada de valor por estilo), telhados por variante (`roofVariantsFor`: laje clara, fibrocimento, metal raro, duas cerâmicas, manta, ardósia), platibanda, caixa d'água, ar-condicionado e antena, `floorPx` para as janelas por andar, calçada portuguesa (`sidewalk_mosaic`), ponto de ônibus, banca, faixa de pedestre, portão, três árvores e o ipê em três carimbos com `ipeStamp` (roxo em junho e julho, amarelo em agosto e setembro), `sceneLightSplit` (quente no lado iluminado, frio na sombra), asfalto molhado com brilho e reflexo dos postes, névoa do horizonte, neve no telhado e `fineStamps`. As regras em `docs/art/estilo-mapa.md` ("0.22.0: do laboratório para o mapa").
+- O Laboratório visual usa o mesmo renderizador do mapa no "depois"; o "antes" é o Simplificado.
+
+### Prédios e árvores do OSM
+
+`pipeline/build_buildings.py` grava `campinas_e0_bldg.bin` (32.116 prédios, 1.760 árvores, 417 KB, no APK; fora das épocas, como as ciclovias). O de São Paulo (2.199.471 prédios, 29 MB) saiu em `out/regions/` e **não vai ser publicado ainda**: o leitor guarda todos os prédios na memória, o que passaria de centenas de MB no celular; o app recusa arquivo de prédios acima de 4 MB. O app já sabe baixar e conferir `route_files.buildings`; falta um formato por tile, lido sob demanda. Até lá São Paulo sai no estilo Completo sem prédios. **A cobertura de prédios do OSM em Campinas é irregular**: há quarteirões cheios (a Praça Ramos de Azevedo tem 149 prédios em 380 m) e trechos do Centro quase vazios (9 prédios a 176 m do ponto de teleporte "Centro"). Onde não há prédio, o estilo novo mostra o chão, as ruas e as árvores.
+
+### Giro: o que estava errado e o que mudou
+
+- **O que girava errado.** No mapa antigo, o ruído do chão era uma textura girada como imagem e reamostrada a cada quadro: pixels tortos e serrilhado misturado. No laboratório, os módulos de chão e de telhado só eram transladados: ao girar, o desenho do piso escorregava por cima do chão, e o quarteirão inteiro era refeito em ângulo contínuo a cada quadro, então os pixels tremiam no giro.
+- **O que mudou** (`app/lib/ui/city/`): o chão (ruas, lotes, grama, calçada, faixas, sombras, a planta dos prédios) é rasterizado já girado, na grade da tela, em blocos de 4 × 4 células z21 guardados em cache. No arrasto e na pinça os blocos ficam no ângulo mais próximo (passos de 3 graus) e no zoom do começo do gesto; um quarto de segundo depois de soltar, são refeitos no ângulo e no zoom exatos e só deslizam por pixels inteiros (teste: `onGrid`). Os blocos se sobrepõem 1 pixel de arte, com pixels iguais, para a emenda nunca abrir. Tudo que tem altura (árvores, postes, props, props de telhado, janelas, paredes, letreiros) é desenhado de pé, na tela, a cada quadro; paredes e telhados saem do centro da tela para fora em qualquer giro.
+
+### Desempenho
+
+- Tipo de build marcado em todo número: o laboratório escreve "DEBUG, NÃO VALE" / "PROFILE" / "RELEASE" no custo do quadro; o Debug, Desempenho, mostra o custo do mapa (chão, blocos refeitos, o que fica de pé, partículas) com a build; o `workbench/numbers.json` e o checklist dizem a build de cada número. A build de profile agora sai com a chave de release (`android/app/build.gradle.kts`): instala por cima da dos amigos sem apagar o save.
+- **Cache:** o chão é refeito só quando o bloco entra na tela, o giro ou o zoom de alvo mudam, a luz muda de faixa (3 graus de altitude ou 5 de azimute do sol), a chuva molha o asfalto ou muda o nível de detalhe; no máximo 4 ms de blocos por quadro, os que faltam primeiro. O que fica de pé é refeito a cada quadro numa camada pequena (pixels de arte); a faixa do céu fica numa imagem.
+- **Zoom aberto** (mais de 65 m de tela, o que inclui o zoom do debug): sem flores, tufos, props de telhado, antenas, janelas, letreiros, faixas e portões, metade do pontilhado; o tráfego e os passantes a mais de 40 m do jogador andam no passo maior.
+- **Efeitos:** um orçamento de partículas só (`particle_cap`), dividido entre o clima e os dois eventos na proporção do pedido de cada camada (antes a primeira levava tudo); as camadas de tela em meia resolução, esticadas; o Simplificado usa metade.
+- **Perfil no celular:** não foi feito (o moto g54 não estava ligado). O passo a passo em profile, com o que anotar, está no checklist (`0220-perfil-antes-depois`). A meta de 16 ms em profile fica sem número até lá.
+
+### Mapa
+
+- Completo é o padrão em todos os biomas; o estilo antigo é o Simplificado (Ajustes, "Gráficos do mapa"), trocado na hora, com a mesma lógica, a mesma máscara de ruas e a mesma camada base. Com o Completo acima de 20 ms por quadro em média por um minuto, um aviso sugere o Simplificado uma vez só (`StyleAdvisor`, guardado nos Ajustes).
+- Ordem nova (`draw_order.dart`, `docs/clima-auditoria.md`): tráfego, depois prédios e o céu, depois o alcance e o que é do jogo. O telhado ou a copa sobre o Conjurador, um Eco, uma Fagulha ou um material fica translúcido. A neve e a geada acumulam também nos telhados, na posição deslocada; poças, alagamento e dunas continuam no chão (o mesmo `climateGround`, com a mesma câmera: a máscara de ruas e o campo de água não mudaram).
+- O Vazio cercado de cidade usa o chão dos vizinhos (só desenho). O céu do horizonte ocupa 6% da tela, com a névoa de distância embaixo.
+
+### Testes
+
+Novos: `test/ui/city_renderer_test` (giro exato e grade com o mapa parado, passos de 3 graus no arrasto; cache refeito só nas condições; a rua desenhada onde a câmera do jogo diz, girada; o chão sem emenda; a árvore igual em dois giros; telhado translúcido sobre o avatar e o Eco; neve no telhado deslocado; nível de detalhe; ipê pela época; orçamento de partículas com a pilha cheia), `test/ui/map_style_switch_test` (troca sem reiniciar e a camada base igual), `test/world/style_advisor_test` (a sugestão uma vez só), `test/data/building_pack_test` e o Tornado da época 13 em `test/core/climate_layers_test`. Ajustados: a ordem das camadas, a lista de épocas e o menu de debug, que cresceu.
+
+### Conhecido
+
+- Prédios só onde o OSM tem contorno; São Paulo sem prédios até o leitor por tile.
+- Os números do celular (profile e release) estão no checklist.
+- Época 13 criada sem confirmação: começa em 2026-12-14 16:00 UTC; se a regra do Tornado não for para agora, basta apagá-la antes de distribuir.

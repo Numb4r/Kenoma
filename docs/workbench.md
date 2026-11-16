@@ -57,4 +57,5 @@ No começo de cada versão, a thread principal lê `workbench/notes.json`:
 
 O `tasks.json` é atualizado no começo e no fim de cada seção do prompt (não a cada passo). O "Running now" reconhece o
 `flutter run` e o emulador `kenoma_g54`. Os números (`numbers.json`) são só o que foi medido; os do emulador ficam marcados
-como emulador e servem só para comparar antes e depois (o orçamento de 4 ms vale medido no moto g54).
+como emulador e servem só para comparar antes e depois (o orçamento de 4 ms vale medido no moto g54). Desde a 0.22.0 todo
+número diz também o tipo de build (debug, profile ou release): só profile e release no moto g54 valem como medida.
