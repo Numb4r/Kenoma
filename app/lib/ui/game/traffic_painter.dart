@@ -138,7 +138,9 @@ class TrafficPainter {
     final (l, top, r, b) = cam.visibleBounds(view.width, view.height);
     final sim = _simFor(seed)
       ..footpathCyclists = cycleways == null
-      ..forcedDensity = forcedDensity; // antes de povoar: a primeira leva já vem na densidade do debug
+      ..forcedDensity = forcedDensity // antes de povoar: a primeira leva já vem na densidade do debug
+      // 0.22.0: com o zoom aberto (mais de 65 m de tela), só os 40 m em volta do jogador andam a cada quadro.
+      ..nearM = view.width / cam.pixelsPerCell * metersPerCell > 65 ? 40 : null;
     final hour = localHour(tUtc, lonDeg);
     final density = sim.config.carDensityIn(speedMult);
     sim.center(px, py, metersPerCell, left: l, top: top, right: r, bottom: b, hour: hour, density: density);

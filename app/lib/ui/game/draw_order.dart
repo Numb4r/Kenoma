@@ -10,13 +10,20 @@ enum MapLayer {
   /// Marcas do clima no chão: cobertura das ruas, poças, crateras, brasas, velas, manchas, pegadas.
   climateGround,
 
-  /// Sombras e o que é do chão em volta do jogador: os pares de sombra da Lua Dupla, a Aura, os rastros.
+  /// Sombras do clima: os pares de sombra da Lua Dupla.
   shadows,
+  walkers,
+  cars,
+
+  /// 0.22.0, estilo Completo: prédios (paredes e telhados), árvores, postes e props de pé e a faixa do céu. O tráfego e os
+  /// passantes passam por baixo; o que é do jogo vem depois e nunca fica escondido.
+  buildings,
+
+  /// O alcance: a Aura, o anel de toque e os rastros, por cima dos prédios.
+  reach,
   creatures,
   sparks,
   materials,
-  walkers,
-  cars,
 
   /// O Familiar, o Conjurador (ou o carro do Modo Viagem) e o retorno visual das ações.
   player,

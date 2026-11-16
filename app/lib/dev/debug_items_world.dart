@@ -199,6 +199,13 @@ List<DebugItem> mapItems(DebugEnv env) {
       ),
     ),
     DebugItem(
+      id: 'map.follow_piece',
+      title: 'Câmera segue a peça',
+      section: DebugSection.map,
+      keywords: const ['câmera livre', 'tornado', 'funil', 'procissão', 'vigília', 'maré', 'gif', 'workbench', 'seguir'],
+      builder: (_) => overlay('Câmera segue a peça que anda', 'A câmera do mapa vai até a peça do clima que se move mais perto (funil, Procissão, olhar, prédio da Maré) e a acompanha. O jogo continua medindo no Conjurador.', () => tools.followPiece, tools.setFollowPiece),
+    ),
+    DebugItem(
       id: 'map.free',
       title: 'Mapa livre',
       section: DebugSection.map,

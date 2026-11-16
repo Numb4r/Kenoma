@@ -281,7 +281,7 @@
         },
         {
           "layer": "eyes",
-          "color": "#ff5a36",
+          "color": "#f02a3a",
           "alpha": 0.8,
           "count": 5,
           "sky": true
@@ -291,7 +291,7 @@
         {
           "kind": "scatter",
           "shape": "pixel",
-          "color": "#ff5a36",
+          "color": "#f02a3a",
           "alpha": 0.3,
           "per_cell": 1,
           "twinkle": true
@@ -579,7 +579,7 @@
       "event": "vigil",
       "name": "Vigília com Tempestade",
       "hud": "Os raios caem onde os olhares pousam; o Eco raro do olhar nasce Elétrico",
-      "lightning_color": "#ff5a36"
+      "lightning_color": "#f02a3a"
     },
     "crimson_storm": {
       "climate": "storm",

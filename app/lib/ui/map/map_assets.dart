@@ -34,6 +34,7 @@ import '../../data/relief_pack.dart';
 import '../../data/traffic_pack.dart';
 import '../../data/visual_pack.dart';
 import '../../world/visual_map.dart';
+import '../../data/building_pack.dart';
 import '../../data/region_loader.dart';
 import '../../net/map_http.dart';
 import '../../net/region_manager.dart';
@@ -53,10 +54,13 @@ import 'map_renderer.dart';
 const String kRegion = kBundledRegion;
 
 class MapAssets {
-  MapAssets({required this.map, required this.atlas, required this.balance, required this.stale, this.visual, this.noWalk, this.epoch, this.world, this.fallback, this.codec, this.trafficPoints, this.relief, this.cycleways});
+  MapAssets({required this.map, required this.atlas, required this.balance, required this.stale, this.visual, this.noWalk, this.epoch, this.world, this.fallback, this.codec, this.trafficPoints, this.relief, this.cycleways, this.buildings});
 
   /// As ciclovias do OSM para os ciclistas da simulação local (`null`: ficam nos caminhos de pedestre).
   final CyclePack? cycleways;
+
+  /// 0.22.0: os prédios e as árvores do estilo Completo (só cenário).
+  final BuildingSource? buildings;
 
   /// O relevo da região (da primeira época que o lista). `null`: terreno plano.
   final ReliefSource? relief;
@@ -282,6 +286,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
     TrafficPack? trafficPoints;
     CyclePack? cycleways;
     ReliefPack? relief;
+    BuildingPack? buildings;
     
     if (withVisual) {
       final pack = await loadVisualPack(region: kRegion, epoch: loaded.epoch, bundle: assets);
@@ -304,7 +309,8 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       final access = await loadAccessPack(region: kRegion, bundle: assets);
       trafficPoints = await loadTrafficPack(region: kRegion, epoch: loaded.epoch, bundle: assets);
       cycleways = await loadCyclePack(region: kRegion, bundle: assets);
-      world = LayeredWorld(regions: [LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk, access: access, relief: relief, traffic: trafficPoints)], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
+      buildings = await loadBuildingPack(region: kRegion, bundle: assets);
+      world = LayeredWorld(regions: [LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk, access: access, relief: relief, traffic: trafficPoints, buildings: buildings)], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
       visual = VisualMap(world);
     }
     final atlas = withAtlas ? await buildBiomeAtlas(biomes) : null;
@@ -321,6 +327,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       codec: world == null ? null : fallbackCodec(biomesJson),
       trafficPoints: world ?? trafficPoints, // com as regiões baixadas: os pontos de cada uma
       cycleways: cycleways,
+      buildings: world ?? buildings, // com as regiões baixadas: os prédios de cada uma
       relief: world ?? relief, // com as regiões baixadas: o relevo de cada uma
     );
   } catch (e) {

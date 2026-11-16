@@ -56,20 +56,18 @@ void main() {
     }
   });
 
-  test('o quarteirão carrega e os dois estilos desenham de dia e de noite, girando', () {
+  test('o quarteirão carrega e o estilo de antes desenha de dia e de noite, girando (o de depois está em city_renderer_test)', () {
     final block = LabBlock.fromJson(jsonDecode(File('assets/lab/centro_bloco.json').readAsStringSync()) as Map<String, dynamic>);
     expect(block.buildings, isNotEmpty);
     expect(block.roads, isNotEmpty);
     final art = LabArt.build();
     final r = LabRenderer(block, art, loadBiomes());
-    for (final after in [false, true]) {
-      for (final (alt, rot) in [(40.0, 0.0), (-20.0, 1.2)]) {
-        final rec = ui.PictureRecorder();
-        r.paint(ui.Canvas(rec), const ui.Size(137, 260), LabView(cx: 0, cy: 0, rotation: rot, pxPerM: 1.2, sunAltDeg: alt, sunAzDeg: 80, localHour: alt > 0 ? 10 : 22), after: after);
-        final img = rec.endRecording().toImageSync(137, 260);
-        expect(img.width, 137);
-        img.dispose();
-      }
+    for (final (alt, rot) in [(40.0, 0.0), (-20.0, 1.2)]) {
+      final rec = ui.PictureRecorder();
+      r.paint(ui.Canvas(rec), const ui.Size(137, 260), LabView(cx: 0, cy: 0, rotation: rot, pxPerM: 1.2, sunAltDeg: alt, sunAzDeg: 80, localHour: alt > 0 ? 10 : 22));
+      final img = rec.endRecording().toImageSync(137, 260);
+      expect(img.width, 137);
+      img.dispose();
     }
     art.dispose();
   });

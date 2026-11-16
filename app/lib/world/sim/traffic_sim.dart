@@ -172,6 +172,11 @@ class TrafficSim {
   int _nextId = 1, _frame = 0;
   double _vl = 0, _vt = 0, _vr = 0, _vb = 0;
   bool _hasView = false;
+  double _px = 0, _py = 0;
+
+  /// 0.22.0, nível de detalhe do zoom aberto: só quem está a até [nearM] metros do jogador anda a cada quadro; o resto da
+  /// tela anda no passo maior, como o que está fora dela. `null`: a área próxima é a tela inteira.
+  double? nearM;
   double _carCap = 0, _walkCap = 0, _spawnDebt = 0;
   final List<SimLink> _carSources = [];
   final List<(SimEdge, bool)> _walkSources = [];
@@ -192,6 +197,8 @@ class TrafficSim {
   /// Centra a área simulada em ([px], [py], células z21): monta o grafo na primeira vez (e já povoa as ruas) e refaz
   /// quando o jogador andou [TrafficSimConfig.rebuildM]. A vista ([left]..[bottom], células) é a tela do momento.
   void center(double px, double py, double mpc, {double? left, double? top, double? right, double? bottom, double hour = 12, double density = 1}) {
+    _px = px;
+    _py = py;
     if (left != null) {
       _vl = left;
       _vt = top!;
@@ -1154,8 +1161,9 @@ class TrafficSim {
     _frame++;
     final every = math.max(1, config.farEvery), far = config.farM;
     if (_hasView) _blocks();
+    final lod = nearM != null && _hasView, nr = (nearM ?? 0) / g.mpc;
     for (final link in g.links) {
-      final near = !_hasView || link.edge.touches(_vl, _vt, _vr, _vb, far / g.mpc);
+      final near = !_hasView || (lod ? link.edge.touches(_px - nr, _py - nr, _px + nr, _py + nr, 0) : link.edge.touches(_vl, _vt, _vr, _vb, far / g.mpc));
       // Longe da tela: um passo maior a cada [every] quadros (cada rua no seu quadro, para espalhar o custo).
       if (!near && (link.edge.a.id + _frame) % every != 0) continue;
       final h = near ? dt : dt * every;
@@ -1180,7 +1188,7 @@ class TrafficSim {
     _avoid();
     for (var i = walkers.length - 1; i >= 0; i--) {
       final w = walkers[i];
-      final near = !_hasView || _inView(w.x, w.y, far);
+      final near = !_hasView || (lod ? (w.x - _px).abs() <= nr && (w.y - _py).abs() <= nr : _inView(w.x, w.y, far));
       if (near || (w.id + _frame) % (every * 2) == 0) _stepWalker(w, near ? dt : dt * every * 2, walkMult);
       if (w.gone) {
         walkers[i] = walkers.last;

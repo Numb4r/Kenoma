@@ -37,6 +37,14 @@ class ClimatePainter {
 
   /// Modo bolso: menos partículas (o agente da Patrulha liga).
   bool lowRate = false;
+
+  /// A fração do orçamento que vale agora: 1 no estilo Completo, menos no Simplificado.
+  double reduction = 1;
+
+  /// 0.22.0: as camadas de tela em meia resolução (um buffer com a metade dos pixels físicos, esticado por vizinho mais
+  /// próximo). [dpr]: pixels físicos por pixel lógico.
+  bool halfRes = false;
+  double dpr = 1;
   void setPocket(bool on) => lowRate = on;
 
   /// Reduzir clarões: o glitch pisca devagar e fraco.
@@ -50,6 +58,9 @@ class ClimatePainter {
   /// Direção do vento na tela (vetor unitário) e a hora local, para as camadas que dependem delas.
   ui.Offset wind = const ui.Offset(1, 0);
   int localHour = 12;
+
+  /// Partículas por camada agora (teste do orçamento).
+  List<int> get layerCounts => [for (final p in _pools.values) if (p.layer.kind == 'particles') p.parts.length];
 
   /// Partículas na tela agora.
   int get count => _pools.values.fold(0, (a, p) => a + p.parts.length);
@@ -74,8 +85,8 @@ class ClimatePainter {
         _pools.putIfAbsent(l, () => _Pool(l)).target = 1;
       }
     }
-    final budget = lowRate ? pocketRate : 1.0;
-    var left = cap;
+    final budget = (lowRate ? pocketRate : 1.0) * reduction;
+    final live = <(_Pool, double)>[];
     for (final p in _pools.values.toList()) {
       final target = enabled ? p.target : 0.0;
       p.level += (target - p.level) * (1 - math.exp(-dt / 1.2));
@@ -84,7 +95,15 @@ class ClimatePainter {
         continue;
       }
       if (p.layer.kind != 'particles' || view.isEmpty) continue;
-      final want = math.min(left, (p.layer.count('count') * p.level * budget).round());
+      live.add((p, p.layer.count('count') * p.level * budget));
+    }
+    // 0.22.0: um orçamento só, com teto fixo [cap], dividido entre o clima e os dois eventos na proporção do que cada camada
+    // pede (antes a primeira camada levava tudo). Nenhuma pilha passa do teto.
+    final total = live.fold(0.0, (a, e) => a + e.$2);
+    final scale = total > cap ? cap / total : 1.0;
+    var left = cap;
+    for (final (p, w) in live) {
+      final want = math.min(left, (w * scale).floor());
       left -= want;
       _step(p, dt, view, want);
     }
@@ -160,6 +179,19 @@ class ClimatePainter {
 
   /// Desenha as camadas. [player] é o Conjurador na tela (o sopro do Frio sai dali). [sky]: as vagas do céu no HUD.
   void paint(ui.Canvas canvas, ui.Size view, {ui.Offset? player, Map<String, ui.Rect> sky = const {}}) {
+    if (!halfRes || view.isEmpty || _pools.isEmpty) return _paintAll(canvas, view, player: player, sky: sky);
+    final w = (view.width * dpr / 2).ceil(), h = (view.height * dpr / 2).ceil();
+    final rec = ui.PictureRecorder();
+    final c = ui.Canvas(rec, ui.Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()))..scale(dpr / 2);
+    _paintAll(c, view, player: player, sky: sky);
+    final pic = rec.endRecording();
+    final img = pic.toImageSync(w, h);
+    pic.dispose();
+    canvas.drawImageRect(img, ui.Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()), ui.Rect.fromLTWH(0, 0, w * 2 / dpr, h * 2 / dpr), ui.Paint()..filterQuality = ui.FilterQuality.none);
+    img.dispose();
+  }
+
+  void _paintAll(ui.Canvas canvas, ui.Size view, {ui.Offset? player, Map<String, ui.Rect> sky = const {}}) {
     for (final p in _pools.values) {
       final l = p.layer;
       final a = l.val('alpha', 0.4) * p.level;

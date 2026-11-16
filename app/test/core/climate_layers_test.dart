@@ -98,6 +98,32 @@ void main() {
     expect(found, greaterThan(0));
   });
 
+  test('época 13: o Tornado do calendário (Estação Seca do Véu) traz o Vendaval pela duração dele; a época 12 não muda', () {
+    final m13 = schedule.epochs.firstWhere((e) => e.id == 13).climate!;
+    var calendar = 0, drawn = 0;
+    for (var seed = 1; seed < 200; seed++) {
+      for (var day = 0; day < 61; day += 3) {
+        final d = utc(2027, 8, 1) + day * 86400;
+        for (final a in m13.schedule.dayOf(seed, m13.schedule.localDay(d), rx, ry, const [])) {
+          if (a.id != 'tornado') continue;
+          a.source == EventSource.calendar ? calendar++ : drawn++;
+          for (var t = a.startUtc; t < a.endUtc; t += 900) {
+            final c = m13.resolve(seed: seed, tUtc: t, rx: rx, ry: ry).climate;
+            if (a.source == EventSource.calendar) {
+              expect(c, 'gale', reason: 'seed $seed: o calendário traz o Vendaval');
+            } else {
+              expect(['storm', 'gale'], contains(c), reason: 'pelo sorteio continua o requisito');
+            }
+          }
+        }
+        // A época 12 continua igual: o mesmo dia lá não tem Vendaval trazido pelo calendário.
+        final w = m.windowOf(d + 15 * 3600);
+        expect(m.resolve(seed: seed, tUtc: w * m.windowS, rx: rx, ry: ry).source == ClimateSource.calendar && m.resolve(seed: seed, tUtc: w * m.windowS, rx: rx, ry: ry).climate == 'gale', isFalse);
+      }
+    }
+    expect(calendar, greaterThan(0));
+  });
+
   test('a Lua Carmim tinge a chuva (Chuva Carmim, poças vermelhas com Carmesins) e com sol fica só no céu', () {
     final rain = m.def('rain+crimson_moon')!, sun = m.def('clear+crimson_moon')!;
     expect(rain.puddles!.name, 'crimson_puddle');

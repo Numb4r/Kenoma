@@ -16,11 +16,13 @@ void main() {
       'base', // ruas, verde, água
       'climateGround', // marcas do clima no chão
       'shadows',
+      'walkers',
+      'cars',
+      'buildings', // 0.22.0: prédios, árvores e o céu do Completo, por cima do tráfego
+      'reach', // a Aura e o alcance, nunca escondidos
       'creatures',
       'sparks',
       'materials',
-      'walkers',
-      'cars',
       'player', // avatar e Familiar
       'air', // arco-íris, olho do furacão, figuras altas
       'climateScreen', // gotas, flocos, tom

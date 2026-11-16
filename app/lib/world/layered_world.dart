@@ -5,6 +5,7 @@
 /// mesmo com ou sem bloco, e Campinas não muda.
 library;
 
+import '../data/building_pack.dart';
 import '../data/traffic_pack.dart';
 import '../data/relief_pack.dart';
 import 'dart:collection';
@@ -23,13 +24,16 @@ enum MapSourceKind { pack, overpass, floor }
 
 /// Um pacote de região já lido e conferido.
 class LoadedRegion {
-  const LoadedRegion({required this.id, required this.grid, required this.visual, this.noWalk, this.access, this.relief, this.traffic});
+  const LoadedRegion({required this.id, required this.grid, required this.visual, this.noWalk, this.access, this.relief, this.traffic, this.buildings});
+
+  /// 0.22.0: os prédios e as árvores do estilo Completo. `null`: o mapa sai sem prédios.
+  final BuildingPack? buildings;
 
   /// Os pontos do OSM da região (postes, marquises, becos, semáforos). `null`: sem pontos.
   final TrafficPack? traffic;
 
-  LoadedRegion copyWith({AccessPack? access, TrafficPack? traffic}) =>
-      LoadedRegion(id: id, grid: grid, visual: visual, noWalk: noWalk, access: access ?? this.access, relief: relief, traffic: traffic ?? this.traffic);
+  LoadedRegion copyWith({AccessPack? access, TrafficPack? traffic, BuildingPack? buildings}) =>
+      LoadedRegion(id: id, grid: grid, visual: visual, noWalk: noWalk, access: access ?? this.access, relief: relief, traffic: traffic ?? this.traffic, buildings: buildings ?? this.buildings);
 
   /// O relevo da região (época 9 em diante). `null`: terreno plano.
   final ReliefPack? relief;
@@ -45,7 +49,28 @@ class LoadedRegion {
   bool contains(int x, int y) => x >= grid.x0 && y >= grid.y0 && x < grid.x0 + grid.width && y < grid.y0 + grid.height;
 }
 
-class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccessSource, ReliefSource, TrafficPointSource {
+class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccessSource, ReliefSource, TrafficPointSource, BuildingSource {
+  @override
+  Iterable<PackBuilding> buildingsIn(double l, double t, double r, double b, {double margin = 2}) sync* {
+    for (final reg in _regions) {
+      if (reg.buildings case final p?) yield* p.buildingsIn(l, t, r, b, margin: margin);
+    }
+  }
+
+  @override
+  Iterable<(double, double)> treesIn(double l, double t, double r, double b) sync* {
+    for (final reg in _regions) {
+      if (reg.buildings case final p?) yield* p.treesIn(l, t, r, b);
+    }
+  }
+
+  bool hasBuildings(String id) => _regions.any((r) => r.id == id && r.buildings != null);
+
+  void setBuildings(String id, BuildingPack buildings) {
+    final i = _regions.indexWhere((r) => r.id == id);
+    if (i >= 0) _regions[i] = _regions[i].copyWith(buildings: buildings);
+  }
+
   // Os pontos de todas as regiões (as áreas não se sobrepõem). Fora delas, nenhum.
   @override
   List<TrafficPoint> pointsIn(double left, double top, double right, double bottom) => [

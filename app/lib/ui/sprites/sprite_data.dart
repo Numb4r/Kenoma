@@ -85,8 +85,13 @@ const List<String> sootlingSprite = [
   '................................................',
 ];
 
-/// Frondling (frond.eco).
+/// Frondling (frond.eco). 0.22.0: a folha perdeu um período de 4 linhas da textura e o corpo desceu 4 px; antes ele
+/// ocupava 47 das 48 linhas e todo acessório de topo das variantes (auréola, broto, telhado) caía em cima da ponta.
 const List<String> frondlingSprite = [
+  '................................................',
+  '................................................',
+  '................................................',
+  '................................................',
   '.......................u.u......................',
   '......................u.O.u.....................',
   '.....................u.OeO.u....................',
@@ -108,10 +113,6 @@ const List<String> frondlingSprite = [
   '.......OedededeeeevdeeeedeeedddvddddededeO......',
   '......uOeedddefffffvdffedeeeddvddddedddeeOu.....',
   '.....uOeevedeefffffvfddededdddvddddeedeeeeOu....',
-  '......OedevdeedeeeeeveedddeedvdddddeedeedeO.....',
-  '.....uOeedvdedeeeeeeveeedeeedvddddddededeeOu....',
-  '....uOeeeevddeeffffdfvfedeeeddddddeedddeeeeOu...',
-  '.....uOeeeeveeefffffdffedeeeddddddeeedeeeeOu....',
   '......OedeeveedeeeeeeddededddddddedeedeedeO.....',
   '.....uOeedvdedeeOeeeeeedddeeddddOeedededeeOu....',
   '......uOeevddeeOOffffffedeeeddddOOeedddeeOu.....',

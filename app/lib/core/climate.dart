@@ -792,8 +792,10 @@ class ClimateModel {
       final local = DateTime.fromMillisecondsSinceEpoch((mid + localOffsetH * 3600) * 1000, isUtc: true);
       bool roll(String id, double chance) => chance >= 1 || Pcg32(fnv1a64([seed, w, fnv1a64Bytes(id.codeUnits), saltCalendar]), saltKenoma).nextFloat() < chance;
       // Época 12: o calendário pode trazer clima e evento no mesmo dia; aqui só conta o primeiro que é clima.
-      final hit = layered ? veil.allAt(seed, w, mid, skipped: _skips(events, mid)).where((h) => defs.containsKey(h.climate)).firstOrNull : veil.at(seed, w, mid, skipped: _skips(events, mid));
-      if (hit != null) return ClimateCause(hit.climate, source: ClimateSource.calendar, event: hit.rule.id);
+      // Época 13: o evento do calendário que traz clima (o Tornado com o Vendaval) conta como esse clima.
+      String? climateOf(String id) => defs.containsKey(id) ? id : eventDefs[id]?.calendarClimate;
+      final hit = layered ? veil.allAt(seed, w, mid, skipped: _skips(events, mid)).where((h) => climateOf(h.climate) != null).firstOrNull : veil.at(seed, w, mid, skipped: _skips(events, mid));
+      if (hit != null) return ClimateCause(layered ? climateOf(hit.climate)! : hit.climate, source: ClimateSource.calendar, event: hit.rule.id);
       for (final r in eclipses) {
         if (!defs.containsKey(r.climate)) continue; // época 12: o eclipse é evento (Sol Negro, Lua Carmim)
         final v = r.visibleIn(w * windowS, (w + 1) * windowS, rx, ry);

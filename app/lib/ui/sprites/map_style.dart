@@ -22,19 +22,35 @@ const int _resDark = 0xFF847C6F, _res = 0xFF968E80, _resLight = 0xFFA8A092;
 const int _sidewalkDark = 0xFF8E92A0, _sidewalk = 0xFFA3A7B3, _sidewalkLight = 0xFFB6BAC4;
 const int _litDark = 0xFFADABB9, _lit = 0xFFC2C0CC, _litLight = 0xFFD4D2DC;
 
-// Paredes e telhados.
-const int _wallRes = 0xFFD9C8A8, _wallResShade = 0xFFB09F82;
-const int _wallUrban = 0xFF9A9FB0, _wallUrbanShade = 0xFF767B8E;
-const int _wallLit = 0xFFE2DFE8, _wallLitShade = 0xFFB9B6C6;
-const int _wallSacred = 0xFFE6E0D0, _wallSacredShade = 0xFFB8B2A0;
-const int _wallBare = 0xFF9A7462, _wallBareShade = 0xFF765848;
-const int _roofTileDark = 0xFF84402F, _roofTile = 0xFFA8553D, _roofTileLight = 0xFFC4704F;
-// Laje: cinza quente de valor médio (luma 108), bem abaixo da calçada (167) e do concreto (130). É a massa dominante
-// do Centro, então fica quieta: quem brilha na cena é a calçada, a parede no sol e a magia.
-const int _roofSlabDark = 0xFF56525A, _roofSlab = 0xFF6E6A70, _roofSlabLight = 0xFF86828A;
-const int _roofTarDark = 0xFF3D4254, _roofTar = 0xFF4A4F62;
+// Paredes e telhados (0.22.0). O telhado é a face que recebe o sol de cima, então em todo estilo a escada de valor é
+// telhado > parede no sol > parede na sombra. Luma da base entre parênteses.
+// Paredes: reboco (97 / 72), reboco azulado (96 / 72), cinza do Centro em três degraus (113 / 87 / 67; o terceiro é a
+// sombra dos prédios de manta), Iluminado (132 / 100), cal do Sagrado (134 / 100), tijolo do Vazio (115 / 85).
+const int _wallRes = 0xFF6E5F4B, _wallResShade = 0xFF52463A;
+const int _wallUrban = 0xFF6C7084, _wallUrbanShade = 0xFF52566A, _wallUrbanDeep = 0xFF3E4254;
+const int _wallLit = 0xFF84828E, _wallLitShade = 0xFF646270;
+const int _wallSacred = 0xFF8A867C, _wallSacredShade = 0xFF68645C;
+const int _wallBare = 0xFF8E6A58, _wallBareShade = 0xFF6A4E42;
+// Cerâmica: vermelho-terra (113) e a telha mais nova, mais clara (134). Bem menos saturadas que a brasa.
+const int _roofTileDark = 0xFF8A4431, _roofTile = 0xFFB05A40, _roofTileLight = 0xFFCC7655;
+const int _roofTileBDark = 0xFF9A5A40, _roofTileB = 0xFFBC7452, _roofTileBLight = 0xFFD49068;
+// Laje de concreto: cinza claro e quente (154), lisa. Fica um degrau abaixo da calçada (167); quem a separa do chão é a
+// borda, a platibanda, a parede escura e a sombra.
+const int _roofSlabDark = 0xFF827F7C, _roofSlab = 0xFF9C9A96, _roofSlabLight = 0xFFB0AEA8;
+// Fibrocimento: cinza-esverdeado (141), ondulado.
+const int _roofFibroDark = 0xFF6F7A70, _roofFibro = 0xFF879287, _roofFibroLight = 0xFF9BA69A;
+// Manta escura (99): o telhado mais escuro da cidade, ainda bem acima do asfalto (57).
+const int _roofTarDark = 0xFF4A4E5E, _roofTar = 0xFF5E6272, _roofTarLight = 0xFF72768A;
+// Metal de galpão: zinco novo (164) e zinco velho (128).
 const int _roofMetalDark = 0xFF7E8A94, _roofMetal = 0xFF9AA7B0, _roofMetalLight = 0xFFB4C0C8;
-const int _roofSlateDark = 0xFF566C8A, _roofSlate = 0xFF6F86A6, _roofSlateLight = 0xFF8AA0BC;
+const int _roofMetalBDark = 0xFF5E6872, _roofMetalB = 0xFF77828C, _roofMetalBLight = 0xFF909BA4;
+// Ardósia do Sagrado (149); a caixa d'água usa os mesmos azuis.
+const int _roofSlateDark = 0xFF647A98, _roofSlate = 0xFF8298B6, _roofSlateLight = 0xFF9CB0CA;
+// Platibanda: a mureta de 1 px por dentro da borda da laje (190) e da manta (140).
+const int _parapet = 0xFFC0BEB6, _parapetTar = 0xFF8A8C98;
+// Calçada portuguesa do Centro: pedra clara (182) e basalto (94), nunca preto. Um terço escuro: a média (153) fica no
+// degrau da calçada.
+const int _mosaicLight = 0xFFB8B6B0, _mosaicDark = 0xFF5E5C68;
 
 /// A paleta do mapa. Nomes estáveis: os carimbos ([mapStampLegend]) apontam para estas chaves.
 const Map<String, int> mapPalette = {
@@ -44,8 +60,16 @@ const Map<String, int> mapPalette = {
   'asphalt_dark': _asphaltDark,
   'asphalt': _asphalt,
   'asphalt_light': _asphaltLight,
+  // Chuva: o asfalto molhado escurece e azula (43 e 34, ainda acima do contorno); `wet_shine` é o brilho do céu nele,
+  // em pixels soltos; `lamp_reflect` é o reflexo do poste à noite, uma faixa vertical curta.
+  'asphalt_wet': 0xFF262B3C,
+  'asphalt_wet_dark': 0xFF1E2231,
+  'wet_shine': 0xFF7C88A6,
+  'lamp_reflect': 0xFFE8C27A,
   'lane': 0xFFC9C4A8,
   'lane_worn': 0xFF8F8C7C,
+  // Faixa de pedestre: listras de 1 px, um pouco mais brancas que a faixa central.
+  'crosswalk': 0xFFDAD7C6,
   'oil': 0xFF22242F,
   'water_dark': _waterDark,
   'water': _water,
@@ -73,6 +97,22 @@ const Map<String, int> mapPalette = {
   'canopy_dark': 0xFF1F5A3A,
   'canopy': 0xFF2C7048,
   'canopy_light': 0xFF45905A,
+  // Mais dois verdes de copa, todos abaixo da grama (118): o amarelado (103; sibipiruna, e o ipê fora da floração) e o
+  // fundo (70; mangueira, figueira).
+  'canopy_warm_dark': 0xFF38602A,
+  'canopy_warm': 0xFF4E7E36,
+  'canopy_warm_light': 0xFF6E9E48,
+  'canopy_deep_dark': 0xFF17482F,
+  'canopy_deep': 0xFF205C3C,
+  'canopy_deep_light': 0xFF34784E,
+  // Ipê em flor. O ipê-roxo é rosa-magenta (matiz 320), de propósito longe do violeta do Véu; o amarelo é ouro, longe
+  // do laranja brasa.
+  'ipe_purple_dark': 0xFF8E3E78,
+  'ipe_purple': 0xFFB85A9A,
+  'ipe_purple_light': 0xFFDA8ABC,
+  'ipe_yellow_dark': 0xFFB88A1E,
+  'ipe_yellow': 0xFFE6BC2E,
+  'ipe_yellow_light': 0xFFF6DC6A,
   'concrete_dark': _concreteDark,
   'concrete': _concrete,
   'concrete_light': _concreteLight,
@@ -82,6 +122,8 @@ const Map<String, int> mapPalette = {
   'sidewalk_dark': _sidewalkDark,
   'sidewalk': _sidewalk,
   'sidewalk_light': _sidewalkLight,
+  'mosaic_light': _mosaicLight,
+  'mosaic_dark': _mosaicDark,
   'lit_dark': _litDark,
   'lit': _lit,
   'lit_light': _litLight,
@@ -90,12 +132,16 @@ const Map<String, int> mapPalette = {
   // Muro de quintal.
   'fence': 0xFFBEB8AA,
   'fence_dark': 0xFF8C867A,
+  // Portão de ferro no muro das casas: 3 a 4 px do lado da rua, `gate_dark` no pixel oposto ao sol.
+  'gate': 0xFF5E6E7E,
+  'gate_dark': 0xFF44505E,
   'wall_res': _wallRes,
   'wall_res_shade': _wallResShade,
-  'wall_res_b': 0xFFC2CCC8,
-  'wall_res_b_shade': 0xFF96A29E,
+  'wall_res_b': 0xFF586464,
+  'wall_res_b_shade': 0xFF414B4C,
   'wall_urban': _wallUrban,
   'wall_urban_shade': _wallUrbanShade,
+  'wall_urban_deep': _wallUrbanDeep,
   'wall_lit': _wallLit,
   'wall_lit_shade': _wallLitShade,
   'wall_sacred': _wallSacred,
@@ -105,14 +151,26 @@ const Map<String, int> mapPalette = {
   'roof_tile_dark': _roofTileDark,
   'roof_tile': _roofTile,
   'roof_tile_light': _roofTileLight,
+  'roof_tile_b_dark': _roofTileBDark,
+  'roof_tile_b': _roofTileB,
+  'roof_tile_b_light': _roofTileBLight,
   'roof_slab_dark': _roofSlabDark,
   'roof_slab': _roofSlab,
   'roof_slab_light': _roofSlabLight,
+  'roof_fibro_dark': _roofFibroDark,
+  'roof_fibro': _roofFibro,
+  'roof_fibro_light': _roofFibroLight,
   'roof_tar_dark': _roofTarDark,
   'roof_tar': _roofTar,
+  'roof_tar_light': _roofTarLight,
   'roof_metal_dark': _roofMetalDark,
   'roof_metal': _roofMetal,
   'roof_metal_light': _roofMetalLight,
+  'roof_metal_b_dark': _roofMetalBDark,
+  'roof_metal_b': _roofMetalB,
+  'roof_metal_b_light': _roofMetalBLight,
+  'parapet': _parapet,
+  'parapet_tar': _parapetTar,
   'roof_slate_dark': _roofSlateDark,
   'roof_slate': _roofSlate,
   'roof_slate_light': _roofSlateLight,
@@ -132,6 +190,10 @@ const Map<String, int> mapPalette = {
   'lamp_glow_lit': 0xFFFFF3D0,
   'cloud': 0xFFECEAF2,
   'cloud_shade': 0xFFC2C0D2,
+  // Neve e geada acumuladas no telhado, em pontilhado de 70% por cima da telha: branco azulado, nunca puro, e a
+  // sombra dela no lado oposto ao sol e junto da borda.
+  'snow': 0xFFE4E8F0,
+  'snow_shade': 0xFFB4BCD0,
 };
 
 /// A receita de um chão: três tons, quanto pontilhado e quais carimbos.
@@ -163,6 +225,8 @@ const Map<String, GroundRecipe> groundRecipes = {
   'lit': GroundRecipe(base: _lit, dark: _litDark, light: _litLight, ditherPct: 4, stamps: ['pebble'], stampsPer100Px: 3),
   'sacred': GroundRecipe(base: _sacred, dark: _sacredDark, light: _sacredLight, ditherPct: 8, stamps: ['pebble', 'tuft_b', 'flower_a'], stampsPer100Px: 10),
   'sidewalk': GroundRecipe(base: _sidewalk, dark: _sidewalkDark, light: _sidewalkLight, ditherPct: 5, stamps: ['crack', 'tuft_b'], stampsPer100Px: 4),
+  // A calçada portuguesa do Centro (Urbano e Iluminado): o pontilhado são pedras soltas ou trocadas, nos tons da calçada.
+  'sidewalk_mosaic': GroundRecipe(base: _mosaicLight, dark: _sidewalkDark, light: _sidewalkLight, ditherPct: 3, stamps: ['crack'], stampsPer100Px: 2),
   'road': GroundRecipe(base: _asphalt, dark: _asphaltDark, light: _asphaltLight, ditherPct: 10, stamps: ['crack', 'oil', 'patch'], stampsPer100Px: 6),
   'yard': GroundRecipe(base: _yard, dark: _yardDark, light: _yardLight, ditherPct: 14, stamps: ['tuft', 'tuft_b', 'flower_c', 'bush'], stampsPer100Px: 35),
   'lot': GroundRecipe(base: _dirt, dark: _dirtDark, light: _dirtLight, ditherPct: 16, stamps: ['weed', 'weed', 'tuft', 'pebble'], stampsPer100Px: 45),
@@ -171,10 +235,53 @@ const Map<String, GroundRecipe> groundRecipes = {
 const GroundRecipe _emptyGround = GroundRecipe(base: _dirt, dark: _dirtDark, light: _dirtLight, ditherPct: 14, stamps: ['weed', 'tuft', 'pebble', 'pebble'], stampsPer100Px: 25);
 
 /// Os chãos que levam um módulo repetido por baixo dos carimbos (paginação de piso).
-const Map<String, String> groundPatterns = {'sidewalk': 'sidewalk_tile', 'lit': 'floor_lit'};
+const Map<String, String> groundPatterns = {'sidewalk': 'sidewalk_tile', 'sidewalk_mosaic': 'sidewalk_mosaic', 'lit': 'floor_lit'};
+
+/// A altura de um andar em pixels de arte: uma fileira de janelas (módulo de 4 x 4) por andar visível da fachada.
+const int floorPx = 4;
+
+/// Os carimbos de detalhe fino, que saem no zoom aberto: flores, tufos, pedrinhas, rachaduras e props de telhado.
+const Set<String> fineStamps = {'tuft', 'tuft_b', 'flower_a', 'flower_b', 'flower_c', 'pebble', 'crack', 'roof_tank', 'roof_ac', 'roof_antenna'};
+
+/// A sombra de cada carimbo de árvore, pelo tamanho da copa.
+const Map<String, String> treeShadows = {
+  'tree': 'tree_shadow',
+  'tree_a': 'tree_shadow_s',
+  'tree_b': 'tree_shadow',
+  'tree_c': 'tree_shadow_l',
+  'ipe_purple': 'tree_shadow',
+  'ipe_yellow': 'tree_shadow',
+  'ipe_green': 'tree_shadow',
+};
+
+/// O carimbo do ipê de [kind] (`purple` ou `yellow`) no mês local [month] (1 a 12). Em Campinas o ipê-roxo floresce em
+/// junho e julho e o ipê-amarelo em agosto e setembro, um depois do outro; fora da floração é `ipe_green`. Ipê só em
+/// praça e parque.
+String ipeStamp(String kind, int month) => switch (kind) {
+      'purple' when month == 6 || month == 7 => 'ipe_purple',
+      'yellow' when month == 8 || month == 9 => 'ipe_yellow',
+      _ => 'ipe_green',
+    };
+
+// A copa do ipê: a mesma silhueta em flor e fora dela, para a árvore não mudar de forma com a estação.
+const List<String> _ipe = [
+  '....OOOOO....',
+  '..OOlllggOO..',
+  '.OllllgggggO.',
+  'OllglggglggdO',
+  'OlllggggggddO',
+  'OlggglggdggdO',
+  'OgglggggggddO',
+  'OggggdglgdddO',
+  'OggdggggddddO',
+  '.OggggdddddO.',
+  '..OOdddddOO..',
+  '....OOOOO....',
+];
 
 /// Carimbos de pixel: um caractere por pixel de arte, `.` transparente, o resto pela legenda de [mapStampLegend].
-/// Os de nome `roof_*`, `sidewalk_tile`, `floor_lit` e `window*` são módulos que se repetem; os outros são avulsos.
+/// Os de nome `roof_*` (menos os props `roof_tank`, `roof_ac` e `roof_antenna`), `sidewalk_*`, `floor_lit` e `window*`
+/// são módulos que se repetem; os outros são avulsos.
 const Map<String, List<String>> mapStamps = {
   // Tufo de grama (três folhas) e o tufo pequeno.
   'tuft': [
@@ -266,6 +373,87 @@ const Map<String, List<String>> mapStamps = {
     '.ssssssssssss.',
     '...ssssssss...',
   ],
+  // Árvores variadas (0.22.0): a pequena amarelada (9 px), a média de copa irregular (12 px) e a grande de verde
+  // fundo (16 px). A `tree` de cima continua valendo como quarta forma.
+  'tree_a': [
+    '..OOOOO..',
+    '.OllgggO.',
+    'OlllggggO',
+    'OllglgggO',
+    'OlgggggdO',
+    'OggggdgdO',
+    'OgggdgddO',
+    '.OgddddO.',
+    '..OOOOO..',
+  ],
+  'tree_b': [
+    '...OOOO.....',
+    '..OllggOOOO.',
+    '.OlllggggggO',
+    'OlllglgggggO',
+    'OllgggggggdO',
+    'OlggglggggdO',
+    '.OgggggggddO',
+    'OggggdggdddO',
+    'OgggdgggdddO',
+    '.OgdddddddO.',
+    '..OOOOOOOO..',
+  ],
+  'tree_c': [
+    '.....OOOOOO.....',
+    '...OOllllggOO...',
+    '..OlllllgggggO..',
+    '.OllllglggggggO.',
+    'OlllgggglgggggdO',
+    'OllggggggggggddO',
+    'OllgglgggggdgddO',
+    'OlgggggggggggddO',
+    'OgggggglggggdddO',
+    'OggggggggdggdddO',
+    'OgggdggggggddddO',
+    '.OgggggdgdddddO.',
+    '..OgdddddddddO..',
+    '...OOddddddOO...',
+    '.....OOOOOO.....',
+  ],
+  'tree_shadow_s': [
+    '..sssss..',
+    '.sssssss.',
+    'sssssssss',
+    '.sssssss.',
+    '..sssss..',
+  ],
+  'tree_shadow_l': [
+    '....ssssssss....',
+    '..ssssssssssss..',
+    '.ssssssssssssss.',
+    'ssssssssssssssss',
+    'ssssssssssssssss',
+    '.ssssssssssssss.',
+    '..ssssssssssss..',
+    '....ssssssss....',
+  ],
+  // Ipê: roxo e amarelo em flor, verde fora da floração ([ipeStamp] escolhe pelo mês).
+  'ipe_purple': _ipe,
+  'ipe_yellow': _ipe,
+  'ipe_green': _ipe,
+  // Abrigo de ônibus visto de cima: a cobertura clara com a espinha escura. Na calçada das ruas principais.
+  'bus_stop': [
+    'OOOOOOOOO',
+    'OlllllllO',
+    'OkkkkkkkO',
+    'OmmmmmmmO',
+    'OOOOOOOOO',
+  ],
+  // Banca de jornal: a caixa de metal e o toldo listrado na linha de baixo. Na calçada do Centro e nas praças.
+  'newsstand': [
+    'OOOOOOO',
+    'OgghggO',
+    'OgggggO',
+    'OkkkkkO',
+    'OakakaO',
+    'OOOOOOO',
+  ],
   'bush': [
     '..OOO..',
     '.OllgO.',
@@ -322,6 +510,21 @@ const Map<String, List<String>> mapStamps = {
     'ltdt',
     'tddd',
   ],
+  // A cerâmica mais clara: telha menor, com o ressalto a cada 3 px.
+  'roof_tile_b': [
+    'ltd',
+    'ltd',
+    'ddd',
+  ],
+  // Fibrocimento: a onda a cada 3 px, em tom próximo (quase não lista), e a emenda das chapas a cada 6 px.
+  'roof_fibro': [
+    'ffdffd',
+    'ffdffd',
+    'ffdffd',
+    'ffdffd',
+    'ffdffd',
+    'lldlld',
+  ],
   // Laje de concreto: lisa, SEM junta (grade é só de calçada), com manchas esparsas num módulo de 12 px.
   'roof_slab': [
     'ssssssssssss',
@@ -345,21 +548,40 @@ const Map<String, List<String>> mapStamps = {
     'ObbdO',
     '.OOO.',
   ],
-  // Manta escura do comércio do Iluminado, com a caixa do ar-condicionado.
+  // Ar-condicionado (a caixa clara com a hélice escura) e antena de TV: props avulsos, como a caixa d'água. Quais
+  // telhados levam qual está em `WallStyle.roofProps`.
+  'roof_ac': [
+    'llll',
+    'lkkl',
+    'dddd',
+  ],
+  'roof_antenna': [
+    'k.k',
+    '.k.',
+    'kkk',
+    '.k.',
+    'kkk',
+  ],
+  // Manta escura: lisa, com a emenda das faixas a cada 8 px (só na horizontal, nunca em grade). O ar-condicionado
+  // agora é prop avulso (`roof_ac`), não faz mais parte do módulo.
   'roof_tar': [
     'tttttttt',
-    'tddddttt',
-    'tdaadttt',
-    'tdaadttt',
-    'tddddttt',
     'tttttttt',
-    'ttttttdt',
+    'ttttlttt',
     'tttttttt',
+    'tttttttt',
+    'tdtttttt',
+    'tttttttt',
+    'dddddddd',
   ],
-  // Telha metálica de galpão.
+  // Telha metálica de galpão: zinco novo, nervura a cada 4 px; zinco velho, trapezoidal, a cada 6 px.
   'roof_metal': [
     'mmlk',
     'mmlk',
+  ],
+  'roof_metal_b': [
+    'mmmmlk',
+    'mmmmlk',
   ],
   // Ardósia do Sagrado, em escama.
   'roof_slate': [
@@ -376,6 +598,15 @@ const Map<String, List<String>> mapStamps = {
     'sssd',
     'sssd',
     'dddd',
+  ],
+  // Calçada portuguesa do Centro: a onda de basalto de 2 px sobre a pedra clara, num módulo de 8 x 6.
+  'sidewalk_mosaic': [
+    'lddlllll',
+    'ddddllll',
+    'dllddlld',
+    'lllldddd',
+    'lllllddl',
+    'llllllll',
   ],
   'floor_lit': [
     'lllllffd',
@@ -438,6 +669,16 @@ const Map<String, Map<String, String>> mapStampLegend = {
   'ripple': {'l': 'water_light'},
   'tree': {'O': 'outline', 'l': 'canopy_light', 'g': 'canopy', 'd': 'canopy_dark'},
   'tree_shadow': {'s': 'shadow'},
+  'tree_a': {'O': 'outline', 'l': 'canopy_warm_light', 'g': 'canopy_warm', 'd': 'canopy_warm_dark'},
+  'tree_b': {'O': 'outline', 'l': 'canopy_light', 'g': 'canopy', 'd': 'canopy_dark'},
+  'tree_c': {'O': 'outline', 'l': 'canopy_deep_light', 'g': 'canopy_deep', 'd': 'canopy_deep_dark'},
+  'tree_shadow_s': {'s': 'shadow'},
+  'tree_shadow_l': {'s': 'shadow'},
+  'ipe_purple': {'O': 'outline', 'l': 'ipe_purple_light', 'g': 'ipe_purple', 'd': 'ipe_purple_dark'},
+  'ipe_yellow': {'O': 'outline', 'l': 'ipe_yellow_light', 'g': 'ipe_yellow', 'd': 'ipe_yellow_dark'},
+  'ipe_green': {'O': 'outline', 'l': 'canopy_warm_light', 'g': 'canopy_warm', 'd': 'canopy_warm_dark'},
+  'bus_stop': {'O': 'outline', 'l': 'roof_metal_light', 'k': 'roof_metal_dark', 'm': 'roof_metal'},
+  'newsstand': {'O': 'outline', 'g': 'gate', 'h': 'pole_head', 'k': 'gate_dark', 'a': 'lane'},
   'bush': {'O': 'outline', 'l': 'canopy_light', 'g': 'canopy', 'd': 'canopy_dark'},
   'lamp': {'h': 'pole_head', 'g': 'lamp_glow', 'p': 'pole'},
   'sign_bar': {'O': 'outline', 'k': 'sign_dark', 'a': 'neon_a'},
@@ -447,8 +688,14 @@ const Map<String, Map<String, String>> mapStampLegend = {
   'roof_tile': {'l': 'roof_tile_light', 't': 'roof_tile', 'd': 'roof_tile_dark'},
   'roof_slab': {'s': 'roof_slab', 'l': 'roof_slab_light', 'd': 'roof_slab_dark'},
   'roof_tank': {'O': 'outline', 'l': 'roof_slate_light', 'b': 'roof_slate', 'd': 'roof_slate_dark'},
-  'roof_tar': {'t': 'roof_tar', 'd': 'roof_tar_dark', 'a': 'roof_metal'},
+  'roof_tile_b': {'l': 'roof_tile_b_light', 't': 'roof_tile_b', 'd': 'roof_tile_b_dark'},
+  'roof_fibro': {'f': 'roof_fibro', 'l': 'roof_fibro_light', 'd': 'roof_fibro_dark'},
+  'roof_ac': {'l': 'pole_head', 'k': 'pole', 'd': 'roof_metal_dark'},
+  'roof_antenna': {'k': 'pole'},
+  'roof_tar': {'t': 'roof_tar', 'd': 'roof_tar_dark', 'l': 'roof_tar_light'},
   'roof_metal': {'m': 'roof_metal', 'l': 'roof_metal_light', 'k': 'roof_metal_dark'},
+  'roof_metal_b': {'m': 'roof_metal_b', 'l': 'roof_metal_b_light', 'k': 'roof_metal_b_dark'},
+  'sidewalk_mosaic': {'l': 'mosaic_light', 'd': 'mosaic_dark'},
   'roof_slate': {'s': 'roof_slate', 'l': 'roof_slate_light', 'd': 'roof_slate_dark'},
   'sidewalk_tile': {'s': 'sidewalk', 'd': 'sidewalk_dark'},
   'floor_lit': {'l': 'lit_light', 'f': 'lit', 'd': 'lit_dark'},
@@ -461,7 +708,7 @@ const Map<String, Map<String, String>> mapStampLegend = {
 
 /// Parede e telhado de um prédio.
 class WallStyle {
-  const WallStyle({required this.wall, required this.wallShade, required this.roof, required this.roofEdge, required this.roofPattern, required this.window});
+  const WallStyle({required this.wall, required this.wallShade, required this.roof, required this.roofEdge, required this.roofPattern, required this.window, this.parapet = 0, this.roofProps = const []});
 
   /// Parede no lado da luz e no lado da sombra, telhado (o tom base do módulo) e a borda de 1 px do telhado.
   final int wall, wallShade, roof, roofEdge;
@@ -471,16 +718,58 @@ class WallStyle {
 
   /// O prefixo do módulo de janela: o renderizador usa `<window>_on` ou `<window>_off`. Vazio: parede cega.
   final String window;
+
+  /// A cor da platibanda, a mureta de 1 px por dentro da borda do telhado. 0: sem platibanda (laje e manta têm; telha,
+  /// fibrocimento, metal e ardósia não).
+  final int parapet;
+
+  /// Os carimbos avulsos que podem cair neste telhado (nome repetido pesa mais). Vazio: telhado sem prop.
+  final List<String> roofProps;
 }
 
+const List<String> _slabProps = ['roof_tank', 'roof_tank', 'roof_ac', 'roof_antenna'];
+const List<String> _tarProps = ['roof_ac', 'roof_ac', 'roof_antenna'];
+const List<String> _fibroProps = ['roof_antenna'];
+
+// Casa: cerâmica (a regra), a cerâmica clara, fibrocimento e a casa de laje.
 const WallStyle _houseStyle = WallStyle(wall: _wallRes, wallShade: _wallResShade, roof: _roofTile, roofEdge: _roofTileDark, roofPattern: 'roof_tile', window: 'window');
-const WallStyle _blockStyle = WallStyle(wall: _wallUrban, wallShade: _wallUrbanShade, roof: _roofSlab, roofEdge: _roofSlabDark, roofPattern: 'roof_slab', window: 'window');
-const WallStyle _shopStyle = WallStyle(wall: _wallUrban, wallShade: _wallUrbanShade, roof: _roofSlab, roofEdge: _roofSlabDark, roofPattern: 'roof_slab', window: 'window_shop');
-const WallStyle _shopLitStyle = WallStyle(wall: _wallLit, wallShade: _wallLitShade, roof: _roofTar, roofEdge: _roofTarDark, roofPattern: 'roof_tar', window: 'window_shop');
-const WallStyle _shedStyle = WallStyle(wall: _wallUrbanShade, wallShade: _concreteDark, roof: _roofMetal, roofEdge: _roofMetalDark, roofPattern: 'roof_metal', window: '');
+const WallStyle _houseTileB = WallStyle(wall: _wallRes, wallShade: _wallResShade, roof: _roofTileB, roofEdge: _roofTileBDark, roofPattern: 'roof_tile_b', window: 'window');
+const WallStyle _houseFibro = WallStyle(wall: _wallRes, wallShade: _wallResShade, roof: _roofFibro, roofEdge: _roofFibroDark, roofPattern: 'roof_fibro', window: 'window', roofProps: _fibroProps);
+const WallStyle _houseSlab = WallStyle(wall: _wallRes, wallShade: _wallResShade, roof: _roofSlab, roofEdge: _roofSlabDark, roofPattern: 'roof_slab', window: 'window', parapet: _parapet, roofProps: _slabProps);
+// Bloco do Centro: laje (a regra), fibrocimento e manta. O prédio de manta desce um degrau na escada do cinza, para a
+// parede continuar abaixo do telhado.
+const WallStyle _blockStyle = WallStyle(wall: _wallUrban, wallShade: _wallUrbanShade, roof: _roofSlab, roofEdge: _roofSlabDark, roofPattern: 'roof_slab', window: 'window', parapet: _parapet, roofProps: _slabProps);
+const WallStyle _blockFibro = WallStyle(wall: _wallUrban, wallShade: _wallUrbanShade, roof: _roofFibro, roofEdge: _roofFibroDark, roofPattern: 'roof_fibro', window: 'window', roofProps: _fibroProps);
+const WallStyle _blockTar = WallStyle(wall: _wallUrbanShade, wallShade: _wallUrbanDeep, roof: _roofTar, roofEdge: _roofTarDark, roofPattern: 'roof_tar', window: 'window', parapet: _parapetTar, roofProps: _tarProps);
+// Comércio fora do Iluminado: os mesmos três, com vitrine.
+const WallStyle _shopStyle = WallStyle(wall: _wallUrban, wallShade: _wallUrbanShade, roof: _roofSlab, roofEdge: _roofSlabDark, roofPattern: 'roof_slab', window: 'window_shop', parapet: _parapet, roofProps: _slabProps);
+const WallStyle _shopFibro = WallStyle(wall: _wallUrban, wallShade: _wallUrbanShade, roof: _roofFibro, roofEdge: _roofFibroDark, roofPattern: 'roof_fibro', window: 'window_shop', roofProps: _fibroProps);
+const WallStyle _shopTar = WallStyle(wall: _wallUrbanShade, wallShade: _wallUrbanDeep, roof: _roofTar, roofEdge: _roofTarDark, roofPattern: 'roof_tar', window: 'window_shop', parapet: _parapetTar, roofProps: _tarProps);
+// Comércio do Iluminado: manta escura (a regra) e a loja de laje, de parede mais clara.
+const WallStyle _shopLitStyle = _shopTar;
+const WallStyle _shopLitSlab = WallStyle(wall: _wallLit, wallShade: _wallLitShade, roof: _roofSlab, roofEdge: _roofSlabDark, roofPattern: 'roof_slab', window: 'window_shop', parapet: _parapet, roofProps: _slabProps);
+// Galpão, parede cega: o zinco novo (a regra do estilo simplificado), o zinco velho, fibrocimento e laje.
+const WallStyle _shedStyle = WallStyle(wall: _wallUrban, wallShade: _wallUrbanShade, roof: _roofMetal, roofEdge: _roofMetalDark, roofPattern: 'roof_metal', window: '');
+const WallStyle _shedMetalB = WallStyle(wall: _wallUrban, wallShade: _wallUrbanShade, roof: _roofMetalB, roofEdge: _roofMetalBDark, roofPattern: 'roof_metal_b', window: '');
+const WallStyle _shedFibro = WallStyle(wall: _wallUrban, wallShade: _wallUrbanShade, roof: _roofFibro, roofEdge: _roofFibroDark, roofPattern: 'roof_fibro', window: '');
+const WallStyle _shedSlab = WallStyle(wall: _wallUrban, wallShade: _wallUrbanShade, roof: _roofSlab, roofEdge: _roofSlabDark, roofPattern: 'roof_slab', window: '', parapet: _parapet, roofProps: _slabProps);
 const WallStyle _sacredStyle = WallStyle(wall: _wallSacred, wallShade: _wallSacredShade, roof: _roofSlate, roofEdge: _roofSlateDark, roofPattern: 'roof_slate', window: 'window');
-// Telha de fibrocimento (o módulo metálico): a laje nova teria a luma da terra do Vazio.
-const WallStyle _bareStyle = WallStyle(wall: _wallBare, wallShade: _wallBareShade, roof: _roofMetal, roofEdge: _roofMetalDark, roofPattern: 'roof_metal', window: 'window');
+// Vazio, tijolo sem reboco: fibrocimento (a regra), laje crua e zinco velho.
+const WallStyle _bareStyle = WallStyle(wall: _wallBare, wallShade: _wallBareShade, roof: _roofFibro, roofEdge: _roofFibroDark, roofPattern: 'roof_fibro', window: 'window', roofProps: _fibroProps);
+const WallStyle _bareSlab = WallStyle(wall: _wallBare, wallShade: _wallBareShade, roof: _roofSlab, roofEdge: _roofSlabDark, roofPattern: 'roof_slab', window: 'window', parapet: _parapet, roofProps: _slabProps);
+const WallStyle _bareMetalB = WallStyle(wall: _wallBare, wallShade: _wallBareShade, roof: _roofMetalB, roofEdge: _roofMetalBDark, roofPattern: 'roof_metal_b', window: 'window');
+
+/// As variantes de telhado de cada estilo; a primeira é a de [wallStyleFor]. Estilo repetido pesa mais no sorteio.
+/// O metal só aparece em galpão (2 em 6) e no Vazio (1 em 4): não domina mais o quarteirão.
+const Map<String, List<WallStyle>> _roofVariants = {
+  'sacred': [_sacredStyle],
+  'house': [_houseStyle, _houseStyle, _houseStyle, _houseTileB, _houseTileB, _houseFibro, _houseSlab],
+  'shop_lit': [_shopLitStyle, _shopLitStyle, _shopLitSlab],
+  'shop': [_shopStyle, _shopStyle, _shopFibro, _shopTar],
+  'block': [_blockStyle, _blockStyle, _blockStyle, _blockFibro, _blockTar],
+  'shed': [_shedStyle, _shedFibro, _shedFibro, _shedSlab, _shedMetalB, _shedSlab],
+  'bare': [_bareStyle, _bareStyle, _bareSlab, _bareMetalB],
+};
 
 const Set<String> _sacredTypes = {'church', 'chapel', 'cathedral', 'temple', 'mosque', 'synagogue', 'shrine', 'religious'};
 const Set<String> _houseTypes = {'house', 'residential', 'detached', 'semidetached_house', 'terrace', 'bungalow', 'hut', 'cabin'};
@@ -490,18 +779,24 @@ const Set<String> _shedTypes = {'industrial', 'warehouse', 'hangar', 'shed', 'ga
 
 /// O estilo de um prédio pelo `building=*` do OSM e pelo bioma onde ele está. O tipo manda; `yes` e o que não se
 /// conhece seguem o bioma, que é o que dá cara ao bairro.
-WallStyle wallStyleFor(String buildingType, String biome) {
-  if (_sacredTypes.contains(buildingType)) return _sacredStyle;
-  if (_houseTypes.contains(buildingType)) return _houseStyle;
-  if (_shopTypes.contains(buildingType)) return biome == 'lit' ? _shopLitStyle : _shopStyle;
-  if (_blockTypes.contains(buildingType)) return _blockStyle;
-  if (_shedTypes.contains(buildingType)) return _shedStyle;
+WallStyle wallStyleFor(String buildingType, String biome) => roofVariantsFor(buildingType, biome).first;
+
+/// As variantes de parede e telhado de um prédio, com a mesma regra de [wallStyleFor] (que devolve a primeira). O
+/// renderizador escolhe `variantes[hash do prédio % length]`; a lista nunca é vazia.
+List<WallStyle> roofVariantsFor(String buildingType, String biome) => _roofVariants[_styleKind(buildingType, biome)]!;
+
+String _styleKind(String buildingType, String biome) {
+  if (_sacredTypes.contains(buildingType)) return 'sacred';
+  if (_houseTypes.contains(buildingType)) return 'house';
+  if (_shopTypes.contains(buildingType)) return biome == 'lit' ? 'shop_lit' : 'shop';
+  if (_blockTypes.contains(buildingType)) return 'block';
+  if (_shedTypes.contains(buildingType)) return 'shed';
   return switch (biome) {
-    'sacred' => _sacredStyle,
-    'residential' || 'green' || 'water' => _houseStyle,
-    'lit' => _shopLitStyle,
-    'urban' => _blockStyle,
-    _ => _bareStyle, // Vazio: tijolo sem reboco e fibrocimento
+    'sacred' => 'sacred',
+    'residential' || 'green' || 'water' => 'house',
+    'lit' => 'shop_lit',
+    'urban' => 'block',
+    _ => 'bare', // Vazio: tijolo sem reboco e fibrocimento
   };
 }
 
@@ -545,6 +840,32 @@ const List<List<int>> _sky = [
 ({int argb, double alpha}) sceneLight(double sunAltDeg) {
   final (i, k) = _segment(sunAltDeg);
   return (argb: mixArgb(_lightTone[i], _lightTone[i + 1], k), alpha: _lightAlpha[i] + (_lightAlpha[i + 1] - _lightAlpha[i]) * k);
+}
+
+/// A luz partida em quente e fria, nas mesmas altitudes de [_altKeys]. De noite e no crepúsculo as duas são o tom de
+/// [sceneLight]; com o sol no horizonte e na hora dourada o contraste é máximo; ao meio-dia as duas somem.
+const List<int> _warmTone = [0xFF141033, 0xFF2A1F55, 0xFFF2907A, 0xFFFFC27A, 0xFFFFE2B0, 0xFFFFFFFF];
+const List<double> _warmAlpha = [0.58, 0.46, 0.30, 0.24, 0.08, 0.0];
+const List<int> _coolTone = [0xFF141033, 0xFF2A1F55, 0xFF3A3F8A, 0xFF4A5AA0, 0xFF6A7AB0, 0xFFFFFFFF];
+const List<double> _coolAlpha = [0.58, 0.46, 0.44, 0.30, 0.10, 0.0];
+
+/// A luz da hora em duas: [warm] por cima de chão, telhado e parede no sol, e [cool] dentro das sombras projetadas e
+/// nas paredes de sombra. Como em [sceneLight], pinta-se ANTES das luzes acesas. Nunca pinte as duas no mesmo pixel.
+({int warm, double warmAlpha, int cool, double coolAlpha}) sceneLightSplit(double sunAltDeg) {
+  final (i, k) = _segment(sunAltDeg);
+  return (
+    warm: mixArgb(_warmTone[i], _warmTone[i + 1], k),
+    warmAlpha: _warmAlpha[i] + (_warmAlpha[i + 1] - _warmAlpha[i]) * k,
+    cool: mixArgb(_coolTone[i], _coolTone[i + 1], k),
+    coolAlpha: _coolAlpha[i] + (_coolAlpha[i + 1] - _coolAlpha[i]) * k,
+  );
+}
+
+/// A cor da névoa de distância que dissolve o topo do mapa no céu: a última cor de [skyGradient] debaixo da mesma luz
+/// da cena. De dia é quase a cor do horizonte; de noite escurece junto com o mapa, em vez de virar uma faixa clara.
+int horizonFog(double sunAltDeg) {
+  final light = sceneLight(sunAltDeg);
+  return mixArgb(skyGradient(sunAltDeg).last, light.argb, light.alpha);
 }
 
 /// Postes, janelas e neon acesos: do sol 1 grau abaixo do horizonte até ele voltar a essa altura.

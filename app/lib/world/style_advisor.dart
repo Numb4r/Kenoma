@@ -1,0 +1,48 @@
+/// 0.22.0 (GDD, Câmera): se o estilo Completo passar de [limitMs] por quadro em média durante [windowS] segundos seguidos,
+/// o jogo sugere UMA vez trocar para o Simplificado (nunca troca sozinho). Mede o intervalo entre quadros; um intervalo
+/// acima de 0,25 s (app em segundo plano, pausa) é ignorado e recomeça a janela. Dart puro.
+library;
+
+class StyleAdvisor {
+  StyleAdvisor({this.limitMs = 20, this.windowS = 60, this.alreadySuggested = false});
+
+  final double limitMs;
+  final double windowS;
+
+  /// A sugestão já saiu (guardada nos Ajustes): nunca mais sai.
+  bool alreadySuggested;
+
+  double _sumS = 0;
+  int _frames = 0;
+
+  /// A média da última janela inteira, em ms (debug).
+  double lastAverageMs = 0;
+
+  /// Soma um quadro de [dtS] segundos. `true` uma única vez: quando uma janela inteira fechou com média acima do limite.
+  bool add(double dtS) {
+    if (alreadySuggested) return false;
+    if (dtS <= 0 || dtS > 0.25) {
+      reset();
+      return false;
+    }
+    _sumS += dtS;
+    _frames++;
+    if (_sumS < windowS) return false;
+    lastAverageMs = _sumS / _frames * 1000;
+    final slow = lastAverageMs > limitMs;
+    reset();
+    if (!slow) return false;
+    alreadySuggested = true;
+    return true;
+  }
+
+  /// Recomeça a janela (troca de estilo, pausa).
+  void reset() {
+    _sumS = 0;
+    _frames = 0;
+  }
+}
+
+/// Ajustes: o mapa no estilo Simplificado (`true`) ou Completo (padrão), e se a sugestão de trocar já saiu.
+const String kSimpleGraphicsSetting = 'map_simple';
+const String kSimpleSuggestedSetting = 'map_simple_suggested';

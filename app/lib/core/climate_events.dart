@@ -77,7 +77,7 @@ class EventTint {
 /// sorteio, a chance por janela de 3 h nos climas pedidos e a duração. [ordinal] é a posição nos dados (o id da pilha e o
 /// fluxo dos sorteios das peças dele).
 class EventDef {
-  const EventDef({required this.id, required this.ordinal, required this.def, this.requires = const EventRequirement(), this.tint, this.draw});
+  const EventDef({required this.id, required this.ordinal, required this.def, this.requires = const EventRequirement(), this.tint, this.draw, this.calendarClimate});
 
   factory EventDef.fromJson(String id, int ordinal, Map<String, dynamic> j) {
     final t = j['tint'] as Map<String, dynamic>?;
@@ -88,6 +88,7 @@ class EventDef {
       ordinal: ordinal,
       def: ClimateDef.fromJson(id, {...j, 'category': 'event'}),
       requires: EventRequirement.fromJson(j['requires'] as Map<String, dynamic>?),
+      calendarClimate: j['calendar_climate'] as String?,
       tint: t == null ? null : EventTint(climates: (t['climates'] as List<dynamic>).cast<String>().toSet(), puddles: puddles as PuddlePiece?),
       draw: d == null
           ? null
@@ -104,6 +105,10 @@ class EventDef {
   final int ordinal;
   final ClimateDef def;
   final EventRequirement requires;
+
+  /// Época 13: o clima que o evento traz quando vem do calendário, pela duração dele (o Tornado da Estação Seca do Véu traz o
+  /// Vendaval). `null`: o calendário só pede o evento, e ele espera o requisito.
+  final String? calendarClimate;
   final EventTint? tint;
   final ({double chance, Set<String> climates, int durationS, int durationMaxS})? draw;
 }

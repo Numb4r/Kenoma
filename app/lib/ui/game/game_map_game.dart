@@ -52,6 +52,11 @@ import '../../world/sim/traffic_sim.dart' show TrafficSim, TrafficSimConfig;
 import '../travel/travel_layer.dart';
 import 'tracker_painter.dart';
 import 'player_painter.dart';
+import '../../data/building_pack.dart';
+import '../../world/style_advisor.dart';
+import '../city/city_renderer.dart';
+import '../city/city_sources.dart';
+import '../lab/lab_art.dart';
 
 /// O mapa do jogo em Flame: segue o Conjurador, desenha o marcador e a Aura e repassa os toques para a
 /// câmera. As regras (suavização, giro, limites de zoom) estão em `world/`.
@@ -97,6 +102,8 @@ class GameMapGame extends FlameGame {
     this.nowUtc = _zero,
     this.floorTile,
     this.floorGridCells = 2,
+    this.buildings,
+    this.simpleStyle = _off,
     (double, double) fallbackCenter = kUnicamp,
   }) {
     final (x, y) = latLonToTileFraction(fallbackCenter.$1, fallbackCenter.$2, biomeZoom);
@@ -106,6 +113,28 @@ class GameMapGame extends FlameGame {
 
   /// A grade de biomas: só aparece como sobreposição do menu de debug.
   final MapRenderer renderer;
+
+  /// 0.22.0: os prédios e as árvores do estilo Completo (`null`: sem o arquivo) e se o mapa está no estilo Simplificado
+  /// (Ajustes, lido a cada quadro). Os dois estilos usam a mesma lógica e a mesma máscara de ruas.
+  final BuildingSource? buildings;
+  final bool Function() simpleStyle;
+  bool get fullStyle => !simpleStyle();
+
+  late final MapCityTiles cityTiles = MapCityTiles(visual: visual, grid: renderer.map.pack, biomes: renderer.map.biomes, buildings: buildings, points: trafficPoints);
+  LabArt? _cityArt;
+  CityRenderer? _city;
+
+  /// O renderizador do Completo, montado no primeiro quadro em que o estilo é usado.
+  CityRenderer get city => _city ??= CityRenderer(art: _cityArt ??= LabArt.build(), tileAt: cityTiles.tileAt, biomeAt: cityTiles.biomeAt, cellsPerTile: visual.cellsPerTile);
+  int _cityRevision = -1;
+  bool? _wasFull;
+
+  /// O sol de agora no lugar do jogador (graus), relido a cada 5 s com a luz do dia.
+  double sunAltDeg = 45, sunAzDeg = 0;
+
+  /// Sugere uma vez o Simplificado quando o Completo fica lento (`StyleAdvisor`). A tela grava e mostra o aviso.
+  final styleAdvisor = StyleAdvisor();
+  void Function()? onSuggestSimple;
 
   /// As geometrias do pacote visual e as cores: o mapa de jogo é desenhado em pixels de arte.
   final VisualMap visual;
@@ -170,6 +199,9 @@ class GameMapGame extends FlameGame {
   final VariantTintOf? variantTint;
   ui.Image? familiarImage;
   final double familiarOffsetM;
+
+  /// O custo de rasterizar o mapa no estilo Simplificado (média móvel, ms).
+  double get artRasterMs => _art.rasterMs;
 
   /// Quantas partículas de clima foram desenhadas no último quadro.
   int get rainCount => _climate.count;
@@ -411,6 +443,13 @@ class GameMapGame extends FlameGame {
   void update(double dt) {
     super.update(dt);
     _frameDt = dt;
+    final full = fullStyle;
+    if (full != _wasFull) {
+      _wasFull = full;
+      styleAdvisor.reset();
+      if (!full) _city?.clear(); // o Simplificado não usa os blocos: a memória volta
+    }
+    if (full && styleAdvisor.add(dt)) onSuggestSimple?.call();
     avatar.update(dt);
     _animate(dt);
     if (avatar.hasPosition) {
@@ -423,6 +462,8 @@ class GameMapGame extends FlameGame {
     if (_lightIn <= 0 && _hasFix) {
       _lightIn = 5;
       light = dayLightAt(_lat, _lon, nowUtc());
+      sunAltDeg = sunAltitudeDeg(_lat, _lon, nowUtc());
+      sunAzDeg = sunAzimuthDeg(_lat, _lon, nowUtc());
     }
     _time += dt;
     fx.update(dt);
@@ -436,7 +477,12 @@ class GameMapGame extends FlameGame {
       worldView!.refresh(lat: lat, lon: lon, tUtc: nowUtc());
       fx.observe(worldView!.spawns);
     }
-    if (avatar.hasPosition) follow.setTarget(avatar.x, avatar.y);
+    final piece = followPiece() ? _movingPiece() : null;
+    if (piece != null) {
+      follow.setTarget(piece.$1, piece.$2);
+    } else if (avatar.hasPosition) {
+      follow.setTarget(avatar.x, avatar.y);
+    }
     if (size.x > 0) {
       // A escala vem dos metros visíveis: segue a largura da tela e a latitude.
       double ppc(double w) => pixelsPerCellFor(widthM: w, viewWidthPx: size.x, lat: _lat);
@@ -459,6 +505,11 @@ class GameMapGame extends FlameGame {
     final wv = worldView;
     final mpc = metersPerCell(_lat);
     final traffic = veilTraffic() && _hasFix && wv != null;
+    final full = fullStyle;
+    _climate
+      ..reduction = full ? 1.0 : 0.5
+      ..halfRes = true
+      ..dpr = dpr;
     if (traffic) {
       final tc = rainFx() ? climateGround.trafficCover(wv.field.seed, climateShown(), wv.climate) : null; // barcos, dunas, gelo
       final mult = wv.climate.trafficMult <= 0 ? 1.0 : wv.climate.trafficMult; // 0 é o Silêncio: pausa, não lentidão
@@ -478,19 +529,20 @@ class GameMapGame extends FlameGame {
     // A ordem é a de MapLayer (draw_order.dart), não a deste mapa.
     paintLayers({
       MapLayer.base: () {
-        _art.paint(canvas, view, cam, dpr: dpr, metersPerCell: mpc, coarse: coarse);
+        if (full) {
+          _paintCityGround(canvas, view, cam, mpc);
+        } else {
+          _art.paint(canvas, view, cam, dpr: dpr, metersPerCell: mpc, coarse: coarse);
+        }
         _paintCycleways(canvas, view, cam);
-        _paintLight(canvas, view);
+        if (!full) _paintLight(canvas, view);
         travelLayer?.paintGround(canvas, view, cam, mpc, utc: _exactUtc(), avatar: avatar);
         if (streetNames()) _labels.paint(canvas, view, cam);
         if (overlayBiomes() || overlayGrid20()) _paintLogicalOverlay(canvas, view, cam);
         if (overlayRelief() && relief != null) paintReliefHeat(canvas, view, cam, relief!);
       },
       if (wv != null && _hasFix) MapLayer.climateGround: () => _paintClimateGround(canvas, view, cam, wv),
-      MapLayer.shadows: () {
-        climateGround.paintShadows();
-        if (here) _paintAura(canvas, view, cam, center);
-      },
+      MapLayer.shadows: climateGround.paintShadows,
       if (here && wv != null) ...{
         MapLayer.creatures: () => _paintSpawns(canvas, view, cam, wv, center, (s) => s.isEco),
         MapLayer.sparks: () {
@@ -512,6 +564,8 @@ class GameMapGame extends FlameGame {
           if (overlayTraffic()) _traffic.paintDebug(canvas, view, cam, mpc);
         },
       },
+      if (full) MapLayer.buildings: () => _paintCityUpright(canvas, view, cam, mpc, here ? center : null, wv),
+      if (here) MapLayer.reach: () => _paintAura(canvas, view, cam, center),
       if (here) MapLayer.player: () => _paintPlayer(canvas, view, cam, center),
       MapLayer.air: () {
         if (_hasFix) rainbow.paint(canvas, view, cam, metersPerCell21: mpc, exactUtc: _exactUtc());
@@ -540,6 +594,68 @@ class GameMapGame extends FlameGame {
           paintEdgeMarks(canvas, view, center, marks, rotation: cam.rotation);
         },
     }, drawn: lastLayers..clear());
+  }
+
+  static const _wetClimates = {'drizzle', 'rain', 'storm', 'deluge', 'acid_rain', 'freezing_rain', 'hail', 'hurricane'};
+  static const _snowClimates = {'snow', 'blizzard', 'veil_snow', 'frost', 'freezing_rain'};
+
+  /// O clima de base que se vê agora (o primeiro da pilha), ou `clear` com o clima desligado nos Ajustes.
+  String get _baseClimate => rainFx() ? climateShown().id.split('+').first : 'clear';
+
+  void _paintCityGround(Canvas canvas, Size view, MapCamera cam, double mpc) {
+    if (cityTiles.revision != _cityRevision) {
+      _cityRevision = cityTiles.revision; // chegou bloco ou região: os blocos de chão saem de novo
+      city.clear();
+    }
+    cityTiles.mpc = mpc;
+    city.paintGround(canvas, view, cam, dpr: dpr, artPixelDp: balance.artPixelDp, mpc: mpc, sunAltDeg: sunAltDeg, sunAzDeg: sunAzDeg, wet: _wetClimates.contains(_baseClimate), touching: follow.touching);
+  }
+
+  /// Prédios, árvores, postes e props de pé, e a faixa do céu. O telhado ou a copa sobre o Conjurador, um Eco, uma Fagulha ou
+  /// um material fica translúcido (o jogo nunca some embaixo do cenário).
+  void _paintCityUpright(Canvas canvas, Size view, MapCamera cam, double mpc, Offset? player, WorldView? wv) {
+    final items = <Offset>[?player];
+    if (wv != null && player != null) {
+      for (final s in wv.spawns) {
+        final (x, y) = cam.cellToScreen(s.x, s.y, view.width, view.height);
+        if (x >= -20 && y >= -20 && x <= view.width + 20 && y <= view.height + 20) items.add(Offset(x, y));
+      }
+    }
+    final local = DateTime.fromMillisecondsSinceEpoch((nowUtc() - 3 * 3600) * 1000, isUtc: true); // o fuso fixo do clima
+    final base = _baseClimate;
+    city.paintUpright(canvas, view, cam,
+        dpr: dpr,
+        artPixelDp: balance.artPixelDp,
+        mpc: mpc,
+        sunAltDeg: sunAltDeg,
+        sunAzDeg: sunAzDeg,
+        localHour: local.hour,
+        month: local.month,
+        snowRoofs: _snowClimates.contains(base),
+        items: items,
+        skyFraction: 0.06,
+        skyClimate: base);
+  }
+
+  /// Debug (0.22.0): a câmera segue a peça do clima que anda.
+  bool Function() followPiece = () => false;
+
+  /// O centro da peça do clima ativa que anda mais perto do Conjurador (a que tem velocidade; senão a Procissão, o olhar ou
+  /// o prédio da Maré), em células z21. `null`: nenhuma.
+  (double, double)? _movingPiece() {
+    if (!avatar.hasPosition) return null;
+    final t = _exactUtc(), mpc = metersPerCell(_lat);
+    (double, double)? best;
+    var bestScore = double.infinity;
+    for (final z in climateGround.zones) {
+      if (!z.activeAt(t.floor())) continue;
+      final style = climateCatalog.piece(z.piece.name).style;
+      if (z.piece.speedMps <= 0 && !const {'figures', 'ghost', 'gaze'}.contains(style)) continue;
+      final (x, y) = z.centerAt(t, mpc);
+      final d = (x - avatar.x) * (x - avatar.x) + (y - avatar.y) * (y - avatar.y) + (z.piece.speedMps > 0 ? 0 : 1e4);
+      if (d < bestScore) (best, bestScore) = ((x, y), d);
+    }
+    return best;
   }
 
   /// As camadas pintadas no último quadro, na ordem (debug e teste).
@@ -741,6 +857,8 @@ class GameMapGame extends FlameGame {
   @override
   void onRemove() {
     _art.dispose();
+    _city?.dispose();
+    _cityArt?.dispose();
     compass.dispose();
     super.onRemove();
   }

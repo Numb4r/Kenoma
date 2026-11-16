@@ -11,6 +11,7 @@ import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 import '../core/epochs.dart';
 import '../net/signed_feed.dart';
 import 'access_pack.dart';
+import 'building_pack.dart';
 import 'cycle_pack.dart';
 import 'traffic_pack.dart';
 import 'nowalk_pack.dart';
@@ -222,6 +223,17 @@ Future<Object?> loadReliefPack({required Epoch epoch, required String region, As
 
 /// As ciclovias da região embutida (`build_cycle.py`). Só os ciclistas da simulação local leem (cenário, fora das épocas):
 /// falta ou defeito deixam os ciclistas nos caminhos de pedestre, como antes (`null`). Nunca lança.
+/// 0.22.0: os prédios e as árvores do estilo Completo (`<região>_e0_bldg.bin`, fora das épocas). `null` sem o arquivo: o
+/// mapa sai sem prédios.
+Future<BuildingPack?> loadBuildingPack({required String region, AssetBundle? bundle}) async {
+  try {
+    final data = await (bundle ?? rootBundle).load('assets/regions/${region}_e0_bldg.bin');
+    return BuildingPack.parse(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
+  } catch (_) {
+    return null;
+  }
+}
+
 Future<CyclePack?> loadCyclePack({required String region, AssetBundle? bundle}) async {
   try {
     final data = await (bundle ?? rootBundle).load('assets/regions/${region}_e0_cycle.bin');

@@ -24,7 +24,7 @@ ui.Paint _px(int argb) => ui.Paint()
 const _neonKeys = {'neon_a', 'neon_b', 'neon_c'};
 
 class LabArt {
-  LabArt._(this.stamps, this.stampsOff, this.patterns);
+  LabArt._(this.stamps, this.stampsOff, this.patterns, this.farPatterns);
 
   /// Monta tudo (pouco mais de cem imagens pequenas).
   factory LabArt.build() {
@@ -33,8 +33,18 @@ class LabArt {
       stamps[e.key] = _stamp(e.key, e.value, lightsOn: true);
       if ((mapStampLegend[e.key] ?? const {}).values.any(_neonKeys.contains)) off[e.key] = _stamp(e.key, e.value, lightsOn: false);
     }
-    final patterns = {for (final e in groundRecipes.entries) e.key: _pattern(e.key, e.value)};
-    return LabArt._(stamps, off, patterns);
+    // 0.22.0: o asfalto molhado (chuva) e os chãos de longe (zoom aberto: metade do
+    // pontilhado e nenhum carimbo).
+    final recipes = {
+      ...groundRecipes,
+      'road_wet': GroundRecipe(base: labColor('asphalt_wet'), dark: labColor('asphalt_wet_dark'), light: labColor('wet_shine'), ditherPct: 9, stamps: const [], stampsPer100Px: 0),
+    };
+    final patterns = {for (final e in recipes.entries) e.key: _pattern(e.key, e.value)};
+    final far = {
+      for (final e in recipes.entries)
+        e.key: _pattern(e.key, GroundRecipe(base: e.value.base, dark: e.value.dark, light: e.value.light, ditherPct: e.value.ditherPct ~/ 2, stamps: const [], stampsPer100Px: 0), far: true),
+    };
+    return LabArt._(stamps, off, patterns, far);
   }
 
   final Map<String, ui.Image> stamps;
@@ -43,10 +53,15 @@ class LabArt {
   final Map<String, ui.Image> stampsOff;
   final Map<String, ui.Image> patterns;
 
+  /// Os chãos de longe (nível de detalhe do zoom aberto).
+  final Map<String, ui.Image> farPatterns;
+
+  ui.Image pattern(String key, {bool far = false}) => (far ? farPatterns : patterns)[key] ?? patterns[key] ?? patterns['urban']!;
+
   ui.Image? stamp(String name, {bool lightsOn = true}) => lightsOn ? stamps[name] : (stampsOff[name] ?? stamps[name]);
 
   void dispose() {
-    for (final i in [...stamps.values, ...stampsOff.values, ...patterns.values]) {
+    for (final i in [...stamps.values, ...stampsOff.values, ...patterns.values, ...farPatterns.values]) {
       i.dispose();
     }
   }
@@ -74,12 +89,13 @@ ui.Image _stamp(String name, List<String> rows, {required bool lightsOn}) {
 
 /// O chão [key]: o módulo de piso (se houver) ou o tom base, o pontilhado e os carimbos, tudo dentro de 64 × 64 e repetível
 /// (o carimbo que passa da borda volta do outro lado).
-ui.Image _pattern(String key, GroundRecipe r) {
+ui.Image _pattern(String key, GroundRecipe r, {bool far = false}) {
   const n = labPatternPx;
   final rec = ui.PictureRecorder();
   final c = ui.Canvas(rec);
   c.drawRect(const ui.Rect.fromLTWH(0, 0, n + 0.0, n + 0.0), _px(r.base));
-  final module = groundPatterns[key];
+  // A calçada portuguesa leva o módulo dela; longe, o piso perde a paginação fina.
+  final module = far ? null : groundPatterns[key];
   final salt = key.codeUnits.fold(7, (a, b) => a * 31 + b);
   final rows = module == null ? null : mapStamps[module];
   if (rows != null) {

@@ -7,6 +7,7 @@ import 'package:flutter/scheduler.dart' show SchedulerBinding, SchedulerPhase;
 import 'dart:ui' as ui;
 
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart' show kProfileMode, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -17,6 +18,7 @@ import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
 import '../../core/tiles.dart';
 import '../../core/windows.dart' show windowIndex;
+import '../../world/style_advisor.dart';
 import '../../world/climate_world.dart' show nearestPuddle;
 import '../../core/weather.dart';
 import '../../core/astro.dart' show moonPhase;
@@ -696,12 +698,21 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       variantTint: (s) => data.variantInfo(biome: s.variant, shiny: s.shiny)?.tint ?? data.climates.tags[s.tag]?.tint, // o Eco carregado do raio é ciano
       familiarImage: familiar,
       floorTile: assets.world!.isFloorTile,
+      buildings: assets.buildings,
+      simpleStyle: () => session.state.setting(kSimpleGraphicsSetting),
       floorGridCells: assets.fallback!.floorGridCells,
       familiarOffsetM: data.street.familiarFollowOffsetM,
       sprites: sprites,
       typeOf: (id) => data.species(id)?.type,
       nowUtc: () => tools.clock.nowUtc,
     );
+    // 0.22.0: com o Completo lento por um minuto, uma sugestão, uma vez só (nunca troca sozinho).
+    game.followPiece = () => tools.followPiece;
+    game.styleAdvisor.alreadySuggested = session.state.setting(kSimpleSuggestedSetting);
+    game.onSuggestSimple = () {
+      session.state.setSetting(kSimpleSuggestedSetting, true);
+      _toast('O mapa está pesado neste celular. Em Ajustes, os gráficos Simplificado são mais leves e poupam bateria.', seconds: 8);
+    };
     final layers = await openMapLayers(
       assets: assets,
       schedule: data.schedule,
@@ -728,7 +739,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             final w = assets.waterFor(data.schedule.select(tools.clock.nowUtc).epoch);
             return 'Água no relevo: ${w?.builds ?? 0} tiles calculados, último em ${(w?.lastBuildMs ?? 0).toStringAsFixed(1)} ms (uma vez por tile)';
           }()} · Véu da neblina: ${game.fogUs.round()} µs por quadro · Bichos e vento: ${game.lifeUs.round()} µs por quadro\n'
-          'Cobertura por campo: ${game.climateGround.cover?.fieldDrawn ?? 0} blocos na tela, ${game.climateGround.cover?.fieldBuilds ?? 0} refeitos, último em ${(game.climateGround.cover?.fieldLastMs ?? 0).toStringAsFixed(1)} ms (fora do quadro)';
+          'Cobertura por campo: ${game.climateGround.cover?.fieldDrawn ?? 0} blocos na tela, ${game.climateGround.cover?.fieldBuilds ?? 0} refeitos, último em ${(game.climateGround.cover?.fieldLastMs ?? 0).toStringAsFixed(1)} ms (fora do quadro)\n'
+          '${game.fullStyle ? 'Mapa Completo: chão ${game.city.groundMs.toStringAsFixed(1)} ms (${game.city.drawnChunks} blocos, ${game.city.rebuiltLastFrame} refeitos no quadro, ${game.city.rebuiltTotal} no total, ${game.city.onGrid ? 'na grade' : 'girando'}), de pé ${game.city.uprightMs.toStringAsFixed(1)} ms (${game.city.upright.stats.buildings} prédios, ${game.city.upright.stats.props} árvores e props)' : 'Mapa Simplificado: ${game.artRasterMs.toStringAsFixed(1)} ms'} · partículas ${game.rainCount} · build ${kReleaseMode ? 'release' : kProfileMode ? 'profile' : 'debug (não vale como medida)'}';
     };
     final accessTol = data.travel.accessTolM / metersPerCell(game.playerLat);
     final travel = TravelSession(

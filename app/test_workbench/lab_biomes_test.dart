@@ -1,15 +1,15 @@
 // As cenas de bioma do laboratório visual para o catálogo do workbench (0.21.0): uma cena pequena por bioma, desenhada
-// pelo renderizador do laboratório (`lab_renderer.dart`), ao lado da imagem atual do bioma. Fica fora de `test/`.
+// pelo renderizador do mapa no estilo Completo (`ui/city/`, 0.22.0), ao lado da imagem atual do bioma. Fica fora de `test/`.
 // Uso: cd app && flutter test test_workbench/lab_biomes_test.dart
 import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/ui/lab/lab_art.dart';
-import 'package:kenoma/ui/lab/lab_renderer.dart';
+import 'package:kenoma/ui/city/city_renderer.dart';
+import 'package:kenoma/ui/city/city_sources.dart';
+import 'package:kenoma/world/map_camera.dart';
 import 'package:kenoma/world/lab_block.dart';
-
-import '../test/support/fixtures.dart';
 
 const out = '../workbench/catalog/biomas';
 
@@ -34,13 +34,16 @@ void main() {
     const w = 140, h = 140, scale = 3;
     for (final (night, tag) in [(false, 'lab'), (true, 'lab_noite')]) {
       for (final e in scenes.entries) {
-        final r = LabRenderer(e.value.$2, art, loadBiomes());
+        final tiles = LabCityTiles(e.value.$2, ground: e.value.$1);
+        final city = CityRenderer(art: art, tileAt: tiles.tileAt, biomeAt: tiles.biomeAt, cellsPerTile: LabCityTiles.cellsPerTile);
+        final (cx, cy) = tiles.toCells(10, 0);
+        final cam = MapCamera(centerX: cx, centerY: cy, pixelsPerCell: 1.1 * scale * tiles.mpc);
         final rec = ui.PictureRecorder();
-        final c = ui.Canvas(rec)..scale(scale.toDouble());
-        final small = ui.PictureRecorder();
-        r.paint(ui.Canvas(small), const ui.Size(w + 0.0, h + 0.0), LabView(cx: 10, cy: 0, rotation: 0, pxPerM: 1.1, sunAltDeg: night ? -25 : 35, sunAzDeg: 70, localHour: night ? 22 : 9), after: true, baseGround: e.value.$1);
-        final img = small.endRecording().toImageSync(w, h);
-        c.drawImage(img, ui.Offset.zero, ui.Paint()..filterQuality = ui.FilterQuality.none);
+        final c = ui.Canvas(rec);
+        const view = ui.Size(w * scale + 0.0, h * scale + 0.0);
+        final alt = night ? -25.0 : 35.0;
+        city.paintGround(c, view, cam, dpr: 1, artPixelDp: scale.toDouble(), mpc: tiles.mpc, sunAltDeg: alt, sunAzDeg: 70, wet: false, touching: false);
+        city.paintUpright(c, view, cam, dpr: 1, artPixelDp: scale.toDouble(), mpc: tiles.mpc, sunAltDeg: alt, sunAzDeg: 70, localHour: night ? 22 : 9, month: 11, snowRoofs: false, items: const []);
         final big = await rec.endRecording().toImage(w * scale, h * scale);
         final bytes = await big.toByteData(format: ui.ImageByteFormat.png);
         File('$out/${e.key}_$tag.png').writeAsBytesSync(bytes!.buffer.asUint8List());

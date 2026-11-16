@@ -982,7 +982,10 @@ void main() {
       env.sim.teleport(la, lo);
       await env.simulate(const Duration(seconds: 6), frames: 120);
       w.radar(env.tools.clock.nowUtc);
-      await env.settle(10);
+      // O pulso leva alguns quadros; com o estilo Completo (0.22.0) cada quadro de teste custa mais: espera até 60.
+      for (var i = 0; i < 60 && !w.spawns.any((s) => s.uid == target.uid); i++) {
+        await env.settle(1);
+      }
       expect(w.spawns.any((s) => s.uid == target.uid), isTrue, reason: 'em cima da distorção: virou Eco');
       expect(w.state.story.count('hidden_revealed'), greaterThan(0));
     });

@@ -121,6 +121,15 @@ class DevTools extends ChangeNotifier {
   /// O que a simulação do tráfego diz de si (quem desenha o mapa do jogo preenche): agentes e custo do passo.
   String Function()? trafficStats;
 
+  /// 0.22.0: a câmera do mapa segue a peça do clima que anda (funil do tornado, Procissão, olhar da Vigília, prédio da
+  /// Maré) em vez do Conjurador. Só para fotos e vídeos do workbench.
+  bool _followPiece = false;
+  bool get followPiece => _followPiece;
+  void setFollowPiece(bool on) {
+    _followPiece = on;
+    notifyListeners();
+  }
+
   void setOverlays({bool? biomes, bool? grid20, bool? radii}) {
     _showRadii = radii ?? _showRadii;
     _showBiomeGrid = biomes ?? _showBiomeGrid;
@@ -185,7 +194,7 @@ class DevTools extends ChangeNotifier {
 
   /// Algo forçado está ativo: simulador, relógio, nível, pedidos de spawn, clima ou sobreposições. Liga a etiqueta DEBUG.
   bool get anyForcing =>
-      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || force.events.isNotEmpty || _hidePersonal || _showPuddles || _testCircle != null || _showBiomeGrid || _showGrid20 || _showRadii || _showRelief || _showTraffic || _trafficDensity != null;
+      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || force.events.isNotEmpty || _hidePersonal || _showPuddles || _testCircle != null || _showBiomeGrid || _showGrid20 || _showRadii || _followPiece || _showRelief || _showTraffic || _trafficDensity != null;
 
   Future<void> setUseSimulator(bool value) async {
     if (value == _useSimulator) return;

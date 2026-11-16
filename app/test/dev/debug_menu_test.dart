@@ -96,7 +96,11 @@ void main() {
     await tester.tap(find.byKey(const Key('section-posicao')));
     await tester.pump();
     expect(shown('pos.teleport'), isTrue);
+    await tester.ensureVisible(find.byKey(const Key('section-spawns')));
+    await tester.pump();
     await tester.tap(find.byKey(const Key('section-spawns')));
+    await tester.pump();
+    await tester.ensureVisible(find.byKey(const Key('section-spawns'))); // o menu cresceu (0.22.0): o cabeçalho pode sair da tela
     await tester.pump();
     await tester.tap(find.byKey(const Key('section-spawns')));
     await tester.pump();

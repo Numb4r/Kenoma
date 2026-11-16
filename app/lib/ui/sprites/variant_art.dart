@@ -8,7 +8,7 @@
 /// | `water`       | 38% mais claro                       | duas faixas escuras de maré no corpo; dois pingos EMBAIXO | corpo claro cortado por duas listras escuras horizontais |
 /// | `residential` | 25% mais claro (quente)              | telhado escuro de cerâmica, largo, no TOPO         | triângulo escuro cobrindo a cabeça de um corpo claro     |
 /// | `lit`         | 48% mais claro (o mais claro, ainda com sombra interna) | tubo de neon de 2 px (1 no mapa) por FORA do contorno escuro, nunca em buraco interno, mais o halo de [variantGlowRows] | o corpo mais claro de todos, com um segundo contorno claro por fora do escuro |
-/// | `sacred`      | 38% mais escuro (cinza violeta)      | auréola clara FLUTUANDO acima da cabeça; véu claro no quarto de cima do corpo | corpo escuro com o alto claro e uma barra solta em cima  |
+/// | `sacred`      | 38% mais escuro (cinza violeta)      | auréola clara FLUTUANDO acima da cabeça (o corpo desce até 7 px para ela caber; sem espaço, ela afina); véu claro no quarto de cima do corpo | corpo escuro com o alto claro e uma barra solta em cima  |
 /// | `crimson`     | 58% mais escuro (o mais escuro)      | dois chifres claros nas PONTAS do topo             | o corpo mais escuro de todos, com duas pontas claras     |
 /// | `shiny`       | 18% mais claro                       | estrela branca de quatro pontas no CANTO de cima à direita; risco de brilho branco com fio escuro em diagonal | diagonal branca e escura que nenhuma outra tem; é a única que pulsa ([shinyPulse]) |
 ///
@@ -60,7 +60,6 @@ const List<String> _muffLeft = ['HA', 'AA', 'AA', 'AK'];
 const List<String> _muffRight = ['AH', 'AA', 'AA', 'KA'];
 const List<String> _sprout = ['HH.HH', '.AAA.', '..A..'];
 const List<String> _roof = ['....A....', '..AAHAA..', '.AAAAAAA.', 'KKKKKKKKK'];
-const List<String> _halo = ['AHHHA'];
 const List<String> _hornLeft = ['H.', 'A.', 'AA'];
 const List<String> _hornRight = ['.H', '.A', 'AA'];
 const List<String> _dripLong = ['A', 'A', 'H'];
@@ -93,7 +92,19 @@ bool _near(List<String> rows, int x, int y, int d) {
 /// As linhas de [rows] (48 x 48, de `phase1Rows` ou de `sprite_data.dart`) com o acessório e os padrões de [variant]
 /// (chave de `creatures.json`). Variante desconhecida ou sprite vazio: devolve [rows] sem mexer. Pinte com
 /// [variantPalette].
-List<String> variantRows(List<String> rows, String variant) {
+List<String> variantRows(List<String> rows, String variant) => _variantRows(variant == 'sacred' ? _lowered(rows) : rows, variant);
+
+/// [rows] com o corpo descido até sobrarem 7 linhas acima dele (auréola de 3 px, o contorno dela em cima e embaixo e
+/// 2 px de ar), no limite do espaço livre embaixo: nunca corta os pés nem muda o tamanho do quadro. Só a Sagrada usa.
+List<String> _lowered(List<String> rows) {
+  final t = rows.indexWhere((r) => r.split('').any(_solid)), b = rows.lastIndexWhere((r) => r.split('').any(_solid));
+  if (t < 0) return rows;
+  final d = math.min(7 - t, rows.length - 1 - b);
+  if (d <= 0) return rows;
+  return [for (var i = 0; i < d; i++) '.' * rows.first.length, ...rows.sublist(0, rows.length - d)];
+}
+
+List<String> _variantRows(List<String> rows, String variant) {
   if (!_looks.containsKey(variant)) return rows;
   final n = rows.length;
   final g = [for (final row in rows) row.split('')];
@@ -172,8 +183,13 @@ List<String> variantRows(List<String> rows, String variant) {
       stamp(_sprout, headX - 7, top(headX) + 2 - 9);
     case 'residential': // o beiral cobre os 3 px de cima
       stamp(_roof, headX - 13, t + 3 - 12);
-    case 'sacred': // 2 px de ar entre a auréola e a cabeça
-      stamp(_halo, headX - 7, t - 6);
+    case 'sacred': // sempre 2 px de ar entre o contorno da auréola e a cabeça; sem espaço, ela afina (3, 2 ou 1 px)
+      final y0 = math.max(0, t - 6), y1 = y0 + math.max(1, math.min(3, t - 3 - y0)), x0 = math.max(0, math.min(headX - 7, n - 15));
+      for (var y = y0; y < y1; y++) {
+        for (var i = 0; i < 15 && x0 + i < g[y].length; i++) {
+          g[y][x0 + i] = i < 3 || i >= 12 ? 'A' : 'H';
+        }
+      }
     case 'crimson':
       final xl = l + w * 2 ~/ 9, xr = l + w * 7 ~/ 9;
       stamp(_hornLeft, xl - 3, top(xl) + 2 - 9);

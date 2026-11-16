@@ -18,6 +18,7 @@ import '../../save/backup_io.dart';
 import '../../save/ksv1.dart';
 import '../../story/local_notifier.dart';
 import '../../story/notification_plan.dart';
+import '../../world/style_advisor.dart';
 import '../colors.dart';
 import '../menu/screen_frame.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
@@ -255,6 +256,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 8),
             PixelButton(label: 'Entrar noutro grupo', color: kSignal, onTap: _joinGroup),
             const SectionTitle('Tela e som'),
+            // 0.22.0 (GDD, Câmera): dois estilos do mapa, com a mesma lógica. Troca na hora, sem reiniciar.
+            const Text('GRÁFICOS DO MAPA', style: TextStyle(fontSize: 8, color: kText)),
+            const SizedBox(height: 4),
+            Row(children: [
+              for (final (simple, label, key) in const [(false, 'Completo', 'map-style-full'), (true, 'Simplificado', 'map-style-simple')])
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: GestureDetector(
+                    key: Key(key),
+                    onTap: () => setState(() => s.setSetting(kSimpleGraphicsSetting, simple)),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      decoration: BoxDecoration(color: s.setting(kSimpleGraphicsSetting) == simple ? kSignal : null, border: Border.all(color: kSignal)),
+                      child: Text(label.toUpperCase(), style: TextStyle(fontSize: 8, color: s.setting(kSimpleGraphicsSetting) == simple ? const Color(0xFF1A1424) : kText)),
+                    ),
+                  ),
+                ),
+            ]),
+            const SizedBox(height: 4),
+            const Text('O Simplificado é plano e leve, para celulares mais fracos ou para poupar bateria: mostra tudo que importa para o jogo e só tira enfeite.',
+                style: TextStyle(fontSize: 8, color: kDim, height: 1.6)),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Nomes de rua', style: TextStyle(fontSize: 8)),

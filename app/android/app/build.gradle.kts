@@ -54,6 +54,11 @@ android {
         release {
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
+        // 0.22.0: a build de profile (medida de desempenho no celular) sai com a mesma chave da release, para instalar por
+        // cima dela sem apagar o save dos amigos.
+        maybeCreate("profile").apply {
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+        }
     }
 }
 

@@ -1473,7 +1473,7 @@
     },
     "gaze": {
       "style": "gaze",
-      "color": "#ff5a36",
+      "color": "#f02a3a",
       "glow": "#ffe9a8",
       "alpha": 0.22
     },
@@ -1483,7 +1483,7 @@
     },
     "lightning_vigil": {
       "style": "bolt",
-      "color": "#ff5a36",
+      "color": "#f02a3a",
       "glow": "#ff9a7a",
       "flash": true,
       "mark": "burn",

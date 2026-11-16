@@ -2,6 +2,7 @@
 /// o catálogo só diz onde baixar; o SHA-256 que vale é o de `epochs.json` (CLAUDE.md, regra 8). Dart puro.
 library;
 
+import '../data/building_pack.dart';
 import '../data/traffic_pack.dart';
 import 'dart:io';
 import 'dart:typed_data';
@@ -26,6 +27,12 @@ const String kKindAccess = 'access';
 /// Os pontos do OSM da região (`_traffic.bin`), em `route_files`, da época 12 em diante: só vale o arquivo que a época
 /// vigente lista em `traffic_packs` (nome e SHA-256 iguais aos do catálogo).
 const String kKindTraffic = 'traffic';
+
+/// 0.22.0: os prédios e as árvores do estilo Completo (`_bldg.bin`), em `route_files` (só cenário, fora das épocas).
+const String kKindBuildings = 'buildings';
+
+/// O maior arquivo de prédios que o app abre (o de Campinas tem 417 KB).
+const int kMaxBuildingFileBytes = 4 * 1024 * 1024;
 
 final _safeName = RegExp(r'^[A-Za-z0-9._-]+$');
 
@@ -176,6 +183,23 @@ TrafficPack? openTrafficFile(RegionFileJob job, {String publicKeyHex = kFeedPubl
     final sig = job.sigHex;
     if (sig != null && !verifySigned(bytes, sig, publicKeyHex: publicKeyHex)) return null;
     return TrafficPack.parse(bytes);
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Lê e confere o arquivo de prédios (0.22.0), como o de pontos: SHA-256 do catálogo e, recém-baixado, a assinatura. Roda em
+/// Isolate.
+BuildingPack? openBuildingFile(RegionFileJob job, {String publicKeyHex = kFeedPublicKeyHex}) {
+  try {
+    // O leitor guarda todos os prédios na memória: acima de [kMaxBuildingFileBytes] (o de São Paulo tem 29 MB e 2,2 milhões
+    // de prédios) ele recusa, até existir o leitor por tile.
+    if (File(job.path).lengthSync() > kMaxBuildingFileBytes) return null;
+    final bytes = File(job.path).readAsBytesSync();
+    if (sha256Hex(bytes) != job.sha256.toLowerCase()) return null;
+    final sig = job.sigHex;
+    if (sig != null && !verifySigned(bytes, sig, publicKeyHex: publicKeyHex)) return null;
+    return BuildingPack.parse(bytes);
   } catch (_) {
     return null;
   }

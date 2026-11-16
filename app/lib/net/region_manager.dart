@@ -2,6 +2,7 @@
 /// no disco ao abrir o app. Qualquer falha deixa o jogador no fallback ou no piso, com um aviso curto. Nunca lança.
 library;
 
+import '../data/building_pack.dart';
 import '../data/traffic_pack.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -40,6 +41,7 @@ Future<RegionOpen> _openInIsolate(String id, List<RegionFileJob> jobs, String ke
 
 Future<AccessPack?> _openAccessInIsolate(RegionFileJob job, String key) => Isolate.run(() => openAccessFile(job, publicKeyHex: key));
 Future<TrafficPack?> _openTrafficInIsolate(RegionFileJob job, String key) => Isolate.run(() => openTrafficFile(job, publicKeyHex: key));
+Future<BuildingPack?> _openBuildingsInIsolate(RegionFileJob job, String key) => Isolate.run(() => openBuildingFile(job, publicKeyHex: key));
 
 class RegionManager extends ChangeNotifier {
   RegionManager({
@@ -139,6 +141,8 @@ class RegionManager extends ChangeNotifier {
   /// baixados, conferidos pelo catálogo assinado. Falha não avisa e não mexe na região: ela segue sem eles.
   Future<void> _routeFiles(RegionEntry r) async {
     await _routeFile<AccessPack>(r, kKindAccess, has: world.hasAccess, open: (j) => _openAccessInIsolate(j, publicKeyHex), set: (p) => world.setAccess(r.id, p));
+    // 0.22.0: os prédios do estilo Completo. Só cenário: não dependem da época.
+    await _routeFile<BuildingPack>(r, kKindBuildings, has: world.hasBuildings, open: (j) => _openBuildingsInIsolate(j, publicKeyHex), set: (p) => world.setBuildings(r.id, p));
     // Os pontos só valem se a época vigente lista o mesmo arquivo, com o mesmo SHA-256.
     final ref = epochRefOf(schedule.select(nowUtc()).epoch, r.id, kKindTraffic), f = r.routeFiles[kKindTraffic];
     if (ref == null || f == null || ref.file != f.file || ref.sha256.toLowerCase() != f.sha256.toLowerCase()) return;

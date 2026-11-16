@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show kProfileMode, kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -18,9 +19,11 @@ import '../../core/climate.dart';
 import '../../data/climate_catalog.dart';
 import '../../data/game_data.dart';
 import '../../world/lab_block.dart';
+import '../../world/map_camera.dart';
+import '../city/city_renderer.dart';
+import '../city/city_sources.dart';
 import '../game/climate_layers.dart';
 import '../game/climate_painter.dart';
-import '../sprites/map_style.dart';
 import 'lab_art.dart';
 import 'lab_renderer.dart';
 
@@ -42,6 +45,10 @@ class VisualLabScreen extends StatefulWidget {
 
 class _VisualLabScreenState extends State<VisualLabScreen> with SingleTickerProviderStateMixin {
   LabRenderer? _renderer;
+
+  /// 0.22.0: o "depois" é o renderizador do mapa (estilo Completo) sobre o quarteirão.
+  CityRenderer? _city;
+  LabCityTiles? _labTiles;
   ClimateCatalog? _catalog;
   ClimateModel? _model;
   String? _error;
@@ -73,7 +80,10 @@ class _VisualLabScreenState extends State<VisualLabScreen> with SingleTickerProv
       final model = data.schedule.epochs.reversed.map((e) => e.climate).firstWhere((m) => m?.layered ?? false, orElse: () => null);
       if (!mounted) return;
       setState(() {
-        _renderer = LabRenderer(block, LabArt.build(), biomes);
+        final art = LabArt.build();
+        _renderer = LabRenderer(block, art, biomes);
+        final tiles = _labTiles = LabCityTiles(block);
+        _city = CityRenderer(art: art, tileAt: tiles.tileAt, biomeAt: tiles.biomeAt, cellsPerTile: LabCityTiles.cellsPerTile);
         _catalog = data.climates;
         _model = model;
       });
@@ -146,6 +156,10 @@ class _VisualLabScreenState extends State<VisualLabScreen> with SingleTickerProv
                   size: box.biggest,
                   painter: _LabPainter(
                     renderer: r,
+                    city: _city!,
+                    tiles: _labTiles!,
+                    dpr: MediaQuery.devicePixelRatioOf(context),
+                    month: DateTime.fromMillisecondsSinceEpoch(t * 1000, isUtc: true).month,
                     view: view,
                     after: after,
                     info: info,
@@ -166,7 +180,7 @@ class _VisualLabScreenState extends State<VisualLabScreen> with SingleTickerProv
             padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Text(
-                '${after ? 'DEPOIS' : 'ANTES'} · ${hour.floor().toString().padLeft(2, '0')}h${((hour % 1) * 60).round().toString().padLeft(2, '0')} · SOL ${alt.round()}° · ${info.name.toUpperCase()} · QUADRO ${avg.toStringAsFixed(1)} MS',
+                '${after ? 'DEPOIS' : 'ANTES'} · ${hour.floor().toString().padLeft(2, '0')}h${((hour % 1) * 60).round().toString().padLeft(2, '0')} · SOL ${alt.round()}° · ${info.name.toUpperCase()} · QUADRO ${avg.toStringAsFixed(1)} MS (${kReleaseMode ? 'RELEASE' : kProfileMode ? 'PROFILE' : 'DEBUG, NÃO VALE'})',
                 key: const Key('lab-status'),
                 style: const TextStyle(fontSize: 8, color: Color(0xFFE8E4F4), height: 1.6),
               ),
@@ -228,9 +242,13 @@ class _VisualLabScreenState extends State<VisualLabScreen> with SingleTickerProv
 }
 
 class _LabPainter extends CustomPainter {
-  _LabPainter({required this.renderer, required this.view, required this.after, required this.info, required this.climatePainter, required this.time, required this.utc, required this.onCost});
+  _LabPainter({required this.renderer, required this.city, required this.tiles, required this.dpr, required this.month, required this.view, required this.after, required this.info, required this.climatePainter, required this.time, required this.utc, required this.onCost});
 
   final LabRenderer renderer;
+  final CityRenderer city;
+  final LabCityTiles tiles;
+  final double dpr;
+  final int month;
   final LabView view;
   final bool after;
   final ClimateInfo info;
@@ -242,18 +260,28 @@ class _LabPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final sw = Stopwatch()..start();
-    final w = (size.width / labArtDp).ceil(), h = (size.height / labArtDp).ceil();
-    final rec = ui.PictureRecorder();
-    final c = Canvas(rec);
-    renderer.paint(c, Size(w.toDouble(), h.toDouble()), view, after: after);
-    if (after) _skyBand(c, w.toDouble());
-    final img = rec.endRecording().toImageSync(w, h);
-    canvas.drawImageRect(img, Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()), Rect.fromLTWH(0, 0, w * labArtDp, h * labArtDp), Paint()..filterQuality = FilterQuality.none);
-    img.dispose();
+    final climate = info.id.split('+').first;
+    if (after) {
+      final (x, y) = tiles.toCells(view.cx, view.cy);
+      final cam = MapCamera(centerX: x, centerY: y, pixelsPerCell: view.pxPerM * labArtDp * tiles.mpc, rotation: view.rotation);
+      final wet = const {'drizzle', 'rain', 'storm', 'deluge', 'acid_rain', 'freezing_rain'}.contains(climate);
+      city.paintGround(canvas, size, cam, dpr: dpr, artPixelDp: labArtDp, mpc: tiles.mpc, sunAltDeg: view.sunAltDeg, sunAzDeg: view.sunAzDeg, wet: wet, touching: false);
+      city.paintUpright(canvas, size, cam,
+          dpr: dpr, artPixelDp: labArtDp, mpc: tiles.mpc, sunAltDeg: view.sunAltDeg, sunAzDeg: view.sunAzDeg, localHour: view.localHour, month: month,
+          snowRoofs: const {'snow', 'blizzard', 'veil_snow', 'frost'}.contains(climate), items: [size.center(Offset.zero)], skyFraction: 0.06, skyClimate: climate);
+    } else {
+      final w = (size.width / labArtDp).ceil(), h = (size.height / labArtDp).ceil();
+      final rec = ui.PictureRecorder();
+      final c = Canvas(rec);
+      renderer.paint(c, Size(w.toDouble(), h.toDouble()), view);
+      final img = rec.endRecording().toImageSync(w, h);
+      canvas.drawImageRect(img, Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()), Rect.fromLTWH(0, 0, w * labArtDp, h * labArtDp), Paint()..filterQuality = FilterQuality.none);
+      img.dispose();
+    }
     onCost(sw.elapsedMicroseconds / 1000);
     // O clima: no estilo novo, o céu do evento fica na faixa do topo e o resto (precipitação, tom) cobre a tela; no de hoje,
     // tudo cobre a tela, como no mapa.
-    final skyRect = Rect.fromLTWH(0, 0, size.width, labSkyPx * labArtDp);
+    final skyRect = Rect.fromLTWH(0, 0, size.width, size.height * 0.06);
     final screen = after ? ClimateInfo(id: '${info.id}#tela', name: info.name, base: info.base, hud: info.hud, layers: [for (final l in info.layers) if (!l.flag('sky')) l]) : info;
     climatePainter.update(1 / 60, size, screen);
     climatePainter.paint(canvas, size);
@@ -265,64 +293,6 @@ class _LabPainter extends CustomPainter {
       }
       if (info.id.split('+').contains('rainbow')) _rainbow(canvas, skyRect);
       canvas.restore();
-    }
-  }
-
-  /// A faixa do céu: o gradiente da hora em quatro bandas com pontilhado entre elas, misturado com a cor do clima, nuvens, o
-  /// sol e a lua no azimute deles (girar o mapa gira o céu) e a neblina ao longe na borda de baixo.
-  void _skyBand(Canvas c, double w) {
-    final climate = info.id.split('+').first;
-    final (mix, force, clouds) = switch (climate) {
-      'cloudy' => (0xFF8A8FA3, 0.45, 5),
-      'drizzle' || 'rain' => (0xFF6C7186, 0.60, 7),
-      'storm' => (0xFF3D4254, 0.75, 8),
-      'fog' => (0xFFC2C0D2, 0.70, 0),
-      'strong_sun' => (0xFFFFF0D0, 0.15, 0),
-      _ => (0, 0.0, 2),
-    };
-    final cols = [for (final g in skyGradient(view.sunAltDeg)) force > 0 ? mixArgb(g, mix, force) : g];
-    final band = labSkyPx / cols.length;
-    final p = Paint()..isAntiAlias = false;
-    for (var i = 0; i < cols.length; i++) {
-      c.drawRect(Rect.fromLTWH(0, i * band, w, band + 1), p..color = Color(cols[i]));
-      if (i > 0) {
-        for (var x = 0.0; x < w; x += 2) {
-          c.drawRect(Rect.fromLTWH(x + (i.isEven ? 0 : 1), i * band - 1, 1, 1), p..color = Color(cols[i]));
-          c.drawRect(Rect.fromLTWH(x + (i.isEven ? 1 : 0), i * band, 1, 1), p..color = Color(cols[i - 1]));
-        }
-      }
-    }
-    // O sol e a lua: -60 a +60 graus em volta do topo da tela ocupam a largura.
-    final heading = -view.rotation * 180 / math.pi;
-    double? xOf(double az) {
-      final d = ((az - heading + 540) % 360) - 180;
-      return d.abs() > 60 ? null : (d / 120 + 0.5) * w;
-    }
-
-    final night = view.sunAltDeg < 0, covered = force >= 0.45; // céu fechado: sem sol nem lua
-    if (view.sunAltDeg > -4 && !covered) {
-      final x = xOf(view.sunAzDeg);
-      if (x != null) c.drawCircle(Offset(x, (labSkyPx - 4 - view.sunAltDeg.clamp(-4, 60) / 60 * (labSkyPx - 8)).toDouble()), 4, p..color = const Color(0xFFFFF4C8));
-    }
-    if (night && !covered) {
-      final elong = moonCycle(utc) * 360, x = xOf(view.sunAzDeg + elong);
-      if (x != null) c.drawCircle(Offset(x, 10), 4.5, p..color = const Color(0xFFE8E4F4));
-    }
-    final cloud = renderer.art.stamp('cloud');
-    if (cloud != null) {
-      for (var i = 0; i < clouds; i++) {
-        final x = ((i * 53 + time * 2) % (w + 40)) - 20, y = 3.0 + (i * 7) % 18;
-        c.drawImage(cloud, Offset(x.roundToDouble(), y), Paint()..filterQuality = FilterQuality.none..color = night ? const Color(0x99FFFFFF) : const Color(0xFFFFFFFF));
-      }
-    }
-    // A neblina ao longe: a última cor pontilhada sobre o mapa, 75%, 50% e 25%.
-    final fog = Color(cols.last);
-    final fogRows = climate == 'fog' ? 16 : 6;
-    for (var y = 0; y < fogRows; y++) {
-      final keep = 1 - y / fogRows;
-      for (var x = 0; x < w; x++) {
-        if (((x * 7 + y * 13) % 8) / 8 < keep) c.drawRect(Rect.fromLTWH(x.toDouble(), labSkyPx + y.toDouble(), 1, 1), p..color = fog);
-      }
     }
   }
 

@@ -7,6 +7,8 @@ library;
 
 import 'dart:math' as math;
 
+export 'city_scene.dart' show roadWidthM, sidewalkWidthM;
+
 typedef Pt = (double, double);
 
 class LabBuilding {
@@ -146,19 +148,6 @@ class LabBlock {
   final List<List<Pt>> greens, waters, lots;
   final List<Pt> trees;
 }
-
-/// A largura da rua de cada classe, em metros (asfalto), e a da calçada de cada lado.
-double roadWidthM(String cls) => switch (cls) {
-      'principal' => 14,
-      'secondary' => 10,
-      'local' => 7,
-      _ => 3,
-    };
-double sidewalkWidthM(String cls) => switch (cls) {
-      'principal' || 'secondary' => 3,
-      'local' => 2,
-      _ => 0,
-    };
 
 /// GTA 2: o ponto do telhado de um ponto da base [p] (na tela, pixels de arte), com o prédio de altura [heightPx], visto de
 /// uma câmera a [cameraPx] pixels de altura sobre o centro da tela [center]. No centro, deslocamento zero; para fora, o
