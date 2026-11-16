@@ -147,6 +147,8 @@ O mapa tem duas camadas. A camada lógica é a grade de biomas em z21, que decid
 
 No jogo a câmera segue o Conjurador pela posição real, com movimento suave. A câmera nunca sai do avatar: arrastar com um dedo gira o mapa em torno dele, como no Pokémon GO, e a pinça só dá zoom numa faixa de 40 a 80 m de largura, com 50 m como padrão. A câmera fica perto para os sprites terem detalhe; Ecos fora da tela aparecem no rastreador. Uma bússola volta o norte para cima, e o modo "seguir direção" gira o mapa com a bússola do celular. Câmera livre só existe no menu de debug.
 
+O mapa tem dois estilos gráficos nos Ajustes: o completo, com prédios de altura falsa, vegetação, luz por hora e horizonte, e o simplificado, plano e leve, para celulares mais fracos ou para poupar bateria. O simplificado mostra tudo que importa para o jogo (Ecos, Fagulhas, Aura, alcance, marcas do clima no chão e eventos) e só tira enfeite. Se o mapa completo ficar lento por um tempo, o jogo sugere uma vez trocar para o simplificado. A lógica é a mesma nos dois.
+
 ### Geração determinística
 
 Tudo que existe no mundo sai de `hash(seed_global, época, célula, janela_de_tempo)`. Spawns usam células z20, com cerca de 35 m de lado na latitude de Campinas, compatível com o erro de 5 a 15 m do GPS. Biomas usam z21 e Fendas e dungeons usam z15, com cerca de 1,1 km. Como a seed é compartilhada, amigos veem os mesmos spawns no mesmo lugar e hora sem servidor.
@@ -182,6 +184,8 @@ Cada clima interage com o mapa por cinco mecânicas genéricas, combinadas em da
 Clima e evento são duas camadas que se somam. O **clima** é o tempo atmosférico e existe um de cada vez: vem do Open-Meteo, da seed ou do calendário, e é tudo que cai do céu ou cobre a vista. Duas coisas caindo do céu não combinam, por isso ocupam a mesma vaga. O **evento** é uma aparição por cima de qualquer clima, com duração própria, independente da janela de 3 horas. Até dois eventos ficam ativos ao mesmo tempo; um terceiro espera o fim de um deles, com prioridade para o feed assinado, depois a astronomia, o calendário e o sorteio. Clima do calendário substitui o clima real enquanto durar.
 
 Spawn de clima e de evento se soma, com teto de +++ por tipo, e as interações de mapa dos dois valem juntas. Na tela, a precipitação do clima fica embaixo, o céu do evento por cima e os clarões por último. Cada evento declara o que precisa; sem o requisito, ele espera ou aparece só com a parte de céu dele. Tudo continua igual para amigos no mesmo lugar: clima real, seed, calendário, astronomia e feed são os mesmos para todos.
+
+Cores do mundo: o ciano é o sinal das ferramentas do Conjurador e o violeta é o jogador, então nenhuma ameaça do Véu usa essas duas cores. Os olhos da Vigília são vermelhos.
 
 | Clima nativo | Visual | Spawn | Interação com o mapa |
 | --- | --- | --- | --- |
@@ -224,7 +228,7 @@ Spawn de clima e de evento se soma, com teto de +++ por tipo, e as interações 
 | Evento | Origem | Requisito | Visual | Spawn | Interação com o mapa |
 | --- | --- | --- | --- | --- | --- |
 | Arco-íris | sorteio pela seed depois de chuva | passagem de chuva ou garoa para sol, de dia | arco no céu | Luz ++, Feérico + | dura pouco; o arco fica fixo no mapa e o pé dele é um ponto com material raro e chance de Feérico, que dá para achar com um item fabricado |
-| Tornado | Estação Seca do Véu (raro) e sorteio raro | Tempestade ou Vendaval | funil cruzando o mapa | Feérico ++, Elétrico + | puxa Fagulhas no caminho e as solta mais adiante, numa trilha; deixa destroços coletáveis por onde passou |
+| Tornado | Estação Seca do Véu (raro) e sorteio raro | Tempestade ou Vendaval; quando vem do calendário, traz o Vendaval junto pela duração dele | funil cruzando o mapa | Feérico ++, Elétrico + | puxa Fagulhas no caminho e as solta mais adiante, numa trilha; deixa destroços coletáveis por onde passou |
 | Aurora | tempestade geomagnética real (NOAA) e Noite Boreal | noite | céu ondulando em verde e violeta | Luz ++, Espectral + | tolerância da sintonia maior durante a aurora |
 | Estática | tempestade geomagnética real e Noite Boreal | nenhum | pixels e glitch na tela, HUD falhando | Digital ++, Elétrico + | sintonia com ruído extra; o Tecnomante fica imune ao ruído |
 | Chuva de meteoros | calendário astronômico | noite; com céu coberto os impactos acontecem, mas as estrelas cadentes não aparecem | estrelas cadentes | Luz +, Dracônico + | pontos de impacto com Fagulhas raras e cratera, como os raios |
