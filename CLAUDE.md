@@ -32,9 +32,8 @@ Flutter stable, Dart 3, Flame no mapa e na sintonia, widgets no resto, Riverpod.
 - Sprite ausente vira placeholder gerado. Cores: Véu `#9b7bff`, sinal `#5fd3c6`, Essência `#ff7a45`, contorno `#1a1424` (nunca preto).
 
 ## Agentes
-Fluxo do conteúdo: `creative` propõe, a thread principal decide, `conteudo` grava.
-- `tester`: depois de mudar código, e no fim do marco com screenshot.
-- `creative`: toda decisão criativa (nomes, lore, criaturas, mecânicas, valores iniciais, textos de UI e diálogo, prompts de arte, direção visual e sonora). Decisões criativas não são tomadas na thread principal; sempre delegue ao agente creative com um briefing fechado e depois registre a escolha.
-- `conteudo`: toda gravação em `app/assets/data/`, com a decisão aprovada passada por inteiro. A thread principal não edita esses arquivos, exceto `epochs.json` e a cópia de `biomes.json` que o `sync_shared.sh` grava.
-- O resto fica na thread principal, inclusive bugs difíceis. Nunca dois agentes no mesmo arquivo. Os agentes globais (`code-reviewer`, `tdd-guide` etc.) não se usam neste repo.
-- Execução autônoma: screenshot só no fim de cada marco; depois de 2 tentativas falhas no mesmo critério, pare e reporte. O histórico fica nos commits: não escreva nem leia diário de bordo.
+- `testador`: depois de cada mudança de código; devolve só as falhas.
+- `criativo`: toda decisão criativa (nomes, textos do Bestiário e do mentor, visual de clima e efeito, sprites, paleta, arte e modelagem 3D) e a conferência das folhas de contato do workbench. Edita só `docs/textos-*.md`, `app/lib/ui/sprites/` e `tools/art/`.
+- `conteudista`: só quando chamado, conteúdo repetitivo em volume nos dados (`app/assets/data/`, menos `epochs.json`, e `workbench/catalog/catalog.json`).
+- O resto fica na thread principal (Opus): implementar, depurar, integrar e o servidor do workbench. Dois agentes nunca editam o mesmo arquivo, e a thread principal não mexe nos arquivos do `criativo` ou do `conteudista` enquanto um deles trabalha. Os agentes globais (`code-reviewer`, `tdd-guide` etc.) não se usam neste repo. Antes de fechar cada versão, a thread principal relê as seções do GDD citadas no prompt.
+- Execução: depois de 2 tentativas falhas no mesmo critério, pare e reporte. Capturas só no fim de cada seção do prompt. No resumo final, liste o que precisa de teste no celular ou na rua. Nada de diário de bordo: o histórico fica no git.
