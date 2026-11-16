@@ -1,0 +1,26 @@
+{
+ "owner": null,
+ "doing": [
+  {
+   "t": "Seção 6: fechamento da 0.20.4",
+   "why": "testes, marcos, commit e push"
+  }
+ ],
+ "queue": [
+  "Release 0.20.4 no PC e instalação no moto g54 (checklist do celular)"
+ ],
+ "done": [
+  "Seção 5: checklist do celular (docs/checklist-celular.md e aba Checklist)",
+  "Seção 4: workbench (catálogo com 255 formas, 44 climas, 7 biomas, 5 clipes, números medidos, notas pelo Tailscale)",
+  "Seção 2: agentes testador, criativo e conteudista (commit separado)",
+  "Seção 1: poças do Rill e do relevo, Dilúvio e Hum conferidos no emulador; trava da época não publicada",
+  "Seção 3: emulador kenoma_g54 (setup, iniciar, rotas, emulador sem recompensa, hashes das camadas)",
+  "GDD rev 353",
+  "Época 12 adiada para 2026-12-07 16:00 UTC"
+ ],
+ "stuck": [
+  "tailscale serve pede root uma vez: sudo tailscale set --operator=$USER",
+  "Climas a refazer (peça móvel ou hora certa): arco-íris, tornado, Procissão, Vigília, Maré do Véu, olho do furacão, Frio de manhã, eventos de noite",
+  "Variantes com tom igual ao da base e Brilhante parecido com a Iluminada: decisão de arte (criativo)"
+ ]
+}

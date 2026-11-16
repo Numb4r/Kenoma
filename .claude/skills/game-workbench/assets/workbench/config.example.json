@@ -1,0 +1,12 @@
+{
+  "game": "YOUR GAME",
+  "port": 8977,
+  "repo": "..",
+  "gitPaths": [".", ":(exclude)workbench"],
+  "buildFile": "",
+  "shotDirs": ["../shots"],
+  "clipDir": "clips",
+  "catalogDir": "catalog",
+  "running": "",
+  "theme": { "gold": "#d8b970", "goldDim": "#8a7443", "bg": "#0a0c0e", "rail": "#0f1215", "panel": "#14181c", "panel2": "#1a1f24", "line": "#272d33", "text": "#ece6d8", "muted": "#8e8a7e", "display": "Georgia", "body": "Inter", "fontUrl": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" }
+}

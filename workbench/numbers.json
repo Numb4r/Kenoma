@@ -1,0 +1,134 @@
+[
+ {
+  "title": "Custo por quadro contra o orçamento de 4 ms",
+  "columns": [
+   "Simulação",
+   "moto g54 (0.19.1, marcos)",
+   "Emulador (0.20.4, só comparação)"
+  ],
+  "rows": [
+   [
+    "Tráfego",
+    "297 µs (120 carros, 70 passantes)",
+    "208 µs, último 248 µs (70 carros, 44 passantes)"
+   ],
+   [
+    "Véu da neblina",
+    "447 µs com neblina, 14 µs sem",
+    "8 µs (sem neblina)"
+   ],
+   [
+    "Bichos e vento",
+    "73 a 87 µs",
+    "129 µs"
+   ],
+   [
+    "Soma",
+    "menos de 1 ms com neblina",
+    "—"
+   ],
+   [
+    "Água do relevo, uma vez por tile (fora do quadro desde a 0.20.0)",
+    "12,9 a 30,1 ms",
+    "60,8 ms (build de debug)"
+   ]
+  ]
+ },
+ {
+  "title": "Ecos à vista numa hora, por nível do Conjurador (Centro, 120 m, época 11, 3 janelas)",
+  "columns": [
+   "Nível",
+   "Ecos",
+   "Espíritos",
+   "Wyrm"
+  ],
+  "rows": [
+   [
+    "1",
+    "21",
+    "0",
+    "0"
+   ],
+   [
+    "5",
+    "21",
+    "0",
+    "0"
+   ],
+   [
+    "8",
+    "23",
+    "2",
+    "0"
+   ],
+   [
+    "10",
+    "23",
+    "2",
+    "0"
+   ],
+   [
+    "15",
+    "23",
+    "2",
+    "0"
+   ],
+   [
+    "20",
+    "23",
+    "2",
+    "0"
+   ]
+  ]
+ },
+ {
+  "title": "Poças do Rill por célula z18 na chuva (Centro, ~1 km)",
+  "columns": [
+   "Faixa",
+   "Pedidas",
+   "Na rua, por célula",
+   "Com Eco de Água",
+   "Chance da faixa"
+  ],
+  "rows": [
+   [
+    "1",
+    "2",
+    "1.99",
+    "25%",
+    "25%"
+   ],
+   [
+    "2",
+    "4",
+    "3.99",
+    "42%",
+    "35%"
+   ],
+   [
+    "3",
+    "6",
+    "5.99",
+    "48%",
+    "45%"
+   ]
+  ]
+ },
+ {
+  "title": "Tamanho do APK",
+  "columns": [
+   "Build",
+   "Tamanho"
+  ],
+  "rows": [
+   [
+    "0.20.4 debug (notebook; x86_64, arm64 e armv7)",
+    "190.9 MB"
+   ],
+   [
+    "último release neste notebook (13/nov, com a chave de release)",
+    "86.3 MB"
+   ]
+  ]
+ }
+]

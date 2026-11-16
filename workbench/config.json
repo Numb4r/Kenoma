@@ -1,0 +1,18 @@
+{
+  "game": "KENOMA",
+  "port": 8977,
+  "repo": "..",
+  "gitPaths": [".", ":(exclude)workbench"],
+  "buildFile": "../app/build/app/outputs/flutter-apk/app-debug.apk",
+  "shotDirs": ["shots"],
+  "clipDir": "clips",
+  "catalogDir": "catalog",
+  "running": "(kenoma_g54|flutter_tools\\.snapshot run)",
+  "theme": {
+    "gold": "#9b7bff", "goldDim": "#5c4a9e", "bg": "#120e1a", "rail": "#1a1424", "panel": "#1e1830", "panel2": "#2a2240", "line": "#3a3155",
+    "text": "#ece6ff", "muted": "#9a90b8", "soft": "#c9b8ff", "active": "#ffffff", "flavour": "#c9b8ff", "track": "#2a2240",
+    "well": "radial-gradient(circle at 50% 42%, #2a2240, #120e1a)", "sendHover": "#c9b8ff",
+    "ok": "#5fd3c6", "bad": "#ff5a6e", "fresh": "#ff7a45", "r0": "#ece6ff", "r1": "#5fd3c6", "r2": "#9b7bff", "r3": "#ff7a45",
+    "scheme": "dark", "display": "Silkscreen", "body": "Pixelify Sans", "fontUrl": "/fonts.css"
+  }
+}

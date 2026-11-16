@@ -1,0 +1,4 @@
+workbench/catalog/
+workbench/clips/
+workbench/shots/
+workbench/notes.json

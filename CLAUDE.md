@@ -12,6 +12,7 @@ Flutter stable, Dart 3, Flame no mapa e na sintonia, widgets no resto, Riverpod.
 - Biomas: edite `shared/biomes.json` e rode `./scripts/sync_shared.sh` (um teste compara as cópias).
 - Pipeline: `cd pipeline && .venv/bin/python build_region.py --region campinas` (e `build_visual.py`). Nunca regere por cima um `.bin` commitado: o extrato muda e o SHA em `epochs.json` é mundo.
 - Aparelho: o celular se o `adb devices` mostrar o moto g54, senão o emulador do notebook (`docs/emulador.md`, só build de debug, sempre `adb -s emulator-5554`); desempenho só se mede no celular.
+- Checklist do celular (`docs/checklist-celular.md`): cumulativo desde a versão instalada no celular; cada versão acrescenta os itens dela, e um item só sai quando o relatório confirmar que passou.
 - Screenshot: só se `adb shell dumpsys window | grep isKeyguardShowing` der `false` e `grep mCurrentFocus` citar `com.numb4r.kenoma`; então `adb exec-out screencap -p > /tmp/kenoma-shots/<nome>.png`.
 
 ## Regras invioláveis

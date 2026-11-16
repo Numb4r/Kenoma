@@ -1,0 +1,7 @@
+
+# Workbench (0.20.4): imagens, clipes, notas e capturas ficam fora do git (o repositório é público)
+workbench/catalog/
+workbench/clips/
+workbench/shots/
+workbench/notes.json
+workbench/.wb_pass

@@ -659,3 +659,48 @@ Pendente: o celular estava desconectado. Falta, com o marcador ligado e numa chu
 
 - **Época 12 adiada** para **2026-12-07 16:00 UTC** (era 2026-11-16), sem publicar nada. O `valid_until_utc` continua 2027-02-14.
 - O celular sai do desenvolvimento por algumas versões: os testes da 0.20.3 no aparelho vão para o checklist da versão seguinte.
+
+## Fase 1 · fatia 8e · Agentes, emulador, workbench e checklist do celular (0.20.4)
+
+GDD rev 353 (commit próprio: o emulador conta como GPS simulado). Versão 0.20.4+36. Esta versão foi feita no notebook, sem o celular: **o build de release e a instalação no moto g54 ficam para o PC** (a chave de release está no notebook por decisão do usuário, mas aqui só entraram builds de debug, no emulador). Save no schema 8 (sem mudança).
+
+### Sobras da 0.20.3, conferidas no emulador
+
+- **Poças do Rill e da água do relevo:** com o marcador ligado e chuva forçada perto da Lagoa do Taquaral, alvos laranja nas poças do Rill (na rua, com Eco de Água) e ciano na poça do relevo (a baixada de 10 m da rua ao norte da lagoa). **Não era bug:** no celular eu não estava numa baixada, e na build de debug o tile da água leva alguns segundos para ficar pronto (no parque, sem rua por perto, as poças do Rill não têm onde cair). O cálculo em fundo foi conferido também em teste.
+- **Dilúvio na Norte-Sul:** a rua alaga no fundo do vale (perto da Orosimbo Maia), com a borda do campo.
+- **Hum à noite** (relógio do debug às 23h, tempestade forçada), no Centro: os Humoths da camada pessoal nos semáforos. Duas vagas da mesma hora caíam no mesmo poste: agora cada vaga pega um poste livre.
+- **Época 12** adiada para 2026-12-07 16:00 UTC (na versão anterior). **Trava nova** (`test/release_guard_test.dart`): uma época que usa um pacote obrigatório (lógico, visual ou de caminhos) que não está no APK nem no `regions.json` publicado tem de começar daqui a pelo menos 7 dias; senão o teste falha, e o build de release, que pede os testes passando, também. A época 12 passa hoje e começa a falhar em 30/nov se o `sao_paulo_e12.bin` não for publicado. O relevo de São Paulo (opcional, não publicado desde a época 10) não trava.
+
+### Agentes (commit próprio)
+
+`testador` (haiku, effort low, proativo, só leitura), `criativo` (fable, effort medium, proativo; edita só `docs/textos-*.md`, `app/lib/ui/sprites/` e `tools/art/`, com um hook que recusa o resto) e `conteudista` (haiku, effort medium, só quando chamado; edita só `app/assets/data/`, menos `epochs.json`, e `workbench/catalog/catalog.json`). O revisor contra o GDD saiu: a thread principal relê as seções citadas antes de fechar cada versão. Thread principal em Opus (`.claude/settings.json`).
+
+### Emulador (`docs/emulador.md`)
+
+- `scripts/emulador/setup.sh` (KVM, SDK, imagem `android-34;google_apis;x86_64`, AVD `kenoma_g54` 1080×2400, 400 dpi, 4 GB; nada precisou de sudo), `iniciar.sh` (NVIDIA por PRIME, Intel, software; subiu na Intel, a NVIDIA deu falha de segmentação com o driver fora de versão) e `rota.py` (GPX a 1,4 m/s pelo `adb emu geo fix`; rotas públicas do OSM: volta da Lagoa do Taquaral 2,7 km, Rua 13 de Maio 1,6 km, Avenida Paulista 810 m; `--fixo=lat,lon`).
+- **O emulador conta como GPS simulado** (GDD rev 353): `isPhysicalDevice` do `device_info_plus` (já era dependência transitiva, agora direta); sem o interruptor de recompensa, nada que se pega conta. Conferido no emulador: "+1 Pó de Essência de Planta (debug, fora da Bolsa)". A Patrulha com o GPS do emulador nunca dá recompensa.
+- **Hashes das camadas** no debug ("Camada pessoal de spawn"): célula, janela, época, `base` e `pessoal`. O teste de dois aparelhos de verdade entra no checklist do celular.
+- A build de debug leva x86_64. Só builds de debug entraram no emulador; nada foi instalado no celular.
+
+### Workbench (`docs/workbench.md`)
+
+- A skill ficou só neste repositório (`.claude/skills/game-workbench/`), com a descrição sem a ordem de se ativar sozinha, sem Vercel, `deploy.py`, `push.py`, `references/hosting.md` e `grades.json`; a aba Ratings e o card de nota independente saíram da página. O servidor escuta só em localhost; o acesso de fora é pelo `tailscale serve` (pede uma vez `sudo tailscale set --operator=$USER`). O HTTPS da tailnet já estava ligado.
+- Tema do Design System (violeta, ciano, laranja, Silkscreen nos títulos e Pixelify Sans no texto, servidas do próprio repositório).
+- **Catálogo** (`workbench/capture/catalogo.py`, lendo os dados do jogo e o que o `flutter test test_workbench/render_sprites_test.dart` exporta com as funções do jogo): 255 formas e variantes (sprites em PNG nos tamanhos do Bestiário e do mapa), 24 habilidades com as três faixas, 44 climas (filtro nativo, outras regiões, místico), 29 eventos, 25 datas do Calendário do Véu, 7 biomas, 7 materiais, 5 veículos do Modo Viagem (os "veículos especiais do tráfego" do GDD são da fase 2 e não existem no jogo) e 13 apps do celular, mais a aba Checklist. Climas capturados pela Simulação de clima do debug (1 min por clima, 60×) no Centro; biomas numa célula de cada um, com o clima Limpo.
+- **O que ficou de fora ou errado** (conferido pelo `criativo` nas folhas de contato): os climas cuja peça anda ou depende da hora não aparecem na foto do Centro de dia (arco-íris, tornado, Procissão da Neblina, Vigília, Maré do Véu, olho do furacão, Frio, que só pinta de manhã); os eventos de noite estão com a foto de dia; Lua Carmim e Os Que Escutam não têm clima fixo nos dados (vêm do feed) e ficam sem imagem; Residencial e Iluminado mal se distinguem do Vazio e do Urbano no chão. Decisões de arte para o `criativo`: o Brilhante fica igual à variante Iluminada, e várias variantes têm o tom da própria cor da base (Frond Verde, Rill Aquática, Hum Iluminada...), então somem.
+- **Clipes** (`adb screenrecord`, ~10 s): andando com tráfego, chuva formando poças, neve, Hum à noite e a navegação do Bestiário. Nenhuma sintonia.
+- **Números** só medidos: custo por quadro (moto g54 da 0.19.1, do registro, e emulador marcado como emulador), Ecos à vista por faixa de nível, poças do Rill por célula z18 (1,99, 3,99 e 5,99 de 2, 4 e 6 pedidas) e o tamanho do APK.
+- **Notas:** o servidor recebe e grava no `notes.json` (teste em `workbench/test_server.py`); nenhuma nota do usuário chegou nesta versão.
+
+### Checklist do celular (`docs/checklist-celular.md`)
+
+Cumulativo desde a 0.20.2 (a que está no celular), com as pendências da 0.20.0 e da 0.20.1, sem as famílias novas e as ciclovias (confirmadas). Regra no `CLAUDE.md`. Também é a aba Checklist do workbench.
+
+### Testes
+
+Novos: `test/dev/emulator_test` (emulador sem recompensa), `test/world/layer_hash_test` (base igual, pessoal diferente), `test/release_guard_test` (trava da época), `workbench/test_server.py` (notas, localhost, fontes, sem Ratings) e o teste dos postes distintos do Hum. Suíte: 1818 passam, 4 pulados; `flutter analyze` limpo.
+
+### Conhecido
+
+- Uma vez, ao abrir o mapa do jogo pelo menu de debug aberto de dentro do mapa (o que empilha dois mapas), a build de debug mostrou "setState() or markNeedsBuild() called during build" no `GameMapScreen`. Não se repetiu na mesma posição; fica anotado.
+- **Falta:** o APK de release 0.20.4 no PC e a instalação no moto g54, e o checklist inteiro no celular.
