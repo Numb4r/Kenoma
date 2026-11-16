@@ -6,7 +6,6 @@ import 'dart:ui' as ui;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/fnv.dart';
 import 'package:kenoma/core/tiles.dart';
-import 'package:kenoma/data/climate_catalog.dart';
 import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/ui/game/climate_cover.dart';
 import 'package:kenoma/ui/game/climate_ground.dart';
@@ -86,7 +85,7 @@ void main() {
     });
 
     final visual = VisualMap(VisualPack.parse(Uint8List.fromList(File('assets/regions/campinas_e0_vis.bin').readAsBytesSync())), cacheTiles: 32);
-    final catalog = ClimateCatalog.fromJson(loadJson('assets/data/clima.json'));
+    final catalog = loadClimateCatalog();
     final mpc = metersPerCell(-22.8174);
     const cx = 12092 * 64.0 + 32, cy = 18513 * 64.0 + 32;
 

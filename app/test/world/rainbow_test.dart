@@ -22,7 +22,7 @@ import '../support/fixtures.dart';
 void main() {
   final seed = seedGlobal('KENOMA-TESTE');
   final data = loadGameData();
-  final catalog = ClimateCatalog.fromJson(loadJson('assets/data/clima.json'));
+  final catalog = loadClimateCatalog();
   final e8 = loadEpochs().epochs.firstWhere((e) => e.id == 8);
   final visual = VisualMap(VisualPack.parse(Uint8List.fromList(File('assets/regions/campinas_e0_vis.bin').readAsBytesSync())), cacheTiles: 32);
   final (ux, uy) = latLonToTileFraction(-22.8174, -47.0697, 21); // Unicamp

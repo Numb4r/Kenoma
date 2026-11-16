@@ -228,32 +228,6 @@
         }
       ]
     },
-    "rainbow": {
-      "name": "Arco-íris",
-      "base": "clear",
-      "hud": "Arco-íris: fica de pé num ponto do mapa; o pé guarda material raro",
-      "icon": [
-        "sun",
-        "rainbow"
-      ],
-      "layers": [
-        {
-          "layer": "tint",
-          "color": "#fff6d8",
-          "alpha": 0.04
-        }
-      ],
-      "ground": [
-        {
-          "kind": "scatter",
-          "shape": "glint",
-          "color": "#ffe9a8",
-          "alpha": 0.35,
-          "per_cell": 3,
-          "twinkle": true
-        }
-      ]
-    },
     "fog": {
       "name": "Neblina",
       "base": "cloudy",
@@ -742,82 +716,6 @@
         }
       ]
     },
-    "tornado": {
-      "name": "Tornado",
-      "wind_force": 0.85,
-      "base": "storm",
-      "hud": "Tornado: Feéricos mais comuns; o funil deixa uma trilha de destroços coletáveis",
-      "icon": [
-        "spiral"
-      ],
-      "layers": [
-        {
-          "layer": "tint",
-          "color": "#3a3350",
-          "alpha": 0.14
-        },
-        {
-          "layer": "particles",
-          "shape": "leaf",
-          "color": "#8a8fa3",
-          "count": 50,
-          "speed": [
-            300,
-            480
-          ],
-          "slant": 0,
-          "alpha": 0.7,
-          "wind": true,
-          "size": 3
-        }
-      ],
-      "ground": [
-        {
-          "kind": "scatter",
-          "shape": "branch",
-          "color": "#6b4a2f",
-          "alpha": 0.6,
-          "per_cell": 2
-        }
-      ]
-    },
-    "aurora": {
-      "name": "Aurora",
-      "base": "clear",
-      "hud": "Aurora: Luz mais comum; a sintonia tolera mais",
-      "icon": [
-        "aurora"
-      ],
-      "layers": [
-        {
-          "layer": "tint",
-          "color": "#1a1424",
-          "alpha": 0.08
-        },
-        {
-          "layer": "aurora",
-          "colors": [
-            "#6bd36a",
-            "#9b7bff",
-            "#5fd3c6"
-          ],
-          "alpha": 0.28
-        }
-      ],
-      "ground": [
-        {
-          "kind": "bands",
-          "color": "#6bd36a",
-          "colors": [
-            "#6bd36a",
-            "#9b7bff"
-          ],
-          "alpha": 0.1,
-          "bands": 5,
-          "speed": 0.05
-        }
-      ]
-    },
     "acid_rain": {
       "name": "Chuva ácida",
       "outfit": "mask",
@@ -856,27 +754,6 @@
           "per_cell": 4,
           "grow_s": 900,
           "fade_s": 2400
-        }
-      ]
-    },
-    "meteor_shower": {
-      "name": "Chuva de meteoros",
-      "base": "clear",
-      "hud": "Chuva de meteoros: Luz mais comum; meteoros deixam Fagulhas raras e crateras com material raro",
-      "icon": [
-        "stars"
-      ],
-      "layers": [
-        {
-          "layer": "tint",
-          "color": "#1a1424",
-          "alpha": 0.1
-        },
-        {
-          "layer": "meteors",
-          "color": "#ffe9a8",
-          "alpha": 0.9,
-          "every_s": 2.5
         }
       ]
     },
@@ -965,7 +842,8 @@
           "grow_s": 600,
           "fade_s": 3600
         }
-      ]
+      ],
+      "until_epoch": 11
     },
     "spark_rain": {
       "name": "Chuva de Fagulhas",
@@ -1014,121 +892,6 @@
         }
       ]
     },
-    "echo_storm": {
-      "name": "Tempestade de Ecos",
-      "base": "storm",
-      "hud": "Tempestade de Ecos: Ecos de nível mais alto; raios violeta",
-      "icon": [
-        "cloud_dark",
-        "bolt_veil"
-      ],
-      "layers": [
-        {
-          "layer": "tint",
-          "color": "#9b7bff",
-          "alpha": 0.22
-        },
-        {
-          "layer": "cracks",
-          "color": "#9b7bff",
-          "alpha": 0.6
-        },
-        {
-          "layer": "particles",
-          "shape": "streak",
-          "color": "#b8a8d8",
-          "count": 140,
-          "speed": [
-            520,
-            760
-          ],
-          "slant": 0.45,
-          "alpha": 0.4,
-          "len": 12
-        }
-      ],
-      "ground": [
-        {
-          "kind": "scatter",
-          "shape": "pixel",
-          "color": "#9b7bff",
-          "alpha": 0.5,
-          "per_cell": 3,
-          "twinkle": true
-        }
-      ]
-    },
-    "static": {
-      "name": "Estática",
-      "base": "cloudy",
-      "hud": "Estática: Digitais mais comuns; a sintonia vem com ruído",
-      "icon": [
-        "glitch"
-      ],
-      "layers": [
-        {
-          "layer": "glitch",
-          "colors": [
-            "#5fd3c6",
-            "#9b7bff",
-            "#e8e4f4"
-          ],
-          "alpha": 0.35,
-          "count": 10
-        },
-        {
-          "layer": "particles",
-          "shape": "pixel",
-          "color": "#5fd3c6",
-          "count": 60,
-          "speed": [
-            120,
-            220
-          ],
-          "slant": 0,
-          "alpha": 0.6,
-          "size": 3,
-          "colors": [
-            "#5fd3c6",
-            "#9b7bff"
-          ]
-        }
-      ],
-      "ground": [
-        {
-          "kind": "scatter",
-          "shape": "pixel",
-          "color": "#5fd3c6",
-          "alpha": 0.6,
-          "per_cell": 6,
-          "twinkle": true
-        }
-      ]
-    },
-    "silence": {
-      "name": "Silêncio",
-      "base": "clear",
-      "hud": "Silêncio: Espectrais mais comuns; os Ecos não fogem e o tráfego do Véu para",
-      "icon": [
-        "silence"
-      ],
-      "layers": [
-        {
-          "layer": "desaturate",
-          "alpha": 0.7
-        }
-      ],
-      "notice": "Tudo ficou quieto. O Familiar sussurra: eles estão ouvindo.",
-      "ground": [
-        {
-          "kind": "scatter",
-          "shape": "pixel",
-          "color": "#8a8fa3",
-          "alpha": 0.25,
-          "per_cell": 2
-        }
-      ]
-    },
     "veil_ash": {
       "name": "Cinzas do Véu",
       "base": "cloudy",
@@ -1170,73 +933,6 @@
         }
       ]
     },
-    "fog_procession": {
-      "name": "Procissão na névoa",
-      "base": "cloudy",
-      "hud": "Procissão na névoa: Espectrais muito mais comuns; no fim do rastro das figuras há um Eco forte",
-      "provisional": "até existir a espécie ou o sistema",
-      "icon": [
-        "fog",
-        "figure"
-      ],
-      "layers": [
-        {
-          "layer": "tint",
-          "color": "#e8e4f4",
-          "alpha": 0.12
-        },
-        {
-          "layer": "vignette",
-          "color": "#e8e4f4",
-          "alpha": 0.55
-        }
-      ],
-      "ground": [
-        {
-          "kind": "scatter",
-          "shape": "figure",
-          "color": "#3a3350",
-          "alpha": 0.25,
-          "per_cell": 0.15,
-          "near_m": 60
-        }
-      ]
-    },
-    "rift_wind": {
-      "name": "Vento das Fendas",
-      "base": "clear",
-      "hud": "Vento das Fendas: Dracônicos mais comuns; Fagulhas derivam numa direção fixa",
-      "icon": [
-        "wind_veil"
-      ],
-      "layers": [
-        {
-          "layer": "particles",
-          "shape": "wisp",
-          "color": "#9b7bff",
-          "count": 40,
-          "speed": [
-            200,
-            320
-          ],
-          "slant": 0,
-          "alpha": 0.6,
-          "wind": true,
-          "size": 2,
-          "len": 10
-        }
-      ],
-      "ground": [
-        {
-          "kind": "scatter",
-          "shape": "streak",
-          "color": "#9b7bff",
-          "alpha": 0.45,
-          "per_cell": 5,
-          "wind": true
-        }
-      ]
-    },
     "inverted_sky": {
       "name": "Céu Invertido",
       "base": "rain",
@@ -1267,70 +963,6 @@
           "color": "#1a1424",
           "alpha": 0.35,
           "per_cell": 3
-        }
-      ]
-    },
-    "veil_tide": {
-      "name": "Maré do Véu",
-      "base": "cloudy",
-      "hud": "Maré do Véu: construções de outra era aparecem no mapa e guardam Ectoplasma",
-      "provisional": "até existir a espécie ou o sistema",
-      "icon": [
-        "wave_veil"
-      ],
-      "layers": [
-        {
-          "layer": "tint",
-          "color": "#9b7bff",
-          "alpha": 0.05
-        }
-      ],
-      "ground": [
-        {
-          "kind": "bands",
-          "color": "#9b7bff",
-          "alpha": 0.14,
-          "bands": 6,
-          "speed": 0.1
-        }
-      ]
-    },
-    "black_sun": {
-      "name": "Sol Negro",
-      "base": "cloudy",
-      "hud": "Sol Negro: Sombra muito mais comum, Luz menos; as sombras guardam Ectoplasma",
-      "provisional": "até existir a espécie ou o sistema",
-      "icon": [
-        "sun_black"
-      ],
-      "layers": [
-        {
-          "layer": "tint",
-          "color": "#1a1424",
-          "alpha": 0.5,
-          "blend": "multiply"
-        },
-        {
-          "layer": "black_sun",
-          "alpha": 0.95
-        }
-      ],
-      "ground": [
-        {
-          "kind": "scatter",
-          "shape": "glint",
-          "color": "#e8e4f4",
-          "alpha": 0.25,
-          "per_cell": 3
-        },
-        {
-          "kind": "scatter",
-          "shape": "shadow",
-          "color": "#e8e4f4",
-          "alpha": 0.38,
-          "per_cell": 10,
-          "grow_s": 600,
-          "fade_s": 900
         }
       ]
     },
@@ -1382,7 +1014,8 @@
           "grow_s": 900,
           "fade_s": 2400
         }
-      ]
+      ],
+      "until_epoch": 11
     },
     "hard_frost": {
       "name": "Geada forte",
@@ -1646,66 +1279,6 @@
           "per_cell": 2
         }
       ]
-    },
-    "double_moon": {
-      "name": "Lua Dupla",
-      "base": "clear",
-      "hud": "Lua Dupla: variantes mais comuns; cada Eco pode ter um par de sombra",
-      "icon": [
-        "stars"
-      ],
-      "layers": [
-        {
-          "layer": "tint",
-          "color": "#1a1424",
-          "alpha": 0.12
-        },
-        {
-          "layer": "moons",
-          "color": "#e8e4f4",
-          "alpha": 0.85
-        }
-      ],
-      "ground": [
-        {
-          "kind": "twins",
-          "chance": 0.5,
-          "color": "#1a1424",
-          "alpha": 0.45
-        }
-      ]
-    },
-    "vigil": {
-      "name": "Vigília",
-      "base": "cloudy",
-      "hud": "Vigília: Digital e Espectrais mais comuns; onde um olhar pousa nasce um Eco raro",
-      "icon": [
-        "cloud",
-        "figure"
-      ],
-      "layers": [
-        {
-          "layer": "tint",
-          "color": "#1a1424",
-          "alpha": 0.18
-        },
-        {
-          "layer": "eyes",
-          "color": "#ff5a36",
-          "alpha": 0.8,
-          "count": 5
-        }
-      ],
-      "ground": [
-        {
-          "kind": "scatter",
-          "shape": "pixel",
-          "color": "#ff5a36",
-          "alpha": 0.3,
-          "per_cell": 1,
-          "twinkle": true
-        }
-      ]
     }
   },
   "pieces": {
@@ -1907,6 +1480,22 @@
     "branch": {
       "style": "fall",
       "color": "#6b4a2f"
+    },
+    "lightning_vigil": {
+      "style": "bolt",
+      "color": "#ff5a36",
+      "glow": "#ff9a7a",
+      "flash": true,
+      "mark": "burn",
+      "mark_s": 600
+    },
+    "lightning_crimson": {
+      "style": "bolt",
+      "color": "#d0344a",
+      "glow": "#ff6a7a",
+      "flash": true,
+      "mark": "burn",
+      "mark_s": 600
     }
   },
   "procession": {
@@ -2052,7 +1641,10 @@
     {
       "id": "noite_das_fendas",
       "name": "Noite das Fendas",
-      "climates": ["rift_wind", "echo_storm"],
+      "climates": [
+        "rift_wind",
+        "echo_storm"
+      ],
       "note": "Data a definir."
     }
   ],

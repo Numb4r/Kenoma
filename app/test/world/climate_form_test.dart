@@ -6,7 +6,6 @@ import 'package:kenoma/core/climate.dart';
 import 'package:kenoma/core/fnv.dart';
 import 'package:kenoma/core/seed.dart';
 import 'package:kenoma/core/tiles.dart';
-import 'package:kenoma/data/climate_catalog.dart';
 import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/dev/dev_tools.dart';
 import 'package:kenoma/world/climate_form.dart';
@@ -26,7 +25,7 @@ int utc(int y, int m, int d, [int h = 0]) => DateTime.utc(y, m, d, h).millisecon
 void main() {
   final seed = seedGlobal('KENOMA-TESTE');
   final data = loadGameData();
-  final catalog = ClimateCatalog.fromJson(loadJson('assets/data/clima.json'));
+  final catalog = loadClimateCatalog();
   final (cx20, cy20) = latLonToTile(-22.8174, -47.0697, 20); // Unicamp
   final x21 = cx20 * 2.0 + 1, y21 = cy20 * 2.0 + 1;
   final mpc = metersPerCell(-22.8174);

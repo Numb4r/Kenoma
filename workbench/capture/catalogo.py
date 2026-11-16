@@ -57,15 +57,19 @@ def main() -> None:
             'id': f['id'],
             'name': f['name'] + (f' ({f["variantName"]})' if f.get('variantName') else ''),
             'sub': f'{layer} · família {f["familyName"]}',
-            'img': img(f['bestiario']),
+            'img': img(f['mapa']) if f.get('variant') and f.get('mapa') else img(f['bestiario']),  # 0.21.0: a variante com arte própria no mapa
             'r': 3 if f.get('variant') == 'shiny' else (2 if f.get('variant') == 'crimson' else (1 if f.get('variant') else 0)),
             'text': f.get('variantTrait') or (lo.get('about') if isinstance(lo, dict) else None),
             'tags': [t for t in [f.get('variantName'), 'só por ritual' if f.get('ritual') else None] if t],
             'fields': clean({'Tipo': tipo.get(f['type'], f['type']), 'Família': f['familyName'], 'Camada': layer, 'Variante': f.get('variantName') or 'comum',
                              'Número': f['number'], 'Desde a época': sp.get('since_epoch'), 'Sprite do mapa': f.get('mapa')}),
         }))
+    for cor, nome in [('cor', 'em cor'), ('cinza', 'em escala de cinza')]:
+        rows.append(clean({'id': f'folha_variantes_{cor}', 'name': f'Folha de contato das variantes ({nome})', 'sub': 'todas as formas, no tamanho do mapa',
+                           'img': img(f'variantes_{cor}.png'), 'text': 'Colunas: comum, Urbana, Verde, Aquática, Residencial, Iluminada, Sagrada, Carmesim, Brilhante (test_workbench/variant_sheet_test.dart).',
+                           'fields': {'Tipo': 'folha', 'Variante': 'todas'}}))
     sections.append({'id': 'formas', 'group': 'Criaturas', 'label': 'Formas', 'title': 'Famílias e formas',
-                     'lede': f'Cada forma do Bestiário e cada variante ({len(rows)} linhas). Os sprites são desenhados em código e renderizados pelo próprio jogo; a variante é o tom por cima da silhueta, como no mapa.',
+                     'lede': f'Cada forma do Bestiário e cada variante ({len(rows)} linhas). Os sprites são desenhados em código e renderizados pelo próprio jogo. Desde a 0.21.0 a variante tem arte própria no mapa (valor e acessório, legível em cinza); a imagem dela é a do mapa.',
                      'layout': 'grid', 'filter': 'Tipo', 'rows': rows})
 
     # Habilidades de mapa, com as três faixas.
@@ -82,28 +86,51 @@ def main() -> None:
     origem = {'native': 'Nativo', 'other_region': 'Outras regiões', 'mystic': 'Místico'}
     rows = []
     for cid, c in clima['climates'].items():
+        if c.get('until_epoch'):
+            continue  # a Chuva Carmim e a Garoa Prismática: só as épocas até a 11; na 12 são tingimentos de evento
         cat = model['climates'].get(cid, {}).get('category')
-        rows.append(clean({'id': cid, 'name': c.get('name', cid), 'sub': origem.get(cat, cat), 'img': img(f'climas/{cid}.png'),
+        foto = 'eventos/clima__cold.png' if cid == 'cold' else f'climas/{cid}.png'  # o Frio, de manhã
+        rows.append(clean({'id': cid, 'name': c.get('name', cid), 'sub': origem.get(cat, cat), 'img': img(foto),
                            'text': c.get('hud'), 'fields': {'Origem': origem.get(cat, cat or '—')}}))
     sections.append({'id': 'climas', 'group': 'Mundo', 'label': 'Climas', 'title': 'Climas',
-                     'lede': 'Os climas do jogo, capturados pelo debug no emulador (Simulação de clima, 1 min por clima a 60×, no Centro), já formados no chão.',
+                     'lede': 'Os climas da época 12: um de cada vez, tudo o que cai do céu ou cobre a vista. Capturados no emulador (Simulação de clima, no Centro), já formados no chão; o Frio de manhã.',
                      'layout': 'wide', 'filter': 'Origem', 'keepOrder': True, 'rows': rows})
 
-    # Eventos e Calendário do Véu.
+    # Eventos da época 12 (por cima do clima) e as três combinações.
+    eventos = j(DATA / 'eventos.json')
+    names = {**{k: v.get('name', k) for k, v in clima['climates'].items()}, **{k: v.get('name', k) for k, v in eventos['events'].items()}}
     cal = model.get('calendar', [])
-    climate_of = {e['id']: (e.get('climate') or (e.get('climates') or [None])[0]) for e in cal}
-    # Os eventos do céu também dizem o clima: a superlua (astro) e os eclipses. Os do feed (Lua Carmim, Os Que Escutam,
-    # tempestade geomagnética) não têm clima fixo nos dados e ficam sem imagem.
-    for e in [*model.get('astro', []), *model.get('eclipses', [])]:
-        climate_of.setdefault(e['id'], e.get('climate'))
+    origem_ev: dict[str, list[str]] = {}
+    for e in cal:
+        for cid in ([e['climate']] if 'climate' in e else e.get('climates', [])):
+            if cid in model.get('events', {}):
+                origem_ev.setdefault(cid, []).append(clima.get('events', {}).get(e['id'], {}).get('name', e['id']))
+    for e in model.get('eclipses', []):
+        origem_ev.setdefault(e['climate'], []).append('eclipse visível da região')
+    for e in model.get('astro', []):
+        origem_ev.setdefault(e['climate'], []).append('lua cheia muito perto da Terra')
+    req_txt = {'day': 'dia', 'night': 'noite'}
+    duas = {'crimson_moon': ('crimson_moon__chuva', 'com chuva; com sol, só o céu: crimson_moon__sol'), 'veil_prism': ('veil_prism__garoa', 'com garoa; no seco: veil_prism__seco'),
+            'fog_procession': ('fog_procession', 'na Neblina; fora dela, a névoa rasa: fog_procession__sem_neblina')}
     rows = []
-    for eid, e in clima.get('events', {}).items():
-        cid = climate_of.get(eid)
-        rows.append(clean({'id': eid, 'name': e.get('name', eid), 'sub': clima['climates'].get(cid, {}).get('name') if cid else None,
-                           'img': img(f'climas/{cid}.png') if cid else None, 'text': e.get('reason'),
-                           'fields': {'Clima': clima['climates'].get(cid, {}).get('name', '—') if cid else 'pelo feed'}}))
+    for eid, e in eventos['events'].items():
+        d = model['events'].get(eid, {})
+        req = d.get('requires', {})
+        reqs = [req_txt.get(req.get('light'), '')] + [names.get(c, c) for c in req.get('climates', [])]
+        foto, nota = duas.get(eid, (eid, None))
+        gif = img(f'eventos/{foto}.gif')
+        origens = origem_ev.get(eid, []) + (['sorteio depois da chuva'] if eid == 'rainbow' else []) + (['sorteio raro na Tempestade e no Vendaval'] if d.get('draw') else [])
+        rows.append(clean({'id': eid, 'name': e.get('name', eid), 'sub': ', '.join(origens) or 'feed assinado e debug',
+                           'img': gif or img(f'eventos/{foto}.png'), 'text': e.get('hud'), 'tags': ['GIF'] if gif else None,
+                           'fields': clean({'Origem': ', '.join(origens) or 'feed assinado', 'Requisito': ' ou '.join(r for r in reqs if r) or 'nenhum',
+                                            'Tinge': ', '.join(names.get(c, c) for c in d.get('tint', {}).get('climates', [])) or None, 'Fotos': nota})}))
+    for k, c in eventos.get('combos', {}).items():
+        foto = f'eventos/combo__{k}'
+        rows.append(clean({'id': f'combo__{k}', 'name': c['name'], 'sub': 'combinação', 'img': img(foto + '.gif') or img(foto + '.png'), 'text': c.get('hud'),
+                           'fields': {'Clima': names.get(c['climate'], c['climate']), 'Evento': names.get(c['event'], c['event'])}}))
     sections.append({'id': 'eventos', 'group': 'Mundo', 'label': 'Eventos', 'title': 'Eventos',
-                     'lede': 'Os eventos do clima.json. A imagem é a do clima que o evento traz (a captura do clima).', 'layout': 'wide', 'rows': rows})
+                     'lede': 'Os eventos da época 12, por cima de qualquer clima (até dois), e as três combinações. Cada foto no estado certo: os noturnos à noite, os que se movem em GIF, os do feed forçados pelo debug.',
+                     'layout': 'wide', 'rows': rows})
 
     meses = 'jan fev mar abr mai jun jul ago set out nov dez'.split()
 
@@ -123,24 +150,25 @@ def main() -> None:
     rows = []
     for e in cal:
         cids = [e['climate']] if 'climate' in e else e.get('climates', [])
-        names = sorted({clima['climates'].get(c, {}).get('name', c) for c in cids})
+        cli = sorted({names.get(c, c) for c in cids if c not in model.get('events', {})})
+        evs = sorted({names.get(c, c) for c in cids if c in model.get('events', {})})
         rows.append(clean({'id': e['id'], 'name': clima.get('events', {}).get(e['id'], {}).get('name', e['id'].replace('_', ' ')),
                            'sub': when(e), 'text': clima.get('events', {}).get(e['id'], {}).get('reason'),
-                           'fields': {'Quando': when(e), 'Climas': ', '.join(names)}}))
+                           'fields': {'Quando': when(e), 'Clima': ', '.join(cli) or 'nenhum', 'Evento': ', '.join(evs) or 'nenhum'}}))
     for e in clima.get('calendar_pending', []):
         rows.append(clean({'id': e['id'], 'name': e['name'], 'sub': 'data a definir', 'text': e.get('note'),
-                           'fields': {'Quando': 'a definir', 'Climas': ', '.join(clima['climates'].get(c, {}).get('name', c) for c in e.get('climates', []))}}))
+                           'fields': {'Quando': 'a definir', 'Evento': ', '.join(names.get(c, c) for c in e.get('climates', []))}}))
     sections.append({'id': 'calendario', 'group': 'Mundo', 'label': 'Calendário do Véu', 'title': 'Calendário do Véu',
                      'lede': 'As datas do ano, na ordem do calendário da época mais nova.', 'layout': 'list', 'keepOrder': True, 'rows': rows})
 
     # Biomas.
     rows = []
     for b in biomes:
-        rows.append(clean({'id': b['key'], 'name': b['name'], 'img': img(f'biomas/{b["key"]}.png'),
+        rows.append(clean({'id': b['key'], 'name': b['name'], 'img': img(f'biomas/{b["key"]}_lado_a_lado.png') or img(f'biomas/{b["key"]}.png'),
                            'sub': f'desde a época {b["since_epoch"]}' if b.get('since_epoch') else None,
                            'tags': b.get('palette'), 'fields': {'Prioridade': b.get('priority'), 'Desde a época': b.get('since_epoch', 0)}}))
     sections.append({'id': 'biomas', 'group': 'Mundo', 'label': 'Biomas', 'title': 'Biomas',
-                     'lede': 'Os biomas do shared/biomes.json. As imagens são do mapa do jogo no emulador, numa célula do bioma, com a grade de biomas do debug.',
+                     'lede': 'Os biomas do shared/biomes.json. À esquerda o mapa de hoje no emulador (uma célula do bioma, com a grade de biomas do debug); à direita a cena do bioma no Laboratório visual (0.21.0), que só entra no mapa quando for aprovada.',
                      'layout': 'wide', 'rows': rows})
 
     # Materiais.

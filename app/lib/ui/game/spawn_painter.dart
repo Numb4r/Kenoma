@@ -14,6 +14,7 @@ import '../../world/creature_wind.dart';
 import '../../world/map_camera.dart';
 import '../../world/spawn_field.dart';
 import '../colors.dart';
+import '../sprites/variant_art.dart' show shinyPulse;
 
 /// Tipo do Eco por espécie, para a cor do anel. Vem de `creatures.json` pelo mapa.
 typedef EcoTypeOf = EcoType? Function(String speciesId);
@@ -103,11 +104,11 @@ void paintSpawns(
         // A costura abre do centro para fora e o Eco aparece dentro dela.
         canvas.save();
         canvas.clipRect(ui.Rect.fromCenter(center: center, width: size * appear + 1, height: size * 2));
-        _eco(canvas, center.translate(0, hop), s, sprites[s.entryId], size, typeOf, near, time, avoid, tint: tint, lean: lean);
+        _eco(canvas, center.translate(0, hop), s, _spriteOf(sprites, s), size, typeOf, near, time, avoid, tint: _hasVariantArt(sprites, s) ? null : tint, lean: lean, glow: sprites['${s.entryId}@lit#glow']);
         canvas.restore();
         paintSeam(canvas, center, size, appear);
       } else {
-        _eco(canvas, center.translate(0, hop), s, sprites[s.entryId], size, typeOf, near, time, avoid, tint: tint, lean: lean);
+        _eco(canvas, center.translate(0, hop), s, _spriteOf(sprites, s), size, typeOf, near, time, avoid, tint: _hasVariantArt(sprites, s) ? null : tint, lean: lean, glow: sprites['${s.entryId}@lit#glow']);
       }
       if (blow) _motes(canvas, center, wind.motes(s.uid, time), windDir, size, _moteColor(s, typeOf));
       if (s.behavior != EcoBehavior.passive) _behaviorIcon(canvas, center, s.behavior, size);
@@ -212,7 +213,17 @@ void _pinMarker(ui.Canvas canvas, ui.Offset c, double size, double time) {
   canvas.drawPath(arrow, ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 1..color = kOutline..isAntiAlias = false);
 }
 
-void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double size, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid, {int? tint, double lean = 0}) {
+/// As variantes com arte própria no mapa (`variant_art.dart`): valor e acessório, legíveis em cinza.
+const List<String> mapVariantKeys = ['urban', 'green', 'water', 'residential', 'lit', 'sacred', 'crimson', 'shiny'];
+
+/// A chave da arte da variante do Eco (o Brilhante ganha da variante de bioma), ou `null` no comum.
+String? _variantKey(WorldSpawn s) => s.shiny ? 'shiny' : s.variant;
+
+bool _hasVariantArt(Map<String, ui.Image> sprites, WorldSpawn s) => _variantKey(s) != null && sprites.containsKey('${s.entryId}@${_variantKey(s)}');
+
+ui.Image? _spriteOf(Map<String, ui.Image> sprites, WorldSpawn s) => (_variantKey(s) == null ? null : sprites['${s.entryId}@${_variantKey(s)}']) ?? sprites[s.entryId];
+
+void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double size, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid, {int? tint, double lean = 0, ui.Image? glow}) {
   final color = spawnColor(s, typeOf);
   // Sombra no chão.
   canvas.drawOval(
@@ -234,8 +245,8 @@ void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double 
     );
   }
   if (s.shiny) {
-    // O Brilhante: um halo suave que pulsa. É o único brilho permitido no estilo.
-    final pulse = 0.65 + 0.35 * math.sin(time * 2.4 + s.uid % 9);
+    // O Brilhante: um halo que pulsa com o lampejo de `variant_art.dart`. É a única variante com brilho animado.
+    final pulse = shinyPulse(time + s.uid % 9 * 0.3);
     final r = size * 0.85;
     canvas.drawCircle(
       dst.center,
@@ -264,6 +275,10 @@ void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double 
     for (final (dx, dy) in [(px, 0.0), (-px, 0.0), (0.0, px), (0.0, -px)]) {
       canvas.drawImageRect(sprite, ui.Rect.fromLTWH(0, 0, sprite.width.toDouble(), sprite.height.toDouble()), dst.shift(ui.Offset(dx, dy)), outline);
     }
+  }
+  if (glow != null && s.variant == 'lit' && !s.shiny) {
+    // A Iluminada: o contorno de luz neon por baixo da silhueta, fixo (não pisca).
+    canvas.drawImageRect(glow, ui.Rect.fromLTWH(0, 0, glow.width.toDouble(), glow.height.toDouble()), dst, ui.Paint()..filterQuality = ui.FilterQuality.none..color = ui.Color.fromRGBO(255, 255, 255, near ? 0.9 : 0.6));
   }
   if (sprite != null) {
     canvas.drawImageRect(

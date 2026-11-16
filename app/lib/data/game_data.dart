@@ -96,6 +96,7 @@ class GameData {
       rituals: await json('rituals').catchError((_) => <String, dynamic>{}), // sem o arquivo, o ritual fica sem receitas
       ridePatterns: await json('ride_patterns').catchError((_) => <String, dynamic>{}), // sem o arquivo, a corrida vai pelos botões
       climates: await json('clima').then<Map<String, dynamic>?>((j) => j).catchError((_) => null), // sem o arquivo, os quatro climas antigos
+      events: await json('eventos').then<Map<String, dynamic>?>((j) => j).catchError((_) => null),
     )..remember();
   }
 
@@ -111,9 +112,10 @@ class GameData {
     Map<String, dynamic>? rituals,
     Map<String, dynamic>? ridePatterns,
     Map<String, dynamic>? climates,
+    Map<String, dynamic>? events,
   }) =>
       GameData(
-        climates: ClimateCatalog.fromJson(climates),
+        climates: ClimateCatalog.fromJson(climates, events),
         climateBalance: ClimateBalance.fromJson(balance['climate'] as Map<String, dynamic>?),
         ritual: RitualBook.fromJson(rituals, balance),
         mentor: MentorScript.fromJson(mentor),

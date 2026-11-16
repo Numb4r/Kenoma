@@ -178,11 +178,21 @@ class ClimateTag {
 }
 
 class ClimateCatalog {
-  const ClimateCatalog({this.climates = const {}, this.pieces = const {}, this.tags = const {}, this.events = const {}, this.reasons = const {}, this.rainbowArc = const {}, this.procession = const {}, this.calendarPending = const []});
+  const ClimateCatalog({this.climates = const {}, this.eventInfos = const {}, this.combos = const {}, this.comboTargets = const {}, this.pieces = const {}, this.tags = const {}, this.events = const {}, this.reasons = const {}, this.rainbowArc = const {}, this.procession = const {}, this.calendarPending = const []});
 
-  factory ClimateCatalog.fromJson(Map<String, dynamic>? j) => j == null
+  /// [events] é o `eventos.json` (época 12: o visual dos eventos, do tingimento e das combinações).
+  factory ClimateCatalog.fromJson(Map<String, dynamic>? j, [Map<String, dynamic>? events]) => j == null
       ? const ClimateCatalog()
       : ClimateCatalog(
+          eventInfos: {for (final e in ((events?['events'] as Map<String, dynamic>?) ?? const {}).entries) e.key: EventInfo.fromJson(e.key, e.value as Map<String, dynamic>)},
+          combos: {
+            for (final e in ((events?['combos'] as Map<String, dynamic>?) ?? const {}).entries)
+              e.key: (name: (e.value as Map<String, dynamic>)['name'] as String, hud: e.value['hud'] as String),
+          },
+          comboTargets: {
+            for (final e in ((events?['combos'] as Map<String, dynamic>?) ?? const {}).entries)
+              e.key: (climate: (e.value as Map<String, dynamic>)['climate'] as String, event: e.value['event'] as String),
+          },
           climates: {for (final e in (j['climates'] as Map<String, dynamic>).entries) e.key: ClimateInfo.fromJson(e.key, e.value as Map<String, dynamic>)},
           pieces: {for (final e in ((j['pieces'] as Map<String, dynamic>?) ?? const {}).entries) e.key: PieceVisual.fromJson(e.value as Map<String, dynamic>)},
           tags: {
@@ -206,6 +216,11 @@ class ClimateCatalog {
   static ClimateCatalog? lastLoaded;
 
   final Map<String, ClimateInfo> climates;
+
+  /// Época 12: o visual de cada evento (`eventos.json`) e o nome e a linha de cada combinação.
+  final Map<String, EventInfo> eventInfos;
+  final Map<String, ({String name, String hud})> combos;
+  final Map<String, ({String climate, String event})> comboTargets;
   final Map<String, PieceVisual> pieces;
   final Map<String, ClimateTag> tags;
 
@@ -225,7 +240,8 @@ class ClimateCatalog {
   final Map<String, dynamic> procession;
 
   /// O visual do clima [id]. Id desconhecido: o estado antigo com esse id, ou Limpo.
-  ClimateInfo of(String id) => climates[id] ?? ClimateInfo.legacy(Weather.parse(id));
+  /// Época 12: a pilha `clima+evento` vira um visual só (ver [composeStack]); o evento sozinho é o visual dele.
+  ClimateInfo of(String id) => climates[id] ?? eventInfos[id] ?? (id.contains('+') ? composeStack(this, id) : ClimateInfo.legacy(Weather.parse(id)));
 
   PieceVisual piece(String name) => pieces[name] ?? PieceVisual.fallback;
 }
@@ -304,4 +320,88 @@ class ClimateBalance {
 
   /// O vento nas criaturas do mapa (`creature_wind`): inclinação, empurrão dos leves e partículas soltas. Só desenho.
   final CreatureWindBalance creatureWind;
+}
+
+/// O visual de um evento (`eventos.json`): o mesmo de um clima, mais o tingimento da precipitação de alguns climas (a Lua
+/// Carmim faz a Chuva Carmim) e a névoa rasa em volta das figuras da Procissão fora da Neblina.
+class EventInfo extends ClimateInfo {
+  EventInfo.fromJson(String id, Map<String, dynamic> j)
+      : tint = j['tint'] as Map<String, dynamic>?,
+        mist = j['mist'] as Map<String, dynamic>?,
+        super(
+          id: id,
+          name: j['name'] as String,
+          base: Weather.parse(j['base'] as String?),
+          hud: j['hud'] as String? ?? j['name'] as String,
+          icon: (j['icon'] as List<dynamic>?)?.cast<String>() ?? const [],
+          layers: [for (final l in (j['layers'] as List<dynamic>?) ?? const []) ClimateLayer((l as Map<String, dynamic>)['layer'] as String, l)],
+          ground: [for (final l in (j['ground'] as List<dynamic>?) ?? const []) ClimateLayer((l as Map<String, dynamic>)['kind'] as String, l)],
+          notice: j['notice'] as String?,
+          windForce: (j['wind_force'] as num?)?.toDouble() ?? 0,
+        );
+
+  /// `climates`, `name`, `color` ou `colors`, `particle_alpha`, `icon`, `ground`.
+  final Map<String, dynamic>? tint;
+  final Map<String, dynamic>? mist;
+
+  bool tints(String climate) => ((tint?['climates'] as List<dynamic>?) ?? const []).contains(climate);
+
+  /// A camada aparece por cima de [climate]: só nos climas pedidos (`only_climates`) e não nos que cobrem o céu dela
+  /// (`hidden_under`: as estrelas cadentes com céu coberto).
+  bool showsOver(ClimateLayer l, String climate) {
+    final only = l.raw['only_climates'] as List<dynamic>?, hidden = l.raw['hidden_under'] as List<dynamic>?;
+    return (only == null || only.contains(climate)) && !(hidden?.contains(climate) ?? false);
+  }
+}
+
+final _composed = Expando<Map<String, ClimateInfo>>();
+
+/// O visual da pilha [id] (`clima+evento+evento`): a precipitação do clima embaixo (tingida pelo evento que tinge), o céu
+/// dos eventos por cima; os clarões são de `climate_fx.dart`, por último. As camadas do mapa levam a origem (`origin`) para
+/// as posições do enfeite não mudarem quando um evento começa.
+ClimateInfo composeStack(ClimateCatalog cat, String id) => (_composed[cat] ??= {}).putIfAbsent(id, () {
+      final parts = id.split('+');
+      final c = cat.climates[parts.first] ?? ClimateInfo.legacy(Weather.parse(parts.first));
+      final evs = [for (final p in parts.skip(1)) ?cat.eventInfos[p]];
+      final tinter = evs.where((e) => e.tints(c.id)).firstOrNull;
+      final tint = tinter?.tint;
+      ClimateLayer tagged(ClimateLayer l, String origin, [Map<String, dynamic> extra = const {}]) => ClimateLayer(l.kind, {...l.raw, 'origin': origin, ...extra});
+      final layers = [
+        for (final l in c.layers)
+          if (tint != null && l.kind == 'particles')
+            tagged(l, c.id, {if (tint['color'] != null) 'color': tint['color'], if (tint['colors'] != null) 'colors': tint['colors'], if (tint['particle_alpha'] != null) 'alpha': tint['particle_alpha']})
+          else
+            tagged(l, c.id),
+        for (final e in evs)
+          for (final l in e.layers)
+            if (e.showsOver(l, c.id)) tagged(l, e.id),
+      ];
+      final tintGround = [for (final g in (tint?['ground'] as List<dynamic>?) ?? const []) ClimateLayer((g as Map<String, dynamic>)['kind'] as String, g)];
+      final ground = [
+        for (final g in tintGround.isNotEmpty ? tintGround : c.ground) tagged(g, tintGround.isNotEmpty ? '${tinter!.id}.tint' : c.id),
+        for (final e in evs)
+          for (final g in e.ground) tagged(g, e.id),
+      ];
+      final combos = [for (final k in cat.combos.entries) if (k.key.isNotEmpty && _comboOf(cat, k.key, c.id, evs)) k.value];
+      final icon = [...((tint?['icon'] as List<dynamic>?)?.cast<String>() ?? c.icon)];
+      for (final e in evs) {
+        if (e != tinter && e.icon.isNotEmpty && !icon.contains(e.icon.first)) icon.add(e.icon.first);
+      }
+      return ClimateInfo(
+        id: id,
+        name: [tint?['name'] as String? ?? c.name, for (final e in evs) e.name].join(' · '),
+        base: c.base,
+        hud: [c.hud, for (final e in evs) e.hud, for (final k in combos) '${k.name}: ${k.hud}'].join('\n'),
+        icon: icon,
+        layers: layers,
+        ground: ground,
+        notice: c.notice ?? [for (final e in evs) ?e.notice].firstOrNull,
+        outfit: c.outfit,
+        windForce: [c.windForce, for (final e in evs) e.windForce].reduce((a, b) => a > b ? a : b),
+      );
+    });
+
+bool _comboOf(ClimateCatalog cat, String id, String climate, List<EventInfo> evs) {
+  final k = cat.comboTargets[id];
+  return k != null && k.climate == climate && evs.any((e) => e.id == k.event);
 }

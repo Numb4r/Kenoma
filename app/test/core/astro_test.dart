@@ -132,4 +132,13 @@ void main() {
       }
     });
   });
+
+  test('azimute do sol em Campinas: leste de manhã e oeste à tarde no equinócio, norte ao meio-dia de junho', () {
+    int t(int mo, int d, int h, [int m = 0]) => DateTime.utc(2026, mo, d, h, m).millisecondsSinceEpoch ~/ 1000;
+    expect(sunAzimuthDeg(-22.9, -47.06, t(3, 20, 9, 30)), closeTo(90, 5));
+    expect(sunAzimuthDeg(-22.9, -47.06, t(3, 20, 21)), closeTo(270, 5));
+    final noonJune = sunAzimuthDeg(-22.9, -47.06, t(6, 21, 15, 10));
+    expect(noonJune < 10 || noonJune > 350, isTrue, reason: 'o sol de inverno passa ao norte: $noonJune');
+    expect(sunAzimuthDeg(-22.9, -47.06, t(12, 21, 11)), inInclusiveRange(90, 130), reason: 'manhã de verão: leste-sudeste');
+  });
 }

@@ -23,6 +23,10 @@ class ClimateDriver {
           },
           source: source ?? OpenMeteoSource(),
           online: online,
+          worldClimateWins: (lat, lon, t) {
+            final (cx, cy) = latLonToTile(lat, lon, 20);
+            return world.causeAt(cx, cy, t).source != ClimateSource.season;
+          },
         );
 
   final GameData data;
@@ -38,8 +42,9 @@ class ClimateDriver {
   /// Atualiza o que se vê em ([lat], [lon]). Devolve se mudou e o aviso do clima novo (uma vez por clima seguido).
   ({bool changed, String? notice}) update(double lat, double lon, int now) {
     unawaited(service.refresh(lat, lon, now));
-    final forced = world.forced();
-    var id = forced ?? service.shown(lat, lon, now);
+    final forced = world.forced() ?? (world.forcedEvents().isEmpty ? null : '');
+    // Com algo forçado pelo debug, vale a pilha do mundo com o forçado (clima e eventos, época 12).
+    var id = forced == null ? service.shown(lat, lon, now) : world.idAt(latLonToTile(lat, lon, 20).$1, latLonToTile(lat, lon, 20).$2, now);
     // Até a época 5 o mundo tem quatro estados: o da rede também é mostrado como um deles.
     if (forced == null && data.schedule.select(now).epoch.climate == null) id = data.climates.of(id).base.id;
     final changed = id != shown;

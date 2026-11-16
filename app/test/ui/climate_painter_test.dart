@@ -2,13 +2,12 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kenoma/data/climate_catalog.dart';
 import 'package:kenoma/ui/game/climate_painter.dart';
 
 import '../support/fixtures.dart';
 
 void main() {
-  final catalog = ClimateCatalog.fromJson(loadJson('assets/data/clima.json'));
+  final catalog = loadClimateCatalog();
 
   test('a chuva sobe devagar com o clima, a tempestade pesa mais e sem clima as gotas somem', () {
     final p = ClimatePainter();

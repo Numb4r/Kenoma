@@ -52,8 +52,9 @@ List<String> bestiaryKeys(String speciesId, {String? variant, bool shiny = false
     ];
 
 /// As marcas de "quando" de um avistamento: a hora pelo sol ([sunAltDeg], com o crepúsculo a menos de [twilightDeg] do
-/// horizonte) e o clima.
+/// horizonte) e o clima. Da época 12 o clima é a pilha (`storm+vigil`): uma marca para o clima e uma para cada evento.
 Set<String> seenTags({required double sunAltDeg, String? climate, double twilightDeg = 6}) => {
       sunAltDeg.abs() < twilightDeg ? 'twilight' : (sunAltDeg > 0 ? 'day' : 'night'),
-      if (climate != null) 'climate:$climate',
+      if (climate != null)
+        for (final part in climate.split('+')) 'climate:$part',
     };

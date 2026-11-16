@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/astro.dart';
+import '../../core/climate_events.dart' show climateOfStack;
 import '../../data/climate_catalog.dart';
 import '../../world/dew_prism.dart';
 import '../../world/sky_outlook.dart';
@@ -20,7 +21,7 @@ const _body = TextStyle(fontSize: 8, color: kText, height: 1.8);
 const _dim = TextStyle(fontSize: 8, color: kDim, height: 1.8);
 
 class SkyScreen extends StatefulWidget {
-  const SkyScreen({required this.nowUtc, required this.lat, required this.catalog, this.shown, this.outlook, this.windows = 6, this.nextEvent, this.prisms, this.usePrism, super.key});
+  const SkyScreen({required this.nowUtc, required this.lat, required this.catalog, this.shown, this.outlook, this.windows = 6, this.nextEvent, this.calendar, this.prisms, this.usePrism, super.key});
 
   final int Function() nowUtc;
 
@@ -38,6 +39,10 @@ class SkyScreen extends StatefulWidget {
   /// O próximo evento do calendário do Véu depois de [nowUtc] (`climate_outlook.dart`, `nextCalendarEvent`).
   final ({String event, String climate, int startUtc})? Function(int nowUtc)? nextEvent;
 
+  /// Época 12: os próximos itens do calendário do Véu, cada um marcado como clima ou evento (`nextCalendarItems`). Com ele,
+  /// a lista substitui [nextEvent].
+  final List<({String event, String what, bool isEvent, int startUtc})> Function(int nowUtc)? calendar;
+
   /// Quantos Prismas de orvalho há na bolsa, e usar um (aponta o pé do arco-íris; `null`: nenhum arco, nada gasto).
   final int Function()? prisms;
   final PrismReading? Function()? usePrism;
@@ -52,6 +57,7 @@ class _SkyScreenState extends State<SkyScreen> {
   /// O próximo evento, calculado uma vez por janela de 3 h (varre até um ano de janelas).
   int? _nextAt;
   ({String event, String climate, int startUtc})? _next;
+  List<({String event, String what, bool isEvent, int startUtc})> _items = const [];
 
   /// A última leitura do prisma, ou a frase de quando não havia arco.
   String? _prism;
@@ -93,37 +99,58 @@ class _SkyScreenState extends State<SkyScreen> {
     final shown = widget.shown?.call();
     final active = [for (final w in list.take(1)) if (w.reason != null) w];
     final window = now ~/ 10800;
-    if (widget.nextEvent != null && _nextAt != window) {
+    if ((widget.nextEvent != null || widget.calendar != null) && _nextAt != window) {
       _nextAt = window;
-      _next = widget.nextEvent!(now);
+      _next = widget.nextEvent?.call(now);
+      _items = widget.calendar?.call(now) ?? const [];
     }
+    // Época 12: o clima e os eventos separados. O "Agora" é só o clima; os eventos vêm em "Eventos ativos".
+    final events = list.isEmpty ? const <OutlookEvent>[] : list.first.events;
+    final climateNow = shown == null ? null : widget.catalog.of(climateOfStack(shown.id));
     final next = _next;
     final prisms = widget.prisms?.call() ?? 0;
     return ScreenFrame(
       title: 'Céu',
       subtitle: phoneClock(now),
       children: [
-        if (shown != null) ...[
-          const SectionTitle('Agora'),
+        if (shown != null && climateNow != null) ...[
+          const SectionTitle('Clima agora'),
           Container(
             key: const Key('sky-now'),
             padding: const EdgeInsets.all(12),
             decoration: panelBox(line: kSignal),
             child: Row(children: [
-              _glyph(shown, size: 36),
+              _glyph(climateNow, size: 36),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(shown.name.toUpperCase(), style: const TextStyle(fontSize: 16, color: kText)),
-                  Text(shown.hud.toUpperCase(), style: _body),
-                  if (list.isNotEmpty && list.first.climateId != shown.id)
+                  Text(climateNow.name.toUpperCase(), style: const TextStyle(fontSize: 16, color: kText)),
+                  Text(climateNow.hud.toUpperCase(), style: _body),
+                  if (list.isNotEmpty && list.first.climateId != climateNow.id)
                     Text('NO MUNDO: ${widget.catalog.of(list.first.climateId).name.toUpperCase()}. O CLIMA DA REDE É SÓ VISUAL.', style: _dim),
                 ]),
               ),
             ]),
           ),
           const SectionTitle('Eventos ativos'),
-          if (active.isEmpty) const Text('NENHUM EVENTO MUDA O CLIMA AGORA.', style: _dim),
+          if (active.isEmpty && events.isEmpty) const Text('NENHUM EVENTO AGORA.', style: _dim),
+          for (final e in events)
+            Container(
+              key: Key('sky-layer-event-${e.id}'),
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: panelBox(line: kVeil),
+              child: Row(children: [
+                _glyph(widget.catalog.of(e.id), size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '${e.name.toUpperCase()} · ATÉ ${phoneClock(e.endUtc)}${e.waited ? ' · ESPEROU A VAGA' : ''}\n${e.effect.toUpperCase()}\n${e.reason.toUpperCase()}',
+                    style: _body,
+                  ),
+                ),
+              ]),
+            ),
           for (final w in active)
             Container(
               key: const Key('sky-event'),
@@ -141,14 +168,29 @@ class _SkyScreenState extends State<SkyScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '${widget.catalog.of(w.climateId).hud}${w.reason == null ? '' : ' · ${w.reason}'}'.toUpperCase(),
+                    '${widget.catalog.of(w.climateId).hud}${w.reason == null ? '' : ' · ${w.reason}'}${w.events.isEmpty ? '' : ' · EVENTO: ${w.events.map((e) => e.name).join(', ')}'}'.toUpperCase(),
                     style: w.reason == null ? _body : _body.copyWith(color: kEssence),
                   ),
                 ),
               ]),
             ),
         ],
-        if (widget.nextEvent != null) ...[
+        if (widget.calendar != null) ...[
+          const SectionTitle('Calendário do Véu'),
+          if (_items.isEmpty) const Text('NENHUM EVENTO NO CALENDÁRIO.', key: Key('sky-next-event'), style: _body),
+          for (final (i, it) in _items.indexed)
+            Text(
+              '${it.event.toUpperCase()} · ${it.isEvent ? 'EVENTO' : 'CLIMA'}: ${it.what.toUpperCase()}. ${_when(it.startUtc)}.',
+              key: Key(i == 0 ? 'sky-next-event' : 'sky-next-event-$i'),
+              style: _body,
+            ),
+          for (final p in widget.catalog.calendarPending)
+            Text(
+              '${p.name.toUpperCase()}: ${[for (final c in p.climates) widget.catalog.of(c).name.toUpperCase()].join(' E ')}. ${p.note.toUpperCase()}',
+              key: Key('sky-pending-${p.id}'),
+              style: _dim,
+            ),
+        ] else if (widget.nextEvent != null) ...[
           const SectionTitle('Calendário do Véu'),
           Text(
             next == null ? 'NENHUM EVENTO NO CALENDÁRIO.' : 'PRÓXIMO: ${next.event.toUpperCase()}, ${next.climate.toUpperCase()}. ${_when(next.startUtc)}.',

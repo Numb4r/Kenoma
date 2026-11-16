@@ -78,13 +78,14 @@ List<SpawnItem> generateCell({
   Map<String, double>? climateMult,
   double shinyMult = 1,
   double variantMult = 1,
+  Map<String, double> shinyTypeMult = const {},
   String? Function(String entryId)? typeOf,
   PathSnapper? snapper,
   SpawnContext? context,
 }) =>
     [
       for (final def in epoch.items)
-        _generateItem(seed, epoch, cellX, cellY, window, biomeKey, def, climateMult ?? (weather == Weather.clear ? null : epoch.ecoV2?.weather.spawnMultipliers[weather.id]), shinyMult, variantMult, typeOf, snapper, context),
+        _generateItem(seed, epoch, cellX, cellY, window, biomeKey, def, climateMult ?? (weather == Weather.clear ? null : epoch.ecoV2?.weather.spawnMultipliers[weather.id]), shinyMult, variantMult, typeOf, snapper, context, shinyTypeMult),
     ];
 
 SpawnItem _generateItem(
@@ -100,8 +101,9 @@ SpawnItem _generateItem(
   double variantMult,
   String? Function(String entryId)? typeOf,
   PathSnapper? snapper,
-  SpawnContext? context,
-) {
+  SpawnContext? context, [
+  Map<String, double> shinyTypeMult = const {},
+]) {
   final epochId = epoch.id;
   final rng = Pcg32(spawnHash(seed, epochId, cellX, cellY, window, def.index), saltKenoma);
   final chance = def.chance[biomeKey] ?? (throw StateError('Item ${def.index} sem chance para $biomeKey'));
@@ -161,7 +163,8 @@ SpawnItem _generateItem(
       bp -= weights[i];
     }
     if (r2.nextFloat() < v2.variantChance * variantMult) variantBiome = biomeKey; // variantMult: 1 fora da Lua Dupla (x * 1.0 == x)
-    shiny = r2.nextFloat() < v2.shinyChance * shinyMult; // shinyMult é 1 fora do clima da época 6 (x * 1.0 == x)
+    final shinyRoll = r2.nextFloat();
+    shiny = shinyRoll < v2.shinyChance * shinyMult; // shinyMult é 1 fora do clima da época 6 (x * 1.0 == x)
     final speciesRoll = r2.nextFloat();
     // O clima mexe nos pesos por tipo. Com tempo limpo, ou sem regra para nenhuma espécie da tabela, a espécie é a original.
     // Até a época 5 os multiplicadores são os do clima de quatro estados (`eco_v2.weather`); da 6 em diante, os do clima
@@ -187,6 +190,8 @@ SpawnItem _generateItem(
         }
       }
     }
+    // Época 12 (Aurora com Neve): a chance de Brilhante maior só para alguns tipos, com o mesmo sorteio.
+    if (!shiny && shinyTypeMult.isNotEmpty && typeOf != null) shiny = shinyRoll < v2.shinyChance * shinyMult * (shinyTypeMult[typeOf(entry.id) ?? ''] ?? 1);
   }
 
   return SpawnItem(

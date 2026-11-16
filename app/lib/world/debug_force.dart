@@ -39,6 +39,27 @@ class DebugForce extends ChangeNotifier {
 
   String? _current;
 
+  /// Época 12: os eventos forçados por cima do clima (até dois), independentes do clima forçado. Vazio: os do mundo.
+  List<String> get events => _events;
+  List<String> _events = const [];
+
+  /// Liga ou desliga o evento [id]; com dois ligados, o terceiro tira o mais antigo.
+  void toggleEvent(String id) {
+    final l = [..._events];
+    if (!l.remove(id)) {
+      l.add(id);
+      if (l.length > 2) l.removeAt(0);
+    }
+    _events = List.unmodifiable(l);
+    notifyListeners();
+  }
+
+  void clearEvents() {
+    if (_events.isEmpty) return;
+    _events = const [];
+    notifyListeners();
+  }
+
   /// "Velocidade do clima" (1, 10 ou 60): quantos segundos de clima passam por segundo no clima forçado. Só a formação das
   /// marcas no chão deste aparelho; o mundo e o relógio do jogo não mudam.
   double get speed => _speed;
@@ -210,6 +231,7 @@ class DebugForce extends ChangeNotifier {
     _sim = null;
     _simKey = null;
     _begin(null);
+    _events = const [];
     tapEffect = null;
     notifyListeners();
   }

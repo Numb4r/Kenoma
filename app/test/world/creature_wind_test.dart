@@ -10,11 +10,11 @@ WorldSpawn spawn(String kind, String id, {int? level, int uid = 7}) =>
     WorldSpawn(uid: uid, kind: kind, entryId: id, quantity: 1, x: 10, y: 10, cellX: 5, cellY: 5, window: 0, level: level);
 
 void main() {
-  final climas = ClimateCatalog.fromJson(jsonDecode(File('assets/data/clima.json').readAsStringSync()) as Map<String, dynamic>);
+  final climas = ClimateCatalog.fromJson(jsonDecode(File('assets/data/clima.json').readAsStringSync()) as Map<String, dynamic>, jsonDecode(File('assets/data/eventos.json').readAsStringSync()) as Map<String, dynamic>);
   final b = ClimateBalance.fromJson((jsonDecode(File('assets/data/balance.json').readAsStringSync()) as Map<String, dynamic>)['climate'] as Map<String, dynamic>).creatureWind;
 
   test('Vento, Vendaval, Tornado e Furacão sopram, cada um mais forte; os outros climas não', () {
-    double f(String id) => climas.climates[id]!.windForce;
+    double f(String id) => climas.of(id).windForce;
     expect(f('wind'), greaterThan(0));
     expect(f('gale'), greaterThan(f('wind')));
     expect(f('tornado'), greaterThan(f('gale')));

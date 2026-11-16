@@ -161,6 +161,13 @@ List<DebugItem> timeItems(DebugEnv env) {
       builder: (_) => _WeatherItem(tools: tools),
     ),
     DebugItem(
+      id: 'time.events',
+      title: 'Eventos forçados',
+      section: DebugSection.time,
+      keywords: const ['evento', 'vigília', 'lua carmim', 'aurora', 'arco-íris', 'tornado', 'procissão', 'silêncio', 'camada', 'pilha', 'sexta-feira 13'],
+      builder: (_) => _WeatherItem(tools: tools, events: true),
+    ),
+    DebugItem(
       id: 'time.lightning_here',
       title: 'Raio aqui',
       section: DebugSection.time,
@@ -181,7 +188,7 @@ List<DebugItem> timeItems(DebugEnv env) {
       section: DebugSection.time,
       keywords: const ['arco-íris', 'arco', 'pé', 'prisma', 'teleporte', 'feérico'],
       builder: (context) => DebugColumn([
-        const DebugNote('Teleporta o GPS simulado até o pé do arco-íris ativo mais perto. Sem arco: force o clima Arco-íris ou solte um no toque.'),
+        const DebugNote('Teleporta o GPS simulado até o pé do arco-íris ativo mais perto. Sem arco: force o evento Arco-íris (época 12; antes, o clima) ou solte um no toque.'),
         DebugButton(
           label: 'Ir até o pé do arco-íris',
           onTap: () {
@@ -219,13 +226,16 @@ List<DebugItem> timeItems(DebugEnv env) {
   ];
 }
 
-const _tapNames = {'lightning': 'Raio', 'hail': 'Granizo', 'dust_devil': 'Redemoinho', 'meteor': 'Meteoro', 'violet_bolt': 'Raio violeta', 'spark_fall': 'Fagulha do céu', 'puddle': 'Poça', 'rainbow': 'Arco-íris', 'dry_bolt': 'Raio seco', 'branch': 'Galho', 'rune': 'Runa', 'gaze': 'Olhar', 'hurricane_eye': 'Olho do furacão', 'procession': 'Procissão'};
+const _tapNames = {'lightning': 'Raio', 'hail': 'Granizo', 'dust_devil': 'Redemoinho', 'meteor': 'Meteoro', 'violet_bolt': 'Raio violeta', 'spark_fall': 'Fagulha do céu', 'puddle': 'Poça', 'rainbow': 'Arco-íris', 'dry_bolt': 'Raio seco', 'branch': 'Galho', 'rune': 'Runa', 'gaze': 'Olhar', 'hurricane_eye': 'Olho do furacão', 'procession': 'Procissão', 'funnel': 'Funil do tornado', 'ghost_building': 'Prédio antigo (Maré)'};
 
 /// Os quatro climas antigos sempre à mão; os outros (nativos, de outras regiões e místicos) chegam do `clima.json`.
 class _WeatherItem extends StatefulWidget {
-  const _WeatherItem({required this.tools});
+  const _WeatherItem({required this.tools, this.events = false});
 
   final DevTools tools;
+
+  /// Os eventos da época 12 (até dois, por cima de qualquer clima), em vez dos climas.
+  final bool events;
 
   @override
   State<_WeatherItem> createState() => _WeatherItemState();
@@ -237,8 +247,8 @@ class _WeatherItemState extends State<_WeatherItem> {
   /// Só lê o arquivo quando pedem (o mapa já deixa o catálogo carregado): ler ao montar o item travava a leitura dos
   /// assets nos testes de widget.
   void _load() {
-    rootBundle.loadString('assets/data/clima.json', cache: false).then((s) {
-      if (mounted) setState(() => _catalog = ClimateCatalog.fromJson(jsonDecode(s) as Map<String, dynamic>));
+    Future.wait([rootBundle.loadString('assets/data/clima.json', cache: false), rootBundle.loadString('assets/data/eventos.json', cache: false)]).then((s) {
+      if (mounted) setState(() => _catalog = ClimateCatalog.fromJson(jsonDecode(s[0]) as Map<String, dynamic>, jsonDecode(s[1]) as Map<String, dynamic>));
     }).catchError((_) {});
   }
 
@@ -247,15 +257,31 @@ class _WeatherItemState extends State<_WeatherItem> {
     final force = widget.tools.force;
     final legacy = {for (final w in Weather.values) w.id};
     Widget chip(String id, String label) => DebugChip(label, on: force.weather == id, color: KCores.veuVioleta, onTap: () => force.set(weather: id));
+    if (widget.events) {
+      return ListenableBuilder(
+        listenable: force,
+        builder: (context, _) => DebugColumn([
+          const DebugNote('Até dois eventos por cima do clima (o forçado ou o do mundo), com as combinações. Antes da época 12, vale o modelo dela. Só neste aparelho.'),
+          DebugWrap([
+            DebugChip('Do mundo', on: force.events.isEmpty, color: KCores.veuVioleta, onTap: force.clearEvents),
+            for (final e in _catalog?.eventInfos.values ?? const <EventInfo>[])
+              DebugChip(e.name, on: force.events.contains(e.id), color: KCores.brasaLaranja, onTap: () => force.toggleEvent(e.id)),
+            if (_catalog == null || _catalog!.eventInfos.isEmpty) DebugButton(label: 'Todos os eventos', color: KCores.textoMudo, onTap: _load),
+          ]),
+        ]),
+      );
+    }
     return ListenableBuilder(
       listenable: force,
       builder: (context, _) => DebugColumn([
-        const DebugNote('Vale para o HUD, o desenho, as peças do clima e os pesos de spawn. Antes da época 6, as peças usam o modelo dela.'),
+        const DebugNote('Vale para o HUD, o desenho, as peças do clima e os pesos de spawn. Antes da época 6, as peças usam o modelo dela. Os eventos ficam em "Eventos forçados".'),
         DebugWrap([
           DebugChip('Real', on: force.weather == null, color: KCores.veuVioleta, onTap: () => force.set(clearWeather: true)),
           for (final w in Weather.values) chip(w.id, w.label),
           for (final c in _catalog?.climates.values ?? const <ClimateInfo>[])
             if (!legacy.contains(c.id)) chip(c.id, c.name),
+          // Os climas que viraram evento na época 12 (Chuva Carmim, Garoa Prismática): só para as épocas antigas.
+          if (_catalog != null && _catalog!.eventInfos.isEmpty) DebugButton(label: 'Carregar eventos', color: KCores.textoMudo, onTap: _load),
           if (_catalog == null) DebugButton(label: 'Todos os climas', color: KCores.textoMudo, onTap: _load),
         ]),
       ]),

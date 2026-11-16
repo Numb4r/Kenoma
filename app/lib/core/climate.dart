@@ -12,12 +12,14 @@ library;
 import 'dart:math' as math;
 
 import 'astro.dart';
+import 'climate_events.dart';
 import 'eclipse.dart';
 import 'fnv.dart';
 import 'pcg32.dart';
 import 'tiles.dart';
 import 'veil_calendar.dart';
 
+export 'climate_events.dart' show ActiveEvent, ClimateStack, ComboDef, EventDef, EventRequirement, EventSource, EventTint, climateOfStack, eventsOfStack, stackIdOf;
 export 'veil_calendar.dart' show CalendarRule, CalendarAnchor, CalendarHit, VeilCalendar;
 
 /// Sal do sorteio do clima da época 6 (separado do `WTHR` do modelo antigo).
@@ -41,12 +43,14 @@ final int saltPuddleFx = salt('PDLFX7');
 final int saltRainbow = salt('RBW8');
 
 /// Categorias do GDD. Só os nativos entram no sorteio; os outros só por evento ou debug.
-enum ClimateCategory { native, otherRegion, mystic }
+/// Da época 12 em diante, os eventos (`climate_events.dart`) têm a categoria [event]: ficam por cima do clima.
+enum ClimateCategory { native, otherRegion, mystic, event }
 
 ClimateCategory _category(String s) => switch (s) {
       'native' => ClimateCategory.native,
       'other_region' => ClimateCategory.otherRegion,
       'mystic' => ClimateCategory.mystic,
+      'event' => ClimateCategory.event,
       _ => throw FormatException('categoria de clima desconhecida: $s'),
     };
 
@@ -59,7 +63,7 @@ double _d(Object? v, [double fallback = 0]) => v == null ? fallback : (v as num)
 /// Uma criatura que uma peça faz nascer. [type] é o tipo pedido (`electric`, `water`...); sem espécie desse tipo no jogo,
 /// nasce [fallbackSpecies] com a marca [tag], e sem fallback não nasce nada (o dado fica sem efeito até a espécie existir).
 class PieceSpawn {
-  const PieceSpawn({required this.type, this.fallbackSpecies, this.tag, required this.chance, required this.levelAdd, required this.ttlS, this.perZone = 1});
+  const PieceSpawn({required this.type, this.fallbackSpecies, this.tag, required this.chance, required this.levelAdd, required this.ttlS, this.perZone = 1, this.variant});
 
   factory PieceSpawn.fromJson(Map<String, dynamic> j) => PieceSpawn(
         type: j['type'] as String,
@@ -69,6 +73,7 @@ class PieceSpawn {
         levelAdd: _range(j['level_add'], (0, 0)),
         ttlS: (j['ttl_s'] as num?)?.toInt() ?? 600,
         perZone: (j['per_zone'] as num?)?.toInt() ?? 1,
+        variant: j['variant'] as String?,
       );
 
   final String type;
@@ -80,6 +85,9 @@ class PieceSpawn {
 
   /// Nas zonas: quantas nascem em cada uma.
   final int perZone;
+
+  /// Época 12: o Eco nasce com esta variante (`crimson`: o Carmesim da Lua Carmim). `null`: a do sorteio normal (nenhuma).
+  final String? variant;
 }
 
 /// Um item que uma peça faz cair ou nascer. [ids] é sorteado; o que não existe em `items.json` vira [fallback].
@@ -171,6 +179,7 @@ sealed class ClimatePiece {
           levelAdd: (j['level_add'] as num?)?.toInt() ?? 0,
           shinyMult: _d(j['shiny_mult'], 1),
           variantMult: _d(j['variant_mult'], 1),
+          shinyTypeMult: {for (final e in ((j['shiny_type_mult'] as Map<String, dynamic>?) ?? const {}).entries) e.key: _d(e.value, 1)},
           effects: (j['effects'] as List<dynamic>?)?.cast<String>() ?? const [],
         ),
       'movement' => MovementPiece(
@@ -206,7 +215,7 @@ sealed class ClimatePiece {
 /// Ponto de impacto (raio, meteoro) e coletável que cai do céu (granizo, Fagulhas): acontecimentos a cada [everyS]
 /// segundos (sorteados entre os dois valores) num ponto da célula z17. Só o desenho difere entre os dois.
 class DropPiece extends ClimatePiece {
-  const DropPiece(super.name, {required this.impact, required this.everyS, this.spawn, this.item, this.item2});
+  const DropPiece(super.name, {required this.impact, required this.everyS, this.spawn, this.item, this.item2, this.atZone});
 
   final bool impact;
   final (int, int) everyS;
@@ -215,6 +224,12 @@ class DropPiece extends ClimatePiece {
 
   /// Época 7: um segundo item no mesmo ponto, com o mesmo sorteio de escolha (o material raro da cratera do meteoro).
   final PieceItem? item2;
+
+  /// Época 12 (combinação Vigília com Tempestade): o acontecimento cai no centro da zona ativa mais perto com este nome
+  /// (`gaze`), se houver uma naquele instante.
+  final String? atZone;
+
+  DropPiece copyWith({PieceSpawn? spawn, String? atZone, String? name}) => DropPiece(name ?? this.name, impact: impact, everyS: everyS, spawn: spawn ?? this.spawn, item: item, item2: item2, atZone: atZone ?? this.atZone);
 }
 
 /// Zona temporária (poça, miragem, sombra de nuvem, redemoinho que anda) e sobreposição fantasma (Maré do Véu): [perCell]
@@ -240,6 +255,9 @@ class ZonePiece extends ClimatePiece {
   /// rota da fila e das velas) e fica `spawn.ttl_s` depois de aparecer, mesmo com a zona já acabada. Sem isso (até a época
   /// 7), nasce no ponto da reta e só existe até o fim da zona.
   final bool streetRoute;
+
+  ZonePiece copyWith({PieceSpawn? spawn}) =>
+      ZonePiece(name, ghost: ghost, perCell: perCell, radiusM: radiusM, durationS: durationS, speedMps: speedMps, spawn: spawn ?? this.spawn, item: item, snap: snap, slotAt: slotAt, streetRoute: streetRoute);
 }
 
 /// Época 7: poças nos pontos baixos das ruas. Os pontos são fixos por célula z17 (a mesma poça em toda chuva); crescem em
@@ -272,6 +290,7 @@ class ModifierPiece extends ClimatePiece {
     required this.levelAdd,
     required this.shinyMult,
     this.variantMult = 1,
+    this.shinyTypeMult = const {},
     this.effects = const [],
   });
 
@@ -294,6 +313,9 @@ class ModifierPiece extends ClimatePiece {
 
   /// A chance de variante vezes isto (Lua Dupla, época 7).
   final double variantMult;
+
+  /// Época 12: a chance de Brilhante vezes isto, só nos Ecos destes tipos (Aurora com Neve: Espectrais).
+  final Map<String, double> shinyTypeMult;
   final List<String> effects;
 }
 
@@ -362,6 +384,9 @@ class RainbowArc {
 
   RainbowArc placed(double x, double y) => RainbowArc(piece: piece, startUtc: startUtc, endUtc: endUtc, headingRad: headingRad, spots: spots, slot: slot, uid: uid, x: x, y: y);
 
+  /// O mesmo arco com outro começo e fim (época 12: o trecho do evento na agenda, com a espera pela vaga).
+  RainbowArc between(int s, int e) => RainbowArc(piece: piece, startUtc: s, endUtc: e, headingRad: headingRad, spots: spots, slot: slot, uid: uid, x: x, y: y);
+
   bool activeAt(num t) => t >= startUtc && t < endUtc;
 
   /// O pé como zona (o que nasce ali e o brilho no chão), enquanto o arco dura.
@@ -380,7 +405,7 @@ class RainbowArc {
 }
 
 class ClimateDef {
-  const ClimateDef({required this.id, required this.category, this.spawn = const {}, this.pieces = const []});
+  const ClimateDef({required this.id, required this.category, this.spawn = const {}, this.pieces = const [], this.streams, this.owners, this.merged});
 
   factory ClimateDef.fromJson(String id, Map<String, dynamic> j) => ClimateDef(
         id: id,
@@ -396,6 +421,17 @@ class ClimateDef {
   final Map<String, double> spawn;
   final List<ClimatePiece> pieces;
 
+  /// Época 12, na pilha montada (`clima+evento`): o fluxo de sorteio de cada peça (o do clima é o índice dela, como antes;
+  /// o de cada evento não depende do clima embaixo) e o evento dono dela (`null`: do clima). Fora da pilha, `null`.
+  final List<int>? streams;
+  final List<String?>? owners;
+
+  /// Época 12: o modificador e o movimento já somados da pilha. `null`: os da primeira peça de cada tipo.
+  final ({ModifierPiece? modifier, MovementPiece? movement})? merged;
+
+  int streamOf(int i) => streams?[i] ?? i;
+  String? ownerOf(int i) => owners?[i];
+
   T? _first<T>() {
     for (final p in pieces) {
       if (p is T) return p as T;
@@ -403,8 +439,8 @@ class ClimateDef {
     return null;
   }
 
-  ModifierPiece? get modifier => _first<ModifierPiece>();
-  MovementPiece? get movement => _first<MovementPiece>();
+  ModifierPiece? get modifier => merged == null ? _first<ModifierPiece>() : merged!.modifier;
+  MovementPiece? get movement => merged == null ? _first<MovementPiece>() : merged!.movement;
   TrailsPiece? get trails => _first<TrailsPiece>();
   PuddlePiece? get puddles => _first<PuddlePiece>();
 }
@@ -477,7 +513,7 @@ class ClimateEvent {
 enum ClimateSource { season, feed, calendar, astro, debug }
 
 class ClimateCause {
-  const ClimateCause(this.climate, {this.source = ClimateSource.season, this.event, this.reason, this.maxUtc});
+  const ClimateCause(this.climate, {this.source = ClimateSource.season, this.event, this.reason, this.maxUtc, this.events = const []});
 
   final String climate;
   final ClimateSource source;
@@ -488,6 +524,9 @@ class ClimateCause {
 
   /// Eclipses: o instante UTC do máximo visível do lugar, para o motivo do app Céu.
   final int? maxUtc;
+
+  /// Época 12: os eventos por cima do clima agora (até dois), cada um com a origem e a duração dele.
+  final List<ActiveEvent> events;
 }
 
 /// Época 7: um evento da astronomia. Hoje só a lua cheia muito perto da Terra (Lua Dupla): lua ao menos [fullMin] cheia e a
@@ -603,14 +642,35 @@ class ClimateZone {
 }
 
 class ClimateModel {
-  ClimateModel({required this.windowS, required this.localOffsetH, required this.seasons, required this.after, required this.defs, this.calendar = const [], this.astro = const [], this.eclipses = const []}) {
+  ClimateModel({
+    required this.windowS,
+    required this.localOffsetH,
+    required this.seasons,
+    required this.after,
+    required this.defs,
+    this.calendar = const [],
+    this.astro = const [],
+    this.eclipses = const [],
+    this.eventDefs = const {},
+    this.combos = const [],
+    this.spawnCap = 3.0,
+    this.spawnFloor = 0.3,
+    this.maxEvents = 2,
+    this.rainbowTo = const {},
+  }) {
     for (final r in seasons) {
       for (final id in r.weights.keys) {
         if (defs[id]?.category != ClimateCategory.native) throw FormatException('o sorteio só usa climas nativos: $id');
       }
     }
     for (final id in [...calendar.expand((r) => r.allClimates), ...astro.map((r) => r.climate), ...eclipses.map((r) => r.climate)]) {
-      if (!defs.containsKey(id)) throw FormatException('evento com clima desconhecido: $id');
+      if (!defs.containsKey(id) && !eventDefs.containsKey(id)) throw FormatException('evento com clima desconhecido: $id');
+    }
+    for (final id in eventDefs.keys) {
+      if (defs.containsKey(id) || id.contains('+')) throw FormatException('evento com id de clima ou com +: $id');
+    }
+    for (final c in combos) {
+      if (!defs.containsKey(c.climate) || !eventDefs.containsKey(c.event)) throw FormatException('combinação desconhecida: ${c.id}');
     }
   }
 
@@ -630,7 +690,29 @@ class ClimateModel {
         calendar: [for (final r in (j['calendar'] as List<dynamic>?) ?? const []) CalendarRule.fromJson(r as Map<String, dynamic>)],
         astro: [for (final r in (j['astro'] as List<dynamic>?) ?? const []) AstroRule.fromJson(r as Map<String, dynamic>)],
         eclipses: [for (final r in (j['eclipses'] as List<dynamic>?) ?? const []) EclipseRule.fromJson(r as Map<String, dynamic>)],
+        eventDefs: {
+          for (final (i, e) in ((j['events'] as Map<String, dynamic>?) ?? const {}).entries.indexed) e.key: EventDef.fromJson(e.key, i, e.value as Map<String, dynamic>),
+        },
+        combos: [for (final c in (j['combos'] as List<dynamic>?) ?? const []) ComboDef.fromJson(c as Map<String, dynamic>)],
+        spawnCap: _d(j['spawn_cap'], 3.0),
+        spawnFloor: _d(j['spawn_floor'], 0.3),
+        maxEvents: (j['max_events'] as num?)?.toInt() ?? 2,
+        rainbowTo: {for (final c in (j['rainbow_to'] as List<dynamic>?) ?? const []) c as String},
       );
+
+  /// Época 12 em diante: os eventos por cima do clima, as combinações com efeito próprio, o teto e o piso da soma dos
+  /// multiplicadores de spawn (+++ = 3,0), quantos eventos ao mesmo tempo e os climas de sol em que o arco-íris nasce.
+  final Map<String, EventDef> eventDefs;
+  final List<ComboDef> combos;
+  final double spawnCap, spawnFloor;
+  final int maxEvents;
+  final Set<String> rainbowTo;
+
+  /// Clima e evento em camadas (época 12 em diante). Sem eventos, o modelo antigo: o evento era um clima.
+  bool get layered => eventDefs.isNotEmpty;
+
+  /// Os eventos e o calendário da época 12 (`climate_events.dart`).
+  late final EventSchedule schedule = EventSchedule(this);
 
   final int windowS;
 
@@ -686,8 +768,16 @@ class ClimateModel {
   }
 
   /// O clima da janela de [tUtc] na região: o de um evento ativo (o primeiro da lista), senão o sorteado.
-  String at({required int seed, required int tUtc, required int rx, required int ry, List<ClimateEvent> events = const []}) =>
-      resolve(seed: seed, tUtc: tUtc, rx: rx, ry: ry, events: events).climate;
+  /// Da época 12 em diante, a pilha: `clima+evento+evento` (`stackIdOf`), que [def] monta.
+  String at({required int seed, required int tUtc, required int rx, required int ry, List<ClimateEvent> events = const []}) => layered
+      ? stackAt(seed: seed, tUtc: tUtc, rx: rx, ry: ry, events: events).id
+      : resolve(seed: seed, tUtc: tUtc, rx: rx, ry: ry, events: events).climate;
+
+  /// Época 12: o clima da janela e os eventos ativos no instante [tUtc] na região z12 `(rx, ry)`.
+  ClimateStack stackAt({required int seed, required int tUtc, required int rx, required int ry, List<ClimateEvent> events = const []}) {
+    final cause = resolve(seed: seed, tUtc: tUtc, rx: rx, ry: ry, events: events);
+    return ClimateStack(this, cause, schedule.activeAt(seed, tUtc, rx, ry, events));
+  }
 
   /// O clima da janela e de onde ele veio: o feed assinado, o calendário, os eclipses, a astronomia (os três só da época 7
   /// em diante) ou o sorteio da estação. O calendário e a astronomia sorteiam a chance com a seed e a janela, sem a região:
@@ -701,13 +791,16 @@ class ClimateModel {
     if (calendar.isNotEmpty || astro.isNotEmpty || eclipses.isNotEmpty) {
       final local = DateTime.fromMillisecondsSinceEpoch((mid + localOffsetH * 3600) * 1000, isUtc: true);
       bool roll(String id, double chance) => chance >= 1 || Pcg32(fnv1a64([seed, w, fnv1a64Bytes(id.codeUnits), saltCalendar]), saltKenoma).nextFloat() < chance;
-      final hit = veil.at(seed, w, mid, skipped: _skips(events, mid));
+      // Época 12: o calendário pode trazer clima e evento no mesmo dia; aqui só conta o primeiro que é clima.
+      final hit = layered ? veil.allAt(seed, w, mid, skipped: _skips(events, mid)).where((h) => defs.containsKey(h.climate)).firstOrNull : veil.at(seed, w, mid, skipped: _skips(events, mid));
       if (hit != null) return ClimateCause(hit.climate, source: ClimateSource.calendar, event: hit.rule.id);
       for (final r in eclipses) {
+        if (!defs.containsKey(r.climate)) continue; // época 12: o eclipse é evento (Sol Negro, Lua Carmim)
         final v = r.visibleIn(w * windowS, (w + 1) * windowS, rx, ry);
         if (v != null) return ClimateCause(r.climate, source: ClimateSource.astro, event: r.id, maxUtc: v.maxUtc);
       }
       for (final r in astro) {
+        if (!defs.containsKey(r.climate)) continue;
         if (r.matches(mid, local) && roll(r.id, r.chance)) return ClimateCause(r.climate, source: ClimateSource.astro, event: r.id);
       }
     }
@@ -738,7 +831,7 @@ class ClimateModel {
 
   /// O clima que tem o arco-íris da época 8 (a peça `rainbow`) e a peça. `null` antes da época 8.
   late final (String, RainbowPiece)? rainbow = () {
-    for (final d in defs.values) {
+    for (final d in [...defs.values, for (final e in eventDefs.values) e.def]) {
       for (final p in d.pieces) {
         if (p is RainbowPiece) return (d.id, p);
       }
@@ -756,8 +849,15 @@ class ClimateModel {
     final (rid, p) = rb;
     final start = window * windowS;
     final now = forcedRainbow ? rid : resolve(seed: seed, tUtc: start, rx: rx, ry: ry, events: events).climate;
-    final forced = now == rid;
-    if (!forced && (p.after.contains(now) || !p.after.contains(resolve(seed: seed, tUtc: start - 1, rx: rx, ry: ry, events: events).climate))) return null;
+    final forced = forcedRainbow || now == rid;
+    if (!forced && layered) {
+      // Época 12: só na passagem de chuva ou garoa para sol, de dia (o sol acima do horizonte no centro da região).
+      if (!rainbowTo.contains(now) || !p.after.contains(resolve(seed: seed, tUtc: start - 1, rx: rx, ry: ry, events: events).climate)) return null;
+      final (lat, lon) = tileFractionToLatLon(rx + 0.5, ry + 0.5, 12);
+      if (sunAltitudeDeg(lat, lon, start) <= 0) return null;
+    } else if (!forced && (p.after.contains(now) || !p.after.contains(resolve(seed: seed, tUtc: start - 1, rx: rx, ry: ry, events: events).climate))) {
+      return null;
+    }
     final rng = Pcg32(fnv1a64([seed, epochId, rx, ry, window, saltRainbow]), saltKenoma);
     final u = rng.nextFloat();
     final (lo, hi) = p.durationS;
@@ -786,7 +886,10 @@ class ClimateModel {
     );
   }
 
-  ClimateDef? def(String id) => defs[id];
+  /// O clima, o evento sozinho ou a pilha `clima+evento+evento` montada (época 12; guardada).
+  ClimateDef? def(String id) => defs[id] ?? (id.contains('+') ? _stacks.putIfAbsent(id, () => mergeStack(this, id)) : eventDefs[id]?.def);
+
+  final _stacks = <String, ClimateDef?>{};
 
   /// A direção do vento (radianos a partir do norte, sentido horário) na região e janela.
   double windHeading(int seed, int epochId, int rx, int ry, int window) =>

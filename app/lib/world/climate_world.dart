@@ -131,14 +131,19 @@ class ClimateWorld {
     this.typeOf,
     this.streets,
     String? Function()? forced,
+    List<String> Function()? forcedEvents,
     this.forcedPhase,
-  }) : forced = forced ?? _none;
+  })  : forced = forced ?? _none,
+        forcedEvents = forcedEvents ?? _noEvents;
 
   final int seed;
   final EpochSchedule schedule;
 
   /// O clima forçado pelo debug (qualquer id), ou `null`.
   final String? Function() forced;
+
+  /// Época 12: os eventos forçados pelo debug (até dois), por cima do clima. Vazio: os do mundo.
+  final List<String> Function() forcedEvents;
 
   /// Há quanto tempo (segundos de clima, já com a velocidade do debug) o clima forçado começa do zero, e o forçado de antes
   /// dele, secando. Só neste aparelho. `null`: o forçado vale inteiro, como antes.
@@ -193,38 +198,99 @@ class ClimateWorld {
   final debugZones = <ClimateZone>[];
   final debugArcs = <RainbowArc>[];
 
-  final _dropCache = <(int, int, int, int, int), List<ClimateDrop>>{};
-  final _zoneCache = <(int, int, int, int, int), List<ClimateZone>>{};
+  final _dropCache = <(int, int, int, int, int, int), List<ClimateDrop>>{};
+  final _zoneCache = <(int, int, int, int, int, int), List<ClimateZone>>{};
   final _spotCache = <(int, int, int, int), List<({int index, double x, double y, double radiusM, double depth})>>{};
   final _arcCache = <(int, int, int, int, bool), RainbowArc?>{};
 
   /// O modelo e a época que valem em [t]: os da época; com o clima forçado pelo debug numa época sem modelo, o da época mais
   /// nova que tem (só neste aparelho, para dar para testar antes da época 6 começar).
   /// Também quando o clima forçado só existe numa época mais nova (os climas da época 7 antes dela começar).
+  /// Com eventos forçados, o modelo mais novo em camadas (época 12, antes dela começar), só neste aparelho.
   (Epoch, ClimateModel)? modelAt(int t) {
     final e = schedule.select(t).epoch;
-    final f = forced();
-    if (e.climate != null && (f == null || e.climate!.defs.containsKey(f))) return (e, e.climate!);
-    if (f == null) return null;
+    final f = forced(), fe = forcedEvents();
+    bool fits(ClimateModel m) => (f == null || m.defs.containsKey(f) || (m.layered && m.eventDefs.containsKey(f))) && (fe.isEmpty || (m.layered && fe.every(m.eventDefs.containsKey)));
+    if (e.climate != null && fits(e.climate!)) return (e, e.climate!);
+    if (f == null && fe.isEmpty) return null;
     for (final o in schedule.epochs.reversed) {
-      if (o.climate != null && o.climate!.defs.containsKey(f)) return (e, o.climate!);
+      if (o.climate != null && fits(o.climate!)) return (e, o.climate!);
     }
     return e.climate == null ? null : (e, e.climate!);
   }
 
+  /// A pilha (id) na região z12 `(rx, ry)` em [t] com o modelo [model]: o clima e os eventos do mundo, trocados pelo que o
+  /// debug forçou. Fora do modelo em camadas, o clima (o forçado, se houver).
+  String _stackIn(ClimateModel model, int rx, int ry, int t) {
+    final f = forced(), fe = forcedEvents();
+    if (!model.layered) return f ?? model.at(seed: seed, tUtc: t, rx: rx, ry: ry, events: events);
+    if (f == null && fe.isEmpty) return model.at(seed: seed, tUtc: t, rx: rx, ry: ry, events: events);
+    // Um id de evento forçado como clima (o debug antigo) entra como evento por cima do clima do mundo.
+    final asEvent = f != null && model.eventDefs.containsKey(f);
+    final climate = f != null && !asEvent ? f : model.resolve(seed: seed, tUtc: t, rx: rx, ry: ry, events: events).climate;
+    final evs = fe.isNotEmpty || asEvent ? [...fe, ?(asEvent ? f : null)] : model.schedule.activeAt(seed, t, rx, ry, events).map((a) => a.id);
+    return stackIdOf(model, climate, evs);
+  }
+
+  /// O evento [owner] está na pilha da célula z17 em [t] (as peças de evento só valem enquanto ele dura).
+  bool _live(String owner, int cx17, int cy17, int t) {
+    final m = modelAt(t)?.$2;
+    if (m == null || !m.layered) return false;
+    final f = forced(), fe = forcedEvents();
+    if (fe.isNotEmpty || (f != null && m.eventDefs.containsKey(f))) return fe.contains(owner) || f == owner;
+    return m.schedule.dayOf(seed, m.schedule.localDay(t), cx17 >>> 5, cy17 >>> 5, events).any((a) => a.id == owner && a.activeAt(t));
+  }
+
   /// O id do clima na célula z20 em [t]: o forçado, o do modelo completo (épocas 6+) ou o de quatro estados (épocas 3 a 5).
   /// É o que pesa nos spawns.
-  String idAt(int cx20, int cy20, int t) => forced() ?? climateIdOfCell(schedule, seed, cx20, cy20, t, events: events);
+  /// Da época 12 em diante é a pilha `clima+evento+evento`.
+  String idAt(int cx20, int cy20, int t) {
+    final me = forced() == null && forcedEvents().isEmpty ? null : modelAt(t);
+    if (me == null) return forced() ?? climateIdOfCell(schedule, seed, cx20, cy20, t, events: events);
+    final (rx, ry) = weatherRegionOfCell(cx20, cy20);
+    return _stackIn(me.$2, rx, ry, t);
+  }
 
   /// De onde vem o clima da célula z20 em [t]: debug, feed, calendário, astronomia ou estação. Sem modelo completo (épocas
   /// até a 5), o sorteio de quatro estados conta como estação.
+  /// Da época 12, com os eventos ativos e a origem de cada um (o debug marca o que ele forçou).
   ClimateCause causeAt(int cx20, int cy20, int t) {
-    final f = forced();
-    if (f != null) return ClimateCause(f, source: ClimateSource.debug);
-    final m = schedule.select(t).epoch.climate;
-    if (m == null) return ClimateCause(idAt(cx20, cy20, t));
+    final f = forced(), fe = forcedEvents();
     final (rx, ry) = weatherRegionOfCell(cx20, cy20);
-    return m.resolve(seed: seed, tUtc: t, rx: rx, ry: ry, events: events);
+    final me = modelAt(t);
+    final m = me?.$2;
+    if (m == null || !m.layered) {
+      if (f != null) return ClimateCause(f, source: ClimateSource.debug);
+      final mm = schedule.select(t).epoch.climate;
+      if (mm == null) return ClimateCause(idAt(cx20, cy20, t));
+      return mm.resolve(seed: seed, tUtc: t, rx: rx, ry: ry, events: events);
+    }
+    final id = _stackIn(m, rx, ry, t);
+    final world = m.stackAt(seed: seed, tUtc: t, rx: rx, ry: ry, events: events);
+    final base = f != null && m.defs.containsKey(f) ? ClimateCause(f, source: ClimateSource.debug) : world.cause;
+    final evs = [
+      for (final e in eventsOfStack(id))
+        world.events.where((a) => a.id == e && fe.isEmpty).firstOrNull ?? ActiveEvent(id: e, source: EventSource.debug, startUtc: t, endUtc: t + m.windowS, naturalStartUtc: t),
+    ];
+    return ClimateCause(base.climate, source: base.source, event: base.event, reason: base.reason, maxUtc: base.maxUtc, events: evs);
+  }
+
+  /// Época 12: os eventos que tocam `[from, to)` na célula z20 (o app Céu), em ordem de começo; os forçados pelo debug valem
+  /// o intervalo inteiro. Fora do modelo em camadas, nenhum.
+  List<ActiveEvent> eventsBetween(int cx20, int cy20, int from, int to) {
+    final m = modelAt(from)?.$2;
+    if (m == null || !m.layered) return const [];
+    final f = forced(), fe = forcedEvents();
+    final debug = [...fe, if (f != null && m.eventDefs.containsKey(f)) f];
+    if (debug.isNotEmpty) return [for (final e in debug) ActiveEvent(id: e, source: EventSource.debug, startUtc: from, endUtc: to, naturalStartUtc: from)];
+    final (rx, ry) = weatherRegionOfCell(cx20, cy20);
+    final seen = <(String, int)>{};
+    final out = <ActiveEvent>[
+      for (var d = m.schedule.localDay(from); d <= m.schedule.localDay(to - 1); d++)
+        for (final a in m.schedule.dayOf(seed, d, rx, ry, events))
+          if (a.startUtc < to && a.endUtc > from && seen.add((a.id, a.startUtc))) a,
+    ]..sort((a, b) => a.startUtc - b.startUtc);
+    return out;
   }
 
   /// A definição do clima da célula z17 em [t], com o modelo e a época. `null` sem modelo.
@@ -232,7 +298,7 @@ class ClimateWorld {
     final me = modelAt(t);
     if (me == null) return null;
     final (epoch, model) = me;
-    final id = forced() ?? model.at(seed: seed, tUtc: t, rx: cx17 >>> 5, ry: cy17 >>> 5, events: events);
+    final id = _stackIn(model, cx17 >>> 5, cy17 >>> 5, t);
     final def = model.def(id);
     return def == null ? null : (epoch: epoch, model: model, def: def, window: model.windowOf(t));
   }
@@ -244,7 +310,7 @@ class ClimateWorld {
   /// densidade (0 a 1) e o multiplicador da visão dos Ecos. `null` sem relevo ali, fora desses climas ou em época sem `fog`.
   ({double low, double density, double viewMult})? fogAt(double x21, double y21, int t, Epoch epoch, String climateId, {double? sunAltDeg}) {
     final fog = epoch.fog, r = relief;
-    if (fog == null || r == null || !fog.climates.contains(climateId)) return null;
+    if (fog == null || r == null || !climateId.split('+').any(fog.climates.contains)) return null;
     final cx = x21.floor(), cy = y21.floor(), k = fog.ringCells, kd = (k * 0.7071).round();
     final h = r.h16At(cx, cy);
     if (h == null) return null;
@@ -280,8 +346,10 @@ class ClimateWorld {
       prevEnd = t - fp.prevSinceEndS.round();
       prevStart = prevEnd - fp.prevFormedS.round();
     } else {
-      runStart = _runStart(cx17, cy17, d.def.id, windowStart, d.model.windowS);
-      prevId = _defAt17(cx17, cy17, runStart - 1)?.def.id;
+      // Da época 12, a sequência e o clima de antes são os do clima: um evento que começa não zera a neve acumulada.
+      runStart = _runStart(cx17, cy17, climateOfStack(d.def.id), windowStart, d.model.windowS);
+      final prev = _defAt17(cx17, cy17, runStart - 1)?.def.id;
+      prevId = prev == null ? null : climateOfStack(prev);
       prevEnd = runStart;
       prevStart = prevId == null ? runStart : _runStart(cx17, cy17, prevId, runStart - d.model.windowS, d.model.windowS);
     }
@@ -310,7 +378,7 @@ class ClimateWorld {
   /// O começo das janelas seguidas com o clima [id] (até 8 para trás): a neve que acumula não zera na virada da janela.
   int _runStart(int cx17, int cy17, String id, int start, int windowS) {
     var s = start;
-    for (var k = 0; k < 8 && _defAt17(cx17, cy17, s - 1)?.def.id == id; k++) {
+    for (var k = 0; k < 8 && climateOfStack(_defAt17(cx17, cy17, s - 1)?.def.id ?? '') == id; k++) {
       s -= windowS;
     }
     return s;
@@ -363,6 +431,8 @@ class ClimateWorld {
   /// A parada do tráfego `[s, e)` que vale na janela [window]: a da própria janela ou a que acabou na anterior (até 8 janelas
   /// seguidas para trás e para a frente). `null`: nenhuma.
   ({int s, int e})? _trafficStop(int cx17, int cy17, int window, int ws, int? since) {
+    final me = modelAt(window * ws);
+    if (me != null && me.$2.layered) return _eventStop(me.$2, cx17, cy17, window, ws, since);
     final int last;
     if (_stopped(cx17, cy17, window * ws)) {
       last = window;
@@ -391,6 +461,25 @@ class ClimateWorld {
     }
     if (since != null) s = math.max(s, since);
     return e > s ? (s: s, e: e) : null;
+  }
+
+  /// Época 12: a parada é o trecho do evento que para o tráfego (o Silêncio), com o começo e o fim dele: o que está em curso
+  /// ou o que acabou nesta janela ou na anterior. Forçado pelo debug: do instante em que foi forçado em diante.
+  ({int s, int e})? _eventStop(ClimateModel m, int cx17, int cy17, int window, int ws, int? since) {
+    bool stops(String? ev) => ev != null && (m.eventDefs[ev]?.def.movement?.trafficMult ?? 1) == 0;
+    final fe = forcedEvents(), f = forced();
+    if (fe.any(stops) || stops(f)) return (s: since ?? window * ws, e: (window + 9) * ws);
+    if (fe.isNotEmpty) return null; // o debug trocou os eventos do mundo
+    final rx = cx17 >>> 5, ry = cy17 >>> 5, from = (window - 1) * ws, to = (window + 1) * ws;
+    ActiveEvent? best;
+    for (var d = m.schedule.localDay(from); d <= m.schedule.localDay(to - 1); d++) {
+      for (final a in m.schedule.dayOf(seed, d, rx, ry, events)) {
+        if (stops(a.id) && a.startUtc < to && a.endUtc > from && (best == null || a.startUtc > best.startUtc)) best = a;
+      }
+    }
+    if (best == null) return null;
+    final s = math.max(best.startUtc, since ?? best.startUtc);
+    return best.endUtc > s ? (s: s, e: best.endUtc) : null;
   }
 
   /// Níveis a mais nos Ecos da célula z20 (Tempestade de Ecos).
@@ -496,7 +585,8 @@ class ClimateWorld {
         for (var i = 0; i < d.def.pieces.length; i++) {
           final p = d.def.pieces[i];
           if (p is! DropPiece) continue;
-          final list = _dropCache.putIfAbsent((d.epoch.id * 64 + i, cx, cy, d.window, d.def.id.hashOfId), () => d.model.drops(seed, d.epoch.id, cx, cy, d.window, i, p));
+          final st = d.def.streamOf(i), owner = d.def.ownerOf(i);
+          final list = _dropCache.putIfAbsent((d.epoch.id, st, cx, cy, d.window, d.def.id.hashOfId), () => d.model.drops(seed, d.epoch.id, cx, cy, d.window, st, p));
           // A lista está em ordem de tempo: começa do primeiro a partir de tFrom (busca binária).
           var lo = 0, hi = list.length;
           while (lo < hi) {
@@ -508,7 +598,10 @@ class ClimateWorld {
             }
           }
           for (var k = lo; k < list.length && list[k].tUtc <= tTo; k++) {
-            if (seen.add(list[k].uid)) out.add(list[k]);
+            final drop = list[k];
+            // Peça de evento (época 12): só cai enquanto o evento dura ali.
+            if (owner != null && !_live(owner, cx, cy, drop.tUtc)) continue;
+            if (seen.add(drop.uid)) out.add(p.atZone == null ? drop : _atZone(drop, p.atZone!, cx, cy));
           }
         }
       }
@@ -517,6 +610,23 @@ class ClimateWorld {
       if (drop.tUtc >= tFrom && drop.tUtc <= tTo) out.add(drop);
     }
     return out;
+  }
+
+  /// Época 12 (Vigília com Tempestade): o raio cai no centro do olhar ativo mais perto, nas células z17 em volta, no instante
+  /// dele. Sem olhar ativo, cai onde ia cair.
+  ClimateDrop _atZone(ClimateDrop drop, String zoneName, int cx, int cy) {
+    final (lat, _) = tileFractionToLatLon(drop.x, drop.y, biomeZoom);
+    final mpc = metersPerCell(lat);
+    (double, double)? best;
+    var d2 = double.infinity;
+    for (final z in zonesNear(drop.x, drop.y, 24, drop.tUtc)) {
+      if (z.piece.name != zoneName) continue;
+      final (x, y) = z.centerAt(drop.tUtc.toDouble(), mpc);
+      final dd = (x - drop.x) * (x - drop.x) + (y - drop.y) * (y - drop.y);
+      if (dd < d2) (best, d2) = ((x, y), dd);
+    }
+    if (best == null) return drop;
+    return ClimateDrop(piece: drop.piece, pieceIndex: drop.pieceIndex, index: drop.index, tUtc: drop.tUtc, x: best.$1, y: best.$2, spawnRoll: drop.spawnRoll, itemRoll: drop.itemRoll, pick: drop.pick, uid: drop.uid);
   }
 
   /// As zonas ativas em [t] perto de (x21, y21), mais as do debug. Para o desenho: [movingExtra21] procura as zonas que
@@ -540,8 +650,11 @@ class ClimateWorld {
         for (var i = 0; i < d.def.pieces.length; i++) {
           final p = d.def.pieces[i];
           if (p is! ZonePiece || (far && p.speedMps <= 0)) continue;
-          final list = _zoneCache.putIfAbsent((d.epoch.id * 64 + i, cx, cy, d.window, d.def.id.hashOfId), () => [for (final z in d.model.zones(seed, d.epoch.id, cx, cy, d.window, i, p)) ?_snapZone(z)]);
+          final st = d.def.streamOf(i), owner = d.def.ownerOf(i);
+          final list = _zoneCache.putIfAbsent((d.epoch.id, st, cx, cy, d.window, d.def.id.hashOfId), () => [for (final z in d.model.zones(seed, d.epoch.id, cx, cy, d.window, st, p)) ?_snapZone(z)]);
           for (final z in list) {
+            // Zona de evento (época 12): só a que começa enquanto o evento dura ali.
+            if (owner != null && !_live(owner, cx, cy, math.max(z.startUtc, math.min(tt, z.endUtc - 1)))) continue;
             if (keep(z) && seen.add(z.uidBase)) out.add(z);
           }
         }
@@ -562,6 +675,7 @@ class ClimateWorld {
     if (me == null) return null;
     var (epoch, model) = me;
     final f = forced();
+    if (model.layered) return _layeredRainbow(epoch, model, rx, ry, t);
     // Forçado pelo debug antes da época 8: o arco da época mais nova que tem (só neste aparelho).
     if (f != null && model.rainbow == null) model = schedule.epochs.reversed.map((e) => e.climate).firstWhere((m) => m?.rainbow != null, orElse: () => model) ?? model;
     final rb = model.rainbow;
@@ -577,6 +691,32 @@ class ClimateWorld {
       return a;
     });
     return arc != null && arc.activeAt(t) ? arc : null;
+  }
+
+  /// Época 12: o arco-íris é evento. Vale o trecho dele na agenda da região (a geometria sai da janela em que nasceu); forçado
+  /// pelo debug, a janela inteira.
+  RainbowArc? _layeredRainbow(Epoch epoch, ClimateModel model, int rx, int ry, int t) {
+    final rb = model.rainbow;
+    if (rb == null) return null;
+    final f = forced(), fe = forcedEvents();
+    final debug = fe.isNotEmpty || (f != null && model.eventDefs.containsKey(f));
+    final forcedRb = f == rb.$1 || fe.contains(rb.$1);
+    if (debug && !forcedRb) return null;
+    final seg = forcedRb ? null : model.schedule.dayOf(seed, model.schedule.localDay(t), rx, ry, events).where((a) => a.id == rb.$1 && a.activeAt(t)).firstOrNull;
+    if (!forcedRb && seg == null) return null;
+    final w = model.windowOf(seg?.naturalStartUtc ?? t);
+    if (_arcCache.length > 64) _arcCache.clear();
+    final arc = _arcCache.putIfAbsent((epoch.id, rx, ry, w, true), () {
+      final a = model.rainbowAt(seed, epoch.id, rx, ry, w, events: events, forcedRainbow: true);
+      if (a == null) return null;
+      for (final (x, y) in a.spots) {
+        if (_toStreet(x, y) case final p?) return a.placed(p.$1, p.$2);
+      }
+      return a;
+    });
+    if (arc == null) return null;
+    final shown = seg == null ? arc : arc.between(seg.startUtc, seg.endUtc);
+    return shown.activeAt(t) ? shown : null;
   }
 
   /// Os arcos ativos em [t] com o pé a até [radius21] células z21 de (x21, y21), mais os do debug.
@@ -614,7 +754,7 @@ class ClimateWorld {
   /// A poça que a neve derretida forma (época 10 em diante): a do clima `melt_as`, se o clima de antes era de neve.
   PuddlePiece? _meltPiece(({Epoch epoch, ClimateModel model, ClimateDef def, int window}) d, String? prevId) {
     final wm = d.epoch.water;
-    if (wm == null || prevId == null || !wm.meltClimates.contains(prevId) || wm.meltClimates.contains(d.def.id)) return null;
+    if (wm == null || prevId == null || !wm.meltClimates.contains(climateOfStack(prevId)) || wm.meltClimates.contains(climateOfStack(d.def.id))) return null;
     return d.model.def(wm.meltAs)?.puddles;
   }
 
@@ -698,7 +838,7 @@ class ClimateWorld {
       final bonus = d.epoch.water?.dryDepthBonus ?? 0;
       final wm = d.epoch.water;
       final hour = ((t + d.model.localOffsetH * 3600) % 86400) ~/ 3600;
-      final iced = wm != null && !piece.frozen && wm.freezeClimates.contains(d.def.id) && hour >= wm.freezeFromH && hour < wm.freezeToH ? d.model.def(wm.freezeAs)?.puddles : null;
+      final iced = wm != null && !piece.frozen && wm.freezeClimates.contains(climateOfStack(d.def.id)) && hour >= wm.freezeFromH && hour < wm.freezeToH ? d.model.def(wm.freezeAs)?.puddles : null;
       // A camada pessoal: as poças a mais do Rill, por célula z18 (4 em cada z17), sorteadas pelo jogador e pela chuva e
       // sempre na rua ou na calçada: cada poça tenta até [_rillTries] pontos da célula até um cair no que se anda.
       final mine = <(({int index, double x, double y, double radiusM, double depth}), ({int key, double eco}))>[];
@@ -831,7 +971,8 @@ class ClimateWorld {
   /// Quanto (s) as zonas com `street_route` do clima de agora mantêm o que nasceu depois de acabar: 0 até a época 7.
   int _lingerS(int t) {
     var m = 0;
-    for (final def in modelAt(t)?.$2.defs.values ?? const <ClimateDef>[]) {
+    final model = modelAt(t)?.$2;
+    for (final def in [...?model?.defs.values, for (final e in model?.eventDefs.values ?? const <EventDef>[]) e.def]) {
       for (final p in def.pieces) {
         if (p is ZonePiece && p.streetRoute) m = math.max(m, p.durationS + (p.spawn?.ttlS ?? 0));
       }
@@ -857,6 +998,7 @@ class ClimateWorld {
       window: windowIndex(seed, cx20, cy20, t),
       level: levelOf(species, add, uid),
       tag: spawn.tag,
+      variant: spawn.variant,
       personal: personal,
     );
   }
@@ -898,7 +1040,7 @@ class ClimateWorld {
   bool debugTrigger(String pieceName, double x21, double y21, int t) {
     // O modelo de agora primeiro; depois os das outras épocas, do mais novo (as peças da época 7 antes dela começar).
     final models = {?modelAt(t)?.$2, for (final e in schedule.epochs.reversed) ?e.climate};
-    for (final def in models.expand((m) => m.defs.values)) {
+    for (final def in models.expand((m) => [...m.defs.values, for (final e in m.eventDefs.values) e.def])) {
       for (var p in def.pieces) {
         if (p.name != pieceName) continue;
         final uid = fnv1a64([seed, t, (x21 * 1000).round(), (y21 * 1000).round(), salt('DBGFX')]);
@@ -932,6 +1074,7 @@ class ClimateWorld {
 }
 
 String? _none() => null;
+List<String> _noEvents() => const [];
 
 /// O clima forçado pelo debug no tempo: há quanto ele vale ([ageS]) e o forçado de antes ([prevId]), que formou por
 /// [prevFormedS] e acabou há [prevSinceEndS]. Segundos de clima (a velocidade do debug já entra).

@@ -6,8 +6,8 @@ library;
 import 'package:flutter/material.dart';
 
 import '../core/behavior.dart';
-import '../save/ksv_save_store.dart';
 import '../ui/game/game_map_screen.dart';
+import '../ui/lab/visual_lab_screen.dart';
 import '../ui/map/map_screen.dart';
 import '../ui/tema.dart';
 import '../world/places.dart';
@@ -143,9 +143,23 @@ List<DebugItem> mapItems(DebugEnv env) {
         builder: (context, _) => DebugButton(
           label: 'Abrir mapa do jogo',
           color: KCores.sinalCiano,
-          onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => GameMapScreen(tools: tools, openStore: KsvSaveStore.inDocuments))),
+          onTap: () => openGameMap(context, tools),
         ),
       ),
+    ),
+    DebugItem(
+      id: 'map.visual_lab',
+      title: 'Laboratório visual',
+      section: DebugSection.map,
+      keywords: const ['laboratório', 'estilo', 'gta', 'stardew', 'prédios', 'arte', 'antes e depois', 'céu', 'horizonte'],
+      builder: (context) => DebugColumn([
+        const DebugNote('O quarteirão da Praça Ramos de Azevedo no estilo de hoje e no novo, com a hora, o clima e até dois eventos. Só aqui: nada entra no mapa até o estilo ser aprovado.'),
+        DebugButton(
+          label: 'Abrir laboratório visual',
+          color: KCores.veuVioleta,
+          onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => VisualLabScreen(nowUtc: () => tools.clock.nowUtc))),
+        ),
+      ]),
     ),
     DebugItem(
       id: 'map.biome_grid',

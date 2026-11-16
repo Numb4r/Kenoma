@@ -47,7 +47,11 @@ void main() {
         final file = key.replaceAll('@', '__');
         final alpha = v == 'shiny' ? 0.55 : 0.4;
         await png(big.normal, bestiaryPx, '$out/${file}_bestiario.png', tint: info?.tint, alpha: alpha);
-        if (small != null) await png(small.normal, small.normal.width * mapScale, '$out/${file}_mapa.png', tint: info?.tint, alpha: alpha);
+        // 0.21.0: no mapa, a variante tem arte própria (valor e acessório, `variant_art.dart`), sem o tom por cima.
+        if (small != null) {
+          final img = v == null ? small.normal : EcoSprite.loadMapVariant(f.spriteKey, v);
+          await png(img, img.width * mapScale, '$out/${file}_mapa.png');
+        }
         final sp = data.species(f.id);
         rows.add({
           'id': key,

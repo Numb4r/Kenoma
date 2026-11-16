@@ -203,7 +203,7 @@ class ClimateGround {
         if (!g.showsAtHour(localHour)) continue;
         final amount = _amount(g, exactUtc - start, end == null ? null : exactUtc - end);
         if (amount <= 0) continue;
-        final layer = (fnv1a64Bytes(info.id.codeUnits) & 0xffff) * 8 + i; // a mesma camada, as mesmas posições, formando ou secando
+        final layer = (fnv1a64Bytes((g.str('origin') ?? info.id).codeUnits) & 0xffff) * 8 + (g.str('origin') == null ? i : info.ground.where((o) => o.str('origin') == g.str('origin')).toList().indexOf(g)); // a mesma camada, as mesmas posições, formando ou secando
         switch (g.kind) {
           case 'streets' when ppc >= 2:
             _streets(canvas, g, seed, c, amount, end == null ? amount : _amount(g, end - start, null), end != null, localHour, exactUtc, mpc, px, l, top, r, b, cam, at);
@@ -231,7 +231,9 @@ class ClimateGround {
         final plan = processionPlans[z.uidBase];
         // As velas no chão (giram com o mapa); as figuras em pé, depois.
         if (plan != null) paintCandles(canvas, plan.candlesAt(exactUtc), t: exactUtc, q: artPixelDp * px, candleS: look.candleS, inView: inView, at: at, placed: placed);
-        upright.add(() => _procession(canvas, view, cam, z, v, plan, exactUtc, mpc, playerX, playerY));
+        // Época 12: a Procissão fora da Neblina traz só uma névoa rasa em volta das figuras.
+        final mist = shown.id.split('+').first == 'fog' ? null : catalog.eventInfos['fog_procession']?.mist;
+        upright.add(() => _procession(canvas, view, cam, z, v, plan, exactUtc, mpc, playerX, playerY, mist: mist));
       } else if (z.activeAt(exactUtc.floor())) {
         if (airZoneStyles.contains(v.style)) {
           upright.add(() {
@@ -505,7 +507,7 @@ class ClimateGround {
 
   /// A Procissão: a fila de figuras encapuzadas pela rota das ruas, em pé na tela, visível até [ProcessionLook.visibleM]. Sem
   /// rota (sem rua perto), a fila anda na reta da zona, como antes.
-  void _procession(ui.Canvas canvas, ui.Size view, MapCamera cam, ClimateZone z, PieceVisual v, ProcessionPlan? plan, double t, double mpc, double px0, double py0) {
+  void _procession(ui.Canvas canvas, ui.Size view, MapCamera cam, ClimateZone z, PieceVisual v, ProcessionPlan? plan, double t, double mpc, double px0, double py0, {Map<String, dynamic>? mist}) {
     final List<ProcessionFigure> figs;
     if (plan != null) {
       figs = plan.figuresAt(t);
@@ -529,6 +531,17 @@ class ClimateGround {
       near.add((f, sx, sy + (math.sin(t * 2.2 + i * 0.9) * pxPerM * 0.06).roundToDouble(), a));
     }
     near.sort((a, b) => a.$3.compareTo(b.$3)); // de trás para a frente na tela
+    if (mist != null) {
+      // Três ovais achatados por figura, rentes ao chão, que respiram devagar: a névoa só onde a fila passa.
+      final r = ((mist['radius_m'] as num?)?.toDouble() ?? 10) * pxPerM, base = ((mist['alpha'] as num?)?.toDouble() ?? 0.35);
+      final c = ui.Color(0xFF000000 | int.parse(((mist['color'] as String?) ?? '#e8e4f4').substring(1), radix: 16));
+      for (final (i, (_, sx, sy, a)) in near.indexed) {
+        for (var k = 0; k < 3; k++) {
+          final w = r * (1.0 - k * 0.25) * (1 + 0.08 * math.sin(t * 0.7 + i + k));
+          canvas.drawOval(ui.Rect.fromCenter(center: ui.Offset(sx, sy - k * r * 0.08), width: w * 2, height: w * 0.6), _fill..color = c.withValues(alpha: base * a / 3));
+        }
+      }
+    }
     for (final (f, sx, sy, a) in near) {
       paintHoodedFigure(canvas, sx, sy, heightPx: figureM * pxPerM, artPx: artPixelDp, robe: v.color, glow: v.glow, alpha: a, flicker: math.sin(t * 9 + f.x * 3), screenHeading: f.heading + cam.rotation);
     }

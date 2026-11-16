@@ -70,7 +70,8 @@ class SpawnConditions {
   double mult(String entryId, SpawnContext c) {
     final f = of(entryId);
     if (f == null) return 1;
-    var m = f.climates[c.climate] ?? f.base;
+    // Da época 12, o clima é a pilha `clima+evento`: vale o número do primeiro que a família tem.
+    var m = f.climates[c.climate] ?? (c.climate.contains('+') ? c.climate.split('+').map((p) => f.climates[p]).nonNulls.firstOrNull : null) ?? f.base;
     m *= c.sunAltDeg.abs() < twilightDeg ? f.twilight : (c.sunAltDeg > 0 ? f.day : f.night);
     if (c.moonIllum >= fullMoonMin) m *= f.fullMoon;
     // O relevo pesa aos poucos: no plano não muda nada.

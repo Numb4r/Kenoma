@@ -7,7 +7,6 @@ import 'package:kenoma/world/sim/traffic_sim.dart';
 import 'package:kenoma/core/astro.dart' show DayLight;
 import 'package:kenoma/core/climate.dart';
 import 'package:kenoma/core/tiles.dart';
-import 'package:kenoma/data/climate_catalog.dart';
 import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/ui/game/climate_ground.dart';
 import 'package:kenoma/ui/game/climate_painter.dart';
@@ -23,7 +22,7 @@ import 'package:kenoma/world/visual_map.dart';
 import '../support/fixtures.dart';
 
 void main() {
-  final catalog = ClimateCatalog.fromJson(loadJson('assets/data/clima.json'));
+  final catalog = loadClimateCatalog();
   final e7 = loadEpochs().epochs.firstWhere((e) => e.id == 7).climate!;
   const view = ui.Size(200, 300);
   final mpc = metersPerCell(-22.8174);

@@ -72,10 +72,8 @@ Future<({SessionLogStore store, FakeExporter exporter})> pumpMenu(WidgetTester t
 
   // O cache de assets guarda o Future do teste anterior, que morreu com a zona dele.
   // Recarregar na zona real deixa o menu carregar em qualquer teste.
-  for (final name in ['balance', 'creatures', 'items', 'epochs', 'biomes']) {
-    rootBundle.evict('assets/data/$name.json');
-  }
-  rootBundle.evict('assets/regions/campinas_e0.bin');
+  // Todos os assets: dois testes que abrem o mapa do jogo leem muito mais que estes (0.21.0).
+  rootBundle.clear();
   await tester.runAsync(TuningData.load);
   await tester.pumpWidget(MaterialApp(home: TuningDebugMenu(store: store, exporter: exporter, devTools: tools, prefs: DebugPrefs(defaultOpen: true), saveStore: MemorySaveStore())));
   for (var i = 0; i < 300 && find.text('INICIAR SINTONIA').evaluate().isEmpty; i++) {
@@ -435,6 +433,51 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('MAPA DO JOGO'), findsOneWidget, reason: 'o < volta ao menu');
     });
+
+    testWidgets('0.21.0, o bug do debug: reabrir o mapa enquanto o outro ainda sai não empilha dois nem dá setState no build', (tester) async {
+      final tools = newTools();
+      await pumpMenu(tester, tools: tools);
+      await tools.setUseSimulator(true);
+      await tester.pump();
+      Future<void> settleMap() async {
+        await tester.pump(const Duration(milliseconds: 500));
+        for (var i = 0; i < 400 && (find.text('Carregando mapa...').evaluate().isNotEmpty || find.byKey(const Key('mode-seal')).evaluate().isEmpty); i++) {
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+          await tester.pump(const Duration(milliseconds: 50));
+        }
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      await tapVisible(tester, find.text('ABRIR MAPA DO JOGO'));
+      await tester.pump();
+      await settleMap();
+      expect(find.byType(GameMapScreen), findsOneWidget);
+      await tapVisible(tester, find.byKey(const Key('mode-seal')));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      await tester.tap(find.byKey(const Key('open-debug-menu')));
+      await tester.pump(const Duration(milliseconds: 60)); // o mapa ainda está saindo
+      await tester.tap(find.text('ABRIR MAPA DO JOGO'), warnIfMissed: false);
+      tools.force.toggleEvent('vigil'); // o DevTools avisa com os dois mapas na árvore
+      tools.force.toggleEvent('vigil');
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await settleMap();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(GameMapScreen, skipOffstage: false), findsOneWidget, reason: 'um mapa só, o novo, depois de o velho fechar');
+      await tester.tap(find.byKey(const Key('mode-seal')));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      await tester.tap(find.byKey(const Key('open-debug-menu')));
+      await tester.pumpAndSettle();
+      expect(find.text('MAPA DO JOGO'), findsOneWidget);
+    });
+
 
     testWidgets('o relógio sobreposto vale também no mapa livre: depois do fim da época o mundo está desatualizado', (tester) async {
       final tools = newTools();

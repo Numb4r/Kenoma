@@ -4,18 +4,22 @@
 library;
 
 import '../core/climate.dart' show ClimateSource;
+export 'climate_outlook.dart' show OutlookEvent;
 import '../data/climate_catalog.dart';
 import 'climate_outlook.dart';
 import 'climate_world.dart';
 
 /// Uma janela de clima: de quando a quando, o id do clima e o motivo, se não foi o sorteio da estação.
 class SkyWindow {
-  const SkyWindow({required this.startUtc, required this.endUtc, required this.climateId, this.reason});
+  const SkyWindow({required this.startUtc, required this.endUtc, required this.climateId, this.reason, this.events = const []});
 
   final int startUtc;
   final int endUtc;
   final String climateId;
   final String? reason;
+
+  /// Época 12: os eventos por cima do clima nesta janela.
+  final List<OutlookEvent> events;
 }
 
 /// As [count] janelas a partir da que contém `nowUtc`, no lugar do jogador.
@@ -28,6 +32,6 @@ SkyOutlook cellSkyOutlook(ClimateWorld world, {required double Function() lat, r
       final o = climateOutlook(world: world, catalog: catalog, lat: lat(), lon: lon(), nowUtc: now, windows: count - 1);
       return [
         for (final w in [o.now, ...o.next])
-          SkyWindow(startUtc: w.startUtc, endUtc: w.endUtc, climateId: w.climate, reason: w.source == ClimateSource.season ? null : w.reason),
+          SkyWindow(startUtc: w.startUtc, endUtc: w.endUtc, climateId: w.climate, reason: w.source == ClimateSource.season ? null : w.reason, events: w.events),
       ];
     };

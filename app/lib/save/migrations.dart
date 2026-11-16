@@ -6,7 +6,7 @@ import '../player/game_state.dart' show kVisitedCellsKey, saveSchemaVersion;
 
 typedef _Step = Map<String, dynamic> Function(Map<String, dynamic>);
 
-final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8};
+final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8, 8: _v8ToV9};
 
 /// Leva [json] ao schema atual. Um save de versão futura passa sem mudar.
 Map<String, dynamic> migrateSave(Map<String, dynamic> json) {
@@ -131,5 +131,29 @@ Map<String, dynamic> _v7ToV8(Map<String, dynamic> j) {
   final out = {...j};
   final pin = out.remove('bestiary_pin');
   if (pin is String) out['bestiary_pins'] = [pin];
+  return out;
+}
+
+/// v8 guardava no Bestiário o clima de cada avistamento com os ids de antes da época 12. A Chuva Carmim e a Garoa
+/// Prismática deixaram de ser climas (0.21.0): viram a Lua Carmim e o Prisma do Véu tingindo a chuva e a garoa. A marca
+/// antiga vira as duas novas (o evento e o clima embaixo), e a pesquisa que pedia a Chuva Carmim passa a pedir a Lua Carmim.
+/// Os outros eventos mantiveram o id. O resto passa intacto.
+Map<String, dynamic> _v8ToV9(Map<String, dynamic> j) {
+  const moved = {
+    'climate:crimson_rain': ['climate:crimson_moon', 'climate:rain'],
+    'climate:prismatic_drizzle': ['climate:veil_prism', 'climate:drizzle'],
+  };
+  final out = {...j};
+  final b = out['bestiary'] as Map<String, dynamic>?;
+  if (b == null) return out;
+  out['bestiary'] = {
+    for (final e in b.entries)
+      e.key: () {
+        final m = e.value as Map<String, dynamic>;
+        final when = (m['when'] as List<dynamic>?)?.cast<String>();
+        if (when == null || !when.any(moved.containsKey)) return m;
+        return {...m, 'when': ({for (final w in when) ...moved[w] ?? [w]}.toList()..sort())};
+      }(),
+  };
   return out;
 }

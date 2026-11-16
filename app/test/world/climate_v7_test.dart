@@ -9,7 +9,6 @@ import 'package:kenoma/core/climate.dart';
 import 'package:kenoma/core/fnv.dart';
 import 'package:kenoma/core/seed.dart';
 import 'package:kenoma/core/tiles.dart';
-import 'package:kenoma/data/climate_catalog.dart';
 import 'package:kenoma/data/visual_pack.dart';
 import 'package:kenoma/world/climate_outlook.dart';
 import 'package:kenoma/world/climate_world.dart';
@@ -54,7 +53,7 @@ int climateFingerprint(ClimateModel m, int seed, int epochId) {
 void main() {
   final seed = seedGlobal('KENOMA-TESTE');
   final data = loadGameData();
-  final catalog = ClimateCatalog.fromJson(loadJson('assets/data/clima.json'));
+  final catalog = loadClimateCatalog();
   final e7 = loadEpochs().epochs.firstWhere((e) => e.id == 7);
   final (cx20, cy20) = latLonToTile(-22.8174, -47.0697, 20); // Unicamp
   final x21 = cx20 * 2.0 + 1, y21 = cy20 * 2.0 + 1;

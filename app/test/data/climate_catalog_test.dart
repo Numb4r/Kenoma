@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/climate.dart';
-import 'package:kenoma/data/climate_catalog.dart';
 import 'package:kenoma/ui/game/climate_ground.dart' show groundLayerKinds, groundStyles, markStyles;
 import 'package:kenoma/ui/game/climate_layers.dart' show screenLayerKinds;
 import 'package:kenoma/ui/game/moon_hud.dart' show WeatherGlyphPainter;
@@ -14,14 +13,15 @@ const _groundShapes = {'glint', 'frost', 'leaf', 'branch', 'ember', 'streak', 'f
 const _skyStyles = {'bolt', 'meteor', 'fall'};
 
 void main() {
-  final catalog = ClimateCatalog.fromJson(loadJson('assets/data/clima.json'));
+  final catalog = loadClimateCatalog();
   final e6 = loadEpochs().epochs.firstWhere((e) => e.id == 6).climate!;
   final model = loadEpochs().epochs.firstWhere((e) => e.id == 7).climate!;
 
   test('os 44 climas do GDD rev 328 carregam: 17 nativos, 11 de outras regiões e 16 místicos; a época 6 segue com os 36', () {
     expect(model.defs.length, 44);
     expect(e6.defs.length, 36);
-    expect(catalog.climates.keys.toSet(), model.defs.keys.toSet());
+    // Da 0.21.0 os eventos moram no `eventos.json`; a Lua Carmim e o Prisma do Véu são os ids novos dos dois tingimentos.
+    expect({...catalog.climates.keys, ...catalog.eventInfos.keys}.difference({'crimson_moon', 'veil_prism'}), model.defs.keys.toSet());
     expect(model.defs.keys, containsAll(e6.defs.keys));
     int n(ClimateCategory c) => model.defs.values.where((d) => d.category == c).length;
     expect((n(ClimateCategory.native), n(ClimateCategory.otherRegion), n(ClimateCategory.mystic)), (17, 11, 16));
@@ -112,7 +112,7 @@ void main() {
     expect(p.climates, ['rift_wind', 'echo_storm']);
     expect(p.note, 'Data a definir.');
     for (final c in p.climates) {
-      expect(catalog.climates, contains(c));
+      expect(catalog.eventInfos, contains(c), reason: 'da 0.21.0 são eventos');
     }
     // Sem data, nada muda no mundo: nenhuma época tem regra de calendário para esses climas (só o debug os mostra).
     final epochs = (loadJson('assets/data/epochs.json')['epochs'] as List<dynamic>).cast<Map<String, dynamic>>();

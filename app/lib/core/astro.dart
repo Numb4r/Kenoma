@@ -27,6 +27,23 @@ double sunAltitudeDeg(double latDeg, double lonDeg, int utcSeconds) {
   return math.asin(sinAlt.clamp(-1.0, 1.0)) / _deg;
 }
 
+/// Azimute do sol, em graus a partir do norte no sentido horário (90 é leste), em ([latDeg], [lonDeg]) no instante
+/// [utcSeconds]. A mesma posição solar de [sunAltitudeDeg]. Só desenho: a sombra projetada dos prédios no laboratório visual.
+double sunAzimuthDeg(double latDeg, double lonDeg, int utcSeconds) {
+  final n = julianDay(utcSeconds) - 2451545.0;
+  final meanLon = (280.460 + 0.9856474 * n) % 360;
+  final anomaly = ((357.528 + 0.9856003 * n) % 360) * _deg;
+  final eclLon = (meanLon + 1.915 * math.sin(anomaly) + 0.020 * math.sin(2 * anomaly)) * _deg;
+  final obliquity = (23.439 - 0.0000004 * n) * _deg;
+  final ra = math.atan2(math.cos(obliquity) * math.sin(eclLon), math.cos(eclLon));
+  final dec = math.asin(math.sin(obliquity) * math.sin(eclLon));
+  final gmst = (280.46061837 + 360.98564736629 * n) % 360;
+  final h = ((gmst + lonDeg) * _deg) - ra;
+  final lat = latDeg * _deg;
+  final az = math.atan2(-math.sin(h), math.tan(dec) * math.cos(lat) - math.sin(lat) * math.cos(h)) / _deg;
+  return (az + 360) % 360;
+}
+
 /// A luz do mapa numa dada altura do sol.
 class DayLight {
   const DayLight({required this.night, required this.warm});

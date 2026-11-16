@@ -187,8 +187,15 @@ class VeilCalendar {
       });
 
   /// O evento da janela [window] (meio em [midUtc]), ou `null`. [skipped] tira regras pelo id (o feed assinado).
-  CalendarHit? at(int seed, int window, int midUtc, {bool Function(String id)? skipped}) {
-    if (rules.isEmpty) return null;
+  CalendarHit? at(int seed, int window, int midUtc, {bool Function(String id)? skipped}) => _hits(seed, window, midUtc, skipped, first: true).firstOrNull;
+
+  /// Época 12: todas as regras que batem no instante [midUtc] (o clima e os eventos do dia podem vir de regras diferentes),
+  /// na ordem da lista. [window] é a janela de 3 h da chance.
+  List<CalendarHit> allAt(int seed, int window, int midUtc, {bool Function(String id)? skipped}) => _hits(seed, window, midUtc, skipped, first: false);
+
+  List<CalendarHit> _hits(int seed, int window, int midUtc, bool Function(String id)? skipped, {required bool first}) {
+    final out = <CalendarHit>[];
+    if (rules.isEmpty) return out;
     final local = DateTime.fromMillisecondsSinceEpoch((midUtc + localOffsetH * 3600) * 1000, isUtc: true);
     List<Map<int, String>>? picks;
     for (final (i, r) in rules.indexed) {
@@ -204,8 +211,9 @@ class VeilCalendar {
         climate = r.climate!;
       }
       if (r.chance < 1 && Pcg32(fnv1a64([seed, window, fnv1a64Bytes(r.id.codeUnits), saltCalendar]), saltKenoma).nextFloat() >= r.chance) continue;
-      return (rule: r, climate: climate);
+      out.add((rule: r, climate: climate));
+      if (first) break;
     }
-    return null;
+    return out;
   }
 }

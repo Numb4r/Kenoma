@@ -4,7 +4,6 @@ import 'dart:ui' as ui;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/climate.dart';
 import 'package:kenoma/core/tiles.dart';
-import 'package:kenoma/data/climate_catalog.dart';
 import 'package:kenoma/ui/game/climate_ground.dart';
 import 'package:kenoma/ui/game/draw_order.dart';
 import 'package:kenoma/world/map_camera.dart';
@@ -52,7 +51,7 @@ void main() {
   });
 
   group('a camada do mapa do clima se divide em chão, sombras e ar', () {
-    final catalog = ClimateCatalog.fromJson(loadJson('assets/data/clima.json'));
+    final catalog = loadClimateCatalog();
     final e7 = loadEpochs().epochs.firstWhere((e) => e.id == 7).climate!;
     final mpc = metersPerCell(-22.8174);
     const view = ui.Size(200, 300), x = 1548400.5, y = 2370520.25, t = 1900000000;

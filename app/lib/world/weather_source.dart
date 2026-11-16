@@ -99,7 +99,7 @@ class OpenMeteoSource implements WeatherSource {
 
 /// Junta o determinístico e a rede: [shown] é o que se vê agora. [refresh] busca na rede quando ela está ligada.
 class WeatherService {
-  WeatherService({required this.deterministic, required this.source, required this.online});
+  WeatherService({required this.deterministic, required this.source, required this.online, this.worldClimateWins});
 
   /// O clima determinístico de (lat, lon) no instante: sempre existe.
   final String Function(double lat, double lon, int tUtc) deterministic;
@@ -108,18 +108,26 @@ class WeatherService {
   /// Se o interruptor "clima pela internet" está ligado (lido a cada vez).
   final bool Function() online;
 
+  /// Época 12: o clima do mundo vale por cima do da rede (o do calendário ou do feed substitui o clima real enquanto dura).
+  final bool Function(double lat, double lon, int tUtc)? worldClimateWins;
+
   final _cache = <(double, double, int), String>{};
   final _asked = <(double, double, int)>{};
 
   (double, double, int) _key(double lat, double lon, int tUtc) => (roundToKm(lat), roundToKm(lon), tUtc ~/ 10800);
 
-  /// O clima que se vê: o da rede, se está ligado e já chegou, senão o determinístico.
+  /// O clima que se vê: o da rede, se está ligado e já chegou, senão o determinístico. Da época 12, os eventos do mundo
+  /// (`clima+evento`) ficam por cima do clima da rede.
   String shown(double lat, double lon, int tUtc) {
+    final det = deterministic(lat, lon, tUtc);
     if (online()) {
       final cached = _cache[_key(lat, lon, tUtc)];
-      if (cached != null) return cached;
+      if (cached != null && !(worldClimateWins?.call(lat, lon, tUtc) ?? false)) {
+        final i = det.indexOf('+');
+        return i < 0 ? cached : '$cached${det.substring(i)}';
+      }
     }
-    return deterministic(lat, lon, tUtc);
+    return det;
   }
 
   /// Pede o clima da rede para esta posição e janela (uma vez por janela e quadra de ~1 km). Nada acontece com a rede

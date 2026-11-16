@@ -117,7 +117,7 @@ String seedWeatherOfCell(EpochSchedule schedule, int seed, int cx, int cy, int t
     climateIdOfCell(schedule, seed, cx, cy, t, events: events);
 
 /// As peças do clima (o Eco do raio, granizo, poças...) do mundo de [state]: as mesmas no mapa e na Patrulha.
-ClimateWorld climateWorldFor({required GameState state, required GameData data, required MapAssets assets, String? Function()? forced, ForcedPhase Function()? forcedPhase}) => ClimateWorld(
+ClimateWorld climateWorldFor({required GameState state, required GameData data, required MapAssets assets, String? Function()? forced, List<String> Function()? forcedEvents, ForcedPhase Function()? forcedPhase}) => ClimateWorld(
       seed: state.seed,
       schedule: data.schedule,
       speciesOfType: data.ecoOfType,
@@ -138,6 +138,7 @@ ClimateWorld climateWorldFor({required GameState state, required GameData data, 
       typeOf: (id) => data.species(id)?.type.name,
       streets: assets.visual == null ? null : StreetDirs(assets.visual!),
       forced: forced,
+      forcedEvents: forcedEvents,
       forcedPhase: forcedPhase,
     );
 

@@ -2,6 +2,8 @@ import '../../dev/tap_latency.dart';
 import '../../core/features.dart';
 import 'dart:async';
 
+import 'package:flutter/scheduler.dart' show SchedulerBinding, SchedulerPhase;
+
 import 'dart:ui' as ui;
 
 import 'package:flame/game.dart';
@@ -36,6 +38,7 @@ import '../../player/conjurer_balance.dart' show School;
 import '../../player/mark.dart';
 import '../../player/progression.dart' show localDay;
 import '../../dev/dev_tools.dart';
+import '../../save/ksv_save_store.dart';
 import '../../player/game_session.dart';
 import '../../save/fresh_start.dart';
 import '../../save/save_store.dart';
@@ -65,7 +68,7 @@ import '../patrol/patrol_screen.dart';
 import '../travel/routes_screen.dart';
 import '../../travel/ride.dart' show RideState;
 import '../../world/sky_outlook.dart';
-import '../../world/climate_outlook.dart' show nextCalendarEvent;
+import '../../world/climate_outlook.dart' show nextCalendarItems, stackLine;
 import '../../world/dew_prism.dart';
 import '../../core/climate.dart' show RainbowArc;
 import '../../story/local_notifier.dart';
@@ -79,6 +82,7 @@ import '../travel/travel_layer.dart';
 import '../travel/travel_overlay.dart';
 import '../settings/settings_screen.dart';
 import 'game_map_game.dart';
+import 'spawn_painter.dart' show mapVariantKeys;
 import 'hud_bar.dart';
 import 'hud_layout.dart';
 import 'joystick.dart';
@@ -538,6 +542,18 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _live = this;
+    _route = ModalRoute.of(context);
+  }
+
+  ModalRoute<Object?>? _route;
+
+  /// Completa quando este mapa termina de fechar (o debug espera antes de abrir outro).
+  final _closed = Completer<void>();
+
+  @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
@@ -548,9 +564,23 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     tools.clock.addListener(_rebuild);
   }
 
+  /// Os ouvintes do [DevTools] e do relógio podem ser avisados no meio de um build (outro mapa ainda saindo, um item do
+  /// debug): aí o redesenho fica para depois do quadro, sem "setState during build".
   void _rebuild() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      if (_rebuildQueued) return;
+      _rebuildQueued = true;
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        _rebuildQueued = false;
+        if (mounted) setState(() {});
+      });
+      return;
+    }
+    setState(() {});
   }
+
+  bool _rebuildQueued = false;
 
   Future<Object> _load() async {
     final dpr = View.of(context).devicePixelRatio;
@@ -568,6 +598,14 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       familiar = await loadFamiliarImage();
       for (final s in data.tuning.species) {
         sprites[s.id] = (await EcoSprite.loadMap(s.id)).normal;
+      }
+      // 0.21.0: cada variante com o valor e o acessório dela (`species@variante`) e o neon da Iluminada (`@lit#glow`),
+      // montados na hora (sem fila de decodificação).
+      for (final s in data.tuning.species) {
+        for (final v in mapVariantKeys) {
+          sprites['${s.id}@$v'] = EcoSprite.loadMapVariant(s.id, v);
+        }
+        if (EcoSprite.loadMapGlow(s.id, 'lit') case final g?) sprites['${s.id}@lit#glow'] = g;
       }
       var version = _version;
       try {
@@ -593,7 +631,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     tools.clock.raiseFloor(session.state.lastSeenUtc);
     session.onSeen = tools.clock.raiseFloor;
     // O clima do mundo: o modelo é o da época ATIVA naquele instante (nunca o da mais nova); o debug pode forçar qualquer id.
-    final climate = climateWorldFor(state: session.state, data: data, assets: assets, forced: () => tools.force.weather, forcedPhase: tools.force.phase);
+    final climate = climateWorldFor(state: session.state, data: data, assets: assets, forced: () => tools.force.weather, forcedEvents: () => tools.force.events, forcedPhase: tools.force.phase);
     final world = worldViewFor(
       state: session.state,
       data: data,
@@ -860,6 +898,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   @override
   void dispose() {
+    if (identical(_live, this)) _live = null;
+    _closed.complete();
     WidgetsBinding.instance.removeObserver(this);
     if (!_restarting) unawaited(WakelockPlus.disable().catchError((_) {}));
     tools.removeListener(_rebuild);
@@ -942,7 +982,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             catalog: r.data.climates,
             shown: streetLifeEnabled ? () => _climate!.info : null,
             outlook: streetLifeEnabled ? cellSkyOutlook(_climate!.world, lat: () => r.game.playerLat, lon: () => r.game.playerLon, catalog: r.data.climates) : null,
-            nextEvent: streetLifeEnabled ? (now) => nextCalendarEvent(world: _climate!.world, catalog: r.data.climates, nowUtc: now) : null,
+            calendar: streetLifeEnabled ? (now) => nextCalendarItems(world: _climate!.world, catalog: r.data.climates, nowUtc: now) : null,
             prisms: () => r.session.state.count(dewPrismId),
             usePrism: streetLifeEnabled ? () => _usePrism(r) : null,
           ),
@@ -1026,7 +1066,19 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       if (tools.clock.overridden) 'RELÓGIO UTC ${_StatusLines.utc(tools.clock.now)} (OVERRIDE)',
       if (s.status != TrackingStatus.tracking) _StatusLines.line(s, tools),
       ?_simLine(r),
+      ?_stackLine(r),
     ];
+  }
+
+  /// Época 12: a pilha do clima no lugar (clima, eventos com a origem, combinações), quando há evento ou algo forçado.
+  String? _stackLine(_Ready r) {
+    final cw = _climate?.world;
+    if (cw == null || !r.game.avatar.hasPosition) return null;
+    final (cx, cy) = latLonToTile(r.game.playerLat, r.game.playerLon, 20);
+    final now = tools.clock.nowUtc;
+    final cause = cw.causeAt(cx, cy, now);
+    final forced = tools.force.weather != null || tools.force.events.isNotEmpty;
+    return stackLine(cause, r.data.climates, cw.modelAt(now)?.$2, forced: forced);
   }
 
   /// A Simulação de clima do debug: o clima, a fase e a velocidade, na zona de avisos (não cobre o HUD).
@@ -1353,4 +1405,23 @@ class _StatusLines extends StatelessWidget {
   static String utc(DateTime t) =>
       '${t.year}-${t.month.toString().padLeft(2, '0')}-${t.day.toString().padLeft(2, '0')} '
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+}
+
+/// O mapa do jogo vivo agora (um só), e quando ele termina de fechar.
+_GameMapScreenState? _live;
+
+/// Abre o mapa do jogo pelo debug sem empilhar outro: se já há um mapa na pilha, volta até ele; se um mapa ainda está
+/// saindo (a animação de voltar ao menu), espera ele fechar e só então abre o novo.
+Future<void> openGameMap(BuildContext context, DevTools tools) async {
+  final nav = Navigator.of(context);
+  final live = _live;
+  final route = live?._route;
+  if (live != null && live.mounted && route != null && route.isActive) {
+    nav.popUntil((r) => r == route);
+    return;
+  }
+  // Um mapa que ainda sai: espera ele fechar (no máximo 2 s; um que já saiu da árvore não conta).
+  if (live != null && live.mounted) await live._closed.future.timeout(const Duration(seconds: 2), onTimeout: () {});
+  if (!nav.mounted) return;
+  await nav.push(MaterialPageRoute<void>(builder: (_) => GameMapScreen(tools: tools, openStore: KsvSaveStore.inDocuments)));
 }

@@ -90,7 +90,7 @@ void main() {
       expect(taskProgress(see('clod.eco'), 'clod.eco', b), 0, reason: 'precisa dos dois');
       seen('clod.eco', {'day', 'night'});
       expect(taskProgress(see('clod.eco'), 'clod.eco', b), 1);
-      seen('wyrm.eco', {'night', 'climate:crimson_rain'});
+      seen('wyrm.eco', {'night', 'climate:crimson_moon'});
       expect(taskProgress(see('wyrm.eco'), 'wyrm.eco', b), 1);
       expect(seenTags(sunAltDeg: 5.9), {'twilight'});
       expect(seenTags(sunAltDeg: -5.9), {'twilight'});

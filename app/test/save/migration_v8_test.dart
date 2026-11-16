@@ -22,7 +22,7 @@ void main() {
 
   test('v7 vira v8: a marca única vira a lista, e o resto passa intacto', () {
     final out = migrateSave(real);
-    expect(out['schema_version'], 8);
+    expect(out['schema_version'], saveSchemaVersion);
     expect(out['bestiary_pins'], ['shade.eco']);
     expect(out.containsKey('bestiary_pin'), isFalse);
     for (final k in real.keys.where((k) => k != 'schema_version' && k != 'bestiary_pin')) {

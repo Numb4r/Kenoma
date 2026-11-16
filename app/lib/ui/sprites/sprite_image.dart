@@ -9,6 +9,7 @@ import '../../core/species_ids.dart';
 import 'phase1_sprites.dart';
 import 'sprite_data.dart';
 import 'sprite_downscale.dart';
+import 'variant_art.dart';
 
 const int spriteSize = 48;
 
@@ -36,6 +37,22 @@ Uint8List spritePixels(List<String> rows, {bool brightSeams = false, Map<String,
     }
   }
   return bytes;
+}
+
+/// O mesmo sprite, montado na hora (sem decodificar): para as centenas de variantes pequenas do mapa, sem fila de
+/// decodificação.
+ui.Image spriteToImageSync(List<String> rows, {Map<String, int> palette = spritePalette}) {
+  final rec = ui.PictureRecorder();
+  final c = ui.Canvas(rec);
+  final p = ui.Paint()..isAntiAlias = false;
+  for (var y = 0; y < rows.length; y++) {
+    for (var x = 0; x < rows[y].length; x++) {
+      final ch = rows[y][x];
+      if (ch == '.') continue;
+      c.drawRect(ui.Rect.fromLTWH(x + 0.0, y + 0.0, 1, 1), p..color = ui.Color(palette[ch] ?? (throw StateError('Caractere sem cor no sprite: "$ch"'))));
+    }
+  }
+  return rec.endRecording().toImageSync(rows.length, rows.length);
 }
 
 Future<ui.Image> spriteToImage(List<String> rows, {bool brightSeams = false, Map<String, int> palette = spritePalette}) {
@@ -101,6 +118,21 @@ class EcoSprite {
   /// O Eco redesenhado na grade do mapa ([mapEcoPx] pixels de lado), para o mapa de jogo.
   static Future<EcoSprite> loadMap(String speciesId) =>
       _from(downscaleRows(ecoSpriteRows(speciesId), tierOfId(speciesId) == SpeciesTier.spirit ? mapSpiritPx : mapEcoPx), spritePaletteOf(speciesId));
+
+  /// 0.21.0: a variante [variant] (`urban`, `lit`, `shiny`...) no tamanho do mapa, com o valor e o acessório de
+  /// `variant_art.dart`. O acessório entra na votação da redução, senão some.
+  static ui.Image loadMapVariant(String speciesId, String variant) {
+    final px = tierOfId(speciesId) == SpeciesTier.spirit ? mapSpiritPx : mapEcoPx;
+    return spriteToImageSync(downscaleRows(variantRows(ecoSpriteRows(speciesId), variant), px, keep: ecoIdentity + variantIdentity), palette: variantPalette(spritePaletteOf(speciesId), variant));
+  }
+
+  /// O contorno de luz neon da Iluminada no tamanho do mapa (por baixo do sprite), ou `null` nas outras variantes.
+  static ui.Image? loadMapGlow(String speciesId, String variant) {
+    final glow = variantGlowRows(ecoSpriteRows(speciesId), variant);
+    if (glow == null) return null;
+    final px = tierOfId(speciesId) == SpeciesTier.spirit ? mapSpiritPx : mapEcoPx;
+    return spriteToImageSync(downscaleRows(glow, px, keep: 'N'), palette: variantPalette(spritePaletteOf(speciesId), variant));
+  }
 
   static Future<EcoSprite> _from(List<String> rows, [Map<String, int> palette = spritePalette]) async =>
       EcoSprite(await spriteToImage(rows, palette: palette), await spriteToImage(rows, brightSeams: true, palette: palette));

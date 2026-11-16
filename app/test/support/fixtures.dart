@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:kenoma/data/climate_catalog.dart';
 import 'package:kenoma/core/biomes.dart';
 import 'package:kenoma/core/epochs.dart';
 import 'package:kenoma/data/game_data.dart';
@@ -47,7 +48,11 @@ GameData loadGameData() => GameData.fromJson(
       forum: loadJson('assets/data/forum.json'),
       rituals: loadJson('assets/data/rituals.json'),
       climates: loadJson('assets/data/clima.json'),
+      events: loadJson('assets/data/eventos.json'),
     );
+
+/// O visual dos climas e dos eventos (`clima.json` e `eventos.json`, época 12).
+ClimateCatalog loadClimateCatalog() => ClimateCatalog.fromJson(loadJson('assets/data/clima.json'), loadJson('assets/data/eventos.json'));
 
 /// As épocas até [lastId]: para testes que descrevem uma época que já ficou para trás (a seguinte começa no release).
 EpochSchedule loadEpochsUpTo(int lastId) {

@@ -219,6 +219,7 @@ class SpawnField {
       climateMult: def == null || def.spawn.isEmpty ? null : def.spawn,
       shinyMult: def?.modifier?.shinyMult ?? 1,
       variantMult: def?.modifier?.variantMult ?? 1,
+      shinyTypeMult: def?.modifier?.shinyTypeMult ?? const {},
       typeOf: typeOf,
       snapper: snapper,
       context: contextOf(epoch, cx, cy, windowStart, weather),
