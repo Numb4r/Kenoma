@@ -1,11 +1,22 @@
 # Checklist do celular
 
 O que precisa ser conferido no moto g54 quando a versão for instalada nele. É cumulativo: cobre tudo desde a última versão
-que está no celular (hoje a **0.20.2**, mais as pendências da 0.20.0 e da 0.20.1), e cada versão nova acrescenta os itens
+que está no celular (hoje a **0.20.2**, mais as pendências da 0.20.0 e da 0.20.1; a 0.20.3, a 0.20.4 e a 0.21.0 ainda não foram para o celular), e cada versão nova acrescenta os itens
 dela. **Um item só sai daqui quando o relatório confirmar que passou.** A ordem vai da versão mais nova para a mais antiga;
 as pendências antigas ficam no fim. O código entre crases é o id do item (o workbench guarda as notas por ele: não mude).
 
 Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`) e o Kenoma em primeiro plano.
+
+## 0.21.0
+
+- [ ] `0210-pilha-sexta13` **Vigília e Tempestade juntas.** Debug, "Clima forçado" Tempestade e "Eventos forçados" Vigília: chove inclinado com raio, os olhos aparecem no alto, e a linha de aviso mostra "PILHA TEMPESTADE · EVENTOS VIGÍLIA · COMBINAÇÃO VIGÍLIA COM TEMPESTADE"; os raios caem nos olhares quando há um por perto.
+- [ ] `0210-ceu-camadas` **O app Céu separa clima e evento.** Com a Lua Carmim forçada sobre a Chuva: "Clima agora" mostra Chuva, "Eventos ativos" mostra a Lua Carmim com até quando vale, e o Calendário do Véu lista os próximos três, marcados como clima ou evento.
+- [ ] `0210-lua-carmim` **A Lua Carmim tinge a chuva e, com sol, fica só no céu.** Forçada sobre Chuva: gotas e poças vermelhas, HUD "Chuva Carmim · Lua Carmim". Forçada sobre Limpo: só o tom vermelho, nada caindo.
+- [ ] `0210-laboratorio` **O Laboratório visual no aparelho.** Debug, "Laboratório visual": o quarteirão da Praça Ramos de Azevedo abre, o arrastar move, o giro gira o mapa e o céu junto, e os botões Antes, Depois, Manhã, Meio-dia, Pôr do sol, Noite, Chuva e Vigília + Tempestade trocam a cena. Os pixels de arte ficam nítidos (3 dp), sem borrão.
+- [ ] `0210-laboratorio-desempenho` **Desempenho do laboratório.** Na build de release, a linha de baixo do laboratório mostra o custo do quadro: anote o de Antes e o de Depois ao meio-dia e à noite (no emulador, na build de debug, deu 0,4 ms antes e 17 a 47 ms depois; só a comparação vale).
+- [ ] `0210-variantes-rua` **As variantes se leem na rua, ao sol.** Com o debug forçando variante no próximo Eco (e o Brilhante), ande até ver uma de cada: dá para dizer qual é pelo acessório (abafador, broto, pingos, telhado, neon, auréola, chifres, estrela) sem chegar perto, com o brilho da tela no automático, ao sol. O Brilhante é o único que pisca.
+- [ ] `0210-reabrir-mapa` **Reabrir o mapa pelo debug não empilha.** No mapa, selo de modo, "Menu de debug", e logo "Abrir mapa do jogo": abre um mapa só, sem tela vermelha de "setState during build".
+- [ ] `0210-save-v9` **O save sobe para o schema 9 sem perder nada.** Ao instalar por cima da 0.20.x: a coleção, a Bolsa e o Bestiário continuam; Debug, Assinaturas, mostra o schema 9.
 
 ## 0.20.4
 

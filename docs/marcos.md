@@ -704,3 +704,47 @@ Novos: `test/dev/emulator_test` (emulador sem recompensa), `test/world/layer_has
 
 - Uma vez, ao abrir o mapa do jogo pelo menu de debug aberto de dentro do mapa (o que empilha dois mapas), a build de debug mostrou "setState() or markNeedsBuild() called during build" no `GameMapScreen`. Não se repetiu na mesma posição; fica anotado.
 - **Falta:** o APK de release 0.20.4 no PC e a instalação no moto g54, e o checklist inteiro no celular.
+
+## Fase 1 · fatia 8f · Clima e evento em camadas, laboratório visual e variantes legíveis (0.21.0)
+
+GDD rev 356 (commit próprio). Versão 0.21.0+37, save no schema 9. Feita no notebook, só com builds de debug no emulador; o celular continua fora e o que só dá para ver nele foi para o `docs/checklist-celular.md`.
+
+### Clima e evento em camadas (época 12)
+
+- A mudança entrou na **época 12**, que ainda não foi publicada (começa 2026-12-07 16:00 UTC); as épocas 0 a 11 ficaram idênticas (conferido bloco a bloco). Não foi preciso abrir a 13.
+- O clima é um de cada vez; até dois eventos por cima, com duração própria e uma agenda por região z12 e dia (`app/lib/core/climate_events.dart`). O terceiro espera a vaga (prioridade feed, astronomia, calendário, sorteio); o evento sem o requisito (dia, noite, clima) espera. A pilha `clima+evento+evento` monta uma definição só: peças do clima com os fluxos de sempre, peças do evento com fluxo próprio, spawn somado com teto de +++ (3,0) e piso de 0,3, modificadores juntos. A camada base sai da pilha.
+- Reclassificação pelas tabelas do GDD: 13 climas viraram eventos com o mesmo id; a Chuva Carmim e a Garoa Prismática viraram o tingimento dos eventos Lua Carmim (`crimson_moon`) e Prisma do Véu (`veil_prism`). As três combinações (Vigília com Tempestade, Lua Carmim com Tempestade, Aurora com Neve) e nada além. As poças vermelhas e o raio da Lua Carmim dão Carmesins de verdade (variante no `PieceSpawn`).
+- Dados: os climas e os eventos em blocos separados da época 12 (`climates`, `events`, `combos`) e o visual em dois arquivos (`clima.json`, `eventos.json`). Detalhes, decisões e a tabela de cada evento em `docs/clima-auditoria.md` ("Clima e evento em camadas").
+- O clima do calendário e do feed ganha do Open-Meteo; os eventos do mundo ficam por cima do clima da rede.
+- App Céu: clima e eventos ativos separados, os eventos de cada janela e os três próximos itens do calendário do Véu, marcados como clima ou evento. Debug: "Eventos forçados" (até dois, independentes do clima) e a linha da pilha nos avisos do mapa.
+- Save 8 → 9: as marcas `climate:crimson_rain` e `climate:prismatic_drizzle` do Bestiário viram o evento e o clima embaixo; a pesquisa do Wyrm pede a Lua Carmim.
+
+### Laboratório visual (debug)
+
+- "Laboratório visual" em Mapa e câmera: o quarteirão da Praça Ramos de Azevedo (OSM, `app/assets/lab/centro_bloco.json`: praça, comércio nas avenidas, casas), com antes e depois, hora, giro, clima e até dois eventos, e o custo do quadro. Nada entra no mapa principal até a aprovação.
+- O `criativo` conduziu: `docs/art/estilo-mapa.md` (paleta, pixel de 3 dp, regras de cada elemento e onde mora o céu dos eventos) e `app/lib/ui/sprites/map_style.dart` (paleta, chão por bioma com pontilhado, carimbos, paredes e telhados por tipo, curva de luz, céu). O renderizador (`app/lib/ui/lab/`) faz a altura falsa do GTA 2 a partir do centro da tela (funciona girando), a sombra pelo sol de verdade (`sunAzimuthDeg`, com teste), a sombra sobre o telhado vizinho, quintal e muro no Residencial, piso claro e neon no Iluminado, terreno baldio no Vazio, árvores, postes e, à noite, poças de luz, janelas e neon. A faixa do céu no topo leva o sol, a lua, as nuvens e a parte de céu dos eventos.
+- O Blender e o Aseprite não foram usados: o `criativo` não tem acesso ao MCP e a arte saiu como dado de pixel em código, renderizada pelo jogo.
+- **Desempenho no emulador** (build de debug, só a comparação vale; custo de desenhar o quarteirão, a média de 60 quadros): antes 1,1 a 1,3 ms; depois 37,6 ms de manhã, 38,6 ms ao meio-dia, 38,3 ms à noite e 41,2 ms com Vigília e Tempestade. O laboratório redesenha o quarteirão inteiro a cada quadro (gravação e `toImageSync`); se o estilo for aprovado, o mapa precisa guardar a cena parada e só refazer quando a câmera muda. A medida no celular está no checklist.
+
+### Variantes legíveis
+
+- `app/lib/ui/sprites/variant_art.dart` (`criativo`): cada variante muda o valor do corpo e ganha um acessório (Urbana: abafadores; Verde: broto e pintas; Aquática: listras e pingos; Residencial: telhado; Iluminada: tubo de neon; Sagrada: véu e auréola; Carmesim: chifres; Brilhante: risco e estrela). Só o Brilhante tem brilho animado. O mapa usa a arte da variante no lugar do tom por cima.
+- Folhas de contato (cor e cinza) em `workbench/catalog/variantes_cor.png` e `variantes_cinza.png` (`test_workbench/variant_sheet_test.dart`).
+- **Pendente (arte):** em alguns sprites a auréola encosta na cabeça (Rill, Frond e outros que tocam o topo do quadro) e alguns acessórios se confundem com antenas ou orelhas (lista do `criativo` no resumo da versão). A saída recomendada é baixar o corpo desses sprites 2 a 3 px.
+
+### Bug do debug
+
+"Abrir mapa do jogo" e a volta da Patrulha passam por `openGameMap`: com um mapa na pilha, volta até ele; com um mapa ainda saindo, espera ele fechar. O redesenho pedido pelo `DevTools` no meio de um build fica para depois do quadro. Teste em `test/ui/tuning_menu_test.dart`.
+
+### Workbench
+
+Fotos novas dos eventos e das combinações no estado certo (`workbench/capture/eventos.py`: noturnos à noite, o Frio de manhã, os que se movem em GIF, a Lua Carmim e Os Que Escutam forçados pelo debug); abas de clima e de evento separadas; biomas com o mapa de hoje e a cena do laboratório lado a lado; formas com a arte nova da variante e as duas folhas de contato.
+
+### Testes
+
+Novos: `test/core/climate_layers_test` (Vigília e Tempestade juntas na sexta-feira 13; arco-íris só na passagem de chuva ou garoa para sol, de dia; Tornado só com Tempestade ou Vendaval; Lua Carmim tingindo a chuva e só no céu com sol; o terceiro evento esperando; teto da soma; as três combinações; a mesma pilha dando a mesma camada base), `test/save/migration_v9_test` (save v8 da 0.20.x), `test/world/lab_block_test`, `test/ui/visual_lab_test` (laboratório e os dados de arte do `criativo`), o teste do bug em `test/ui/tuning_menu_test` (o menu agora limpa o cache de assets entre testes: dois testes abrem o mapa) e o azimute do sol em `test/core/astro_test`. Suíte: 1838 passam, 4 pulados; `flutter analyze` limpo.
+
+### Conhecido
+
+- Fotos do workbench: os que se movem (funil do tornado, Procissão, Vigília, Maré do Véu) foram capturados em GIF no Centro, mas a peça que anda nem sempre cai no quadro; o arco-íris é a captura com o GPS simulado levado ao pé. A Chuva de meteoros ficou de dia: o relógio do debug não pegou nas duas tentativas do script.
+- O Céu e o calendário mostram o modelo da época vigente: até 7/dez, a 11, onde os eventos ainda são climas.

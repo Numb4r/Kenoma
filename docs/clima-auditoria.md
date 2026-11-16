@@ -1,4 +1,4 @@
-# Auditoria do clima (0.17.1)
+# Auditoria do clima (0.17.1, camadas na 0.21.0)
 
 Base: `docs/GDD.md`, "Tempo, astronomia e clima" (rev 328), o `assets/data/clima.json` e o bloco `climate` da época 6 em `assets/data/epochs.json`. Cada clima tem duas camadas:
 
@@ -8,6 +8,59 @@ Base: `docs/GDD.md`, "Tempo, astronomia e clima" (rev 328), o `assets/data/clima
 O que muda o mundo (onde algo nasce, o que nasce, quanto dura a coleta) fica na época 7. O que é só desenho (cobertura das ruas, barcos, decoração espalhada pelo chão) fica no `clima.json` e pode mudar sem época nova; mesmo assim sai de hash da seed e da posição, para amigos juntos verem o mesmo.
 
 O que o GDD não define e foi escolhido aqui foi aprovado na revisão da 0.17.0. "Provisório" marca o substituto que vale até existir a espécie ou o sistema (campo `provisional` no `clima.json`); "pendente" marca o que ainda espera revisão. "Sem alvo" marca o efeito que o dado declara, mas que ainda não existe no jogo (espécie, sistema ou fonte).
+
+## Clima e evento em camadas (0.21.0, época 12)
+
+GDD rev 356. Até a época 11, o evento era um clima: na sexta-feira 13 a Vigília e a tempestade disputavam a mesma vaga da janela de 3 h, e uma trocava a outra. Da época 12 (não publicada, começa 2026-12-07 16:00 UTC) em diante são duas camadas. As épocas 0 a 11 não mudaram (o teste compara os blocos).
+
+- **Clima:** um de cada vez, por janela de 3 h e região z12: o feed, o calendário (o clima do calendário substitui o real enquanto durar) ou o sorteio da estação. É tudo que cai do céu ou cobre a vista. O Open-Meteo continua só visual, e agora perde para o clima do calendário e do feed (`WeatherService.worldClimateWins`).
+- **Evento:** por cima de qualquer clima, com duração própria (`app/lib/core/climate_events.dart`). Até `max_events` (2) ao mesmo tempo. Um terceiro espera o fim de um deles (ninguém é tirado da vaga), com prioridade feed, astronomia, calendário e sorteio; no empate, quem começou antes e depois a ordem dos dados. A agenda é por região z12 e dia local, simulada a partir do dia anterior: amigos na mesma região veem o mesmo começo e o mesmo fim. O evento que esperou mostra "esperou a vaga" no app Céu.
+- **Requisito:** cada evento declara o que precisa (`requires`: `light` dia ou noite pelo sol no centro da região, `climates`). Sem o requisito ele espera dentro do período dele; se o período acaba antes, não acontece.
+- **Pilha:** o id `clima+evento+evento` (eventos na ordem dos dados, venham de onde vierem). `ClimateModel.def` monta: as peças do clima com os mesmos fluxos de sorteio de antes, as de cada evento com fluxo próprio (não dependem do clima embaixo) e que só valem enquanto o evento dura, o spawn somado (cada multiplicador entra com o quanto passa de 1, teto `spawn_cap` 3,0 = +++ e piso `spawn_floor` 0,3), os modificadores juntos (Aura soma, visão fica a menor, sintonia e Brilhante multiplicam) e o movimento (o tráfego multiplica; a deriva das Fagulhas é a do evento que tem uma, como o Vento das Fendas, senão a do clima). A camada base sai da pilha: a mesma pilha dá a mesma célula.
+- **Tela:** a precipitação do clima embaixo, o céu do evento por cima, os clarões por último (`ClimateCatalog.of` monta o visual da pilha). As camadas do mapa guardam a origem: as poças da chuva não pulam quando um evento começa.
+
+### Eventos
+
+| Evento | Origem | Requisito | Duração | Tingimento | O que mudou |
+| --- | --- | --- | --- | --- | --- |
+| Arco-íris (`rainbow`) | sorteio, na primeira janela de sol (Limpo ou Sol forte) depois de chuva, garoa ou tempestade | dia | 20 a 40 min desde o começo da janela | — | o granizo saiu do "depois de"; precisa de sol e de dia |
+| Tornado (`tornado`) | sorteio raro (4% por janela) e Estação Seca do Véu | Tempestade ou Vendaval | 15 a 30 min | — | sem Tempestade nem Vendaval, espera; no dia da Estação Seca quase nunca há |
+| Aurora (`aurora`) | Noite Boreal e feed (NOAA) | noite | o trecho da regra | — | a Noite Boreal das 18h às 19h espera o sol se pôr |
+| Estática (`static`) | Noite Boreal e feed | nenhum | o trecho da regra | — | — |
+| Chuva de meteoros (`meteor_shower`) | calendário astronômico | noite | o trecho da regra | — | com céu coberto os impactos continuam e as estrelas cadentes somem (`hidden_under` no `eventos.json`) |
+| Lua Dupla (`double_moon`) | lua cheia perto da Terra | noite | o trecho da regra | — | — |
+| Lua Carmim (`crimson_moon`) | eclipse lunar total visível da região, e feed | nenhum | o trecho visível do eclipse | Garoa, Chuva, Tempestade: Chuva Carmim | era o clima Chuva Carmim; as poças vermelhas agora dão Carmesins de verdade (Eco de Água com a variante Carmesim) |
+| Sol Negro (`black_sun`) | eclipse solar visível da região | dia | o trecho visível | — | antes valia a janela de 3 h inteira |
+| Prisma do Véu (`veil_prism`) | Carnaval do Véu | nenhum | os dias da regra | Garoa e Chuva: Garoa Prismática | era o clima Garoa Prismática; no tempo seco, brilho no ar |
+| Vigília (`vigil`) | Sexta dos Olhos e feed (Os Que Escutam) | nenhum | o dia inteiro | — | fica junto da tempestade |
+| Silêncio (`silence`) | Noite Calada e feed | nenhum | o trecho da regra | — | o tráfego para no começo do trecho e volta no fim dele, ao segundo |
+| Procissão na névoa (`fog_procession`) | Finados | nenhum | o dia | — | não traz mais a Neblina nem o limite de visão de 60 m; fora da Neblina, uma névoa rasa em volta das figuras (`mist`) |
+| Maré do Véu (`veil_tide`) | Maré da Cidade | nenhum | o dia | — | — |
+| Vento das Fendas (`rift_wind`) | Fenda crescendo (sem Fendas: só feed e debug) | nenhum | — | — | substitui o vento do clima para as Fagulhas |
+| Tempestade de Ecos (`echo_storm`) | Fenda perto do colapso (idem) | nenhum | — | — | com Tempestade, os raios violeta caem junto dos comuns |
+| Temporada de panteão | — | — | — | — | sem alvo: não há temporadas |
+
+### Combinações
+
+Só as três do GDD (`combos` na época 12, visual no `eventos.json`):
+
+| Combinação | Efeito no jogo |
+| --- | --- |
+| Vigília com Tempestade (`vigil_storm`) | o raio cai no centro do olhar ativo mais perto, quando há um (`bolts_at`), e o Eco raro do olhar nasce Elétrico; o raio fica laranja-vermelho |
+| Lua Carmim com Tempestade (`crimson_storm`) | raios vermelhos; no impacto, 15% de chance de um Eco Elétrico Carmesim (a mesma faísca do Eco carregado) |
+| Aurora com Neve (`aurora_snow`) | Espectrais com chance de Brilhante 3× (só eles, com o mesmo sorteio) |
+
+### Dados e save
+
+- `assets/data/epochs.json`, época 12, bloco `climate`: `climates` (29), `events` (15), `combos`, `spawn_cap`, `spawn_floor`, `max_events`, `rainbow_to`. O calendário e os eclipses apontam para os ids de evento (o Carnaval traz `veil_prism`, o eclipse lunar `crimson_moon`). As condições da família Wyrm trocaram `crimson_rain` por `crimson_moon`. A Procissão saiu dos climas da neblina.
+- `assets/data/clima.json`: só os climas. A Chuva Carmim e a Garoa Prismática ficam com `until_epoch: 11`, para as épocas antigas. `assets/data/eventos.json`: o visual dos eventos (camadas de céu marcadas com `sky`, o tingimento, a névoa da Procissão) e das combinações. Os ids dos eventos não mudaram, menos os dois tingimentos.
+- Save 8 → 9: no Bestiário, `climate:crimson_rain` vira `climate:crimson_moon` e `climate:rain`, e `climate:prismatic_drizzle` vira `climate:veil_prism` e `climate:drizzle`. A pesquisa do Wyrm pede a Lua Carmim. A marca de um avistamento numa pilha conta o clima e cada evento.
+
+### Debug e app Céu
+
+- "Clima forçado" só lista climas; "Eventos forçados" liga até dois eventos (o terceiro tira o mais antigo), independentes do clima. Antes da época 12, forçar um evento usa o modelo da época 12.
+- Uma linha nos avisos do mapa mostra a pilha: o clima, cada evento com a origem (feed, astro, calendário, sorteio, debug) e se esperou, e a combinação.
+- O app Céu mostra o clima e os eventos ativos separados (até quando, se esperou, o motivo), os eventos de cada janela seguinte e os três próximos itens do calendário do Véu, marcados como clima ou evento.
 
 ## Climas
 
@@ -59,6 +112,8 @@ O que o GDD não define e foi escolhido aqui foi aprovado na revisão da 0.17.0.
 | Vigília (`vigil`, novo) | olhos entre as nuvens, satélites | olhares andando pelo chão | olhar no chão | no olhar nasce um Eco de nível alto; Exposição: sem alvo | Os Que Escutam (events.json) |
 
 ## Eventos que forçam clima
+
+Até a época 11. Da 12 em diante, ver "Clima e evento em camadas".
 
 Ordem: o forçado pelo debug, o `events.json` assinado, o calendário da época (7: datas fixas; 8: mais o calendário do Véu), os eclipses, a astronomia, o sorteio. O app Céu mostra o motivo (`ClimateOutlook`, `app/lib/world/climate_outlook.dart`).
 
