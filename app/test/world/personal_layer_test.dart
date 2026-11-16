@@ -212,6 +212,11 @@ void main() {
       expect(hourly(layerOf({kStormNightEco: 3}, weather: 'storm'), day), isNotEmpty, reason: 'tempestade de dia');
       expect(hourly(layerOf({kStormNightEco: 3}), day), isEmpty, reason: 'dia limpo');
       expect(hourly(layerOf({kStormNightEco: 3}, pts: TrafficPack.of(const [])), night), isEmpty, reason: 'sem poste');
+      // Num bloco com postes de sobra, as vagas da mesma hora ficam em postes diferentes (não uma em cima da outra).
+      for (final (bx, by) in blocks) {
+        final here = layerOf({kStormNightEco: 3}).block(bx, by, night, 10);
+        expect({for (final s in here) (s.x, s.y)}.length, here.length, reason: 'bloco $bx,$by');
+      }
     });
 
     test('Hum e Wisp: os da hora valem a hora inteira, e a hora seguinte sorteia de novo', () {

@@ -165,6 +165,11 @@ class PersonalLayer {
     return out;
   }
 
+  /// A semente da camada pessoal na célula z20 `(cx, cy)` em [t]: sai do `player_id`, então muda de aparelho para aparelho
+  /// mesmo com o Círculo vazio. Para comparar dois aparelhos a olho no debug.
+  int personalHashAt(int cx, int cy, int t) =>
+      fnv1a64([field.seed, playerKey, field.schedule.select(t).epoch.id, cx, cy, windowIndex(field.seed, cx, cy, t), _saltEco]);
+
   /// O Eco da Shade na célula z20 `(cx, cy)` em [t]: à noite, numa célula com beco ou marquise, com a chance da faixa. Os
   /// oito sorteios saem sempre; a build (a do começo da janela da célula) só decide se ele nasce.
   List<WorldSpawn> cell(int cx, int cy, int t, int playerLevel) {
@@ -205,6 +210,7 @@ class PersonalLayer {
     final h = fnv1a64([field.seed, playerKey, ctx.epoch.id, bx, by, hour, _saltHour]);
     final rng = Pcg32(h, saltKenoma);
     final out = <WorldSpawn>[];
+    final usedPoles = <int>{}; // cada vaga do Hum num poste diferente, enquanto houver poste livre
     final poles = hum <= 0 ? const <TrafficPoint>[] : [for (final p in _points(bx * 16.0, by * 16.0, 16)) if (balance.poleKinds.contains(p.kind)) p];
     final fogCells = wisp <= 0
         ? const <(int, int)>[]
@@ -220,7 +226,12 @@ class PersonalLayer {
         double x, y;
         if (kind == 0) {
           if (poles.isEmpty) continue;
-          final p = poles[(r.px * poles.length).floor().clamp(0, poles.length - 1)];
+          var i = (r.px * poles.length).floor().clamp(0, poles.length - 1);
+          for (var n = 0; n < poles.length && usedPoles.contains(i); n++) {
+            i = (i + 1) % poles.length;
+          }
+          usedPoles.add(i);
+          final p = poles[i];
           final (cx, cy) = (p.x.floor() >>> 1, p.y.floor() >>> 1);
           if (!_night(cx, cy, start) && !balance.stormClimates.contains(field.weatherAt?.call(cx, cy, start) ?? 'clear')) continue;
           (x, y) = (p.x, p.y);

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="kenoma scripts/emulador">
+  <trk>
+    <name>Centro de Campinas</name>
+    <desc>Rua 13 de Maio, ida e volta (OSM, extrato da época 0)</desc>
+    <trkseg>
+      <trkpt lat="-22.908413" lon="-47.066398"/>
+      <trkpt lat="-22.908110" lon="-47.065680"/>
+      <trkpt lat="-22.907769" lon="-47.064928"/>
+      <trkpt lat="-22.907391" lon="-47.064066"/>
+      <trkpt lat="-22.907096" lon="-47.063404"/>
+      <trkpt lat="-22.907033" lon="-47.063258"/>
+      <trkpt lat="-22.906663" lon="-47.062408"/>
+      <trkpt lat="-22.906302" lon="-47.061587"/>
+      <trkpt lat="-22.906030" lon="-47.060963"/>
+      <trkpt lat="-22.906009" lon="-47.060915"/>
+      <trkpt lat="-22.905996" lon="-47.060885"/>
+      <trkpt lat="-22.905671" lon="-47.060141"/>
+      <trkpt lat="-22.905660" lon="-47.060116"/>
+      <trkpt lat="-22.905392" lon="-47.059485"/>
+      <trkpt lat="-22.905660" lon="-47.060116"/>
+      <trkpt lat="-22.905671" lon="-47.060141"/>
+      <trkpt lat="-22.905996" lon="-47.060885"/>
+      <trkpt lat="-22.906009" lon="-47.060915"/>
+      <trkpt lat="-22.906030" lon="-47.060963"/>
+      <trkpt lat="-22.906302" lon="-47.061587"/>
+      <trkpt lat="-22.906663" lon="-47.062408"/>
+      <trkpt lat="-22.907033" lon="-47.063258"/>
+      <trkpt lat="-22.907096" lon="-47.063404"/>
+      <trkpt lat="-22.907391" lon="-47.064066"/>
+      <trkpt lat="-22.907769" lon="-47.064928"/>
+      <trkpt lat="-22.908110" lon="-47.065680"/>
+      <trkpt lat="-22.908413" lon="-47.066398"/>
+    </trkseg>
+  </trk>
+</gpx>

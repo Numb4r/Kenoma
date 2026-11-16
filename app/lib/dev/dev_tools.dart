@@ -8,6 +8,7 @@ import '../net/feed_config.dart';
 import '../world/debug_force.dart';
 import '../world/places.dart';
 import '../world/position_source.dart';
+import 'emulator.dart';
 import 'game_clock.dart';
 import 'gps_simulator.dart';
 
@@ -111,6 +112,9 @@ class DevTools extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// A célula z20 e a janela de agora, com os resumos das camadas base e pessoal (quem monta o mapa do jogo preenche).
+  String Function()? layerHashes;
+
   /// O que a camada pessoal acrescentou nesta sessão (quem monta o mapa do jogo preenche).
   String Function()? personalStats;
 
@@ -138,8 +142,23 @@ class DevTools extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// O simulador está ligado e não dá recompensa, ou a Simulação de clima está ligada (ela nunca dá recompensa).
-  bool get sandboxed => (_useSimulator && !_simRewards) || force.simulating;
+  bool _emulator = false;
+
+  /// O app roda num emulador: a localização dele conta como GPS simulado (GDD, Salvaguardas).
+  bool get emulator => _emulator;
+
+  /// Descobre se é um emulador (uma vez, ao abrir o app).
+  Future<void> detect() async => setEmulator(await detectEmulator());
+
+  void setEmulator(bool v) {
+    if (v == _emulator) return;
+    _emulator = v;
+    notifyListeners();
+  }
+
+  /// O simulador está ligado ou é um emulador, sem o interruptor de recompensa; ou a Simulação de clima está ligada (ela
+  /// nunca dá recompensa).
+  bool get sandboxed => sandboxFor(simulator: _useSimulator, emulator: _emulator, rewards: _simRewards, climateSim: force.simulating);
 
   String? _feedUrl;
 

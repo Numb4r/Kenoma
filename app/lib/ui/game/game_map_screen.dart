@@ -14,6 +14,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
 import '../../core/tiles.dart';
+import '../../core/windows.dart' show windowIndex;
 import '../../world/climate_world.dart' show nearestPuddle;
 import '../../core/weather.dart';
 import '../../core/astro.dart' show moonPhase;
@@ -608,6 +609,13 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       },
     );
     tools.personalStats = () => world.personal!.stats;
+    tools.layerHashes = () {
+      if (!world.hasPlayer) return 'sem posição ainda';
+      final t = tools.clock.nowUtc, cx = world.playerX.floor() >>> 1, cy = world.playerY.floor() >>> 1;
+      String hex(int h) => (h >>> 32).toRadixString(16).padLeft(8, '0');
+      return 'célula $cx,$cy · janela ${windowIndex(world.field.seed, cx, cy, t)} · época ${data.schedule.select(t).epoch.id}\n'
+          'base ${hex(world.field.baseHashAt(cx, cy, t))} · pessoal ${hex(world.personal!.personalHashAt(cx, cy, t))}';
+    };
     tools.nearestPuddle = () {
       // A até 1 km do jogador, as duas camadas de poça (a do Rill está no mesmo mundo do clima).
       if (!world.hasPlayer) return null;

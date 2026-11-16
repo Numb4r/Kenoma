@@ -30,6 +30,11 @@ List<DebugItem> positionItems(DebugEnv env) {
         listenable: tools,
         builder: (context, _) => Column(children: [
           Align(alignment: Alignment.centerLeft, child: DebugNote('Fonte de posição: ${tools.useSimulator ? 'simulador' : 'GPS real'}')),
+          if (tools.emulator)
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: DebugNote('Emulador: a localização dele conta como GPS simulado (sem recompensa com o interruptor abaixo desligado).', key: Key('debug-emulator'), color: KCores.brasaLaranja),
+            ),
           DebugSwitch(
             title: 'Simulador de GPS',
             subtitle: 'No lugar do GPS real. Joystick, velocidade e teleporte no mapa do jogo.',
@@ -39,7 +44,7 @@ List<DebugItem> positionItems(DebugEnv env) {
           ),
           DebugSwitch(
             title: 'GPS simulado dá recompensa',
-            subtitle: 'Desligado: com o simulador (no mapa e na Patrulha simulada) nada conta para XP, estatísticas ou bestiário, e as capturas entram marcadas como debug.',
+            subtitle: 'Desligado: com o simulador ou no emulador (no mapa e na Patrulha simulada) nada conta para XP, estatísticas ou bestiário, e as capturas entram marcadas como debug.',
             value: tools.simRewards,
             color: KCores.brasaLaranja,
             onChanged: tools.setSimRewards,

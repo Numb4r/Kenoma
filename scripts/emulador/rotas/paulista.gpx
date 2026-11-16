@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="kenoma scripts/emulador">
+  <trk>
+    <name>Avenida Paulista</name>
+    <desc>Trecho da Avenida Paulista, São Paulo, para a época 12 (OSM, extrato da época 0)</desc>
+    <trkseg>
+      <trkpt lat="-23.560662" lon="-46.657249"/>
+      <trkpt lat="-23.560434" lon="-46.657502"/>
+      <trkpt lat="-23.560349" lon="-46.657597"/>
+      <trkpt lat="-23.560286" lon="-46.657662"/>
+      <trkpt lat="-23.560186" lon="-46.657766"/>
+      <trkpt lat="-23.559989" lon="-46.657954"/>
+      <trkpt lat="-23.559638" lon="-46.658345"/>
+      <trkpt lat="-23.559481" lon="-46.658521"/>
+      <trkpt lat="-23.559125" lon="-46.658919"/>
+      <trkpt lat="-23.559033" lon="-46.659022"/>
+      <trkpt lat="-23.558285" lon="-46.659845"/>
+      <trkpt lat="-23.558039" lon="-46.660117"/>
+      <trkpt lat="-23.557743" lon="-46.660444"/>
+      <trkpt lat="-23.557420" lon="-46.660803"/>
+      <trkpt lat="-23.557312" lon="-46.660918"/>
+      <trkpt lat="-23.557250" lon="-46.660986"/>
+      <trkpt lat="-23.557153" lon="-46.661092"/>
+      <trkpt lat="-23.557116" lon="-46.661133"/>
+      <trkpt lat="-23.557005" lon="-46.661254"/>
+      <trkpt lat="-23.556567" lon="-46.661732"/>
+      <trkpt lat="-23.556490" lon="-46.661815"/>
+      <trkpt lat="-23.556418" lon="-46.661894"/>
+      <trkpt lat="-23.556372" lon="-46.661944"/>
+      <trkpt lat="-23.556327" lon="-46.661994"/>
+      <trkpt lat="-23.556312" lon="-46.662013"/>
+      <trkpt lat="-23.555861" lon="-46.662536"/>
+      <trkpt lat="-23.555730" lon="-46.662700"/>
+      <trkpt lat="-23.555657" lon="-46.662785"/>
+      <trkpt lat="-23.555606" lon="-46.662846"/>
+      <trkpt lat="-23.555556" lon="-46.662899"/>
+    </trkseg>
+  </trk>
+</gpx>

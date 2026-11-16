@@ -67,6 +67,8 @@ List<DebugItem> spawnItems(DebugEnv env) {
           const DebugNote('O que as habilidades do Círculo acrescentam só para você. Escondida, o mapa mostra só o mundo base, igual para todos.'),
           DebugSwitch(title: 'Esconder a camada pessoal', subtitle: null, value: env.tools.hidePersonal, onChanged: env.tools.setHidePersonal),
           DebugNote('Nesta sessão: ${env.tools.personalStats?.call() ?? 'abra o mapa do jogo'}', key: const Key('debug-personal-stats')),
+          const DebugNote('Dois aparelhos na mesma célula e janela: a base tem de ser igual e a pessoal, diferente (outro player_id).'),
+          DebugNote(env.tools.layerHashes?.call() ?? 'Hashes: abra o mapa do jogo', key: const Key('debug-layer-hashes')),
           const DebugNote('Círculo de teste (só no mapa, nível 10, o save não muda). A troca vale a partir da janela seguinte de cada célula.'),
           DebugWrap([
             DebugChip('Círculo real', on: env.tools.testCircle == null, onTap: () => env.tools.setTestCircle(null)),

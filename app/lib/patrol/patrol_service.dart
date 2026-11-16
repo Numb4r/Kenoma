@@ -6,6 +6,7 @@
 /// conversa com o app; um serviço próprio em Kotlin repetiria tudo isso.
 library;
 
+import '../dev/emulator.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -113,6 +114,9 @@ class PatrolTaskHandler extends TaskHandler {
       final b = world.balance;
       final docs = await getApplicationDocumentsDirectory();
       _journal = JournalWriter(File('${docs.path}/$kJournalFile'));
+      // No emulador, a Patrulha com o GPS dele é como a simulada sem recompensa (o interruptor fica no app, não chega aqui).
+      final emulator = config.sim == null && await detectEmulator();
+      final sandbox = sandboxFor(simulator: config.sim != null, emulator: emulator, rewards: config.sim?.rewards ?? false);
       final engine = _engine = PatrolEngine(
         world: world.world,
         state: world.state,
@@ -120,10 +124,10 @@ class PatrolTaskHandler extends TaskHandler {
         startUtc: _now(),
         maxDurationS: config.maxDurationS,
         streetAt: world.streetAt,
-        recordCells: config.sim == null,
+        recordCells: config.sim == null && !emulator,
         speciesName: (id) => world.data.species(id)?.name ?? id,
       );
-      _write([engine.startLine(extra: {..._steps(await _sensors.readSteps()), if (config.sim != null) 'sim': true, if (config.sim != null && !config.sim!.rewards) 'sandbox': true})]);
+      _write([engine.startLine(extra: {..._steps(await _sensors.readSteps()), if (config.sim != null) 'sim': true, if (sandbox) 'sandbox': true})]);
       await _notes.initialize(settings: const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')));
       final sim = config.sim;
       final source = _source = sim == null

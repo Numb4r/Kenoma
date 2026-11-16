@@ -45,7 +45,7 @@ class TuningDebugMenu extends StatefulWidget {
 }
 
 class _TuningDebugMenuState extends State<TuningDebugMenu> {
-  late final DevTools _tools = widget.devTools ?? DevTools(realSource: GeolocatorPositionSource());
+  late final DevTools _tools = widget.devTools ?? (DevTools(realSource: GeolocatorPositionSource())..detect());
   late final DebugEnv _env = DebugEnv(
     tools: _tools,
     capture: CaptureDebug(store: widget.store, exporter: widget.exporter),

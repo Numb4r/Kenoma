@@ -5,11 +5,13 @@
 /// individual (o nível do Eco, o que já foi coletado) fica fora daqui ou entra por parâmetro.
 library;
 
+import 'dart:convert' show utf8;
 import 'dart:math' as math;
 
 import '../core/astro.dart';
 import '../core/behavior.dart';
 import '../core/epochs.dart';
+import '../core/fnv.dart';
 import '../core/spawn.dart';
 import '../core/spawn_conditions.dart';
 import '../core/tiles.dart';
@@ -222,6 +224,11 @@ class SpawnField {
       context: contextOf(epoch, cx, cy, windowStart, weather),
     );
   }
+
+  /// Um resumo curto dos itens da camada base na célula z20 `(cx, cy)` em [tUtc] (uid, se existe, o que é e a posição de
+  /// cada um): igual em qualquer aparelho com a mesma seed, época e relógio. Para comparar dois aparelhos a olho no debug.
+  int baseHashAt(int cx, int cy, int tUtc) =>
+      fnv1a64Bytes(utf8.encode([for (final i in cellItems(cx, cy, tUtc)) '${i.uid}:${i.exists}:${i.entryId}:${i.quantity}:${i.px}:${i.py}'].join('|')));
 
   /// Segundos até a janela da célula acabar.
   int secondsLeft(int cx, int cy, int tUtc) => windowSeconds - (tUtc + windowOffset(seed, cx, cy)) % windowSeconds;
