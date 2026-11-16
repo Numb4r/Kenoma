@@ -175,9 +175,13 @@ Fase da lua, nascer e pôr do sol e eclipses são calculados offline a partir de
 - Meio-dia de sol forte enfraquece criaturas noturnas.
 - À noite a Aura encolhe, criaturas noturnas ficam mais fortes e capturar exige selos melhores, mas os spawns são mais raros.
 
-Clima vem do Open-Meteo quando há internet. Sem rede, o jogo usa clima determinístico gerado pela seed, por janela de 3 horas e região. O sorteio normal só usa os climas nativos de Campinas, seguindo as estações: tempestades de tarde no verão e neblina, frio, poeira e fumaça no inverno seco. Climas de outras regiões e climas místicos entram por evento (calendário, `events.json` assinado, Lua Carmim, Fendas) ou pelo debug. Todo efeito no mapa que muda o mundo, como o ponto onde um raio cai, sai da seed, para amigos juntos verem o mesmo.
+Clima vem do Open-Meteo quando há internet. Sem rede, o jogo usa clima determinístico gerado pela seed, por janela de 3 horas e região. O sorteio normal só usa os climas nativos de Campinas, seguindo as estações: tempestades de tarde no verão e neblina, frio, poeira e fumaça no inverno seco. Climas de outras regiões, climas místicos e eventos entram por gatilho (calendário, `events.json` assinado, Lua Carmim, Fendas) ou pelo debug. Todo efeito no mapa que muda o mundo, como o ponto onde um raio cai, sai da seed, para amigos juntos verem o mesmo.
 
 Cada clima interage com o mapa por cinco mecânicas genéricas, combinadas em dados: **ponto de impacto** (algo cai num ponto sorteado e gera spawn ou material ali), **zona temporária** (uma área do mapa ganha modificador por alguns minutos), **coletável que cai do céu**, **modificador do jogador** (Aura, alcance de visão, sintonia) e **movimento** (Fagulhas e tráfego se deslocam).
+
+Clima e evento são duas camadas que se somam. O **clima** é o tempo atmosférico e existe um de cada vez: vem do Open-Meteo, da seed ou do calendário, e é tudo que cai do céu ou cobre a vista. Duas coisas caindo do céu não combinam, por isso ocupam a mesma vaga. O **evento** é uma aparição por cima de qualquer clima, com duração própria, independente da janela de 3 horas. Até dois eventos ficam ativos ao mesmo tempo; um terceiro espera o fim de um deles, com prioridade para o feed assinado, depois a astronomia, o calendário e o sorteio. Clima do calendário substitui o clima real enquanto durar.
+
+Spawn de clima e de evento se soma, com teto de +++ por tipo, e as interações de mapa dos dois valem juntas. Na tela, a precipitação do clima fica embaixo, o céu do evento por cima e os clarões por último. Cada evento declara o que precisa; sem o requisito, ele espera ou aparece só com a parte de céu dele. Tudo continua igual para amigos no mesmo lugar: clima real, seed, calendário, astronomia e feed são os mesmos para todos.
 
 | Clima nativo | Visual | Spawn | Interação com o mapa |
 | --- | --- | --- | --- |
@@ -188,52 +192,61 @@ Cada clima interage com o mapa por cinco mecânicas genéricas, combinadas em da
 | Chuva | chuva cheia, ruas brilhando | Água ++, Fogo − | poças: zonas onde nascem Ecos de Água e água pura |
 | Tempestade | chuva forte inclinada, céu escuro | Elétrico ++, Água + | raios: ponto de impacto com clarão, trovão, poeira e marca queimada; às vezes nasce um Eco Elétrico ali |
 | Granizo | pedras de gelo quicando no chão | Terra +, Água + | coletável: pedras de granizo viram cristal de gelo, material raro, por poucos minutos |
-| Arco-íris | arco no céu depois de chuva com sol | Luz ++, Feérico + | aparece por sorteio depois de uma chuva e dura pouco; o arco fica fixo no mapa e o pé dele é um ponto com material raro e chance de Feérico, que dá para achar com um item fabricado |
 | Neblina | véu branco nas bordas, vultos ao longe | Espectral ++ | visão dos Ecos cai para 60 m; Espectrais aparecem e somem a até 40 m |
 | Frio | sopro visível, geada nas áreas verdes de manhã | Espectral +, Fogo − | geada guarda pegadas: rastros de Ecos ficam visíveis por mais tempo |
+| Geada forte | chão branco nas áreas verdes, poças congeladas; inverno | Espectral +, Água − | poças viram gelo e guardam um cristal coletável; tráfego de pedestres mais lento |
 | Vento | folhas e papéis cruzando a tela | Feérico + | Fagulhas derivam devagar na direção do vento |
 | Vendaval | lixo e galhos voando, árvores curvadas | Feérico ++ | papéis voando são coletáveis e viram rumores no fórum |
 | Poeira seca | partículas amareladas, céu amarelado | Terra ++, Fogo +, Planta − | redemoinhos de poeira andam pela rua e deixam Ecos de Terra e poeira por onde passam |
 | Fumaça de queimada | céu alaranjado, cinza caindo | Fogo ++, Planta − | zonas de cinza com Ecos de Fogo; vem do INPE quando online |
+| Trovoada seca | raios sem chuva, céu alaranjado; fim do inverno | Elétrico ++, Fogo + | raios deixam brasas que viram Fagulhas de Fogo por alguns minutos |
+| Smog | céu marrom, prédios distantes apagados; inverno seco | Metal +, Digital + | avenidas viram zonas de fuligem com sucata extra |
 
-| Clima de outras regiões (eventos) | Visual | Spawn | Interação com o mapa |
+| Clima de outras regiões | Visual | Spawn | Interação com o mapa |
 | --- | --- | --- | --- |
 | Neve | neve acumulando em parques e telhados | Água +, Espectral + | pegadas do jogador e dos Ecos ficam marcadas na neve, e seguir pegadas leva ao Eco |
 | Nevasca | neve horizontal, visão curta | Espectral ++ | visão dos Ecos cai para 40 m e a Aura encolhe 2 m |
 | Tempestade de areia | parede de areia, dunas nas ruas | Terra ++ | dunas temporárias escondem materiais que só aparecem cavando (escavação) |
 | Dilúvio | ruas alagadas, tráfego lento | Água +++ | ruas viram zonas de água com Ecos de Água por toda parte |
 | Onda de calor | asfalto derretendo, sol branco | Fogo +++ | Fagulhas evaporam se não forem coletadas em 2 minutos |
-| Tornado | funil cruzando o mapa | Feérico ++, Elétrico + | puxa Fagulhas no caminho e as solta mais adiante, numa trilha |
-| Aurora | céu ondulando em verde e violeta | Luz ++, Espectral + | tolerância da sintonia maior durante a aurora |
 | Chuva ácida | gotas esverdeadas, metal enferrujando | Metal ++ | sucata enferrujada aparece como material extra no Urbano |
-| Chuva de meteoros | estrelas cadentes | Luz +, Dracônico + | pontos de impacto com Fagulhas raras, como os raios |
+| Chuva congelante | ruas brilhando de gelo, galhos quebrados | Água +, Metal + | carros fantasmas derrapam e andam devagar; galhos caídos são coletáveis (madeira) |
+| Furacão | bandas de chuva girando, olho calmo passando | Feérico ++, Água ++ | o olho atravessa o mapa: dentro dele tudo para e nasce um Eco raro |
 
 | Clima místico (do Véu) | Visual | Spawn | Interação com o mapa |
 | --- | --- | --- | --- |
 | Neve do Véu | flocos cinza-violeta lentos que não acumulam | Espectral ++, Sombra + | flocos que tocam o chão viram Pó de Essência coletável por pouco tempo; o Familiar avisa que não é neve |
-| Chuva Carmim | gotas vermelhas, só na Lua Carmim | variantes Carmesim ++ | poças vermelhas onde nascem Carmesins |
 | Chuva de Fagulhas | Fagulhas caindo do céu como brasas | Fagulhas +++ | coletáveis que caem do céu: o grande evento de farm |
-| Tempestade de Ecos | raios violeta, céu rachado | nível dos Ecos + | raios violeta abrem microfendas temporárias com Ecos de nível alto |
-| Estática | pixels e glitch caindo, HUD falhando | Digital ++, Elétrico + | sintonia com ruído extra; o Tecnomante fica imune ao ruído |
-| Silêncio | som some, cores dessaturam | Espectral +, todos mais calmos | Ecos não fogem nem atacam, mas a Exposição ao Véu sobe; os Que Escutam estão ouvindo |
 | Cinzas do Véu | cinza violeta caindo devagar | Corrompidas + | chance de Corrompida nos spawns; risco e recompensa |
-| Procissão na névoa | névoa com figuras andando em fila | Espectral +++ | as figuras deixam rastro; seguir até o fim leva a um Espectral raro |
-| Vento das Fendas | vento violeta soprando numa direção fixa | Dracônico + | Fagulhas derivam na direção da Fenda mais próxima, apontando onde ela está |
 | Céu Invertido | chuva subindo, objetos flutuando | Feérico ++ | Fagulhas flutuam e somem no céu se não forem pegas logo |
-| Maré do Véu | o mapa ondula, prédios antigos aparecem translúcidos | Ecos das Eras Antigas | zonas fantasmas com construções de outra era e spawns antigos |
-| Sol Negro | dia escuro, sombras invertidas | Sombra +++, Luz − | sombras viram zonas onde Sombra nasce em dobro |
-| Garoa Prismática | gotas que refratam em cores | Brilhante ×2 | chance de Brilhante dobrada enquanto durar |
+| Chuva de Runas | glifos violeta caindo devagar | Espectral +, Sombra + | runas no chão: tocar uma dá bônus no próximo ritual |
 
-| Clima novo | Categoria | Visual | Spawn | Interação com o mapa |
-| --- | --- | --- | --- | --- |
-| Geada forte | nativo, inverno | chão branco nas áreas verdes, poças congeladas | Espectral +, Água − | poças viram gelo e guardam um cristal coletável; tráfego de pedestres mais lento |
-| Trovoada seca | nativo, fim do inverno | raios sem chuva, céu alaranjado | Elétrico ++, Fogo + | raios deixam brasas que viram Fagulhas de Fogo por alguns minutos |
-| Smog | nativo, inverno seco | céu marrom, prédios distantes apagados | Metal +, Digital + | avenidas viram zonas de fuligem com sucata extra |
-| Chuva congelante | outra região | ruas brilhando de gelo, galhos quebrados | Água +, Metal + | carros fantasmas derrapam e andam devagar; galhos caídos são coletáveis (madeira) |
-| Furacão | outra região, evento | bandas de chuva girando, olho calmo passando | Feérico ++, Água ++ | o olho atravessa o mapa: dentro dele tudo para e nasce um Eco raro |
-| Chuva de Runas | místico | glifos violeta caindo devagar | Espectral +, Sombra + | runas no chão: tocar uma dá bônus no próximo ritual |
-| Lua Dupla | místico, evento | segunda lua no céu, sombras duplas | variantes + | Ecos podem nascer em pares idênticos, um deles só de sombra |
-| Vigília | místico, evento de Os Que Escutam | olhos piscando entre as nuvens, satélites cruzando | Digital ++, Espectral + | onde um olhar pousa, a Exposição sobe e nasce um Eco raro; ficar fora dos olhares é escolha do jogador |
+| Evento | Origem | Requisito | Visual | Spawn | Interação com o mapa |
+| --- | --- | --- | --- | --- | --- |
+| Arco-íris | sorteio pela seed depois de chuva | passagem de chuva ou garoa para sol, de dia | arco no céu | Luz ++, Feérico + | dura pouco; o arco fica fixo no mapa e o pé dele é um ponto com material raro e chance de Feérico, que dá para achar com um item fabricado |
+| Tornado | Estação Seca do Véu (raro) e sorteio raro | Tempestade ou Vendaval | funil cruzando o mapa | Feérico ++, Elétrico + | puxa Fagulhas no caminho e as solta mais adiante, numa trilha; deixa destroços coletáveis por onde passou |
+| Aurora | tempestade geomagnética real (NOAA) e Noite Boreal | noite | céu ondulando em verde e violeta | Luz ++, Espectral + | tolerância da sintonia maior durante a aurora |
+| Estática | tempestade geomagnética real e Noite Boreal | nenhum | pixels e glitch na tela, HUD falhando | Digital ++, Elétrico + | sintonia com ruído extra; o Tecnomante fica imune ao ruído |
+| Chuva de meteoros | calendário astronômico | noite; com céu coberto os impactos acontecem, mas as estrelas cadentes não aparecem | estrelas cadentes | Luz +, Dracônico + | pontos de impacto com Fagulhas raras e cratera, como os raios |
+| Lua Dupla | lua cheia muito perto da Terra, rara | noite | segunda lua no céu, sombras duplas | variantes + | Ecos podem nascer em pares idênticos, um deles só de sombra |
+| Lua Carmim | eclipse lunar total visível da região | nenhum | céu vermelho | variantes Carmesim ++ | com chuva ou garoa, tinge a precipitação: Chuva Carmim, com poças vermelhas onde nascem Carmesins |
+| Sol Negro | eclipse solar visível da região, parcial conta | dia | dia escuro, sombras invertidas | Sombra +++, Luz − | sombras viram zonas onde Sombra nasce em dobro |
+| Prisma do Véu | Carnaval do Véu | nenhum | com garoa ou chuva, as gotas refratam em cores (Garoa Prismática); no tempo seco, brilho no ar | Brilhante ×2 | chance de Brilhante dobrada enquanto durar |
+| Vigília | Sexta dos Olhos e evento de Os Que Escutam | nenhum | olhos piscando entre as nuvens, satélites cruzando | Digital ++, Espectral + | onde um olhar pousa, a Exposição sobe e nasce um Eco raro; ficar fora dos olhares é escolha do jogador |
+| Silêncio | Noite Calada e evento de Os Que Escutam | nenhum | som some, cores dessaturam | Espectral +, todos mais calmos | Ecos não fogem nem atacam, mas a Exposição ao Véu sobe; o tráfego do Véu congela no instante em que ele começa |
+| Procissão na névoa | Finados | nenhum; fora da Neblina, traz uma névoa rasa só em volta das figuras | figuras andando em fila | Espectral +++ | as figuras deixam rastro; seguir até o fim leva a um Espectral raro |
+| Maré do Véu | Maré da Cidade | nenhum | o mapa ondula, prédios antigos aparecem translúcidos | Ecos das Eras Antigas | zonas fantasmas com construções de outra era e spawns antigos |
+| Vento das Fendas | Fenda crescendo | nenhum | vento violeta soprando numa direção fixa | Dracônico + | substitui o vento do clima para as Fagulhas, que derivam na direção da Fenda mais próxima |
+| Tempestade de Ecos | Fenda perto do colapso | nenhum | raios violeta, céu rachado | nível dos Ecos + | raios violeta abrem microfendas temporárias com Ecos de nível alto; com Tempestade, se misturam aos raios comuns |
+| Temporada de panteão | temporada | nenhum | definido na temporada | definido na temporada | definido na temporada |
+
+Algumas combinações de clima e evento têm efeito próprio. São poucas de propósito:
+
+| Combinação | Efeito |
+| --- | --- |
+| Vigília com Tempestade | os raios caem onde os olhares pousam, e o Eco raro do olhar nasce Elétrico |
+| Lua Carmim com Tempestade | raios vermelhos; no ponto de impacto nasce um Carmesim |
+| Aurora com Neve | a neve reflete a aurora, e Espectrais nascem com chance de Brilhante maior |
 
 Todo clima tem duas camadas. A camada de tela só tem o que cai do céu ou cobre a vista: chuva, flocos, partículas, tom de cor e clarão. Tudo que acontece no chão pertence ao mapa: gira, move e dá zoom junto com ele, e fica no mesmo lugar para amigos juntos. Isso inclui poças, crateras, dunas, sombras de nuvem, figuras da procissão, prédios da Maré do Véu, as sombras do Sol Negro, olhos e olhares projetados no chão, marcas de raio e neve acumulada.
 
@@ -246,41 +259,28 @@ Nenhum clima existe só como enfeite. Cada um deixa ao menos uma marca cosmétic
 - Na tempestade de areia, as dunas cobrem parte das ruas e mudam a rota dos fantasmas.
 - O tornado deixa um rastro de destroços coletáveis por onde passou.
 
-Alguns climas são presos a eventos do jogo:
-
-| Evento | Clima |
-| --- | --- |
-| Lua Carmim (eclipse lunar total visível da região) | Chuva Carmim |
-| Eclipse solar visível da região, parcial conta | Sol Negro |
-| Fenda crescendo | Vento das Fendas e, perto do colapso, Tempestade de Ecos |
-| Chuva de meteoros do calendário | Chuva de meteoros |
-| Tempestade geomagnética real (NOAA) | Aurora e Estática |
-| Finados | Procissão na névoa |
-| Festa Junina | Chuva de Fagulhas, como fogos |
-| Temporada de panteão | clima próprio do panteão, definido na temporada |
-| Evento de Os Que Escutam | Silêncio (o tráfego do Véu congela no instante em que ele começa) ou Vigília |
-| Lua cheia muito perto da Terra | Lua Dupla, rara |
-
 O que um clima deixa no chão se forma com o tempo e some com o tempo, nunca aparece pronto: poças crescem durante a chuva, a neve cobre primeiro o chão e os telhados e só depois as ruas, dunas sobem aos poucos, e tudo seca, derrete ou se desfaz depois. O estado de cada marca é função do tempo desde o início do clima, então amigos juntos veem a mesma fase. Os passantes fantasmas se vestem conforme o clima: guarda-chuva e capa na chuva, casaco e cachecol no frio e na neve, roupa leve no calor, máscara na fumaça e no smog.
 
-O clima real e o sorteio cobrem só os climas nativos. Para todo clima de outra região e todo místico aparecer ao menos uma vez por ano, eles entram pelo calendário do Véu, embarcado na época e ajustável pelo feed assinado:
+O clima real e o sorteio cobrem só os climas nativos. Para todo clima de outra região, todo clima místico e todo evento do Véu aparecerem ao menos uma vez por ano, eles entram pelo calendário do Véu, embarcado na época e ajustável pelo feed assinado:
 
-| Quando | Evento | Climas |
-| --- | --- | --- |
-| 1º de janeiro | Ano-Novo | Chuva de Fagulhas, como fogos |
-| Carnaval | Carnaval do Véu | Garoa Prismática |
-| Quarta-feira de Cinzas | Cinzas | Cinzas do Véu |
-| fevereiro e março | Águas do Véu | Dilúvio, Furacão (raro) |
-| 1º de abril | Dia do Avesso | Céu Invertido |
-| equinócios | Noite das Runas | Chuva de Runas |
-| maio | Semana da Fuligem | Chuva ácida, Smog |
-| solstício de inverno | Noite Branca | Neve do Véu |
-| julho | Inverno do Véu | Neve, Nevasca, Chuva congelante |
-| 14 de julho, aniversário de Campinas | Maré da Cidade | Maré do Véu, com a cidade antiga |
-| agosto e setembro | Estação Seca do Véu | Tempestade de areia, Onda de calor, Tornado (raro) |
-| sextas-feiras 13 | Sexta dos Olhos | Vigília |
-| 31 de outubro | Noite Calada | Silêncio |
-| dezembro | Noite Boreal | Aurora, Estática |
+| Quando | Evento do calendário | Clima | Evento |
+| --- | --- | --- | --- |
+| 1º de janeiro | Ano-Novo | Chuva de Fagulhas, como fogos | nenhum |
+| Carnaval | Carnaval do Véu | nenhum | Prisma do Véu |
+| Quarta-feira de Cinzas | Cinzas | Cinzas do Véu | nenhum |
+| fevereiro e março | Águas do Véu | Dilúvio, Furacão (raro) | nenhum |
+| 1º de abril | Dia do Avesso | Céu Invertido | nenhum |
+| equinócios | Noite das Runas | Chuva de Runas | nenhum |
+| maio | Semana da Fuligem | Chuva ácida, Smog | nenhum |
+| junho | Festa Junina | Chuva de Fagulhas, como fogos | nenhum |
+| solstício de inverno | Noite Branca | Neve do Véu | nenhum |
+| julho | Inverno do Véu | Neve, Nevasca, Chuva congelante | nenhum |
+| 14 de julho, aniversário de Campinas | Maré da Cidade | nenhum | Maré do Véu, com a cidade antiga |
+| agosto e setembro | Estação Seca do Véu | Tempestade de areia, Onda de calor | Tornado (raro) |
+| sextas-feiras 13 | Sexta dos Olhos | nenhum | Vigília |
+| 31 de outubro | Noite Calada | nenhum | Silêncio |
+| 2 de novembro | Finados | nenhum | Procissão na névoa |
+| dezembro | Noite Boreal | nenhum | Aurora, Estática |
 
 ### Eventos
 
