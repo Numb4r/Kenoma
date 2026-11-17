@@ -67,6 +67,16 @@ class CityRenderer {
   /// A âncora do quadro: muda só a cada 1024 células (~18 km), então os blocos quase nunca perdem o quadro por ela.
   static (double, double) anchorOf(MapCamera cam) => ((cam.centerX / 1024).floor() * 1024.0, (cam.centerY / 1024).floor() * 1024.0);
 
+  double _kcHeld = 0;
+
+  /// O zoom do quadro, preso enquanto o de verdade não sair 0,3% dele: andando, a escala muda em frações ínfimas com a
+  /// latitude, e cada fração refazia um bloco por quadro. O chão e o que fica de pé usam o mesmo valor (menos de 1 pixel de
+  /// diferença na borda da tela).
+  double stableKc(double kc) {
+    if (_kcHeld == 0 || (kc / _kcHeld - 1).abs() > 0.003) _kcHeld = kc;
+    return _kcHeld;
+  }
+
   /// O giro e o zoom que os blocos devem ter agora: os exatos com o mapa parado; no gesto, o passo do giro e o zoom de antes.
   (double, double) target(double angle, double kc, {required bool touching}) {
     final now = nowUs?.call() ?? _clock.elapsedMicroseconds;
@@ -88,7 +98,7 @@ class CityRenderer {
   void paintGround(ui.Canvas canvas, ui.Size size, MapCamera cam, {required double dpr, required double artPixelDp, required double mpc, required double sunAltDeg, required double sunAzDeg, required bool wet, required bool touching}) {
     final sw = Stopwatch()..start();
     final k = pixelSize(artPixelDp, dpr);
-    final kc = cam.pixelsPerCell * dpr / k;
+    final kc = stableKc(cam.pixelsPerCell * dpr / k);
     final (ox, oy) = anchorOf(cam);
     final exact = CityFrame(angle: cam.rotation, kc: kc, ox: ox, oy: oy);
     final (ta, tk) = target(cam.rotation, kc, touching: touching);
@@ -160,7 +170,10 @@ class CityRenderer {
   void _build((int, int) id, CityFrame goal, GroundKey key, double sunAltDeg, double sunAzDeg, double mpc) {
     final x0 = id.$1 * chunkCells, y0 = id.$2 * chunkCells;
     _chunks.remove(id)?.image.dispose();
-    _chunks[id] = rasterGroundChunk(cx0: x0, cy0: y0, size: chunkCells, f: goal, key: key, sunAltDeg: sunAltDeg, sunAzDeg: sunAzDeg, mpc: mpc, art: art, tiles: _tilesAround(x0 - 3.0, y0 - 3.0, x0 + chunkCells + 3.0, y0 + chunkCells + 3.0), biomeAt: biomeAt);
+    // Só o que toca o bloco, com 3 células de folga (a sombra de um prédio alto ao lado, uma rua larga na borda).
+    final l = x0 - 3.0, t = y0 - 3.0, r = x0 + chunkCells + 3.0, b = y0 + chunkCells + 3.0;
+    final tiles = [for (final tile in _tilesAround(l, t, r, b)) tile.within(l, t, r, b)];
+    _chunks[id] = rasterGroundChunk(cx0: x0, cy0: y0, size: chunkCells, f: goal, key: key, sunAltDeg: sunAltDeg, sunAzDeg: sunAzDeg, mpc: mpc, art: art, tiles: tiles, biomeAt: biomeAt);
   }
 
   List<CityTile> _tilesAround(double l, double t, double r, double b) => [
@@ -176,7 +189,7 @@ class CityRenderer {
     final k = pixelSize(artPixelDp, dpr);
     final lowW = (size.width * dpr / k).ceil(), lowH = (size.height * dpr / k).ceil();
     if (lowW <= 0 || lowH <= 0) return;
-    final kc = cam.pixelsPerCell * dpr / k;
+    final kc = stableKc(cam.pixelsPerCell * dpr / k);
     final (ox, oy) = anchorOf(cam);
     final f = CityFrame(angle: cam.rotation, kc: kc, ox: ox, oy: oy);
     final off = _offset(size, dpr, k, cam, f);

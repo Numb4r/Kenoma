@@ -86,6 +86,13 @@ void main() {
     expect(c.rebuiltLastFrame, 0, reason: 'nada mudou');
     ground(c, camAt(0.3, 0.2)).dispose();
     expect(c.rebuiltLastFrame, 0, reason: 'andar um pouco não refaz o que já está pronto');
+    // Andando, a escala muda em frações ínfimas com a latitude: nada é refeito (no moto g54 isso refazia um bloco por quadro).
+    for (var i = 1; i <= 5; i++) {
+      nowUs += 16000;
+      final cam = camAt(0.3, 0.2 + i * 0.001);
+      ground(c, MapCamera(centerX: cam.centerX, centerY: cam.centerY, pixelsPerCell: cam.pixelsPerCell * (1 + i * 1e-6))).dispose();
+      expect(c.rebuiltLastFrame, 0, reason: 'passo $i');
+    }
     ground(c, camAt(0.3, 0.2), alt: 39.9).dispose();
     expect(c.rebuiltLastFrame, 0, reason: 'a mesma faixa de luz');
     ground(c, camAt(0.3, 0.2), alt: 47).dispose();

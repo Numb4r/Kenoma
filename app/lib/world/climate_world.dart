@@ -615,6 +615,18 @@ class ClimateWorld {
   /// Época 12 (Vigília com Tempestade): o raio cai no centro do olhar ativo mais perto, nas células z17 em volta, no instante
   /// dele. Sem olhar ativo, cai onde ia cair.
   ClimateDrop _atZone(ClimateDrop drop, String zoneName, int cx, int cy) {
+    // 0.22.0: o resultado só depende da queda, da zona e do que o debug força; guardado, a Vigília com Tempestade não refaz
+    // centenas de buscas de zona a cada atualização (era a maior parte dos 190 ms por atualização no moto g54).
+    final key = (drop.uid, zoneName, forced(), '${forcedEvents().join('+')}#${events.length}');
+    final hit = _atZoneCache[key];
+    if (hit != null) return hit;
+    if (_atZoneCache.length > 4000) _atZoneCache.clear();
+    return _atZoneCache[key] = _atZoneUncached(drop, zoneName);
+  }
+
+  final _atZoneCache = <(int, String, String?, String), ClimateDrop>{};
+
+  ClimateDrop _atZoneUncached(ClimateDrop drop, String zoneName) {
     final (lat, _) = tileFractionToLatLon(drop.x, drop.y, biomeZoom);
     final mpc = metersPerCell(lat);
     (double, double)? best;
@@ -645,7 +657,9 @@ class ClimateWorld {
     for (final tt in {t, if (lookBackS > 0) t - lookBackS}) {
       for (final (cx, cy) in _cells17(x21, y21, radius21 + movingExtra21)) {
         final far = movingExtra21 > 0 && ((cx + 0.5) * 16 - x21).abs() > radius21 + 8 || movingExtra21 > 0 && ((cy + 0.5) * 16 - y21).abs() > radius21 + 8;
-        final d = forced() != null ? _defAt17(cx, cy, tt) : memo.putIfAbsent((cx >>> 5, cy >>> 5, tt), () => _defAt17(cx, cy, tt));
+        // `_defAt17` só depende da região z12 e do instante, forçado ou não: a memória vale também com o debug forçando (0.22.0:
+        // sem ela, a Vigília com Tempestade forçadas custava 230 ms por atualização no moto g54).
+        final d = memo.putIfAbsent((cx >>> 5, cy >>> 5, tt), () => _defAt17(cx, cy, tt));
         if (d == null) continue;
         for (var i = 0; i < d.def.pieces.length; i++) {
           final p = d.def.pieces[i];

@@ -27,7 +27,23 @@ class CityRoad {
 
   /// `x0, y0, x1, y1, ...` em células z21.
   final Float64List xy;
+
+  late final (double, double, double, double) bounds = boundsOf(xy);
 }
+
+/// O retângulo `(esquerda, topo, direita, baixo)` de uma lista `x0, y0, x1, y1, ...`.
+(double, double, double, double) boundsOf(Float64List xy) {
+  var l = double.infinity, t = double.infinity, r = -double.infinity, b = -double.infinity;
+  for (var i = 0; i + 1 < xy.length; i += 2) {
+    if (xy[i] < l) l = xy[i];
+    if (xy[i] > r) r = xy[i];
+    if (xy[i + 1] < t) t = xy[i + 1];
+    if (xy[i + 1] > b) b = xy[i + 1];
+  }
+  return (l, t, r, b);
+}
+
+bool _touches((double, double, double, double) a, double l, double t, double r, double b) => a.$1 <= r && a.$3 >= l && a.$2 <= b && a.$4 >= t;
 
 /// O visual de um prédio: o bioma do estilo, o tipo para `wallStyleFor` e a altura falsa em pixels de arte (por metro de
 /// zoom). As mesmas regras do Laboratório (`lab_block.dart`).
@@ -122,6 +138,16 @@ class CityTile {
   final List<List<Float64List>> greens, waters;
   final List<CityBuilding> buildings;
   final List<CityProp> props;
+
+  /// 0.22.0: só o que toca o retângulo `[l, r] × [t, b]` (células z21). O bloco do cache desenha isto, não o tile inteiro:
+  /// um tile z15 tem mais de um quilômetro de ruas e prédios.
+  CityTile within(double l, double t, double r, double b) => CityTile(
+        roads: [for (final x in roads) if (_touches(x.bounds, l, t, r, b)) x],
+        greens: [for (final g in greens) if (g.isNotEmpty && _touches(boundsOf(g.first), l, t, r, b)) g],
+        waters: [for (final g in waters) if (g.isNotEmpty && _touches(boundsOf(g.first), l, t, r, b)) g],
+        buildings: [for (final x in buildings) if (_touches(x.bounds, l, t, r, b)) x],
+        props: [for (final p in props) if (p.x >= l && p.x <= r && p.y >= t && p.y <= b) p],
+      );
 
   static final empty = CityTile(roads: const [], greens: const [], waters: const [], buildings: const [], props: const []);
 }
