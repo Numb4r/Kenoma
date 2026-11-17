@@ -9,6 +9,10 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.24.4
+
+- [ ] `0244-voltar` **Voltar.** No menu de debug, Voltar com busca limpa a busca; no topo, volta ao mapa (nunca fecha o app). Nos apps do celular, Voltar sai do app para o celular e do celular para o mapa; no Loadout com a lista de troca aberta e no Experimentar com a escolha de material aberta, o primeiro Voltar só fecha a lista.
+
 ## 0.24.3
 
 Não muda o save. Antes de qualquer toque pelo adb: o dono libera o aparelho na sessão, e tudo passa por `scripts/celular.sh`.

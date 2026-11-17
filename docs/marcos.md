@@ -1087,3 +1087,26 @@ Novos: `test/ui/tree_sway_test.dart` (o balanço vai para os dois lados e para; 
 ### Capturas
 
 No emulador, em `/tmp/kenoma-shots/0243_*`: o item do debug (`debug_devopts`), a seção Desenvolvedor (`ajustes`, cortada antes do player_id), a confirmação, o mapa com **ÉPOCA 12 EM TESTE** no HUD (`hud_epoca12`) e a árvore da praça balançando (`arvore_balanca.mp4`, `.gif` ampliado e `arvore_quadros.png`).
+
+## Fase 1 · fatia 10e · Voltar do debug e conceitos do Humoth (0.24.4)
+
+Versão 0.24.4+48, mesma chave, save no schema 12 (sem mudança). Feita no notebook, no emulador; o celular não foi tocado.
+
+### Voltar
+
+- **Menu de debug:** ele é a primeira rota do app, então o Voltar fechava o app. Agora (`PopScope` em `DebugMenuView`) o Voltar sobe um nível: com busca, limpa a busca; no topo do menu, abre o mapa (`openGameMap`, que volta ao mapa da pilha ou abre um). Do mapa, o Voltar continua levando ao menu de debug: o Voltar não fecha mais o app (sai-se pelo botão de início do Android).
+- **Telas do celular do jogo:** conferidas no emulador as 13 (Radar, Bestiário, Círculo, Bolsa, Loadout, Bancada, Chat, Fórum, Perfil, Rotas, Patrulha, Céu, Ajustes): Voltar sai do app para o celular e do celular para o mapa; o detalhe de um item da Bolsa fecha e volta à Bolsa. Dois lugares fechavam a tela inteira com um nível aberto por dentro e agora fecham só o nível: a lista de troca do **Loadout** e a escolha de material do **Experimentar** (Bancada).
+
+### Humoth: só os conceitos
+
+O `criativo` fez três conceitos no Aseprite, em `tools/art/teste/humoth/` (fora do git, no `.gitignore`), cada um em 19 px (pixel de 3 dp), 28 px (pixel de 2 dp) e retrato de 96 px, com as notas em `notas.md`: **A · Delta "Letreiro"** (mariposa-esfinge em voo planado, índigo frio, ocelos ciano), **B · Tenda "Brasa"** (pousada, asas em telhado, ameixa e quatro ocelos laranja), **C · Batimento "Véu"** (mariposa-lua, asas redondas, violeta do Véu e ocelos amarelos). Recomendação dele: B se a densidade ficar em 3 dp; A se o teste de 2 dp passar. As referências (o Humoth e o Conjurador atuais exportados, o mapa de noite no emulador) estão em `tools/art/teste/ref/`. Nada entrou no jogo; o dono escolhe o conceito e a densidade.
+
+Observação do `criativo` para depois: o corpo escuro some no asfalto da noite e quem segura a leitura são a borda da asa, os ocelos e os veios. Se o tom da noite (`sceneLight`) for pintado por cima do Eco, os ocelos e veios apagam; para valerem como LED, terão de ir depois do tom, como as janelas e o neon. Nas folhas os conceitos estão sem o tom.
+
+### Testes
+
+Novos: o Voltar do menu de debug em `test/dev/debug_menu_test.dart` (limpa a busca, chama o mapa no topo, nunca sai) e o do Loadout e do Experimentar em `test/ui/craft_screens_test.dart`.
+
+### Capturas
+
+`/tmp/kenoma-shots/0244_humoth_mapa.png` (os três conceitos e o atual sobre o mapa de noite, ao lado do Conjurador, em 19 px a 3 dp e 28 px a 2 dp, na escala do jogo) e `0244_humoth_retratos.png` (os retratos de 96 px, com os de 19 e 28 px e o atual).
