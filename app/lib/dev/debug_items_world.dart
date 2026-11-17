@@ -199,6 +199,35 @@ List<DebugItem> mapItems(DebugEnv env) {
       ),
     ),
     DebugItem(
+      id: 'map.width',
+      title: 'Largura da tela',
+      section: DebugSection.map,
+      keywords: const ['zoom', 'largura', 'pinça', 'zoom ampliado', '250', 'longe', 'metros'],
+      builder: (_) => ListenableBuilder(
+        listenable: tools,
+        builder: (context, _) => DebugColumn([
+          DebugNote('O zoom do mapa sem pinça (até o limite de agora: 80 m, ou 250 m com o Zoom ampliado). Pedido: ${tools.forcedWidthM?.round() ?? '-'} m.'),
+          DebugWrap([
+            for (final m in const [50.0, 80.0, 120.0, 250.0]) DebugButton(label: '${m.round()} m', onTap: () => tools.setWidthM(m)),
+          ]),
+        ]),
+      ),
+    ),
+    DebugItem(
+      id: 'map.aseprite_art',
+      title: 'Arte do Aseprite',
+      section: DebugSection.map,
+      keywords: const ['aseprite', 'arte', 'carimbo', 'sprite', 'telhado', 'árvore', 'ipê', 'comparar'],
+      builder: (_) => overlay('Arte do Aseprite', 'O mapa Completo usa os carimbos desenhados no Aseprite (telhados, árvores, props, calçada) no lugar dos de código.', () => tools.asepriteArt, tools.setAsepriteArt),
+    ),
+    DebugItem(
+      id: 'map.turn_labels',
+      title: 'Giro dos objetos',
+      section: DebugSection.map,
+      keywords: const ['giro', 'rotação', 'gira', 'de pé', 'rótulo', 'categoria', 'telhado', 'retângulo'],
+      builder: (_) => overlay('Giro dos objetos', 'Escreve sobre cada objeto do mapa o tipo e se ele gira com o chão, fica de pé ou gira com o rumo.', () => tools.turnLabels, tools.setTurnLabels),
+    ),
+    DebugItem(
       id: 'map.follow_piece',
       title: 'Câmera segue a peça',
       section: DebugSection.map,

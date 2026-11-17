@@ -6,16 +6,11 @@ Prédios: as áreas com `building=*` (fora `no`, `construction` sem planta, `roo
 `height` (em andares de 3 m) e se há `shop`/`amenity` de comércio na própria área. Contorno simplificado a 0,5 m, sem
 buracos. Árvores: os nós `natural=tree`.
 
-Formato: `BLD1` + gzip(
-  varint n_tipos; por tipo varint tamanho e bytes UTF-8;
-  varint n_prédios; por prédio: varint tipo, u8 andares (0 = sem dado; 255 no máximo), u8 bandeiras (bit 0: comércio),
-    varint n_pontos e os pontos em 1/64 de célula z21, em deltas com zigzag (o primeiro em relação ao primeiro ponto do
-    prédio anterior, na ordem do primeiro ponto);
-  varint n_árvores; por árvore x, y em 1/64 de célula z21, em deltas com zigzag, na ordem de (x, y)).
+Formato `BLD2` (0.22.2), por tile z15 com índice: ver `bld_tiles.py`. (O `BLD1` da 0.22.0, um gzip só, foi convertido sem
+ler o extrato de novo: `bld_tiles.py <bld1> <bld2>`.)
 
 Uso: .venv/bin/python build_buildings.py --region campinas [--epoch 0] [--out-dir ...]"""
 import argparse
-import gzip
 import hashlib
 import json
 from pathlib import Path
@@ -26,7 +21,7 @@ import shapely
 from shapely.ops import transform
 
 from build_region import REGIONS_DIR, ROOT, ensure_source, lonlat_to_tile
-from build_visual import varint, zigzag
+from bld_tiles import write_bld2
 
 UNIT = 64
 SIMPLIFY_M = 0.5
@@ -111,27 +106,11 @@ def main() -> None:
             shop = obj.tags.get("shop") is not None or obj.tags.get("amenity") in SHOP_AMENITY
             buildings.append((clean[0][0], clean[0][1], tid, levels_of(obj.tags), 1 if shop else 0, clean))
 
-    buildings.sort(key=lambda b: (b[0], b[1]))
-    body = bytearray(varint(len(types)))
-    for name in sorted(types, key=types.get):
-        raw = name.encode()
-        body += varint(len(raw)) + raw
-    body += varint(len(buildings))
-    px = py = 0
-    for x0, y0, tid, lv, flags, pts in buildings:
-        body += varint(tid) + bytes([lv, flags]) + varint(len(pts))
-        for x, y in pts:
-            body += varint(zigzag(x - px)) + varint(zigzag(y - py))
-            px, py = x, y
-        px, py = x0, y0
-    body += varint(len(trees))
-    px = py = 0
-    for x, y in sorted(trees):
-        body += varint(zigzag(x - px)) + varint(zigzag(y - py))
-        px, py = x, y
+    names = sorted(types, key=types.get)
+    data = write_bld2(names, [(tid, lv, flags, pts) for _, _, tid, lv, flags, pts in buildings], sorted(trees))
     args.out_dir.mkdir(parents=True, exist_ok=True)
     out = args.out_dir / f"{args.region}_e{args.epoch}_bldg.bin"
-    out.write_bytes(b"BLD1" + gzip.compress(bytes(body), compresslevel=9, mtime=0))
+    out.write_bytes(data)
     print(f"{len(buildings)} prédios ({len(types)} tipos), {len(trees)} árvores, {out.stat().st_size} bytes, "
           f"sha256 {hashlib.sha256(out.read_bytes()).hexdigest()}")
 

@@ -39,6 +39,26 @@ class MapCityTiles {
     }
   }
 
+  /// 0.22.2: os tiles montados antes de os prédios deles chegarem (o tile de prédios ainda carregava).
+  final _waiting = <(int, int)>{};
+  int _buildingRev = -1;
+
+  /// Os tiles que ganharam os prédios desde a última chamada: quem desenha refaz os blocos deles.
+  List<(int, int)> takeRefreshed() {
+    final b = buildings;
+    if (b == null || b.buildingRevision == _buildingRev) return const [];
+    _buildingRev = b.buildingRevision;
+    final out = <(int, int)>[];
+    for (final k in [..._waiting]) {
+      final c = cellsPerTile;
+      if (!b.readyAt(k.$1 * c + c / 2, k.$2 * c + c / 2)) continue;
+      _waiting.remove(k);
+      _tiles.remove(k);
+      out.add(k);
+    }
+    return out;
+  }
+
   CityTile tileAt(int tx, int ty) {
     if (visual.pack.revision != _revision) {
       _revision = visual.pack.revision; // chegou bloco ou região: a cena muda
@@ -47,6 +67,8 @@ class MapCityTiles {
     final key = (tx, ty);
     final hit = _tiles.remove(key);
     if (hit != null) return _tiles[key] = hit;
+    final c = cellsPerTile;
+    if (buildings != null && !buildings!.readyAt(tx * c + c / 2, ty * c + c / 2)) _waiting.add(key);
     final t = buildCityTile(tx: tx, ty: ty, visual: visual.tile(tx, ty), cellsPerTile: visual.cellsPerTile, extent: visual.pack.extent, mpc: mpc, biomeAt: biomeAt, buildings: buildings, points: points);
     _tiles[key] = t;
     while (_tiles.length > maxTiles) {

@@ -41,7 +41,7 @@ Future<RegionOpen> _openInIsolate(String id, List<RegionFileJob> jobs, String ke
 
 Future<AccessPack?> _openAccessInIsolate(RegionFileJob job, String key) => Isolate.run(() => openAccessFile(job, publicKeyHex: key));
 Future<TrafficPack?> _openTrafficInIsolate(RegionFileJob job, String key) => Isolate.run(() => openTrafficFile(job, publicKeyHex: key));
-Future<BuildingPack?> _openBuildingsInIsolate(RegionFileJob job, String key) => Isolate.run(() => openBuildingFile(job, publicKeyHex: key));
+Future<BuildingPack?> _openBuildingsInIsolate(RegionFileJob job, String key) async => await Isolate.run(() => verifyBuildingFile(job, publicKeyHex: key)) ? openBuildingPackFile(job.path) : null;
 
 class RegionManager extends ChangeNotifier {
   RegionManager({

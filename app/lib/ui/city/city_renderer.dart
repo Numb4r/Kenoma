@@ -11,6 +11,7 @@
 /// primeiro). Só desenho.
 library;
 
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -118,7 +119,7 @@ class CityRenderer {
     final ccx = cam.centerX / chunkCells, ccy = cam.centerY / chunkCells;
     double dist((int, int) id) => (id.$1 + 0.5 - ccx) * (id.$1 + 0.5 - ccx) + (id.$2 + 0.5 - ccy) * (id.$2 + 0.5 - ccy);
     final missing = [for (final id in ids) if (!_chunks.containsKey(id)) id]..sort((a, b) => dist(a).compareTo(dist(b)));
-    final stale = [for (final id in ids) if (_chunks[id] case final c? when c.frame != goal || c.key != key) id]..sort((a, b) => dist(a).compareTo(dist(b)));
+    final stale = [for (final id in ids) if (_chunks[id] case final c? when c.frame != goal || c.key != key || _dirty.contains(id)) id]..sort((a, b) => dist(a).compareTo(dist(b)));
     rebuiltLastFrame = 0;
     final rs = Stopwatch()..start();
     for (final id in [...missing, ...stale]) {
@@ -129,6 +130,7 @@ class CityRenderer {
     }
     rasterChunkMs = rs.elapsedMicroseconds / 1000;
     rebuiltTotal += rebuiltLastFrame;
+    if (prefetch) _prefetch(cam, size, goal, key, sunAltDeg, sunAzDeg, mpc);
     // Desenha: o bloco exato só desliza por pixels inteiros; o de outro giro ou zoom leva o resto do giro e da escala.
     canvas.save();
     canvas.scale(k / dpr);
@@ -161,6 +163,58 @@ class CityRenderer {
     groundMs = sw.elapsedMicroseconds / 1000;
   }
 
+  /// 0.22.2: monta fora do quadro os blocos em volta da tela (um anel de 2 blocos além da folga), do mais perto para o mais
+  /// longe: a gravação roda depois do quadro (`scheduleMicrotask`, fora da fase de desenho) e a rasterização no thread de raster (`toImage`, assíncrono). Um
+  /// por vez. Quando o jogador anda, o bloco que vai entrar na tela já está pronto e o quadro não tem tranco.
+  bool prefetch = true;
+  final _pending = <(int, int)>{};
+  final _dirty = <(int, int)>{};
+  int prefetchedTotal = 0;
+
+  /// O anel em volta da tela está todo pronto (teste).
+  bool prefetchDone = false;
+
+  void _prefetch(MapCamera cam, ui.Size size, CityFrame goal, GroundKey key, double sunAltDeg, double sunAzDeg, double mpc) {
+    if (_pending.isNotEmpty) return;
+    final (l, t, r, b) = cam.visibleBounds(size.width, size.height);
+    final ccx = cam.centerX / chunkCells, ccy = cam.centerY / chunkCells;
+    (int, int)? best;
+    var bd = double.infinity;
+    for (var y = (t / chunkCells).floor() - 3; y <= (b / chunkCells).floor() + 3; y++) {
+      for (var x = (l / chunkCells).floor() - 3; x <= (r / chunkCells).floor() + 3; x++) {
+        final c = _chunks[(x, y)];
+        if (c != null && c.frame == goal && c.key == key && !_dirty.contains((x, y))) continue;
+        final d = (x + 0.5 - ccx) * (x + 0.5 - ccx) + (y + 0.5 - ccy) * (y + 0.5 - ccy);
+        if (d < bd) (best, bd) = ((x, y), d);
+      }
+    }
+    final id = best;
+    prefetchDone = id == null;
+    if (id == null) return;
+    _pending.add(id);
+    scheduleMicrotask(() {
+      final x0 = id.$1 * chunkCells, y0 = id.$2 * chunkCells;
+      final l = x0 - 3.0, t = y0 - 3.0, r = x0 + chunkCells + 3.0, b = y0 + chunkCells + 3.0;
+      final tiles = [for (final tile in _tilesAround(l, t, r, b)) tile.within(l, t, r, b)];
+      final rec = recordGroundChunk(cx0: x0, cy0: y0, size: chunkCells, f: goal, key: key, sunAltDeg: sunAltDeg, sunAzDeg: sunAzDeg, mpc: mpc, art: art, tiles: tiles, biomeAt: biomeAt);
+      rec.toImage().then((c) {
+        _pending.remove(id);
+        final old = _chunks[id];
+        // Só entra se ainda vale e se ninguém montou o mesmo bloco no quadro enquanto rasterizava.
+        if (_disposed || (old != null && old.frame == c.frame && old.key == c.key && !_dirty.contains(id))) {
+          c.image.dispose();
+          return;
+        }
+        _chunks.remove(id)?.image.dispose();
+        _chunks[id] = c;
+        _dirty.remove(id);
+        prefetchedTotal++;
+      });
+    });
+  }
+
+  bool _disposed = false;
+
   /// O deslocamento inteiro (pixels de arte) do quadro até a tela: o centro da câmera cai no centro da tela.
   ui.Offset _offset(ui.Size size, double dpr, int k, MapCamera cam, CityFrame f) {
     final cam0 = f.map(cam.centerX, cam.centerY);
@@ -170,6 +224,7 @@ class CityRenderer {
   void _build((int, int) id, CityFrame goal, GroundKey key, double sunAltDeg, double sunAzDeg, double mpc) {
     final x0 = id.$1 * chunkCells, y0 = id.$2 * chunkCells;
     _chunks.remove(id)?.image.dispose();
+    _dirty.remove(id);
     // Só o que toca o bloco, com 3 células de folga (a sombra de um prédio alto ao lado, uma rua larga na borda).
     final l = x0 - 3.0, t = y0 - 3.0, r = x0 + chunkCells + 3.0, b = y0 + chunkCells + 3.0;
     final tiles = [for (final tile in _tilesAround(l, t, r, b)) tile.within(l, t, r, b)];
@@ -225,6 +280,16 @@ class CityRenderer {
     uprightMs = sw.elapsedMicroseconds / 1000;
   }
 
+  /// Esquece os blocos que tocam o retângulo (células z21), com a folga de 3 células que cada bloco lê em volta: chegaram os
+  /// prédios desse pedaço.
+  void invalidateArea(double l, double t, double r, double b) {
+    for (final id in [..._chunks.keys]) {
+      final x0 = id.$1 * chunkCells - 3.0, y0 = id.$2 * chunkCells - 3.0;
+      if (x0 + chunkCells + 6 < l || x0 > r || y0 + chunkCells + 6 < t || y0 > b) continue;
+      _dirty.add(id); // continua desenhado até ser refeito (no orçamento do quadro ou em segundo plano)
+    }
+  }
+
   /// Esquece todos os blocos (chegou bloco ou região nova, ou trocou o estilo).
   void clear() {
     for (final c in _chunks.values) {
@@ -233,5 +298,8 @@ class CityRenderer {
     _chunks.clear();
   }
 
-  void dispose() => clear();
+  void dispose() {
+    _disposed = true;
+    clear();
+  }
 }

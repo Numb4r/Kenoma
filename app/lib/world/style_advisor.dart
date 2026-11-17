@@ -46,3 +46,23 @@ class StyleAdvisor {
 /// Ajustes: o mapa no estilo Simplificado (`true`) ou Completo (padrão), e se a sugestão de trocar já saiu.
 const String kSimpleGraphicsSetting = 'map_simple';
 const String kSimpleSuggestedSetting = 'map_simple_suggested';
+
+/// 0.22.2 (GDD, Câmera): "Zoom ampliado", desligado por padrão. Ligado, a pinça abre até [kWideZoomMaxM].
+const String kWideZoomSetting = 'zoom_wide';
+const double kWideZoomMaxM = 250;
+
+/// Acima desta largura de tela (m) o mapa passa sozinho para o Simplificado; volta ao Completo abaixo de [kAutoSimpleBackM]
+/// (a folga evita trocar de estilo a cada movimento da pinça perto do limite).
+const double kAutoSimpleM = 120, kAutoSimpleBackM = 112;
+
+/// As ruas que somem de longe (a fina antes da avenida): acima de 120 m somem as trilhas, acima de 200 m as locais, acima
+/// de 400 m as secundárias. Dart puro, com teste.
+Set<String> hiddenRoadClasses(double widthM) => {
+      if (widthM > 120) 'pedestrian',
+      if (widthM > 200) 'local',
+      if (widthM > 400) 'secondary',
+    };
+
+/// O estilo automático: com [simpleWanted] (Ajustes) ou no mapa de Rotas é sempre o Simplificado; senão o zoom decide,
+/// com folga. [wasAuto]: se o último quadro já estava no Simplificado automático.
+bool autoSimple({required double widthM, required bool wasAuto}) => wasAuto ? widthM > kAutoSimpleBackM : widthM > kAutoSimpleM;

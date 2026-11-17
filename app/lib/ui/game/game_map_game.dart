@@ -56,6 +56,10 @@ import '../../data/building_pack.dart';
 import '../../world/style_advisor.dart';
 import '../city/city_renderer.dart';
 import '../city/city_sources.dart';
+import '../city/turn_category.dart';
+import '../../world/city_scene.dart' show roadClassKey;
+import '../../data/visual_pack.dart' show RoadClass;
+import 'package:flutter/painting.dart' show TextPainter, TextSpan, TextStyle, TextDirection;
 import '../lab/lab_art.dart';
 
 /// O mapa do jogo em Flame: segue o Conjurador, desenha o marcador e a Aura e repassa os toques para a
@@ -118,14 +122,45 @@ class GameMapGame extends FlameGame {
   /// (Ajustes, lido a cada quadro). Os dois estilos usam a mesma lógica e a mesma máscara de ruas.
   final BuildingSource? buildings;
   final bool Function() simpleStyle;
-  bool get fullStyle => !simpleStyle();
+  /// O estilo deste quadro: o Completo, a menos que os Ajustes peçam o Simplificado, o mapa seja o de Rotas (0.22.2: sempre
+  /// Simplificado) ou o zoom passe de 120 m (volta ao Completo abaixo de 112 m).
+  bool get fullStyle => !simpleStyle() && !routesView && !_autoSimple;
+  bool _autoSimple = false;
+
+  /// O mapa de Rotas (escolher destino ou a viagem) está aberto: tela larga do Modo Viagem.
+  bool get routesView => _travelViewM != null;
+
+  /// Nível de detalhe de longe (0.22.2): sem tráfego, passantes, bichos e partículas; as ruas finas somem antes.
+  bool get farView => routesView || widthM > kAutoSimpleM;
+
+  /// "Zoom ampliado" nos Ajustes (lido a cada quadro): a pinça abre até 250 m.
+  bool Function() wideZoom = () => false;
+
+  /// Debug: a largura pedida pelo menu (sem pinça), aplicada uma vez a cada pedido novo.
+  double? Function() forcedWidthM = () => null;
+  double? _forcedWidth;
 
   late final MapCityTiles cityTiles = MapCityTiles(visual: visual, grid: renderer.map.pack, biomes: renderer.map.biomes, buildings: buildings, points: trafficPoints);
   LabArt? _cityArt;
   CityRenderer? _city;
 
-  /// O renderizador do Completo, montado no primeiro quadro em que o estilo é usado.
-  CityRenderer get city => _city ??= CityRenderer(art: _cityArt ??= LabArt.build(), tileAt: cityTiles.tileAt, biomeAt: cityTiles.biomeAt, cellsPerTile: visual.cellsPerTile);
+  /// 0.22.2: os carimbos do Aseprite (`assets/art/map/`, carregados pela tela) e o debug que troca a arte em código por eles.
+  Map<String, ui.Image> asepriteStamps = const {};
+  bool Function() asepriteArt = () => false;
+  bool? _cityAse;
+
+  /// O renderizador do Completo, montado no primeiro quadro em que o estilo é usado (e de novo quando a arte troca).
+  CityRenderer get city {
+    final ase = asepriteArt() && asepriteStamps.isNotEmpty;
+    if (_city != null && _cityAse != ase) {
+      _city!.dispose();
+      _cityArt?.dispose();
+      _city = null;
+      _cityArt = null;
+    }
+    _cityAse = ase;
+    return _city ??= CityRenderer(art: _cityArt ??= LabArt.build(overrides: ase ? asepriteStamps : const {}), tileAt: cityTiles.tileAt, biomeAt: cityTiles.biomeAt, cellsPerTile: visual.cellsPerTile);
+  }
   int _cityRevision = -1;
   bool? _wasFull;
 
@@ -443,11 +478,23 @@ class GameMapGame extends FlameGame {
   void update(double dt) {
     super.update(dt);
     _frameDt = dt;
+    if (_travelViewM == null) {
+      maxWidthM = wideZoom() ? kWideZoomMaxM : _normalMaxWidthM;
+      if (widthM > maxWidthM) widthM = maxWidthM;
+    }
+    final fw = forcedWidthM();
+    if (fw != _forcedWidth) {
+      _forcedWidth = fw;
+      if (fw != null) widthM = fw.clamp(minWidthM, maxWidthM).toDouble();
+    }
+    _autoSimple = autoSimple(widthM: widthM, wasAuto: _autoSimple);
     final full = fullStyle;
     if (full != _wasFull) {
       _wasFull = full;
       styleAdvisor.reset();
-      if (!full) _city?.clear(); // o Simplificado não usa os blocos: a memória volta
+      // O Simplificado dos Ajustes não usa os blocos: a memória volta. No automático (zoom, Rotas) os blocos ficam para a
+      // volta ao Completo não ter tranco.
+      if (!full && simpleStyle()) _city?.clear();
     }
     if (full && styleAdvisor.add(dt)) onSuggestSimple?.call();
     avatar.update(dt);
@@ -504,10 +551,11 @@ class GameMapGame extends FlameGame {
     final cam = follow.camera;
     final wv = worldView;
     final mpc = metersPerCell(_lat);
-    final traffic = veilTraffic() && _hasFix && wv != null;
+    final far = farView;
+    final traffic = veilTraffic() && _hasFix && wv != null && !far;
     final full = fullStyle;
     _climate
-      ..reduction = full ? 1.0 : 0.5
+      ..reduction = far ? 0.0 : (full ? 1.0 : 0.5)
       ..halfRes = true
       ..dpr = dpr;
     if (traffic) {
@@ -532,7 +580,8 @@ class GameMapGame extends FlameGame {
         if (full) {
           _paintCityGround(canvas, view, cam, mpc);
         } else {
-          _art.paint(canvas, view, cam, dpr: dpr, metersPerCell: mpc, coarse: coarse);
+          final hide = hiddenRoadClasses(widthM);
+          _art.paint(canvas, view, cam, dpr: dpr, metersPerCell: mpc, coarse: coarse, hideRoads: {for (final c in RoadClass.values) if (hide.contains(roadClassKey(c))) c});
         }
         _paintCycleways(canvas, view, cam);
         if (!full) _paintLight(canvas, view);
@@ -594,6 +643,70 @@ class GameMapGame extends FlameGame {
           paintEdgeMarks(canvas, view, center, marks, rotation: cam.rotation);
         },
     }, drawn: lastLayers..clear());
+    if (turnLabels()) paintTurnLabels(canvas, view, cam);
+  }
+
+  /// Debug (0.22.2): o tipo e a categoria de giro de cada objeto à vista.
+  bool Function() turnLabels = () => false;
+
+  /// O que o modo "Giro dos objetos" escreveu no último quadro (teste).
+  final turnLabelsDrawn = <String>[];
+
+  void paintTurnLabels(Canvas canvas, Size view, MapCamera cam) {
+    final items = <(String, Offset)>[];
+    bool inView(double x, double y) => x >= 0 && y >= 0 && x <= view.width && y <= view.height;
+    void add(String kind, double cx, double cy) {
+      final (x, y) = cam.cellToScreen(cx, cy, view.width, view.height);
+      if (inView(x, y)) items.add((kind, Offset(x, y)));
+    }
+
+    final (l, t, r, b) = cam.visibleBounds(view.width, view.height);
+    final cpt = visual.cellsPerTile;
+    var roads = 0;
+    for (var ty = (t / cpt).floor(); ty <= (b / cpt).floor(); ty++) {
+      for (var tx = (l / cpt).floor(); tx <= (r / cpt).floor(); tx++) {
+        final tile = cityTiles.tileAt(tx, ty);
+        if (fullStyle) {
+          for (final bd in tile.buildings) {
+            add('telhado', bd.centroid.$1, bd.centroid.$2);
+          }
+          for (final p in tile.props) {
+            add(propKindName(p.kind), p.x, p.y);
+          }
+        }
+        for (final rd in tile.roads) {
+          if (roads > 8 || rd.xy.length < 4) continue;
+          final m = rd.xy.length ~/ 4 * 2;
+          final (x, y) = cam.cellToScreen(rd.xy[m], rd.xy[m + 1], view.width, view.height);
+          if (inView(x, y)) {
+            items.add(('rua', Offset(x, y)));
+            roads++;
+          }
+        }
+      }
+    }
+    for (final (k, x, y) in _traffic.debugObjects) {
+      if (inView(x, y)) items.add((k, Offset(x, y)));
+    }
+    for (final s in worldView?.spawns ?? const <WorldSpawn>[]) {
+      add(s.isEco ? 'Eco' : (s.isSpark ? 'Fagulha' : 'material'), s.x, s.y);
+    }
+    if (avatar.hasPosition) add('Conjurador', avatar.x, avatar.y);
+    turnLabelsDrawn
+      ..clear()
+      ..addAll(items.map((e) => turnLabel(e.$1)));
+    // Um rótulo por casa de 56 × 20 px: o resto some para dar para ler.
+    final taken = <(int, int)>{};
+    for (final (kind, at) in items) {
+      if (!taken.add(((at.dx / 56).floor(), (at.dy / 20).floor()))) continue;
+      final turn = objectTurn[kind] ?? Turn.upright;
+      final color = switch (turn) { Turn.ground => const Color(0xFF8BE08B), Turn.upright => const Color(0xFFFFFFFF), Turn.heading => const Color(0xFFFFB060) };
+      final tp = TextPainter(text: TextSpan(text: turnLabel(kind), style: TextStyle(fontSize: 8, color: color)), textDirection: TextDirection.ltr)..layout();
+      final box = Rect.fromLTWH(at.dx - tp.width / 2 - 2, at.dy - tp.height - 4, tp.width + 4, tp.height + 2);
+      canvas.drawRect(box, Paint()..color = const Color(0xCC1A1424));
+      tp.paint(canvas, box.topLeft + const Offset(2, 1));
+      canvas.drawCircle(at, 2, Paint()..color = color);
+    }
   }
 
   static const _wetClimates = {'drizzle', 'rain', 'storm', 'deluge', 'acid_rain', 'freezing_rain', 'hail', 'hurricane'};
@@ -608,6 +721,10 @@ class GameMapGame extends FlameGame {
       city.clear();
     }
     cityTiles.mpc = mpc;
+    final cpt = visual.cellsPerTile;
+    for (final (tx, ty) in cityTiles.takeRefreshed()) {
+      city.invalidateArea(tx * cpt + 0.0, ty * cpt + 0.0, (tx + 1) * cpt + 0.0, (ty + 1) * cpt + 0.0); // chegaram os prédios do tile
+    }
     city.paintGround(canvas, view, cam, dpr: dpr, artPixelDp: balance.artPixelDp, mpc: mpc, sunAltDeg: sunAltDeg, sunAzDeg: sunAzDeg, wet: _wetClimates.contains(_baseClimate), touching: follow.touching);
   }
 

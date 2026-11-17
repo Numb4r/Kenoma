@@ -278,6 +278,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Text('O Simplificado é plano e leve, para celulares mais fracos ou para poupar bateria: mostra tudo que importa para o jogo e só tira enfeite.',
                 style: TextStyle(fontSize: 8, color: kDim, height: 1.6)),
             SwitchListTile(
+              key: const Key('zoom-wide'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Zoom ampliado', style: TextStyle(fontSize: 8)),
+              subtitle: const Text('A pinça abre até 250 m. Acima de 120 m o mapa fica Simplificado e volta ao fechar o zoom. Não muda o jogo: Ecos só dentro da visão, toque e Aura iguais', style: TextStyle(fontSize: 8, color: kDim)),
+              value: s.setting(kWideZoomSetting),
+              activeThumbColor: kSignal,
+              onChanged: (v) => setState(() => s.setSetting(kWideZoomSetting, v)),
+            ),
+            SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Nomes de rua', style: TextStyle(fontSize: 8)),
               subtitle: const Text('Rótulos discretos nas ruas principais, que giram com o mapa', style: TextStyle(fontSize: 8, color: kDim)),

@@ -33,17 +33,28 @@ def _ref(data: Path) -> dict:
     return {"sha256": hashlib.sha256(d).hexdigest(), "bytes": len(d), "sig": sign(data)}
 
 
+LOCAL = False
+
+
 def _url(name: str) -> str:
+    if LOCAL:
+        return name
     return RELEASE.format(epoch=re.search(r"_e(\d+)", name).group(1), file=name)
 
 
 def main() -> None:
     args = sys.argv[1:]
     out_dir = PAGES
+    # --local: url relativa (só o nome do arquivo), para testar com um servidor local (docs/assinatura.md); nada publicado.
+    local = "--local" in args
+    if local:
+        args.remove("--local")
     if "--out" in args:
         i = args.index("--out")
         out_dir = Path(args[i + 1])
         del args[i:i + 2]
+    global LOCAL
+    LOCAL = local
     region, epoch = args[0], int(args[1])
     info = json.loads((ROOT / "pipeline/regions.json").read_text())[region]
     ep = next(e for e in json.loads((ROOT / "app/assets/data/epochs.json").read_text())["epochs"] if e["id"] == epoch)
@@ -70,6 +81,10 @@ def main() -> None:
         route_files["traffic"] = {"file": traffic["file"], "url": _url(traffic["file"]), **_ref(OUT / traffic["file"])}
         if route_files["traffic"]["sha256"] != traffic["sha256"]:
             sys.exit(f"{traffic['file']}: SHA-256 diferente do da época {epoch}")
+    # 0.22.2: os prédios do estilo Completo (por tile, BLD2). Só cenário: não dependem da época.
+    bldg = OUT / f"{region}_e0_bldg.bin"
+    if bldg.exists():
+        route_files["buildings"] = {"file": bldg.name, "url": _url(bldg.name), **_ref(bldg)}
     out_dir.mkdir(parents=True, exist_ok=True)
     target = out_dir / "regions.json"
     entry = {"id": region, "name": info["name"], "bbox": info["bbox"], "epoch": epoch, "files": files}

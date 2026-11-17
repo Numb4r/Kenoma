@@ -64,6 +64,18 @@ class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccess
     }
   }
 
+  @override
+  bool readyAt(double x, double y) => _regions.every((r) => r.buildings?.readyAt(x, y) ?? true);
+
+  @override
+  int get buildingRevision => _regions.fold(0, (a, r) => a + (r.buildings?.buildingRevision ?? 0));
+
+  /// Debug: os tiles de prédios carregados, a memória estimada e o tempo da última carga, por região.
+  String get buildingStats => [
+        for (final r in _regions)
+          if (r.buildings case final p?) '${r.id}: ${p.loadedTiles}/${p.tileCount} tiles, ${(p.loadedBytes / 1048576).toStringAsFixed(1)} MB, ${p.loadingTiles} carregando, última carga ${p.lastLoadMs.toStringAsFixed(1)} ms (${p.loadsTotal} cargas)',
+      ].join(' · ');
+
   bool hasBuildings(String id) => _regions.any((r) => r.id == id && r.buildings != null);
 
   void setBuildings(String id, BuildingPack buildings) {

@@ -98,6 +98,16 @@ class TrafficPainter {
 
   // O quadro preparado por [prepare]: quem está na tela, já ordenado, e o que o desenho precisa.
   final _walkers = <(Ghost, double, double)>[], _cars = <(Ghost, double, double)>[];
+
+  /// Debug (0.22.2, "Giro dos objetos"): o que o tráfego desenhou no último quadro, com a posição na tela.
+  Iterable<(String, double, double)> get debugObjects sync* {
+    for (final (g, x, y) in _cars) {
+      yield (g.bus ? 'ônibus' : 'carro', x, y);
+    }
+    for (final (g, x, y) in _walkers) {
+      yield (g.model == GhostModel.cyclist ? 'ciclista' : 'passante', x, y);
+    }
+  }
   ({double rotation, double pxPerM, double night, double t, StreetState Function(GhostLine, double)? streetState, bool skid, String? outfit})? _frame;
 
   /// Avança a simulação local [dt] segundos em volta do jogador ([px], [py], células z21) e calcula quem aparece neste

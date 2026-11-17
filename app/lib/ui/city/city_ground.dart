@@ -12,7 +12,6 @@ import 'dart:ui' as ui;
 import '../../world/city_scene.dart';
 import '../../world/lab_block.dart' show shadowOffset;
 import '../lab/lab_art.dart';
-import '../lab/lab_renderer.dart' show Matrix4Lite;
 import '../sprites/map_style.dart';
 
 /// O quadro de pixels de arte de um giro e de um zoom: `(x, y)` em células z21 vira `R(angle) · (p − o) · kc`, com o eixo
@@ -74,9 +73,47 @@ class GroundChunk {
   final GroundKey key;
 }
 
-/// Rasteriza o bloco de [size] × [size] células z21 com o canto em `(cx0, cy0)`. [tiles]: os tiles da cena que tocam o
-/// retângulo (com folga para as sombras que vêm de fora). [biomeAt]: a chave do bioma da grade numa célula.
+/// O bloco gravado e ainda não rasterizado: a gravação, o canto e o tamanho. [toImage] rasteriza no thread de raster.
+class RecordedChunk {
+  RecordedChunk(this.picture, this.left, this.top, this.width, this.height, this.frame, this.key);
+
+  final ui.Picture picture;
+  final int left, top, width, height;
+  final CityFrame frame;
+  final GroundKey key;
+
+  GroundChunk toImageSync() {
+    final img = picture.toImageSync(width, height);
+    picture.dispose();
+    return GroundChunk(img, left, top, frame, key);
+  }
+
+  Future<GroundChunk> toImage() async {
+    final img = await picture.toImage(width, height);
+    picture.dispose();
+    return GroundChunk(img, left, top, frame, key);
+  }
+}
+
+/// Rasteriza o bloco já no quadro (o que está na tela sem imagem).
 GroundChunk rasterGroundChunk({
+  required int cx0,
+  required int cy0,
+  required int size,
+  required CityFrame f,
+  required GroundKey key,
+  required double sunAltDeg,
+  required double sunAzDeg,
+  required double mpc,
+  required LabArt art,
+  required List<CityTile> tiles,
+  required String Function(int cx, int cy) biomeAt,
+}) =>
+    recordGroundChunk(cx0: cx0, cy0: cy0, size: size, f: f, key: key, sunAltDeg: sunAltDeg, sunAzDeg: sunAzDeg, mpc: mpc, art: art, tiles: tiles, biomeAt: biomeAt).toImageSync();
+
+/// Grava o bloco de [size] × [size] células z21 com o canto em `(cx0, cy0)`. [tiles]: os tiles da cena que tocam o
+/// retângulo (com folga para as sombras que vêm de fora). [biomeAt]: a chave do bioma da grade numa célula.
+RecordedChunk recordGroundChunk({
   required int cx0,
   required int cy0,
   required int size,
@@ -124,8 +161,10 @@ GroundChunk rasterGroundChunk({
     return p;
   }
 
-  // Os módulos de chão ancorados na origem do quadro: dois blocos vizinhos continuam o mesmo desenho.
-  final shaderM = Matrix4Lite.translate(-left.toDouble(), -top.toDouble());
+  // Os módulos de chão ancorados na origem do quadro e girados com ele (0.22.2): o desenho do chão (remendo, óleo, junta,
+  // onda da calçada) gira junto com o chão, nunca fica preso à tela; dois blocos vizinhos continuam o mesmo desenho.
+  final ca = math.cos(f.angle), sa = math.sin(f.angle);
+  final shaderM = Float64List.fromList([ca, sa, 0, 0, -sa, ca, 0, 0, 0, 0, 1, 0, -left.toDouble(), -top.toDouble(), 0, 1]);
   ui.Paint ground(String k) => ui.Paint()
     ..isAntiAlias = false
     ..filterQuality = ui.FilterQuality.none
@@ -304,10 +343,7 @@ GroundChunk rasterGroundChunk({
       }
     }
   }
-  final pic = rec.endRecording();
-  final img = pic.toImageSync(w, h);
-  pic.dispose();
-  return GroundChunk(img, left, top, f, key);
+  return RecordedChunk(rec.endRecording(), left, top, w, h, f, key);
 }
 
 /// O portão no muro da casa: 3 a 4 px no meio da aresta mais longa (quase sempre a da rua nos lotes do bairro).

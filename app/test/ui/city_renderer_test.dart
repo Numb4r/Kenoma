@@ -34,7 +34,7 @@ void main() {
   }
 
   var nowUs = 0;
-  CityRenderer make({CityTile Function(int, int)? tileAt}) => CityRenderer(art: art, tileAt: tileAt ?? tiles.tileAt, biomeAt: tiles.biomeAt, cellsPerTile: 64, budgetMs: 1000, nowUs: () => nowUs);
+  CityRenderer make({CityTile Function(int, int)? tileAt, bool prefetch = false}) => CityRenderer(art: art, tileAt: tileAt ?? tiles.tileAt, biomeAt: tiles.biomeAt, cellsPerTile: 64, budgetMs: 1000, nowUs: () => nowUs)..prefetch = prefetch;
 
   ui.Image ground(CityRenderer c, MapCamera cam, {double alt = 39, double az = 80, bool wet = false, bool touching = false}) {
     final rec = ui.PictureRecorder();
@@ -147,6 +147,21 @@ void main() {
       img.dispose();
       c.dispose();
     }
+  });
+
+  testWidgets('0.22.2: os blocos em volta da tela são montados fora do quadro; ao andar até eles, nada é refeito no quadro', (tester) async {
+    nowUs += 1000000;
+    final c = make(prefetch: true);
+    ground(c, camAt(0, 0)).dispose();
+    for (var i = 0; i < 400 && !c.prefetchDone; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+      ground(c, camAt(0, 0)).dispose();
+    }
+    expect(c.prefetchedTotal, greaterThanOrEqualTo(6));
+    // Andar um bloco (4 células, uns 70 m) para o leste: o bloco novo já estava pronto.
+    ground(c, camAt(4 * tiles.mpc, 0)).dispose();
+    expect(c.rebuiltLastFrame, 0, reason: 'o bloco que entrou na tela veio do segundo plano');
+    c.dispose();
   });
 
   CityTile oneHouse(double cx, double cy, {double half = 0.4}) => CityTile(

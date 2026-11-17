@@ -78,7 +78,7 @@ class ArtRenderer {
   /// Desenha o mundo em [canvas], numa tela de [size] logical px e [dpr] pixels físicos por pixel lógico.
   /// [metersPerCell] vem da latitude (converte a largura das ruas em metros). Com [coarse] maior que 1 o
   /// pixel de arte fica [coarse] vezes maior: é o recurso para segurar o fps durante um gesto.
-  void paint(ui.Canvas canvas, ui.Size size, MapCamera cam, {required double dpr, required double metersPerCell, int coarse = 1}) {
+  void paint(ui.Canvas canvas, ui.Size size, MapCamera cam, {required double dpr, required double metersPerCell, int coarse = 1, Set<RoadClass> hideRoads = const {}}) {
     final watch = Stopwatch()..start();
     if (visual.pack.revision != _revision) {
       _revision = visual.pack.revision; // chegou bloco ou região
@@ -177,7 +177,7 @@ class ArtRenderer {
     for (final sidewalks in [true, false]) {
       for (final cls in RoadClass.values.reversed) {
         final widthM = balance.roadWidthM[_roadKey(cls)] ?? 0;
-        if (widthM <= 0 || (sidewalks && cls == RoadClass.pedestrian)) continue;
+        if (widthM <= 0 || (sidewalks && cls == RoadClass.pedestrian) || hideRoads.contains(cls)) continue;
         final core = math.max(1.0, widthM / metersPerCell * ppcLow);
         final width = sidewalks ? core + 2 * balance.sidewalkArtPx : core;
         final paint = ui.Paint()

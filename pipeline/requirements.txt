@@ -3,3 +3,5 @@ shapely
 pyproj
 rasterio
 numpy
+duckdb
+pillow

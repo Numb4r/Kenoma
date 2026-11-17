@@ -9,7 +9,8 @@ import 'dart:ui' as ui;
 import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart' show kProfileMode, kReleaseMode;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show HapticFeedback;
+import 'package:flutter/services.dart' show HapticFeedback, rootBundle;
+import '../lab/lab_art.dart' show loadAsepriteArt;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:vibration/vibration.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -708,6 +709,18 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     );
     // 0.22.0: com o Completo lento por um minuto, uma sugestão, uma vez só (nunca troca sozinho).
     game.followPiece = () => tools.followPiece;
+    game.turnLabels = () => tools.turnLabels;
+    game.wideZoom = () => session.state.setting(kWideZoomSetting);
+    game.forcedWidthM = () => tools.forcedWidthM;
+    game.asepriteArt = () => tools.asepriteArt;
+    unawaited(loadAsepriteArt((p) async {
+      try {
+        final d = await (widget.bundle ?? rootBundle).load(p);
+        return d.buffer.asUint8List(d.offsetInBytes, d.lengthInBytes);
+      } catch (_) {
+        return null;
+      }
+    }).then((m) => game.asepriteStamps = m));
     game.styleAdvisor.alreadySuggested = session.state.setting(kSimpleSuggestedSetting);
     game.onSuggestSimple = () {
       session.state.setSetting(kSimpleSuggestedSetting, true);
@@ -740,7 +753,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             return 'Água no relevo: ${w?.builds ?? 0} tiles calculados, último em ${(w?.lastBuildMs ?? 0).toStringAsFixed(1)} ms (uma vez por tile)';
           }()} · Véu da neblina: ${game.fogUs.round()} µs por quadro · Bichos e vento: ${game.lifeUs.round()} µs por quadro\n'
           'Cobertura por campo: ${game.climateGround.cover?.fieldDrawn ?? 0} blocos na tela, ${game.climateGround.cover?.fieldBuilds ?? 0} refeitos, último em ${(game.climateGround.cover?.fieldLastMs ?? 0).toStringAsFixed(1)} ms (fora do quadro)\n'
-          '${game.fullStyle ? 'Mapa Completo: chão ${game.city.groundMs.toStringAsFixed(1)} ms (${game.city.drawnChunks} blocos, ${game.city.rebuiltLastFrame} refeitos no quadro, ${game.city.rebuiltTotal} no total, ${game.city.onGrid ? 'na grade' : 'girando'}), de pé ${game.city.uprightMs.toStringAsFixed(1)} ms (${game.city.upright.stats.buildings} prédios, ${game.city.upright.stats.props} árvores e props)' : 'Mapa Simplificado: ${game.artRasterMs.toStringAsFixed(1)} ms'} · partículas ${game.rainCount} · build ${kReleaseMode ? 'release' : kProfileMode ? 'profile' : 'debug (não vale como medida)'}';
+          '${game.fullStyle ? 'Mapa Completo: chão ${game.city.groundMs.toStringAsFixed(1)} ms (${game.city.drawnChunks} blocos, ${game.city.rebuiltLastFrame} refeitos no quadro, ${game.city.rebuiltTotal} no total, ${game.city.onGrid ? 'na grade' : 'girando'}), de pé ${game.city.uprightMs.toStringAsFixed(1)} ms (${game.city.upright.stats.buildings} prédios, ${game.city.upright.stats.props} árvores e props)' : 'Mapa Simplificado: ${game.artRasterMs.toStringAsFixed(1)} ms'} · partículas ${game.rainCount}\nPrédios: ${assets.world?.buildingStats ?? '-'} · build ${kReleaseMode ? 'release' : kProfileMode ? 'profile' : 'debug (não vale como medida)'}';
     };
     final accessTol = data.travel.accessTolM / metersPerCell(game.playerLat);
     final travel = TravelSession(

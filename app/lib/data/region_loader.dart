@@ -228,7 +228,7 @@ Future<Object?> loadReliefPack({required Epoch epoch, required String region, As
 Future<BuildingPack?> loadBuildingPack({required String region, AssetBundle? bundle}) async {
   try {
     final data = await (bundle ?? rootBundle).load('assets/regions/${region}_e0_bldg.bin');
-    return BuildingPack.parse(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
+    return BuildingPack.fromBytes(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
   } catch (_) {
     return null;
   }

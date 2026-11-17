@@ -6,12 +6,12 @@
 library;
 
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import '../../world/city_scene.dart';
 import '../../world/lab_block.dart' show facesSun, isClockwise, roofPoint, shadowOffset, wallVisible;
 import '../lab/lab_art.dart';
-import '../lab/lab_renderer.dart' show Matrix4Lite;
 import '../sprites/map_style.dart';
 import 'city_ground.dart';
 
@@ -249,7 +249,7 @@ class CityUpright {
       ui.Paint()
         ..isAntiAlias = false
         ..filterQuality = ui.FilterQuality.none
-        ..shader = ui.ImageShader(art.stamp(st.roofPattern) ?? art.pattern('urban'), ui.TileMode.repeated, ui.TileMode.repeated, Matrix4Lite.translate(rp.first.dx.roundToDouble(), rp.first.dy.roundToDouble())),
+        ..shader = ui.ImageShader(art.stamp(st.roofPattern) ?? art.pattern('urban'), ui.TileMode.repeated, ui.TileMode.repeated, roofTextureMatrix(rp)),
     );
     if (st.parapet != 0 && !v.far) {
       // A platibanda: 1 px por dentro da borda.
@@ -260,7 +260,7 @@ class CityUpright {
     }
     c.drawPath(roofPath, ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 1..isAntiAlias = false..color = ui.Color(st.roofEdge));
     final rc = rp.fold(ui.Offset.zero, (a, p) => a + p) / rp.length.toDouble();
-    if (v.snowRoofs) _snow(c, roofPath, rp.first);
+    if (v.snowRoofs) _snow(c, roofPath, roofTextureMatrix(rp));
     final area = b.length < 3 ? 0.0 : _area(rp);
     if (!v.far && st.roofProps.isNotEmpty && area >= 60) {
       // De um a três props, perto do centro do telhado e dentro dele (hash do prédio).
@@ -303,12 +303,12 @@ class CityUpright {
     return rec.endRecording().toImageSync(32, 32);
   }();
 
-  void _snow(ui.Canvas c, ui.Path roof, ui.Offset at) => c.drawPath(
+  void _snow(ui.Canvas c, ui.Path roof, Float64List m) => c.drawPath(
         roof,
         ui.Paint()
           ..isAntiAlias = false
           ..filterQuality = ui.FilterQuality.none
-          ..shader = ui.ImageShader(_snowTex, ui.TileMode.repeated, ui.TileMode.repeated, Matrix4Lite.translate(at.dx.roundToDouble(), at.dy.roundToDouble())),
+          ..shader = ui.ImageShader(_snowTex, ui.TileMode.repeated, ui.TileMode.repeated, m),
       );
 
   static double _area(List<ui.Offset> p) {
@@ -319,6 +319,20 @@ class CityUpright {
     }
     return a.abs() / 2;
   }
+}
+
+/// 0.22.2: a textura do telhado é do prédio. As linhas do módulo ficam paralelas à aresta mais longa do contorno e a
+/// textura gira e anda exatamente com ele, presa no começo dessa aresta: nunca desliza, nunca gira sozinha, nunca fica
+/// presa à tela.
+Float64List roofTextureMatrix(List<ui.Offset> rp) {
+  var best = 0, len = -1.0;
+  for (var i = 0; i < rp.length; i++) {
+    final d = (rp[(i + 1) % rp.length] - rp[i]).distanceSquared;
+    if (d > len) (best, len) = (i, d);
+  }
+  final a = rp[best], b = rp[(best + 1) % rp.length];
+  final ang = math.atan2(b.dy - a.dy, b.dx - a.dx), c = math.cos(ang), sn = math.sin(ang);
+  return Float64List.fromList([c, sn, 0, 0, -sn, c, 0, 0, 0, 0, 1, 0, a.dx, a.dy, 0, 1]);
 }
 
 /// A faixa do céu no topo (no máximo 10% da tela) e, embaixo dela, a névoa de distância que dissolve o topo do mapa no céu:

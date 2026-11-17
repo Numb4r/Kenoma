@@ -123,6 +123,30 @@ class DevTools extends ChangeNotifier {
 
   /// 0.22.0: a câmera do mapa segue a peça do clima que anda (funil do tornado, Procissão, olhar da Vigília, prédio da
   /// Maré) em vez do Conjurador. Só para fotos e vídeos do workbench.
+  /// 0.22.2: escreve sobre cada objeto do mapa o tipo e a categoria de giro (gira com o chão, de pé, gira com o rumo).
+  /// 0.22.2: a largura da tela do mapa pedida pelo debug (m), sem pinça; o mapa respeita o limite da pinça de agora.
+  double? _widthM;
+  double? get forcedWidthM => _widthM;
+  void setWidthM(double? m) {
+    _widthM = m;
+    notifyListeners();
+  }
+
+  /// 0.22.2: o mapa usa os carimbos desenhados no Aseprite no lugar dos de código (comparação).
+  bool _asepriteArt = false;
+  bool get asepriteArt => _asepriteArt;
+  void setAsepriteArt(bool on) {
+    _asepriteArt = on;
+    notifyListeners();
+  }
+
+  bool _turnLabels = false;
+  bool get turnLabels => _turnLabels;
+  void setTurnLabels(bool on) {
+    _turnLabels = on;
+    notifyListeners();
+  }
+
   bool _followPiece = false;
   bool get followPiece => _followPiece;
   void setFollowPiece(bool on) {
@@ -194,7 +218,7 @@ class DevTools extends ChangeNotifier {
 
   /// Algo forçado está ativo: simulador, relógio, nível, pedidos de spawn, clima ou sobreposições. Liga a etiqueta DEBUG.
   bool get anyForcing =>
-      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || force.events.isNotEmpty || _hidePersonal || _showPuddles || _testCircle != null || _showBiomeGrid || _showGrid20 || _showRadii || _followPiece || _showRelief || _showTraffic || _trafficDensity != null;
+      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || force.events.isNotEmpty || _hidePersonal || _showPuddles || _testCircle != null || _showBiomeGrid || _showGrid20 || _showRadii || _followPiece || _turnLabels || _asepriteArt || _showRelief || _showTraffic || _trafficDensity != null;
 
   Future<void> setUseSimulator(bool value) async {
     if (value == _useSimulator) return;

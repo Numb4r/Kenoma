@@ -31,8 +31,7 @@ const String kKindTraffic = 'traffic';
 /// 0.22.0: os prédios e as árvores do estilo Completo (`_bldg.bin`), em `route_files` (só cenário, fora das épocas).
 const String kKindBuildings = 'buildings';
 
-/// O maior arquivo de prédios que o app abre (o de Campinas tem 417 KB).
-const int kMaxBuildingFileBytes = 4 * 1024 * 1024;
+
 
 final _safeName = RegExp(r'^[A-Za-z0-9._-]+$');
 
@@ -188,18 +187,37 @@ TrafficPack? openTrafficFile(RegionFileJob job, {String publicKeyHex = kFeedPubl
   }
 }
 
-/// Lê e confere o arquivo de prédios (0.22.0), como o de pontos: SHA-256 do catálogo e, recém-baixado, a assinatura. Roda em
-/// Isolate.
-BuildingPack? openBuildingFile(RegionFileJob job, {String publicKeyHex = kFeedPublicKeyHex}) {
+/// Confere o arquivo de prédios (0.22.0; por tile desde a 0.22.2): SHA-256 do catálogo e, recém-baixado, a assinatura.
+/// Roda em Isolate. O arquivo em si é aberto por [openBuildingPackFile], que lê só os tiles em volta da câmera.
+bool verifyBuildingFile(RegionFileJob job, {String publicKeyHex = kFeedPublicKeyHex}) {
   try {
-    // O leitor guarda todos os prédios na memória: acima de [kMaxBuildingFileBytes] (o de São Paulo tem 29 MB e 2,2 milhões
-    // de prédios) ele recusa, até existir o leitor por tile.
-    if (File(job.path).lengthSync() > kMaxBuildingFileBytes) return null;
     final bytes = File(job.path).readAsBytesSync();
-    if (sha256Hex(bytes) != job.sha256.toLowerCase()) return null;
+    if (sha256Hex(bytes) != job.sha256.toLowerCase()) return false;
     final sig = job.sigHex;
-    if (sig != null && !verifySigned(bytes, sig, publicKeyHex: publicKeyHex)) return null;
-    return BuildingPack.parse(bytes);
+    return sig == null || verifySigned(bytes, sig, publicKeyHex: publicKeyHex);
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Abre o arquivo de prédios do disco sem trazê-lo inteiro para a memória: o índice agora, os tiles quando pedidos (leituras
+/// em fila no mesmo `RandomAccessFile`).
+Future<BuildingPack?> openBuildingPackFile(String path) async {
+  try {
+    final raf = await File(path).open();
+    var chain = Future<void>.value();
+    Future<Uint8List> read(int offset, int len) {
+      final done = chain.then((_) async {
+        await raf.setPosition(offset);
+        return raf.read(len);
+      });
+      chain = done.then((_) {}, onError: (_) {});
+      return done;
+    }
+
+    final first = await read(0, 64 * 1024);
+    final head = await read(0, BuildingPack.headerLength(first));
+    return BuildingPack.open(head, read);
   } catch (_) {
     return null;
   }
