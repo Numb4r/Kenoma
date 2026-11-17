@@ -102,11 +102,20 @@ class CityUpright {
     final shadowDir = shadowOffset(v.sunAltDeg, v.sunAzDeg, 1, rotationRad: v.frame.angle);
     // Prédios do mais longe do centro da tela para o mais perto (o perto cobre o longe).
     final order = <(CityBuilding, List<ui.Offset>, double)>[];
+    // 0.23.2: entra todo prédio cujo contorno toca a tela (com a folga do maior deslocamento do telhado), não só o de centro
+    // na tela: um shopping com o centro fora dela perdia telhado e parede e sobrava só a planta escura no chão.
+    final lean = 16 * kpm / 1.1;
+    final reach = view.inflate(lean);
     for (final t in tiles) {
       for (final b in t.buildings) {
         final (cx, cy) = b.centroid;
         final cp = v.at(cx, cy);
-        if (!view.contains(cp)) continue;
+        if (!reach.contains(cp)) {
+          final (l, tp, r, bt) = b.bounds;
+          final cs = [v.at(l, tp), v.at(r, tp), v.at(r, bt), v.at(l, bt)];
+          final box = ui.Rect.fromLTRB(cs.map((p) => p.dx).reduce(math.min), cs.map((p) => p.dy).reduce(math.min), cs.map((p) => p.dx).reduce(math.max), cs.map((p) => p.dy).reduce(math.max));
+          if (!box.overlaps(reach)) continue;
+        }
         order.add((b, [for (var i = 0; i < b.xy.length; i += 2) v.at(b.xy[i], b.xy[i + 1])], (cp - center).distanceSquared));
       }
     }
@@ -223,7 +232,7 @@ class CityUpright {
     final shadowA = ((labColor('shadow') >>> 24) & 0xff) / 255;
     final paint = ui.Paint()
       ..filterQuality = ui.FilterQuality.none
-      ..colorFilter = ui.ColorFilter.mode(ui.Color(mixArgb(0xFF1A1424, split.cool, split.coolAlpha)), ui.BlendMode.srcIn);
+      ..colorFilter = ui.ColorFilter.mode(ui.Color(mixArgb(0xFF000000 | labColor('shadow'), split.cool, split.coolAlpha)), ui.BlendMode.srcIn);
     var open = false;
     for (final t in tiles) {
       for (final p in t.props) {
@@ -422,17 +431,18 @@ void paintSkyBand(ui.Canvas c, double w, UprightView v) {
   if (v.sunAltDeg > -4 && force < 0.45 && d.abs() <= 60) {
     c.drawCircle(ui.Offset((d / 120 + 0.5) * w, (sky - 3 - v.sunAltDeg.clamp(-4, 60) / 60 * (sky - 6)).toDouble()), math.min(4, sky / 4), p..color = const ui.Color(0xFFFFF4C8));
   }
-  // A névoa: a cor de baixo do céu sobre o mapa, de 85% a 5%, num pontilhado ordenado (Bayer 4 × 4), por [fogRows].
+  // A névoa: a cor de baixo do céu sobre o mapa, rareando até sumir (0.23.2: faixa curta, sem xadrez).
   final fog = ui.Color(force > 0 ? mixArgb(horizonFog(v.sunAltDeg), mix, force) : horizonFog(v.sunAltDeg));
-  // A névoa começa da cor do céu (sem linha) e rareia devagar, numa curva: nenhuma fileira cheia, nenhuma borda dura.
-  final fogRows = math.max(6, (sky * (v.skyClimate == 'fog' ? 2.4 : 1.4)).round());
-  const bayer = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  // 0.23.2 (criativo): a névoa numa faixa curta, um ponto por pixel de arte, com limiar de ruído de gradiente intercalado
+  // (IGN) no pixel da tela, sem matriz: sem nível de 50% em xadrez e sem grade de pontos a cada 4 px.
+  final fogRows = math.max(5, (sky * (v.skyClimate == 'fog' ? 1.1 : 0.55)).round());
   final fp = ui.Paint()..isAntiAlias = false..color = fog;
   for (var y = 0; y < fogRows; y++) {
-    final u = 1 - y / fogRows;
-    final keep = 0.94 * u * u;
+    final u = 1 - (y + 0.5) / fogRows;
+    final keep = 0.85 * math.pow(u, 1.6);
     for (var x = 0; x < w; x++) {
-      if (bayer[(y % 4) * 4 + x % 4] / 16 < keep) c.drawRect(ui.Rect.fromLTWH(x.toDouble(), sky + y.toDouble(), 1, 1), fp);
+      final t = (52.9829189 * ((0.06711056 * x + 0.00583715 * y) % 1)) % 1;
+      if (t < keep) c.drawRect(ui.Rect.fromLTWH(x.toDouble(), sky + y.toDouble(), 1, 1), fp);
     }
   }
 }

@@ -24,6 +24,9 @@ import 'city_upright.dart';
 /// O passo do giro dos blocos durante o gesto.
 const double angleStepDeg = 3;
 
+/// O passo do zoom dos blocos durante a pinça (0.23.2): 6%, então o chão estica no máximo uns 3% até o passo seguinte.
+const double zoomStep = 1.06;
+
 /// Acima disto (metros de largura da tela) o mapa usa o nível de detalhe de longe.
 const double farWidthM = 65;
 
@@ -58,7 +61,7 @@ class CityRenderer {
   bool onGrid = false;
 
   /// O giro e o zoom de alvo do último quadro (teste).
-  double targetAngle = 0;
+  double targetAngle = 0, targetKc = 0;
 
   int get cachedChunks => _chunks.length;
 
@@ -92,7 +95,11 @@ class CityRenderer {
       return (angle, kc);
     }
     final step = angleStepDeg * math.pi / 180;
-    return ((angle / step).round() * step, _targetKc);
+    // 0.23.2: na pinça o zoom também anda em passos (`zoomStep`, a partir do zoom do começo do gesto): o bloco é refeito a
+    // cada passo e só estica até meio passo, em vez de esticar o gesto inteiro.
+    final lz = math.log(zoomStep);
+    final k = (math.log(kc / _targetKc) / lz).round();
+    return ((angle / step).round() * step, _targetKc * math.exp(k * lz));
   }
 
   /// Desenha o chão. [touching]: o dedo está na tela. [wet]: o asfalto está molhado.
@@ -104,6 +111,7 @@ class CityRenderer {
     final exact = CityFrame(angle: cam.rotation, kc: kc, ox: ox, oy: oy);
     final (ta, tk) = target(cam.rotation, kc, touching: touching);
     targetAngle = ta;
+    targetKc = tk;
     final goal = CityFrame(angle: ta, kc: tk, ox: ox, oy: oy);
     final far = size.width / cam.pixelsPerCell * mpc > farWidthM;
     final key = groundKeyFor(sunAltDeg: sunAltDeg, sunAzDeg: sunAzDeg, wet: wet, far: far);

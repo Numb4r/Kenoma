@@ -76,6 +76,29 @@ void main() {
     c.dispose();
   });
 
+  test('0.23.2: na pinça os blocos seguem o zoom em passos de 6%, e o chão nunca estica mais que meio passo', () {
+    nowUs = 0;
+    final c = make();
+    ground(c, camAt(0, 0, widthM: 60)).dispose();
+    final start = c.targetKc;
+    for (var i = 1; i <= 12; i++) {
+      nowUs += 16000;
+      final cam = camAt(0, 0, widthM: 60 - i * 1.6); // pinça abrindo: mais zoom a cada quadro
+      ground(c, cam, touching: true).dispose();
+      final exact = cam.pixelsPerCell / 3; // dpr 1, pixel de arte de 3 dp
+      final steps = math.log(c.targetKc / start) / math.log(zoomStep);
+      expect((steps - steps.round()).abs(), lessThan(1e-9), reason: 'o zoom dos blocos anda em passos');
+      expect((exact / c.targetKc - 1).abs(), lessThanOrEqualTo(math.sqrt(zoomStep) - 1 + 1e-9), reason: 'estica no máximo meio passo');
+    }
+    expect(c.targetKc, greaterThan(start * zoomStep), reason: 'os blocos acompanharam a pinça');
+    nowUs += 300000;
+    final cam = camAt(0, 0, widthM: 60 - 12 * 1.6);
+    ground(c, cam).dispose();
+    expect(c.targetKc, closeTo(cam.pixelsPerCell / 3, 1e-9), reason: 'soltou: o zoom exato');
+    expect(c.onGrid, isTrue);
+    c.dispose();
+  });
+
   test('o cache só é refeito quando um bloco entra na tela, a luz muda de faixa, a chuva molha o asfalto ou o zoom assenta', () {
     nowUs = 0;
     final c = make();
@@ -100,8 +123,10 @@ void main() {
     ground(c, camAt(0.3, 0.2), alt: 47, wet: true).dispose();
     expect(c.rebuiltLastFrame, greaterThan(0), reason: 'a chuva molhou o asfalto');
     nowUs += 300000;
+    ground(c, camAt(0.3, 0.2, widthM: 51), alt: 47, wet: true, touching: true).dispose();
+    expect(c.rebuiltLastFrame, 0, reason: 'na pinça, menos de meio passo de zoom: vale a imagem pronta, esticada');
     ground(c, camAt(0.3, 0.2, widthM: 60), alt: 47, wet: true, touching: true).dispose();
-    expect(c.rebuiltLastFrame, 0, reason: 'na pinça vale a imagem pronta, esticada');
+    expect(c.rebuiltLastFrame, greaterThan(0), reason: '0.23.2: passou de meio passo, o bloco é refeito no passo novo');
     nowUs += 300000;
     ground(c, camAt(0.3, 0.2, widthM: 60), alt: 47, wet: true).dispose();
     expect(c.rebuiltLastFrame, greaterThan(0), reason: 'o zoom assentou');
@@ -215,6 +240,46 @@ void main() {
   });
 
   // O teste da árvore de pé em dois giros virou test/ui/upright_turn_test.dart (0.23.1): todo sprite de pé, nas duas artes.
+
+  test('0.23.2: prédio grande com o centro fora da tela continua com telhado e parede', () {
+    final (x, y) = tiles.toCells(0, 0);
+    // Um shopping de 600 m: o centro fica 300 m à direita da câmera, e a borda esquerda dele entra na tela.
+    final half = 300 / tiles.mpc;
+    final cx = x + 300 / tiles.mpc + 15 / tiles.mpc;
+    final xy = Float64List.fromList([cx - half, y - half, cx + half, y - half, cx + half, y + half, cx - half, y + half]);
+    final mall = CityBuilding(xy, buildingLook(type: 'retail', shop: true, areaM2: 360000, levels: 2, gridBiome: 'urban'), 7, levels: 2);
+    final tile = CityTile(roads: const [], greens: const [], waters: const [], buildings: [mall], props: const []);
+    final c = make(tileAt: (tx, ty) => tx == 0 && ty == 0 ? tile : CityTile.empty);
+    upright(c, camAt(0, 0)).dispose();
+    expect(c.upright.stats.buildings, 1, reason: 'o contorno toca a tela');
+    expect(c.upright.drawn.where((d) => d.name == 'building'), hasLength(1));
+    c.dispose();
+  });
+
+  testWidgets('0.23.2: a névoa embaixo do céu é curta e sem xadrez; a sombra é translúcida', (tester) async {
+    expect(((labColor('shadow') >>> 24) & 0xff) / 255, lessThanOrEqualTo(0.35), reason: 'a sombra escurece sem apagar o chão');
+    final c = make(tileAt: (_, _) => CityTile.empty);
+    final rec = ui.PictureRecorder();
+    c.paintUpright(ui.Canvas(rec), view, camAt(0, 0), dpr: 1, artPixelDp: 3, mpc: tiles.mpc, sunAltDeg: 40, sunAzDeg: 80, localHour: 10, month: 11, snowRoofs: false, items: const [], skyFraction: 0.06);
+    final img = rec.endRecording().toImageSync(view.width.toInt(), view.height.toInt());
+    final d = await bytes(tester, img);
+    final sky = (view.height ~/ 3 * 0.06).floor(); // em pixels de arte (3 px de tela cada)
+    final maxRows = math.max(5, (sky * 0.55).round());
+    int rowOpaque(int artRow) => [for (var ax = 0; ax < view.width ~/ 3; ax++) px(d, ax * 3 + 1, artRow * 3 + 1)].where((p) => p >>> 24 != 0).length;
+    expect(rowOpaque(sky), greaterThan(0), reason: 'a névoa começa logo embaixo do céu');
+    expect(rowOpaque(sky + maxRows), 0, reason: 'faixa curta: some em $maxRows fileiras');
+    // Sem xadrez nem grade: a matriz de Bayer 4 × 4 repetia cada fileira a cada 4 pixels (e cada 4 fileiras); o ruído não.
+    for (final r in [sky + 1, sky + 2]) {
+      final row = [for (var ax = 0; ax < view.width ~/ 3; ax++) px(d, ax * 3 + 1, r * 3 + 1) >>> 24 != 0];
+      var same = 0;
+      for (var i = 4; i < row.length; i++) {
+        if (row[i] == row[i - 4]) same++;
+      }
+      expect(same / (row.length - 4), lessThan(0.9), reason: 'fileira $r sem período de 4 px');
+    }
+    img.dispose();
+    c.dispose();
+  });
 
   test('zoom aberto: sem janelas e sem props de telhado; zoom fechado: com janelas', () {
     final c = make();

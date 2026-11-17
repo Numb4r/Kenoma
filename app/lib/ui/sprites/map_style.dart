@@ -60,8 +60,9 @@ const int _mosaicLight = 0xFFB8B6B0, _mosaicDark = 0xFF5E5C68;
 /// A paleta do mapa. Nomes estáveis: os carimbos ([mapStampLegend]) apontam para estas chaves.
 const Map<String, int> mapPalette = {
   'outline': _outline,
-  // Sombra projetada (prédio, árvore): o contorno ameixa a 42%. O renderizador lê o alfa daqui.
-  'shadow': 0x6B1A1424,
+  // Sombra projetada (prédio, árvore): um anil escuro (28) a 30%, translúcido: escurece o chão e mantém 70% do
+  // contraste dele (vagas, grama e calçada continuam legíveis). O renderizador lê daqui o alfa E a cor (0.23.2).
+  'shadow': 0x4D161A36,
   'asphalt_dark': _asphaltDark,
   'asphalt': _asphalt,
   'asphalt_light': _asphaltLight,

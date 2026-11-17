@@ -21,7 +21,7 @@ const String kVeilBadgeHelp = 'Aqui o mapa veio da rede: amigos em versões dife
 
 /// A barra única do topo: hora, lua e clima à esquerda (o toque abre o Céu) e o selo de modo à direita.
 class HudBar extends StatefulWidget {
-  const HudBar({required this.nowUtc, required this.lat, required this.seal, this.weather, this.onSky, this.battery, super.key});
+  const HudBar({required this.nowUtc, required this.lat, required this.seal, this.weather, this.onSky, this.battery, this.hole, super.key});
 
   final int Function() nowUtc;
   final double Function() lat;
@@ -33,6 +33,9 @@ class HudBar extends StatefulWidget {
 
   /// 0.23.1: a carga da bateria em % (o modo imersivo esconde a barra de status). `null` ou sem leitura: sem indicador.
   final Future<int?> Function()? battery;
+
+  /// 0.23.2: o furo da câmera, nas coordenadas da barra (tela cheia): a parte da esquerda termina antes dele.
+  final Rect? hole;
 
   @override
   State<HudBar> createState() => _HudBarState();
@@ -59,6 +62,13 @@ class _HudBarState extends State<HudBar> {
     if (mounted && v != _battery) setState(() => _battery = v);
   }
 
+  /// A parte da esquerda (hora, bateria, lua, clima): ocupa o que sobra, ou só até o furo da câmera.
+  Widget _left(Widget child) {
+    final h = widget.hole;
+    if (h == null || h.left < 40) return Expanded(child: child);
+    return Expanded(child: Row(children: [SizedBox(width: h.left - 4, child: child), SizedBox(width: h.width + 8), const Spacer()]));
+  }
+
   @override
   void dispose() {
     _tick?.cancel();
@@ -74,8 +84,7 @@ class _HudBarState extends State<HudBar> {
       key: const Key('hud-bar'),
       decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.85), border: Border.all(color: kPanelLine, width: 2)),
       child: Row(children: [
-        Expanded(
-          child: GestureDetector(
+        _left(GestureDetector(
             key: const Key('weather-hud'),
             behavior: HitTestBehavior.opaque,
             onTap: widget.onSky,

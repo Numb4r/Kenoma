@@ -293,7 +293,7 @@ RecordedChunk recordGroundChunk({
   if (sunAltDeg > 0) {
     final shadowA = ((labColor('shadow') >>> 24) & 0xff) / 255;
     c.saveLayer(null, ui.Paint()..color = ui.Color(0xFF000000).withValues(alpha: shadowA));
-    final sp = _fill(mixArgb(0xFF1A1424, split.cool, split.coolAlpha));
+    final sp = _fill(mixArgb(0xFF000000 | labColor('shadow'), split.cool, split.coolAlpha)); // 0.23.2: a cor da chave `shadow`, translúcida
     for (final b in buildings) {
       final off = shadowOffset(sunAltDeg, sunAzDeg, b.look.fakeHeightPx * kpm, rotationRad: f.angle);
       if (off == null) continue;

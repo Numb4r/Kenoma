@@ -1164,9 +1164,15 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final now = tools.clock.nowUtc;
     final patrolOn = _patrol != null && PatrolController.instance.running;
     final travelChip = _travelChip(r.travel);
+    // 0.23.2: na tela cheia o HUD sobe até o topo e só desvia do furo da câmera (`displayFeatures`); o Android declara a faixa
+    // inteira da barra de status como recorte, e era ela que ficava preta. Com as barras à vista, vale a barra de status.
+    final barsShown = st.setting(kSystemBarsSetting);
+    final hole = barsShown
+        ? null
+        : MediaQuery.displayFeaturesOf(context).where((f) => f.type == ui.DisplayFeatureType.cutout && f.bounds.top <= 1).map((f) => f.bounds).firstOrNull;
     final hud = hudLayout(
       screen,
-      top: pad.top,
+      top: hole != null ? 0 : pad.top,
       bottom: pad.bottom,
       trackerMax: 0, // sem rastreador fixo: o atalho do Radar fica no canto (as marcas do pulso vão na borda da tela)
       marks: st.activeMarks(now).length,
@@ -1227,6 +1233,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             onSky: () => _openApp(r, PhoneAppId.sky),
             seal: ModeSeal(tools: tools, source: r.layers.source, onTap: () => _openModeSheet(r)),
             battery: const SystemBridge().batteryLevel,
+            hole: hole?.shift(-hud.bar.topLeft),
           ),
         ),
         Positioned.fromRect(

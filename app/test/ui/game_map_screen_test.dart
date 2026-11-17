@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'dart:async';
 import 'dart:io';
@@ -321,6 +322,23 @@ void main() {
   });
 
   group('HUD', () {
+    testWidgets('0.23.2: na tela cheia o HUD sobe até o topo e a parte da esquerda termina antes do furo da câmera', (tester) async {
+      // O moto g54: o Android declara 117 px de recorte na largura toda, mas o furo é só x 495 a 580.
+      tester.view.padding = const FakeViewPadding(top: 117);
+      tester.view.displayFeatures = const [ui.DisplayFeature(bounds: Rect.fromLTRB(495 / 2.625, 0, 580 / 2.625, 117 / 2.625), type: ui.DisplayFeatureType.cutout, state: ui.DisplayFeatureState.unknown)]; // em pixels lógicos, como o engine entrega
+      addTearDown(tester.view.resetPadding);
+      addTearDown(tester.view.resetDisplayFeatures);
+      await pumpGame(tester);
+      final bar = tester.getRect(find.byKey(const Key('hud-bar')));
+      expect(bar.top, lessThan(117 / 2.625), reason: 'sobe acima da faixa que o Android declara');
+      const hole = Rect.fromLTRB(495 / 2.625, 0, 580 / 2.625, 117 / 2.625);
+      for (final k in ['hud-clock', 'moon-hud', 'weather-glyph']) {
+        final r = tester.getRect(find.byKey(Key(k)));
+        expect(r.overlaps(hole), isFalse, reason: '$k fica fora do furo');
+      }
+      expect(tester.getRect(find.byType(GameWidget<GameMapGame>)).top, bar.bottom);
+    });
+
     testWidgets('0.23.1: o mapa começa embaixo da barra do HUD e termina na borda de baixo; com a barra de status, nada passa por cima', (tester) async {
       tester.view.padding = const FakeViewPadding(top: 63, bottom: 126); // 24 dp e 48 dp com dpr 2,625
       addTearDown(tester.view.resetPadding);
