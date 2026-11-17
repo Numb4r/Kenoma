@@ -66,6 +66,10 @@ Saem sozinhas, uma vez cada, quando o acontecimento acontece, sem esperar a fila
 | `ritual_hint_rill` (mentor) | ritual_seen_rill ≥ 1 | Wellmirror só se mostra quando a luz da noite está inteira. Água se espelha, mas a raiz bebe até o fundo. Você anda de noite? |
 | `ritual_first` (Familiar) | ritual_done ≥ 1 | *O Familiar anda uma vez em volta do desenho que se fechou, devagar, como quem confere uma costura. Depois se senta no centro, onde a criatura estava. Parece dizer: ainda está quente.* |
 | `radar_gift` (mentor) | level_5 ≥ 1 | Cinco. Você já ouve o que está perto. Deixei uma coisa no seu celular: o Radar. Um pulso, e o que está longe responde, por dois minutos, na beira da tela. Depois some. Você acha que só você ouve o pulso? |
+| `page_components` (mentor) | refine ≥ 3 | Você anda deixando giz ao relento. Eu vi. O que se refina sozinho ainda é pouco: junto, e com Essência, vira outra coisa. Deixei uma página no seu grimório. A Bancada de casa sabe o resto. Você sabe o que está montando? |
+| `page_moon` (mentor) | vessel_filled ≥ 1 | Uma garrafa cheia. Bonito. A lua também cabe num frasco, se o vidro for escuro e a noite for inteira. Cada fase guarda uma coisa diferente, e nenhuma delas é luz. Mandei a página. O que você acha que a lua nova esconde? |
+| `page_seasons` (mentor) | component ≥ 5 | A cidade troca de pele quatro vezes por ano e quase ninguém repara. Há coisas que só se fazem numa estação, e elas esperam um ano inteiro por quem perdeu a hora. Deixei a página das estações. Em que estação você está, mesmo? |
+| `page_gear` (mentor) | level_8 ≥ 1 | Bolsa cheia. Acontece com quem pega tudo o que brilha. Dá para costurar uma maior, e um cinto, e mais do que isso. A página já está no grimório. Quanto de cidade você pretende carregar? |
 
 ## Falas de desbloqueio do celular
 

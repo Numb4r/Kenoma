@@ -9,6 +9,18 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.24.0
+
+Muda o save (schema 10): instalar por cima da 0.23.2 e conferir que nada some.
+
+- [ ] `0240-save` **Save da 0.23.2.** Depois de instalar por cima: o inventário inteiro aparece na Bolsa como comum (um ponto), as criaturas continuam na Coleção (Círculo, "Ver a Coleção") e as receitas antigas (selos, tônico, prisma) aparecem na Bancada.
+- [ ] `0240-plantado-chuva` **Coletor plantado numa caminhada de verdade na chuva.** Com uma Garrafa de vidro na bolsa, a pé, plantar pela Bolsa (aba Condições) num ponto e seguir andando; outro a menos de 100 m é recusado. Uns 20 minutos de chuva depois (mesmo longe), o Radar e Rotas mostram "cheio"; voltar até ele e colher pelo toque no mapa: vai para o cinto com a qualidade da chuva (garoa um ponto, chuva dois, tempestade três).
+- [ ] `0240-carro` **Plantar de carro.** Num ônibus ou carro, "Plantar" recusa com "Só a pé".
+- [ ] `0240-patrulha` **Aviso da Patrulha.** Com um coletor plantado e a Patrulha ligada (app em segundo plano), quando ele encher sai uma notificação "Coletor plantado cheio" e o celular vibra; ao abrir o app, o aviso não se repete no mapa.
+- [ ] `0240-cinto` **Garrafa no cinto na chuva.** Uma garrafa vazia no cinto, app aberto ou Patrulha, uns 5 minutos de chuva: enche, com aviso. Depois de alguns dias, a neve engarrafada (Inverno do Véu, Noite Branca) vira água de neve, menos no frasco térmico.
+- [ ] `0240-bolsa-visual` **Bolsa e Bancada no aparelho.** Molduras, abas e ícones nítidos (pixel de 3 dp, sem borrão) em 412 × 915; a grade de 4 colunas cabe; segurar "Descartar" leva um segundo e soltar antes cancela.
+- [ ] `0240-equip` **Equipamento no Conjurador.** Com bolsa, garrafas no cinto e amuleto equipados, o sprite do mapa mostra a bolsa, de 1 a 3 garrafas e o brilho; "Mostrar no personagem" desligado tira cada um; virando para a esquerda, tudo espelha junto; girando o mapa, fica de pé.
+
 ## 0.23.2
 
 - [ ] `0232-pinca` **Chão na pinça.** Dando zoom devagar com dois dedos no Centro: o chão (calçada portuguesa, faixas, ladrilho) não estica mais durante o gesto; o pixel muda de tamanho em passos pequenos (6%) e volta à grade nítida ao soltar.
