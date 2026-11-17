@@ -115,6 +115,7 @@ Future<void> handleMapTouch(BuildContext context, TouchHit h, MapTouchDeps d) as
         d.toast(n('map.limit_feather'));
       }
     case TouchKind.tree:
+      d.game.swayTree(h.x, h.y); // a copa balança em todo toque, com folha ou sem
       final month = DateTime.fromMillisecondsSinceEpoch(now * 1000).month;
       final ipe = h.prop.startsWith('ipe_') && ipeStamp(h.prop.substring(4), month) != 'ipe_green';
       final autumn = seasonAt(now) == YearSeason.autumn;

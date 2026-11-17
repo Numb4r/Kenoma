@@ -15,6 +15,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:vibration/vibration.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../core/epochs.dart' show kTestEpochSetting, testEpochId, testEpochOf;
 import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
 import '../../core/tiles.dart';
@@ -674,6 +675,13 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   Future<Object> _load() async {
     final dpr = View.of(context).devicePixelRatio;
+    // A época em teste (Ajustes, só neste aparelho) vale antes do pacote da região: ela escolhe o pacote.
+    final store = await _store();
+    try {
+      testEpochId = testEpochOf(await store.read());
+    } catch (_) {
+      testEpochId = null; // save ilegível: o GameSession conta
+    }
     final result = await loadMapAssets(nowUtc: tools.clock.nowUtc, bundle: widget.bundle, withVisual: true);
     if (result is String) return result;
     final assets = result as MapAssets;
@@ -705,7 +713,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         // sem o plugin (testes): a versão fica 'dev'
       }
       session = await GameSession.open(
-        store: await _store(),
+        store: store,
         startInventory: data.startInventory,
         balance: data.progress,
         nowUtc: () => tools.clock.nowUtc,
@@ -714,6 +722,12 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         epochOf: (t) => data.schedule.select(t).epoch.id,
         nextInt: Pcg32(fnv1a64([DateTime.now().microsecondsSinceEpoch]), saltKenoma).nextInt, // só sorteia o código do grupo
       );
+      // A época em teste foi publicada (ou sumiu do epochs.json): a opção desliga sozinha e sai do save.
+      if (testEpochId != null && data.schedule.testing == null) {
+        testEpochId = null;
+        session.state.settings.remove(kTestEpochSetting);
+        session.state.changed();
+      }
     } catch (e) {
       assets.dispose();
       return 'Não consegui ler os dados do jogo: $e';
@@ -1547,6 +1561,9 @@ class _StatusLines extends StatelessWidget {
 
 /// O mapa do jogo vivo agora (um só), e quando ele termina de fechar.
 _GameMapScreenState? _live;
+
+/// O save do mapa aberto agora, ou `null`: o debug grava nele em vez de gravar por baixo (o mapa sobrescreveria).
+GameState? liveGameState() => _live?._ready?.session.state;
 
 /// Abre o mapa do jogo pelo debug sem empilhar outro: se já há um mapa na pilha, volta até ele; se um mapa ainda está
 /// saindo (a animação de voltar ao menu), espera ele fechar e só então abre o novo.

@@ -13,6 +13,21 @@ import 'weather.dart';
 /// A região embutida nos assets do app. As outras vêm de `regions.json`, baixadas sob demanda.
 const String kBundledRegion = 'campinas';
 
+/// O início das épocas ainda não publicadas (2099-01-01 UTC): a data real só se escreve ao publicar.
+const int kUnpublishedStartUtc = 4070908800;
+
+/// Época em teste (0.24.3): a época não publicada que a opção de desenvolvedor dos Ajustes liga só neste aparelho (o mapa
+/// lê do save antes de abrir). `null`: desligada. Enquanto vale, ela é a vigente em todo instante depois da primeira época;
+/// some sozinha quando a época é publicada (o início deixa de ser 2099). Amigos nunca ligam: só veem época publicada.
+int? testEpochId;
+
+/// As chaves do save (Ajustes): o id da época em teste, e se a seção de desenvolvedor aparece (o menu de debug libera).
+const String kTestEpochSetting = 'dev_test_epoch';
+const String kDevOptionsSetting = 'dev_options';
+
+/// O id da época em teste guardado no save cru (`settings`), ou `null`.
+int? testEpochOf(Map<String, dynamic>? save) => switch (save?['settings']) { {kTestEpochSetting: final int id} => id, _ => null };
+
 class WeightedEntry {
   const WeightedEntry(this.id, this.weight);
 
@@ -268,13 +283,33 @@ class EpochSchedule {
 
   final List<Epoch> epochs;
 
-  /// Época de maior `starts_utc` que já passou. `null` se o relógio está antes da primeira.
+  /// A época não publicada mais nova (a que a opção de desenvolvedor liga). `null`: nenhuma.
+  Epoch? get newestUnpublished {
+    Epoch? best;
+    for (final e in epochs) {
+      if (e.startsUtc >= kUnpublishedStartUtc && (best == null || e.id > best.id)) best = e;
+    }
+    return best;
+  }
+
+  /// A época em teste que vale: [testEpochId], se ela existe aqui e ainda não foi publicada. `null`: o mundo de todos.
+  Epoch? get testing {
+    final id = testEpochId;
+    if (id == null) return null;
+    for (final e in epochs) {
+      if (e.id == id && e.startsUtc >= kUnpublishedStartUtc) return e;
+    }
+    return null;
+  }
+
+  /// Época de maior `starts_utc` que já passou (ou a época em teste, ver [testEpochId]). `null` se o relógio está antes da
+  /// primeira.
   Epoch? current(int tUtc) {
     Epoch? best;
     for (final e in epochs) {
       if (e.startsUtc <= tUtc && (best == null || e.startsUtc > best.startsUtc)) best = e;
     }
-    return best;
+    return best == null ? null : testing ?? best;
   }
 
   /// Mundo desatualizado: o relógio está antes da primeira época ou chegou ao `valid_until_utc` da época vigente. O app

@@ -149,4 +149,46 @@ void main() {
     // 2026-09-22T00:00:00Z = 1790035200 s desde a época Unix.
     expect(loadEpochs().epochs.first.startsUtc, 1790035200);
   });
+
+  group('época em teste (0.24.3, só no aparelho do dono)', () {
+    tearDown(() => testEpochId = null);
+    final t = utc('2026-11-20T12:00:00Z');
+    EpochSchedule schedule({String e2 = '2099-01-01T00:00:00Z'}) => EpochSchedule.fromJson({
+          'epochs': [
+            epochJson(0, '2026-09-22T00:00:00Z', '2027-03-22T00:00:00Z'),
+            epochJson(1, '2099-01-01T00:00:00Z', '2099-04-01T00:00:00Z'),
+            epochJson(2, e2, '2099-04-01T00:00:00Z'),
+          ],
+        });
+
+    test('2099-01-01 é o início das não publicadas', () => expect(kUnpublishedStartUtc, utc('2099-01-01T00:00:00Z')));
+
+    test('desligada, vale a publicada; a não publicada mais nova é a de maior id', () {
+      expect(schedule().select(t).epoch.id, 0);
+      expect(schedule().newestUnpublished!.id, 2);
+      expect(schedule(e2: '2026-11-01T00:00:00Z').newestUnpublished!.id, 1);
+    });
+
+    test('ligada, a época em teste vale em todo instante depois da primeira, sem aviso de mundo vencido', () {
+      testEpochId = 2;
+      final s = schedule();
+      expect(s.select(t).epoch.id, 2);
+      expect(s.select(t).stale, isFalse);
+      expect(s.current(utc('2026-01-01T00:00:00Z')), isNull, reason: 'antes da primeira época continua sem vigente');
+    });
+
+    test('some sozinha quando a época é publicada (o início deixa de ser 2099)', () {
+      testEpochId = 2;
+      final s = schedule(e2: '2026-12-07T16:00:00Z');
+      expect(s.testing, isNull);
+      expect(s.select(t).epoch.id, 0, reason: 'antes do início publicado, a de todos');
+      expect(s.select(utc('2026-12-08T00:00:00Z')).epoch.id, 2);
+    });
+
+    test('lê o id do save cru', () {
+      expect(testEpochOf({'settings': {kTestEpochSetting: 12}}), 12);
+      expect(testEpochOf({'settings': <String, dynamic>{}}), isNull);
+      expect(testEpochOf(null), isNull);
+    });
+  });
 }

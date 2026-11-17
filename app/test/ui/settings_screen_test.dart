@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/core/epochs.dart';
 import 'package:kenoma/ui/chime.dart';
 import 'package:kenoma/player/game_session.dart';
 import 'package:kenoma/save/backup.dart';
@@ -88,6 +89,29 @@ void main() {
     expect(find.text('VERSÃO 0.12.0+18'), findsOneWidget);
     expect(find.text(s.state.founder!.playerId), findsOneWidget);
     expect(find.textContaining('DESATUALIZADO'), findsNothing);
+  });
+
+  testWidgets('0.24.3: a época em teste fica escondida até o debug liberar; ligar grava a não publicada mais nova e reabre o mapa', (tester) async {
+    final store = MemorySaveStore();
+    final s = await session(store);
+    await pump(tester, s);
+    expect(find.byKey(const Key('test-epoch')), findsNothing, reason: 'amigos não veem');
+    s.state.setSetting(kDevOptionsSetting, true);
+    await tester.pump();
+    final newest = data.schedule.newestUnpublished!.id;
+    await tester.scrollUntilVisible(find.byKey(const Key('test-epoch')), 300);
+    await tester.tap(find.byKey(const Key('test-epoch')));
+    await tester.pumpAndSettle();
+    expect(find.text('LIGAR A ÉPOCA $newest?'), findsOneWidget);
+    await tester.tap(find.text('LIGAR'));
+    await tester.pumpAndSettle();
+    expect(s.state.settings[kTestEpochSetting], newest);
+    expect(testEpochOf(store.json), newest, reason: 'fica no save');
+    expect(restarts, 1);
+    await tester.tap(find.byKey(const Key('test-epoch')));
+    await tester.pumpAndSettle();
+    expect(s.state.settings.containsKey(kTestEpochSetting), isFalse);
+    expect(restarts, 2);
   });
 
   testWidgets('0.23.1: "Barras do Android" fica desligado (tela cheia) e grava a escolha', (tester) async {

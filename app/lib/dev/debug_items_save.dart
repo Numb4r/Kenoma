@@ -5,10 +5,12 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../core/epochs.dart' show kDevOptionsSetting;
 import '../save/backup.dart';
 import '../save/ksv1.dart' show SaveCorrupt;
 import '../save/migrations.dart';
 import '../save/save_store.dart';
+import '../ui/game/game_map_screen.dart' show liveGameState;
 import '../ui/tema.dart';
 import 'debug_env.dart';
 import 'debug_registry.dart';
@@ -110,6 +112,13 @@ List<DebugItem> performanceItems() => [
     ];
 
 List<DebugItem> saveItems(DebugEnv env) => [
+      DebugItem(
+        id: 'save.dev_options',
+        title: 'Opções de desenvolvedor nos Ajustes',
+        section: DebugSection.save,
+        keywords: const ['época em teste', 'época não publicada', 'desenvolvedor', 'ajustes', 'época 12'],
+        builder: (_) => _DevOptions(env: env),
+      ),
       DebugItem(
         id: 'save.export',
         title: 'Exportar',
@@ -237,4 +246,53 @@ class _DeleteSaveBoxState extends State<DeleteSaveBox> {
         DebugField('Digite $kDeleteWord', _text, onChanged: (_) => setState(() {})),
         DebugButton(label: 'Apagar save', color: KCores.falha, enabled: _text.text == kDeleteWord, onTap: _delete),
       ]);
+}
+
+/// 0.24.3: mostra nos Ajustes a seção Desenvolvedor (a época em teste). Grava no save do mapa aberto, ou no do disco.
+class _DevOptions extends StatefulWidget {
+  const _DevOptions({required this.env});
+
+  final DebugEnv env;
+
+  @override
+  State<_DevOptions> createState() => _DevOptionsState();
+}
+
+class _DevOptionsState extends State<_DevOptions> {
+  bool _on = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final live = liveGameState();
+    if (live != null) {
+      _on = live.setting(kDevOptionsSetting);
+      return;
+    }
+    widget.env.openSave().then((s) => s.read()).then((json) {
+      if (mounted) setState(() => _on = (json?['settings'] as Map?)?[kDevOptionsSetting] == true);
+    }).catchError((_) {});
+  }
+
+  Future<void> _set(bool v) async {
+    setState(() => _on = v);
+    final live = liveGameState();
+    if (live != null) return live.setSetting(kDevOptionsSetting, v);
+    try {
+      final store = await widget.env.openSave();
+      final json = {...?await store.read()};
+      json['settings'] = {...?(json['settings'] as Map<String, dynamic>?), kDevOptionsSetting: v};
+      await store.write(json);
+    } catch (_) {
+      // sem disco: vale só até fechar o menu
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => DebugSwitch(
+        title: 'Seção Desenvolvedor nos Ajustes',
+        subtitle: 'Mostra a opção "Época em teste": a época não publicada mais nova, só neste aparelho. Fica no save.',
+        value: _on,
+        onChanged: _set,
+      );
 }

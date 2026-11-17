@@ -64,6 +64,13 @@ TouchHit? touchHitAt(ui.Offset screen, ui.Size view, MapCamera cam, {required It
   return best;
 }
 
+/// Quanto dura o balanço da copa tocada (0.24.3), em segundos.
+const double kTreeSwayS = 1.4;
+
+/// A copa da árvore tocada (0.24.3): quanto o topo sai do lugar, em pixels de arte, [age] segundos depois do toque. Um
+/// balanço de 2 idas e voltas por segundo que amortece até parar em [kTreeSwayS]. Só desenho.
+double treeSwayPx(double age) => age < 0 || age >= kTreeSwayS ? 0 : 3 * math.exp(-1.5 * age) * math.sin(2 * math.pi * 2 * age);
+
 /// Uma reação na tela: a tira de quadros, onde (células) e desde quando (segundos de jogo). [fall] faz descer (pena, folha);
 /// [lift] sobe a reação em pixels da tela (o clarão no alto do poste).
 class TouchFx {

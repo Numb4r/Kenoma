@@ -763,6 +763,7 @@ class GameMapGame extends FlameGame {
     }
     final local = DateTime.fromMillisecondsSinceEpoch((nowUtc() - 3 * 3600) * 1000, isUtc: true); // o fuso fixo do clima
     final base = _baseClimate;
+    treeSways.removeWhere((_, t0) => _time - t0 >= kTreeSwayS);
     city.paintUpright(canvas, view, cam,
         dpr: dpr,
         artPixelDp: balance.artPixelDp,
@@ -774,8 +775,14 @@ class GameMapGame extends FlameGame {
         snowRoofs: _snowClimates.contains(base),
         items: items,
         skyFraction: 0.06,
-        skyClimate: base);
+        skyClimate: base,
+        sway: treeSways.isEmpty ? null : (x, y) => switch (treeSways[(x, y)]) { final t0? => treeSwayPx(_time - t0), null => 0.0 });
   }
+
+  /// As árvores tocadas (0.24.3): o pé (células z21, o do prop) e quando, para a copa balançar. Só desenho.
+  final treeSways = <(double, double), double>{};
+
+  void swayTree(double x, double y) => treeSways[(x, y)] = _time;
 
   /// Debug (0.22.0): a câmera segue a peça do clima que anda.
   bool Function() followPiece = () => false;

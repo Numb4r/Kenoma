@@ -262,7 +262,7 @@ class CityRenderer {
   /// Desenha o que fica de pé, num buffer de pixels de arte ampliado por vizinho mais próximo. [items]: onde estão as
   /// coisas do jogo na tela (pixels lógicos): o telhado ou a copa por cima delas fica translúcido. [skyFraction]: a altura
   /// da faixa do céu na tela (0 a 0,10).
-  void paintUpright(ui.Canvas canvas, ui.Size size, MapCamera cam, {required double dpr, required double artPixelDp, required double mpc, required double sunAltDeg, required double sunAzDeg, required int localHour, required int month, required bool snowRoofs, required List<ui.Offset> items, double skyFraction = 0, String skyClimate = 'clear'}) {
+  void paintUpright(ui.Canvas canvas, ui.Size size, MapCamera cam, {required double dpr, required double artPixelDp, required double mpc, required double sunAltDeg, required double sunAzDeg, required int localHour, required int month, required bool snowRoofs, required List<ui.Offset> items, double skyFraction = 0, String skyClimate = 'clear', double Function(double x, double y)? sway}) {
     final sw = Stopwatch()..start();
     final k = pixelSize(artPixelDp, dpr);
     final lowW = (size.width * dpr / k).ceil(), lowH = (size.height * dpr / k).ceil();
@@ -292,6 +292,7 @@ class CityRenderer {
         items: [for (final p in items) p * dpr / k.toDouble()],
         skyPx: (lowH * skyFraction.clamp(0.0, 0.10)).floor(),
         skyClimate: skyClimate,
+        sway: sway,
       ),
       tiles,
     );

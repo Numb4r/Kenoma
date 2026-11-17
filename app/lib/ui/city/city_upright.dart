@@ -35,6 +35,7 @@ class UprightView {
     required this.items,
     this.skyPx = 0,
     this.skyClimate = 'clear',
+    this.sway,
   });
 
   /// O quadro exato (o giro e o zoom de agora) e o deslocamento inteiro dele até o buffer.
@@ -56,6 +57,10 @@ class UprightView {
   /// A altura da faixa do céu em pixels de arte (0: sem faixa) e o clima de base (o céu muda de cor).
   final int skyPx;
   final String skyClimate;
+
+  /// 0.24.3: quanto a copa da árvore com o pé em (x, y) (células z21) sai do lugar no topo, em pixels de arte (0: parada).
+  /// `null`: nenhuma balança.
+  final double Function(double x, double y)? sway;
 
   ui.Offset at(double x, double y) => frame.map(x, y) + offset;
   double get kpm => frame.kc / mpc;
@@ -170,7 +175,8 @@ class CityUpright {
     stamps.sort((a, b) => a.$2.dy.compareTo(b.$2.dy));
     for (final (kind, at, see, anchor) in stamps) {
       if (see) c.saveLayer(null, ui.Paint()..color = const ui.Color(0x73FFFFFF));
-      _stamp(c, art.stamp(kind) != null ? kind : 'tree', at, lights, anchor);
+      final tree = kind.startsWith('tree') || kind.startsWith('ipe');
+      _stamp(c, art.stamp(kind) != null ? kind : 'tree', at, lights, anchor, sway: tree ? v.sway?.call(anchor.$1, anchor.$2) ?? 0 : 0);
       if (see) c.restore();
       stats.props++;
     }
@@ -215,12 +221,31 @@ class CityUpright {
   }
 
   /// Um carimbo de pé: a imagem sem giro nem escala, só na posição. [anchor]: o ponto do chão dele (células z21).
-  void _stamp(ui.Canvas c, String name, ui.Offset at, bool lights, (double, double) anchor) {
+  /// [sway]: o topo da copa sai do lugar tantos pixels de arte (a árvore tocada).
+  void _stamp(ui.Canvas c, String name, ui.Offset at, bool lights, (double, double) anchor, {double sway = 0}) {
     final img = art.stamp(name, lightsOn: lights);
     if (img == null) return;
     final tl = ui.Offset((at.dx - img.width / 2).roundToDouble(), (at.dy - img.height / 2).roundToDouble());
-    c.drawImage(img, tl, ui.Paint()..filterQuality = ui.FilterQuality.none);
+    if (sway.round() == 0) {
+      c.drawImage(img, tl, ui.Paint()..filterQuality = ui.FilterQuality.none);
+    } else {
+      _swayed(c, img, tl, sway);
+    }
     drawn.add((name: name, rect: tl & ui.Size(img.width.toDouble(), img.height.toDouble()), anchor: anchor));
+  }
+
+  /// A copa que balança (0.24.3): cada faixa de linhas da imagem sai do lugar por pixels inteiros (nenhum pixel fora da
+  /// grade), o topo [sway] e o terço de baixo (a base escura da copa, presa à sombra) nada.
+  static void _swayed(ui.Canvas c, ui.Image img, ui.Offset tl, double sway) {
+    final h = img.height, w = img.width.toDouble(), fixed = h * 2 ~/ 3;
+    final paint = ui.Paint()..filterQuality = ui.FilterQuality.none;
+    int shift(int y) => y >= fixed ? 0 : (sway * (fixed - y) / fixed).round();
+    var y0 = 0;
+    for (var y = 1; y <= h; y++) {
+      if (y < h && shift(y) == shift(y0)) continue;
+      c.drawImageRect(img, ui.Rect.fromLTWH(0, y0.toDouble(), w, (y - y0).toDouble()), ui.Rect.fromLTWH(tl.dx + shift(y0), tl.dy + y0, w, (y - y0).toDouble()), paint);
+      y0 = y;
+    }
   }
 
   /// 0.23.1: a sombra de cada árvore é a silhueta do próprio carimbo achatada a 70%, de pé como a copa (no chão ela girava com
