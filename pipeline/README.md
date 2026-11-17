@@ -141,6 +141,38 @@ No `regions.json` assinado, o relevo de São Paulo entra em `files.relief` da re
 
 O de São Paulo entra em `route_files.buildings` do `regions.json` assinado (`scripts/assinar_regioes.py` já o põe lá; `--local` gera URLs relativas para o teste com `http.server`, sem publicar). Andando na Paulista no emulador (build de debug), o app tinha 9 dos 1.760 tiles na memória, 4,2 MB, cada tile carregado em uns 38 ms.
 
-## Medição do Overture Maps (0.22.2, só medição)
+## Medição do Overture Maps (0.22.2)
 
-`measure_overture.py`: temas `buildings` e `places` da release pública do Overture, lidos com DuckDB, contra o OSM acima em três recortes. Resultado e licenças em `docs/overture-medicao.md`. Nada disto vai para o app nem para os pacotes.
+`measure_overture.py`: temas `buildings` e `places` da release pública do Overture, lidos com DuckDB, contra o OSM acima em três recortes. Resultado e licenças em `docs/overture-medicao.md`. (O script lia o `BLD1`; desde a 0.22.2 os arquivos são `BLD2`.)
+
+## Overture Maps nos pacotes (0.23.0, época 12: é mundo)
+
+Release **`2026-10-21.0`** (a da medição), fixada em `fetch_overture.py` (`RELEASE`) e registrada na época 12 (`overture_release`). Mesmo extrato do OSM (MD5 `d4778499e2017add7ee7879dd3b64b3c`).
+
+1. `fetch_overture.py --region <região>` baixa do S3 (DuckDB, sem credencial) os temas `buildings` e `places` da bbox da região para `cache/overture/<release>/<região>_{buildings,places}.parquet`, só as colunas usadas, em ordem de `id` (Campinas: 933.867 prédios, 105,7 MB, e 94.562 places, 7,6 MB, em 5,5 min; São Paulo: 4.927.593 prédios, 686 MB, e 676.179 places, 54 MB, em 14 min). Os geradores só leem esse cache: sem rede.
+2. Com `--overture`, `build_buildings.py`, `build_region.py` e `build_traffic.py` juntam o Overture pelas regras de `overture.py` e gravam `<região>_e<época>_ov[_bldg|_traffic].bin`, sem regerar por cima (o script recusa se o arquivo existe). Os prédios e os places aceitos (depois do corte de confiança e da junção com o OSM) ficam guardados ao lado do cache (`_buildings_new.txt`, `_places_new_0.70.json`, `_places_stats.json`), para os três geradores usarem os mesmos.
+3. `test_overture.py` (`.venv/bin/python test_overture.py`): filtro de confiança, mapeamento de categorias, nome parecido, junção a 30 m, nenhum prédio duplicado, place dentro do prédio, mesmo `BLD2` com a mesma entrada.
+4. `overture_impact.py <antes.bin> <depois.bin> <antes_traffic> <depois_traffic>`: células z18 que mudam de bioma, pontos por tipo, células z20 com âncora da Shade e do Hum, tamanhos. `bld_info.py <arquivo>`: tiles, maior tile, prédios e árvores de um `BLD2`.
+
+```
+.venv/bin/python fetch_overture.py --region campinas
+.venv/bin/python build_buildings.py --region campinas --epoch 12 --overture
+.venv/bin/python build_region.py --region campinas --epoch 12 --overture
+.venv/bin/python build_traffic.py --region campinas --epoch 12 --overture
+# São Paulo: os mesmos com --region sao_paulo --out-dir out/regions (não embarcado)
+```
+
+| Arquivo | Conteúdo | Bytes | SHA-256 |
+| --- | --- | --- | --- |
+| `app/assets/regions/campinas_e12_ov.bin` | biomas: 6 de 87.300 células z18 mudam | 441.646 | `53109216c4ab6dd4ba21d5fdb4c09d807eb1c9007dfdb204899b4afe45c67854` |
+| `app/assets/regions/campinas_e12_ov_traffic.bin` | 35.231 pontos (semáforo 909, pare 1.137, preferência 77, faixa 4.933, entrada 934, ônibus 1.258, comércio 12.737, bar 5.280, escola 1.719, praça 1.884, estádio 65, beco 4.298) | 128.979 | `43ed415d81fc3d8e34a375db56def623b10654a13f832eafed9f0d0995c4892d` |
+| `app/assets/regions/campinas_e12_ov_bldg.bin` | 933.147 prédios (32.116 do OSM, 901.031 do Overture), 1.760 árvores, 1.397 tiles (maior 46.501 bytes); só cenário, fora da época | 9.366.856 | `5321b6ea57ca15dbafa820b0b9b04de15606c2a3d9f91c6af8fb75af14050479` |
+| `out/regions/sao_paulo_e12_ov.bin` (não embarcado) | biomas: 108 de 179.208 células z18 mudam | 873.510 | `2559ee8c888987201cbfbc54143f91f49c7c64eb9532d2353e85159e1ca98ba1` |
+| `out/regions/sao_paulo_e12_ov_traffic.bin` (não embarcado) | 309.773 pontos (semáforo 9.485, pare 3.163, preferência 336, faixa 55.450, entrada 8.780, ônibus 23.212, comércio 81.134, bar 37.532, escola 12.537, praça 10.727, estádio 353, beco 67.064) | 1.096.958 | `4a489b27bb568b00bcb3716cb0500dbed79afbad2cf934126ee09966219f0cb3` |
+| `out/regions/sao_paulo_e12_ov_bldg.bin` (não embarcado, não publicado) | 4.925.644 prédios (2.199.471 do OSM, 2.726.173 do Overture), 12.012 árvores, 2.602 tiles (maior 100.851 bytes) | 54.239.483 | `4e369703cf725b833fbb681646bccfe0870862b2bd6f13d1c8af40bc846b7065` |
+
+São Paulo leva 96 minutos e passa de 12 GB de memória no arquivo de pontos (a grade de prédios em z22 com 4,9 milhões de contornos); feche o emulador antes. O catálogo assinado de rascunho (`scripts/assinar_regioes.py sao_paulo 12 --out out/regions/rascunho-e12`) já lista os três; nada foi publicado.
+
+A época 12 lista os de biomas e de pontos (`region_packs`, `traffic_packs`). O de prédios continua fora das épocas (cenário); o app embute o de Campinas no lugar do `campinas_e0_bldg.bin` (no histórico do git), e o `assinar_regioes.py` põe o `_e12_ov_bldg.bin` de São Paulo em `route_files.buildings` quando ele existe. Os `campinas_e12_traffic.bin` e `sao_paulo_e12.bin`/`_traffic.bin` sem Overture deixaram de estar em alguma época (a 12 ainda não foi publicada); o de Campinas saiu dos assets (está no histórico do git).
+
+**Reprodutível:** em 2026-11-17 os três de Campinas foram gerados de novo do zero (a junção com o OSM e o corte dos places refeitos, os guardados afastados, saída noutra pasta): os mesmos três SHA-256 acima, e os arquivos guardados da junção saíram iguais byte a byte.

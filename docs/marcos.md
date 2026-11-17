@@ -865,3 +865,36 @@ O `criativo` viu as ferramentas do Aseprite e do Blender; o Blender não respond
 ### Testes
 
 Novos: `test/ui/turn_and_zoom_test` (categoria de giro de cada tipo, textura do telhado presa ao contorno, troca automática com folga, ruas que somem), o zoom ampliado em `test/ui/map_style_switch_test` (250 m, Simplificado, sem tráfego nem partículas, Ecos só dentro da visão, volta ao Completo), `test/data/building_pack_test` (índice, carga sob demanda, teto de memória, pedaço sem prédio enquanto carrega, tile grande recusado), blocos montados fora do quadro em `test/ui/city_renderer_test`, e o Tornado na época 12 em `test/core/climate_layers_test`.
+
+## Fase 1 · fatia 9d · Overture Maps nos pacotes e arte do Aseprite (0.23.0)
+
+GDD rev 360 (commit próprio: a visão dos Ecos é 120 m, que a Neblina derruba para 60 m e a Nevasca para 40 m). Versão 0.23.0+41, mesma chave, save no schema 9 (sem mudança). Feita no notebook, com o emulador.
+
+### Respostas à 0.22.2
+
+- As exceções de giro ficam: veículos apontam para onde andam e nomes de rua acompanham a rua.
+- **Testes com o emulador ligado:** o tempo de cada teste passou a 60 s (`app/dart_test.yaml`, `timeout: 2x`), escrito no `CLAUDE.md`. Na suíte com o emulador ligado nenhum teste estourou desta vez; o mais lento sem `@Timeout` próprio levou 21 s (o círculo desenhado contra a lógica), perto dos 30 s de antes.
+- **Arte do Aseprite é o padrão.** O `criativo` comparou os 22 PNGs com a arte em código: os valores são os mesmos (cada pixel é uma cor do `mapPalette`; luma média dos telhados igual na primeira casa). O painel "lavado" da `comparacao_arte.png` era o telhado translúcido (45%) do prédio com um Eco embaixo, que só aparecia no painel do Aseprite. Refeita a comparação no mesmo lugar, mesmo relógio e clima Limpo forçado: telhados 118, 119 e 137 contra a rua 76 de dia nas duas artes, e 63 a 73 contra 59 de noite, com diferença de no máximo 1 ponto; o avatar 112 de dia e 81 de noite nas duas. O debug agora é "Arte em código" (só para comparar; sai na próxima versão).
+- **Sombras das árvores:** a sombra é a silhueta do carimbo da copa achatada a 70%, na cor da sombra (`city_ground.dart`), no lugar do oval igual para todas; os carimbos `tree_shadow*` que ninguém usava saíram. **`roof_tar_light` apagado:** com luma 117 caía em cima do `wall_urban` e do `roof_metal_b` sem dar degrau legível, e nenhum estilo o usava.
+- **Blender:** o `criativo` alcança o Blender (5.2.3 LTS, addon 2.0, protocolo 16/16, sem aviso). Sem tarefa nesta versão.
+
+### Overture nos pacotes
+
+Release `2026-10-21.0`, fixada no pipeline e registrada na época 12 (`overture_release`); regras, números e licenças em `docs/overture-medicao.md`, comandos e SHAs em `pipeline/README.md`.
+
+- **Prédios:** o OSM tem prioridade; do Overture entram só os contornos sem fonte OSM que não cobrem um prédio já aceito (mais de 30% da área do menor). Campinas: 32.116 do OSM e 901.031 do Overture (Google Open Buildings e Microsoft); nenhum do Overture tem altura nem classe, então a altura continua estimada pelo tamanho e pelo tipo. O arquivo de prédios de Campinas vai de 0,45 MB para 9,4 MB no APK (1.397 tiles z15, o maior com 46 KB, bem abaixo do limite de 512 KB); montar a cena do tile mais cheio (Ouro Verde, 3.621 prédios) levou 38 ms num teste da VM, contra 25 ms no Centro.
+- **POIs:** confiança mínima 0,7 (dos 94.561 places de Campinas ficam 65.703 com 0,5, 45.525 com 0,7 e 23.418 com 0,9; nenhum marcado como fechado), junção com o OSM por grupo e nome parecido a até 30 m (1.208 casaram), 18.160 novos nos grupos do jogo.
+- **Biomas:** um place sem par no OSM vale como a tag do OSM na área do prédio que o contém (shopping, supermercado, feira, igreja, escola, hospital, rodoviária); o comércio comum não vira Iluminado, como no OSM. Em Campinas mudam **6 das 87.300 células z18** (0,007%).
+- **Pontos de spawn por condição:** as células z20 com beco ou marquise (Shade) vão de 4.456 para 15.784; as com poste (Hum) não mudam (1.856). Os becos vão de 2.845 para 4.298 pontos.
+- **Época 12** (ainda não publicada, começa em 2026-12-07 16:00 UTC): `campinas_e12_ov.bin` e `campinas_e12_ov_traffic.bin` no lugar do `campinas_e11.bin` e do `campinas_e12_traffic.bin`; São Paulo com `sao_paulo_e12_ov.bin` e `sao_paulo_e12_ov_traffic.bin`, prontos e assinados localmente, não publicados.Em São Paulo: 2.726.173 prédios do Overture (o arquivo vai de 28,4 MB para 54,2 MB, o maior tile com 101 KB), 122.287 places novos, 108 das 179.208 células z18 mudam de bioma (0,06%) e as células da Shade vão de 46.313 para 116.154. O rascunho do catálogo assinado (`pipeline/out/regions/rascunho-e12/`) já lista os arquivos novos; `docs/pages` não mudou. A trava de release (`test/release_guard_test`) falha a partir de 2026-11-30 se o `sao_paulo_e12_ov.bin` não estiver publicado.
+- **Créditos** nos Ajustes (botão "Créditos"): OpenStreetMap (ODbL), Overture Maps Foundation (prédios ODbL, places CDLA Permissive 2.0, com a release), Microsoft Global ML Building Footprints (ODbL), Google Open Buildings (CC BY 4.0), as fontes dos places presentes nos recortes (Meta, Microsoft, Uberall, PinMeTo, OpenTravel Alliance e DAC sob CDLA Permissive 2.0; AllThePlaces CC0; Foursquare Apache 2.0) e o SRTM. A página de atribuição do Overture não cita release (é a mesma para todas); a lista segue as fontes que aparecem nos dados baixados: sem Esri nem as outras fontes de prédios, que não estão em Campinas nem em São Paulo.
+
+### Conhecido
+
+- **Amigos com a 0.22.2:** a época 12 desse APK tem os arquivos sem o Overture. Quem não atualizar até 2026-12-07 16:00 UTC vê outros biomas em 6 células z18 de Campinas e outros pontos da Shade (só a camada pessoal, que já é individual); os spawns de base dependem do bioma.
+- **Travamento no emulador:** ao ligar o simulador vindo do mapa da rede da Califórnia (posição padrão do emulador), o app ficou sem responder e o emulador caiu logo depois. Abrindo direto em Campinas pelo simulador não se repetiu. Item no checklist do celular para conferir o desempenho com 30 vezes mais prédios.
+- No Ouro Verde, um contorno grande e irregular do Overture ao lado da lagoa parece prédio fantasma (área de concreto ou estacionamento); está no checklist.
+
+### Testes
+
+Novos: `pipeline/test_overture.py` (filtro de confiança, mapeamento de categorias, nome parecido, junção a 30 m, nenhum prédio duplicado, place dentro do prédio, mesmo arquivo com a mesma entrada); **pacote idêntico:** os três de Campinas gerados de novo do zero, da mesma release, saíram com os mesmos SHA-256; `test/ui/credits_screen_test` e o botão Créditos em `test/ui/settings_screen_test`. Corrigido: o mapa do jogo descartava as imagens do renderizador duas vezes quando o debug lia as estatísticas depois de o mapa fechar (só aparecia com a arte do Aseprite como padrão). Ajustados: `test/data/traffic_e12_test` (a época 12 com o Overture e a release registrada; os pontos de rua iguais, nenhum POI do OSM perdido) `test/data/building_pack_test` (o arquivo novo), `test/release_guard_test` (o nome do pacote de São Paulo) e os pacotes da época 12 nos assets falsos de `test/ui/map_screen_test`, `test/ui/game_map_screen_test`, `test/data/region_loader_test` e `test/net/region_manager_test`.

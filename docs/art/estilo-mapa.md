@@ -76,7 +76,7 @@ Como distinguir os quatro que hoje se confundem: **Vazio** é marrom e mato, o �
 ## Grama, flores, árvore e sombra
 
 - Tufos e flores só nas receitas `green`, `yard` e `sacred`. Flor nunca encosta em rua: se o carimbo cair a menos de 2 px de outro chão, não desenhe.
-- Árvore: carimbo `tree` (14 x 13) com `tree_shadow` por baixo, deslocada de 2 a 6 px na direção oposta ao sol (mais longe com o sol baixo, some com o sol abaixo de 0 grau). No Verde, uma árvore a cada 500 px de arte quadrados em média, em grupos (sorteie por célula z21: célula com árvore tem de 1 a 3). No quintal, no máximo uma por lote. Na calçada do Iluminado e do Urbano, uma a cada 40 px ao longo das ruas `principal`, alternando com os postes.
+- Árvore: carimbo `tree` (14 x 13) com a sombra por baixo (a silhueta da copa achatada a 70%, na cor da sombra), deslocada de 2 a 6 px na direção oposta ao sol (mais longe com o sol baixo, some com o sol abaixo de 0 grau). No Verde, uma árvore a cada 500 px de arte quadrados em média, em grupos (sorteie por célula z21: célula com árvore tem de 1 a 3). No quintal, no máximo uma por lote. Na calçada do Iluminado e do Urbano, uma a cada 40 px ao longo das ruas `principal`, alternando com os postes.
 - Arbusto (`bush`) acompanha muro e borda de parque.
 - A copa passa por cima de rua e calçada, mas nunca por cima de telhado.
 
