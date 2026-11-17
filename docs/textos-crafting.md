@@ -91,16 +91,20 @@ Já caem no mundo pelas épocas (chuva de meteoros, Chuva de Runas, chuva congel
 
 ## Recipientes
 
-Vazios, vão no cinto ou são plantados. Todos de improviso. A garrafa de vidro é a porta de entrada: só pede Sucata.
+Vazios, vão no cinto ou são plantados. Todos de improviso. A garrafa de vidro é a porta de entrada: só pede Caco de vidro (0.24.2; antes era Sucata).
+
+### item.glass_shard
+- nome: Caco de vidro
+- descrição: Resto de garrafa na calçada dos bares. Corta menos do que parece.
 
 ### item.vessel.glass
 - nome: Garrafa de vidro
-- descrição: Vidro de sucata refundido, bom para guardar o que cai do céu.
+- descrição: Cacos de vidro refundidos, bons para guardar o que cai do céu.
 - enche com: Água de chuva (durante garoa, chuva ou tempestade) e Neve (durante neve do calendário)
 
 ### recipe.vessel.glass
 - saída: item.vessel.glass
-- entra: Sucata ×2
+- entra: Caco de vidro ×2
 - pista: algo para guardar chuva
 - condição: nenhuma
 
@@ -690,16 +694,16 @@ Fenda e Mercador ainda não existem, então as quatro páginas chegam pelo mento
 
 ## Quest da primeira garrafa
 
-Ensina o crafting pelos coletores. Começa na primeira vez que o jogador pega Sucata. Mensagens do mentor (Número desconhecido), uma vez cada, no tom de `docs/textos-mentor.md`.
+Ensina o crafting pelos coletores. Começa na primeira vez que o jogador pega Caco de vidro (0.24.2; antes era Sucata). Mensagens do mentor (Número desconhecido), uma vez cada, no tom de `docs/textos-mentor.md`.
 
 | Id | Quando | Texto |
 | --- | --- | --- |
-| `craft_tut_start` | primeira Sucata na bolsa | Sucata. Todo mundo passa por cima. Dois pedaços disso, refundidos, viram vidro, e vidro guarda o que cai do céu. Faça uma garrafa na Bancada. O que você guardaria, se desse para guardar o tempo? |
+| `craft_tut_start` | primeiro Caco de vidro na bolsa | Caco de vidro. Todo mundo desvia. Dois desses, refundidos, voltam a ser garrafa, e garrafa guarda o que cai do céu. Faça uma na Bancada. O que você guardaria, se desse para guardar o tempo? |
 | `craft_tut_bottle` | passo (a): fez a garrafa | Uma garrafa vazia. Na bolsa ela só ocupa lugar. Abra a Bolsa, na aba Condições, e ponha a garrafa no cinto. Vazio também se carrega, não? |
 | `craft_tut_belt` | passo (b): garrafa no cinto | Agora ela anda com você. Quando chover, enche sozinha, no seu passo. Se o céu demorar, plante a garrafa no chão e volte depois: ela espera melhor do que você. Você sabe esperar? |
 | `craft_tut_fill` | passo (c): a garrafa encheu ou foi plantada | Pronto. O céu faz o resto. Água que não tocou o chão ainda lembra de onde veio, e a Bancada sabe a diferença. Quando a garrafa estiver cheia, faça uma receita com essa água. O que você acha que a chuva sabe? |
 | `craft_tut_done` | passo (d): fez uma receita com a água | Feito. Você pegou uma coisa do céu e fez outra com as mãos. Há mais para guardar: neve, fumaça, a lua, cada uma no seu vidro. A cidade chove para todo mundo. Quem mais você acha que está guardando? |
-| `craft_tut_gift` | abriu a aba Condições sem nenhuma garrafa | Você abriu o cinto e não tinha o que pôr nele. Deixei uma garrafa na sua bolsa. Não agradeça, é só vidro. As próximas você faz: dois pedaços de Sucata, na Bancada. O que você pretende guardar nela? |
+| `craft_tut_gift` | abriu a aba Condições sem nenhuma garrafa | Você abriu o cinto e não tinha o que pôr nele. Deixei uma garrafa na sua bolsa. Não agradeça, é só vidro. As próximas você faz: dois Cacos de vidro, na Bancada. O que você pretende guardar nela? |
 
 - O presente sai uma vez só e vale como o passo (a): quem ganhou a garrafa não recebe `craft_tut_bottle` e segue do passo (b). Se a quest ainda não tinha começado, o presente a começa.
 - `craft_tut_fill` e `page_moon` (primeira garrafa cheia) podem cair juntas. Sugestão: `page_moon` só depois de `craft_tut_done`.

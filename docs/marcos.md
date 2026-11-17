@@ -1020,3 +1020,43 @@ Com o simulador no Centro, relógio em 2027-01-08 (verão, lua nova, noite) e ch
 Duas correções que as capturas pediram, na mesma versão:
 - **Uma célula por pilha de 99.** Uma pilha de 551 Pó contava 6 espaços na barra, mas aparecia como uma célula só: agora são 6 células (99 × 5 e 56), como os espaços contam.
 - **O tônico marcado no último passo.** O Tônico de foco tem dois caminhos (Água pura e Água de chuva) e a lista mostrava o da Água pura, sem a marca; agora a marca vale se algum caminho usa o que um coletor pegou, e a receita abre já no caminho da chuva. Coberto em `craft_screens_test.dart`.
+
+## Fase 1 · fatia 10c · Ponto de ônibus, pássaros e o mapa que responde ao toque (0.24.2)
+
+Versão 0.24.2+46, mesma chave, **save no schema 12** (o bloco `touches`, com o dia e o que cada interação já rendeu). Teste de migração com `test/fixtures/save_v11_0241.json`, gravado pelo código real da 0.24.1.
+
+### Segurança ao controlar o celular
+
+Na 0.24.1 o script de capturas seguiu tocando e digitando às cegas depois que o dono pegou o aparelho, e o texto foi parar numa conversa. Regras novas no `CLAUDE.md`, e o script novo `scripts/celular.sh`:
+- antes de **cada** ação (toque, deslize, voltar, captura, comando) ele confere tela ligada, sem bloqueio e o `com.numb4r.kenoma` em primeiro plano; se não, para na hora, grava a trava `/tmp/kenoma-celular.parado` e recusa tudo até um `reset` explícito (nada de tentar de novo sozinho). A captura confere de novo depois e se apaga se algo mudou no meio;
+- **nunca digita texto**: o debug vai por `celular.sh cmd "sim on; clock ...; weather rain; tp lat,lon; width 80; labels on; map"`, uma intent que só o Kenoma lê (`kenoma_cmd`, `lib/dev/debug_commands.dart`, entregue pela `MainActivity` em build de debug, profile e release);
+- abrir o app (`start`) só com `KENOMA_CELULAR_LIBERADO=1`, depois que o dono disser na sessão que o aparelho está livre.
+Nesta versão o celular não foi tocado (não foi liberado na sessão); as capturas são do emulador, pelo mesmo script.
+
+### Correções
+
+1. **Ponto de ônibus.** O retângulo que girava com o mapa, paralelo à rua, era o abrigo do ponto, que vem do OSM como um prédio pequeno (`roof`/`shelter`) e virava telhado. Prédio de até 40 m² a até 10 m de um ponto sai dos prédios; o ponto fica de pé (o carimbo), e só a base dele gira com o chão: a marca da calçada (4 × 1,6 m) e o meio-fio, ao longo da rua mais perto. No teste de giro (`street_sign` também).
+2. **Pássaros por cima dos telhados.** Os bichos saem em duas passadas: no chão (pombo ciscando, gato no muro) por baixo dos prédios; no ar (pombo voando, maritacas, morcegos e a fumaça do vento) na camada do ar, depois dos prédios, das árvores e do Conjurador, abaixo só do clima da tela e do HUD. O pombo que pousa dentro de um prédio fica no telhado, na posição deslocada do telhado (a mesma conta das paredes). Folhas, papéis, fuligem e areia do vento rolam pelo chão e ficaram no chão; as Fagulhas já vinham depois dos prédios.
+3. **Caco de vidro.** Material novo (`item.glass_shard`, `since_epoch: 12`), na época 12 (ainda não publicada): nas tabelas de material do Urbano (peso 2) e do Iluminado (peso 3, que é o bioma dos bares e do comércio). A Garrafa de vidro passou a 2 Cacos de vidro e a quest "Primeira garrafa" começa no primeiro caco. **Até a época 12 ser publicada não cai vidro no mundo**: a primeira garrafa vem do presente do mentor (aba Condições vazia). Pontos de reciclagem não estão no pacote da região; pô-los pediria o pipeline e um pacote novo na época 12. Quem já tem receita ou garrafa não perde nada.
+4. **Giro dos objetos.** Rodado no Centro e no Dom Pedro (Fagulha, material, passante, poste, árvore, ponto de ônibus, placa, Eco, Conjurador de pé; telhado e rua girando com o chão; carro com o rumo): nenhum outro objeto na categoria errada além do abrigo. Pássaros, gatos e as folhas do vento não ganham rótulo nesse modo.
+
+### O mapa responde ao toque
+
+Todos só a até 30 m e a pé (`canTouch`), e nada muda o mundo dos amigos: o que é igual para o grupo sai da seed; o resto é cenário local ou recompensa pequena da camada pessoal, com limite por dia (`map_touch` no `balance.json`). Textos do `criativo` em `docs/textos-mapa.md` (para revisão), nos dados em `app/assets/data/mapa.json`; reações desenhadas no Aseprite (`fx_*.png`).
+1. **Ponto de ônibus:** o próximo Ônibus Espectral ali (`spectralBusNext`, de 15 a 35 min por ponto, pela seed e pelo ponto: igual para o grupo). **O Ônibus Espectral ainda não circula no jogo**; este é o horário que ele terá de seguir quando vier. **O pacote não tem as linhas reais (`route_ref`)**: o painel diz que ninguém anotou as linhas do ponto.
+2. **Pombos e maritacas:** o bando levanta voo; às vezes cai uma Pena (até 3 por dia).
+3. **Banca de jornal:** a manchete do Véu do dia, de 24 modelos (clima de hoje ali, evento do calendário nos próximos 14 dias, ou a família de Eco mais vista a até 150 m), igual para amigos (`hash(seed, época, dia, banca)`). **As bancas não são do OSM**: são uma em três praças, como já eram desenhadas.
+4. **Árvores:** sacodem; no outono pode cair Folha seca e, no ipê florido (roxo em junho e julho, amarelo em agosto e setembro), Flor de ipê (material de estação). Uma vez por árvore por dia, até 6 por dia. A copa não treme no desenho (fica para depois: as árvores saem do bloco já desenhado); a folha ou a pétala cai na frente dela.
+5. **Poças:** a onda; um Eco de Água a até 40 m se vira para o Conjurador por 6 s (espelhado) e dá um pulo.
+6. **Postes à noite:** piscam; um Hum a até 40 m pula e fica à vista 8 s a mais, mesmo além do alcance de visão. De dia o poste não acende.
+7. **Gatos nos muros:** carinho (o coração), o gato segue o Conjurador por uns 100 m (cenário) e às vezes larga uma coisa (Sucata, Pena ou Giz; até 3 por dia).
+8. **Placas de rua:** novas, nas esquinas onde uma rua com nome cruza outra; o painel mostra o nome. **Só as ruas principais e secundárias têm nome no pacote**, então só as esquinas delas têm placa.
+Materiais novos com uso: Pena (tônico de foco com água pura), Folha seca (ervas secas, no outono), Flor de ipê (água lustral, na primavera). O Bestiário de lugares do workbench não foi mexido.
+
+### Testes
+
+Novos: `test/world/map_touch_test.dart` (alcance e a pé, limite por dia e por árvore, o ônibus igual para o grupo, a manchete igual para dois aparelhos no mesmo dia e com a concordância dos dias), `test/world/birds_layers_test.dart` (a camada do ar depois dos prédios, o pombo no telhado e no chão, o abrigo do ponto), `test/ui/touch_fx_test.dart` (a reação desenha e some), `test/save/migration_v12_test.dart` e a placa no teste de giro. Ajustado: o teste do Eco oculto espera até 150 quadros (a camada do ar deixou o quadro de teste mais caro e a suíte inteira passava do limite de 60).
+
+### Capturas
+
+No emulador, em `/tmp/kenoma-shots/0242_*`: o ponto de ônibus a 0° e girado (`ponto_0`, `ponto_girado`: a rua gira, o ponto fica de pé), o painel do ponto, da placa ("Avenida Francisco Glicério") e da banca, a árvore, o poste à noite ("piscou sozinho, nenhum Hum por perto"), o bando levantando voo (e a pena recusada pela bolsa cheia do emulador) com o vídeo `0242_bando_telhados.mp4`, e o gato largando uma Sucata. Não saíram nas capturas: a poça (a chuva forçada não chegou a formar poça perto) e a folha caindo (as duas árvores tocadas tiraram "nada hoje" no sorteio pessoal); a reação desenhada está coberta pelo teste.
