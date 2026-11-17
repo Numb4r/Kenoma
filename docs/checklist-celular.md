@@ -1,7 +1,7 @@
 # Checklist do celular
 
 O que precisa ser conferido no moto g54 quando a versão for instalada nele. É cumulativo: cobre tudo desde a última versão
-que está no celular (hoje a **0.20.2**, mais as pendências da 0.20.0 e da 0.20.1; a 0.20.3, a 0.20.4, a 0.21.0 e a 0.22.0 ainda não foram para o celular), e cada versão nova acrescenta os itens
+que está no celular (hoje a **0.22.1**, instalada em 2026-11-16 por cima da 0.21.0; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
 dela. **Um item só sai daqui quando o relatório confirmar que passou.** A ordem vai da versão mais nova para a mais antiga;
 as pendências antigas ficam no fim. O código entre crases é o id do item (o workbench guarda as notas por ele: não mude).
 
@@ -9,9 +9,9 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
-## 0.22.0
+## 0.22.0 e 0.22.1
 
-- [ ] `0220-perfil-antes-depois` **Perfil no celular, em profile.** `cd app && flutter run --profile -d ZF524FMMGF` (desde a 0.22.0 a build de profile sai com a chave de release e instala por cima da release sem apagar o save; o menu de debug continua nela). DevTools, Performance: grave 20 s de cada cena no Centro, ao meio-dia, no estilo **Simplificado** (o mapa antigo) e no **Completo**: zoom fechado (40 m), zoom aberto (80 m) e Vigília com Tempestade forçadas. Anote o tempo médio e o pior de UI e de raster por quadro e diga o que pesa: chão (`CityRenderer.paintGround`, blocos refeitos), prédios (`paintUpright`), partículas (`ClimatePainter`), eventos ou simulações (Debug, Desempenho). Meta: o Completo abaixo de 16 ms por quadro em qualquer zoom e pilha, e as simulações dentro de 4 ms.
+- [x] `0220-perfil-antes-depois` **Perfil no celular, em profile.** Feito em 2026-11-16 (números em `docs/marcos.md`, 0.22.1): Completo a 62–118 fps andando, p90 abaixo de 16 ms em todos os casos; os dois travamentos achados foram corrigidos na 0.22.1.
 - [ ] `0220-custo-release` **Custo por quadro na release, nos dois estilos.** Ajustes, "Gráficos do mapa": Completo e depois Simplificado, andando no Centro por um minuto em cada; Debug, Desempenho, anote o custo médio do mapa nos dois, marcado "release".
 - [ ] `0220-mapa-rua` **O mapa novo andando na rua.** Uma volta de uns 10 minutos (Centro ou bairro): os prédios com paredes e telhados variados, árvores e ipês nas praças, calçada portuguesa no Centro, faixas de pedestre e pontos de ônibus nos lugares certos do OSM; ao andar, o chão não pisca e nenhum bloco fica vazio por mais de um instante.
 - [ ] `0220-giro` **Girar o mapa.** Arraste girando devagar e rápido: o chão gira em passos pequenos durante o gesto e, um instante depois de soltar, fica nítido no ângulo exato; árvores, postes, props, Ecos e o Conjurador ficam sempre de pé; as paredes e os telhados saem do centro da tela para fora em qualquer giro.

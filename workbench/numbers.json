@@ -1,5 +1,59 @@
 [
  {
+  "title": "Mapa no moto g54, build de profile (0.22.1), Centro, andando",
+  "columns": [
+   "Estilo e clima",
+   "fps",
+   "build p50 / p90",
+   "raster p50 / p90",
+   "pior quadro"
+  ],
+  "rows": [
+   [
+    "Simplificado, limpo",
+    "77 a 87",
+    "2,1–2,8 / 3,3–4,2 ms",
+    "9,1–10,8 / 11,4–12,0 ms",
+    "15,6 ms"
+   ],
+   [
+    "Simplificado, Tempestade + Tornado + Vigília",
+    "75 a 81",
+    "4,4–5,3 / 7,3–9,4 ms",
+    "4,8–6,2 / 6,0–7,5 ms",
+    "33 ms"
+   ],
+   [
+    "Completo, limpo, 40 m",
+    "92 a 118",
+    "3,4–4,6 / 4,5–5,9 ms",
+    "4,2–6,4 / 4,9–10,2 ms",
+    "17,5 ms"
+   ],
+   [
+    "Completo, limpo, 80 m",
+    "111 a 115",
+    "4,0–4,7 / 5,2–6,0 ms",
+    "3,8–4,7 / 4,5–5,3 ms",
+    "28,6 ms"
+   ],
+   [
+    "Completo, Tempestade + Tornado + Vigília",
+    "62 a 75",
+    "5,8–7,1 / 8,0–12,1 ms",
+    "4,3–5,7 / 5,2–6,8 ms",
+    "32,9 ms"
+   ],
+   [
+    "Completo da 0.22.0 (antes da correção), limpo, 40 m",
+    "7",
+    "115–153 / 150–160 ms",
+    "3,5 / 3,8 ms",
+    "172 ms"
+   ]
+  ]
+ },
+ {
   "title": "Custo por quadro contra o orçamento de 4 ms",
   "columns": [
    "Simulação",

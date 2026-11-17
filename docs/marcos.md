@@ -798,3 +798,27 @@ Novos: `test/ui/city_renderer_test` (giro exato e grade com o mapa parado, passo
 - Prédios só onde o OSM tem contorno; São Paulo sem prédios até o leitor por tile.
 - Os números do celular (profile e release) estão no checklist.
 - Época 13 criada sem confirmação: começa em 2026-12-14 16:00 UTC; se a regra do Tornado não for para agora, basta apagá-la antes de distribuir.
+
+## Fase 1 · fatia 9b · O mapa novo medido no celular (0.22.1)
+
+Versão 0.22.1+39, mesma chave, instalada no moto g54 por cima da 0.21.0 (o save ficou). Medido em **build de profile no celular** (a build de profile agora tem a chave de release), com uma instrumentação temporária, nunca commitada (`FrameTiming` agregado a cada 3 s no logcat, o custo de cada camada e do `update`): Centro de Campinas, simulador andando com o joystick seguro o tempo todo (mantém os clocks altos), zoom alternando 40 e 80 m a cada 30 s. A tela do g54 vai a 120 Hz.
+
+### O que a medida achou e o que mudou
+
+- **O Completo da 0.22.0 era inutilizável andando:** 7 fps a 40 m e uns 18 fps a 80 m. Duas causas: (1) andando, a escala muda em frações ínfimas com a latitude, e o cache refazia um bloco por quadro; agora o zoom do quadro fica preso enquanto o real não sair 0,3% dele (`CityRenderer.stableKc`, com teste); (2) cada bloco desenhava as ruas, os prédios e as sombras do tile z15 inteiro (1,1 km) e confiava no recorte: 110 a 150 ms por bloco; agora cada bloco recebe só o que toca o retângulo dele, com 3 células de folga (`CityTile.within`).
+- **A Vigília com Tempestade travava o mapa nos dois estilos** (3 fps): o `refresh` do mundo levava ~300 ms. Cada raio que cai no olhar procurava as zonas em volta (`_atZone` → `zonesNear`), e com o clima forçado pelo debug a memória das definições era pulada. Agora a memória vale também forçada (a definição só depende da região z12 e do instante) e o resultado de `_atZone` fica guardado pela queda: o `refresh` caiu para ~12 ms. O resultado é o mesmo (os testes de mundo e clima passam); só some o trabalho repetido. Isso também afetava a Vigília com Tempestade de verdade, numa sexta-feira 13.
+
+### Números (profile, moto g54, Centro, andando; por janela de 3 s)
+
+| Estilo | Clima | fps | build p50 / p90 (ms) | raster p50 / p90 (ms) | pior quadro (ms) |
+| --- | --- | --- | --- | --- | --- |
+| Simplificado | Limpo, 40 e 80 m | 77 a 87 | 2,1 a 2,8 / 3,3 a 4,2 | 9,1 a 10,8 / 11,4 a 12,0 | 15,6 |
+| Simplificado | Tempestade + Tornado + Vigília | 75 a 81 | 4,4 a 5,3 / 7,3 a 9,4 | 4,8 a 6,2 / 6,0 a 7,5 | 33 |
+| Completo (0.22.0) | Limpo, 40 m | 7 | 115 a 153 / 150 a 160 | 3,5 / 3,8 | 172 |
+| Completo (0.22.1) | Limpo, 40 m | 92 a 118 | 3,4 a 4,6 / 4,5 a 5,9 | 4,2 a 6,4 / 4,9 a 10,2 | 17,5 |
+| Completo (0.22.1) | Limpo, 80 m | 111 a 115 | 4,0 a 4,7 / 5,2 a 6,0 | 3,8 a 4,7 / 4,5 a 5,3 | 28,6 |
+| Completo (0.22.1) | Tempestade + Tornado + Vigília | 62 a 75 | 5,8 a 7,1 / 8,0 a 12,1 | 4,3 a 5,7 / 5,2 a 6,8 | 32,9 |
+
+- **O que pesa no Completo:** o chão parado custa 0,1 a 0,2 ms por quadro (os blocos prontos); um bloco novo entrando custa uns 5 a 10 ms (é dele parte dos piores quadros); o que fica de pé, 1 a 6 ms; as partículas e as camadas de tela ficam abaixo de 1 ms; o tráfego, 0,2 a 0,3 ms por passo; bichos e vento, 0,1 ms; o véu da neblina, menos de 0,02 ms. Simulações bem dentro dos 4 ms.
+- **Meta de 16 ms:** cumprida no p90 em todos os casos medidos (o pior p90 é 12,1 ms, na pilha cheia). Os piores quadros isolados vão de 17 a 33 ms: blocos entrando na tela e o `refresh` do mundo a cada 0,25 s. O próximo passo, se for preciso, é refazer os blocos fora do quadro.
+- O Simplificado tem o raster mais caro que o Completo (9 a 11 ms contra 4 a 6) porque redesenha as ruas inteiras a cada quadro; o Completo reaproveita os blocos.
