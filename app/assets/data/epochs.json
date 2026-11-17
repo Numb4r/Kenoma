@@ -27251,6 +27251,10 @@
                 [
                   "item.pure_water",
                   1
+                ],
+                [
+                  "item.glass_shard",
+                  2
                 ]
               ],
               "green": [
@@ -27315,6 +27319,10 @@
                 [
                   "item.pure_water",
                   1
+                ],
+                [
+                  "item.glass_shard",
+                  3
                 ]
               ],
               "sacred": [
@@ -27369,6 +27377,10 @@
                 [
                   "item.pure_water",
                   1
+                ],
+                [
+                  "item.glass_shard",
+                  2
                 ]
               ],
               "green": [
@@ -27433,6 +27445,10 @@
                 [
                   "item.pure_water",
                   1
+                ],
+                [
+                  "item.glass_shard",
+                  3
                 ]
               ],
               "sacred": [

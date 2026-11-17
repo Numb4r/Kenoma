@@ -120,6 +120,12 @@ class CityBuilding {
 
 /// Um objeto de pé do cenário: árvore (`tree_a`..., `ipe_purple`, `ipe_yellow`), poste (`lamp`), ponto de ônibus
 /// (`bus_stop`), banca (`newsstand`); e a faixa de pedestre (`crosswalk`, deitada no chão, com o ângulo da rua [angle]).
+/// O abrigo de ônibus do OSM: prédio de até tantos m² a até tantos metros de um ponto de ônibus (sai dos prédios).
+const double kShelterMaxM2 = 40, kShelterNearM = 10;
+
+/// Um prédio de [areaM2] a [distM] de um ponto de ônibus é o abrigo dele (sai dos prédios; o ponto fica de pé).
+bool isBusShelter(double areaM2, double distM) => areaM2 <= kShelterMaxM2 && distM <= kShelterNearM;
+
 class CityProp {
   const CityProp(this.kind, this.x, this.y, {this.angle = 0, this.widthM = 0, this.hash = 0});
 
@@ -193,9 +199,18 @@ CityTile buildCityTile({
   final m2 = mpc * mpc;
   final bs = <CityBuilding>[];
   final occupied = <int>{}; // células z23 com prédio (as árvores plantadas não nascem dentro)
+  // 0.24.2: o abrigo do ponto de ônibus vem do OSM como um prédio pequeno (`roof`, `shelter`) e virava um telhado que gira
+  // com o chão. Ele sai daqui; o ponto fica de pé (o carimbo) com a base no chão, que gira.
+  final stops = [for (final p in points?.pointsIn(x0 - 1, y0 - 1, x1 + 1, y1 + 1) ?? const <TrafficPoint>[]) if (p.kind == TrafficPointKind.busStop) p];
+  bool isShelter(PackBuilding b) {
+    final (cx, cy) = b.centroid;
+    return stops.any((p) => isBusShelter(b.areaCells * m2, math.sqrt((p.x - cx) * (p.x - cx) + (p.y - cy) * (p.y - cy)) * mpc));
+  }
+
   for (final b in buildings?.buildingsIn(x0, y0, x1, y1, margin: 0) ?? const <PackBuilding>[]) {
     final (cx, cy) = b.centroid;
     if (cx < x0 || cx >= x1 || cy < y0 || cy >= y1) continue; // cada prédio num tile só
+    if (isShelter(b)) continue;
     final look = buildingLook(type: b.type, shop: b.shop, areaM2: b.areaCells * m2, levels: b.levels == 0 ? null : b.levels.toDouble(), gridBiome: biomeAt(cx.floor(), cy.floor()));
     bs.add(CityBuilding(b.xy, look, cityHash([b.index, b.length]), levels: b.levels));
     final (l, t, r, bb) = b.bounds;
@@ -252,7 +267,8 @@ CityTile buildCityTile({
     final h = cityHash([(p.x * 64).round(), (p.y * 64).round(), p.kind.index]);
     switch (p.kind) {
       case TrafficPointKind.busStop:
-        props.add(CityProp('bus_stop', p.x, p.y, hash: h));
+        // O ângulo da rua mais perto: a base no chão (a marca da calçada e o meio-fio) corre ao longo dela.
+        props.add(CityProp('bus_stop', p.x, p.y, angle: _nearestRoad(roads, p.x, p.y, 25 / mpc)?.$3 ?? 0, hash: h));
       case TrafficPointKind.square when h % 3 == 0:
         props.add(CityProp('newsstand', p.x, p.y, hash: h));
       case TrafficPointKind.crossing:
@@ -261,6 +277,24 @@ CityTile buildCityTile({
       default:
         break;
     }
+  }
+  // 0.24.2: a placa de rua nas esquinas, onde uma rua com nome (só as principais e secundárias têm nome no pacote) cruza
+  // outra; na calçada da esquina. Tocar mostra o nome (cenário, igual ao do mapa).
+  final ends = <(int, int), int>{};
+  final named = <(int, int)>{};
+  for (final l in visual?.lines ?? const <VisualLine>[]) {
+    for (var i = 0; i < l.xy.length; i += 2) {
+      final k = (l.xy[i], l.xy[i + 1]);
+      ends[k] = (ends[k] ?? 0) + 1;
+      if (l.name != null) named.add(k);
+    }
+  }
+  final corner = 3 / mpc;
+  for (final k in named) {
+    if ((ends[k] ?? 0) < 2) continue;
+    final x = x0 + k.$1 * u + corner, y = y0 + k.$2 * u + corner;
+    if (x < x0 || x >= x1 || y < y0 || y >= y1) continue;
+    props.add(CityProp('street_sign', x, y, hash: cityHash([(x * 64).round(), (y * 64).round(), 5])));
   }
   return CityTile(roads: roads, greens: greens, waters: waters, buildings: bs, props: props, areas: ground?.areasIn(tx, ty) ?? const []);
 }

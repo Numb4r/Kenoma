@@ -12,6 +12,7 @@ import '../story/chat_state.dart' show ChatEntry;
 import '../story/forum_data.dart';
 import '../story/mentor_script.dart';
 import '../story/story_state.dart';
+import '../world/map_touch.dart' show TouchState;
 import 'bestiary.dart';
 import 'conjurer.dart';
 import 'conjurer_balance.dart';
@@ -23,7 +24,7 @@ import 'progression.dart';
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 11;
+const int saveSchemaVersion = 12;
 
 /// A chave das células z17 visitadas no save (schema 6).
 const String kVisitedCellsKey = 'celulas_visitadas';
@@ -117,6 +118,7 @@ class GameState extends ChangeNotifier {
     Iterable<(int, int)>? visitedCells,
     ConjurerState? conjurer,
     CraftingState? crafting,
+    TouchState? touches,
     this.radarLastUtc = 0,
     Map<String, int>? hiddenRevealed,
     Map<String, dynamic>? settings,
@@ -136,6 +138,7 @@ class GameState extends ChangeNotifier {
         _visited = {...?visitedCells},
         conjurer = conjurer ?? ConjurerState(),
         crafting = crafting ?? CraftingState(),
+        touches = touches ?? TouchState(),
         hiddenRevealed = {...?hiddenRevealed},
         pins = [...?pins],
         builds = [...?builds],
@@ -148,7 +151,7 @@ class GameState extends ChangeNotifier {
   factory GameState.fromJson(Map<String, dynamic> j, ProgressBalance balance) {
     const known = {
       'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'bestiary_pins', 'personal_builds', 'marks', 'saved_utc',
-      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', kVisitedCellsKey, 'radar', 'conjurer', 'crafting',
+      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', kVisitedCellsKey, 'radar', 'conjurer', 'crafting', 'touches',
     };
     final progress = PlayerProgress.fromJson(j['player'] as Map<String, dynamic>?, balance)..settleBanked();
     final state = GameState(
@@ -172,6 +175,7 @@ class GameState extends ChangeNotifier {
       visitedCells: [for (final c in (j[kVisitedCellsKey] as List<dynamic>?) ?? const []) ((c as List<dynamic>)[0] as int, c[1] as int)],
       conjurer: ConjurerState.fromJson(j['conjurer'] as Map<String, dynamic>?),
       crafting: CraftingState.fromJson(j['crafting'] as Map<String, dynamic>?),
+      touches: TouchState.fromJson(j['touches'] as Map<String, dynamic>?),
       radarLastUtc: ((j['radar'] as Map<String, dynamic>?)?['last_utc'] as int?) ?? 0,
       hiddenRevealed: {
         for (final e in (((j['radar'] as Map<String, dynamic>?)?['revealed'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as int,
@@ -286,6 +290,9 @@ class GameState extends ChangeNotifier {
 
   /// O crafting da fase 1: recipientes, receitas conhecidas, páginas, fixados e loadout.
   final CraftingState crafting;
+
+  /// O mapa que responde ao toque (0.24.2): o dia e o que cada interação já rendeu nele.
+  final TouchState touches;
 
   /// Os números do Conjurador do `balance.json`: desbloqueios, escolas, fusão.
   ConjurerBalance get cb => balance.conjurer;
@@ -472,7 +479,7 @@ class GameState extends ChangeNotifier {
       final e = bestiary[id] ?? const BestiaryEntry();
       bestiary[id] = e.copyWith(captured: true, captures: e.captures + n);
     }
-    // A primeira Sucata abre a quest que ensina o crafting (0.24.1): o mentor manda a mensagem `craft_tut_start`.
+    // O primeiro Caco de vidro abre a quest que ensina o crafting: o mentor manda a mensagem `craft_tut_start`.
     if (id == kCraftTutorialTrigger && crafting.tutorial == CraftTutorial.off) {
       crafting.tutorial = CraftTutorial.on;
       story.events['craft_tut_start'] = 1;
@@ -679,6 +686,7 @@ class GameState extends ChangeNotifier {
         kVisitedCellsKey: [for (final c in _visited) [c.$1, c.$2]],
         'conjurer': conjurer.toJson(),
         'crafting': crafting.toJson(),
+        'touches': touches.toJson(),
         'radar': {'last_utc': radarLastUtc, 'revealed': hiddenRevealed},
         'inventory': inventory,
         'collection': [for (final c in collection) c.toJson()],

@@ -154,7 +154,7 @@ class CityUpright {
         if (p.kind == 'crosswalk') continue;
         final q = v.at(p.x, p.y);
         if (!view.contains(q)) continue;
-        if (p.kind == 'lamp' || p.kind == 'bus_stop' || p.kind == 'newsstand') {
+        if (p.kind == 'lamp' || p.kind == 'bus_stop' || p.kind == 'newsstand' || p.kind == 'street_sign') {
           stamps.add((p.kind, q, false, (p.x, p.y)));
           continue;
         }

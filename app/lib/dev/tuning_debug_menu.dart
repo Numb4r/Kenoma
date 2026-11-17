@@ -20,6 +20,7 @@ import 'debug_items.dart';
 import 'debug_menu_view.dart';
 import 'debug_prefs.dart';
 import 'debug_registry.dart';
+import 'debug_commands.dart';
 import 'dev_tools.dart';
 
 class TuningDebugMenu extends StatefulWidget {
@@ -66,6 +67,10 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
     _env.prefs = prefs;
     if (mounted) setState(() => _prefs = prefs);
     _env.loadLevelOverride();
+    // Comandos do adb por intent (scripts/celular.sh cmd ...): o celular se dirige sem teclado (0.24.2).
+    unawaited(listenDebugCommands(tools: _tools, openMap: () async {
+      if (mounted) await openGameMap(context, _tools);
+    }));
     // Aberto pelo aviso de um Eco raro da Patrulha: vai direto ao mapa, que abre o Eco.
     if (await initPatrolLaunch() && mounted) {
       unawaited(openGameMap(context, _tools));

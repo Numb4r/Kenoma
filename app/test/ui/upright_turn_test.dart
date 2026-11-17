@@ -42,7 +42,7 @@ void main() {
     final (x, y) = next();
     buildings.add(square(x, y, h, h < 8 ? 'apartments' : 'commercial', h < 8 ? 'urban' : 'lit'));
   }
-  for (final kind in ['tree', 'tree_a', 'tree_b', 'tree_c', 'ipe_purple', 'ipe_yellow', 'lamp', 'bus_stop', 'newsstand']) {
+  for (final kind in ['tree', 'tree_a', 'tree_b', 'tree_c', 'ipe_purple', 'ipe_yellow', 'lamp', 'bus_stop', 'newsstand', 'street_sign']) {
     final (x, y) = next();
     props.add(CityProp(kind, x, y, hash: n));
   }

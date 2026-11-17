@@ -22,6 +22,9 @@ class Bird {
   bool left = false;
 
   bool get flying => flight >= 0;
+
+  /// Pousado num telhado: a altura do prédio (metros de desenho); 0 no chão ou no muro.
+  double roofM = 0;
 }
 
 class BirdFlock {
@@ -43,6 +46,9 @@ class BirdFlocks {
   final int perFlock;
   final Pcg32 _rng;
   final Map<(int, int), BirdFlock> flocks = {};
+
+  /// A altura do prédio sob um ponto (células), ou `null` se é chão: o pombo que pousa ali fica no telhado.
+  double? Function(double x, double y)? roofAt;
 
   /// Quantas vezes um bando levantou voo (testes e debug).
   int takeoffs = 0;
@@ -68,24 +74,7 @@ class BirdFlocks {
     final scare = scareM / mpc;
     for (final f in flocks.values) {
       final scared = f.birds.any((b) => !b.flying && (b.x - px) * (b.x - px) + (b.y - py) * (b.y - py) < scare * scare);
-      if (scared) {
-        takeoffs++;
-        // Todos para o mesmo lado, para longe do avatar, cada um com o seu atraso e o seu canto.
-        final away = math.atan2(f.y - py, f.x - px) + (_u() - 0.5) * 1.2, d = flyM * (0.8 + 0.5 * _u()) / mpc;
-        f.x += math.cos(away) * d;
-        f.y += math.sin(away) * d;
-        for (final b in f.birds) {
-          if (b.flying) continue;
-          b
-            ..fx = b.x
-            ..fy = b.y
-            ..tx = f.x + (_u() - 0.5) * 5 / mpc
-            ..ty = f.y + (_u() - 0.5) * 5 / mpc
-            ..flight = 0
-            ..delay = _u() * 0.35
-            ..left = b.tx < b.x;
-        }
-      }
+      if (scared) takeOff(f, px, py, mpc);
       for (final b in f.birds) {
         b.phase += dt;
         if (b.flying) {
@@ -102,6 +91,7 @@ class BirdFlocks {
           if (b.flight >= 1) {
             b
               ..flight = -1
+              ..roofM = roofAt?.call(b.x, b.y) ?? 0
               ..height = 0
               ..hopIn = 0.5 + _u();
           }
@@ -124,6 +114,36 @@ class BirdFlocks {
   }
 
   bool _started = false;
+
+  /// O bando levanta voo para longe de ([px], [py]): o avatar chegou perto, ou o jogador tocou nele (0.24.2).
+  void takeOff(BirdFlock f, double px, double py, double mpc) {
+    takeoffs++;
+    // Todos para o mesmo lado, para longe do avatar, cada um com o seu atraso e o seu canto.
+    final away = math.atan2(f.y - py, f.x - px) + (_u() - 0.5) * 1.2, d = flyM * (0.8 + 0.5 * _u()) / mpc;
+    f.x += math.cos(away) * d;
+    f.y += math.sin(away) * d;
+    for (final b in f.birds) {
+      if (b.flying) continue;
+      b
+        ..fx = b.x
+        ..fy = b.y
+        ..roofM = 0
+        ..tx = f.x + (_u() - 0.5) * 5 / mpc
+        ..ty = f.y + (_u() - 0.5) * 5 / mpc
+        ..flight = 0
+        ..delay = _u() * 0.35
+        ..left = b.tx < b.x;
+    }
+  }
+
+  /// O gato que segue o Conjurador depois do carinho (só cenário) e quantos metros ele ainda anda.
+  (int, int)? following;
+  double followLeftM = 0;
+
+  void followCat((int, int) key, double meters) {
+    following = key;
+    followLeftM = meters;
+  }
 
   // ---------------------------------------------------------------- gatos, morcegos e maritacas
 
@@ -152,6 +172,18 @@ class BirdFlocks {
       cats[key] = (p.x + 2.5 / mpc, p.y - 1.5 / mpc);
     }
     _catsStarted = true;
+    // O gato do carinho anda atrás do avatar, a 1,5 m, até gastar os metros dele; depois fica onde parou.
+    final fk = following;
+    if (fk != null && cats[fk] != null) {
+      final (cx, cy) = cats[fk]!;
+      final dx = px - cx, dy = py - cy, d = math.sqrt(dx * dx + dy * dy), gap = 1.5 / mpc;
+      if (d > gap) {
+        final step = math.min(d - gap, 1.8 * dt / mpc);
+        cats[fk] = (cx + dx / d * step, cy + dy / d * step);
+        followLeftM -= step * mpc;
+      }
+      if (followLeftM <= 0) following = null;
+    }
     cats.removeWhere((_, c) => ((c.$1 - px).abs() > range * 1.3 || (c.$2 - py).abs() > range * 1.3) && !seen(c.$1, c.$2));
     // Morcegos: três por praça, em voltas tortas de 6 a 14 m, das 19 h às 5 h.
     bats.clear();

@@ -37,6 +37,21 @@ class CityRenderer {
 
   /// A cena de um tile z15 (o chamador guarda o cache dos tiles).
   final CityTile Function(int tx, int ty) tileAt;
+
+  /// A altura (metros de desenho, `fakeHeightPx`) do prédio sob o ponto ([x], [y], células z21), ou `null` se é chão. O pássaro
+  /// que pousa ali fica no telhado (0.24.2).
+  double? roofHeightAt(double x, double y) {
+    final t = tileAt((x / cellsPerTile).floor(), (y / cellsPerTile).floor());
+    for (final b in t.buildings) {
+      final xy = b.xy;
+      var inside = false;
+      for (var i = 0, j = xy.length - 2; i < xy.length; j = i, i += 2) {
+        if ((xy[i + 1] > y) != (xy[j + 1] > y) && x < (xy[j] - xy[i]) * (y - xy[i + 1]) / (xy[j + 1] - xy[i + 1]) + xy[i]) inside = !inside;
+      }
+      if (inside) return b.look.fakeHeightPx.toDouble();
+    }
+    return null;
+  }
   final String Function(int cx, int cy) biomeAt;
   final int cellsPerTile;
   final int chunkCells;

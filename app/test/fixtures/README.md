@@ -29,3 +29,7 @@
   `GameSession` (a migração da 0.24.0 o levou ao 10), pôs Sucata, Pó de Fogo e Giz bom na Bolsa, fabricou duas Garrafas de
   vidro (a receita marcada como conhecida), pôs uma no cinto, plantou a outra e gravou. É a base de
   `test/save/migration_v11_test.dart` (as receitas antigas da Bancada continuam conhecidas e entra a quest do crafting).
+- `save_v11_0241.json`: save do schema 11 gravado pelo código real da 0.24.1 (commit 9240232, build 0.24.1+45), do mesmo
+  jeito: `git archive 9240232 app shared` numa pasta temporária, e lá um teste descartável abriu `save_v10_0240.json` numa
+  `GameSession` (a migração da 0.24.1 o levou ao 11), pegou Sucata (a quest ligou), encheu a garrafa do cinto de Água de
+  chuva e levou a quest até o último passo, e gravou. É a base de `test/save/migration_v12_test.dart`.

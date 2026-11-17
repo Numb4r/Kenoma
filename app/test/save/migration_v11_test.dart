@@ -30,7 +30,7 @@ void main() {
     expect(migrateSave(out), out, reason: 'migrar duas vezes dá o mesmo');
   });
 
-  test('abrir o save v10 na 0.24.1: nada some, as receitas antigas valem e a próxima Sucata liga a quest já adiantada', () async {
+  test('abrir o save v10 na 0.24.1: nada some, as receitas antigas valem e o próximo Caco de vidro liga a quest já adiantada', () async {
     final data = loadGameData();
     final store = MemorySaveStore()..json = jsonDecode(jsonEncode(v10)) as Map<String, dynamic>;
     final session = await GameSession.open(store: store, startInventory: {}, balance: loadProgressBalance(), nowUtc: () => 1795600000, nextInt: (n) => 0, appVersion: '0.24.1+45');
@@ -42,7 +42,7 @@ void main() {
       expect(isKnown(s, data.recipes[id]!), isTrue, reason: id);
     }
     expect(s.crafting.tutorial, CraftTutorial.off);
-    s.add('item.scrap', 1);
+    s.add('item.glass_shard', 1);
     expect(s.crafting.tutorial, CraftTutorial.on);
     // Já fez a garrafa e pôs no cinto na 0.24.0: a quest segue do passo de encher.
     expect(currentStep(s), TutStep.fill);

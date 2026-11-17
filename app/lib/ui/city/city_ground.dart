@@ -281,6 +281,7 @@ RecordedChunk recordGroundChunk({
   for (final t in tiles) {
     for (final p in t.props) {
       if (p.kind == 'crosswalk') _crosswalk(c, p, s, kpm, f.angle);
+      if (p.kind == 'bus_stop') _busStopBase(c, p, s, kpm, f.angle);
     }
   }
   // 5. A planta dos prédios (por baixo das paredes e do telhado, desenhados a cada quadro).
@@ -391,6 +392,22 @@ void _lanes(ui.Canvas canvas, List<ui.Offset> pts, int road) {
 }
 
 /// A faixa de pedestre: barras de 1 px no sentido da rua, a cada 2 px através do asfalto, com uns 3 m de comprimento.
+/// A base do ponto de ônibus no chão (0.24.2): a marca da calçada, 4 × 1,6 m ao longo da rua, e o meio-fio do lado da
+/// rua. Gira com o chão; o abrigo fica de pé (o carimbo `bus_stop`).
+void _busStopBase(ui.Canvas c, CityProp p, ui.Offset Function(double, double) s, double kpm, double frameAngle) {
+  final center = s(p.x, p.y);
+  final a = p.angle + frameAngle;
+  final along = ui.Offset(math.cos(a), math.sin(a)), across = ui.Offset(-along.dy, along.dx);
+  final mark = _fill(labColor('sidewalk_light')), curb = _fill(labColor('sidewalk_dark'));
+  final hl = 2 * kpm, hw = 0.8 * kpm;
+  for (var v = -hw; v <= hw; v += 1) {
+    for (var u = -hl; u <= hl; u += 1) {
+      final q = center + along * u + across * v;
+      c.drawRect(ui.Rect.fromLTWH(q.dx.floorToDouble(), q.dy.floorToDouble(), 1, 1), v >= hw - 1 ? curb : mark);
+    }
+  }
+}
+
 void _crosswalk(ui.Canvas c, CityProp p, ui.Offset Function(double, double) s, double kpm, double frameAngle) {
   final center = s(p.x, p.y);
   final a = p.angle + frameAngle;

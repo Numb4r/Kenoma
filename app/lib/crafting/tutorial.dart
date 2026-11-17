@@ -1,4 +1,4 @@
-/// A quest que ensina o crafting (0.24.1): a Garrafa de vidro é a porta de entrada dos coletores. Abre na primeira Sucata
+/// A quest que ensina o crafting (0.24.1): a Garrafa de vidro é a porta de entrada dos coletores. Abre no primeiro Caco de vidro
 /// (ou no presente do mentor); os passos são fazer a garrafa na Bancada, pôr no cinto, encher (na chuva, ou plantada) e
 /// fazer uma receita com o que ela pegou. Os passos saem dos eventos do jogo, então valem mesmo feitos antes da quest; o
 /// mentor comenta cada um (`craft_tut_*` em `mentor.json`). Dart puro.

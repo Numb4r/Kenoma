@@ -192,6 +192,10 @@ class WorldView {
   /// Se a bolsa comporta [n] da pilha [key]; sem ela, sempre. Bolsa cheia: o material fica no mapa.
   bool Function(String key, int n, int t)? bagFits;
 
+  /// Ecos que um toque no mapa deixou à vista até um instante (0.24.2: o poste que pisca mostra o Hum por perto alguns
+  /// segundos a mais, além do alcance de visão). Só desenho e alcance de vista: o mundo não muda.
+  final Map<int, int> revealUntil = {};
+
   /// A qualidade do último material pego (a Patrulha a escreve no diário).
   Quality lastPickQuality = Quality.common;
 
@@ -339,7 +343,7 @@ class WorldView {
         ...field.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel),
         ...?p?.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel),
       ])
-        if (visibleTier(s) && (viewCap == null || !s.isEco || distanceM(s) <= viewCap) && (distanceM(s) <= base || isPinned(s))) _withForce(s),
+        if (visibleTier(s) && (((viewCap == null || !s.isEco || distanceM(s) <= viewCap) && (distanceM(s) <= base || isPinned(s))) || (revealUntil[s.uid] ?? 0) > tUtc)) _withForce(s),
       // As do "Criar criatura": fora do mundo, valem em qualquer nível.
       ...?force?.creatures.around(px: px, py: py, metersPerCell21: _mpc, radiusM: auraRadiusM, tUtc: tUtc, biomeAt: _biomeKeyAt),
     ];

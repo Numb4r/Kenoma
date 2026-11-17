@@ -86,7 +86,7 @@
     { "id": "page_gear", "from": "mentor", "page": "page.gear", "requires": { "event": "level_8", "min": 1 },
       "text": "Bolsa cheia. Acontece com quem pega tudo o que brilha. Dá para costurar uma maior, e um cinto, e mais do que isso. A página já está no grimório. Quanto de cidade você pretende carregar?" },
     { "id": "craft_tut_start", "from": "mentor", "requires": { "event": "craft_tut_start", "min": 1 },
-      "text": "Sucata. Todo mundo passa por cima. Dois pedaços disso, refundidos, viram vidro, e vidro guarda o que cai do céu. Faça uma garrafa na Bancada. O que você guardaria, se desse para guardar o tempo?" },
+      "text": "Caco de vidro. Todo mundo desvia. Dois desses, refundidos, voltam a ser garrafa, e garrafa guarda o que cai do céu. Faça uma na Bancada. O que você guardaria, se desse para guardar o tempo?" },
     { "id": "craft_tut_bottle", "from": "mentor", "requires": { "event": "craft_tut_bottle", "min": 1 },
       "text": "Uma garrafa vazia. Na bolsa ela só ocupa lugar. Abra a Bolsa, na aba Condições, e ponha a garrafa no cinto. Vazio também se carrega, não?" },
     { "id": "craft_tut_belt", "from": "mentor", "requires": { "event": "craft_tut_belt", "min": 1 },
@@ -122,7 +122,7 @@
     { "id": "steps_10k", "from": "familiar",
       "text": "*O Familiar se deita atravessado no caminho e só levanta quando você para também. Dez mil passos. Parece dizer: chega por hoje, ou ainda não?*" },
     { "id": "craft_tut_gift", "from": "mentor",
-      "text": "Você abriu o cinto e não tinha o que pôr nele. Deixei uma garrafa na sua bolsa. Não agradeça, é só vidro. As próximas você faz: dois pedaços de Sucata, na Bancada. O que você pretende guardar nela?" }
+      "text": "Você abriu o cinto e não tinha o que pôr nele. Deixei uma garrafa na sua bolsa. Não agradeça, é só vidro. As próximas você faz: dois Cacos de vidro, na Bancada. O que você pretende guardar nela?" }
   ],
   "craft_tutorial": { "title": "Primeira garrafa", "steps": ["Faça uma garrafa na Bancada", "Ponha a garrafa no cinto", "Encha na chuva ou plante a garrafa", "Faça uma receita com a água"] }
 }

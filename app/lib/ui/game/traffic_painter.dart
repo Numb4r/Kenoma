@@ -9,6 +9,7 @@ import 'dart:ui' as ui;
 import '../../core/astro.dart' show DayLight;
 import '../../data/cycle_pack.dart';
 import '../../data/traffic_pack.dart';
+import '../../world/lab_block.dart' show roofPoint;
 import '../../world/map_camera.dart';
 import '../../world/sim/birds.dart';
 import '../../world/sim/cyclists.dart';
@@ -271,9 +272,11 @@ class TrafficPainter {
   late final WindLeaves leaves = WindLeaves(count: config.leaves);
   String? _windId;
 
-  void paintLeaves(ui.Canvas canvas) {
+  /// [air] `true`: só a fumaça, que sobe e passa por cima dos telhados (0.24.2); `false`: folhas, papéis, fuligem e areia,
+  /// que rolam pelo chão.
+  void paintLeaves(ui.Canvas canvas, {bool air = false}) {
     final f = _birdFrame;
-    if (f == null || leaves.leaves.isEmpty) return;
+    if (f == null || leaves.leaves.isEmpty || air != (leaves.style == 'smoke')) return;
     final u = math.max(2.0, (f.pxPerM * 0.14).roundToDouble());
     const leaf = [0xFF6FA35A, 0xFFD08A3C, 0xFFE8E4F4, 0xFF8A6A4A], smoke = [0xFF8E8A9A, 0xFFA9A5B5, 0xFF75717F, 0xFF9B97A8];
     const soot = [0xFF1A1424, 0xFF2A2236, 0xFF1A1424, 0xFF3A3248], sand = [0xFFE0C27A, 0xFFF2DCA4, 0xFFC9A862, 0xFFE0C27A];
@@ -304,16 +307,25 @@ class TrafficPainter {
   ({ui.Size view, MapCamera cam, double pxPerM})? _birdFrame;
   double _birdT = 0;
 
-  /// Os pombos do quadro preparado: no chão, um corpinho cinza que cisca; no ar, as asas batendo e a sombra embaixo.
-  void paintBirds(ui.Canvas canvas) {
+  /// Os bichos do quadro preparado, em duas passadas (0.24.2). [air] `false`: o que está no chão (pombo ciscando, gato no
+  /// muro), por baixo dos prédios. [air] `true`: o que voa (pombo no ar, maritacas, morcegos) e o pombo pousado num telhado,
+  /// na posição deslocada do telhado, por cima de tudo que é do mundo e por baixo só do HUD. A sombra de quem voa fica no chão.
+  void paintBirds(ui.Canvas canvas, {bool air = false}) {
     final f = _birdFrame;
     if (f == null) return;
+    final center = (f.view.width / 2, f.view.height / 2);
     final sw = Stopwatch()..start();
     final u = math.max(4.0, (f.pxPerM * 0.5).roundToDouble()); // bem maior que o pombo de verdade: senão some no chão
     bool off(double sx, double sy) => sx < -40 || sy < -40 || sx > f.view.width + 40 || sy > f.view.height + 40;
     void bird(Bird b, int body, int wing, double unit, {bool always = false}) {
-      final (sx, sy) = f.cam.cellToScreen(b.x, b.y, f.view.width, f.view.height);
+      // Quem voa ou está num telhado sai na passada do ar; quem está no chão, na do chão.
+      if (air != birdInAir(b, always: always)) return;
+      var (sx, sy) = f.cam.cellToScreen(b.x, b.y, f.view.width, f.view.height);
       if (off(sx, sy)) return;
+      if (b.roofM > 0 && b.height == 0) {
+        final r = roofPoint((sx, sy), center, b.roofM * f.pxPerM, cameraPx: 160 * f.pxPerM / 1.1, maxPx: 16 * f.pxPerM / 1.1, halfScreen: center);
+        (sx, sy) = r;
+      }
       final lift = b.height * unit * 7, x = sx.roundToDouble(), y = (sy - lift).roundToDouble();
       // A sombra fica no chão: embaixo do bicho parado, para trás e menor quando ele sobe.
       canvas.drawRect(ui.Rect.fromLTWH(x - unit, sy.roundToDouble(), unit * (b.height > 0.5 ? 1.5 : 2), unit * 0.5), _fill..color = kOutline.withValues(alpha: 0.3));
@@ -341,8 +353,8 @@ class TrafficPainter {
     for (final p in birds.parrots) {
       bird(p, 0xFF4FA83A, 0xFF7ED957, u * 0.8, always: true);
     }
-    // Gatos: sentados, com as orelhas e o rabo que balança de vez em quando.
-    for (final c in birds.cats.entries) {
+    // Gatos: sentados no muro, com as orelhas e o rabo que balança de vez em quando (passada do chão).
+    for (final c in air ? const <MapEntry<(int, int), (double, double)>>[] : birds.cats.entries) {
       final (sx, sy) = f.cam.cellToScreen(c.value.$1, c.value.$2, f.view.width, f.view.height);
       if (off(sx, sy)) continue;
       final x = sx.roundToDouble(), y = sy.roundToDouble(), k = c.key.$1 & 3, flick = ((f.pxPerM + (_birdT * 1.3 + k)).floor() % 5 == 0) ? -u : 0.0;
@@ -354,8 +366,8 @@ class TrafficPainter {
       canvas.drawRect(ui.Rect.fromLTWH(x + u, y - u + flick, u, u * 0.6), _fill);
       canvas.drawRect(ui.Rect.fromLTWH(x - u * 0.6, y - u * 1.6, u * 0.4, u * 0.4), _fill..color = kSignal);
     }
-    // Morcegos: um V escuro que abre e fecha.
-    for (final (i, m) in birds.bats.indexed) {
+    // Morcegos: um V escuro que abre e fecha (sempre no ar).
+    for (final (i, m) in air ? birds.bats.indexed : const <(int, (double, double))>[]) {
       final (sx, sy) = f.cam.cellToScreen(m.$1, m.$2, f.view.width, f.view.height);
       if (off(sx, sy)) continue;
       final x = sx.roundToDouble(), y = sy.roundToDouble(), open = ((_birdT * 10).floor() + i).isEven, w = u * 0.8;
@@ -502,3 +514,7 @@ class TrafficPainter {
     }
   }
 }
+
+/// Em que passada o bicho sai (0.24.2): no ar quem voa (ou sempre voa, como a maritaca) e quem pousou num telhado; no chão
+/// o resto. A do ar vem depois dos prédios e das árvores.
+bool birdInAir(Bird b, {bool always = false}) => b.height > 0 || always || b.roofM > 0;

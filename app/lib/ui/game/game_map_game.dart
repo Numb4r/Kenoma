@@ -1,7 +1,10 @@
 import 'fx.dart';
 import '../../crafting/crafting_state.dart';
 import '../../crafting/loadout.dart' show avatarGear;
+import '../../world/city_scene.dart' show CityTile;
+import '../../world/sim/birds.dart' show BirdFlocks;
 import '../craft/ui_art.dart';
+import 'touch_fx.dart';
 import '../../core/features.dart';
 import 'dart:ui';
 import 'dart:ui' as ui;
@@ -620,7 +623,9 @@ class GameMapGame extends FlameGame {
         },
         MapLayer.cars: () {
           _traffic.paintCars(canvas);
-          _traffic.paintBirds(canvas);
+          // O pombo que pousa dentro de um prédio fica no telhado (só no estilo Completo, que desenha os telhados).
+          _traffic.birds.roofAt = full ? city.roofHeightAt : null;
+          _traffic.paintBirds(canvas); // os do chão; os do ar vão na camada do ar
           if (overlayTraffic()) _traffic.paintDebug(canvas, view, cam, mpc);
         },
       },
@@ -628,6 +633,13 @@ class GameMapGame extends FlameGame {
       if (here) MapLayer.reach: () => _paintAura(canvas, view, cam, center),
       if (here) MapLayer.player: () => _paintPlayer(canvas, view, cam, center),
       MapLayer.air: () {
+        // 0.24.2: o pássaro voando, o pousado no telhado, as maritacas e os morcegos ficam por cima dos telhados e árvores.
+        // As reações ao toque (pena, folha, onda, clarão, coração): presas ao mapa, por cima de tudo que é do mundo.
+        touchFx.paint(canvas, view, cam, _time, playerSizePx / mapPlayerPx);
+        if (traffic) {
+          _traffic.paintLeaves(canvas, air: true);
+          _traffic.paintBirds(canvas, air: true);
+        }
         if (_hasFix) rainbow.paint(canvas, view, cam, metersPerCell21: mpc, exactUtc: _exactUtc());
         climateGround.paintAir();
         // A neblina presa ao mapa, mais densa nas baixadas (a camada leve da tela vem depois).
@@ -903,6 +915,7 @@ class GameMapGame extends FlameGame {
         sparkSize: sparkSizePx,
         dpr: dpr,
         artPixelDp: balance.artPixelDp,
+        facingLeftOf: (uid) => (ecoFacing[uid]?.$1 ?? -1) > _time && ecoFacing[uid]!.$2,
         wind: creatureWind,
         windDir: _climate.wind,
         localWind: _localWindOf,
@@ -1086,6 +1099,37 @@ class GameMapGame extends FlameGame {
       final dst = Rect.fromLTWH(x - img.width * px / 2, y + px - img.height * px, img.width * px, img.height * px);
       canvas.drawImageRect(img, Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble()), dst, plain);
     }
+  }
+
+  /// As reações ao toque no mapa (0.24.2).
+  final touchFx = TouchFxLayer();
+
+  /// O relógio das animações (segundos desde que o mapa abriu).
+  double get gameTime => _time;
+
+  /// O jogador em células z21.
+  double get playerX => latLonToTileFraction(_lat, _lon, biomeZoom).$1;
+  double get playerY => latLonToTileFraction(_lat, _lon, biomeZoom).$2;
+
+  /// Ecos virados para o Conjurador até um instante (a onda na poça): uid -> (até, olhando para a esquerda).
+  final ecoFacing = <int, (double, bool)>{};
+
+  /// Os bandos e gatos do tráfego (o toque espanta o bando e faz carinho no gato).
+  BirdFlocks get flocks => _traffic.birds;
+
+  /// O objeto do mapa sob [screen] (ponto de ônibus, banca, árvore, poste, placa, bando, gato ou poça), ou `null`.
+  TouchHit? touchAt(Offset screen, {Iterable<(double, double)> puddles = const []}) {
+    if (size.x <= 0) return null;
+    final view = Size(size.x, size.y);
+    final cam = follow.camera;
+    final corners = [for (final (x, y) in [(0.0, 0.0), (view.width, 0.0), (0.0, view.height), (view.width, view.height)]) cam.screenToCell(x, y, view.width, view.height)];
+    final n = city.cellsPerTile;
+    final xs = corners.map((c) => c.$1), ys = corners.map((c) => c.$2);
+    final tiles = <CityTile>[
+      for (var ty = (ys.reduce(math.min) / n).floor(); ty <= (ys.reduce(math.max) / n).floor(); ty++)
+        for (var tx = (xs.reduce(math.min) / n).floor(); tx <= (xs.reduce(math.max) / n).floor(); tx++) city.tileAt(tx, ty),
+    ];
+    return touchHitAt(screen, view, cam, tiles: tiles, birds: _traffic.birds, puddles: puddles);
   }
 
   /// O coletor plantado desenhado em [screen], ou `null`.

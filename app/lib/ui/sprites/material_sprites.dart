@@ -38,6 +38,7 @@ const Map<String, int> materialPalette = {
   'prism_yellow': 0xFFF6E27A,
   'prism_blue': 0xFF8AB4FF,
   'glass': 0xFFE6F4FF,
+  'glass_dark': 0xFF56708E,
   'water': 0xFF5AA0E6,
   'water_dark': 0xFF3A6EB8,
   'cork': 0xFFB08A5A,
@@ -87,6 +88,15 @@ const Map<String, List<String>> materialSprites = {
     'OrrrddO',
     '.OrddO.',
     '..OOO..',
+  ],
+  // Caco de vidro (0.24.2): o fundo de garrafa quebrado, três dentes; vidro mais escuro que o gelo. 8 x 6.
+  'item.glass_shard': [
+    '.O..O.O.',
+    'OgOOmOdO',
+    'OgmmmmdO',
+    'OgmmmddO',
+    'OmmddddO',
+    '.OOOOOO.',
   ],
   // Ervas: o maço de três folhas amarrado com barbante. 7 x 8.
   'item.herbs': [
@@ -178,6 +188,7 @@ const Map<String, Map<String, String>> materialSpriteLegend = {
   'item.chalk': {'O': 'outline', 'l': 'chalk_light', 'c': 'chalk', 'd': 'chalk_dark'},
   'item.ectoplasm': {'O': 'outline', 'l': 'ecto_light', 'g': 'ecto', 'd': 'ecto_dark'},
   'item.essence.crimson': {'O': 'outline', 'l': 'crimson_light', 'r': 'crimson', 'd': 'crimson_dark'},
+  'item.glass_shard': {'O': 'outline', 'g': 'glass', 'm': 'ice_dark', 'd': 'glass_dark'},
   'item.herbs': {'O': 'outline', 'l': 'herb_light', 'g': 'herb', 'd': 'herb_dark', 't': 'twine'},
   'item.ice_crystal': {'O': 'outline', 'l': 'ice_light', 'i': 'ice', 'd': 'ice_dark'},
   'item.meteorite': {'O': 'outline', 'l': 'meteor_light', 'm': 'meteor', 'd': 'meteor_dark', 'y': 'gold'},

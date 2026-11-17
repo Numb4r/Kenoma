@@ -102,7 +102,7 @@ void main() {
 
   testWidgets('no último passo da quest, a Bancada marca o tônico e abre no caminho da Água de chuva', (tester) async {
     final s = state({'item.herbs': 2, 'item.pure_water': 1})
-      ..add('item.scrap', 1) // liga a quest
+      ..add('item.glass_shard', 1) // liga a quest
       ..crafting.known.add('recipe.tonic.focus'); // o caminho antigo, de Água pura, também conhecido
     s.crafting.vessels.add(Vessel(uid: 1, kind: 'item.vessel.glass', place: VesselPlace.belt, content: 'item.rain_water', quality: Quality.good));
     s.recordEvent('vessel_made', '', 1);

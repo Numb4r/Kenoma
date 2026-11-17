@@ -1,0 +1,140 @@
+{
+  "format": 1,
+  "bus": {
+    "title": "Ponto de ônibus",
+    "day": "Ônibus Espectral passa em {min} min.",
+    "night": "Ônibus Espectral passa em {min} min. A esta hora, pode vir uma linha que não existe.",
+    "now": "Ônibus Espectral no ponto. Ele não espera.",
+    "lines": "Linhas daqui: {linhas}",
+    "no_lines": "Ninguém anotou as linhas deste ponto. As do Véu passam mesmo assim."
+  },
+  "news": {
+    "title": "Manchetes do Véu",
+    "footer": "Edição de hoje. Amanhã é outra.",
+    "climate": [
+      {
+        "title": "Previsão para hoje: {clima}",
+        "body": "Quem sai sem olhar o céu volta com a bolsa vazia."
+      },
+      {
+        "title": "{clima} muda o humor das ruas",
+        "body": "Moradores relatam Ecos que ontem não estavam ali."
+      },
+      {
+        "title": "Céu do dia: {clima}",
+        "body": "O Véu acompanha. O que aparece hoje pode não voltar amanhã."
+      },
+      {
+        "title": "{clima}: garrafas no cinto, recomendam",
+        "body": "Há quem guarde o tempo. Há quem só se molhe."
+      },
+      {
+        "title": "Boletim do Véu confirma: {clima}",
+        "body": "Coletores plantados ontem agradecem."
+      },
+      {
+        "title": "{clima} deixa marcas no chão do bairro",
+        "body": "Olhe para baixo antes de olhar para o aparelho."
+      },
+      {
+        "title": "Dia de {clima}: sinal oscila",
+        "body": "Conjuradores pedem calma no dial."
+      },
+      {
+        "title": "{clima} outra vez, e ninguém reclamou",
+        "body": "A cidade muda de cara. Os Ecos mudam junto."
+      }
+    ],
+    "event": [
+      {
+        "title": "{evento} chega em {dias} dias",
+        "body": "Quem tem selo guardado, que confira a bolsa."
+      },
+      {
+        "title": "Faltam {dias} dias para {evento}",
+        "body": "A banca avisa cedo. Depois não diga que não soube."
+      },
+      {
+        "title": "Contagem: {dias} dias até {evento}",
+        "body": "Dizem que o Véu afina antes. Ninguém mediu."
+      },
+      {
+        "title": "{evento} em {dias} dias, prepare a Bancada",
+        "body": "Receitas de calendário não esperam o atrasado."
+      },
+      {
+        "title": "Bairro se prepara: {evento} em {dias} dias",
+        "body": "Combine a rota com quem anda na sua frequência."
+      },
+      {
+        "title": "Hoje: {evento}",
+        "body": "Só hoje. Amanhã vira história de banca.",
+        "today": true
+      },
+      {
+        "title": "{evento} começou",
+        "body": "O que nasce hoje não nasce em outro dia.",
+        "today": true
+      },
+      {
+        "title": "É dia de {evento} na cidade",
+        "body": "Saia. O resto a rua explica.",
+        "today": true
+      }
+    ],
+    "family": [
+      {
+        "title": "{familia} visto de novo no bairro",
+        "body": "Terceiro relato da semana. Coincidência não é."
+      },
+      {
+        "title": "Moradores ouvem {familia} à noite",
+        "body": "\"Achei que era a geladeira\", diz vizinha."
+      },
+      {
+        "title": "{familia} anda aparecendo por aqui",
+        "body": "Quem procura, leve o selo certo."
+      },
+      {
+        "title": "Mais um {familia} perto da praça",
+        "body": "A banca não confirma nem desmente. Só vende jornal."
+      },
+      {
+        "title": "Rastro de {familia} nas ruas do bairro",
+        "body": "Sinal fresco. Dial na mão."
+      },
+      {
+        "title": "{familia}: o bairro tem um novo vizinho",
+        "body": "Não paga aluguel e não dá bom-dia."
+      },
+      {
+        "title": "Procura-se: {familia}",
+        "body": "Visto por último a poucas quadras desta banca."
+      },
+      {
+        "title": "{familia} some quando alguém chega perto",
+        "body": "Especialistas recomendam chegar devagar."
+      }
+    ]
+  },
+  "sign": {
+    "label": "Você está em",
+    "hint": "Diga este nome a um amigo. A rua é a mesma para os dois."
+  },
+  "notices": {
+    "map.feather_drop": "Caiu uma pena.",
+    "map.leaf_drop": "Caiu uma folha seca.",
+    "map.ipe_drop": "Caiu uma flor de ipê.",
+    "map.limit_feather": "As aves já deram o que tinham hoje.",
+    "map.limit_tree": "As árvores já deram o que tinham hoje.",
+    "map.limit_cat": "Os gatos já cansaram de você por hoje.",
+    "map.limit_puddle": "As poças não respondem mais hoje.",
+    "map.limit_lamp": "Os postes não piscam mais para você hoje.",
+    "map.cat_follow": "O gato resolveu ir com você.",
+    "map.cat_gift": "O gato largou uma coisa no chão.",
+    "map.cat_leave": "O gato achou coisa melhor para fazer.",
+    "map.tree_empty": "Esta árvore não tem nada para dar hoje.",
+    "map.puddle_empty": "Só água. Nenhum Eco de Água por perto.",
+    "map.lamp_empty": "O poste piscou sozinho. Nenhum Hum por perto."
+  }
+}

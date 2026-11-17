@@ -101,8 +101,8 @@ class Vessel {
 /// A quest que ensina o crafting (0.24.1): desligada até a primeira Sucata, ligada enquanto há passo a fazer, feita.
 enum CraftTutorial { off, on, done }
 
-/// O item que abre a quest: a Sucata, de que a Garrafa de vidro é feita.
-const kCraftTutorialTrigger = 'item.scrap';
+/// O item que abre a quest: o Caco de vidro, de que a Garrafa de vidro é feita (0.24.2; na 0.24.1 era a Sucata).
+const kCraftTutorialTrigger = 'item.glass_shard';
 
 enum LoadoutSlot {
   bag('Bolsa'),

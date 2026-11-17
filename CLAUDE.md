@@ -14,6 +14,7 @@ Flutter stable, Dart 3, Flame no mapa e na sintonia, widgets no resto, Riverpod.
 - Aparelho: o celular se o `adb devices` mostrar o moto g54, senão o emulador do notebook (`docs/emulador.md`, só build de debug, sempre `adb -s emulator-5554`); desempenho só se mede no celular.
 - Checklist do celular (`docs/checklist-celular.md`): cumulativo desde a versão instalada no celular; cada versão acrescenta os itens dela, e um item só sai quando o relatório confirmar que passou.
 - Screenshot: só se `adb shell dumpsys window | grep isKeyguardShowing` der `false` e `grep mCurrentFocus` citar `com.numb4r.kenoma`; então `adb exec-out screencap -p > /tmp/kenoma-shots/<nome>.png`.
+- Celular, segurança (0.24.2): só mexer depois que o dono disser na sessão que o aparelho está liberado, e parar quando ele pegar o aparelho (tela desligada, app trocado ou toque dele). Todo toque ou captura passa por `scripts/celular.sh`, que antes de cada ação confere que o primeiro plano é `com.numb4r.kenoma` e, se não for, para na hora e não tenta de novo. Nunca digitar texto pelo `adb` no celular: o debug se dirige por comandos (`scripts/celular.sh cmd ...`, uma intent que o próprio app lê, só no Kenoma), nunca pelo teclado.
 
 ## Regras invioláveis
 1. Determinismo: o mundo deriva de `hash(seed_global, época, célula, janela)` com o FNV-1a 64 e o PCG32 de `app/lib/core/`. Nunca `hashCode` nem `dart:math Random`. Hash é u64: `>>>`, módulo sobre `h >>> 32`. Tempo em segundos UTC; só a exibição é local.

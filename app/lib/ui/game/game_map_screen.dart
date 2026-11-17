@@ -31,6 +31,7 @@ import '../../crafting/tutorial.dart' show syncTutorial;
 import '../craft/craft_context.dart';
 import '../craft/planted_list.dart';
 import '../craft/ui_art.dart';
+import 'map_touch_flow.dart';
 import '../../crafting/collectors.dart';
 import '../../crafting/crafting_state.dart';
 import '../../crafting/ritual_data.dart';
@@ -314,6 +315,32 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _toast(v.place == VesselPlace.belt ? 'Colhido para o cinto: $what' : 'Colhido para a bolsa: $what');
   }
 
+  /// 0.24.2: o toque que não pegou Eco nem material vai para o mapa (ponto de ônibus, banca, árvore, poste, placa, bando,
+  /// gato, poça), no alcance de toque e a pé.
+  Future<void> _touchMap(_Ready r, Offset at) async {
+    final now = tools.clock.nowUtc;
+    final cw = _climate?.world;
+    final (x, y) = latLonToTileFraction(r.game.playerLat, r.game.playerLon, biomeZoom);
+    final puddles = cw == null ? const <(double, double)>[] : [for (final p in cw.puddlesNear(x, y, 60 / r.world.metersPerCell21, now)) (p.x, p.y)];
+    final hit = r.game.touchAt(at, puddles: puddles);
+    if (hit == null) return;
+    await handleMapTouch(
+      context,
+      hit,
+      MapTouchDeps(
+        state: r.session.state,
+        data: r.data,
+        world: r.world,
+        game: r.game,
+        nowUtc: () => tools.clock.nowUtc,
+        speedMps: r.game.avatar.speedMps,
+        toast: _toast,
+        climate: cw,
+        visual: r.assets.visual,
+      ),
+    );
+  }
+
   void _onBagFull() {
     final now = tools.clock.nowUtc;
     if (now - _bagFullToastUtc < 20) return; // a Fagulha na Aura tenta a cada quadro
@@ -544,7 +571,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     if (r.travel.tapCell(cellX, cellY) || r.travel.quiet) return; // escolheu o destino, ou o mundo está calado
     if (r.game.collectorAt(at) case final v?) return _tapCollector(r, v);
     final spawn = r.game.spawnAt(at);
-    if (spawn == null) return;
+    if (spawn == null) return _touchMap(r, at);
     switch (r.world.touch(spawn, tools.clock.nowUtc)) {
       case TouchResult.collected:
         break; // o aviso já saiu do WorldView

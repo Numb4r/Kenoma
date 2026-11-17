@@ -198,6 +198,8 @@ const Map<String, int> mapPalette = {
   'sign_dark': 0xFF2B2540,
   'pole': 0xFF3D4254,
   'pole_head': 0xFFC9CDD8,
+  // O azul da placa de rua: escuro e pouco saturado, longe do ciano do sinal e do neon.
+  'sign_blue': 0xFF2F5FA8,
   'lamp_glow': 0xFFFFD98A,
   'lamp_glow_lit': 0xFFFFF3D0,
   'cloud': 0xFFECEAF2,
@@ -466,6 +468,15 @@ const Map<String, List<String>> mapStamps = {
     '.p.',
     '.p.',
   ],
+  // Placa de rua de esquina (0.24.2): a plaquinha azul de borda clara no poste fino. De pé, sem texto; a base do
+  // poste (coluna do meio, última linha) fica no ponto. 5 x 5.
+  'street_sign': [
+    'lllll',
+    'lbbbl',
+    'lllll',
+    '..p..',
+    '..p..',
+  ],
   // Letreiros do Iluminado, sem texto: barra, lâmina vertical, anel e seta.
   'sign_bar': [
     'OOOOOOOOOO',
@@ -698,6 +709,7 @@ const Map<String, Map<String, String>> mapStampLegend = {
   'newsstand': {'O': 'outline', 'g': 'gate', 'h': 'pole_head', 'k': 'gate_dark', 'a': 'lane'},
   'bush': {'O': 'outline', 'l': 'canopy_light', 'g': 'canopy', 'd': 'canopy_dark'},
   'lamp': {'h': 'pole_head', 'g': 'lamp_glow', 'p': 'pole'},
+  'street_sign': {'l': 'pole_head', 'b': 'sign_blue', 'p': 'pole'},
   'sign_bar': {'O': 'outline', 'k': 'sign_dark', 'a': 'neon_a'},
   'sign_blade': {'O': 'outline', 'k': 'sign_dark', 'c': 'neon_c'},
   'neon_ring': {'b': 'neon_b'},

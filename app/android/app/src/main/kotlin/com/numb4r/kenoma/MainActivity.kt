@@ -1,5 +1,6 @@
 package com.numb4r.kenoma
 
+import android.content.Intent
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Handler
@@ -10,6 +11,23 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val device = DeviceChannels(this)
+
+    // Comandos de debug do adb (0.24.2): `am start -n com.numb4r.kenoma/.MainActivity --es kenoma_cmd "..."`. O script do
+    // celular manda por aqui em vez de digitar; o Dart pega o que abriu o app e recebe os seguintes.
+    private var pendingCmd: String? = null
+    private var debugCmd: MethodChannel? = null
+
+    private fun takeCmd(intent: Intent?) {
+        val cmd = intent?.getStringExtra("kenoma_cmd") ?: return
+        intent.removeExtra("kenoma_cmd")
+        val ch = debugCmd
+        if (ch != null) ch.invokeMethod("cmd", cmd) else pendingCmd = cmd
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        takeCmd(intent)
+    }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -22,6 +40,17 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         device.register(flutterEngine.dartExecutor.binaryMessenger)
         PatrolChannels.register(this)
+        val ch = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kenoma/debug_cmd")
+        ch.setMethodCallHandler { call, result ->
+            if (call.method == "pending") {
+                takeCmd(intent)
+                result.success(pendingCmd)
+                pendingCmd = null
+            } else {
+                result.notImplemented()
+            }
+        }
+        debugCmd = ch
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kenoma/sound").setMethodCallHandler { call, result ->
             if (call.method == "chime") {
                 try {

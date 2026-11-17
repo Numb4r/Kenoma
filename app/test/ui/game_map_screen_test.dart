@@ -1016,8 +1016,9 @@ void main() {
       env.sim.teleport(la, lo);
       await env.simulate(const Duration(seconds: 6), frames: 120);
       w.radar(env.tools.clock.nowUtc);
-      // O pulso leva alguns quadros; com o estilo Completo (0.22.0) cada quadro de teste custa mais: espera até 60.
-      for (var i = 0; i < 60 && !w.spawns.any((s) => s.uid == target.uid); i++) {
+      // O pulso leva alguns quadros; com o estilo Completo (0.22.0) cada quadro de teste custa mais, e na 0.24.2 a camada do
+      // ar (pássaros por cima dos telhados) também: espera até 150, que a suíte inteira ainda alcança com a máquina cheia.
+      for (var i = 0; i < 150 && !w.spawns.any((s) => s.uid == target.uid); i++) {
         await env.settle(1);
       }
       expect(w.spawns.any((s) => s.uid == target.uid), isTrue, reason: 'em cima da distorção: virou Eco');

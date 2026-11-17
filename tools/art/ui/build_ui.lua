@@ -940,6 +940,117 @@ draw('jewel_rune', {
   '....OOOO....',
 })
 
+-- ---------------------------------------------------------------- 0.24.2: o mapa responde ao toque
+-- Caco de vidro: o fundo de garrafa quebrado, três dentes. Vidro mais escuro que o gelo (q, m, 0).
+draw('glass_shard', {
+  '..O........',
+  '.OqO..O....',
+  '.OqmOOmO.O.',
+  'OqqmmmmmO0O',
+  'Oqmmmmmm00O',
+  'Oqmmmmm000O',
+  'Oqmmmm0000O',
+  'Ommmm00000O',
+  '.Omm00000O.',
+  '..OOOOOOO..',
+})
+-- Pena: de pé, cinza de pombo, a haste clara no meio e dois cortes na barba.
+draw('feather', {
+  '...O...',
+  '..O8O..',
+  '.O8asO.',
+  'O88asuO',
+  'O88asuO',
+  'O8OasuO',
+  'O88asOO',
+  '.O8asuO',
+  '.O8asO.',
+  '..OaO..',
+  '..OaO..',
+  '..ObO..',
+  '...O...',
+})
+-- Folha seca: na diagonal, a ponta em cima à direita, a nervura escura e o talo embaixo à esquerda.
+draw('dry_leaf', {
+  '......OOOO.',
+  '....OOttEO.',
+  '...OttGEEO.',
+  '..OttGtEEFO',
+  '.OttGtEEFFO',
+  '.OtGEEEFFO.',
+  '.OGEEFFFO..',
+  'OGOFFFOO...',
+  'OGOOOO.....',
+  '.O.........',
+})
+-- Flor de ipê: cinco pétalas amarelas vistas de cima, a garganta ferrugem.
+draw('ipe_flower', {
+  '....OOO....',
+  '...OzzyO...',
+  '.OOOzyyOOO.',
+  'OzzyOyOyyYO',
+  'OzyyyYyyyYO',
+  '.OOyYRYyOO.',
+  '.OzyyYyyYO.',
+  'OzzyyOyyYYO',
+  'OzyyO.OyYYO',
+  '.OOO...OOO.',
+})
+
+-- Reações do mapa: tiras horizontais em out/fx_*.png, 1 px por pixel de arte, quadros do mesmo tamanho.
+local function strip(name, fr, map)
+  local rows = {}
+  for y = 1, #fr[1] do
+    local line = ''
+    for _, f in ipairs(fr) do
+      if #f ~= #fr[1] or #f[y] ~= #fr[1][1] then problems[#problems + 1] = name .. ': quadros de tamanhos diferentes' end
+      line = line .. f[y]
+    end
+    rows[y] = line
+  end
+  save(grid(rows, map, PAL, name), BASE, OUT, name)
+  print(name .. ': ' .. #fr .. ' quadros de ' .. #fr[1][1] .. 'x' .. #fr[1])
+end
+-- Pena caindo: inclina para um lado, nivela, inclina para o outro. Só a borda de baixo tem contorno. 7 x 5.
+strip('fx_feather', {
+  { 'a......', '8aa....', 'O88a...', '.OOs8..', '...OO..' },
+  { '.......', '.aaaaa.', 'O8888sO', '.OOOOO.', '.......' },
+  { '......a', '....aa8', '...a88O', '..8sOO.', '..OO...' },
+})
+-- Folha seca e pétala de ipê caindo: de frente, de perfil, de frente virada. 5 x 5.
+local LEAF_FX = {
+  { '...OO', '..OtO', '.OtFO', 'OEFO.', 'OOO..' },
+  { '.....', '.OOO.', 'OtEFO', '.OOO.', '.....' },
+  { 'OO...', 'OtO..', 'OEtO.', '.OFEO', '..OOO' },
+}
+strip('fx_leaf', LEAF_FX)
+local PETAL_FX = {
+  { '.....', '..OO.', '.O12O', '.O23O', '..OO.' },
+  { '.....', '.....', '.OOO.', 'O123O', '.OOO.' },
+  { '.....', '.OO..', 'O12O.', 'O23O.', '.OO..' },
+}
+strip('fx_ipe_petal', PETAL_FX, { ['1'] = 'z', ['2'] = 'y', ['3'] = 'Y' })
+-- Ipê-roxo (junho e julho): rosa-magenta, nunca o violeta do Véu.
+strip('fx_ipe_petal_pink', PETAL_FX, { ['1'] = 'ffc0de', ['2'] = 'e868a8', ['3'] = 'b03c7c' })
+-- Onda na poça: anel achatado visto de cima, do pequeno ao grande, sumindo. 13 x 5.
+strip('fx_ripple', {
+  { '.............', '.............', '.....111.....', '.............', '.............' },
+  { '.............', '....22222....', '...2.....2...', '....22222....', '.............' },
+  { '...3333333...', '.33.......33.', '.3.........3.', '.33.......33.', '...3333333...' },
+  { '..44.444.44..', '4...........4', '.............', '4...........4', '..44.444.44..' },
+}, { ['1'] = 'e6f4ffe0', ['2'] = 'e6f4ffc0', ['3'] = 'e6f4ff90', ['4'] = 'e6f4ff50' })
+-- Clarão do poste piscando: aceso forte e quase apagado. O centro do quadro vai no miolo da cabeça do `lamp`. 7 x 7.
+strip('fx_lamp_flicker', {
+  { '...1...', '..121..', '.12321.', '1234321', '.12321.', '..121..', '...1...' },
+  { '.......', '.......', '...1...', '..121..', '...1...', '.......', '.......' },
+}, { ['1'] = 'ffd98a40', ['2'] = 'ffd98a80', ['3'] = 'ffd98ac0', ['4'] = 'fff3d0ff' })
+-- Carinho no gato: o coração sobe e some. Só o violeta do Véu, sem contorno. 5 x 9.
+strip('fx_cat_heart', {
+  { '.....', '.....', '.....', '.....', '.U.V.', 'UVVVV', 'VVVVT', '.VVT.', '..T..' },
+  { '.....', '.....', '.U.V.', 'UVVVV', 'VVVVT', '.VVT.', '..T..', '.....', '.....' },
+  { '.1.1.', '.111.', '..1..', '.....', '.....', '.....', '.....', '.....', '.....' },
+}, { ['1'] = '9b7bff99' })
+
 -- ---------------------------------------------------------------- equipamento no Conjurador (16 x 16)
 local function blank16() local r = {} for i = 1, 16 do r[i] = '................' end return r end
 local function gearRows(lines) local r = blank16() for y, row in pairs(lines) do r[y + 1] = row end return r end

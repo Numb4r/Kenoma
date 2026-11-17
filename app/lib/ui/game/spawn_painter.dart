@@ -77,6 +77,7 @@ void paintSpawns(
   ui.Offset Function(WorldSpawn s)? localWind,
   double pxPerM = 0,
   double artPixelDp = 3,
+  bool Function(int uid)? facingLeftOf,
 }) {
   final ordered = [...spawns]..sort((a, b) => a.y.compareTo(b.y));
   final climateWind = windDir;
@@ -106,11 +107,11 @@ void paintSpawns(
         // A costura abre do centro para fora e o Eco aparece dentro dela.
         canvas.save();
         canvas.clipRect(ui.Rect.fromCenter(center: center, width: size * appear + 1, height: size * 2));
-        _eco(canvas, center.translate(0, hop), s, _spriteOf(sprites, s), size, typeOf, near, time, avoid, tint: _hasVariantArt(sprites, s) ? null : tint, lean: lean, glow: sprites['${s.entryId}@lit#glow']);
+        _eco(canvas, center.translate(0, hop), s, _spriteOf(sprites, s), size, typeOf, near, time, avoid, tint: _hasVariantArt(sprites, s) ? null : tint, lean: lean, glow: sprites['${s.entryId}@lit#glow'], flip: facingLeftOf?.call(s.uid) ?? false);
         canvas.restore();
         paintSeam(canvas, center, size, appear);
       } else {
-        _eco(canvas, center.translate(0, hop), s, _spriteOf(sprites, s), size, typeOf, near, time, avoid, tint: _hasVariantArt(sprites, s) ? null : tint, lean: lean, glow: sprites['${s.entryId}@lit#glow']);
+        _eco(canvas, center.translate(0, hop), s, _spriteOf(sprites, s), size, typeOf, near, time, avoid, tint: _hasVariantArt(sprites, s) ? null : tint, lean: lean, glow: sprites['${s.entryId}@lit#glow'], flip: facingLeftOf?.call(s.uid) ?? false);
       }
       if (blow) _motes(canvas, center, wind.motes(s.uid, time), windDir, size, _moteColor(s, typeOf));
       if (s.behavior != EcoBehavior.passive) _behaviorIcon(canvas, center, s.behavior, size);
@@ -227,7 +228,7 @@ bool _hasVariantArt(Map<String, ui.Image> sprites, WorldSpawn s) => _variantKey(
 
 ui.Image? _spriteOf(Map<String, ui.Image> sprites, WorldSpawn s) => (_variantKey(s) == null ? null : sprites['${s.entryId}@${_variantKey(s)}']) ?? sprites[s.entryId];
 
-void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double size, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid, {int? tint, double lean = 0, ui.Image? glow}) {
+void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double size, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid, {int? tint, double lean = 0, ui.Image? glow, bool flip = false}) {
   final color = spawnColor(s, typeOf);
   // Sombra no chão.
   canvas.drawOval(
@@ -268,6 +269,13 @@ void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double 
     canvas.skew(-math.tan(lean), 0);
     canvas.translate(-dst.center.dx, -dst.bottom);
   }
+  if (flip) {
+    // 0.24.2: o Eco que se virou para o Conjurador (a onda na poça) aparece espelhado.
+    canvas.save();
+    canvas.translate(dst.center.dx, 0);
+    canvas.scale(-1, 1);
+    canvas.translate(-dst.center.dx, 0);
+  }
   if (sprite != null && near) {
     // Ao alcance de toque (30 m): contorno violeta pulsando em volta da silhueta, um pixel de arte de espessura.
     final px = size / sprite.width;
@@ -299,6 +307,7 @@ void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double 
   } else {
     canvas.drawRect(dst.deflate(size * 0.2), _flat..color = color);
   }
+  if (flip) canvas.restore();
   if (leaning) canvas.restore();
   if (!near) return;
   // Anel e rótulo têm tamanho fixo de tela. Perto do Conjurador ficam de fora: nada cobre o marcador.

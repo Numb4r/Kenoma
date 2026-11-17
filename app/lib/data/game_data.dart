@@ -2,6 +2,7 @@
 /// JSONs de `assets/data/`. A sintonia usa [tuning].
 library;
 
+import '../world/map_touch.dart' show TouchBalance;
 import '../world/personal_layer.dart' show PersonalBalance;
 import '../player/bestiary.dart';
 import '../player/research.dart';
@@ -93,6 +94,8 @@ class GameData {
     required this.startInventory,
     required this.recipes,
     this.craft = const CraftingBook(),
+    this.mapTouch = const TouchBalance(),
+    this.mapTexts = const {},
     required this.progress,
     required this.mentor,
     required this.forum,
@@ -128,6 +131,7 @@ class GameData {
       ridePatterns: await json('ride_patterns').catchError((_) => <String, dynamic>{}), // sem o arquivo, a corrida vai pelos botões
       climates: await json('clima').then<Map<String, dynamic>?>((j) => j).catchError((_) => null), // sem o arquivo, os quatro climas antigos
       events: await json('eventos').then<Map<String, dynamic>?>((j) => j).catchError((_) => null),
+      mapTexts: await json('mapa').catchError((_) => <String, dynamic>{}), // sem o arquivo, o toque no mapa sem textos
     )..remember();
   }
 
@@ -144,8 +148,11 @@ class GameData {
     Map<String, dynamic>? ridePatterns,
     Map<String, dynamic>? climates,
     Map<String, dynamic>? events,
+    Map<String, dynamic>? mapTexts,
   }) =>
       GameData(
+        mapTouch: TouchBalance.fromJson(balance['map_touch'] as Map<String, dynamic>?),
+        mapTexts: mapTexts ?? const {},
         climates: ClimateCatalog.fromJson(climates, events),
         climateBalance: ClimateBalance.fromJson(balance['climate'] as Map<String, dynamic>?),
         ritual: RitualBook.fromJson(rituals, balance),
@@ -214,6 +221,13 @@ class GameData {
 
   /// Itens, páginas e tabelas do crafting da fase 1.
   final CraftingBook craft;
+
+  /// O mapa que responde ao toque (0.24.2): os limites (`map_touch` do `balance.json`) e os textos (`mapa.json`).
+  final TouchBalance mapTouch;
+  final Map<String, dynamic> mapTexts;
+
+  /// Um aviso curto do toque no mapa (`mapa.json`, `notices`).
+  String notice(String id) => ((mapTexts['notices'] as Map<String, dynamic>?)?[id] as String?) ?? '';
 
   /// XP, descanso, marcação e destilação do `balance.json`.
   final ProgressBalance progress;

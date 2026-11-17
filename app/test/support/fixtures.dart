@@ -49,6 +49,7 @@ GameData loadGameData() => GameData.fromJson(
       rituals: loadJson('assets/data/rituals.json'),
       climates: loadJson('assets/data/clima.json'),
       events: loadJson('assets/data/eventos.json'),
+      mapTexts: loadJson('assets/data/mapa.json'),
     );
 
 /// O visual dos climas e dos eventos (`clima.json` e `eventos.json`, época 12).

@@ -85,19 +85,19 @@ void main() {
   });
 
   group('a quest que ensina o crafting', () {
-    test('começa conhecendo só a garrafa, o frasco escuro, o selo simples e o tônico da chuva; a garrafa é 2 Sucata', () {
+    test('começa conhecendo só a garrafa, o frasco escuro, o selo simples e o tônico da chuva; a garrafa é 2 Cacos de vidro', () {
       final s = state();
       expect({for (final r in data.recipes.values) if (isKnown(s, r)) r.id}, {'recipe.vessel.glass', 'recipe.vessel.dark', 'recipe.seal.simple', 'recipe.tonic.focus.rain'});
-      expect(data.recipes['recipe.vessel.glass']!.inputs, {'item.scrap': 2});
-      final withScrap = state({'item.scrap': 2});
+      expect(data.recipes['recipe.vessel.glass']!.inputs, {'item.glass_shard': 2});
+      final withScrap = state({'item.glass_shard': 2});
       final g = groupRecipes(withScrap, data.recipes.values, book, here(), bench: false);
       expect(g.now.map((e) => e.$1.id), contains('recipe.vessel.glass'), reason: 'com Sucata, a garrafa está em "pode fazer agora"');
     });
 
-    test('a primeira Sucata liga a quest; cada passo solta a mensagem do mentor, em ordem, e a quest acaba', () {
+    test('o primeiro Caco de vidro liga a quest; cada passo solta a mensagem do mentor, em ordem, e a quest acaba', () {
       final s = state();
       expect(currentStep(s), isNull);
-      s.add('item.scrap', 2);
+      s.add('item.glass_shard', 2);
       expect((s.crafting.tutorial, s.story.count('craft_tut_start')), (CraftTutorial.on, 1));
       expect(currentStep(s), TutStep.bottle);
       expect(craftAt(s, data.recipes['recipe.vessel.glass']!, book, here()), Quality.common);
@@ -118,7 +118,7 @@ void main() {
     });
 
     test('plantar vale como o passo de encher quando não chove', () {
-      final s = state()..add('item.scrap', 2);
+      final s = state()..add('item.glass_shard', 2);
       craftAt(s, data.recipes['recipe.vessel.glass']!, book, here());
       plant(s, 'item.vessel.glass', here(), 1, 2.2, book);
       expect(currentStep(s), TutStep.use);

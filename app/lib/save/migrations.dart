@@ -6,7 +6,7 @@ import '../player/game_state.dart' show kVisitedCellsKey, saveSchemaVersion;
 
 typedef _Step = Map<String, dynamic> Function(Map<String, dynamic>);
 
-final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8, 8: _v8ToV9, 9: _v9ToV10, 10: _v10ToV11};
+final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8, 8: _v8ToV9, 9: _v9ToV10, 10: _v10ToV11, 11: _v11ToV12};
 
 /// Leva [json] ao schema atual. Um save de versão futura passa sem mudar.
 Map<String, dynamic> migrateSave(Map<String, dynamic> json) {
@@ -185,5 +185,12 @@ Map<String, dynamic> _v10ToV11(Map<String, dynamic> j) {
   c['tutorial_steps'] ??= 0;
   c['gift'] ??= false;
   out['crafting'] = c;
+  return out;
+}
+
+/// v11 não tinha o mapa que responde ao toque (0.24.2): o bloco `touches` entra vazio (nada rendeu hoje ainda).
+Map<String, dynamic> _v11ToV12(Map<String, dynamic> j) {
+  final out = {...j};
+  out['touches'] ??= <String, dynamic>{'day': 0, 'counts': <String, dynamic>{}, 'used': <dynamic>[]};
   return out;
 }
