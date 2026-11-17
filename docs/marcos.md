@@ -1012,3 +1012,11 @@ Versão 0.24.1+45, mesma chave, **save no schema 11**. Respostas à 0.24.0: o GD
 ### Testes
 
 Novos: `test/crafting/phase1_fixes_test.dart` (limite da bolsa em todo caminho, caminhos `.alt` numa linha, a quest passo a passo, plantar valendo como encher, o presente uma vez, as receitas de começo e a garrafa de 2 Sucata, a validade com o verbo, concordância e plurais) e `test/save/migration_v11_test.dart` (com `test/fixtures/save_v10_0240.json`, gravado pelo código real da 0.24.0: as receitas antigas continuam conhecidas e a próxima Sucata liga a quest já no passo de encher).
+
+### Capturas no moto g54 (release 0.24.1)
+
+Com o simulador no Centro, relógio em 2027-01-08 (verão, lua nova, noite) e chuva forçada, no save real do celular (sem o kit do debug), em `/tmp/kenoma-shots/0241_celular_*.png`: o mapa, o celular com o ícone novo do Loadout (`apps`), a Bolsa (34/40, sem a faixa preta no topo), a aba Condições com o presente do mentor e a lista da quest (`condicoes`), a garrafa no cinto com a dica da chuva (`condicoes_cinto`), a garrafa cheia de Água de chuva, qualidade boa, depois de 5 minutos de chuva (`garrafa_cheia`), a Bancada com as etiquetas inteiras e "Sai qualidade comum", o Loadout e o Radar. O presente e os três primeiros passos da quest ficaram feitos no save do celular; o último (o tônico com a água) ficou para o dono.
+
+Duas correções que as capturas pediram, na mesma versão:
+- **Uma célula por pilha de 99.** Uma pilha de 551 Pó contava 6 espaços na barra, mas aparecia como uma célula só: agora são 6 células (99 × 5 e 56), como os espaços contam.
+- **O tônico marcado no último passo.** O Tônico de foco tem dois caminhos (Água pura e Água de chuva) e a lista mostrava o da Água pura, sem a marca; agora a marca vale se algum caminho usa o que um coletor pegou, e a receita abre já no caminho da chuva. Coberto em `craft_screens_test.dart`.

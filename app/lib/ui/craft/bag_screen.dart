@@ -133,11 +133,13 @@ class _BagScreenState extends State<BagScreen> {
       mainAxisSpacing: 6,
       crossAxisSpacing: 6,
       children: [
+        // Uma célula por pilha de até 99, como os espaços contam (0.24.1: 551 Pó são 6 células, não uma).
         for (final e in stacks)
+          for (var i = 0, left = e.value; left > 0; i++, left -= _book.balance.stack)
           _Cell(
-            key: Key('bag-cell-${e.key}'),
+            key: Key(i == 0 ? 'bag-cell-${e.key}' : 'bag-cell-${e.key}#$i'),
             stackKey: e.key,
-            qty: e.value,
+            qty: left < _book.balance.stack ? left : _book.balance.stack,
             name: widget.data.itemName(parseStack(e.key).id),
             tint: _tint(parseStack(e.key).id),
             pinned: s.crafting.pins.contains(parseStack(e.key).id),

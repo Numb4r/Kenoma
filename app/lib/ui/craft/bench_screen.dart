@@ -58,7 +58,14 @@ class _CraftBenchScreenState extends State<CraftBenchScreen> {
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(text)));
 
-  void _open(Recipe r) => showRecipeSheet(context, state: widget.state, data: widget.data, ctx: widget.ctx, recipe: r, say: _say);
+  /// Abre a receita. No último passo da quest, abre já no caminho que usa o que um coletor pegou.
+  void _open(Recipe r) {
+    final s = widget.state;
+    if (currentStep(s) == TutStep.use) {
+      r = alternativesOf(s, widget.data.recipes.values, r).where((x) => x.inputs.keys.any((id) => isCondition(_book, id))).firstOrNull ?? r;
+    }
+    showRecipeSheet(context, state: s, data: widget.data, ctx: widget.ctx, recipe: r, say: _say);
+  }
 
   @override
   Widget build(BuildContext context) => PhoneScreen(
@@ -72,8 +79,10 @@ class _CraftBenchScreenState extends State<CraftBenchScreen> {
             final g = groupRecipes(s, widget.data.recipes.values, _book, h, bench: _bench && benchOpen);
             final step = currentStep(s);
             // O passo da quest: a garrafa (a) e as receitas que usam o que um coletor pegou (d) ganham a marca do mentor.
+            // Um item com mais de um caminho conta se algum deles usa o que um coletor pegou (o tônico com Água de chuva).
+            bool usesCondition(Recipe x) => x.inputs.keys.any((id) => isCondition(_book, id));
             bool marked(Recipe r) =>
-                (step == TutStep.bottle && r.outId == 'item.vessel.glass') || (step == TutStep.use && r.inputs.keys.any((id) => isCondition(_book, id)));
+                (step == TutStep.bottle && r.outId == 'item.vessel.glass') || (step == TutStep.use && alternativesOf(s, widget.data.recipes.values, r).any(usesCondition));
             return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), children: [
               TutorialCard(state: s, script: widget.data.mentor),
               Wrap(spacing: 6, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [

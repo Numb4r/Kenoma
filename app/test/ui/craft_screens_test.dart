@@ -32,6 +32,7 @@ void main() {
     expect(find.text('4/40'), findsOneWidget);
     expect(find.text('MATERIAIS 13'), findsOneWidget);
     expect(find.byKey(const Key('bag-cell-item.chalk@perfect')), findsOneWidget);
+    expect(find.text('12'), findsOneWidget, reason: 'até 99, uma célula');
     await tester.tap(find.byKey(const Key('bag-tab-use')));
     await tester.pump();
     expect(find.byKey(const Key('bag-cell-item.seal.simple')), findsOneWidget);
@@ -52,6 +53,14 @@ void main() {
     await hold.up();
     await tester.pump();
     expect(s.countQ('item.chalk', Quality.common), 7);
+  });
+
+  testWidgets('uma pilha de mais de 99 vira uma célula por pilha, como os espaços contam', (tester) async {
+    final s = state({'item.dust.fire': 230});
+    await pump(tester, BagScreen(state: s, data: data, ctx: ctx));
+    expect(find.text('3/40'), findsOneWidget);
+    expect(find.text('99'), findsNWidgets(2));
+    expect(find.text('32'), findsOneWidget);
   });
 
   testWidgets('a aba Condições planta a pé e recusa sem GPS', (tester) async {
@@ -89,6 +98,25 @@ void main() {
     await tester.pump();
     expect(find.byKey(const Key('experiment-result')), findsOneWidget);
     expect(s.inventory, before);
+  });
+
+  testWidgets('no último passo da quest, a Bancada marca o tônico e abre no caminho da Água de chuva', (tester) async {
+    final s = state({'item.herbs': 2, 'item.pure_water': 1})
+      ..add('item.scrap', 1) // liga a quest
+      ..crafting.known.add('recipe.tonic.focus'); // o caminho antigo, de Água pura, também conhecido
+    s.crafting.vessels.add(Vessel(uid: 1, kind: 'item.vessel.glass', place: VesselPlace.belt, content: 'item.rain_water', quality: Quality.good));
+    s.recordEvent('vessel_made', '', 1);
+    s.recordEvent('vessel_filled', '', 1);
+    await pump(tester, CraftBenchScreen(state: s, data: data, ctx: ctx));
+    await tester.pumpAndSettle();
+    final row = find.byKey(const Key('recipe-recipe.tonic.focus'));
+    await tester.scrollUntilVisible(row, 300);
+    expect(find.descendant(of: row, matching: find.byKey(const Key('tutorial-mark'))), findsOneWidget);
+    await tester.tap(row);
+    await tester.pumpAndSettle();
+    expect(find.text('CAMINHO 2'), findsOneWidget);
+    expect(find.text('1/1'), findsWidgets, reason: 'a Água de chuva do cinto conta');
+    expect(find.text('ÁGUA DE CHUVA'), findsOneWidget, reason: 'abriu no caminho da chuva');
   });
 
   testWidgets('o Loadout equipa a bolsa, soma o efeito e esconde do personagem', (tester) async {
