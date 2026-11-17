@@ -962,7 +962,21 @@ Receitas são descobertas experimentando combinações e por páginas de grimór
 
 ### Escopo
 
-MVP com improviso, bancada básica e destilação de Ecos, com selos de tipo simplificados como improviso. Fase 1 com coletores, refino, receitas de condição e receitas de lua e estação. Fase 2 com estações no mundo e combinação de equipamentos. Fase 3 com grandes obras, receitas de janela, altares efêmeros e cravar estações e altares em casa.
+MVP com improviso, bancada básica e destilação de Ecos, com selos de tipo simplificados como improviso. Fase 1 com coletores, refino, receitas de condição, bolsa, loadout e receitas de lua e estação. Fase 2 com estações no mundo e combinação de equipamentos. Fase 3 com grandes obras, receitas de janela, altares efêmeros e cravar estações e altares em casa.
+
+### Regras da fase 1
+
+Qualquer receita funciona com material comum; material bom é recompensado, nunca exigido.
+
+- **Qualidade:** três níveis, comum, bom e perfeito. O resultado herda o pior ingrediente. A qualidade de um bruto vem da condição em que foi pego (água de garoa é comum, de chuva é boa, de tempestade é perfeita), do lugar real (melhor que o altar) e da fase da lua certa, que sobe um nível. O efeito é sentido sem ser obrigatório: selo perfeito dá mais tolerância na sintonia, lure perfeito dura mais.
+- **Coletores levados:** garrafas e frascos vazios no cinto enchem sozinhos com a condição real no lugar do jogador, com o app aberto ou na Patrulha, depois de alguns minutos.
+- **Coletores plantados:** o jogador deixa um coletor no ponto onde está, a pé. Ele enche com a condição naquele lugar (uns 20 minutos de chuva, uma noite para luz de lua), mesmo com o jogador longe, e a qualidade sai da condição e do lugar. Para colher, é preciso voltar até ele, dentro do alcance de toque. Fica a pelo menos 100 m de outro coletor plantado, o que transforma o plantio em rota. Só o dono vê os próprios coletores (camada pessoal). Conteúdo perecível estraga no lugar no mesmo ritmo da bolsa; a garrafa não some. Rotas e Radar mostram os coletores e o estado deles, e a Patrulha avisa quando um enche.
+- **Limites:** começa com 3 garrafas no cinto e 3 coletores plantados; os dois sobem com equipamento.
+- **Refino situado no improviso:** na fase 1, o refino simples se faz em qualquer lugar, pedindo a condição na hora (giz consagrado à noite, água purificada perto de qualquer água). A bancada de casa fica para os componentes.
+- **Descoberta:** receitas de improviso e refino se descobrem experimentando, e o grimório mostra silhueta e pista depois que o jogador tem um dos ingredientes. Componentes e receitas de lua e estação vêm de páginas de grimório (Fenda, Mercador, quest do mentor). Errar uma combinação nunca gasta material.
+- **Bolsa:** 40 espaços, pilhas de até 99. Bolsas maiores se fabricam; o nível só libera a receita. Descartar é permitido e rende 1 Pó de Essência a cada 5 itens. Criaturas não ficam na bolsa, ficam na Coleção. A bolsa tem as abas Materiais, Condições, Uso, Equipáveis e Missão.
+- **Loadout:** espaços de bolsa, cinto de coletores, grimório ativo, um amuleto, duas joias e os de gadget. Cada espaço pode aparecer ou não no visual do personagem. Equipamento e aparência são camadas separadas: o efeito de um item com a aparência de outro.
+- **Amuletos de estação:** as datas astronômicas abrem e fecham cada linha, e o tema segue o clima real da região (em Campinas, verão de chuva e tempestade, inverno de seca, neblina e frio). O amuleto de neve se faz no inverno com a neve do calendário (Inverno do Véu e Noite Branca); a Nevasca dá a neve perfeita. Neve engarrafada derrete em alguns dias e vira água de neve, a menos que vá num frasco térmico.
 
 ### Mercador Errante
 
