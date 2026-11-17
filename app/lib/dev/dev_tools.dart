@@ -132,11 +132,12 @@ class DevTools extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 0.22.2: o mapa usa os carimbos desenhados no Aseprite no lugar dos de código (comparação).
-  bool _asepriteArt = false;
-  bool get asepriteArt => _asepriteArt;
-  void setAsepriteArt(bool on) {
-    _asepriteArt = on;
+  /// 0.23.0: a arte do Aseprite é o padrão; o debug volta à arte em código só para comparar (sai na próxima versão).
+  bool _codeArt = false;
+  bool get asepriteArt => !_codeArt;
+  bool get codeArt => _codeArt;
+  void setCodeArt(bool on) {
+    _codeArt = on;
     notifyListeners();
   }
 
@@ -218,7 +219,7 @@ class DevTools extends ChangeNotifier {
 
   /// Algo forçado está ativo: simulador, relógio, nível, pedidos de spawn, clima ou sobreposições. Liga a etiqueta DEBUG.
   bool get anyForcing =>
-      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || force.events.isNotEmpty || _hidePersonal || _showPuddles || _testCircle != null || _showBiomeGrid || _showGrid20 || _showRadii || _followPiece || _turnLabels || _asepriteArt || _showRelief || _showTraffic || _trafficDensity != null;
+      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || force.events.isNotEmpty || _hidePersonal || _showPuddles || _testCircle != null || _showBiomeGrid || _showGrid20 || _showRadii || _followPiece || _turnLabels || _codeArt || _showRelief || _showTraffic || _trafficDensity != null;
 
   Future<void> setUseSimulator(bool value) async {
     if (value == _useSimulator) return;

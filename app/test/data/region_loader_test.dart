@@ -98,9 +98,10 @@ void main() {
     });
 
     test('com o relógio depois do fim da época carrega e avisa que está desatualizado', () async {
-      // Depois do fim, vale a última época: a 11, com o pacote dela (biomas Iluminado e Sagrado).
-      final last = Uint8List.fromList(File('assets/regions/campinas_e11.bin').readAsBytesSync());
-      final bundle = _Bundle({'assets/data/epochs.json': utf8.encode(epochsText), 'assets/regions/campinas_e11.bin': last});
+      // Depois do fim, vale a última época, com o pacote dela (a 12: biomas com o Overture).
+      final file = loadEpochs().epochs.last.regionPacks['campinas']!.file;
+      final last = Uint8List.fromList(File('assets/regions/$file').readAsBytesSync());
+      final bundle = _Bundle({'assets/data/epochs.json': utf8.encode(epochsText), 'assets/regions/$file': last});
       final r = await loadRegion(region: 'campinas', nowUtc: loadEpochs().epochs.last.validUntilUtc + 1, bundle: bundle);
       expect((r as RegionLoaded).stale, isTrue);
     });

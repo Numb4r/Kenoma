@@ -6,19 +6,19 @@ import 'package:kenoma/core/tiles.dart';
 import 'package:kenoma/data/building_pack.dart';
 import 'package:kenoma/world/city_scene.dart';
 
-/// O arquivo de prédios de Campinas (`pipeline/build_buildings.py`, `BLD2` por tile z15 desde a 0.22.2), só cenário do
+/// O arquivo de prédios de Campinas (`pipeline/build_buildings.py --overture`, `BLD2` por tile z15 desde a 0.22.2, com o Overture desde a 0.23.0), só cenário do
 /// estilo Completo: o índice na memória, os tiles sob demanda, o teto de memória.
 void main() {
-  final bytes = File('assets/regions/campinas_e0_bldg.bin').readAsBytesSync();
+  final bytes = File('assets/regions/campinas_e12_ov_bldg.bin').readAsBytesSync();
   BuildingPack open({int maxBytes = 1 << 40}) => BuildingPack.fromBytes(bytes, decodeInBackground: false, maxBytes: maxBytes);
   final (cx, cy) = latLonToTileFraction(-22.9041, -47.0687, biomeZoom); // a Praça Ramos de Azevedo
 
-  test('o índice tem os 676 tiles; carregados todos, estão os 32.116 prédios e as 1.760 árvores do extrato da época 0', () async {
+  test('o índice tem os 1.397 tiles; carregados todos, estão os 933.147 prédios (32.116 do OSM e 901.031 do Overture) e as 1.760 árvores', () async {
     final pack = open();
-    expect(pack.tileCount, 676);
+    expect(pack.tileCount, 1397);
     expect(pack.loadedTiles, 0, reason: 'nada carrega antes de pedir');
     await pack.loadAll();
-    expect(pack.buildingsIn(0, 0, 1e7, 1e7, margin: 0).length, 32116);
+    expect(pack.buildingsIn(0, 0, 1e7, 1e7, margin: 0).length, 933147);
     expect(pack.treesIn(0, 0, 1e7, 1e7).length, 1760);
   });
 
@@ -65,7 +65,7 @@ void main() {
     expect(() => BuildingPack.fromBytes(File('assets/regions/campinas_e0_cycle.bin').readAsBytesSync()), throwsFormatException);
     final bad = Uint8List.fromList(bytes);
     // O primeiro tile do índice com 1 MB de tamanho declarado.
-    final first = BuildingPack.headerLength(bad) - 20 * 676;
+    final first = BuildingPack.headerLength(bad) - 20 * 1397;
     ByteData.sublistView(bad).setUint32(first + 12, 1024 * 1024, Endian.little);
     expect(() => BuildingPack.fromBytes(bad), throwsFormatException);
   });

@@ -64,8 +64,9 @@ def _metres_per_cell21(lat: float) -> float:
     return 40075016.686 * np.cos(np.radians(lat)) / 2**21
 
 
-def alley_points(pbf: Path, bbox: list[float]) -> list[tuple[float, float]]:
-    """Os pontos de beco (lon, lat): ao longo de `service=alley` e dos caminhos estreitos entre construções."""
+def alley_points(pbf: Path, bbox: list[float], extra_buildings=()) -> list[tuple[float, float]]:
+    """Os pontos de beco (lon, lat): ao longo de `service=alley` e dos caminhos estreitos entre construções. [extra_buildings]:
+    contornos (lon, lat) a mais na grade dos prédios (os do Overture, 0.23.0)."""
     min_lon, min_lat, max_lon, max_lat = bbox
     buildings, alleys, footways = [], [], []
     fp = osmium.FileProcessor(str(pbf)).with_locations().with_filter(osmium.filter.KeyFilter("highway", "building"))
@@ -83,6 +84,7 @@ def alley_points(pbf: Path, bbox: list[float]) -> list[tuple[float, float]]:
             alleys.append(locs)
         elif hw in ("footway", "path") and t.get("footway") not in ("sidewalk", "crossing"):
             footways.append(locs)
+    buildings.extend(extra_buildings)
     # A grade dos prédios em z22 (uns 9 m).
     gx0, gy1 = lonlat_to_tile(np.array([min_lon]), np.array([min_lat]), BUILDING_ZOOM)
     gx1, gy0 = lonlat_to_tile(np.array([max_lon]), np.array([max_lat]), BUILDING_ZOOM)
@@ -135,6 +137,7 @@ def main() -> None:
     ap.add_argument("--region", required=True)
     ap.add_argument("--epoch", type=int, default=0, help="a época do extrato que este arquivo acompanha")
     ap.add_argument("--out-dir", type=Path, default=REGIONS_DIR, help="fora de assets para regiões baixáveis")
+    ap.add_argument("--overture", action="store_true", help="junta os POIs e os prédios do Overture (release fixada, cache local)")
     args = ap.parse_args()
     region = json.loads((ROOT / "pipeline/regions.json").read_text())[args.region]
     pbf = ensure_source(region["source"])
@@ -164,8 +167,17 @@ def main() -> None:
             locs = [(n.lon, n.lat) for n in obj.nodes if n.location.valid()]
             if locs:
                 add(kind, sum(p[0] for p in locs) / len(locs), sum(p[1] for p in locs) / len(locs))
+    extra = []
+    if args.overture:
+        import overture
+        from fetch_overture import RELEASE
+        # Os POIs do Overture sem par no OSM, nos tipos do jogo (comércio, bar, escola, praça, estádio).
+        for g, _, lon, lat in overture.overture_places(args.region, pbf, region["bbox"], RELEASE):
+            if g in overture.TRAFFIC_KIND:
+                add(overture.TRAFFIC_KIND[g], lon, lat)
+        extra = [list(p.exterior.coords) for p, _, _ in overture.overture_buildings(args.region, pbf, region["bbox"], RELEASE)]
     if args.epoch >= ALLEY_FROM_EPOCH:
-        for lon, lat in alley_points(pbf, region["bbox"]):
+        for lon, lat in alley_points(pbf, region["bbox"], extra):
             add(ALLEY, lon, lat)
     body = bytearray(varint(len(pts)))
     px = py = 0
@@ -173,7 +185,9 @@ def main() -> None:
         body += bytes([kind]) + varint(zigzag(x - px)) + varint(zigzag(y - py))
         px, py = x, y
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    out = args.out_dir / f"{args.region}_e{args.epoch}_traffic.bin"
+    out = args.out_dir / f"{args.region}_e{args.epoch}{'_ov' if args.overture else ''}_traffic.bin"
+    if args.overture and out.exists():
+        raise SystemExit(f"{out} já existe: não regero por cima")
     out.write_bytes(b"TRF1" + gzip.compress(bytes(body), compresslevel=9, mtime=0))
     print(f"{len(pts)} pontos (semáforo {counts[0]}, pare {counts[1]}, preferência {counts[2]}, faixa {counts[3]}, "
           f"entrada {counts[4]}, ônibus {counts[5]}, comércio {counts[6]}, bar {counts[7]}, escola {counts[8]}, "

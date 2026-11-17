@@ -214,11 +214,11 @@ List<DebugItem> mapItems(DebugEnv env) {
       ),
     ),
     DebugItem(
-      id: 'map.aseprite_art',
-      title: 'Arte do Aseprite',
+      id: 'map.code_art',
+      title: 'Arte em código',
       section: DebugSection.map,
-      keywords: const ['aseprite', 'arte', 'carimbo', 'sprite', 'telhado', 'árvore', 'ipê', 'comparar'],
-      builder: (_) => overlay('Arte do Aseprite', 'O mapa Completo usa os carimbos desenhados no Aseprite (telhados, árvores, props, calçada) no lugar dos de código.', () => tools.asepriteArt, tools.setAsepriteArt),
+      keywords: const ['aseprite', 'código', 'arte', 'carimbo', 'sprite', 'telhado', 'árvore', 'ipê', 'comparar'],
+      builder: (_) => overlay('Arte em código', 'O mapa Completo volta aos carimbos desenhados em código (telhados, árvores, props, calçada) no lugar dos do Aseprite, que são o padrão. Só para comparar.', () => tools.codeArt, tools.setCodeArt),
     ),
     DebugItem(
       id: 'map.turn_labels',

@@ -1,0 +1,3 @@
+# 0.23.0: o tempo padrão de cada teste dobra (60 s). Com o emulador ligado, os testes mais pesados (o círculo desenhado,
+# o simulador de GPS) passavam dos 30 s e estouravam; assim a suíte roda com ou sem o emulador.
+timeout: 2x

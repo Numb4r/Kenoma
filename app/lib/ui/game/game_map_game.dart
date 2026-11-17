@@ -974,8 +974,11 @@ class GameMapGame extends FlameGame {
   @override
   void onRemove() {
     _art.dispose();
+    // Sem a referência: o getter `city` (o debug ainda pode chamá-lo depois) não descarta as imagens uma segunda vez.
     _city?.dispose();
     _cityArt?.dispose();
+    _city = null;
+    _cityArt = null;
     compass.dispose();
     super.onRemove();
   }

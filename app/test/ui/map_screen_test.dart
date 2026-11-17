@@ -30,6 +30,8 @@ Map<String, List<int>> realAssets({Uint8List? bin}) => {
       'assets/regions/campinas_e0.bin': bin ?? File('assets/regions/campinas_e0.bin').readAsBytesSync(),
       // Da época 11 em diante o pacote é outro (biomas Iluminado e Sagrado): o relógio do teste decide qual é lido.
       'assets/regions/campinas_e11.bin': bin ?? File('assets/regions/campinas_e11.bin').readAsBytesSync(),
+      // Da época 12 em diante, com o Overture.
+      'assets/regions/campinas_e12_ov.bin': bin ?? File('assets/regions/campinas_e12_ov.bin').readAsBytesSync(),
     };
 
 Future<void> pumpMap(WidgetTester tester, {Map<String, List<int>>? assets, double lat = -22.8174, double lon = -47.0697, int? nowUtc}) async {

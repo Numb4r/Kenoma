@@ -117,6 +117,30 @@ def collect(pbf: Path, rules: dict, keys: list[str], bbox: list[float]) -> dict[
     return geoms
 
 
+def add_overture(geoms: dict[int, list], rules: dict, region: str, pbf: Path, bbox: list[float]) -> dict:
+    """0.23.0: o Overture nos biomas, pelas mesmas regras de área do OSM (`overture.py`): o `class` dos prédios novos vale
+    como `building=*`, e um place sem par no OSM vale como a tag equivalente na área do prédio que o contém."""
+    import overture
+    from fetch_overture import RELEASE
+    ov = overture.overture_buildings(region, pbf, bbox, RELEASE)
+    polys = overture._osm_building_rings(pbf, bbox) + [p for p, _, _ in ov]
+    stats = {"buildings_with_rule": 0, "places_lifted": 0}
+    for poly, kind, _ in ov:
+        hits = [m for m in rules.get(("building", kind), ()) if m[1] == "area"]
+        stats["buildings_with_rule"] += bool(hits)
+        for biome_id, _, _ in hits:
+            geoms[biome_id].append(poly)
+    places = overture.overture_places(region, pbf, bbox, RELEASE)
+    lifted = overture.lift_to_buildings(polys, [(lon, lat, k) for _, k, lon, lat in places if k is not None])
+    for i, key in lifted:
+        hits = [m for m in rules.get(overture.OSM_TAG[key], ()) if m[1] == "area"]
+        stats["places_lifted"] += bool(hits)
+        for biome_id, _, _ in hits:
+            geoms[biome_id].append(polys[i])
+    print(f"overture nos biomas: {stats}")
+    return stats
+
+
 def build_grid(geoms: dict[int, list], biomes: dict, bbox: list[float], zoom: int):
     """Rasteriza pelo centro da célula, da menor para a maior prioridade."""
     min_lon, min_lat, max_lon, max_lat = bbox
@@ -168,6 +192,7 @@ def main() -> None:
     parser.add_argument("--region", required=True)
     parser.add_argument("--epoch", type=int, default=0)
     parser.add_argument("--out-dir", type=Path, default=REGIONS_DIR, help="fora de assets para pacotes baixáveis")
+    parser.add_argument("--overture", action="store_true", help="junta o Overture (release fixada, cache local): `<região>_e<época>_ov.bin`")
     args = parser.parse_args()
 
     region = json.loads((PIPELINE / "regions.json").read_text())[args.region]
@@ -176,6 +201,8 @@ def main() -> None:
 
     pbf = ensure_source(region["source"])
     geoms = collect(pbf, rules, keys, region["bbox"])
+    if args.overture:
+        add_overture(geoms, rules, args.region, pbf, region["bbox"])
     grid, x0, y0 = build_grid(geoms, biomes, region["bbox"], region["zoom"])
 
     data = encode(grid, x0, y0, region["zoom"])
@@ -183,9 +210,11 @@ def main() -> None:
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     OUT.mkdir(parents=True, exist_ok=True)
-    bin_path = args.out_dir / f"{args.region}_e{args.epoch}.bin"
+    bin_path = args.out_dir / f"{args.region}_e{args.epoch}{'_ov' if args.overture else ''}.bin"
+    if args.overture and bin_path.exists():
+        raise SystemExit(f"{bin_path} já existe: não regero por cima")
     bin_path.write_bytes(data)
-    preview_path = OUT / f"{args.region}_preview.png"
+    preview_path = OUT / f"{args.region}{'_ov' if args.overture else ''}_preview.png"
     write_preview(grid, preview_path)
 
     counts = np.bincount(grid.ravel(), minlength=len(PREVIEW_COLORS))

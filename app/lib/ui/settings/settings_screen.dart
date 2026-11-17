@@ -23,6 +23,7 @@ import '../colors.dart';
 import '../menu/screen_frame.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
 import 'connectivity_section.dart';
+import 'credits_screen.dart';
 import 'fresh_start_screen.dart';
 import 'qr_scan_screen.dart';
 import 'regions_section.dart';
@@ -387,6 +388,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     await Clipboard.setData(ClipboardData(text: id));
                     if (mounted) _say('player_id copiado');
                   },
+                ),
+                const SizedBox(height: 8),
+                PixelButton(
+                  key: const Key('credits'),
+                  label: 'Créditos',
+                  color: kSignal,
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const CreditsScreen())),
                 ),
               ]),
             ),

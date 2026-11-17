@@ -223,11 +223,11 @@ Future<Object?> loadReliefPack({required Epoch epoch, required String region, As
 
 /// As ciclovias da região embutida (`build_cycle.py`). Só os ciclistas da simulação local leem (cenário, fora das épocas):
 /// falta ou defeito deixam os ciclistas nos caminhos de pedestre, como antes (`null`). Nunca lança.
-/// 0.22.0: os prédios e as árvores do estilo Completo (`<região>_e0_bldg.bin`, fora das épocas). `null` sem o arquivo: o
+/// 0.22.0: os prédios e as árvores do estilo Completo (`<região>_e12_ov_bldg.bin` desde a 0.23.0, com o Overture; fora das épocas). `null` sem o arquivo: o
 /// mapa sai sem prédios.
 Future<BuildingPack?> loadBuildingPack({required String region, AssetBundle? bundle}) async {
   try {
-    final data = await (bundle ?? rootBundle).load('assets/regions/${region}_e0_bldg.bin');
+    final data = await (bundle ?? rootBundle).load('assets/regions/${region}_e12_ov_bldg.bin');
     return BuildingPack.fromBytes(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
   } catch (_) {
     return null;

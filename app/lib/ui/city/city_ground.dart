@@ -297,15 +297,20 @@ RecordedChunk recordGroundChunk({
     }
     final tOff = shadowOffset(sunAltDeg, sunAzDeg, 6 * kpm, rotationRad: f.angle);
     if (tOff != null) {
+      // A sombra da copa é a silhueta do próprio carimbo achatada a 70%, na cor da sombra (0.23.0: casa com as árvores novas).
+      final treeShadow = ui.Paint()
+        ..filterQuality = ui.FilterQuality.none
+        ..colorFilter = ui.ColorFilter.mode(sp.color, ui.BlendMode.srcIn);
       for (final t in tiles) {
         for (final p in t.props) {
           if (!p.kind.startsWith('tree') && !p.kind.startsWith('ipe')) continue;
-          // A sombra da copa: do tamanho do carimbo (pixels de arte, como a copa, que não cresce com o zoom), deslocada pelo
-          // sol a partir do pé da árvore.
+          // Pixels de arte, como a copa (não cresce com o zoom), deslocada pelo sol a partir do pé da árvore.
           final img = art.stamp(p.kind) ?? art.stamp('tree');
-          final r = (img?.width ?? 12) / 2 - 1;
+          if (img == null) continue;
+          final sw = img.width.toDouble(), sh = (img.height * 0.7).roundToDouble();
           final q = s(p.x, p.y) + ui.Offset(tOff.$1, tOff.$2) * 0.5;
-          c.drawOval(ui.Rect.fromCenter(center: q, width: 2 * r, height: 1.4 * r), sp);
+          c.drawImageRect(img, ui.Rect.fromLTWH(0, 0, sw, img.height.toDouble()),
+              ui.Rect.fromLTWH((q.dx - sw / 2).roundToDouble(), (q.dy - sh / 2).roundToDouble(), sw, sh), treeShadow);
         }
       }
     }

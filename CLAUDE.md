@@ -8,7 +8,7 @@
 
 ## Stack e comandos
 Flutter stable, Dart 3, Flame no mapa e na sintonia, widgets no resto, Riverpod. Só Android. Pipeline em Python 3.11 via uv. Antes de `flutter`: `export PATH="$HOME/development/flutter/bin:$PATH" ANDROID_HOME=$HOME/Android/Sdk`.
-- Testes: `cd app && flutter analyze && flutter test` (um arquivo: `flutter test test/core/fnv_test.dart`; por nome: `--plain-name "FNV-1a"`). Nunca `dart format` (reescreve ~150 arquivos).
+- Testes: `cd app && flutter analyze && flutter test` (um arquivo: `flutter test test/core/fnv_test.dart`; por nome: `--plain-name "FNV-1a"`). Nunca `dart format` (reescreve ~150 arquivos). O tempo de cada teste é 60 s (`app/dart_test.yaml`, `timeout: 2x`): a suíte roda com o emulador ligado.
 - Biomas: edite `shared/biomes.json` e rode `./scripts/sync_shared.sh` (um teste compara as cópias).
 - Pipeline: `cd pipeline && .venv/bin/python build_region.py --region campinas` (e `build_visual.py`). Nunca regere por cima um `.bin` commitado: o extrato muda e o SHA em `epochs.json` é mundo.
 - Aparelho: o celular se o `adb devices` mostrar o moto g54, senão o emulador do notebook (`docs/emulador.md`, só build de debug, sempre `adb -s emulator-5554`); desempenho só se mede no celular.

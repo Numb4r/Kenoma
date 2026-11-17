@@ -243,16 +243,8 @@ const int floorPx = 4;
 /// Os carimbos de detalhe fino, que saem no zoom aberto: flores, tufos, pedrinhas, rachaduras e props de telhado.
 const Set<String> fineStamps = {'tuft', 'tuft_b', 'flower_a', 'flower_b', 'flower_c', 'pebble', 'crack', 'roof_tank', 'roof_ac', 'roof_antenna'};
 
-/// A sombra de cada carimbo de árvore, pelo tamanho da copa.
-const Map<String, String> treeShadows = {
-  'tree': 'tree_shadow',
-  'tree_a': 'tree_shadow_s',
-  'tree_b': 'tree_shadow',
-  'tree_c': 'tree_shadow_l',
-  'ipe_purple': 'tree_shadow',
-  'ipe_yellow': 'tree_shadow',
-  'ipe_green': 'tree_shadow',
-};
+// A sombra da árvore não é carimbo (0.23.0): o renderizador desenha a silhueta do próprio carimbo da copa, achatada a
+// 70% da altura, na cor `shadow`. Assim a sombra tem sempre a forma da copa, seja a de código ou a do Aseprite.
 
 /// O carimbo do ipê de [kind] (`purple` ou `yellow`) no mês local [month] (1 a 12). Em Campinas o ipê-roxo floresce em
 /// junho e julho e o ipê-amarelo em agosto e setembro, um depois do outro; fora da floração é `ipe_green`. Ipê só em
@@ -348,7 +340,7 @@ const Map<String, List<String>> mapStamps = {
     '.lll..',
     'l...ll',
   ],
-  // Copa de árvore vista de cima e a sombra dela (o renderizador desloca a sombra pelo sol).
+  // Copa de árvore vista de cima (a sombra é a silhueta dela, desenhada e deslocada pelo sol no renderizador).
   'tree': [
     '....OOOOOO....',
     '..OOllllggOO..',
@@ -363,15 +355,6 @@ const Map<String, List<String>> mapStamps = {
     '.OgggggdddddO.',
     '..OOddddddOO..',
     '....OOOOOO....',
-  ],
-  'tree_shadow': [
-    '...ssssssss...',
-    '.ssssssssssss.',
-    'ssssssssssssss',
-    'ssssssssssssss',
-    'ssssssssssssss',
-    '.ssssssssssss.',
-    '...ssssssss...',
   ],
   // Árvores variadas (0.22.0): a pequena amarelada (9 px), a média de copa irregular (12 px) e a grande de verde
   // fundo (16 px). A `tree` de cima continua valendo como quarta forma.
@@ -415,23 +398,6 @@ const Map<String, List<String>> mapStamps = {
     '..OgdddddddddO..',
     '...OOddddddOO...',
     '.....OOOOOO.....',
-  ],
-  'tree_shadow_s': [
-    '..sssss..',
-    '.sssssss.',
-    'sssssssss',
-    '.sssssss.',
-    '..sssss..',
-  ],
-  'tree_shadow_l': [
-    '....ssssssss....',
-    '..ssssssssssss..',
-    '.ssssssssssssss.',
-    'ssssssssssssssss',
-    'ssssssssssssssss',
-    '.ssssssssssssss.',
-    '..ssssssssssss..',
-    '....ssssssss....',
   ],
   // Ipê: roxo e amarelo em flor, verde fora da floração ([ipeStamp] escolhe pelo mês).
   'ipe_purple': _ipe,
@@ -668,12 +634,9 @@ const Map<String, Map<String, String>> mapStampLegend = {
   'patch': {'d': 'asphalt_dark', 'l': 'asphalt_light', 'k': 'oil'},
   'ripple': {'l': 'water_light'},
   'tree': {'O': 'outline', 'l': 'canopy_light', 'g': 'canopy', 'd': 'canopy_dark'},
-  'tree_shadow': {'s': 'shadow'},
   'tree_a': {'O': 'outline', 'l': 'canopy_warm_light', 'g': 'canopy_warm', 'd': 'canopy_warm_dark'},
   'tree_b': {'O': 'outline', 'l': 'canopy_light', 'g': 'canopy', 'd': 'canopy_dark'},
   'tree_c': {'O': 'outline', 'l': 'canopy_deep_light', 'g': 'canopy_deep', 'd': 'canopy_deep_dark'},
-  'tree_shadow_s': {'s': 'shadow'},
-  'tree_shadow_l': {'s': 'shadow'},
   'ipe_purple': {'O': 'outline', 'l': 'ipe_purple_light', 'g': 'ipe_purple', 'd': 'ipe_purple_dark'},
   'ipe_yellow': {'O': 'outline', 'l': 'ipe_yellow_light', 'g': 'ipe_yellow', 'd': 'ipe_yellow_dark'},
   'ipe_green': {'O': 'outline', 'l': 'canopy_warm_light', 'g': 'canopy_warm', 'd': 'canopy_warm_dark'},

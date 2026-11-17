@@ -22,6 +22,8 @@ from shapely.ops import transform
 
 from build_region import REGIONS_DIR, ROOT, ensure_source, lonlat_to_tile
 from bld_tiles import write_bld2
+import overture
+from fetch_overture import RELEASE
 
 UNIT = 64
 SIMPLIFY_M = 0.5
@@ -47,6 +49,7 @@ def main() -> None:
     ap.add_argument("--region", required=True)
     ap.add_argument("--epoch", type=int, default=0, help="a época do extrato que este arquivo acompanha")
     ap.add_argument("--out-dir", type=Path, default=REGIONS_DIR, help="fora de assets para regiões baixáveis")
+    ap.add_argument("--overture", action="store_true", help="junta os prédios do Overture (release fixada, cache local)")
     args = ap.parse_args()
     region = json.loads((ROOT / "pipeline/regions.json").read_text())[args.region]
     pbf = ensure_source(region["source"])
@@ -63,6 +66,23 @@ def main() -> None:
     def to_units(lons, lats):
         x, y = lonlat_to_tile(np.asarray(lons), np.asarray(lats), 21)
         return [(int(round(a * UNIT)), int(round(b * UNIT))) for a, b in zip(x, y)]
+
+    def ring_units(poly):
+        """O contorno simplificado a 0,5 m em 1/64 de célula z21, sem pontos repetidos. `None`: não sobra polígono."""
+        if not poly.is_valid:
+            poly = poly.buffer(0)
+        # Simplifica em metros (escala local da longitude), sem perder a forma de prédios pequenos.
+        sx = m_per_deg_lon / m_per_deg_lat
+        poly = transform(lambda x, y: (x * sx, y), poly).simplify(tol_deg, preserve_topology=True)
+        poly = transform(lambda x, y: (x / sx, y), poly)
+        if poly.is_empty or poly.geom_type != "Polygon":
+            return None
+        ring = list(poly.exterior.coords)[:-1]
+        if len(ring) < 3:
+            return None
+        units = to_units([p[0] for p in ring], [p[1] for p in ring])
+        clean = [u for i, u in enumerate(units) if u != units[i - 1]]
+        return clean if len(clean) >= 3 else None
 
     fp = osmium.FileProcessor(str(pbf)).with_locations().with_areas().with_filter(osmium.filter.KeyFilter("building", "natural"))
     for obj in fp:
@@ -85,31 +105,36 @@ def main() -> None:
             cy = sum(p[1] for p in pts) / len(pts)
             if not (min_lon <= cx <= max_lon and min_lat <= cy <= max_lat):
                 continue
-            poly = shapely.Polygon(pts)
-            if not poly.is_valid:
-                poly = poly.buffer(0)
-            # Simplifica em metros (escala local da longitude), sem perder a forma de prédios pequenos.
-            sx = m_per_deg_lon / m_per_deg_lat
-            poly = transform(lambda x, y: (x * sx, y), poly).simplify(tol_deg, preserve_topology=True)
-            poly = transform(lambda x, y: (x / sx, y), poly)
-            if poly.is_empty or poly.geom_type != "Polygon":
-                continue
-            ring = list(poly.exterior.coords)[:-1]
-            if len(ring) < 3:
-                continue
-            units = to_units([p[0] for p in ring], [p[1] for p in ring])
-            # Sem pontos repetidos depois do arredondamento.
-            clean = [u for i, u in enumerate(units) if u != units[i - 1]]
-            if len(clean) < 3:
+            clean = ring_units(shapely.Polygon(pts))
+            if clean is None:
                 continue
             tid = types.setdefault(kind, len(types))
             shop = obj.tags.get("shop") is not None or obj.tags.get("amenity") in SHOP_AMENITY
             buildings.append((clean[0][0], clean[0][1], tid, levels_of(obj.tags), 1 if shop else 0, clean))
 
+    n_osm = len(buildings)
+    if args.overture:
+        # Do Overture, só os contornos que o OSM não tem; a bandeira de comércio vem dos places (do OSM ou do Overture) dentro.
+        for poly, kind, lv in overture.overture_buildings(args.region, pbf, region["bbox"], RELEASE):
+            clean = ring_units(poly)
+            if clean is None:
+                continue
+            tid = types.setdefault(kind, len(types))
+            buildings.append((clean[0][0], clean[0][1], tid, lv, 0, clean))
+        places = overture.overture_places(args.region, pbf, region["bbox"], RELEASE)
+        shops = [(lon, lat, "") for g, _, lon, lat in places if g in ("shop", "bar")]
+        polys = [shapely.Polygon(b[5]) for b in buildings]
+        to_u = lambda lon, lat: to_units([lon], [lat])[0]
+        for i, _ in overture.lift_to_buildings(polys, [(*to_u(lon, lat), k) for lon, lat, k in shops]):
+            b = buildings[i]
+            buildings[i] = (*b[:4], 1, b[5])
+        print(f"{n_osm} do OSM, {len(buildings) - n_osm} do Overture")
     names = sorted(types, key=types.get)
     data = write_bld2(names, [(tid, lv, flags, pts) for _, _, tid, lv, flags, pts in buildings], sorted(trees))
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    out = args.out_dir / f"{args.region}_e{args.epoch}_bldg.bin"
+    out = args.out_dir / f"{args.region}_e{args.epoch}{'_ov' if args.overture else ''}_bldg.bin"
+    if out.exists():
+        raise SystemExit(f"{out} já existe: não regero por cima (apague à mão se for mesmo para trocar)")
     out.write_bytes(data)
     print(f"{len(buildings)} prédios ({len(types)} tipos), {len(trees)} árvores, {out.stat().st_size} bytes, "
           f"sha256 {hashlib.sha256(out.read_bytes()).hexdigest()}")

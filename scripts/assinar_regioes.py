@@ -81,9 +81,10 @@ def main() -> None:
         route_files["traffic"] = {"file": traffic["file"], "url": _url(traffic["file"]), **_ref(OUT / traffic["file"])}
         if route_files["traffic"]["sha256"] != traffic["sha256"]:
             sys.exit(f"{traffic['file']}: SHA-256 diferente do da época {epoch}")
-    # 0.22.2: os prédios do estilo Completo (por tile, BLD2). Só cenário: não dependem da época.
-    bldg = OUT / f"{region}_e0_bldg.bin"
-    if bldg.exists():
+    # 0.22.2: os prédios do estilo Completo (por tile, BLD2). Só cenário: não dependem da época. 0.23.0: o com o Overture
+    # (`_e12_ov_bldg.bin`) no lugar do só do OSM, quando existe.
+    bldg = next((p for p in (OUT / f"{region}_e12_ov_bldg.bin", OUT / f"{region}_e0_bldg.bin") if p.exists()), None)
+    if bldg is not None:
         route_files["buildings"] = {"file": bldg.name, "url": _url(bldg.name), **_ref(bldg)}
     out_dir.mkdir(parents=True, exist_ok=True)
     target = out_dir / "regions.json"

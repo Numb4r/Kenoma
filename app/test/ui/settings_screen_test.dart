@@ -89,6 +89,16 @@ void main() {
     expect(find.textContaining('DESATUALIZADO'), findsNothing);
   });
 
+  testWidgets('o botão Créditos abre a tela com o OpenStreetMap e o Overture', (tester) async {
+    final s = await session(MemorySaveStore());
+    await pump(tester, s);
+    await tester.scrollUntilVisible(find.byKey(const Key('credits')), 300);
+    await tester.tap(find.byKey(const Key('credits')));
+    await tester.pumpAndSettle();
+    expect(find.text('OPENSTREETMAP'), findsOneWidget);
+    expect(find.text('OVERTURE MAPS FOUNDATION'), findsOneWidget);
+  });
+
   testWidgets('só preferências: a Patrulha e o modo bolso moram no app Patrulha; sem interruptor de som até a sonoplastia', (tester) async {
     final s = await session(MemorySaveStore());
     await pump(tester, s);
