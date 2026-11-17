@@ -11,10 +11,10 @@ void main() {
   final r = data.recipes;
 
   test('as receitas existem: simples, reforçado, selos de tipo, tônico e o Prisma de orvalho', () {
-    expect(r.keys.toSet(), {
+    expect(r.keys.toSet(), containsAll({
       'recipe.seal.simple', 'recipe.seal.reinforced', 'recipe.tonic.focus', 'recipe.dew_prism',
       for (final t in EcoType.values) 'recipe.seal.${t.name}', // um selo de tipo para cada um dos 12
-    });
+    }));
     expect(r['recipe.seal.reinforced']!.anyEssence, 2);
     expect(r['recipe.seal.reinforced']!.inputs, {'item.seal.simple': 1});
   });

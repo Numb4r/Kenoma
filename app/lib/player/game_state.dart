@@ -5,6 +5,8 @@ library;
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 import '../core/seed.dart';
+import '../crafting/crafting_state.dart';
+import '../crafting/quality.dart';
 import '../save/founder.dart';
 import '../story/chat_state.dart' show ChatEntry;
 import '../story/forum_data.dart';
@@ -21,7 +23,7 @@ import 'progression.dart';
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 9;
+const int saveSchemaVersion = 10;
 
 /// A chave das células z17 visitadas no save (schema 6).
 const String kVisitedCellsKey = 'celulas_visitadas';
@@ -114,6 +116,7 @@ class GameState extends ChangeNotifier {
     StoryState? story,
     Iterable<(int, int)>? visitedCells,
     ConjurerState? conjurer,
+    CraftingState? crafting,
     this.radarLastUtc = 0,
     Map<String, int>? hiddenRevealed,
     Map<String, dynamic>? settings,
@@ -132,6 +135,7 @@ class GameState extends ChangeNotifier {
         story = story ?? StoryState(),
         _visited = {...?visitedCells},
         conjurer = conjurer ?? ConjurerState(),
+        crafting = crafting ?? CraftingState(),
         hiddenRevealed = {...?hiddenRevealed},
         pins = [...?pins],
         builds = [...?builds],
@@ -144,7 +148,7 @@ class GameState extends ChangeNotifier {
   factory GameState.fromJson(Map<String, dynamic> j, ProgressBalance balance) {
     const known = {
       'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'bestiary_pins', 'personal_builds', 'marks', 'saved_utc',
-      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', kVisitedCellsKey, 'radar', 'conjurer',
+      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', kVisitedCellsKey, 'radar', 'conjurer', 'crafting',
     };
     final progress = PlayerProgress.fromJson(j['player'] as Map<String, dynamic>?, balance)..settleBanked();
     final state = GameState(
@@ -167,6 +171,7 @@ class GameState extends ChangeNotifier {
       story: StoryState.fromJson(j['story'] as Map<String, dynamic>?),
       visitedCells: [for (final c in (j[kVisitedCellsKey] as List<dynamic>?) ?? const []) ((c as List<dynamic>)[0] as int, c[1] as int)],
       conjurer: ConjurerState.fromJson(j['conjurer'] as Map<String, dynamic>?),
+      crafting: CraftingState.fromJson(j['crafting'] as Map<String, dynamic>?),
       radarLastUtc: ((j['radar'] as Map<String, dynamic>?)?['last_utc'] as int?) ?? 0,
       hiddenRevealed: {
         for (final e in (((j['radar'] as Map<String, dynamic>?)?['revealed'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as int,
@@ -279,6 +284,9 @@ class GameState extends ChangeNotifier {
   /// Escola, testes, talentos, pesquisa de rituais e contagens do Perfil.
   final ConjurerState conjurer;
 
+  /// O crafting da fase 1: recipientes, receitas conhecidas, páginas, fixados e loadout.
+  final CraftingState crafting;
+
   /// Os números do Conjurador do `balance.json`: desbloqueios, escolas, fusão.
   ConjurerBalance get cb => balance.conjurer;
 
@@ -386,6 +394,9 @@ class GameState extends ChangeNotifier {
     final fam = story.chat.deliverFamiliar(nowUtc, script, story.count);
     final offered = _offerSchoolTests(nowUtc, script);
     final ev = story.chat.deliverEvents(nowUtc, script, story.count);
+    for (final e in ev) {
+      if (e.page != null) crafting.pages.add(e.page!);
+    }
     if (m != null || offered || ev.any((e) => e.from == 'mentor')) onNotice?.call('Nova mensagem de ${script.contactName}');
     if (fam.isNotEmpty || ev.any((e) => e.from == 'familiar')) onNotice?.call('O Familiar tem algo a dizer');
     if (m != null || fam.isNotEmpty || offered || ev.isNotEmpty) notifyListeners();
@@ -420,7 +431,17 @@ class GameState extends ChangeNotifier {
   /// Um interruptor que vale [fallback] enquanto o jogador não mexeu nele.
   bool settingOr(String key, bool fallback) => settings[key] is bool ? settings[key] as bool : fallback;
 
-  int count(String itemId) => inventory[itemId] ?? 0;
+  /// Avisa a interface e o save de uma mudança feita de fora (o crafting mexe em [crafting] direto).
+  void changed() => notifyListeners();
+
+  /// Quantos [itemId] há. Um id puro soma as três qualidades; uma chave com qualidade (`item.chalk@good`) conta só a pilha.
+  int count(String itemId) => itemId.contains('@') ? inventory[itemId] ?? 0 : stackKeys(itemId).fold(0, (n, k) => n + (inventory[k] ?? 0));
+
+  /// Quantos [itemId] há na qualidade [q].
+  int countQ(String itemId, Quality q) => inventory[stackKey(itemId, q)] ?? 0;
+
+  /// A melhor qualidade de [itemId] que há, ou `null`.
+  Quality? bestQuality(String itemId) => Quality.values.reversed.where((q) => countQ(itemId, q) > 0).firstOrNull;
 
   /// Ganha XP de Conjurador em [nowUtc]. Devolve quantos níveis subiu.
   int gainXp(int raw, int nowUtc) {
@@ -434,50 +455,63 @@ class GameState extends ChangeNotifier {
     return up;
   }
 
-  void add(String itemId, int n) {
+  /// Põe [n] [itemId] na pilha da qualidade [q] (uma chave com qualidade já diz qual pilha).
+  void add(String itemId, int n, {Quality q = Quality.common}) {
     if (n <= 0) return;
-    inventory[itemId] = count(itemId) + n;
+    final key = itemId.contains('@') ? itemId : stackKey(itemId, q);
+    inventory[key] = (inventory[key] ?? 0) + n;
     // A Fagulha coletada entra no Bestiário (a primeira forma de cada família).
-    if (itemId.startsWith('item.dust.')) {
-      final e = bestiary[itemId] ?? const BestiaryEntry();
-      bestiary[itemId] = e.copyWith(captured: true, captures: e.captures + n);
+    final id = parseStack(key).id;
+    if (id.startsWith('item.dust.')) {
+      final e = bestiary[id] ?? const BestiaryEntry();
+      bestiary[id] = e.copyWith(captured: true, captures: e.captures + n);
     }
     notifyListeners();
   }
 
-  /// Gasta uma unidade. `false` se não há.
-  bool take(String itemId) {
-    final have = count(itemId);
-    if (have <= 0) return false;
-    if (have == 1) {
-      inventory.remove(itemId);
-    } else {
-      inventory[itemId] = have - 1;
+  /// Gasta uma unidade (de um id puro, a pior qualidade que houver). `false` se não há.
+  bool take(String itemId) => spend({itemId: 1});
+
+  /// As pilhas exatas que [items] gasta: uma chave com qualidade sai da própria pilha; um id puro sai da pior qualidade
+  /// primeiro, para guardar o material bom. `null` se falta algum.
+  Map<String, int>? stacksFor(Map<String, int> items) {
+    final plan = <String, int>{};
+    int have(String k) => (inventory[k] ?? 0) - (plan[k] ?? 0);
+    for (final e in items.entries) {
+      var left = e.value;
+      for (final k in e.key.contains('@') ? [e.key] : stackKeys(e.key)) {
+        final take = left < have(k) ? left : have(k);
+        if (take > 0) plan[k] = (plan[k] ?? 0) + take;
+        left -= take > 0 ? take : 0;
+        if (left == 0) break;
+      }
+      if (left > 0) return null;
     }
-    notifyListeners();
-    return true;
+    return plan;
+  }
+
+  void _drop(Map<String, int> stacks) {
+    for (final e in stacks.entries) {
+      final left = (inventory[e.key] ?? 0) - e.value;
+      left <= 0 ? inventory.remove(e.key) : inventory[e.key] = left;
+    }
   }
 
   /// Gasta vários itens de uma vez (o ritual). `false`, sem gastar nada, se falta algum.
   bool spend(Map<String, int> items) {
-    if (items.entries.any((e) => count(e.key) < e.value)) return false;
-    for (final e in items.entries) {
-      final left = count(e.key) - e.value;
-      left == 0 ? inventory.remove(e.key) : inventory[e.key] = left;
-    }
+    final plan = stacksFor(items);
+    if (plan == null) return false;
+    _drop(plan);
     notifyListeners();
     return true;
   }
 
-  /// Fabrica uma receita se há todos os ingredientes. `false` se falta algum.
-  bool craft(Map<String, int> inputs, String outId, int outQty) {
-    if (inputs.entries.any((e) => count(e.key) < e.value)) return false;
-    for (final e in inputs.entries) {
-      final left = count(e.key) - e.value;
-      left == 0 ? inventory.remove(e.key) : inventory[e.key] = left;
-    }
-    inventory[outId] = count(outId) + outQty;
-    notifyListeners();
+  /// Fabrica uma receita se há todos os ingredientes: o resultado sai na qualidade [q]. `false` se falta algum.
+  bool craft(Map<String, int> inputs, String outId, int outQty, {Quality q = Quality.common}) {
+    final plan = stacksFor(inputs);
+    if (plan == null) return false;
+    _drop(plan);
+    add(outId, outQty, q: q);
     return true;
   }
 
@@ -632,6 +666,7 @@ class GameState extends ChangeNotifier {
         'story': story.toJson(),
         kVisitedCellsKey: [for (final c in _visited) [c.$1, c.$2]],
         'conjurer': conjurer.toJson(),
+        'crafting': crafting.toJson(),
         'radar': {'last_utc': radarLastUtc, 'revealed': hiddenRevealed},
         'inventory': inventory,
         'collection': [for (final c in collection) c.toJson()],

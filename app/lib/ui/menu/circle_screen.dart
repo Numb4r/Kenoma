@@ -10,6 +10,7 @@ import '../../data/tuning_data.dart';
 import '../../player/attributes.dart' as attr;
 import '../../player/circle.dart';
 import '../../player/game_state.dart';
+import '../collection/collection_screen.dart';
 import '../colors.dart';
 import '../sprites/sprite_image.dart';
 import '../type_label.dart';
@@ -82,6 +83,11 @@ class _CircleScreenState extends State<CircleScreen> {
               ]),
             ),
             const SectionTitle('Coleção'),
+            GestureDetector(
+              key: const Key('circle-open-collection'),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => CollectionScreen(state: s, data: widget.data))),
+              child: const Padding(padding: EdgeInsets.only(bottom: 8), child: Text('▸ VER A COLEÇÃO COM PODER, HABILIDADE E TRAÇOS', style: TextStyle(fontSize: 8, color: kSignal, height: 1.8))),
+            ),
             if (s.collection.isEmpty) const Text('NENHUMA CRIATURA AINDA.', style: TextStyle(fontSize: 8, color: kDim)),
             for (final c in s.collection.reversed) _Tile(creature: c, state: s, data: widget.data, sprites: _sprites, bands: bands),
           ],

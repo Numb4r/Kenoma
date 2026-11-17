@@ -17,9 +17,12 @@ import '../core/tiles.dart';
 import '../player/conjurer_balance.dart' show School;
 import '../player/circle.dart' show MapAbilities;
 import '../player/game_state.dart';
+import '../crafting/conditions.dart';
+import '../crafting/quality.dart';
 import 'climate_world.dart';
 import 'debug_creatures.dart';
 import 'debug_force.dart';
+import 'here_probe.dart';
 import 'personal_layer.dart';
 import '../player/personal_build.dart';
 import 'radar.dart';
@@ -36,6 +39,9 @@ enum TouchResult {
 
   /// O Eco está a até 30 m e é `ritualOnly`: a tela abre o ritual em vez da sintonia.
   ritual,
+
+  /// O material está ao alcance, mas a bolsa está cheia: ele fica no mapa.
+  bagFull,
 }
 
 class WorldView {
@@ -178,6 +184,47 @@ class WorldView {
   final _forced = <int, ({EcoBehavior behavior, bool variant, bool shiny, bool spirit, bool ritual})>{};
   final _inAura = <int>{};
   double _px = 0, _py = 0, _mpc = 1;
+  double _lat = 0, _lon = 0;
+
+  /// A qualidade de um material pego agora (a condição e o lugar, `crafting.quality.raw`); sem ela, comum.
+  Quality Function(String itemId, Here here)? pickupQuality;
+
+  /// Se a bolsa comporta [n] da pilha [key]; sem ela, sempre. Bolsa cheia: o material fica no mapa.
+  bool Function(String key, int n, int t)? bagFits;
+
+  /// A qualidade do último material pego (a Patrulha a escreve no diário).
+  Quality lastPickQuality = Quality.common;
+
+  /// Avisa quando a bolsa cheia recusou um material.
+  void Function()? onBagFull;
+
+  /// A condição de agora em ([lat], [lon]): o clima, os eventos, o bioma e a água a até [waterSearchM], do mesmo mundo do mapa.
+  Here here(double lat, double lon, int t, {double waterSearchM = 300}) {
+    final c = field.climate;
+    return probeHere(
+      lat: lat,
+      lon: lon,
+      t: t,
+      biomeAt: _biomeKeyAt,
+      climateAt: (x, y, t) => c?.idAt(x, y, t) ?? 'clear',
+      eventsAt: c == null ? null : (x, y, t) => [for (final e in c.eventsBetween(x, y, t, t + 1)) e.id],
+      waterSearchM: waterSearchM,
+    );
+  }
+
+  /// A condição em volta do jogador na última atualização.
+  Here hereNow(int t) => here(_lat, _lon, t);
+
+  /// Pega [qty] de [id] em [t] com a qualidade de agora. `false` (nada entra) se a bolsa está cheia.
+  bool _pick(String id, int qty, int t) {
+    final q = lastPickQuality = pickupQuality?.call(id, hereNow(t)) ?? Quality.common;
+    if (!(bagFits?.call(stackKey(id, q), qty, t) ?? true)) {
+      onBagFull?.call();
+      return false;
+    }
+    if (!sandbox()) state.add(id, qty, q: q); // GPS simulado sem recompensa: nada entra na Bolsa
+    return true;
+  }
   bool _hasPlayer = false;
 
   /// Metros do jogador até o spawn.
@@ -268,6 +315,8 @@ class WorldView {
     final (px, py) = latLonToTileFraction(lat, lon, biomeZoom);
     _px = px;
     _py = py;
+    _lat = lat;
+    _lon = lon;
     _mpc = metersPerCell(lat);
     _hasPlayer = true;
     climate = field.climate?.modsAt(px, py, tUtc) ?? PlayerClimate.none;
@@ -320,7 +369,10 @@ class WorldView {
         visible.add(s);
         continue;
       }
-      if (!sandbox()) state.add(s.entryId, s.quantity); // GPS simulado sem recompensa: nada entra na Bolsa
+      if (!_pick(s.entryId, s.quantity, tUtc)) {
+        visible.add(s);
+        continue;
+      }
       state.markDone(s.uid, tUtc);
       _gainXp(state.balance.spark, tUtc);
       _record('spark', s.entryId.replaceFirst('item.dust.', ''), s.quantity);
@@ -382,10 +434,8 @@ class WorldView {
     if (!canReach(s)) return TouchResult.tooFar;
     if (s.isEco) return TouchResult.encounter;
     final qty = s.quantity + (personal?.extraMaterial(s, tUtc) ?? 0); // o Clod: às vezes uma unidade a mais
-    if (!sandbox()) {
-      state.add(s.entryId, qty); // GPS simulado sem recompensa: nada entra na Bolsa
-      if (s.tag == 'rune_bonus') state.conjurer.runeBonus++; // a runa guarda o bônus do próximo ritual
-    }
+    if (!_pick(s.entryId, qty, tUtc)) return TouchResult.bagFull;
+    if (!sandbox() && s.tag == 'rune_bonus') state.conjurer.runeBonus++; // a runa guarda o bônus do próximo ritual
     state.markDone(s.uid, tUtc);
     _gainXp(state.balance.material, tUtc);
     _record('material', s.entryId, qty);

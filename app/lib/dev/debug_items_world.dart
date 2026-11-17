@@ -12,6 +12,7 @@ import '../ui/map/map_screen.dart';
 import '../ui/tema.dart';
 import '../world/places.dart';
 import 'debug_env.dart';
+import 'debug_items_crafting.dart';
 import 'debug_items_fusion.dart';
 import 'debug_registry.dart';
 import 'debug_widgets.dart';
@@ -303,6 +304,7 @@ List<DebugItem> playerItems(DebugEnv env) => [
         builder: (_) => _LevelOverride(env: env),
       ),
       ...fusionItems(env),
+      ...craftingItems(env),
     ];
 
 /// Override do nível (1 a 15) guardado no save; 0 deixa valer o nível real. Os Ecos do mapa e a resistência usam o

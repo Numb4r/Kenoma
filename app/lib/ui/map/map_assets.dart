@@ -24,6 +24,8 @@ import '../../world/spawn_field.dart';
 import '../../world/street_dirs.dart';
 import '../../world/walk_paths.dart';
 import '../../world/water_field.dart';
+import '../../crafting/bag.dart';
+import '../../crafting/conditions.dart';
 import '../../world/world_view.dart';
 import '../../net/signed_feed.dart';
 import '../../data/block_cache.dart';
@@ -201,7 +203,10 @@ WorldView worldViewFor({
     ritual: data.ritual,
     itemName: data.itemName,
     onMessage: onMessage,
-  );
+  )
+    // O crafting da fase 1: a qualidade do bruto vem da condição e do lugar, e a bolsa cheia deixa o material no mapa.
+    ..pickupQuality = ((id, here) => rawQuality(id, here, data.craft.balance))
+    ..bagFits = ((key, n, t) => fits(state, data.craft, t, key, n));
 }
 
 /// As funções do bloco com as regras do OSM ligadas.

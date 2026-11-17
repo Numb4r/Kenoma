@@ -57,9 +57,9 @@ void main() {
   });
 
   test('lê os selos (simples, reforçado e um de cada um dos 12 tipos) e o tônico', () {
-    expect(data.seals.map((s) => s.id).toSet(), {'item.seal.simple', 'item.seal.reinforced', for (final t in EcoType.values) 'item.seal.${t.name}'});
+    expect(data.seals.map((s) => s.id).toSet(), containsAll({'item.seal.simple', 'item.seal.reinforced', for (final t in EcoType.values) 'item.seal.${t.name}'}));
     expect({for (final s in data.seals) if (s.type != null) s.type}, EcoType.values.toSet());
-    expect(data.tonics.single.extraTimeS, 5);
+    expect(data.tonics.firstWhere((t) => t.id == 'item.tonic.focus').extraTimeS, 5);
   });
 
   group('TuningSetup', () {

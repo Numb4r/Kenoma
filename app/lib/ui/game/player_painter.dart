@@ -67,3 +67,24 @@ void paintPlayerMarker(Canvas canvas, Offset center, {required Image? sprite, re
   );
   canvas.restore();
 }
+
+/// O equipamento por cima do Conjurador (0.24.0): cada camada é um quadro do mesmo tamanho do sprite, transparente fora da
+/// peça, deslocado [dx] pixels de arte (as garrafas do cinto, uma ao lado da outra). Espelha junto com o sprite.
+void paintPlayerGear(Canvas canvas, Offset center, {required List<(Image, int dx)> layers, required double size, bool mirrored = false, double dpr = 1}) {
+  if (layers.isEmpty) return;
+  final dst = Rect.fromLTWH(_snap(center.dx - size / 2, dpr), _snap(center.dy - size / 2, dpr), size, size);
+  final paint = Paint()
+    ..filterQuality = FilterQuality.none
+    ..isAntiAlias = false;
+  canvas.save();
+  if (mirrored) {
+    canvas.translate(dst.center.dx, 0);
+    canvas.scale(-1, 1);
+    canvas.translate(-dst.center.dx, 0);
+  }
+  for (final (img, dx) in layers) {
+    final art = size / img.width;
+    canvas.drawImageRect(img, Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble()), dst.shift(Offset(dx * art, 0)), paint);
+  }
+  canvas.restore();
+}

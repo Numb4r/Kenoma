@@ -1,5 +1,5 @@
-/// Coleção e bolsa: as criaturas capturadas e o que o jogador carrega. O Círculo, o bestiário e a
-/// bancada têm telas próprias.
+/// A Coleção: as criaturas capturadas, com poder, habilidade e traços. Desde a 0.24.0 elas não ficam na Bolsa; a tela abre
+/// pelo Círculo.
 library;
 
 import 'package:flutter/material.dart';
@@ -53,7 +53,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
           listenable: widget.state,
           builder: (context, _) {
             final s = widget.state;
-            final items = [for (final e in s.inventory.entries) if (e.value > 0) e]..sort((a, b) => a.key.compareTo(b.key));
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               children: [
@@ -64,18 +63,6 @@ class _CollectionScreenState extends State<CollectionScreen> {
                 if (s.collection.isEmpty)
                   const Text('NENHUMA AINDA. TOQUE NUM ECO DENTRO DA AURA.', style: TextStyle(fontSize: 8, color: kDim, height: 1.8)),
                 for (final c in s.collection.reversed) _CreatureTile(creature: c, data: widget.data, sprite: _sprites[c.speciesId], date: _date(c.capturedUtc)),
-                const SizedBox(height: 24),
-                const Text('BOLSA', style: TextStyle(fontSize: 16, color: kSignal)),
-                const SizedBox(height: 8),
-                if (items.isEmpty) const Text('VAZIA.', style: TextStyle(fontSize: 8, color: kDim)),
-                for (final e in items)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(children: [
-                      Expanded(child: Text(widget.data.itemName(e.key).toUpperCase(), style: const TextStyle(fontSize: 8, color: kText))),
-                      Text('×${e.value}', style: const TextStyle(fontSize: 8, color: kEssence)),
-                    ]),
-                  ),
               ],
             );
           },

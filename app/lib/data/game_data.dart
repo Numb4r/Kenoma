@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../core/epochs.dart';
+import '../crafting/crafting_data.dart';
 import '../crafting/ritual_data.dart';
 import '../net/signed_feed.dart';
 import '../patrol/patrol_balance.dart';
@@ -27,7 +28,18 @@ import 'climate_catalog.dart';
 import 'tuning_data.dart';
 
 class Recipe {
-  const Recipe({required this.id, required this.outId, required this.outQty, required this.inputs, this.anyEssence = 0});
+  const Recipe({
+    required this.id,
+    required this.outId,
+    required this.outQty,
+    required this.inputs,
+    this.anyOf = const {},
+    this.bench = false,
+    this.discovery = Discovery.start,
+    this.page,
+    this.needs = const Needs(),
+    this.hint = '',
+  });
 
   final String id;
   final String outId;
@@ -36,8 +48,26 @@ class Recipe {
   /// Ingredientes `item -> quantidade`, sem a Essência de qualquer tipo.
   final Map<String, int> inputs;
 
-  /// Quantas Essências de qualquer tipo a receita pede (`any:essence`), misturadas ou não.
-  final int anyEssence;
+  /// Quantos de cada grupo, de qualquer tipo, a receita pede (`any:essence`, `any:dust`, `any:trait`), misturados ou não.
+  final Map<String, int> anyOf;
+
+  /// Quantas Essências de qualquer tipo a receita pede (`any:essence`).
+  int get anyEssence => anyOf['essence'] ?? 0;
+
+  /// Feita na Bancada de casa (`station: bench`); senão, no improviso, em qualquer lugar.
+  final bool bench;
+
+  /// Como entra no grimório; sem o campo, a receita é de começo (as da 0.23 e antes).
+  final Discovery discovery;
+
+  /// A página de grimório que ensina a receita (`discovery: page`).
+  final String? page;
+
+  /// A condição do momento e do lugar.
+  final Needs needs;
+
+  /// A pista da silhueta no grimório e no Experimentar.
+  final String hint;
 }
 
 /// Uma variante (de bioma ou Brilhante): o nome, o traço passivo (só dado por enquanto) e a cor da paleta.
@@ -62,6 +92,7 @@ class GameData {
     this.researchTolerance = 1,
     required this.startInventory,
     required this.recipes,
+    this.craft = const CraftingBook(),
     required this.progress,
     required this.mentor,
     required this.forum,
@@ -157,12 +188,18 @@ class GameData {
                 for (final i in r['in'] as List<dynamic>)
                   if (!((i as List<dynamic>)[0] as String).startsWith('any:')) i[0] as String: i[1] as int,
               },
-              anyEssence: [
+              anyOf: {
                 for (final i in r['in'] as List<dynamic>)
-                  if (((i as List<dynamic>)[0] as String) == 'any:essence') i[1] as int,
-              ].fold(0, (a, b) => a + b),
+                  if (((i as List<dynamic>)[0] as String).startsWith('any:')) (i[0] as String).substring(4): i[1] as int,
+              },
+              bench: r['station'] == 'bench',
+              discovery: r['discovery'] == null ? Discovery.start : Discovery.values.byName(r['discovery'] as String),
+              page: r['page'] as String?,
+              needs: Needs.fromJson(r['needs'] as Map<String, dynamic>?),
+              hint: (r['hint'] as String?) ?? '',
             ),
         },
+        craft: CraftingBook.fromJson(items: items, recipes: recipes, balance: balance),
       );
 
   final TuningData tuning;
@@ -174,6 +211,9 @@ class GameData {
   final Map<String, int> itemSinceEpoch;
   final Map<String, int> startInventory;
   final Map<String, Recipe> recipes;
+
+  /// Itens, páginas e tabelas do crafting da fase 1.
+  final CraftingBook craft;
 
   /// XP, descanso, marcação e destilação do `balance.json`.
   final ProgressBalance progress;

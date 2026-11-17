@@ -125,7 +125,7 @@ void main() {
     test('v2 passa sem mudar, e uma versão futura também', () {
       final v2 = migrateSave(v1);
       expect(migrateSave(v2), v2);
-      final future = {...v2, 'schema_version': 9, 'novo': true};
+      final future = {...v2, 'schema_version': saveSchemaVersion + 1, 'novo': true};
       expect(migrateSave(future), future);
     });
 

@@ -18,7 +18,7 @@ import '../support/fixtures.dart';
 void main() {
   final data = loadGameData();
   const t = 1790040000;
-  const order = ['vision', 'radar', 'bestiary', 'circle', 'bag', 'bench', 'chat', 'forum', 'profile', 'routes', 'patrol', 'sky', 'settings'];
+  const order = ['vision', 'radar', 'bestiary', 'circle', 'bag', 'loadout', 'bench', 'chat', 'forum', 'profile', 'routes', 'patrol', 'sky', 'settings'];
 
   GameState state(int level) => GameState(groupCode: 'KENOMA-TESTE', balance: data.progress)..levelOverride = level;
 
@@ -69,7 +69,7 @@ void main() {
 
   test('a tabela vem do balance.json e os ícones são todos de 12 x 12', () {
     expect([for (final a in data.phone.apps) a.id], order);
-    expect({for (final a in data.phone.apps) a.id: a.unlockLevel}, {'vision': 1, 'radar': 5, 'bestiary': 1, 'circle': 1, 'bag': 1, 'bench': 2, 'chat': 2, 'forum': 2, 'profile': 1, 'routes': 1, 'patrol': 1, 'sky': 1, 'settings': 1});
+    expect({for (final a in data.phone.apps) a.id: a.unlockLevel}, {'vision': 1, 'radar': 5, 'bestiary': 1, 'circle': 1, 'bag': 1, 'loadout': 1, 'bench': 2, 'chat': 2, 'forum': 2, 'profile': 1, 'routes': 1, 'patrol': 1, 'sky': 1, 'settings': 1});
     for (final id in order) {
       final art = phoneIconArt[id]!;
       expect(art.length, 12, reason: id);

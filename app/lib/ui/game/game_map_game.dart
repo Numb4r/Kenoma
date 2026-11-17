@@ -1,4 +1,7 @@
 import 'fx.dart';
+import '../../crafting/crafting_state.dart';
+import '../../crafting/loadout.dart' show avatarGear;
+import '../craft/ui_art.dart';
 import '../../core/features.dart';
 import 'dart:ui';
 import 'dart:ui' as ui;
@@ -9,7 +12,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart' show ValueNotifier;
 
 import '../../capture/eco_type.dart';
-import '../colors.dart' show kCycleway, kEssence, kOutline, kSignal;
+import '../colors.dart' show kCycleway, kDim, kEssence, kOutline, kSignal, kVeil;
 import '../../core/astro.dart';
 import '../../core/weather.dart';
 import '../../world/companion.dart';
@@ -605,7 +608,10 @@ class GameMapGame extends FlameGame {
           if (cw != null) paintVortices(canvas, view, cam, wv.field.seed, cw.schedule.select(nowUtc()).epoch, _exactUtc(), mpc, balance.artPixelDp);
           _paintSpawns(canvas, view, cam, wv, center, (s) => s.isSpark);
         },
-        MapLayer.materials: () => _paintSpawns(canvas, view, cam, wv, center, (s) => !s.isEco && !s.isSpark),
+        MapLayer.materials: () {
+          _paintSpawns(canvas, view, cam, wv, center, (s) => !s.isEco && !s.isSpark);
+          _paintCollectors(canvas, view, cam, wv);
+        },
       },
       if (traffic) ...{
         MapLayer.walkers: () {
@@ -911,6 +917,20 @@ class GameMapGame extends FlameGame {
       // Parado, o Conjurador respira: dois quadros, o segundo um pixel de arte mais alto.
       final breath = avatar.moving || ((_time / 0.7).floor() % 2 == 0) ? 0.0 : -balance.artPixelDp;
       paintPlayerMarker(canvas, center.translate(0, breath), sprite: _playerFrame, size: playerSize, mirrored: _facingLeft, dpr: dpr);
+      // O equipamento que lê no tamanho do sprite: a bolsa, as garrafas do cinto e o brilho do amuleto (Loadout).
+      final art = UiArt.instance;
+      final st = worldView?.state;
+      if (art != null && st != null) {
+        final g = avatarGear(st);
+        paintPlayerGear(canvas, center.translate(0, breath), size: playerSize, mirrored: _facingLeft, dpr: dpr, layers: [
+          if (g.bag)
+            if (art.image('gear_bag') case final b?) (b, 0),
+          for (var i = 0; i < g.bottles; i++)
+            if (art.image('gear_bottle') case final b?) (b, 2 * i),
+          if (g.amuletGlow)
+            if (art.image('gear_amulet_glow') case final b?) (b, 0),
+        ]);
+      }
     }
     travelLayer?.paintCar(canvas, view, cam, metersPerCell(_lat), utc: _exactUtc(), avatar: avatar);
     fx.paint(canvas, view, cam, avatar: center, playerSize: playerSize, sparkSize: sparkSizePx, dpr: dpr);
@@ -1040,6 +1060,40 @@ class GameMapGame extends FlameGame {
   }
 
   /// O spawn sob o toque em [screen], se houver: o mais perto dentro do raio de toque.
+  /// Os coletores plantados (camada pessoal: só o dono vê): o recipiente de pé e um anel com o estado, cheio no ciano do
+  /// sinal, enchendo no violeta do Véu, esperando apagado.
+  void _paintCollectors(Canvas canvas, Size view, MapCamera cam, WorldView wv) {
+    final planted = wv.state.crafting.at(VesselPlace.planted);
+    if (planted.isEmpty) return;
+    const px = kUiPixel;
+    for (final v in planted) {
+      final (cx, cy) = latLonToTileFraction(v.lat, v.lon, biomeZoom);
+      final (sx, sy) = cam.cellToScreen(cx, cy, view.width, view.height);
+      final ring = v.content != null ? kSignal : (v.progressS > 0 ? kVeil : kDim);
+      canvas.drawRect(Rect.fromCenter(center: Offset(sx.roundToDouble(), sy.roundToDouble() + 2 * px), width: 12 * px, height: 4 * px), Paint()..color = ring.withValues(alpha: 0.55));
+      final img = UiArt.instance?.icon(v.kind);
+      final dst = Rect.fromCenter(center: Offset(sx.roundToDouble(), (sy - 6 * px).roundToDouble()), width: 16 * px, height: 16 * px);
+      if (img == null) {
+        canvas.drawRect(dst.deflate(4 * px), Paint()..color = ring);
+      } else {
+        canvas.drawImageRect(img, Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble()), dst, Paint()..filterQuality = FilterQuality.none);
+      }
+    }
+  }
+
+  /// O coletor plantado desenhado em [screen], ou `null`.
+  Vessel? collectorAt(Offset screen) {
+    final w = worldView;
+    if (w == null || size.x <= 0) return null;
+    final cam = follow.camera;
+    for (final v in w.state.crafting.at(VesselPlace.planted)) {
+      final (cx, cy) = latLonToTileFraction(v.lat, v.lon, biomeZoom);
+      final (sx, sy) = cam.cellToScreen(cx, cy, size.x, size.y);
+      if ((Offset(sx, sy - 6 * kUiPixel) - screen).distance <= 10 * kUiPixel) return v;
+    }
+    return null;
+  }
+
   WorldSpawn? spawnAt(Offset screen) {
     final w = worldView;
     if (w == null || size.x <= 0) return null;

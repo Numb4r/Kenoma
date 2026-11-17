@@ -15,6 +15,8 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import '../crafting/crafting_state.dart';
+import '../crafting/quality.dart';
 import '../player/game_state.dart';
 import '../player/mark.dart';
 import '../world/steps.dart';
@@ -117,7 +119,7 @@ JournalResult applyJournal(GameState state, List<Map<String, dynamic>> lines, {r
       case 'spark' || 'material':
         if (uid == null || state.isDone(uid)) continue;
         final item = l['item'] as String, q = (l['q'] as int?) ?? 1;
-        if (!sandbox) state.add(item, q); // GPS simulado sem recompensa: nada entra na Bolsa
+        if (!sandbox) state.add(item, q, q: Quality.byName(l['ql'] as String?)); // GPS simulado sem recompensa: nada entra na Bolsa
         state.markDone(uid, t);
         if (!sandbox) {
           state.gainXp(k == 'spark' ? state.balance.spark : state.balance.material, t);
@@ -136,6 +138,20 @@ JournalResult applyJournal(GameState state, List<Map<String, dynamic>> lines, {r
         if (!m.activeAt(nowUtc) || !state.addMark(m, nowUtc)) continue; // vencida (conta da hora do diário) ou sem vaga
         res.marks++;
         bump('marks', 1);
+      case 'vessel':
+        // A garrafa do cinto que encheu na Patrulha: a mesma, se ainda está no cinto e vazia.
+        final v = state.crafting.vessels.where((v) => v.uid == uid && v.place == VesselPlace.belt && v.empty).firstOrNull;
+        if (v == null || sandbox) continue;
+        v
+          ..content = l['content'] as String?
+          ..quality = Quality.byName(l['ql'] as String?)
+          ..filledUtc = (l['filled'] as int?) ?? t;
+        state.recordEvent('vessel_filled', v.content ?? '', 1);
+      case 'planted_full':
+        // O plantado enche pela conta do lugar, igual no app: aqui só fica o aviso já dado.
+        for (final v in state.crafting.vessels.where((v) => v.uid == uid)) {
+          v.notified = true;
+        }
       case 'fled':
         if (uid != null && !state.isDone(uid)) state.markDone(uid, t);
       case 'cell':

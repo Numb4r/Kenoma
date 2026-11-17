@@ -1,5 +1,5 @@
-/// A Bancada (docs/fase0-spec.md, seção 7): fabricar selos e tônico, e destilar Ecos em Essência. As receitas
-/// são improviso: valem em qualquer lugar.
+/// Destilar Ecos em Essência e fundir (docs/fase0-spec.md, seção 7; docs/GDD.md, "Fusão"). Era a Bancada antiga: na 0.24.0
+/// o fabricar foi para a Bancada nova (`ui/craft/bench_screen.dart`), que liga para esta tela.
 library;
 
 import 'package:flutter/material.dart';
@@ -14,8 +14,8 @@ import '../type_label.dart';
 import 'fusion_screen.dart';
 import 'screen_frame.dart';
 
-class BenchScreen extends StatefulWidget {
-  const BenchScreen({required this.state, required this.data, this.openFusion = false, super.key});
+class DistillScreen extends StatefulWidget {
+  const DistillScreen({required this.state, required this.data, this.openFusion = false, super.key});
 
   /// Abre já na aba Fundir (o botão do Bestiário).
   final bool openFusion;
@@ -24,11 +24,11 @@ class BenchScreen extends StatefulWidget {
   final GameData data;
 
   @override
-  State<BenchScreen> createState() => _BenchScreenState();
+  State<DistillScreen> createState() => _DistillScreenState();
 }
 
-class _BenchScreenState extends State<BenchScreen> {
-  bool _distill = false;
+class _DistillScreenState extends State<DistillScreen> {
+  bool _distill = true;
   late bool _fusion = widget.openFusion;
   Map<String, EcoSprite> _sprites = {};
 
@@ -70,12 +70,11 @@ class _BenchScreenState extends State<BenchScreen> {
     return ListenableBuilder(
       listenable: widget.state,
       builder: (context, _) => ScreenFrame(
-        title: 'Bancada',
-        subtitle: 'Improviso: vale em qualquer lugar',
+        title: 'Destilar e fundir',
+        subtitle: 'Ecos viram Essência; Ecos iguais viram Espírito',
         children: [
           // Wrap: três abas de 16 pt não cabem lado a lado nas telas estreitas.
           Wrap(spacing: 8, runSpacing: 8, children: [
-            PixelButton(label: 'Fabricar', color: _distill || _fusion ? kDim : kSignal, onTap: () => setState(() => _distill = _fusion = false)),
             PixelButton(label: 'Destilar', color: _distill ? kEssence : kDim, onTap: () => setState(() { _distill = true; _fusion = false; })),
             // Antes do nível da fusão a aba é um ???.
             PixelButton(
@@ -85,40 +84,11 @@ class _BenchScreenState extends State<BenchScreen> {
             ),
           ]),
           const SizedBox(height: 16),
-          if (_fusion) FusionPanel(state: widget.state, data: widget.data, sprites: _sprites) else if (_distill) ..._distillTab() else ..._craftTab(),
+          if (_fusion) FusionPanel(state: widget.state, data: widget.data, sprites: _sprites) else ..._distillTab(),
         ],
       ),
     );
   }
-
-  List<Widget> _craftTab() {
-    final s = widget.state, d = widget.data;
-    return [
-      for (final r in d.recipes.values)
-        Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
-          decoration: panelBox(line: canCraft(s, r) ? kSignal : kPanelLine),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(d.itemName(r.outId).toUpperCase(), style: const TextStyle(fontSize: 16, color: kText)),
-            const SizedBox(height: 6),
-            for (final e in r.inputs.entries) _need(d.itemName(e.key), s.count(e.key), e.value),
-            if (r.anyEssence > 0) _need('Essência (qualquer tipo)', essenceTotal(s), r.anyEssence),
-            const SizedBox(height: 8),
-            PixelButton(
-              label: 'Fabricar',
-              color: canCraft(s, r) ? kSignal : kDim,
-              onTap: () => craftRecipe(s, r) ? _say('+${r.outQty} ${d.itemName(r.outId)}') : _say('Falta ingrediente'),
-            ),
-          ]),
-        ),
-    ];
-  }
-
-  Widget _need(String name, int have, int need) => Text(
-        '${name.toUpperCase()}  $have/$need',
-        style: TextStyle(fontSize: 8, height: 1.8, color: have >= need ? kSignal : kEssence),
-      );
 
   List<Widget> _distillTab() {
     final s = widget.state, d = widget.data;

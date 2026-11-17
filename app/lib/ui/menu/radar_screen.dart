@@ -29,7 +29,7 @@ String radarSummary(RadarOutcome o) {
 }
 
 class RadarScreen extends StatefulWidget {
-  const RadarScreen({required this.state, required this.street, required this.nowUtc, required this.onSweep, required this.echoes, required this.rotation, super.key});
+  const RadarScreen({required this.state, required this.street, required this.nowUtc, required this.onSweep, required this.echoes, required this.rotation, this.planted, super.key});
 
   final GameState state;
   final StreetLifeBalance street;
@@ -40,6 +40,9 @@ class RadarScreen extends StatefulWidget {
 
   /// Os ecos de agora, vistos do jogador (`WorldView.sonar`).
   final List<SonarEcho> Function() echoes;
+
+  /// Os coletores plantados com distância e estado (só o dono vê).
+  final Widget? planted;
 
   /// A rotação do mapa (radianos): o sonar gira com o norte dele.
   final double Function() rotation;
@@ -124,6 +127,7 @@ class _RadarScreenState extends State<RadarScreen> with SingleTickerProviderStat
               : 'NÍVEL 1: ARCOS NA DIREÇÃO PROVÁVEL DOS ECOS RAROS (VARIANTES, BRILHANTES, OCULTOS E MAIS FORTES QUE VOCÊ) A ATÉ ${b.traceRangeM.round()} M, MAIS ESTREITOS QUANTO MAIS PERTO. OS OCULTOS A ATÉ ${b.radarRadiusM.round()} M VOLTAM COMO DISTORÇÃO: ANDE ATÉ ELA. O NÍVEL 2 VEM NO NÍVEL ${b.radarLevel2PlayerLevel}.',
           style: const TextStyle(fontSize: 8, color: kDim, height: 1.8),
         ),
+        if (widget.planted != null) ...[const SizedBox(height: 16), widget.planted!],
       ],
     );
   }

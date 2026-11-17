@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 
 import '../../capture/seal.dart';
 import '../../core/behavior.dart';
+import '../../crafting/item_use.dart';
+import '../../crafting/quality.dart';
 import '../../capture/tuning_setup.dart';
 import '../../data/game_data.dart';
 import '../../data/tuning_data.dart';
@@ -24,7 +26,6 @@ import '../tuning/tuning_screen.dart';
 import '../tuning/vibration_driver.dart';
 import '../type_label.dart';
 
-const _tonicId = 'item.tonic.focus';
 
 /// O que o jogador escolheu na folha de preparo.
 typedef Prep = ({Seal seal, bool tonic});
@@ -45,6 +46,7 @@ Future<void> runEncounter(
   final navigator = Navigator.of(context);
   while (context.mounted) {
     final seals = [for (final s in data.tuning.seals) if (state.count(s.id) > 0) s];
+    final best = bestTonic(state, data.craft, data.tuning.tonics, nowUtc());
     if (!context.mounted) return;
     final prep = await showModalBottomSheet<Prep>(
       // ignore: use_build_context_synchronously
@@ -58,14 +60,20 @@ Future<void> runEncounter(
         level: level,
         seals: seals,
         count: state.count,
-        tonics: state.count(_tonicId),
+        tonics: best == null ? 0 : state.count(best.tonic.id),
+        tonicLabel: best == null ? null : '${best.tonic.name} · ${best.q.label}',
+        tonicSeconds: best?.seconds ?? 0,
         behavior: eco.behavior,
         variant: data.variantInfo(biome: eco.variant, shiny: eco.shiny),
       ),
     );
     if (prep == null || !context.mounted) return; // cancelar não custa nada
-    state.take(prep.seal.id);
-    final tonic = prep.tonic && state.take(_tonicId) ? data.tuning.tonics.first : null;
+    // A melhor pilha do selo escolhido: a qualidade dá tolerância; o tônico é o melhor que o jogador tem.
+    final sealQ = state.bestQuality(prep.seal.id) ?? Quality.common;
+    state.spend({stackKey(prep.seal.id, sealQ): 1});
+    final tonic = prep.tonic && best != null && state.spend({stackKey(best.tonic.id, best.q): 1})
+        ? Tonic(id: best.tonic.id, name: best.tonic.name, extraTimeS: best.seconds)
+        : null;
     final run = await navigator.push<TuningRun>(MaterialPageRoute(
       builder: (_) => TuningScreen(
         encounter: true,
@@ -77,7 +85,8 @@ Future<void> runEncounter(
           seal: prep.seal,
           tonic: tonic,
           circleStrong: strongInCircle(state, data, species.type),
-          toleranceMult: state.cb.toleranceMultFor(state.conjurer.school) *
+          toleranceMult: sealToleranceMult(state, data.craft, sealQ, nowUtc()) * // selo bom e perfeito, e o equipamento
+              state.cb.toleranceMultFor(state.conjurer.school) *
               world.climate.toleranceMult * // Aurora
               data.researchToleranceMult(state.bestiary, species.id) * // pesquisa do Bestiário, nível 4
               (world.sightTags.contains('day') ? 1 + world.abilities().of('day_tolerance_pct') / 100 : 1), // Glimlet no Círculo, de dia
@@ -136,7 +145,7 @@ Future<void> runEncounter(
     }
     // Rustling no Círculo: na falha, uma chance de o selo não ser gasto.
     if (!o.success && sealSaved(eco.uid, nowUtc(), world.abilities().of('seal_save_pct'))) {
-      state.add(prep.seal.id, 1);
+      state.add(prep.seal.id, 1, q: sealQ);
       onMessage?.call('${prep.seal.name} não foi gasto');
     }
     // Xamã Urbano: o Eco não foge depois de uma sintonia falha.
@@ -156,6 +165,8 @@ class PrepSheet extends StatefulWidget {
     required this.seals,
     required this.count,
     required this.tonics,
+    this.tonicLabel,
+    this.tonicSeconds = 0,
     this.behavior = EcoBehavior.passive,
     this.variant,
     super.key,
@@ -166,6 +177,10 @@ class PrepSheet extends StatefulWidget {
   final List<Seal> seals;
   final int Function(String itemId) count;
   final int tonics;
+
+  /// O melhor tônico que o jogador tem, com a qualidade, e os segundos que ele dá.
+  final String? tonicLabel;
+  final double tonicSeconds;
 
   /// O comportamento do Eco e a variante (ou Brilhante) dele, mostrados na folha.
   final EcoBehavior behavior;
@@ -218,8 +233,8 @@ class _PrepSheetState extends State<PrepSheet> {
               if (widget.tonics > 0)
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text('Tônico de foco (×${widget.tonics})', style: const TextStyle(fontSize: 8)),
-                  subtitle: const Text('+5 s na sintonia', style: TextStyle(fontSize: 8, color: kDim)),
+                  title: Text('${widget.tonicLabel ?? 'Tônico'} (×${widget.tonics})', style: const TextStyle(fontSize: 8)),
+                  subtitle: Text('+${widget.tonicSeconds.toStringAsFixed(widget.tonicSeconds % 1 == 0 ? 0 : 1)} s na sintonia', style: const TextStyle(fontSize: 8, color: kDim)),
                   value: _tonic,
                   activeThumbColor: kSignal,
                   onChanged: (v) => setState(() => _tonic = v),

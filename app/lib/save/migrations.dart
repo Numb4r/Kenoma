@@ -6,7 +6,7 @@ import '../player/game_state.dart' show kVisitedCellsKey, saveSchemaVersion;
 
 typedef _Step = Map<String, dynamic> Function(Map<String, dynamic>);
 
-final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8, 8: _v8ToV9};
+final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8, 8: _v8ToV9, 9: _v9ToV10};
 
 /// Leva [json] ao schema atual. Um save de versão futura passa sem mudar.
 Map<String, dynamic> migrateSave(Map<String, dynamic> json) {
@@ -155,5 +155,14 @@ Map<String, dynamic> _v8ToV9(Map<String, dynamic> j) {
         return {...m, 'when': ({for (final w in when) ...moved[w] ?? [w]}.toList()..sort())};
       }(),
   };
+  return out;
+}
+
+/// v9 não tinha qualidade nem o bloco `crafting` (docs/GDD.md, "Regras da fase 1"). As pilhas antigas usam o id puro, que
+/// já é a pilha comum: todo material antigo vira comum sem mudar uma chave. O bloco entra vazio: nenhum recipiente, as
+/// receitas de começo (`discovery: start`) valem sem estar na lista, nada equipado (bolsa de 40 e cinto de 3 da base).
+Map<String, dynamic> _v9ToV10(Map<String, dynamic> j) {
+  final out = {...j};
+  out['crafting'] ??= <String, dynamic>{'vessels': <dynamic>[], 'known': <dynamic>[], 'pages': <dynamic>[], 'pins': <dynamic>[], 'equipped': <String, dynamic>{}, 'looks': <String, dynamic>{}, 'hidden': <dynamic>[], 'next_uid': 1};
   return out;
 }

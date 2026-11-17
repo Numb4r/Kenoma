@@ -14,6 +14,7 @@ abstract final class PhoneAppId {
   static const circle = 'circle';
   static const bag = 'bag';
   static const bench = 'bench';
+  static const loadout = 'loadout';
   static const chat = 'chat';
   static const forum = 'forum';
   static const profile = 'profile';
@@ -31,6 +32,7 @@ const Map<String, String> phoneAppLabels = {
   PhoneAppId.circle: 'Círculo',
   PhoneAppId.bag: 'Bolsa',
   PhoneAppId.bench: 'Bancada',
+  PhoneAppId.loadout: 'Loadout',
   PhoneAppId.chat: 'Chat',
   PhoneAppId.forum: 'Fórum',
   PhoneAppId.profile: 'Perfil',

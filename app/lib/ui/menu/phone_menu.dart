@@ -7,10 +7,12 @@ import 'package:flutter/material.dart';
 import '../../data/climate_catalog.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
-import '../collection/collection_screen.dart';
+import '../craft/bag_screen.dart';
+import '../craft/bench_screen.dart';
+import '../craft/craft_context.dart';
+import '../craft/loadout_screen.dart';
 import '../pressable.dart';
 import '../tema.dart';
-import 'bench_screen.dart';
 import 'bestiary_screen.dart';
 import 'chat_screen.dart';
 import 'circle_screen.dart';
@@ -84,6 +86,7 @@ Future<void> showPhoneMenu(
   required int Function() epochId,
   ClimateInfo Function()? weather,
   double Function()? lat,
+  CraftContext Function()? craft,
 }) {
   final status = PhoneStatusSource(nowUtc: nowUtc, lat: lat ?? () => 0, weather: weather);
   phoneStatusSource = status;
@@ -91,14 +94,16 @@ Future<void> showPhoneMenu(
   // saído da árvore quando o HUD se reorganiza (faixa da Patrulha, corrida), e Navigator.of nele falharia.
   var sheet = context;
   NavigatorState nav() => Navigator.of(sheet.mounted ? sheet : context);
+  CraftContext ctx() => craft?.call() ?? CraftContext.offline(nowUtc);
 
   void open(String id) {
     final screen = switch (id) {
       PhoneAppId.radar => radar(),
       PhoneAppId.bestiary => BestiaryScreen(state: state, data: data),
       PhoneAppId.circle => CircleScreen(state: state, data: data),
-      PhoneAppId.bag => CollectionScreen(state: state, data: data),
-      PhoneAppId.bench => BenchScreen(state: state, data: data),
+      PhoneAppId.bag => BagScreen(state: state, data: data, ctx: ctx(), onOpenRecipe: (r) => nav().push(phoneRoute<void>(CraftBenchScreen(state: state, data: data, ctx: ctx(), openRecipe: r)))),
+      PhoneAppId.bench => CraftBenchScreen(state: state, data: data, ctx: ctx()),
+      PhoneAppId.loadout => LoadoutScreen(state: state, data: data, nowUtc: nowUtc),
       PhoneAppId.chat => ChatScreen(state: state, data: data),
       PhoneAppId.forum => ForumScreen(state: state, data: data, nowUtc: nowUtc, epochId: epochId),
       PhoneAppId.profile => ProfileScreen(

@@ -18,7 +18,7 @@ import '../../ritual/ritual_research_panel.dart';
 import '../../sprites/sprite_image.dart';
 import '../../tema.dart';
 import '../../type_label.dart';
-import '../bench_screen.dart';
+import '../distill_screen.dart';
 import '../phone_shell.dart';
 import '../screen_frame.dart' show SpeciesImage;
 import 'bestiary_widgets.dart';
@@ -181,7 +181,7 @@ class _SpeciesDetailScreenState extends State<SpeciesDetailScreen> {
                     key: const Key('detail-fuse'),
                     label: form.layer == FormLayer.eco ? 'Fundir $owned/${widget.state.cb.fusionEcoCount}' : 'Fundir',
                     onTap: form.layer == FormLayer.eco && owned > 0
-                        ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => BenchScreen(state: widget.state, data: widget.data, openFusion: true)))
+                        ? () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => DistillScreen(state: widget.state, data: widget.data, openFusion: true)))
                         : null,
                   ),
                 ),

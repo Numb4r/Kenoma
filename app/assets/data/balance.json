@@ -88,7 +88,7 @@
   "power": { "base": { "eco": 10, "spirit": 40 }, "per_level": { "eco": 2, "spirit": 3 } },
   "talent": { "points_per_level": 1 },
   "distill": { "eco_yield": [ { "from": 1, "to": 7, "value": 3 }, { "from": 8, "to": 14, "value": 4 }, { "from": 15, "to": 20, "value": 5 } ] },
-  "phone": { "apps": [ { "id": "vision", "unlock_level": 1 }, { "id": "radar", "unlock_level": 5 }, { "id": "bestiary", "unlock_level": 1 }, { "id": "circle", "unlock_level": 1 }, { "id": "bag", "unlock_level": 1 }, { "id": "bench", "unlock_level": 2 }, { "id": "chat", "unlock_level": 2 }, { "id": "forum", "unlock_level": 2 }, { "id": "profile", "unlock_level": 1 }, { "id": "routes", "unlock_level": 1 }, { "id": "patrol", "unlock_level": 1 }, { "id": "sky", "unlock_level": 1 }, { "id": "settings", "unlock_level": 1 } ] },
+  "phone": { "apps": [ { "id": "vision", "unlock_level": 1 }, { "id": "radar", "unlock_level": 5 }, { "id": "bestiary", "unlock_level": 1 }, { "id": "circle", "unlock_level": 1 }, { "id": "bag", "unlock_level": 1 }, { "id": "loadout", "unlock_level": 1 },{ "id": "bench", "unlock_level": 2 }, { "id": "chat", "unlock_level": 2 }, { "id": "forum", "unlock_level": 2 }, { "id": "profile", "unlock_level": 1 }, { "id": "routes", "unlock_level": 1 }, { "id": "patrol", "unlock_level": 1 }, { "id": "sky", "unlock_level": 1 }, { "id": "settings", "unlock_level": 1 } ] },
   "steps": { "per_spark": 1000, "max_jump": 20000, "daily_cap": 12000, "milestones": [5000, 10000], "boot_tolerance_s": 120 },
   "patrol": {
     "gps_interval_s": 10, "gps_distance_m": 15, "max_hours_default": 2, "max_hours_limit": 4, "battery_min_pct": 20, "gps_timeout_s": 600,
@@ -121,5 +121,38 @@
     "ride": { "urban_speed_mps": 7, "eta_default_min": 5, "eta_max_min": 60, "car_tries": 8, "board_s": 1.2, "leave_s": 8, "leave_speed_mps": 10 },
     "search": { "min_interval_s": 1, "viewbox_deg": 0.2, "limit": 5, "timeout_s": 6 }
   },
-  "start_inventory": { "item.seal.simple": 5, "item.chalk": 3 }
+  "start_inventory": { "item.seal.simple": 5, "item.chalk": 3 },
+  "crafting": {
+    "bag": { "base_slots": 40, "stack": 99, "discard_per_dust": 5 },
+    "unlock_levels": { "recipe.bag.satchel": 8, "recipe.bag.deep": 15 },
+    "bench_level": 5,
+    "experiment_slots": 3,
+    "conditions": { "water_m": 150, "night_sun_deg": -6, "strong_sun_deg": 35 },
+    "collectors": {
+      "belt_slots": 3, "planted_slots": 3, "planted_gap_m": 100,
+      "rules": [
+        { "id": "glass.drizzle", "vessels": ["item.vessel.glass"], "climates": ["drizzle", "prismatic_drizzle"], "out": "item.rain_water", "quality": "common", "carry_s": 300, "planted_s": 1200 },
+        { "id": "glass.rain", "vessels": ["item.vessel.glass"], "climates": ["rain", "freezing_rain", "deluge"], "out": "item.rain_water", "quality": "good", "carry_s": 300, "planted_s": 1200 },
+        { "id": "glass.storm", "vessels": ["item.vessel.glass"], "climates": ["storm", "hurricane"], "out": "item.rain_water", "quality": "perfect", "carry_s": 300, "planted_s": 1200 },
+        { "id": "glass.veil_snow", "vessels": ["item.vessel.glass"], "climates": ["veil_snow"], "out": "item.snow", "quality": "common", "carry_s": 300, "planted_s": 1200 },
+        { "id": "glass.snow", "vessels": ["item.vessel.glass"], "climates": ["snow"], "out": "item.snow", "quality": "good", "carry_s": 300, "planted_s": 1200 },
+        { "id": "glass.blizzard", "vessels": ["item.vessel.glass"], "climates": ["blizzard"], "out": "item.snow", "quality": "perfect", "carry_s": 300, "planted_s": 1200 },
+        { "id": "thermal.veil_snow", "vessels": ["item.vessel.thermal"], "climates": ["veil_snow"], "out": "item.snow", "quality": "common", "carry_s": 300, "planted_s": 1200 },
+        { "id": "thermal.snow", "vessels": ["item.vessel.thermal"], "climates": ["snow"], "out": "item.snow", "quality": "good", "carry_s": 300, "planted_s": 1200 },
+        { "id": "thermal.blizzard", "vessels": ["item.vessel.thermal"], "climates": ["blizzard"], "out": "item.snow", "quality": "perfect", "carry_s": 300, "planted_s": 1200 },
+        { "id": "dark.moon", "vessels": ["item.vessel.dark"], "night": true, "out": "item.moonlight.{moon}", "quality": "common", "carry_s": 300, "planted_s": 21600 },
+        { "id": "candle.ash", "vessels": ["item.vessel.candle"], "climates": ["veil_ash"], "events": ["noite_das_fendas"], "out": "item.rift_smoke", "quality": "common", "carry_s": 300, "planted_s": 1200 }
+      ]
+    },
+    "quality": {
+      "raw": {
+        "item.herbs": { "biomes": ["green"], "moon": ["full"] },
+        "item.pure_water": { "biomes": ["water"] },
+        "item.chalk": { "biomes": ["sacred"] },
+        "item.ectoplasm": { "biomes": ["sacred"] },
+        "item.scrap": { "biomes": ["urban"] }
+      },
+      "effects": { "seal_tolerance": [1, 1.15, 1.3], "duration": [1, 1.25, 1.5] }
+    }
+  }
 }

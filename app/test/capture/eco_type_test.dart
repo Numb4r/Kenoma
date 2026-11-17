@@ -62,7 +62,8 @@ void main() {
   });
 
   test('tolerância: o selo de cada um dos 12 tipos ganha o multiplicador contra todo tipo que o tipo dele vence, e só contra eles', () {
-    final typed = {for (final s in seals) if (s.type != null) s.type!: s};
+    // Os selos de tipo da Bancada (`item.seal.<tipo>`); os de lua da 0.24.0 têm outra tolerância.
+    final typed = {for (final s in seals) if (s.type != null && s.id == 'item.seal.${s.type!.name}') s.type!: s};
     expect(typed.keys.toSet(), EcoType.values.toSet());
     final simple = seals.firstWhere((s) => s.id == 'item.seal.simple');
     for (final t in EcoType.values) {

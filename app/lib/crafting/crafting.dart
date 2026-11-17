@@ -8,6 +8,7 @@ import '../data/game_data.dart';
 import '../player/circle.dart';
 import '../player/game_state.dart';
 import '../player/progress_balance.dart';
+import 'quality.dart';
 
 /// As Essências de tipo, na ordem usada para desempatar: as três do MVP na ordem de sempre e depois as nove da fase 1.
 final List<String> essenceIds = [
@@ -42,7 +43,10 @@ bool canCraft(GameState s, Recipe r) => craftPlan(s, r) != null;
 /// Fabrica a receita. `false` se falta algum ingrediente (nada é gasto).
 bool craftRecipe(GameState s, Recipe r) {
   final plan = craftPlan(s, r);
-  if (plan == null || !s.craft(plan, r.outId, r.outQty)) return false;
+  final stacks = plan == null ? null : s.stacksFor(plan);
+  // O resultado herda o pior ingrediente.
+  final q = stacks == null || stacks.isEmpty ? Quality.common : Quality.worst(stacks.keys.map((k) => parseStack(k).q));
+  if (plan == null || !s.craft(plan, r.outId, r.outQty, q: q)) return false;
   s.recordEvent('craft', r.id, 1);
   return true;
 }

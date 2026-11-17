@@ -27,7 +27,7 @@ void main() {
   test('v8 vira v9: a Chuva Carmim e a Garoa Prismática do Bestiário viram o evento e o clima embaixo', () {
     final old = v8();
     final out = migrateSave(old);
-    expect(out['schema_version'], 9);
+    expect(out['schema_version'], saveSchemaVersion);
     final b = out['bestiary'] as Map<String, dynamic>;
     expect((b['wyrm.eco'] as Map)['when'], ['climate:crimson_moon', 'climate:rain', 'night']);
     expect((b['shade.eco'] as Map)['when'], ['climate:drizzle', 'climate:fog', 'climate:veil_prism', 'day']);

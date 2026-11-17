@@ -24,6 +24,12 @@ import '../../world/climate_world.dart' show nearestPuddle;
 import '../../core/weather.dart';
 import '../../core/astro.dart' show moonPhase;
 import '../../core/species_ids.dart' show isRitualOnlyId;
+import '../../crafting/collector_tick.dart';
+import '../craft/craft_context.dart';
+import '../craft/planted_list.dart';
+import '../craft/ui_art.dart';
+import '../../crafting/collectors.dart';
+import '../../crafting/crafting_state.dart';
 import '../../crafting/ritual_data.dart';
 import '../ritual/ritual_screen.dart';
 import '../../net/region_catalog.dart' show RegionEntry;
@@ -254,6 +260,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _tickLayers(r, st);
     _optionalSensors(r, st, now);
     _patrol?.tick();
+    if (_collectorsIn-- <= 0) {
+      _collectorsIn = 10;
+      _tickCollectors(r, st, now);
+    }
     _radioTick(r, now);
     if (tools.force.rainbowJumpPending) _pendingRainbowJump(r);
     if (_weatherIn-- <= 0 || tools.force.simulating) {
@@ -264,6 +274,48 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   }
 
   String? _radioSaid;
+  int _collectorsIn = 0;
+  int _bagFullToastUtc = 0;
+
+  /// A cada 10 s: as garrafas do cinto enchem com a condição em volta do jogador e os plantados seguem a conta do lugar.
+  void _tickCollectors(_Ready r, GameState st, int now) {
+    if (st.crafting.vessels.isEmpty || !r.world.hasPlayer) return;
+    final news = tickCollectors(st, r.data.craft,
+        hereAt: (lat, lon, t) => r.world.here(lat, lon, t, waterSearchM: 0), lat: r.game.playerLat, lon: r.game.playerLon, now: now, dtS: 10);
+    for (final v in news.belt) {
+      _toast('Garrafa cheia: ${r.data.itemName(v.content!)} (${v.quality.label})');
+    }
+    for (final v in news.planted) {
+      _toast('Coletor plantado cheio: ${r.data.itemName(v.content!)} (${v.quality.label})');
+    }
+  }
+
+  /// A condição de agora e aqui para a Bolsa, a Bancada e os plantados: o mesmo mundo do mapa.
+  CraftContext _craftContext(_Ready r) => CraftContext(
+        nowUtc: () => tools.clock.nowUtc,
+        here: () => r.world.here(r.game.playerLat, r.game.playerLon, tools.clock.nowUtc, waterSearchM: r.data.craft.balance.waterNearM * 2),
+        hereAt: (lat, lon, t) => r.world.here(lat, lon, t, waterSearchM: 0),
+        speedMps: () => r.game.avatar.speedMps,
+        walkMaxMps: r.data.patrol.walkMaxMps,
+        touchM: r.world.touchRangeM,
+        climateName: (id) => r.data.climates.of(id).name,
+      );
+
+  /// Toque num coletor plantado: de perto colhe (cinto se houver espaço, senão bolsa); de longe diz a distância.
+  void _tapCollector(_Ready r, Vessel v) {
+    final st = r.session.state;
+    final d = metersBetween(r.game.playerLat, r.game.playerLon, v.lat, v.lon);
+    final what = v.content == null ? 'vazio' : '${r.data.itemName(v.content!)} (${v.quality.label})';
+    if (!harvest(st, v, d, r.world.touchRangeM, r.data.craft, tools.clock.nowUtc)) return _toast('Coletor a ${d.round()} m ($what): chegue perto para colher');
+    _toast(v.place == VesselPlace.belt ? 'Colhido para o cinto: $what' : 'Colhido para a bolsa: $what');
+  }
+
+  void _onBagFull() {
+    final now = tools.clock.nowUtc;
+    if (now - _bagFullToastUtc < 20) return; // a Fagulha na Aura tenta a cada quadro
+    _bagFullToastUtc = now;
+    _toast('Bolsa cheia: descarte algo ou faça uma bolsa maior');
+  }
 
   /// O Rádio do Véu mora no app Rotas; no mapa, cada fala nova sai uma vez no aviso.
   void _radioTick(_Ready r, int now) {
@@ -486,6 +538,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       return;
     }
     if (r.travel.tapCell(cellX, cellY) || r.travel.quiet) return; // escolheu o destino, ou o mundo está calado
+    if (r.game.collectorAt(at) case final v?) return _tapCollector(r, v);
     final spawn = r.game.spawnAt(at);
     if (spawn == null) return;
     switch (r.world.touch(spawn, tools.clock.nowUtc)) {
@@ -500,6 +553,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         await _startEncounter(spawn);
       case TouchResult.ritual:
         break; // o WorldView já chamou onRitualTarget (_startRitual)
+      case TouchResult.bagFull:
+        break; // o WorldView já avisou (onBagFull)
     }
   }
 
@@ -802,6 +857,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     game.onWalked = _onWalked;
     world.onRitualTarget = _startRitual;
     world.onCollected = game.onCollected;
+    world.onBagFull = _onBagFull;
+    unawaited(UiArt.load()); // os ícones dos coletores plantados no mapa
     world.onShiny = _onShiny;
     world.onEnteredRange = _onEnteredRange;
     _climate = ClimateDriver(data: data, world: climate, online: () => session.state.setting('weather_online'));
@@ -992,6 +1049,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             onSweep: () => r.world.radar(tools.clock.nowUtc),
             echoes: r.world.sonar,
             rotation: () => r.game.follow.rotation,
+            planted: PlantedList(state: r.session.state, data: r.data, ctx: _craftContext(r)),
           ),
         PhoneAppId.routes => RoutesScreen(
             travel: r.travel,
@@ -1002,6 +1060,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             playerLon: () => r.game.playerLon,
             onMessage: _toast,
             onPickOnMap: _backToMap,
+            planted: PlantedList(state: r.session.state, data: r.data, ctx: _craftContext(r)),
           ),
         PhoneAppId.patrol => PatrolScreen(state: r.session.state, balance: r.data.patrol, onMessage: _toast),
         PhoneAppId.sky => SkyScreen(
@@ -1315,6 +1374,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                 weather: () => _climate!.info,
                 lat: () => game.playerLat,
                 epochId: () => r.data.schedule.select(tools.clock.nowUtc).epoch.id,
+                craft: () => _craftContext(r),
               ),
             ),
           ),

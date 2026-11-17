@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/ui/collection/collection_screen.dart';
-import 'package:kenoma/ui/menu/bench_screen.dart';
+import 'package:kenoma/ui/menu/distill_screen.dart';
 import 'package:kenoma/ui/menu/fusion_animation.dart';
 import 'package:kenoma/ui/menu/fusion_screen.dart';
 
@@ -29,7 +29,7 @@ void main() {
   group('Bancada', () {
     testWidgets('antes do nível 6 a aba da fusão é um ??? e abre o aviso do nível', (tester) async {
       await tall(tester);
-      await tester.pumpWidget(MaterialApp(home: BenchScreen(state: make(5), data: data)));
+      await tester.pumpWidget(MaterialApp(home: DistillScreen(state: make(5), data: data)));
       await tester.pump();
       expect(find.text('FUSÃO'), findsNothing);
       await tester.tap(find.text('???'));
@@ -41,7 +41,7 @@ void main() {
     testWidgets('no nível 6 a aba mostra a fusão e o botão só liga com 5 Ecos escolhidos', (tester) async {
       await tall(tester);
       final s = make(6);
-      await tester.pumpWidget(MaterialApp(home: BenchScreen(state: s, data: data)));
+      await tester.pumpWidget(MaterialApp(home: DistillScreen(state: s, data: data)));
       await tester.pump();
       await tester.tap(find.text('FUSÃO'));
       await tester.pump();
@@ -76,7 +76,7 @@ void main() {
     testWidgets('Eco no Círculo: aviso na tela e confirmação antes de fundir', (tester) async {
       await tall(tester);
       final s = make(6)..toggleCircle('e2');
-      await tester.pumpWidget(MaterialApp(home: BenchScreen(state: s, data: data)));
+      await tester.pumpWidget(MaterialApp(home: DistillScreen(state: s, data: data)));
       await tester.pump();
       await tester.tap(find.text('FUSÃO'));
       await tester.pump();

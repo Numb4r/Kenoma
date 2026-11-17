@@ -23,6 +23,7 @@ class RoutesScreen extends StatelessWidget {
     required this.playerLon,
     required this.onMessage,
     required this.onPickOnMap,
+    this.planted,
     super.key,
   });
 
@@ -37,6 +38,9 @@ class RoutesScreen extends StatelessWidget {
   /// Fecha o celular para o jogador tocar o destino no mapa.
   final VoidCallback onPickOnMap;
 
+  /// Os coletores plantados com distância e estado: o plantio vira rota.
+  final Widget? planted;
+
   @override
   Widget build(BuildContext context) => ScreenFrame(title: 'Rotas', children: [
         TravelOverlay(
@@ -50,6 +54,7 @@ class RoutesScreen extends StatelessWidget {
           embedded: true,
           onPickOnMap: onPickOnMap,
         ),
+        if (planted != null) ...[const SizedBox(height: 12), planted!],
         const SizedBox(height: 8),
         ListenableBuilder(
           listenable: state,

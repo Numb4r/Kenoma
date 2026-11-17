@@ -126,6 +126,7 @@ class PatrolTaskHandler extends TaskHandler {
         streetAt: world.streetAt,
         recordCells: config.sim == null && !emulator,
         speciesName: (id) => world.data.species(id)?.name ?? id,
+        craft: world.data.craft,
       );
       _write([engine.startLine(extra: {..._steps(await _sensors.readSteps()), if (config.sim != null) 'sim': true, if (sandbox) 'sandbox': true})]);
       await _notes.initialize(settings: const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')));

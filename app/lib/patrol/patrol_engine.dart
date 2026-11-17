@@ -16,6 +16,9 @@ import 'dart:math' as math;
 
 import '../core/species_ids.dart';
 import '../core/tiles.dart';
+import '../crafting/collector_tick.dart';
+import '../crafting/crafting_data.dart';
+import '../crafting/quality.dart';
 import '../player/game_state.dart';
 import '../player/mark.dart';
 import '../world/geo_fix.dart';
@@ -90,9 +93,10 @@ class PatrolEngine {
     this.streetAt,
     this.recordCells = true,
     this.speciesName,
+    this.craft,
   }) {
     world.quiet = () => mode != PatrolMode.walking;
-    world.onCollected = (s) => _pending?.lines.add({'k': s.kind, 'uid': GameState.uidKey(s.uid), 't': _now, 'item': s.entryId, 'q': s.quantity});
+    world.onCollected = (s) => _pending?.lines.add({'k': s.kind, 'uid': GameState.uidKey(s.uid), 't': _now, 'item': s.entryId, 'q': s.quantity, if (world.lastPickQuality != Quality.common) 'ql': world.lastPickQuality.name});
   }
 
   final WorldView world;
@@ -114,6 +118,10 @@ class PatrolEngine {
 
   /// As espécies marcadas que já foram avisadas (uma vez por Eco).
   final _pinNoticed = <int>{};
+
+  /// O crafting: com ele, as garrafas do cinto enchem durante a Patrulha e ela avisa quando um plantado enche.
+  final CraftingBook? craft;
+  int _collectorsUtc = 0;
 
   PatrolMode mode = PatrolMode.walking;
   bool? _passenger;
@@ -174,6 +182,7 @@ class PatrolEngine {
         if (s.isMaterial && world.inAura(s) && world.touch(s, nowUtc) == TouchResult.collected) materials += s.quantity;
       }
     }
+    _collectors(f, nowUtc, out);
     if (mode == PatrolMode.walking || mode == PatrolMode.passenger) {
       _mark(nowUtc, out);
       _pinned(out);
@@ -188,6 +197,24 @@ class PatrolEngine {
     }
     _pending = null;
     return out;
+  }
+
+  /// A cada 30 s: o cinto enche com a condição em volta (vale em qualquer modo: a chuva cai no carro também) e os plantados
+  /// seguem a conta do lugar. Garrafa cheia vai para o diário; plantado cheio vibra e avisa numa notificação.
+  void _collectors(GeoFix f, int nowUtc, PatrolOutput out) {
+    final book = craft;
+    if (book == null || state.crafting.vessels.isEmpty || nowUtc - _collectorsUtc < 30) return;
+    final dt = _collectorsUtc == 0 ? 30.0 : (nowUtc - _collectorsUtc).toDouble();
+    _collectorsUtc = nowUtc;
+    final news = tickCollectors(state, book, hereAt: (lat, lon, t) => world.here(lat, lon, t, waterSearchM: 0), lat: f.lat, lon: f.lon, now: nowUtc, dtS: dt);
+    for (final v in news.belt) {
+      out.lines.add({'k': 'vessel', 'uid': v.uid, 't': nowUtc, 'content': v.content, 'ql': v.quality.name, 'filled': v.filledUtc});
+    }
+    for (final v in news.planted) {
+      out.lines.add({'k': 'planted_full', 'uid': v.uid, 't': nowUtc});
+      out.vibrations.add(balance.vibrateRareMs);
+      out.rare.add((uid: -v.uid, text: 'Coletor plantado cheio: ${book.items[v.content]?.name ?? v.content} (${v.quality.label})'));
+    }
   }
 
   /// Uma vez a cada `tick_s`: o tempo máximo e o GPS calado.

@@ -12,7 +12,7 @@ class MentorRequirement {
 }
 
 class MentorMessage {
-  const MentorMessage({required this.id, required this.afterS, required this.text, this.requires, this.from = 'mentor', this.action});
+  const MentorMessage({required this.id, required this.afterS, required this.text, this.requires, this.from = 'mentor', this.action, this.page});
 
   factory MentorMessage.fromJson(Map<String, dynamic> j, {String from = 'mentor'}) => MentorMessage(
         id: j['id'] as String,
@@ -20,6 +20,7 @@ class MentorMessage {
         afterS: ((j['after_s'] as num?) ?? 0).toDouble(),
         text: j['text'] as String,
         action: j['action'] as String?,
+        page: j['page'] as String?,
         requires: j['requires'] == null
             ? null
             : MentorRequirement(event: (j['requires'] as Map<String, dynamic>)['event'] as String, min: (j['requires'] as Map<String, dynamic>)['min'] as int),
@@ -38,6 +39,9 @@ class MentorMessage {
 
   /// Botão opcional que o Chat mostra embaixo da mensagem (`school_tests`: abre os testes de escola).
   final String? action;
+
+  /// A página de grimório que a mensagem entrega (`page.moon`): a quest do mentor do crafting da fase 1.
+  final String? page;
 }
 
 class MentorScript {

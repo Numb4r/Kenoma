@@ -19,3 +19,8 @@
   jeito: `git archive a70e6f7 app shared` numa pasta temporária, e lá um teste descartável abriu `save_v6_0191.json`
   numa `GameSession`, capturou um Humoth, viu um Umbrel à noite, marcou o Umbrel no Bestiário (`bestiary_pin`) e gravou.
   É a base de `test/save/migration_v8_test.dart` (a marca única vira a lista `bestiary_pins`).
+- `save_v9_0232.json`: save do schema 9 gravado pelo código real da 0.23.2 (commit f3a0670, build 0.23.2+43), do mesmo
+  jeito: `git archive f3a0670 app shared` numa pasta temporária, e lá um teste descartável abriu `save_v7_0200.json`
+  numa `GameSession` (as migrações da 0.23.2 o levaram ao 9), pôs na Bolsa giz, ervas, água pura, ectoplasma, cristal de
+  gelo, fragmento de luz, sucata, Essência de Água e Pó de Sombra, fabricou um Selo simples e gravou. É a base de
+  `test/save/migration_v10_test.dart` (todo material antigo vira comum e entra o bloco `crafting`).
