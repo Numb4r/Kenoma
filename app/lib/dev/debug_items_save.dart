@@ -25,6 +25,23 @@ const String kDeleteWord = 'APAGAR';
 /// Apaga o save de [store]: as três cópias, o legado e as sobras. Na memória (testes), zera o JSON.
 Future<void> deleteSave(SaveStore store) => store.wipe();
 
+/// Grava uma chave dos Ajustes ([value] `null` apaga): no save do mapa aberto (o mapa sobrescreveria uma gravação por
+/// baixo) ou, sem mapa, no do disco.
+Future<void> writeSetting(Future<SaveStore> Function() openSave, String key, Object? value) async {
+  final live = liveGameState();
+  if (live != null) {
+    value == null ? live.settings.remove(key) : live.settings[key] = value;
+    live.changed();
+    return;
+  }
+  final store = await openSave();
+  final json = {...?await store.read()};
+  final settings = {...?(json['settings'] as Map<String, dynamic>?)};
+  value == null ? settings.remove(key) : settings[key] = value;
+  json['settings'] = settings;
+  await store.write(json);
+}
+
 List<DebugItem> signatureItems(DebugEnv env) => [
       DebugItem(
         id: 'sign.identity',
@@ -276,13 +293,8 @@ class _DevOptionsState extends State<_DevOptions> {
 
   Future<void> _set(bool v) async {
     setState(() => _on = v);
-    final live = liveGameState();
-    if (live != null) return live.setSetting(kDevOptionsSetting, v);
     try {
-      final store = await widget.env.openSave();
-      final json = {...?await store.read()};
-      json['settings'] = {...?(json['settings'] as Map<String, dynamic>?), kDevOptionsSetting: v};
-      await store.write(json);
+      await writeSetting(widget.env.openSave, kDevOptionsSetting, v);
     } catch (_) {
       // sem disco: vale só até fechar o menu
     }
