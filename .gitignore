@@ -5,3 +5,7 @@ workbench/clips/
 workbench/shots/
 workbench/notes.json
 workbench/.wb_pass
+
+# Logs de sessão do Claude Code (0.22.2)
+.claude/logs/
+**/.claude/logs/
