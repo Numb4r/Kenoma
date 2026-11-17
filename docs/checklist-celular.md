@@ -1,7 +1,7 @@
 # Checklist do celular
 
 O que precisa ser conferido no moto g54 quando a versão for instalada nele. É cumulativo: cobre tudo desde a última versão
-que está no celular (hoje a **0.23.0**, instalada em 2026-11-17 por cima da 0.22.1, com o save mantido; a 0.22.2 nunca foi para o celular, então os itens dela continuam; a 0.23.1 entra quando for instalada; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
+que está no celular (hoje a **0.23.2**, instalada em 2026-11-17 por cima da 0.23.1 (e esta da 0.23.0, que entrou por cima da 0.22.1), com o save mantido; a 0.22.2 nunca foi para o celular, então os itens dela continuam; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
 dela. **Um item só sai daqui quando o relatório confirmar que passou.** A ordem vai da versão mais nova para a mais antiga;
 as pendências antigas ficam no fim. O código entre crases é o id do item (o workbench guarda as notas por ele: não mude).
 
@@ -9,12 +9,19 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.23.2
+
+- [ ] `0232-pinca` **Chão na pinça.** Dando zoom devagar com dois dedos no Centro: o chão (calçada portuguesa, faixas, ladrilho) não estica mais durante o gesto; o pixel muda de tamanho em passos pequenos (6%) e volta à grade nítida ao soltar.
+- [ ] `0232-topo` **HUD no topo.** Na tela cheia, sem faixa preta acima do HUD: a barra começa no topo da tela, a hora e a bateria à esquerda do furo da câmera, o selo à direita. Com "Barras do Android" ligado, o HUD fica embaixo da barra de status, como antes.
+- [ ] `0232-nevoa` **Névoa curta.** A passagem do céu para o mapa é uma faixa curta de pontos soltos, sem xadrez nem grade, sobre telhado claro e sobre grama.
+- [ ] `0232-sombra` **Sombras translúcidas.** De manhã ou no fim da tarde (relógio do debug), no estacionamento do Dom Pedro: a sombra dos prédios escurece o asfalto e deixa ver as vagas, a grama e a calçada. O shopping, com o centro fora da tela, continua com telhado e parede (antes sobrava só a planta escura no chão).
+
 ## 0.23.1
 
 - [ ] `0231-giro-sprites` **Árvore e telhado de pé.** Debug, "Giro dos objetos", girando o mapa com o dedo devagar: a copa de cada árvore e de cada ipê não muda de forma (a sombra também não, só muda de lado com o sol), e a caixa d'água, o ar-condicionado e a antena ficam no mesmo ponto do telhado e de pé. Pare a 30° e tire uma foto.
 - [ ] `0231-chao` **O chão pelo uso do solo.** Num estacionamento (o do Shopping Iguatemi ou de um supermercado), num terreno baldio e numa rua de bairro: o estacionamento é asfalto com vagas, o terreno é terra com mato, o bairro tem o chão do lote, e ladrilho só em praça e calçadão. Nada de piso branco paginado ao longo das avenidas.
 - [ ] `0231-calcada` **Calçada.** No Centro, a calçada portuguesa (ondas pretas e brancas); fora dele, concreto liso com junta discreta, sem a faixa grossa.
-- [ ] `0231-pixel` **Mesma grade de pixel.** Parado e logo depois de girar e de dar zoom: paredes, telhados, chão e Ecos com o mesmo tamanho de pixel, nítidos, nada borrado ou esticado. Se ainda aparecer, uma foto de perto e o que estava fazendo (girando, pinçando ou parado).
+- [ ] `0231-pixel` **Mesma grade de pixel.** (Medido em 2026-11-17 na 0.23.1: o borrão era o chão no meio do giro e da pinça, refeito em menos de 1 s ao soltar; a 0.23.2 refaz o chão em passos de zoom na pinça, item `0232-pinca`.) Parado e logo depois de girar e de dar zoom: paredes, telhados, chão e Ecos com o mesmo tamanho de pixel, nítidos, nada borrado ou esticado. Se ainda aparecer, uma foto de perto e o que estava fazendo (girando, pinçando ou parado).
 - [ ] `0231-paredes` **Prédio alto.** Perto de um prédio alto do Centro, na borda da tela e no meio: a parede escura se lê como lado de prédio e não cobre a rua inteira (o telhado sai no máximo um quarto da distância do centro da tela até a borda).
 - [ ] `0231-materiais` **Materiais.** Os quadrados cinza e brancos viraram sprites (engrenagem de sucata, giz, ervas, frasco de água...): leem bem ao sol e não se confundem com Fagulha nem Eco.
 - [ ] `0231-tela-cheia` **Tela cheia.** Sem barra de status e de navegação no mapa, na sintonia e no celular do jogo; um deslize da borda mostra as barras, que somem de novo sozinhas. O HUD fica fora do recorte da câmera, a bateria aparece ao lado da hora (laranja com 20% ou menos) e o céu aparece inteiro embaixo da barra do HUD. Ajustes, "Barras do Android" ligado: as barras voltam e o mapa não passa por baixo delas.

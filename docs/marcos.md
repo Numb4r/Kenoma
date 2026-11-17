@@ -937,3 +937,20 @@ O `criativo` decidiu a arte (`map_style.dart`, `material_sprites.dart`); o códi
 ### Testes
 
 Novos: `test/ui/upright_turn_test.dart`, `test/ui/material_sprites_test.dart`, `test/data/ground_pack_test.dart`, `test/ui/hud_battery_test.dart`, o teto da Shade em `test/world/personal_layer_test.dart`, o teto do telhado em `test/world/lab_block_test.dart`, a época em 2099 em `test/core/epochs_test.dart`, o mapa abaixo da barra em `test/ui/game_map_screen_test.dart`, "Barras do Android" em `test/ui/settings_screen_test.dart` e o filtro de fantasmas em `pipeline/test_overture.py`. Os testes de interface tiram os nomes dos pacotes de `epochs.json` em vez de escrevê-los à mão; os toques nos testes do mapa somam o canto do mapa (que agora começa embaixo da barra). O teste antigo da árvore em dois giros virou o teste de giro novo.
+
+## Fase 1 · fatia 9f · Ajustes finos do mapa (0.23.2)
+
+Versão 0.23.2+43, mesma chave, save sem mudança. O `criativo` decidiu a névoa e a sombra; o resto é código.
+
+1. **Chão na pinça.** O vídeo da 0.23.1 no celular mostrou que o borrão era o chão no meio do gesto (os blocos do zoom do começo da pinça, esticados) e que sumia ao soltar. Agora, na pinça, os blocos seguem o zoom em passos de 6% a partir do zoom do começo do gesto (`zoomStep`), como o giro em passos de 3 graus: o chão estica no máximo uns 3% até o passo seguinte, e o zoom exato volta um quarto de segundo depois de soltar.
+2. **HUD no topo.** O Android do moto g54 declara como recorte a faixa inteira da barra de status (117 px), mas o furo da câmera é só x 495 a 580. A janela agora desenha atrás do recorte (`windowLayoutInDisplayCutoutMode=shortEdges`, `values-v28`), e na tela cheia o mapa usa o retângulo do furo (`displayFeatures`) em vez da faixa: o HUD sobe até o topo, a parte da esquerda (hora, bateria, lua, clima) termina antes do furo e o selo fica à direita. Com "Barras do Android" ligado, vale a barra de status, como antes.
+3. **Névoa.** A passagem do céu para o mapa ficou numa faixa curta (`max(5, 0,55 × céu)` fileiras, o dobro na neblina, contra 1,4 × céu antes), um ponto por pixel de arte, com limiar de ruído de gradiente intercalado (IGN) no lugar da matriz de Bayer 4 × 4: sem nível de 50% em xadrez e sem grade a cada 4 px (`tools/art/ref/haze_0232_opcoes.png`).
+4. **Sombras.** A chave `shadow` foi de `#1A1424` a 42% para `#161A36` a 30%, e o renderizador usa a cor da chave (antes usava o contorno, quase preto): asfalto 57 → 49 na sombra, grama 118 → 91, calçada 167 → 125, vaga 105 sobre 49. **O "quase preto" do Dom Pedro não era sombra:** o `criativo` mediu a cor (`#312D3A`, opaca, sem vaga por baixo) e ela batia com a planta do prédio no chão. O que fica de pé descartava o prédio cujo centro saía da tela, e o shopping (centro fora da tela) perdia telhado e parede, sobrando só a planta escura. Agora entra todo prédio cujo contorno toca a tela, com a folga do maior deslocamento do telhado.
+
+### Testes
+
+Novos em `test/ui/city_renderer_test.dart`: os passos de zoom na pinça (no máximo meio passo esticado, zoom exato ao soltar), o shopping com o centro fora da tela desenhado, a névoa curta e sem período de 4 px e a sombra com alfa de no máximo 35%. Em `test/ui/game_map_screen_test.dart`: o HUD no topo com o furo do moto g54, a hora, a lua e o clima fora dele. Ajustado: o teste do cache (na pinça, menos de meio passo não refaz; mais, refaz no passo novo).
+
+### Capturas
+
+A 0.23.2 foi instalada no moto g54 (release, `versionName=0.23.2`), mas o celular estava em uso (Chrome em primeiro plano) e depois saiu do USB antes das capturas. Ficam para quando ele voltar: os mesmos lugares da 0.23.1 (Centro a 0° e a 30° com o "Giro dos objetos", o estacionamento do Dom Pedro, o Cambuí, o prédio alto no Centro e o topo da tela com o HUD).
