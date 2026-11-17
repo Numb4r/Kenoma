@@ -1,5 +1,6 @@
 -- Kenoma 0.24.0: gera a arte da Bolsa e da Bancada (molduras em nove partes, pontos de qualidade, ícones de 16 px e o
 -- equipamento do Conjurador) e a folha de contato. Fonte única: as linhas de pixels deste arquivo.
+-- 0.24.1: também escreve out/slices.json, os coletores do mapa (out/map_vessel_*.png) e loadout_icon.txt.
 -- Rodar no Aseprite em lote: aseprite -b --script tools/art/ui/build_ui.lua
 -- Regras do estilo: docs/art/estilo-ui.md.
 local BASE = '/home/yuri/Documentos/kenoma/tools/art/ui/'
@@ -135,7 +136,8 @@ frame('sheet', { 3, 3, 3, 1 }, {
   'PPPPPPPPPPPP',
   'PPPPPPPPPPPP',
 })
-frame('tab_on', { 4, 4, 4, 2 }, {
+-- 0.24.1: a borda é só o que não é cor lisa (2 px nas laterais), porque o texto fica a borda x 3 dp + 3 dp de cada lado.
+frame('tab_on', { 2, 4, 2, 2 }, {
   '..OOOOOOOO..',
   '.OVVVVVVVVO.',
   'OHPPPPPPPPLO',
@@ -147,7 +149,7 @@ frame('tab_on', { 4, 4, 4, 2 }, {
   'OLPPPPPPPPDO',
   'OPPPPPPPPPPO',
 })
-frame('tab_off', { 4, 4, 4, 2 }, {
+frame('tab_off', { 2, 4, 2, 2 }, {
   '............',
   '..OOOOOOOO..',
   '.OLLLLLLLLO.',
@@ -159,7 +161,8 @@ frame('tab_off', { 4, 4, 4, 2 }, {
   'OOOOOOOOOOOO',
   'HHHHHHHHHHHH',
 })
-frame('button', { 3, 3, 3, 3 }, {
+-- As três imagens de botão somam 5 px de borda em cima e embaixo (2+3, 4+1, 2+3): o botão não muda de altura.
+frame('button', { 2, 2, 2, 3 }, {
   '.OOOOOOOOOO.',
   'OHHHHHHHHHHO',
   'OHLLLLLLLLLO',
@@ -167,12 +170,12 @@ frame('button', { 3, 3, 3, 3 }, {
   'OHLLLLLLLLLO',
   'OHLLLLLLLLLO',
   'OHLLLLLLLLLO',
-  'OLLLLLLLLLLO',
+  'OHLLLLLLLLLO',
   'OBBBBBBBBBBO',
   'OBBBBBBBBBBO',
   '.OOOOOOOOOO.',
 })
-frame('button_pressed', { 3, 5, 3, 2 }, {
+frame('button_pressed', { 2, 4, 2, 1 }, {
   '............',
   '............',
   '.OOOOOOOOOO.',
@@ -185,7 +188,7 @@ frame('button_pressed', { 3, 5, 3, 2 }, {
   'ODBBBBBBBBBO',
   '.OOOOOOOOOO.',
 })
-frame('button_disabled', { 3, 3, 3, 3 }, {
+frame('button_disabled', { 2, 2, 2, 3 }, {
   '.OOOOOOOOOO.',
   'OBBBBBBBBBBO',
   'OBBBBBBBBBBO',
@@ -232,17 +235,25 @@ frame('bar_fill', { 1, 1, 1, 1 }, {
   'SSS',
   'ttt',
 })
-frame('chip', { 3, 3, 3, 3 }, {
-  '..OOOOOO..',
-  '.OttttttO.',
-  'OtDDDDDDgO',
-  'OgDDDDDDgO',
-  'OgDDDDDDgO',
-  'OgDDDDDDgO',
-  'OgDDDDDDgO',
-  '.OggggggO.',
-  '..OOOOOO..',
+-- 0.24.1: 8 x 7, chanfro de 1 px e aro de 1 px; a borda de 3 cortava o texto da etiqueta.
+frame('chip', { 2, 2, 2, 2 }, {
+  '.OOOOOO.',
+  'OttttttO',
+  'OtDDDDgO',
+  'OgDDDDgO',
+  'OgDDDDgO',
+  'OggggggO',
+  '.OOOOOO.',
 })
+do
+  local f = assert(io.open(OUT .. 'slices.json', 'w'))
+  f:write('{\n')
+  for i, name in ipairs(frameOrder) do
+    f:write('  "' .. name .. '": [' .. table.concat(frames[name].slice, ', ') .. ']' .. (i < #frameOrder and ',' or '') .. '\n')
+  end
+  f:write('}\n')
+  f:close()
+end
 
 -- ---------------------------------------------------------------- pontos de qualidade
 local DOT = { 'OlO', 'lbd', 'OdO' }
@@ -976,8 +987,97 @@ local player = grid({
   '................',
 }, { O = '1a1424', n = '3a3450', w = '2b2540', m = '56507a', D = '2e8f86', C = '5fd3c6', W = 'cff7f1', k = '22304a', g = '2f5f66' })
 
+-- ---------------------------------------------------------------- coletor plantado no mapa (0.24.1)
+-- Menores que o Conjurador (16 px): quadro de 9 x 10, de pé, centrado, com a base na última linha (o ponto do coletor).
+local function stand(s)
+  local d = { w = 9, h = 10, px = {} }
+  local ox, oy = (9 - s.w) // 2, 10 - s.h
+  for i, c in pairs(s.px) do d.px[(oy + i // s.w) * 9 + ox + i % s.w] = c end
+  return d
+end
+local mapVessels, mapVesselOrder = {}, { 'map_vessel_glass', 'map_vessel_dark', 'map_vessel_candle', 'map_vessel_thermal' }
+local function mapVessel(name, rows)
+  mapVessels[name] = stand(grid(rows, nil, PAL, name))
+  save(mapVessels[name], BASE, OUT, name)
+end
+mapVessel('map_vessel_glass', {
+  '.OOO.',
+  '.OrO.',
+  '.OqO.',
+  'OOqOO',
+  'Oq00O',
+  'Oq00O',
+  'Oq00O',
+  'O000O',
+  '.OOO.',
+})
+mapVessel('map_vessel_dark', {
+  '..OOO..',
+  '..OAO..',
+  '.OONOO.',
+  'OsMNNXO',
+  'OsMNNXO',
+  'OMNNXXO',
+  '.ONXXO.',
+  '..OOO..',
+})
+mapVessel('map_vessel_candle', {
+  '...O...',
+  '..OGO..',
+  'OOOGOOO',
+  'OAeeeCO',
+  'OABBBCO',
+  'OABRBCO',
+  'OBBCCCO',
+  '.OOOOO.',
+})
+mapVessel('map_vessel_thermal', {
+  '..OOO..',
+  '..OrO..',
+  '.OOqOO.',
+  'OttFtFO',
+  'OtFttGO',
+  'OFttFGO',
+  'OttFtGO',
+  'OtFtFGO',
+  'OFFGGGO',
+  '.OOOOO.',
+})
+
+-- ---------------------------------------------------------------- ícone do app Loadout (0.24.1)
+-- Matriz de 12 x 12 de phone_icons.dart (letras de `_palette`). O amuleto no cordão: o que se veste. Sai em loadout_icon.txt.
+local PHONE = { v = '9b7bff', l = 'c9b8ff', c = '5fd3c6', o = 'ff7a45', t = 'ece6ff', m = '9a90b8' }
+local LOADOUT = {
+  'l..........l',
+  'l..........l',
+  '.l........l.',
+  '..l......l..',
+  '...vvvvvv...',
+  '..vvoooovv..',
+  '..voooooov..',
+  '..voooooov..',
+  '..voooooov..',
+  '..vvoooovv..',
+  '...vvvvvv...',
+  '............',
+}
+do
+  if #LOADOUT ~= 12 then problems[#problems + 1] = 'loadout_icon: ' .. #LOADOUT .. ' linhas' end
+  local f = assert(io.open(BASE .. 'loadout_icon.txt', 'w'))
+  for _, row in ipairs(LOADOUT) do f:write(row .. '\n') end
+  f:close()
+end
+-- Os vizinhos, copiados de phone_icons.dart só para a folha de contato.
+local phoneRow = {
+  { '....vvvv....', '...v....v...', '...v....v...', '.vvvvvvvvvv.', '.vllllllllv.', '.vllllllllv.', '.vlllooollv.', '.vlllooollv.', '.vllllllllv.', '.vllllllllv.', '.vvvvvvvvvv.', '............' },
+  { '....tttt....', '.....tt.....', '.....tt.....', '....tttt....', '...t.oo.t...', '..t.oooo.t..', '..toooooot..', '.t.oooooo.t.', '.t.oooooo.t.', '.tttttttttt.', '............', '............' },
+  LOADOUT,
+  { '............', '....llll....', '...llllll...', '...llllll...', '...llllll...', '....llll....', '............', '..vvvvvvvv..', '.vvvvvvvvvv.', '.vvvvvvvvvv.', '.vvvvvvvvvv.', '............' },
+}
+
 -- ---------------------------------------------------------------- folha de contato
-local SW, SH = 244, 78 + 24 * math.ceil(#icons / 10) + 2
+local TOP = 104
+local SW, SH = 244, TOP + 24 * math.ceil(#icons / 10) + 2
 local sheet = { w = SW, h = SH, px = {} }
 local function rect(x, y, w, h, c) for yy = y, y + h - 1 do for xx = x, x + w - 1 do sheet.px[yy * SW + xx] = c end end end
 local function blit(s, ox, oy)
@@ -1018,7 +1118,7 @@ blit(nine('tab_off', 14, 10), 114, 6)
 blit(nine('button', 40, 11), 134, 4)
 blit(nine('button_pressed', 40, 11), 134, 18)
 blit(nine('button_disabled', 40, 11), 134, 32)
-blit(nine('chip', 60, 9), 180, 4)
+blit(nine('chip', 60, 7), 180, 4)
 blit(nine('bar_frame', 60, 6), 180, 17)
 blit(nine('bar_fill', 34, 4), 181, 18)
 blit(dots.dot_common, 180, 28)
@@ -1039,10 +1139,25 @@ blit(player, 166, 54) blit(gear.gear_bag, 166, 54)
 for n = 0, 2 do blit(gear.gear_bottle, 166 + 2 * n, 54) end
 blit(gear.gear_amulet_glow, 166, 54)
 blit(gear.gear_bag, 186, 54) blit(gear.gear_bottle, 202, 54) blit(gear.gear_amulet_glow, 218, 54)
+-- Fileira 3: os ícones do celular (Bolsa, Bancada, Loadout, Perfil) e os coletores do mapa ao lado do Conjurador,
+-- sozinhos e depois sobre a base do estado (9 x 3 px: cheio ciano, enchendo violeta, esperando apagado).
+rect(2, 78, 68, 22, hex(UI.D))
+for i, rows in ipairs(phoneRow) do blit(grid(rows, nil, PHONE, 'phone ' .. i), 6 + 16 * (i - 1), 83) end
+rect(110, 78, 130, 24, hex('429658'))
+blit(player, 112, 82)
+for i, name in ipairs(mapVesselOrder) do blit(mapVessels[name], 120 + 12 * i, 87) end
+local function onBase(name, color, x)
+  blit(grid({ '.1111111.', '111111111', '.1111111.' }, { ['1'] = color }), x, 95)
+  blit(mapVessels[name], x, 87)
+end
+onBase('map_vessel_glass', UI.S, 184)
+onBase('map_vessel_dark', UI.V, 196)
+onBase('map_vessel_candle', UI.H, 208)
+onBase('map_vessel_thermal', UI.S, 220)
 -- Ícones: grade de 10, cada um na célula da bolsa; o primeiro de cada fileira na célula selecionada.
 local dotNames = { 'dot_common', 'dot_good', 'dot_perfect' }
 for i, ic in ipairs(icons) do
-  local cx, cy = 2 + 24 * ((i - 1) % 10), 78 + 24 * ((i - 1) // 10)
+  local cx, cy = 2 + 24 * ((i - 1) % 10), TOP + 24 * ((i - 1) // 10)
   blit(nine((i - 1) % 10 == 0 and 'cell_selected' or 'cell', 22, 22), cx, cy)
   blit(ic.s, cx + 3, cy + 3)
   local q = (i - 1) % 3 + 1

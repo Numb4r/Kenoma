@@ -12,12 +12,14 @@ import '../../crafting/crafting_state.dart';
 import '../../crafting/grimoire.dart';
 import '../../crafting/loadout.dart';
 import '../../crafting/quality.dart';
+import '../../crafting/tutorial.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
 import '../colors.dart';
 import '../menu/phone_shell.dart';
 import 'bag_detail.dart';
 import 'craft_context.dart';
+import 'tutorial_card.dart';
 import 'ui_art.dart';
 
 class BagScreen extends StatefulWidget {
@@ -48,6 +50,12 @@ class _BagScreenState extends State<BagScreen> {
 
   CraftingBook get _book => widget.data.craft;
 
+  /// Troca de aba. Abrir Condições sem nenhum recipiente faz o mentor deixar a primeira garrafa (uma vez).
+  void _open(BagTab t) {
+    setState(() => _tab = t);
+    if (t == BagTab.conditions && giveFirstBottle(widget.state, widget.ctx.nowUtc())) _say('O mentor deixou uma Garrafa de vidro na sua bolsa');
+  }
+
   void _say(String text) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(content: Text(text)));
@@ -60,11 +68,11 @@ class _BagScreenState extends State<BagScreen> {
       final def = _book.items[r.outId];
       if (def?.kind != 'bag' || _book.balance.baseSlots + (def!.effects['bag_slots'] ?? 0) <= cap) continue;
       final lv = levelBlocker(s, r, _book.balance);
-      if (lv != null) return 'Próxima bolsa: receita no ${lv.toLowerCase()}';
-      if (!isKnown(s, r)) return 'Próxima bolsa: numa página do grimório';
-      return 'Próxima bolsa: ${def.name}, na Bancada';
+      if (lv != null) return 'A próxima bolsa se fabrica. A receita abre no ${lv.toLowerCase()}.';
+      if (!isKnown(s, r)) return 'A próxima bolsa se fabrica: a receita vem numa página do grimório.';
+      return 'A próxima bolsa se fabrica: ${def.name}, na Bancada.';
     }
-    return 'Esta é a maior bolsa por agora';
+    return 'Esta é a maior bolsa que existe, por enquanto.';
   }
 
   @override
@@ -79,6 +87,7 @@ class _BagScreenState extends State<BagScreen> {
             final counts = tabCounts(s, _book);
             final bag = s.crafting.equipped[LoadoutSlot.bag];
             return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), children: [
+              TutorialCard(state: s, script: widget.data.mentor),
               UiFrame(
                 name: 'panel',
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -87,7 +96,7 @@ class _BagScreenState extends State<BagScreen> {
                   Row(children: [
                     Expanded(child: _CapacityBar(used: used, cap: cap)),
                     const SizedBox(width: 8),
-                    Text('$used/$cap', key: const Key('bag-capacity'), style: TextStyle(fontSize: 8, color: used >= cap ? kEssence : kSignal)),
+                    Text(used >= cap ? '$used/$cap · CHEIA' : '$used/$cap', key: const Key('bag-capacity'), style: TextStyle(fontSize: 8, color: used >= cap ? kText : kSignal)),
                   ]),
                   const SizedBox(height: 6),
                   Text(_nextBag(s), style: const TextStyle(fontSize: 8, color: kDim, height: 1.6)),
@@ -96,7 +105,10 @@ class _BagScreenState extends State<BagScreen> {
               const SizedBox(height: 12),
               Wrap(spacing: 6, runSpacing: 6, children: [
                 for (final t in BagTab.values)
-                  _Tab(key: Key('bag-tab-${t.name}'), label: '${t.label} ${counts[t]}', on: _tab == t, onTap: () => setState(() => _tab = t)),
+                  TutorialMark(
+                    on: t == BagTab.conditions && _tab != t && const {TutStep.belt, TutStep.fill}.contains(currentStep(s)),
+                    child: _Tab(key: Key('bag-tab-${t.name}'), label: '${t.label} ${counts[t]}', on: _tab == t, onTap: () => _open(t)),
+                  ),
               ]),
               const SizedBox(height: 10),
               if (_tab == BagTab.materials)
@@ -137,18 +149,27 @@ class _BagScreenState extends State<BagScreen> {
 
   Color? _tint(String id) => itemTint(_book, id);
 
-  /// A aba Condições: as garrafas do cinto com a validade, os recipientes guardados e os coletores plantados.
+  /// A aba Condições: as garrafas do cinto com a validade, os recipientes vazios, os guardados (iguais com a mesma validade
+  /// numa linha só, ×N) e os coletores plantados. Os passos da quest do crafting ficam destacados aqui.
   List<Widget> _conditions(GameState s, int now) {
     final ctx = widget.ctx;
     final belt = s.crafting.at(VesselPlace.belt).toList();
-    final stored = s.crafting.at(VesselPlace.bag).toList();
     final planted = s.crafting.at(VesselPlace.planted).toList();
     final empties = [for (final e in s.inventory.entries) if (e.value > 0 && _book.item(e.key)?.kind == 'vessel') e];
     final here = ctx.here();
+    final step = currentStep(s);
+    // Os guardados: iguais (conteúdo, qualidade e validade) numa linha só.
+    final groups = <String, List<Vessel>>{};
+    for (final v in s.crafting.at(VesselPlace.bag)) {
+      groups.putIfAbsent('${v.kind}|${v.content}|${v.quality.name}|${vesselValidity(v, _book, now)?.text}', () => []).add(v);
+    }
     return [
       _title('CINTO · ${belt.length}/${beltCapacity(s, _book, now)}'),
+      if (step == TutStep.fill)
+        TutorialHint(key: const Key('tut-fill'), text: ruleFor('item.vessel.glass', here, _book.balance) != null ? 'Está chovendo: a garrafa do cinto enche em alguns minutos.' : 'Sem chuva agora: espere a próxima, ou plante a garrafa e volte depois.'),
       if (belt.isEmpty) _dim('NENHUMA GARRAFA NO CINTO. PONHA UMA VAZIA PARA ENCHER COM O TEMPO EM VOLTA.'),
-      for (final v in belt) _VesselRow(key: Key('belt-${v.uid}'), v: v, data: widget.data, now: now, action: ('Tirar', () => fromBelt(s, v))),
+      for (final v in belt)
+        _VesselRow(key: Key('belt-${v.uid}'), v: v, data: widget.data, now: now, action: ('Tirar', () => fromBelt(s, v, _book, now) ? null : _say('Bolsa cheia'))),
       const SizedBox(height: 12),
       _title('RECIPIENTES VAZIOS'),
       if (empties.isEmpty) _dim('NENHUM. FAÇA UMA GARRAFA NA BANCADA.'),
@@ -159,11 +180,12 @@ class _BagScreenState extends State<BagScreen> {
             ItemIcon(itemId: e.key, name: widget.data.itemName(e.key), size: 32),
             const SizedBox(width: 8),
             Expanded(child: Text('${widget.data.itemName(e.key).toUpperCase()} ×${e.value}', style: const TextStyle(fontSize: 8, color: kText))),
-            _Small(label: 'Cinto', onTap: () => toBelt(s, e.key, _book, now) ? null : _say('Cinto cheio')),
+            _Small(key: Key('belt-${e.key}'), label: 'Cinto', mark: step == TutStep.belt, onTap: () => toBelt(s, e.key, _book, now) ? null : _say('Cinto cheio')),
             const SizedBox(width: 6),
             _Small(
               key: Key('plant-${e.key}'),
               label: 'Plantar',
+              mark: step == TutStep.fill,
               onTap: () {
                 final why = plantBlocker(s, e.key, here, ctx.speedMps?.call() ?? double.infinity, ctx.walkMaxMps, _book);
                 if (why != null) return _say(why);
@@ -173,10 +195,10 @@ class _BagScreenState extends State<BagScreen> {
             ),
           ]),
         ),
-      if (stored.isNotEmpty) ...[
+      if (groups.isNotEmpty) ...[
         const SizedBox(height: 12),
         _title('GUARDADOS NA BOLSA'),
-        for (final v in stored) _VesselRow(v: v, data: widget.data, now: now),
+        for (final g in groups.values) _VesselRow(key: Key('stored-${g.first.uid}'), v: g.first, count: g.length, data: widget.data, now: now),
       ],
       const SizedBox(height: 12),
       _title('PLANTADOS · ${planted.length}/${plantedCapacity(s, _book, now)}'),
@@ -190,8 +212,8 @@ class _BagScreenState extends State<BagScreen> {
             v: v,
             data: widget.data,
             now: now,
-            extra: '${d.round()} M · ${plantedLabel(st)}',
-            action: d <= ctx.touchM ? ('Colher', () => harvest(s, v, d, ctx.touchM, _book, now)) : null,
+            extra: '${d.round()} M · ${plantedLabel(st, _book.items[v.kind])}',
+            action: d <= ctx.touchM ? ('Colher', () => harvest(s, v, d, ctx.touchM, _book, now) ? null : _say('Cinto e bolsa cheios')) : null,
           );
         }),
     ];
@@ -201,26 +223,33 @@ class _BagScreenState extends State<BagScreen> {
   Widget _dim(String t) => Text(t, style: const TextStyle(fontSize: 8, color: kDim, height: 1.8));
 }
 
-String plantedLabel(PlantedState s) => switch (s) {
-      PlantedState.full => 'CHEIO',
+/// O estado de um plantado, concordando com o recipiente ("garrafa cheia", "frasco cheio").
+String plantedLabel(PlantedState s, ItemDef? kind) => switch (s) {
+      PlantedState.full => kind?.agree('CHEIO', 'CHEIA') ?? 'CHEIO',
       PlantedState.filling => 'ENCHENDO',
       PlantedState.waiting => 'ESPERANDO',
     };
 
-/// A validade de um conteúdo: laranja só quando falta pouco (horas).
+/// A validade de um conteúdo, com o verbo dele ("derrete em", "apaga em", "estraga em"): laranja só quando falta pouco
+/// (horas), a única urgência do Design System. O que não estraga diz isso.
 ({String text, bool soon})? vesselValidity(Vessel v, CraftingBook book, int now) {
-  final h = book.items[v.content]?.perishH;
-  if (v.empty || h == null) return null;
-  if (book.items[v.content]!.meltsTo != null && (book.items[v.kind]?.keepsCold ?? false)) return (text: 'NÃO DERRETE', soon: false);
+  if (v.empty) return null;
+  final def = book.items[v.content];
+  final verb = (def?.perishVerb ?? (def?.meltsTo != null ? 'derrete' : 'estraga')).toUpperCase();
+  final h = def?.perishH;
+  if (h == null) return (text: 'NÃO ${verb == 'APAGA' ? 'SE APAGA' : verb}', soon: false);
+  if (def!.meltsTo != null && (book.items[v.kind]?.keepsCold ?? false)) return (text: 'NÃO $verb', soon: false);
   final left = (v.filledUtc + (h * 3600).round() - now).clamp(0, 1 << 40); // a conta de 10 s em 10 s alcança
-  final verb = book.items[v.content]!.meltsTo == null ? 'ESTRAGA' : 'DERRETE';
   return left < 86400 ? (text: '$verb EM ${(left / 3600).ceil()} H', soon: true) : (text: '$verb EM ${(left / 86400).ceil()} DIAS', soon: false);
 }
 
 class _VesselRow extends StatelessWidget {
-  const _VesselRow({required this.v, required this.data, required this.now, this.extra, this.action, super.key});
+  const _VesselRow({required this.v, required this.data, required this.now, this.count = 1, this.extra, this.action, super.key});
 
   final Vessel v;
+
+  /// Quantos iguais a linha representa (guardados com o mesmo conteúdo, qualidade e validade).
+  final int count;
   final GameData data;
   final int now;
   final String? extra;
@@ -241,7 +270,12 @@ class _VesselRow extends StatelessWidget {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Flexible(child: Text((v.empty ? '${data.itemName(v.kind)} · vazia$progress' : data.itemName(v.content!)).toUpperCase(), style: const TextStyle(fontSize: 8, color: kText))),
+                Flexible(
+                  child: Text(
+                    (v.empty ? '${data.itemName(v.kind)} · ${data.craft.items[v.kind]?.agree('vazio', 'vazia') ?? 'vazio'}$progress' : '${data.itemName(v.content!)}${count > 1 ? ' ×$count' : ''}').toUpperCase(),
+                    style: const TextStyle(fontSize: 8, color: kText),
+                  ),
+                ),
                 if (!v.empty) QualityDots(v.quality),
               ]),
               if (extra != null) Text(extra!, style: const TextStyle(fontSize: 8, color: kDim, height: 1.6)),
@@ -270,7 +304,7 @@ class _CapacityBar extends StatelessWidget {
         const Positioned.fill(child: UiFrame(name: 'bar_frame', padding: EdgeInsets.zero, child: SizedBox.expand())),
         FractionallySizedBox(
           widthFactor: frac,
-          child: UiFrame(name: 'bar_fill', padding: EdgeInsets.zero, fallbackFill: used >= cap ? kEssence : kSignal, fallbackLine: kOutline, child: const SizedBox.expand()),
+          child: const UiFrame(name: 'bar_fill', padding: EdgeInsets.zero, fallbackFill: kSignal, fallbackLine: kOutline, child: SizedBox.expand()),
         ),
       ]),
     );
@@ -316,19 +350,25 @@ class _Chip extends StatelessWidget {
 }
 
 class _Small extends StatelessWidget {
-  const _Small({required this.label, required this.onTap, super.key});
+  const _Small({required this.label, required this.onTap, this.mark = false, super.key});
 
   final String label;
   final VoidCallback onTap;
 
+  /// O passo da quest do crafting: o botão ganha a marca do mentor.
+  final bool mark;
+
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: UiFrame(
-          name: 'button',
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          fallbackLine: kSignal,
-          child: Text(label.toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal)),
+  Widget build(BuildContext context) => TutorialMark(
+        on: mark,
+        child: GestureDetector(
+          onTap: onTap,
+          child: UiFrame(
+            name: 'button',
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            fallbackLine: kSignal,
+            child: Text(label.toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal)),
+          ),
         ),
       );
 }

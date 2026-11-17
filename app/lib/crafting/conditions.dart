@@ -78,8 +78,19 @@ class Here {
   bool strongSun(CraftingBalance b) => sunAltDeg >= b.strongSunDeg && climates.any(kSunnyClimates.contains);
 }
 
-/// Uma condição que falta: o que pede e quando (ou onde) vai valer.
-typedef Unmet = ({String what, String when});
+/// Uma condição que falta: de que tipo (`night`, `sun`, `water`, `place`, `moon`, `season`, `climate`), o que pede e quando
+/// (ou onde) vai valer.
+typedef Unmet = ({String kind, String what, String when});
+
+/// Onde fica cada bioma, em palavras ("num lugar sagrado").
+const _biomePlace = {
+  'green': 'em área verde',
+  'water': 'perto de água',
+  'sacred': 'num lugar sagrado',
+  'urban': 'no centro urbano',
+  'residential': 'num bairro residencial',
+  'lit': 'numa rua iluminada',
+};
 
 String _inTime(int s) {
   if (s < 3600) return 'em ${(s / 60).ceil()} min';
@@ -95,20 +106,21 @@ List<Unmet> unmetNeeds(Needs n, Here h, CraftingBalance b, {String Function(Stri
     while (t < h.utc + 86400 && sunAltitudeDeg(h.lat, h.lon, t) >= b.nightSunDeg) {
       t += 600;
     }
-    out.add((what: 'à noite', when: _inTime(t - h.utc)));
+    out.add((kind: 'night', what: 'à noite', when: _inTime(t - h.utc)));
   }
-  if (n.daySun && !h.strongSun(b)) out.add((what: 'sol forte de dia', when: h.night(b) ? 'amanhã, sem nuvem' : 'quando abrir o sol'));
+  if (n.daySun && !h.strongSun(b)) out.add((kind: 'sun', what: 'sol forte de dia', when: h.night(b) ? 'amanhã, sem nuvem' : 'quando abrir o sol'));
   if (n.waterM != null && (h.waterM == null || h.waterM! > n.waterM!)) {
-    out.add((what: 'perto de água', when: h.waterM == null ? 'sem água por perto' : 'água a ${h.waterM!.round()} m'));
+    out.add((kind: 'water', what: 'perto de água', when: h.waterM == null ? 'sem água por perto' : 'água a ${h.waterM!.round()} m'));
   }
-  if (n.biomes.isNotEmpty && !n.biomes.contains(h.biome)) out.add((what: n.biomes.contains('green') ? 'em área verde' : 'em ${n.biomes.join(' ou ')}', when: 'noutro lugar'));
+  if (n.biomes.isNotEmpty && !n.biomes.contains(h.biome)) out.add((kind: n.biomes.contains('green') ? 'green' : 'place', what: n.biomes.map((b) => _biomePlace[b] ?? b).join(' ou '), when: 'noutro lugar'));
   if (n.moon.isNotEmpty && !n.moon.contains(h.moon)) {
     final next = n.moon.map((g) => nextMoonGroup(g, h.utc)).reduce((a, b) => a < b ? a : b);
-    out.add((what: n.moon.map((g) => g.label).join(' ou '), when: _inTime(next - h.utc)));
+    out.add((kind: 'moon', what: n.moon.map((g) => g.label).join(' ou '), when: _inTime(next - h.utc)));
   }
-  if (n.season != null && h.season != n.season) out.add((what: 'no ${n.season!.label}', when: _inTime(nextSeason(n.season!, h.utc) - h.utc)));
+  if (n.season != null && h.season != n.season) out.add((kind: 'season', what: n.season!.inLabel, when: _inTime(nextSeason(n.season!, h.utc) - h.utc)));
   if (n.climates.isNotEmpty && !n.climates.any(h.climates.contains)) {
-    out.add((what: n.climates.map(climateName ?? (c) => c).join(' ou '), when: 'quando o tempo virar'));
+    final rain = n.climates.any((c) => c.contains('rain') || c.contains('drizzle') || c.contains('storm') || c == 'deluge');
+    out.add((kind: rain ? 'rain' : 'climate', what: n.climates.map(climateName ?? (c) => c).join(' ou '), when: 'quando o tempo virar'));
   }
   return out;
 }

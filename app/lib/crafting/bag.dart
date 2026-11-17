@@ -15,6 +15,26 @@ int _slots(int n, int stack) => n <= 0 ? 0 : (n + stack - 1) ~/ stack;
 /// Espaços ocupados por [inventory] e pelos recipientes guardados na bolsa.
 int slotsUsedBy(Map<String, int> inventory, int vesselsInBag, int stack) => inventory.values.fold(0, (n, q) => n + _slots(q, stack)) + vesselsInBag;
 
+/// Quantos de [n] da pilha [key] cabem: o que falta para completar as pilhas de [key] já abertas mais as pilhas novas que
+/// os espaços livres comportam. A bolsa nunca passa de [cap] (0.24.1): o resto é recusado.
+int acceptableCount({required Map<String, int> inventory, required int vesselsInBag, required int stack, required int cap, required String key, required int n}) {
+  final have = inventory[key] ?? 0;
+  final room = _slots(have, stack) * stack - have;
+  final free = cap - slotsUsedBy(inventory, vesselsInBag, stack);
+  final max = room + (free > 0 ? free * stack : 0);
+  return n < 0 ? 0 : (n < max ? n : max);
+}
+
+/// Quantos de [n] da pilha [key] cabem na bolsa de [s] agora.
+int acceptable(GameState s, CraftingBook book, int utc, String key, int n) => acceptableCount(
+      inventory: s.inventory,
+      vesselsInBag: s.crafting.at(VesselPlace.bag).length,
+      stack: book.balance.stack,
+      cap: bagCapacity(s, book, utc),
+      key: key,
+      n: n,
+    );
+
 int slotsUsed(GameState s, CraftingBook book) => slotsUsedBy(s.inventory, s.crafting.at(VesselPlace.bag).length, book.balance.stack);
 
 /// Se a bolsa comporta a troca: [remove] sai e [add] entra (chaves de pilha exatas).

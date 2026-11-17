@@ -6,7 +6,7 @@ import '../player/game_state.dart' show kVisitedCellsKey, saveSchemaVersion;
 
 typedef _Step = Map<String, dynamic> Function(Map<String, dynamic>);
 
-final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8, 8: _v8ToV9, 9: _v9ToV10};
+final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8, 8: _v8ToV9, 9: _v9ToV10, 10: _v10ToV11};
 
 /// Leva [json] ao schema atual. Um save de versão futura passa sem mudar.
 Map<String, dynamic> migrateSave(Map<String, dynamic> json) {
@@ -164,5 +164,26 @@ Map<String, dynamic> _v8ToV9(Map<String, dynamic> j) {
 Map<String, dynamic> _v9ToV10(Map<String, dynamic> j) {
   final out = {...j};
   out['crafting'] ??= <String, dynamic>{'vessels': <dynamic>[], 'known': <dynamic>[], 'pages': <dynamic>[], 'pins': <dynamic>[], 'equipped': <String, dynamic>{}, 'looks': <String, dynamic>{}, 'hidden': <dynamic>[], 'next_uid': 1};
+  return out;
+}
+
+/// As receitas da Bancada que todo save até a 0.24.0 conhecia de começo. Na 0.24.1 elas passam a ser descobertas por
+/// experimento num jogo novo (só garrafa de vidro, frasco escuro e selo simples vêm sabidas); quem já jogava não perde nada.
+const kRecipesKnownBefore0241 = [
+  'recipe.seal.reinforced', 'recipe.tonic.focus', 'recipe.dew_prism', //
+  'recipe.seal.fire', 'recipe.seal.plant', 'recipe.seal.water', 'recipe.seal.earth', 'recipe.seal.electric', 'recipe.seal.metal',
+  'recipe.seal.light', 'recipe.seal.shadow', 'recipe.seal.spectral', 'recipe.seal.digital', 'recipe.seal.fae', 'recipe.seal.draconic',
+];
+
+/// v10 não tinha a quest que ensina o crafting: ela entra desligada (liga na próxima Sucata, e os passos já feitos contam).
+/// As receitas antigas da Bancada viram conhecidas no save, porque deixaram de ser de começo.
+Map<String, dynamic> _v10ToV11(Map<String, dynamic> j) {
+  final out = {...j};
+  final c = {...?(out['crafting'] as Map<String, dynamic>?)};
+  c['known'] = ({...((c['known'] as List<dynamic>?) ?? const []).cast<String>(), ...kRecipesKnownBefore0241}.toList()..sort());
+  c['tutorial'] ??= 'off';
+  c['tutorial_steps'] ??= 0;
+  c['gift'] ??= false;
+  out['crafting'] = c;
   return out;
 }

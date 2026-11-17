@@ -24,7 +24,10 @@ import '../../world/climate_world.dart' show nearestPuddle;
 import '../../core/weather.dart';
 import '../../core/astro.dart' show moonPhase;
 import '../../core/species_ids.dart' show isRitualOnlyId;
+import '../../crafting/bag.dart' show acceptable;
 import '../../crafting/collector_tick.dart';
+import '../../crafting/quality.dart' show parseStack;
+import '../../crafting/tutorial.dart' show syncTutorial;
 import '../craft/craft_context.dart';
 import '../craft/planted_list.dart';
 import '../craft/ui_art.dart';
@@ -279,14 +282,15 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   /// A cada 10 s: as garrafas do cinto enchem com a condição em volta do jogador e os plantados seguem a conta do lugar.
   void _tickCollectors(_Ready r, GameState st, int now) {
+    syncTutorial(st); // os passos da quest do crafting soltam as mensagens do mentor
     if (st.crafting.vessels.isEmpty || !r.world.hasPlayer) return;
     final news = tickCollectors(st, r.data.craft,
         hereAt: (lat, lon, t) => r.world.here(lat, lon, t, waterSearchM: 0), lat: r.game.playerLat, lon: r.game.playerLon, now: now, dtS: 10);
     for (final v in news.belt) {
-      _toast('Garrafa cheia: ${r.data.itemName(v.content!)} (${v.quality.label})');
+      _toast(vesselFullText(v, r.data.craft));
     }
     for (final v in news.planted) {
-      _toast('Coletor plantado cheio: ${r.data.itemName(v.content!)} (${v.quality.label})');
+      _toast('Plantado: ${vesselFullText(v, r.data.craft)}');
     }
   }
 
@@ -305,7 +309,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   void _tapCollector(_Ready r, Vessel v) {
     final st = r.session.state;
     final d = metersBetween(r.game.playerLat, r.game.playerLon, v.lat, v.lon);
-    final what = v.content == null ? 'vazio' : '${r.data.itemName(v.content!)} (${v.quality.label})';
+    final what = v.content == null ? r.data.craft.items[v.kind]?.agree('vazio', 'vazia') ?? 'vazio' : '${r.data.itemName(v.content!)}, ${v.quality.phrase}';
     if (!harvest(st, v, d, r.world.touchRangeM, r.data.craft, tools.clock.nowUtc)) return _toast('Coletor a ${d.round()} m ($what): chegue perto para colher');
     _toast(v.place == VesselPlace.belt ? 'Colhido para o cinto: $what' : 'Colhido para a bolsa: $what');
   }
@@ -314,7 +318,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final now = tools.clock.nowUtc;
     if (now - _bagFullToastUtc < 20) return; // a Fagulha na Aura tenta a cada quadro
     _bagFullToastUtc = now;
-    _toast('Bolsa cheia: descarte algo ou faça uma bolsa maior');
+    _toast('Bolsa cheia. Destile, descarte ou fabrique para abrir espaço.');
   }
 
   /// O Rádio do Véu mora no app Rotas; no mapa, cada fala nova sai uma vez no aviso.
@@ -689,6 +693,12 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     }
     tools.clock.raiseFloor(session.state.lastSeenUtc);
     unawaited(applySystemBars(show: session.state.setting(kSystemBarsSetting)));
+    // 0.24.1: a bolsa nunca passa do limite. Todo item que entra passa por aqui; o que não cabe é recusado com aviso.
+    session.state.accept = (key, n) {
+      final ok = acceptable(session.state, data.craft, tools.clock.nowUtc, key, n);
+      if (ok < n && mounted) _toast('Bolsa cheia: ${n - ok} × ${data.itemName(parseStack(key).id)} ${n - ok == 1 ? 'ficou' : 'ficaram'} de fora');
+      return ok;
+    };
     session.onSeen = tools.clock.raiseFloor;
     // O clima do mundo: o modelo é o da época ATIVA naquele instante (nunca o da mais nova); o debug pode forçar qualquer id.
     final climate = climateWorldFor(state: session.state, data: data, assets: assets, forced: () => tools.force.weather, forcedEvents: () => tools.force.events, forcedPhase: tools.force.phase);

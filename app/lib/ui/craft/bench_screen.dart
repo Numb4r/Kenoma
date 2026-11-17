@@ -10,14 +10,17 @@ import '../../crafting/conditions.dart';
 import '../../crafting/crafting_data.dart';
 import '../../crafting/grimoire.dart';
 import '../../crafting/quality.dart';
+import '../../crafting/tutorial.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
 import '../colors.dart';
+import '../tema.dart';
 import '../menu/distill_screen.dart';
 import '../menu/phone_shell.dart';
 import 'craft_context.dart';
 import 'experiment_sheet.dart';
 import 'recipe_sheet.dart';
+import 'tutorial_card.dart';
 import 'ui_art.dart';
 
 class CraftBenchScreen extends StatefulWidget {
@@ -67,7 +70,12 @@ class _CraftBenchScreenState extends State<CraftBenchScreen> {
             final h = widget.ctx.here();
             final benchOpen = s.playerLevel >= _book.balance.benchLevel;
             final g = groupRecipes(s, widget.data.recipes.values, _book, h, bench: _bench && benchOpen);
+            final step = currentStep(s);
+            // O passo da quest: a garrafa (a) e as receitas que usam o que um coletor pegou (d) ganham a marca do mentor.
+            bool marked(Recipe r) =>
+                (step == TutStep.bottle && r.outId == 'item.vessel.glass') || (step == TutStep.use && r.inputs.keys.any((id) => isCondition(_book, id)));
             return ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), children: [
+              TutorialCard(state: s, script: widget.data.mentor),
               Wrap(spacing: 6, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 _Tab(key: const Key('bench-tab-improv'), label: 'Improviso · aqui', on: !_bench, onTap: () => setState(() => _bench = false)),
                 _Tab(
@@ -88,11 +96,11 @@ class _CraftBenchScreenState extends State<CraftBenchScreen> {
               const SizedBox(height: 16),
               _title('PODE FAZER AGORA · ${g.now.length}'),
               if (g.now.isEmpty) _dim('NADA AGORA, AQUI.'),
-              for (final (r, q) in g.now) _RecipeRow(key: Key('recipe-${r.id}'), data: widget.data, recipe: r, quality: q, onTap: () => _open(r)),
+              for (final (r, q) in g.now) _RecipeRow(key: Key('recipe-${r.id}'), data: widget.data, recipe: r, quality: q, mark: marked(r), onTap: () => _open(r)),
               const SizedBox(height: 12),
               _title('ESPERANDO UMA CONDIÇÃO · ${g.waiting.length}'),
               for (final (r, unmet) in g.waiting)
-                _RecipeRow(key: Key('recipe-${r.id}'), data: widget.data, recipe: r, note: '${unmet.first.what} · ${unmet.first.when}'.toUpperCase(), onTap: () => _open(r)),
+                _RecipeRow(key: Key('recipe-${r.id}'), data: widget.data, recipe: r, note: '${unmet.first.what} · ${unmet.first.when}'.toUpperCase(), mark: marked(r), onTap: () => _open(r)),
               const SizedBox(height: 12),
               GestureDetector(
                 key: const Key('bench-missing'),
@@ -100,7 +108,7 @@ class _CraftBenchScreenState extends State<CraftBenchScreen> {
                 child: _title('${_showMissing ? '▾' : '▸'} FALTA MATERIAL · ${g.missing.length}'),
               ),
               if (_showMissing)
-                for (final r in g.missing) _RecipeRow(key: Key('recipe-${r.id}'), data: widget.data, recipe: r, note: 'FALTA MATERIAL', dim: true, onTap: () => _open(r)),
+                for (final r in g.missing) _RecipeRow(key: Key('recipe-${r.id}'), data: widget.data, recipe: r, note: 'FALTA MATERIAL', dim: true, mark: marked(r), onTap: () => _open(r)),
               const SizedBox(height: 20),
               GestureDetector(
                 key: const Key('bench-distill'),
@@ -144,7 +152,7 @@ class _HereStrip extends StatelessWidget {
         const SizedBox(height: 6),
         Wrap(spacing: 4, runSpacing: 4, children: [
           for (final c in chips)
-            UiFrame(name: 'chip', padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4), child: Text(c.toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal))),
+            UiFrame(name: 'chip', padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2), child: Text(c.toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal))),
         ]),
       ]),
     );
@@ -152,19 +160,20 @@ class _HereStrip extends StatelessWidget {
 }
 
 class _RecipeRow extends StatelessWidget {
-  const _RecipeRow({required this.data, required this.recipe, required this.onTap, this.quality, this.note, this.dim = false, super.key});
+  const _RecipeRow({required this.data, required this.recipe, required this.onTap, this.quality, this.note, this.dim = false, this.mark = false, super.key});
 
   final GameData data;
   final Recipe recipe;
   final Quality? quality;
   final String? note;
   final bool dim;
+  final bool mark;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) => GestureDetector(
         onTap: onTap,
-        child: Padding(
+        child: TutorialMark(on: mark, child: Padding(
           padding: const EdgeInsets.only(bottom: 6),
           child: UiFrame(
             name: 'cell',
@@ -175,13 +184,14 @@ class _RecipeRow extends StatelessWidget {
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(data.itemName(recipe.outId).toUpperCase(), style: TextStyle(fontSize: 8, color: dim ? kDim : kText)),
-                  if (note != null) Text(note!, style: const TextStyle(fontSize: 8, color: kEssence, height: 1.6)),
+                  if (note != null) Text(note!, style: const TextStyle(fontSize: 8, color: KCores.textoMudo, height: 1.6)),
+                  if (quality != null) Text('SAI ${quality!.phrase}'.toUpperCase(), style: TextStyle(fontSize: 8, color: qualityColor(quality!), height: 1.6)),
                 ]),
               ),
               if (quality != null) QualityDots(quality!),
             ]),
           ),
-        ),
+        )),
       );
 }
 

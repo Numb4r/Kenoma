@@ -79,12 +79,22 @@
       "text": "Cinco. Você já ouve o que está perto. Deixei uma coisa no seu celular: o Radar. Um pulso, e o que está longe responde, por dois minutos, na beira da tela. Depois some. Você acha que só você ouve o pulso?" },
     { "id": "page_components", "from": "mentor", "page": "page.components", "requires": { "event": "refine", "min": 3 },
       "text": "Você anda deixando giz ao relento. Eu vi. O que se refina sozinho ainda é pouco: junto, e com Essência, vira outra coisa. Deixei uma página no seu grimório. A Bancada de casa sabe o resto. Você sabe o que está montando?" },
-    { "id": "page_moon", "from": "mentor", "page": "page.moon", "requires": { "event": "vessel_filled", "min": 1 },
+    { "id": "page_moon", "from": "mentor", "page": "page.moon", "requires": { "event": "craft_tut_done", "min": 1 },
       "text": "Uma garrafa cheia. Bonito. A lua também cabe num frasco, se o vidro for escuro e a noite for inteira. Cada fase guarda uma coisa diferente, e nenhuma delas é luz. Mandei a página. O que você acha que a lua nova esconde?" },
     { "id": "page_seasons", "from": "mentor", "page": "page.seasons", "requires": { "event": "component", "min": 5 },
       "text": "A cidade troca de pele quatro vezes por ano e quase ninguém repara. Há coisas que só se fazem numa estação, e elas esperam um ano inteiro por quem perdeu a hora. Deixei a página das estações. Em que estação você está, mesmo?" },
     { "id": "page_gear", "from": "mentor", "page": "page.gear", "requires": { "event": "level_8", "min": 1 },
-      "text": "Bolsa cheia. Acontece com quem pega tudo o que brilha. Dá para costurar uma maior, e um cinto, e mais do que isso. A página já está no grimório. Quanto de cidade você pretende carregar?" }
+      "text": "Bolsa cheia. Acontece com quem pega tudo o que brilha. Dá para costurar uma maior, e um cinto, e mais do que isso. A página já está no grimório. Quanto de cidade você pretende carregar?" },
+    { "id": "craft_tut_start", "from": "mentor", "requires": { "event": "craft_tut_start", "min": 1 },
+      "text": "Sucata. Todo mundo passa por cima. Dois pedaços disso, refundidos, viram vidro, e vidro guarda o que cai do céu. Faça uma garrafa na Bancada. O que você guardaria, se desse para guardar o tempo?" },
+    { "id": "craft_tut_bottle", "from": "mentor", "requires": { "event": "craft_tut_bottle", "min": 1 },
+      "text": "Uma garrafa vazia. Na bolsa ela só ocupa lugar. Abra a Bolsa, na aba Condições, e ponha a garrafa no cinto. Vazio também se carrega, não?" },
+    { "id": "craft_tut_belt", "from": "mentor", "requires": { "event": "craft_tut_belt", "min": 1 },
+      "text": "Agora ela anda com você. Quando chover, enche sozinha, no seu passo. Se o céu demorar, plante a garrafa no chão e volte depois: ela espera melhor do que você. Você sabe esperar?" },
+    { "id": "craft_tut_fill", "from": "mentor", "requires": { "event": "craft_tut_fill", "min": 1 },
+      "text": "Pronto. O céu faz o resto. Água que não tocou o chão ainda lembra de onde veio, e a Bancada sabe a diferença. Quando a garrafa estiver cheia, faça uma receita com essa água. O que você acha que a chuva sabe?" },
+    { "id": "craft_tut_done", "from": "mentor", "requires": { "event": "craft_tut_done", "min": 1 },
+      "text": "Feito. Você pegou uma coisa do céu e fez outra com as mãos. Há mais para guardar: neve, fumaça, a lua, cada uma no seu vidro. A cidade chove para todo mundo. Quem mais você acha que está guardando?" }
   ],
   "phone_unlock": {
     "radar": "*O Familiar encosta no ícone novo e uma onda fraca sai dele, em círculo. Parece dizer: agora eu alcanço mais longe.*",
@@ -110,6 +120,9 @@
     { "id": "steps_5k", "from": "familiar",
       "text": "*O Familiar bate no chão cinco vezes com a ponta do contorno e encosta no seu tornozelo. Parece dizer: cinco mil passos hoje, e o chão lembra de cada um.*" },
     { "id": "steps_10k", "from": "familiar",
-      "text": "*O Familiar se deita atravessado no caminho e só levanta quando você para também. Dez mil passos. Parece dizer: chega por hoje, ou ainda não?*" }
-  ]
+      "text": "*O Familiar se deita atravessado no caminho e só levanta quando você para também. Dez mil passos. Parece dizer: chega por hoje, ou ainda não?*" },
+    { "id": "craft_tut_gift", "from": "mentor",
+      "text": "Você abriu o cinto e não tinha o que pôr nele. Deixei uma garrafa na sua bolsa. Não agradeça, é só vidro. As próximas você faz: dois pedaços de Sucata, na Bancada. O que você pretende guardar nela?" }
+  ],
+  "craft_tutorial": { "title": "Primeira garrafa", "steps": ["Faça uma garrafa na Bancada", "Ponha a garrafa no cinto", "Encha na chuva ou plante a garrafa", "Faça uma receita com a água"] }
 }

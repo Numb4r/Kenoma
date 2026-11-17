@@ -19,7 +19,7 @@ void main() {
 
   test('v9 vira v10: todo material antigo fica comum e entra o bloco crafting vazio', () {
     final out = migrateSave(v9);
-    expect(out['schema_version'], 10);
+    expect(out['schema_version'], saveSchemaVersion);
     expect(out['inventory'], v9['inventory'], reason: 'as chaves antigas já são as pilhas comuns');
     expect((out['crafting'] as Map)['vessels'], isEmpty);
     for (final k in v9.keys.where((k) => k != 'schema_version')) {

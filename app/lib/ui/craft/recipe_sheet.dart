@@ -13,6 +13,7 @@ import '../../crafting/quality.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
 import '../colors.dart';
+import '../tema.dart';
 import 'craft_context.dart';
 import 'ui_art.dart';
 
@@ -45,6 +46,9 @@ class _RecipeSheetState extends State<_RecipeSheet> {
   final _pick = <String, Quality>{};
   int _times = 1;
 
+  /// O caminho escolhido entre os que fazem o mesmo item (os `.alt`).
+  late Recipe _r = widget.recipe;
+
   CraftingBook get _book => widget.data.craft;
 
   /// As qualidades que há de [id] (pilhas ou recipientes cheios).
@@ -55,7 +59,7 @@ class _RecipeSheetState extends State<_RecipeSheet> {
 
   int _maxTimes() {
     var n = 0;
-    while (n < 99 && planCraft(widget.state, widget.recipe, _book, pick: _pick, times: n + 1) != null) {
+    while (n < 99 && planCraft(widget.state, _r, _book, pick: _pick, times: n + 1) != null) {
       n++;
     }
     return n;
@@ -65,7 +69,8 @@ class _RecipeSheetState extends State<_RecipeSheet> {
   Widget build(BuildContext context) => ListenableBuilder(
         listenable: widget.state,
         builder: (context, _) {
-          final s = widget.state, d = widget.data, r = widget.recipe;
+          final s = widget.state, d = widget.data, r = _r;
+          final paths = alternativesOf(s, d.recipes.values, widget.recipe);
           final h = widget.ctx.here();
           final unmet = unmetNeeds(r.needs, h, _book.balance, climateName: widget.ctx.climateName);
           final plan = planCraft(s, r, _book, pick: _pick, times: _times);
@@ -75,6 +80,21 @@ class _RecipeSheetState extends State<_RecipeSheet> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
               Text(d.itemName(r.outId).toUpperCase(), style: const TextStyle(fontSize: 16, color: kText)),
               Text((r.bench ? 'Bancada de casa' : 'Improviso, em qualquer lugar').toUpperCase(), style: const TextStyle(fontSize: 8, color: kDim, height: 1.8)),
+              if (paths.length > 1) ...[
+                const SizedBox(height: 8),
+                Wrap(spacing: 6, children: [
+                  for (final (i, p) in paths.indexed)
+                    _Choice(
+                      label: 'Caminho ${i + 1}',
+                      on: p.id == r.id,
+                      onTap: () => setState(() {
+                        _r = p;
+                        _pick.clear();
+                        _times = 1;
+                      }),
+                    ),
+                ]),
+              ],
               const SizedBox(height: 12),
               Wrap(spacing: 6, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 for (final e in r.inputs.entries) _Ingredient(data: d, id: e.key, need: e.value * _times, have: isCondition(_book, e.key) ? carriedWith(s, e.key).length : s.count(e.key)),
@@ -92,7 +112,7 @@ class _RecipeSheetState extends State<_RecipeSheet> {
               const SizedBox(height: 12),
               if (r.needs.none) const Text('SEM CONDIÇÃO: VALE A QUALQUER HORA.', style: TextStyle(fontSize: 8, color: kDim, height: 1.8)),
               if (!r.needs.none && unmet.isEmpty) const Text('CONDIÇÃO CUMPRIDA AGORA, AQUI.', key: Key('recipe-condition-ok'), style: TextStyle(fontSize: 8, color: kSignal, height: 1.8)),
-              for (final u in unmet) Text('PEDE ${u.what} · ${u.when}'.toUpperCase(), style: const TextStyle(fontSize: 8, color: kEssence, height: 1.8)),
+              for (final u in unmet) Text('PEDE ${u.what} · ${u.when}'.toUpperCase(), style: const TextStyle(fontSize: 8, color: KCores.textoMudo, height: 1.8)),
               const SizedBox(height: 12),
               for (final id in r.inputs.keys)
                 if (_have(id).length > 1)
@@ -114,10 +134,10 @@ class _RecipeSheetState extends State<_RecipeSheet> {
                       plan == null
                           ? 'FALTA MATERIAL'
                           : plan.quality == Quality.perfect
-                              ? 'PERFEITO'
-                              : '${plan.quality.label} · para subir: ${plan.limiting.map((id) => id.startsWith('any:') ? 'a Essência' : d.itemName(id)).join(', ')} ${plan.quality.up().label}'.toUpperCase(),
+                              ? 'QUALIDADE PERFEITA'
+                              : '${plan.quality.phrase} · para subir, use ${_join(plan.limiting.map((id) => id.startsWith('any:') ? 'a Essência' : d.itemName(id)).toList())} de ${plan.quality.up().phrase}'.toUpperCase(),
                       key: const Key('recipe-outcome'),
-                      style: TextStyle(fontSize: 8, color: plan == null ? kEssence : qualityColor(plan.quality), height: 1.6),
+                      style: TextStyle(fontSize: 8, color: plan == null ? KCores.textoMudo : qualityColor(plan.quality), height: 1.6),
                     ),
                   ),
                 ]),
@@ -133,7 +153,7 @@ class _RecipeSheetState extends State<_RecipeSheet> {
                   onTap: () {
                     if (blocker != null) return widget.say(blocker);
                     final q = craftAt(s, r, _book, h, pick: _pick, times: _times);
-                    if (q != null) widget.say('+${r.outQty * _times} ${d.itemName(r.outId)} (${q.label})');
+                    if (q != null) widget.say('+${r.outQty * _times} ${d.itemName(r.outId)}, ${q.phrase}');
                     setState(() => _times = 1);
                   },
                   child: UiFrame(
@@ -151,6 +171,9 @@ class _RecipeSheetState extends State<_RecipeSheet> {
       );
 }
 
+/// "a, b e c".
+String _join(List<String> xs) => xs.length < 2 ? xs.join() : '${xs.sublist(0, xs.length - 1).join(', ')} e ${xs.last}';
+
 class _Ingredient extends StatelessWidget {
   const _Ingredient({required this.data, required this.id, required this.need, this.have, this.label, this.result = false});
 
@@ -164,8 +187,9 @@ class _Ingredient extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [
         ItemIcon(itemId: id, name: label ?? data.itemName(id), size: 40, tint: itemTint(data.craft, id)),
-        Text(result ? '×$need' : '${have ?? 0}/$need', style: TextStyle(fontSize: 8, color: result ? kText : ((have ?? 0) >= need ? kSignal : kEssence))),
-        SizedBox(width: 64, child: Text((label ?? data.itemName(id)).toUpperCase(), maxLines: 2, textAlign: TextAlign.center, style: const TextStyle(fontSize: 8, color: kDim))),
+        Text(result ? '×$need' : '${have ?? 0}/$need', style: TextStyle(fontSize: 8, color: result ? kText : ((have ?? 0) >= need ? kSignal : KCores.textoMudo))),
+        // 0.24.1: o nome quebra em até três linhas ("Pó de Essência / de Sombra"), sem cortar.
+        SizedBox(width: 96, child: Text((label ?? data.itemName(id)).toUpperCase(), maxLines: 3, softWrap: true, textAlign: TextAlign.center, style: const TextStyle(fontSize: 8, color: kDim, height: 1.4))),
       ]);
 }
 

@@ -1,14 +1,14 @@
 {
   "panel": [4, 4, 4, 4],
   "sheet": [3, 3, 3, 1],
-  "tab_on": [4, 4, 4, 2],
-  "tab_off": [4, 4, 4, 2],
-  "button": [3, 3, 3, 3],
-  "button_pressed": [3, 5, 3, 2],
-  "button_disabled": [3, 3, 3, 3],
+  "tab_on": [2, 4, 2, 2],
+  "tab_off": [2, 4, 2, 2],
+  "button": [2, 2, 2, 3],
+  "button_pressed": [2, 4, 2, 1],
+  "button_disabled": [2, 2, 2, 3],
   "cell": [2, 2, 2, 2],
   "cell_selected": [3, 3, 3, 3],
   "bar_frame": [2, 2, 2, 2],
   "bar_fill": [1, 1, 1, 1],
-  "chip": [3, 3, 3, 3]
+  "chip": [2, 2, 2, 2]
 }

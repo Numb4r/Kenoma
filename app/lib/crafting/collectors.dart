@@ -7,6 +7,7 @@ library;
 import 'dart:math' as math;
 
 import '../player/game_state.dart';
+import 'bag.dart';
 import 'conditions.dart';
 import 'crafting_data.dart';
 import 'crafting_state.dart';
@@ -144,9 +145,9 @@ PlantedState updatePlanted(Vessel v, int now, Here Function(int t) hereAt, Craft
 /// tipo na bolsa, dentro do limite e a [CraftingBalance.plantedGapM] ou mais de outro plantado.
 String? plantBlocker(GameState s, String kind, Here h, double speedMps, double walkMaxMps, CraftingBook book) {
   if (speedMps > walkMaxMps) return 'Só a pé: plante parado ou andando';
-  if ((s.inventory[kind] ?? 0) <= 0) return 'Nenhum recipiente vazio desse na bolsa';
+  if ((s.inventory[kind] ?? 0) <= 0) return 'Nenhum recipiente vazio desse tipo na bolsa';
   final planted = s.crafting.at(VesselPlace.planted).toList();
-  if (planted.length >= plantedCapacity(s, book, h.utc)) return 'Já há ${planted.length} coletores plantados';
+  if (planted.length >= plantedCapacity(s, book, h.utc)) return 'Já há ${planted.length} ${planted.length == 1 ? 'coletor plantado' : 'coletores plantados'}: colha um antes';
   for (final p in planted) {
     final d = metersBetween(h.lat, h.lon, p.lat, p.lon);
     if (d < book.balance.plantedGapM) return 'Outro coletor a ${d.round()} m: plante a ${book.balance.plantedGapM.round()} m dele';
@@ -160,14 +161,20 @@ Vessel? plant(GameState s, String kind, Here h, double speedMps, double walkMaxM
   s.spend({kind: 1});
   final v = Vessel(uid: s.crafting.nextUid++, kind: kind, place: VesselPlace.planted, lat: h.lat, lon: h.lon, plantedUtc: h.utc, checkedUtc: h.utc);
   s.crafting.vessels.add(v);
-  s.changed();
+  s.recordEvent('vessel_placed', kind, 1);
+  s.recordEvent('vessel_planted', kind, 1);
   return v;
 }
 
-/// Colhe o plantado [v] estando a [distM] dele: volta para o cinto se há espaço, senão para a bolsa. `false` se longe.
+/// Se cabe mais um recipiente guardado na bolsa (um espaço).
+bool _bagHasSlot(GameState s, CraftingBook book, int now) => slotsUsed(s, book) < bagCapacity(s, book, now);
+
+/// Colhe o plantado [v] estando a [distM] dele: volta para o cinto se há espaço, senão para a bolsa. `false` se longe ou se
+/// o cinto e a bolsa estão cheios (ele fica plantado).
 bool harvest(GameState s, Vessel v, double distM, double touchM, CraftingBook book, int now) {
   if (distM > touchM || v.place != VesselPlace.planted) return false;
   final beltFree = s.crafting.at(VesselPlace.belt).length < beltCapacity(s, book, now);
+  if (!beltFree && !_bagHasSlot(s, book, now)) return false;
   if (v.empty) {
     s.crafting.vessels.remove(v);
     if (beltFree) {
@@ -187,20 +194,24 @@ bool toBelt(GameState s, String kind, CraftingBook book, int now) {
   if (s.crafting.at(VesselPlace.belt).length >= beltCapacity(s, book, now) || (s.inventory[kind] ?? 0) <= 0) return false;
   s.spend({kind: 1});
   s.crafting.vessels.add(Vessel(uid: s.crafting.nextUid++, kind: kind, place: VesselPlace.belt));
-  s.changed();
+  s.recordEvent('vessel_placed', kind, 1);
   return true;
 }
 
-/// Tira [v] do cinto: vazio volta a ser pilha; cheio fica guardado na bolsa (não enche mais).
-void fromBelt(GameState s, Vessel v) {
-  if (v.place != VesselPlace.belt) return;
+/// Tira [v] do cinto: vazio volta a ser pilha; cheio fica guardado na bolsa (não enche mais). `false`, sem mexer, se a
+/// bolsa não comporta.
+bool fromBelt(GameState s, Vessel v, CraftingBook book, int now) {
+  if (v.place != VesselPlace.belt) return false;
   if (v.empty) {
+    if (acceptable(s, book, now, v.kind, 1) < 1) return false;
     s.crafting.vessels.remove(v);
     s.add(v.kind, 1);
   } else {
+    if (!_bagHasSlot(s, book, now)) return false;
     v.place = VesselPlace.bag;
   }
   s.changed();
+  return true;
 }
 
 /// Os recipientes cheios de [contentId] que o jogador carrega (cinto e bolsa), do pior ao melhor.
@@ -217,6 +228,12 @@ void useContent(GameState s, Vessel v) {
   } else {
     v.clear();
   }
+}
+
+/// "Garrafa de vidro cheia: Água de chuva, qualidade boa" (o recipiente concorda com o gênero dele).
+String vesselFullText(Vessel v, CraftingBook book) {
+  final kind = book.items[v.kind];
+  return '${kind?.name ?? v.kind} ${kind?.agree('cheio', 'cheia') ?? 'cheio'}: ${book.items[v.content]?.name ?? v.content}, ${v.quality.phrase}';
 }
 
 /// A qualidade do conteúdo de [v] (comum se vazio).

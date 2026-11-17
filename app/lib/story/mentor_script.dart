@@ -45,7 +45,7 @@ class MentorMessage {
 }
 
 class MentorScript {
-  const MentorScript({required this.contactName, required this.contactNote, required this.tutorial, this.familiar = const [], this.school = const [], this.events = const [], this.phoneUnlock = const {}, this.radio = const [], this.direct = const []});
+  const MentorScript({required this.contactName, required this.contactNote, required this.tutorial, this.familiar = const [], this.school = const [], this.events = const [], this.phoneUnlock = const {}, this.radio = const [], this.direct = const [], this.craftTutorialTitle = 'Primeira garrafa', this.craftTutorialSteps = const []});
 
   factory MentorScript.fromJson(Map<String, dynamic> j) => MentorScript(
         contactName: (j['contact'] as Map<String, dynamic>)['name'] as String,
@@ -57,6 +57,8 @@ class MentorScript {
         phoneUnlock: {for (final e in ((j['phone_unlock'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as String},
         radio: [for (final m in (j['radio'] as List<dynamic>?) ?? const []) MentorMessage.fromJson(m as Map<String, dynamic>)],
         direct: [for (final m in (j['direct'] as List<dynamic>?) ?? const []) MentorMessage.fromJson(m as Map<String, dynamic>)],
+        craftTutorialTitle: ((j['craft_tutorial'] as Map<String, dynamic>?)?['title'] as String?) ?? 'Primeira garrafa',
+        craftTutorialSteps: [...(((j['craft_tutorial'] as Map<String, dynamic>?)?['steps'] as List<dynamic>?) ?? const []).cast<String>()],
       );
 
   final String contactName;
@@ -83,6 +85,10 @@ class MentorScript {
   /// Mensagens que o código manda quantas vezes precisar, com números no texto (`{sparks}`): o resumo da Patrulha e os
   /// marcos de passos do dia. Não saem sozinhas (`GameState.deliverMessage`).
   final List<MentorMessage> direct;
+
+  /// A quest que ensina o crafting (0.24.1): o título e os rótulos dos quatro passos na lista de tarefas da tela.
+  final String craftTutorialTitle;
+  final List<String> craftTutorialSteps;
 
   MentorMessage? byId(String id) {
     for (final m in [...tutorial, ...familiar, ...school, ...events, ...direct]) {

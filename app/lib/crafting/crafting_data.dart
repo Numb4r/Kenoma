@@ -39,6 +39,9 @@ enum YearSeason {
   const YearSeason(this.label);
 
   final String label;
+
+  /// "no verão", "na primavera".
+  String get inLabel => this == spring ? 'na $label' : 'no $label';
 }
 
 /// Os grupos de fase que as receitas de lua e o frasco escuro usam.
@@ -73,6 +76,8 @@ class ItemDef {
     this.effects = const {},
     this.season,
     this.inSeasonMult = 1,
+    this.feminine = false,
+    this.perishVerb,
   });
 
   factory ItemDef.fromJson(Map<String, dynamic> j) {
@@ -90,6 +95,8 @@ class ItemDef {
       effects: {for (final e in ((j['effects'] as Map<String, dynamic>?) ?? const {}).entries) e.key: (e.value as num).toDouble()},
       season: j['season'] == null ? null : YearSeason.values.byName(j['season'] as String),
       inSeasonMult: ((j['in_season_mult'] as num?) ?? 1).toDouble(),
+      feminine: j['gender'] == 'f',
+      perishVerb: j['perish_verb'] as String?,
     );
   }
 
@@ -118,6 +125,15 @@ class ItemDef {
   /// O amuleto de estação: a linha só se fabrica nela, e ele vale [inSeasonMult] vezes nela.
   final YearSeason? season;
   final double inSeasonMult;
+
+  /// O nome é feminino (`gender: f`): a interface concorda ("garrafa cheia", "frasco cheio").
+  final bool feminine;
+
+  /// O verbo da validade (`derrete`, `apaga`, `estraga`); sem ele, `estraga`.
+  final String? perishVerb;
+
+  /// [m] ou [f] conforme o gênero do nome.
+  String agree(String m, String f) => feminine ? f : m;
 
   BagTab get tab => switch (kind) {
         'vessel' || 'condition' => BagTab.conditions,

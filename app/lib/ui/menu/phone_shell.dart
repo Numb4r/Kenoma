@@ -5,6 +5,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../system_bars.dart';
 import '../tema.dart';
 import 'phone_status.dart';
 
@@ -31,11 +32,15 @@ class PhoneScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 0.24.1: em tela cheia o conteúdo sobe até o topo e só a barra de status fina desvia do furo da câmera (como o HUD do
+    // mapa); com as barras do Android à vista, vale a barra de status.
+    final hole = topCutout(context);
     return Scaffold(
       backgroundColor: KCores.fundo,
       body: SafeArea(
+        top: hole == null,
         child: Column(children: [
-          const PhoneStatusBar(compact: true),
+          ConstrainedBox(constraints: BoxConstraints(minHeight: hole?.bottom ?? 0), child: const PhoneStatusBar(compact: true)),
           Padding(
             padding: const EdgeInsets.fromLTRB(KEspaco.s1, KEspaco.s1, KEspaco.s2, KEspaco.s1),
             child: Row(children: [

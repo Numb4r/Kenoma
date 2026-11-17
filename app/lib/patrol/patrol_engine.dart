@@ -17,6 +17,7 @@ import 'dart:math' as math;
 import '../core/species_ids.dart';
 import '../core/tiles.dart';
 import '../crafting/collector_tick.dart';
+import '../crafting/collectors.dart' show vesselFullText;
 import '../crafting/crafting_data.dart';
 import '../crafting/quality.dart';
 import '../player/game_state.dart';
@@ -213,7 +214,7 @@ class PatrolEngine {
     for (final v in news.planted) {
       out.lines.add({'k': 'planted_full', 'uid': v.uid, 't': nowUtc});
       out.vibrations.add(balance.vibrateRareMs);
-      out.rare.add((uid: -v.uid, text: 'Coletor plantado cheio: ${book.items[v.content]?.name ?? v.content} (${v.quality.label})'));
+      out.rare.add((uid: -v.uid, text: 'Plantado: ${vesselFullText(v, book)}'));
     }
   }
 

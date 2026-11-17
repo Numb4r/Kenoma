@@ -61,7 +61,7 @@ Future<void> runEncounter(
         seals: seals,
         count: state.count,
         tonics: best == null ? 0 : state.count(best.tonic.id),
-        tonicLabel: best == null ? null : '${best.tonic.name} · ${best.q.label}',
+        tonicLabel: best == null ? null : '${best.tonic.name} · ${best.q.phrase}',
         tonicSeconds: best?.seconds ?? 0,
         behavior: eco.behavior,
         variant: data.variantInfo(biome: eco.variant, shiny: eco.shiny),

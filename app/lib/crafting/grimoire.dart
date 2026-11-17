@@ -128,6 +128,8 @@ Quality? craftAt(GameState s, Recipe r, CraftingBook book, Here h, {Map<String, 
   }
   s.craft(plan.stacks, r.outId, r.outQty * times, q: plan.quality);
   s.recordEvent('craft', r.id, times);
+  if (book.items[r.outId]?.kind == 'vessel') s.recordEvent('vessel_made', r.outId, times);
+  if (plan.vessels.isNotEmpty) s.recordEvent('condition_used', r.id, times);
   final tier = book.items[r.outId]?.tier;
   if (tier == Tier.refined) s.recordEvent('refine', r.id, times);
   if (tier == Tier.component) s.recordEvent('component', r.id, times);
@@ -137,22 +139,41 @@ Quality? craftAt(GameState s, Recipe r, CraftingBook book, Here h, {Map<String, 
 /// Os três grupos da lista de receitas conhecidas da Bancada.
 typedef RecipeGroups = ({List<(Recipe, Quality)> now, List<(Recipe, List<Unmet>)> waiting, List<Recipe> missing});
 
+/// Os três grupos com uma linha por resultado (0.24.1): os caminhos de um mesmo item (`.alt`) contam como uma receita só,
+/// no melhor grupo que algum deles alcança (e, em "pode fazer agora", o que sai com a melhor qualidade).
 RecipeGroups groupRecipes(GameState s, Iterable<Recipe> recipes, CraftingBook book, Here h, {required bool bench}) {
-  final now = <(Recipe, Quality)>[];
-  final waiting = <(Recipe, List<Unmet>)>[];
-  final missing = <Recipe>[];
+  final best = <String, (int, Recipe, Quality?, List<Unmet>)>{}; // saída -> (grupo 0 agora, 1 esperando, 2 falta)
   for (final r in recipes) {
     if (r.bench != bench || !isKnown(s, r) || levelBlocker(s, r, book.balance) != null) continue;
     final plan = planCraft(s, r, book);
-    if (plan == null) {
-      missing.add(r);
-      continue;
-    }
-    final unmet = unmetNeeds(r.needs, h, book.balance);
-    unmet.isEmpty ? now.add((r, plan.quality)) : waiting.add((r, unmet));
+    final unmet = plan == null ? const <Unmet>[] : unmetNeeds(r.needs, h, book.balance);
+    final rank = plan == null ? 2 : (unmet.isEmpty ? 0 : 1);
+    final old = best[r.outId];
+    final better = old == null || rank < old.$1 || (rank == 0 && old.$1 == 0 && plan!.quality.index > old.$3!.index);
+    if (better) best[r.outId] = (rank, r, plan?.quality, unmet);
   }
-  return (now: now, waiting: waiting, missing: missing);
+  return (
+    now: [for (final e in best.values) if (e.$1 == 0) (e.$2, e.$3!)],
+    waiting: [for (final e in best.values) if (e.$1 == 1) (e.$2, e.$4)],
+    missing: [for (final e in best.values) if (e.$1 == 2) e.$2],
+  );
 }
+
+/// Os caminhos conhecidos para o mesmo resultado de [r] (ela inclusive), na ordem dos dados.
+List<Recipe> alternativesOf(GameState s, Iterable<Recipe> recipes, Recipe r) => [for (final x in recipes) if (x.outId == r.outId && x.bench == r.bench && isKnown(s, x)) x];
+
+/// As pistas do Experimentar quando os ingredientes estão certos e falta a condição (`docs/textos-crafting.md`).
+const kTryHints = {
+  'night': 'Falta algo da noite.',
+  'sun': 'Falta algo do sol.',
+  'rain': 'Falta algo da chuva.',
+  'water': 'Falta algo de água por perto.',
+  'green': 'Falta chão verde.',
+  'place': 'Falta o lugar certo.',
+  'moon': 'Falta algo da lua.',
+  'season': 'Falta a estação certa.',
+  'page': 'Falta uma página do grimório.',
+};
 
 /// O resultado de Tentar no Experimentar.
 typedef TryResult = ({Recipe? learned, String text});
@@ -172,24 +193,24 @@ TryResult experiment(GameState s, List<String> ids, Iterable<Recipe> recipes, Cr
     final mapped = {for (final id in combo) need.contains(id) ? id : key(id)};
     if (!need.containsAll(mapped)) continue;
     if (r.discovery == Discovery.page) {
-      partial ??= 'Uma página do grimório explica essa mistura';
+      partial ??= kTryHints['page']!;
       continue;
     }
     if (need.length > mapped.length) {
-      partial ??= r.hint.isEmpty ? 'Falta mais um material' : r.hint;
+      partial ??= r.hint.isEmpty ? 'Quase. Falta mais um material. Nada foi gasto.' : 'Quase: ${r.hint}. Nada foi gasto.';
       continue;
     }
     final unmet = unmetNeeds(r.needs, h, book.balance);
     if (unmet.isNotEmpty) {
-      partial ??= 'Falta algo: ${unmet.first.what}';
+      partial ??= kTryHints[unmet.first.kind] ?? 'Falta algo: ${unmet.first.what}.';
       continue;
     }
-    if (isKnown(s, r)) return (learned: r, text: 'Você já conhece esta');
+    if (isKnown(s, r)) return (learned: r, text: 'Você já conhece esta receita');
     s.crafting.known.add(r.id);
     s.recordEvent('discover', r.id, 1);
     return (learned: r, text: 'Receita nova no grimório');
   }
-  return (learned: null, text: partial ?? 'Nada acontece. Nada se perdeu');
+  return (learned: null, text: partial ?? 'Isso não dá em nada. Nada foi gasto.');
 }
 
 /// As receitas desconhecidas que usam algo que o jogador tem (ou só [itemId]): a silhueta do grimório, com o degrau do

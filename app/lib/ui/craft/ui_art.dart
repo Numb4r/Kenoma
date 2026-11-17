@@ -110,7 +110,10 @@ class UiFrame extends StatelessWidget {
     if (img == null || ins == null) {
       return Container(padding: padding, decoration: BoxDecoration(color: fallbackFill, border: Border.all(color: fallbackLine, width: kUiPixel)), child: child);
     }
-    return CustomPaint(painter: NineSlicePainter(img, ins), child: Padding(padding: padding, child: child));
+    // 0.24.1: o conteúdo fica sempre fora da borda da moldura, com 3 dp de folga (as etiquetas cortadas da 0.24.0).
+    double at(int i, double p) => p == 0 ? 0 : (p > ins[i] * kUiPixel + 3 ? p : ins[i] * kUiPixel + 3);
+    final pad = EdgeInsets.fromLTRB(at(0, padding.left), at(1, padding.top), at(2, padding.right), at(3, padding.bottom));
+    return CustomPaint(painter: NineSlicePainter(img, ins), child: Padding(padding: pad, child: child));
   }
 }
 

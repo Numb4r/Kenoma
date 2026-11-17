@@ -23,7 +23,7 @@ import 'progression.dart';
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 10;
+const int saveSchemaVersion = 11;
 
 /// A chave das células z17 visitadas no save (schema 6).
 const String kVisitedCellsKey = 'celulas_visitadas';
@@ -455,10 +455,16 @@ class GameState extends ChangeNotifier {
     return up;
   }
 
-  /// Põe [n] [itemId] na pilha da qualidade [q] (uma chave com qualidade já diz qual pilha).
-  void add(String itemId, int n, {Quality q = Quality.common}) {
-    if (n <= 0) return;
+  /// O limite da bolsa (0.24.1): quantos de [n] da pilha [key] cabem. Quem recusa avisa. Sem ele (testes), cabe tudo.
+  int Function(String key, int n)? accept;
+
+  /// Põe [n] [itemId] na pilha da qualidade [q] (uma chave com qualidade já diz qual pilha). Devolve quantos entraram: a
+  /// bolsa nunca passa do limite ([accept]).
+  int add(String itemId, int n, {Quality q = Quality.common}) {
+    if (n <= 0) return 0;
     final key = itemId.contains('@') ? itemId : stackKey(itemId, q);
+    n = accept?.call(key, n) ?? n;
+    if (n <= 0) return 0;
     inventory[key] = (inventory[key] ?? 0) + n;
     // A Fagulha coletada entra no Bestiário (a primeira forma de cada família).
     final id = parseStack(key).id;
@@ -466,7 +472,13 @@ class GameState extends ChangeNotifier {
       final e = bestiary[id] ?? const BestiaryEntry();
       bestiary[id] = e.copyWith(captured: true, captures: e.captures + n);
     }
+    // A primeira Sucata abre a quest que ensina o crafting (0.24.1): o mentor manda a mensagem `craft_tut_start`.
+    if (id == kCraftTutorialTrigger && crafting.tutorial == CraftTutorial.off) {
+      crafting.tutorial = CraftTutorial.on;
+      story.events['craft_tut_start'] = 1;
+    }
     notifyListeners();
+    return n;
   }
 
   /// Gasta uma unidade (de um id puro, a pior qualidade que houver). `false` se não há.

@@ -98,6 +98,12 @@ class Vessel {
 }
 
 /// Os espaços do loadout (docs/GDD.md, "Regras da fase 1"). Não há espaço de gadget: o jogo ainda não tem gadget equipável.
+/// A quest que ensina o crafting (0.24.1): desligada até a primeira Sucata, ligada enquanto há passo a fazer, feita.
+enum CraftTutorial { off, on, done }
+
+/// O item que abre a quest: a Sucata, de que a Garrafa de vidro é feita.
+const kCraftTutorialTrigger = 'item.scrap';
+
 enum LoadoutSlot {
   bag('Bolsa'),
   belt('Cinto de coletores'),
@@ -124,6 +130,9 @@ class CraftingState {
     Map<LoadoutSlot, String>? looks,
     Set<LoadoutSlot>? hidden,
     this.nextUid = 1,
+    this.tutorial = CraftTutorial.off,
+    this.tutorialSteps = 0,
+    this.gift = false,
   })  : vessels = vessels ?? [],
         known = known ?? {},
         pages = pages ?? {},
@@ -147,6 +156,9 @@ class CraftingState {
       looks: slots(j['looks']),
       hidden: {for (final s in ((j['hidden'] as List<dynamic>?) ?? const []).cast<String>()) if (LoadoutSlot.values.any((x) => x.name == s)) LoadoutSlot.values.byName(s)},
       nextUid: (j['next_uid'] as int?) ?? 1,
+      tutorial: CraftTutorial.values.byName((j['tutorial'] as String?) ?? 'off'),
+      tutorialSteps: (j['tutorial_steps'] as int?) ?? 0,
+      gift: (j['gift'] as bool?) ?? false,
     );
   }
 
@@ -171,6 +183,11 @@ class CraftingState {
   final Set<LoadoutSlot> hidden;
   int nextUid;
 
+  /// A quest do crafting, quantos passos dela o mentor já comentou e se ele já deu a primeira garrafa.
+  CraftTutorial tutorial;
+  int tutorialSteps;
+  bool gift;
+
   Iterable<Vessel> at(VesselPlace p) => vessels.where((v) => v.place == p);
 
   Map<String, dynamic> toJson() => {
@@ -182,5 +199,8 @@ class CraftingState {
         'looks': {for (final e in looks.entries) e.key.name: e.value},
         'hidden': [for (final s in hidden) s.name],
         'next_uid': nextUid,
+        'tutorial': tutorial.name,
+        'tutorial_steps': tutorialSteps,
+        'gift': gift,
       };
 }

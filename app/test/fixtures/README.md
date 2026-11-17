@@ -24,3 +24,8 @@
   numa `GameSession` (as migrações da 0.23.2 o levaram ao 9), pôs na Bolsa giz, ervas, água pura, ectoplasma, cristal de
   gelo, fragmento de luz, sucata, Essência de Água e Pó de Sombra, fabricou um Selo simples e gravou. É a base de
   `test/save/migration_v10_test.dart` (todo material antigo vira comum e entra o bloco `crafting`).
+- `save_v10_0240.json`: save do schema 10 gravado pelo código real da 0.24.0 (commit aefae3e, build 0.24.0+44), do mesmo
+  jeito: `git archive aefae3e app shared` numa pasta temporária, e lá um teste descartável abriu `save_v9_0232.json` numa
+  `GameSession` (a migração da 0.24.0 o levou ao 10), pôs Sucata, Pó de Fogo e Giz bom na Bolsa, fabricou duas Garrafas de
+  vidro (a receita marcada como conhecida), pôs uma no cinto, plantou a outra e gravou. É a base de
+  `test/save/migration_v11_test.dart` (as receitas antigas da Bancada continuam conhecidas e entra a quest do crafting).

@@ -34,9 +34,9 @@ class PlantedList extends StatelessWidget {
               Builder(builder: (_) {
                 final st = updatePlanted(v, now, (t) => ctx.hereAt(v.lat, v.lon, t), data.craft);
                 final d = metersBetween(me.lat, me.lon, v.lat, v.lon);
-                final what = v.content == null ? '' : ' · ${data.itemName(v.content!)} ${v.quality.label}';
+                final what = v.content == null ? '' : ' · ${data.itemName(v.content!)}, ${v.quality.phrase}';
                 return Text(
-                  '${data.itemName(v.kind)} · ${d.round()} m · ${plantedLabel(st)}$what'.toUpperCase(),
+                  '${data.itemName(v.kind)} · ${d.round()} m · ${plantedLabel(st, data.craft.items[v.kind])}$what'.toUpperCase(),
                   style: TextStyle(fontSize: 8, color: st == PlantedState.full ? kSignal : (st == PlantedState.filling ? kVeil : kDim), height: 1.8),
                 );
               }),

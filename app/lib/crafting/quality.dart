@@ -5,15 +5,19 @@ library;
 
 enum Quality {
   common('comum'),
-  good('bom'),
-  perfect('perfeito');
+  good('boa'),
+  perfect('perfeita');
 
   const Quality(this.label);
 
+  /// O rótulo depois de "qualidade" ("qualidade boa"): concorda sempre, qualquer que seja o item.
   final String label;
 
   /// Quantos pontos a célula da bolsa desenha (1 a 3): a contagem diferencia, não só a cor.
   int get dots => index + 1;
+
+  /// "qualidade boa".
+  String get phrase => 'qualidade $label';
 
   Quality up([int n = 1]) => Quality.values[(index + n).clamp(0, Quality.values.length - 1)];
 

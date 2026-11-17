@@ -16,15 +16,19 @@ import '../menu/screen_frame.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
 
 /// Um efeito em palavras: `bag_slots` 20 → "+20 espaços na bolsa".
-String effectText(String key, double v) => switch (key) {
-      'bag_slots' => '+${v.round()} espaços na bolsa',
-      'belt_slots' => '+${v.round()} garrafas no cinto',
-      'planted_slots' => '+${v.round()} coletores plantados',
+String effectText(String key, double v) {
+  final n = v.round();
+  String plural(String one, String many) => n == 1 ? one : many;
+  return switch (key) {
+      'bag_slots' => '+$n ${plural('espaço', 'espaços')} na bolsa',
+      'belt_slots' => '+$n ${plural('garrafa', 'garrafas')} no cinto',
+      'planted_slots' => '+$n ${plural('coletor plantado', 'coletores plantados')}',
       'seal_tolerance' => '+${(v * 100).round()}% de tolerância no selo',
       'tonic_time' => '+${(v * 100).round()}% de tempo no tônico',
       'fill_speed' => '+${(v * 100).round()}% de velocidade ao encher',
       _ => '$key ${v.toStringAsFixed(2)}',
     };
+}
 
 class LoadoutScreen extends StatefulWidget {
   const LoadoutScreen({required this.state, required this.data, required this.nowUtc, super.key});
@@ -113,7 +117,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
         ),
         if (!_looks && def != null)
           for (final e in def.effects.entries) Text(effectText(e.key, e.value).toUpperCase(), style: const TextStyle(fontSize: 8, color: kSignal, height: 1.6)),
-        if (!_looks && def?.season != null) Text('MAIS FORTE NO ${def!.season!.label.toUpperCase()}', style: const TextStyle(fontSize: 8, color: kVeil, height: 1.6)),
+        if (!_looks && def?.season != null) Text('MAIS FORTE ${def!.season!.inLabel.toUpperCase()}', style: const TextStyle(fontSize: 8, color: kVeil, height: 1.6)),
         const SizedBox(height: 6),
         Wrap(spacing: 6, runSpacing: 6, children: [
           if (choices.isNotEmpty) PixelButton(label: _choosing == slot ? 'Fechar' : 'Trocar', color: kSignal, onTap: () => setState(() => _choosing = _choosing == slot ? null : slot)),
@@ -135,7 +139,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
               },
               child: Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Text('▸ ${_name(k).toUpperCase()}${parseStack(k).q == Quality.common ? '' : ' · ${parseStack(k).q.label.toUpperCase()}'}', style: const TextStyle(fontSize: 8, color: kText, height: 1.6)),
+                child: Text('▸ ${_name(k).toUpperCase()}${parseStack(k).q == Quality.common ? '' : ' · ${parseStack(k).q.phrase.toUpperCase()}'}', style: const TextStyle(fontSize: 8, color: kText, height: 1.6)),
               ),
             ),
       ]),

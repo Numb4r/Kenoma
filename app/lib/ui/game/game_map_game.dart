@@ -1060,24 +1060,31 @@ class GameMapGame extends FlameGame {
   }
 
   /// O spawn sob o toque em [screen], se houver: o mais perto dentro do raio de toque.
-  /// Os coletores plantados (camada pessoal: só o dono vê): o recipiente de pé e um anel com o estado, cheio no ciano do
-  /// sinal, enchendo no violeta do Véu, esperando apagado.
+  /// Os coletores plantados (camada pessoal: só o dono vê), menores que o Conjurador (0.24.1): o sprite de mapa do
+  /// recipiente (9 × 10 pixels de arte, base no ponto) sobre uma base de 9 pixels com o estado, cheio no ciano do sinal,
+  /// enchendo no violeta do Véu, esperando apagado.
   void _paintCollectors(Canvas canvas, Size view, MapCamera cam, WorldView wv) {
     final planted = wv.state.crafting.at(VesselPlace.planted);
     if (planted.isEmpty) return;
-    const px = kUiPixel;
+    final px = playerSizePx / mapPlayerPx; // o pixel do Conjurador: 10 pixels de altura contra os 16 dele
+    final plain = Paint()..filterQuality = FilterQuality.none;
     for (final v in planted) {
       final (cx, cy) = latLonToTileFraction(v.lat, v.lon, biomeZoom);
       final (sx, sy) = cam.cellToScreen(cx, cy, view.width, view.height);
-      final ring = v.content != null ? kSignal : (v.progressS > 0 ? kVeil : kDim);
-      canvas.drawRect(Rect.fromCenter(center: Offset(sx.roundToDouble(), sy.roundToDouble() + 2 * px), width: 12 * px, height: 4 * px), Paint()..color = ring.withValues(alpha: 0.55));
-      final img = UiArt.instance?.icon(v.kind);
-      final dst = Rect.fromCenter(center: Offset(sx.roundToDouble(), (sy - 6 * px).roundToDouble()), width: 16 * px, height: 16 * px);
-      if (img == null) {
-        canvas.drawRect(dst.deflate(4 * px), Paint()..color = ring);
-      } else {
-        canvas.drawImageRect(img, Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble()), dst, Paint()..filterQuality = FilterQuality.none);
+      final x = (sx / px).roundToDouble() * px, y = (sy / px).roundToDouble() * px;
+      final ring = Paint()..color = (v.content != null ? kSignal : (v.progressS > 0 ? kVeil : kDim)).withValues(alpha: 0.8);
+      // A base: linhas de 7, 9 e 7 pixels, centrada no ponto.
+      for (final (row, w) in [(-1, 7), (0, 9), (1, 7)]) {
+        canvas.drawRect(Rect.fromLTWH(x - w * px / 2, y + row * px, w * px, px), ring);
       }
+      final img = UiArt.instance?.image('map_${v.kind.replaceFirst('item.', '').replaceAll('.', '_')}');
+      if (img == null) {
+        canvas.drawRect(Rect.fromLTWH(x - 2 * px, y - 8 * px, 4 * px, 8 * px), plain..color = kSignal);
+        continue;
+      }
+      // A última linha do sprite cai na linha do meio da base.
+      final dst = Rect.fromLTWH(x - img.width * px / 2, y + px - img.height * px, img.width * px, img.height * px);
+      canvas.drawImageRect(img, Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble()), dst, plain);
     }
   }
 
@@ -1089,7 +1096,8 @@ class GameMapGame extends FlameGame {
     for (final v in w.state.crafting.at(VesselPlace.planted)) {
       final (cx, cy) = latLonToTileFraction(v.lat, v.lon, biomeZoom);
       final (sx, sy) = cam.cellToScreen(cx, cy, size.x, size.y);
-      if ((Offset(sx, sy - 6 * kUiPixel) - screen).distance <= 10 * kUiPixel) return v;
+      final px = playerSizePx / mapPlayerPx;
+      if ((Offset(sx, sy - 4 * px) - screen).distance <= 8 * px + 12) return v; // sprite pequeno: folga de dedo
     }
     return null;
   }

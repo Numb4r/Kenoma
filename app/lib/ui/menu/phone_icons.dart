@@ -36,10 +36,10 @@ const Map<String, List<String>> phoneIconArt = {
     '....tttt....', '.....tt.....', '.....tt.....', '....tttt....', '...t.oo.t...', '..t.oooo.t..',
     '..toooooot..', '.t.oooooo.t.', '.t.oooooo.t.', '.tttttttttt.', '............', '............',
   ],
-  // Provisório (o criativo revê): o Conjurador com o amuleto no peito e a bolsa ao lado.
+  // Do criativo (0.24.1): o amuleto no cordão.
   PhoneAppId.loadout: [
-    '....llll....', '...llllll...', '...llllll...', '....llll....', '..vvvvvvvv..', '.vvvvvvvvvv.',
-    '.vvvvccvvvoo', '.vvvvccvvvoo', '.vvvvvvvvvoo', '..vv....vv..', '..vv....vv..', '............',
+    'l..........l', 'l..........l', '.l........l.', '..l......l..', '...vvvvvv...', '..vvoooovv..',
+    '..voooooov..', '..voooooov..', '..voooooov..', '..vvoooovv..', '...vvvvvv...', '............',
   ],
   PhoneAppId.chat: [
     '............', '.vvvvvvvvvv.', 'vllllllllllv', 'vl.t..t..tlv', 'vllllllllllv', 'vllllllllllv',

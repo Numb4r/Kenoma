@@ -153,7 +153,7 @@ class _BagDetailState extends State<_BagDetail> {
                   Text('${q.label.toUpperCase()}  ×${s.countQ(id, q)}', style: TextStyle(fontSize: 8, color: s.countQ(id, q) > 0 ? qualityColor(q) : kDim, height: 2)),
                 ]),
               const SizedBox(height: 12),
-              const Text('RECEITAS QUE USAM', style: TextStyle(fontSize: 8, color: kSignal)),
+              const Text('USADO EM', key: Key('detail-used-in'), style: TextStyle(fontSize: 8, color: kSignal)),
               const SizedBox(height: 4),
               if (known.isEmpty && shadows.isEmpty) const Text('NENHUMA AINDA.', style: TextStyle(fontSize: 8, color: kDim)),
               for (final r in known)
@@ -187,7 +187,7 @@ class _BagDetailState extends State<_BagDetail> {
               UiFrame(
                 name: 'panel',
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('DESCARTAR', style: TextStyle(fontSize: 8, color: kEssence)),
+                  const Text('DESCARTAR', style: TextStyle(fontSize: 8, color: kText)),
                   const SizedBox(height: 8),
                   Row(children: [
                     _Btn(label: '−', onTap: () => setState(() => _qty = (_qty - 1).clamp(1, maxQ.clamp(1, 999)))),
@@ -206,11 +206,11 @@ class _BagDetailState extends State<_BagDetail> {
                     onTapUp: (_) => _endHold(),
                     onTapCancel: _endHold,
                     child: Stack(children: [
-                      UiFrame(name: 'button', padding: const EdgeInsets.all(12), fallbackLine: kEssence, child: const Center(child: Text('SEGURE PARA DESCARTAR', style: TextStyle(fontSize: 8, color: kEssence)))),
+                      UiFrame(name: 'button', padding: const EdgeInsets.all(12), fallbackLine: kText, child: const Center(child: Text('SEGURE PARA DESCARTAR', style: TextStyle(fontSize: 8, color: kText)))),
                       Positioned.fill(
                         child: Align(
                           alignment: Alignment.centerLeft,
-                          child: FractionallySizedBox(widthFactor: _hold.clamp(0.0, 1.0), heightFactor: 1, child: ColoredBox(color: kEssence.withValues(alpha: 0.3))),
+                          child: FractionallySizedBox(widthFactor: _hold.clamp(0.0, 1.0), heightFactor: 1, child: ColoredBox(color: kVeil.withValues(alpha: 0.35))),
                         ),
                       ),
                     ]),

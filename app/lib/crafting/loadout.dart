@@ -38,10 +38,15 @@ bool equip(GameState s, CraftingBook book, LoadoutSlot slot, String key) {
   return true;
 }
 
-/// Tira o item do espaço e o devolve à bolsa.
-void unequip(GameState s, LoadoutSlot slot) {
-  final old = s.crafting.equipped.remove(slot);
-  if (old != null) s.add(old, 1);
+/// Tira o item do espaço e o devolve à bolsa. `false`, sem tirar, se a bolsa não comporta (0.24.1: nada passa do limite).
+bool unequip(GameState s, LoadoutSlot slot) {
+  final old = s.crafting.equipped[slot];
+  if (old == null) return false;
+  s.crafting.equipped.remove(slot);
+  if (s.add(old, 1) == 1) return true;
+  s.crafting.equipped[slot] = old; // não coube: volta para o espaço
+  s.changed();
+  return false;
 }
 
 /// O item cuja cara aparece no espaço: a aparência escolhida ou, sem ela, o equipado.
