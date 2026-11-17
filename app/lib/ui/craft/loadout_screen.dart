@@ -64,7 +64,16 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
   String _name(String? key) => key == null ? 'vazio' : widget.data.itemName(parseStack(key).id);
 
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
+  Widget build(BuildContext context) => PopScope(
+        // 0.24.4: Voltar com a lista de troca aberta só fecha a lista (um nível), depois sai do app.
+        canPop: _choosing == null,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) setState(() => _choosing = null);
+        },
+        child: _body(context),
+      );
+
+  Widget _body(BuildContext context) => ListenableBuilder(
         listenable: widget.state,
         builder: (context, _) {
           final s = widget.state;

@@ -86,7 +86,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   Widget build(BuildContext context) {
     final prefs = _prefs;
     if (prefs == null) return const Scaffold(body: Center(child: Text('Carregando...')));
-    return DebugMenuView(registry: _registry, prefs: prefs);
+    return DebugMenuView(registry: _registry, prefs: prefs, onTop: () => openGameMap(context, _tools));
   }
 
   @override

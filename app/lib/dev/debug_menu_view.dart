@@ -11,10 +11,14 @@ import 'debug_registry.dart';
 import 'debug_widgets.dart';
 
 class DebugMenuView extends StatefulWidget {
-  const DebugMenuView({required this.registry, required this.prefs, super.key});
+  const DebugMenuView({required this.registry, required this.prefs, this.onTop, super.key});
 
   final DebugRegistry registry;
   final DebugPrefs prefs;
+
+  /// 0.24.4: o Voltar no topo do menu (sem busca). O menu é a primeira rota: sem isto o Voltar fechava o app. O menu do
+  /// jogo passa "abrir o mapa".
+  final VoidCallback? onTop;
 
   @override
   State<DebugMenuView> createState() => _DebugMenuViewState();
@@ -32,7 +36,19 @@ class _DebugMenuViewState extends State<DebugMenuView> {
   @override
   Widget build(BuildContext context) {
     final query = _search.text.trim();
-    return Scaffold(
+    // Voltar sobe um nível: com busca, limpa a busca; no topo, [onTop] (o mapa). Nunca fecha o app.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (_search.text.isNotEmpty) {
+          _search.clear();
+          setState(() {});
+        } else {
+          widget.onTop?.call();
+        }
+      },
+      child: Scaffold(
       backgroundColor: KCores.fundo,
       body: SafeArea(
         child: ListenableBuilder(
@@ -53,6 +69,7 @@ class _DebugMenuViewState extends State<DebugMenuView> {
           ),
         ),
       ),
+    ),
     );
   }
 

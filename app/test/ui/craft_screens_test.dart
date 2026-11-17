@@ -135,4 +135,43 @@ void main() {
     await tester.pump();
     expect(s.crafting.hidden, contains(LoadoutSlot.bag));
   });
+
+  /// Abre [w] por cima de uma tela vazia, como o celular faz: o Voltar tem para onde ir.
+  Future<void> pushed(WidgetTester tester, Widget w) async {
+    await pump(tester, Builder(builder: (context) => TextButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => w)), child: const Text('abrir'))));
+    await tester.tap(find.text('abrir'));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('0.24.4: no Loadout, Voltar com a lista de troca aberta fecha só a lista; o segundo sai da tela', (tester) async {
+    final bag = data.craft.items.values.firstWhere((i) => i.kind == 'bag');
+    await pushed(tester, LoadoutScreen(state: state({bag.id: 1}), data: data, nowUtc: () => t0));
+    await tester.tap(find.text('TROCAR').first);
+    await tester.pump();
+    expect(find.byKey(Key('loadout-pick-${bag.id}')), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byKey(Key('loadout-pick-${bag.id}')), findsNothing);
+    expect(find.byType(LoadoutScreen), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(LoadoutScreen), findsNothing);
+  });
+
+  testWidgets('0.24.4: no Experimentar, Voltar com a escolha de material aberta fecha só a escolha', (tester) async {
+    await pushed(tester, CraftBenchScreen(state: state({'item.herbs': 1}), data: data, ctx: ctx));
+    await tester.tap(find.byKey(const Key('bench-experiment')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('experiment-slot-0')));
+    await tester.pump();
+    expect(find.byKey(const Key('experiment-pick-item.herbs')), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('experiment-pick-item.herbs')), findsNothing);
+    expect(find.byKey(const Key('experiment-slot-0')), findsOneWidget, reason: 'o experimento continua aberto');
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('experiment-slot-0')), findsNothing);
+    expect(find.byType(CraftBenchScreen), findsOneWidget, reason: 'volta à Bancada');
+  });
 }

@@ -58,7 +58,13 @@ class _ExperimentState extends State<_Experiment> {
   Widget build(BuildContext context) {
     final s = widget.state, d = widget.data;
     final shadows = silhouettes(s, d.recipes.values);
-    return SingleChildScrollView(
+    // 0.24.4: Voltar com a escolha de material aberta só fecha a escolha (um nível), depois fecha o experimento.
+    return PopScope(
+      canPop: _picking == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _picking = null);
+      },
+      child: SingleChildScrollView(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
         const Text('EXPERIMENTAR', style: TextStyle(fontSize: 16, color: kVeil)),
         const Text('ERRAR NUNCA GASTA MATERIAL.', style: TextStyle(fontSize: 8, color: kDim, height: 1.8)),
@@ -129,6 +135,7 @@ class _ExperimentState extends State<_Experiment> {
             ]),
           ),
       ]),
+    ),
     );
   }
 }

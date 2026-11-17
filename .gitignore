@@ -9,3 +9,6 @@ workbench/.wb_pass
 # Logs de sessão do Claude Code (0.22.2)
 .claude/logs/
 **/.claude/logs/
+
+# Testes de arte do criativo (0.24.4): fora do git
+tools/art/teste/

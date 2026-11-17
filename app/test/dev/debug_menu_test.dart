@@ -35,12 +35,12 @@ const originalIds = [
 DebugEnv newEnv({DevTools? tools, SaveStore? save}) =>
     DebugEnv(tools: tools ?? DevTools(realSource: FakeGps()), capture: CaptureDebug(), saveStore: save ?? MemorySaveStore());
 
-Future<DebugRegistry> pumpMenu(WidgetTester tester, DebugPrefs prefs, {DebugEnv? env, DebugRegistry? registry}) async {
+Future<DebugRegistry> pumpMenu(WidgetTester tester, DebugPrefs prefs, {DebugEnv? env, DebugRegistry? registry, VoidCallback? onTop}) async {
   tester.view.physicalSize = const Size(1080, 4800);
   tester.view.devicePixelRatio = 2.625;
   addTearDown(tester.view.reset);
   final reg = registry ?? buildDefaultRegistry(env ?? newEnv());
-  await tester.pumpWidget(MaterialApp(home: DebugMenuView(registry: reg, prefs: prefs)));
+  await tester.pumpWidget(MaterialApp(home: DebugMenuView(registry: reg, prefs: prefs, onTop: onTop)));
   addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
   return reg;
 }
@@ -55,6 +55,21 @@ void main() {
     expect(reg.ids.toList()..sort(), containsAll(originalIds));
     expect(originalIds.where((id) => !reg.ids.contains(id)), isEmpty);
     expect(reg.items.every((i) => i.section != DebugSection.favorites), isTrue);
+  });
+
+  testWidgets('0.24.4: Voltar limpa a busca; no topo do menu chama o mapa e nunca fecha o app', (tester) async {
+    var top = 0;
+    await pumpMenu(tester, DebugPrefs(), onTop: () => top++);
+    await tester.enterText(find.byKey(const Key('debug-search')), 'relogio');
+    await tester.pump();
+    expect(await tester.binding.handlePopRoute(), isTrue, reason: 'o app não sai');
+    await tester.pump();
+    expect(find.text('relogio'), findsNothing, reason: 'um nível: a busca');
+    expect(top, 0);
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pump();
+    expect(top, 1, reason: 'no topo, o mapa');
+    expect(find.byType(DebugMenuView), findsOneWidget);
   });
 
   test('as seções vêm na ordem pedida', () {
