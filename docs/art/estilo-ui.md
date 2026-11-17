@@ -43,19 +43,20 @@ As bordas ficam em `tools/art/ui/out/slices.json`, em pixels de arte, na ordem `
 |---|---|---|---|
 | `panel.png` | 12 × 12 | 4, 4, 4, 4 | painel em relevo |
 | `sheet.png` | 12 × 6 | 3, 3, 3, 1 | folha de baixo: só a borda de cima, com a linha violeta; laterais e fundo sangram |
-| `tab_on.png` | 12 × 10 | 4, 4, 4, 2 | aba ativa: linha violeta em cima, aberta embaixo |
-| `tab_off.png` | 12 × 10 | 4, 4, 4, 2 | aba apagada: 1 px mais baixa, rebaixada |
-| `button.png` | 12 × 11 | 3, 3, 3, 3 | botão: face, realce em cima e 2 px de lateral embaixo |
-| `button_pressed.png` | 12 × 11 | 3, 5, 3, 2 | apertado: a face desce 2 px e a lateral some |
-| `button_disabled.png` | 12 × 11 | 3, 3, 3, 3 | desativado: mesma forma, sem realce |
+| `tab_on.png` | 12 × 10 | 2, 4, 2, 2 | aba ativa: linha violeta em cima, aberta embaixo |
+| `tab_off.png` | 12 × 10 | 2, 4, 2, 2 | aba apagada: 1 px mais baixa, rebaixada |
+| `button.png` | 12 × 11 | 2, 2, 2, 3 | botão: face, realce em cima e 2 px de lateral embaixo |
+| `button_pressed.png` | 12 × 11 | 2, 4, 2, 1 | apertado: a face desce 2 px e a lateral some |
+| `button_disabled.png` | 12 × 11 | 2, 2, 2, 3 | desativado: mesma forma, sem realce |
 | `cell.png` | 8 × 8 | 2, 2, 2, 2 | célula da bolsa e espaço do Experimentar, rebaixada |
 | `cell_selected.png` | 8 × 8 | 3, 3, 3, 3 | célula selecionada: anel violeta |
 | `bar_frame.png` | 8 × 6 | 2, 2, 2, 2 | trilho da barra de capacidade |
 | `bar_fill.png` | 3 × 4 | 1, 1, 1, 1 | enchimento: fica 1 px para dentro do trilho, com 4 px de altura |
-| `chip.png` | 10 × 9 | 3, 3, 3, 3 | a faixa "Agora, aqui": aro no ciano do sinal |
+| `chip.png` | 8 × 7 | 2, 2, 2, 2 | a faixa "Agora, aqui": chanfro e aro de 1 px no ciano do sinal |
 
 - As abas sobem 2 px por cima do painel: as duas últimas linhas da aba cobrem o contorno e o realce de cima do painel. A apagada redesenha esses dois e a ativa os abre.
-- As três imagens de botão têm o mesmo tamanho, então o botão não muda de lugar; o conteúdo desce 2 px no apertado porque a borda de cima dele é 5.
+- As três imagens de botão têm o mesmo tamanho, então o botão não muda de lugar; o conteúdo desce 2 px no apertado porque a borda de cima dele é 4 e a de baixo 1 (os três somam 5 px de borda vertical).
+- O código (0.24.1) põe o conteúdo sempre a pelo menos a borda × 3 dp + 3 dp de cada lado: uma moldura nova não corta o texto.
 - Moldura nova: largura e altura de até 12 px, miolo de pelo menos 2 × 2 px liso, e o corte sempre depois do último pixel que não é de cor lisa.
 
 ## Estados de botão
@@ -75,7 +76,7 @@ Normal: face `#3d3357`, realce `#56507a`, lateral `#2a2240`. Apertado: face `#2a
 
 ## Pontos de qualidade
 
-`dot_common.png` (cinza), `dot_good.png` (ciano) e `dot_perfect.png` (ouro), 3 × 3 px cada. Comum leva 1 ponto, Bom 2, Perfeito 3, todos da cor do nível: quem diferencia é a quantidade, a cor só reforça. Ficam no canto de baixo à direita da célula, a 1 px da borda, com passo de 4 px (1 px de vão).
+`dot_common.png` (cinza), `dot_good.png` (ciano) e `dot_perfect.png` (ouro), 3 × 3 px cada. Qualidade comum leva 1 ponto, boa 2, perfeita 3, todos da cor do nível: quem diferencia é a quantidade, a cor só reforça. Ficam no canto de baixo à direita da célula, a 1 px da borda, com passo de 4 px (1 px de vão).
 
 ## Equipamento no Conjurador
 

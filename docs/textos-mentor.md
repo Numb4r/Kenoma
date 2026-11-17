@@ -67,9 +67,14 @@ Saem sozinhas, uma vez cada, quando o acontecimento acontece, sem esperar a fila
 | `ritual_first` (Familiar) | ritual_done ≥ 1 | *O Familiar anda uma vez em volta do desenho que se fechou, devagar, como quem confere uma costura. Depois se senta no centro, onde a criatura estava. Parece dizer: ainda está quente.* |
 | `radar_gift` (mentor) | level_5 ≥ 1 | Cinco. Você já ouve o que está perto. Deixei uma coisa no seu celular: o Radar. Um pulso, e o que está longe responde, por dois minutos, na beira da tela. Depois some. Você acha que só você ouve o pulso? |
 | `page_components` (mentor) | refine ≥ 3 | Você anda deixando giz ao relento. Eu vi. O que se refina sozinho ainda é pouco: junto, e com Essência, vira outra coisa. Deixei uma página no seu grimório. A Bancada de casa sabe o resto. Você sabe o que está montando? |
-| `page_moon` (mentor) | vessel_filled ≥ 1 | Uma garrafa cheia. Bonito. A lua também cabe num frasco, se o vidro for escuro e a noite for inteira. Cada fase guarda uma coisa diferente, e nenhuma delas é luz. Mandei a página. O que você acha que a lua nova esconde? |
+| `page_moon` (mentor) | craft_tut_done ≥ 1 | Uma garrafa cheia. Bonito. A lua também cabe num frasco, se o vidro for escuro e a noite for inteira. Cada fase guarda uma coisa diferente, e nenhuma delas é luz. Mandei a página. O que você acha que a lua nova esconde? |
 | `page_seasons` (mentor) | component ≥ 5 | A cidade troca de pele quatro vezes por ano e quase ninguém repara. Há coisas que só se fazem numa estação, e elas esperam um ano inteiro por quem perdeu a hora. Deixei a página das estações. Em que estação você está, mesmo? |
 | `page_gear` (mentor) | level_8 ≥ 1 | Bolsa cheia. Acontece com quem pega tudo o que brilha. Dá para costurar uma maior, e um cinto, e mais do que isso. A página já está no grimório. Quanto de cidade você pretende carregar? |
+| `craft_tut_start` (mentor) | craft_tut_start ≥ 1 | Sucata. Todo mundo passa por cima. Dois pedaços disso, refundidos, viram vidro, e vidro guarda o que cai do céu. Faça uma garrafa na Bancada. O que você guardaria, se desse para guardar o tempo? |
+| `craft_tut_bottle` (mentor) | craft_tut_bottle ≥ 1 | Uma garrafa vazia. Na bolsa ela só ocupa lugar. Abra a Bolsa, na aba Condições, e ponha a garrafa no cinto. Vazio também se carrega, não? |
+| `craft_tut_belt` (mentor) | craft_tut_belt ≥ 1 | Agora ela anda com você. Quando chover, enche sozinha, no seu passo. Se o céu demorar, plante a garrafa no chão e volte depois: ela espera melhor do que você. Você sabe esperar? |
+| `craft_tut_fill` (mentor) | craft_tut_fill ≥ 1 | Pronto. O céu faz o resto. Água que não tocou o chão ainda lembra de onde veio, e a Bancada sabe a diferença. Quando a garrafa estiver cheia, faça uma receita com essa água. O que você acha que a chuva sabe? |
+| `craft_tut_done` (mentor) | craft_tut_done ≥ 1 | Feito. Você pegou uma coisa do céu e fez outra com as mãos. Há mais para guardar: neve, fumaça, a lua, cada uma no seu vidro. A cidade chove para todo mundo. Quem mais você acha que está guardando? |
 
 ## Falas de desbloqueio do celular
 
@@ -118,6 +123,7 @@ Saem pelo código, quantas vezes for preciso (lista `direct` do JSON). O resumo 
 | `patrol_summary` | mentor | Patrulha encerrada. Tempo: {min} min. Fagulhas: {sparks}. Materiais: {materials}. Ecos presos ao seu sinal: {marks}. A cidade nem percebeu. Ou percebeu e ficou quieta? |
 | `steps_5k` | Familiar | *O Familiar bate no chão cinco vezes com a ponta do contorno e encosta no seu tornozelo. Parece dizer: cinco mil passos hoje, e o chão lembra de cada um.* |
 | `steps_10k` | Familiar | *O Familiar se deita atravessado no caminho e só levanta quando você para também. Dez mil passos. Parece dizer: chega por hoje, ou ainda não?* |
+| `craft_tut_gift` | mentor | Você abriu o cinto e não tinha o que pôr nele. Deixei uma garrafa na sua bolsa. Não agradeça, é só vidro. As próximas você faz: dois pedaços de Sucata, na Bancada. O que você pretende guardar nela? |
 
 ## Fórum Limen: pedidos diários
 

@@ -1,13 +1,21 @@
 # Checklist do celular
 
 O que precisa ser conferido no moto g54 quando a versão for instalada nele. É cumulativo: cobre tudo desde a última versão
-que está no celular (hoje a **0.23.2**, instalada em 2026-11-17 por cima da 0.23.1 (e esta da 0.23.0, que entrou por cima da 0.22.1), com o save mantido; a 0.22.2 nunca foi para o celular, então os itens dela continuam; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
+que está no celular (hoje a **0.24.1**, instalada em 2026-11-17 por cima da 0.24.0 (e esta da 0.23.2, e esta da 0.23.1, e esta da 0.23.0, que entrou por cima da 0.22.1), com o save mantido; a 0.22.2 nunca foi para o celular, então os itens dela continuam; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
 dela. **Um item só sai daqui quando o relatório confirmar que passou.** A ordem vai da versão mais nova para a mais antiga;
 as pendências antigas ficam no fim. O código entre crases é o id do item (o workbench guarda as notas por ele: não mude).
 
 Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`) e o Kenoma em primeiro plano.
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
+
+## 0.24.1
+
+- [ ] `0241-topo` **Telas do celular até o topo.** Bolsa, Bancada, Loadout e Radar sem a faixa preta: a barra de status fina divide o topo com o furo da câmera.
+- [ ] `0241-limite` **Bolsa no limite.** Com a bolsa cheia, pegar material, colher um plantado, tirar do cinto ou do loadout é recusado com aviso; a conta nunca passa do total.
+- [ ] `0241-quest` **Primeira garrafa.** Num jogo que ainda não pegou Sucata: a primeira Sucata traz a mensagem do mentor e a lista de tarefas na Bolsa e na Bancada; cada passo marcado em violeta na tela certa; na chuva de verdade, a garrafa do cinto enche; o tônico com a água fecha a quest e traz a página da lua.
+- [ ] `0241-presente` **Presente.** Sem nenhum recipiente, abrir a aba Condições dá uma Garrafa de vidro e a mensagem do mentor, uma vez.
+- [ ] `0241-coletor` **Coletor no mapa.** O plantado fica menor que o Conjurador e ainda se reconhece (garrafa, frasco, pote); a base muda de cor cheio, enchendo e esperando.
 
 ## 0.24.0
 

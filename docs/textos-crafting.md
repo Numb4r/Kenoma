@@ -91,7 +91,7 @@ Já caem no mundo pelas épocas (chuva de meteoros, Chuva de Runas, chuva congel
 
 ## Recipientes
 
-Vazios, vão no cinto ou são plantados. Todos de improviso, com 2 ingredientes.
+Vazios, vão no cinto ou são plantados. Todos de improviso. A garrafa de vidro é a porta de entrada: só pede Sucata.
 
 ### item.vessel.glass
 - nome: Garrafa de vidro
@@ -100,7 +100,7 @@ Vazios, vão no cinto ou são plantados. Todos de improviso, com 2 ingredientes.
 
 ### recipe.vessel.glass
 - saída: item.vessel.glass
-- entra: Sucata ×2, Pó de Essência de Fogo ×1
+- entra: Sucata ×2
 - pista: algo para guardar chuva
 - condição: nenhuma
 
@@ -688,12 +688,37 @@ Fenda e Mercador ainda não existem, então as quatro páginas chegam pelo mento
 - quando: na primeira vez que a bolsa enche; se nunca encher, ao chegar no nível 8
 - mensagem: Bolsa cheia. Acontece com quem pega tudo o que brilha. Dá para costurar uma maior, e um cinto, e mais do que isso. A página já está no grimório. Quanto de cidade você pretende carregar?
 
+## Quest da primeira garrafa
+
+Ensina o crafting pelos coletores. Começa na primeira vez que o jogador pega Sucata. Mensagens do mentor (Número desconhecido), uma vez cada, no tom de `docs/textos-mentor.md`.
+
+| Id | Quando | Texto |
+| --- | --- | --- |
+| `craft_tut_start` | primeira Sucata na bolsa | Sucata. Todo mundo passa por cima. Dois pedaços disso, refundidos, viram vidro, e vidro guarda o que cai do céu. Faça uma garrafa na Bancada. O que você guardaria, se desse para guardar o tempo? |
+| `craft_tut_bottle` | passo (a): fez a garrafa | Uma garrafa vazia. Na bolsa ela só ocupa lugar. Abra a Bolsa, na aba Condições, e ponha a garrafa no cinto. Vazio também se carrega, não? |
+| `craft_tut_belt` | passo (b): garrafa no cinto | Agora ela anda com você. Quando chover, enche sozinha, no seu passo. Se o céu demorar, plante a garrafa no chão e volte depois: ela espera melhor do que você. Você sabe esperar? |
+| `craft_tut_fill` | passo (c): a garrafa encheu ou foi plantada | Pronto. O céu faz o resto. Água que não tocou o chão ainda lembra de onde veio, e a Bancada sabe a diferença. Quando a garrafa estiver cheia, faça uma receita com essa água. O que você acha que a chuva sabe? |
+| `craft_tut_done` | passo (d): fez uma receita com a água | Feito. Você pegou uma coisa do céu e fez outra com as mãos. Há mais para guardar: neve, fumaça, a lua, cada uma no seu vidro. A cidade chove para todo mundo. Quem mais você acha que está guardando? |
+| `craft_tut_gift` | abriu a aba Condições sem nenhuma garrafa | Você abriu o cinto e não tinha o que pôr nele. Deixei uma garrafa na sua bolsa. Não agradeça, é só vidro. As próximas você faz: dois pedaços de Sucata, na Bancada. O que você pretende guardar nela? |
+
+- O presente sai uma vez só e vale como o passo (a): quem ganhou a garrafa não recebe `craft_tut_bottle` e segue do passo (b). Se a quest ainda não tinha começado, o presente a começa.
+- `craft_tut_fill` e `page_moon` (primeira garrafa cheia) podem cair juntas. Sugestão: `page_moon` só depois de `craft_tut_done`.
+
+### Lista de tarefas
+- `ui.craft_tut.title`: Primeira garrafa
+- `ui.craft_tut.step.bottle`: Faça uma garrafa na Bancada
+- `ui.craft_tut.step.belt`: Ponha a garrafa no cinto
+- `ui.craft_tut.step.fill`: Encha na chuva ou plante a garrafa
+- `ui.craft_tut.step.recipe`: Faça uma receita com a água
+
 ## Textos de interface
 
 ### Qualidade
-- `ui.craft.quality.common`: Comum
-- `ui.craft.quality.good`: Bom
-- `ui.craft.quality.perfect`: Perfeito
+Sai sempre depois da palavra "qualidade" e concorda com ela: "qualidade comum", "qualidade boa", "qualidade perfeita". Nunca "bom" ou "perfeito", nem quando o item é masculino.
+
+- `ui.craft.quality.common`: comum
+- `ui.craft.quality.good`: boa
+- `ui.craft.quality.perfect`: perfeita
 
 ### Pistas do Experimentar
 Aparecem quando os ingredientes estão certos e falta a condição.
