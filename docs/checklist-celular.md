@@ -1,7 +1,7 @@
 # Checklist do celular
 
 O que precisa ser conferido no moto g54 quando a versão for instalada nele. É cumulativo: cobre tudo desde a última versão
-que está no celular (hoje a **0.22.1**, instalada em 2026-11-16 por cima da 0.21.0; a 0.22.2 e a 0.23.0 ainda não foram para o celular; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
+que está no celular (hoje a **0.23.0**, instalada em 2026-11-17 por cima da 0.22.1, com o save mantido; a 0.22.2 nunca foi para o celular, então os itens dela continuam; a 0.23.1 entra quando for instalada; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
 dela. **Um item só sai daqui quando o relatório confirmar que passou.** A ordem vai da versão mais nova para a mais antiga;
 as pendências antigas ficam no fim. O código entre crases é o id do item (o workbench guarda as notas por ele: não mude).
 
@@ -9,12 +9,23 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.23.1
+
+- [ ] `0231-giro-sprites` **Árvore e telhado de pé.** Debug, "Giro dos objetos", girando o mapa com o dedo devagar: a copa de cada árvore e de cada ipê não muda de forma (a sombra também não, só muda de lado com o sol), e a caixa d'água, o ar-condicionado e a antena ficam no mesmo ponto do telhado e de pé. Pare a 30° e tire uma foto.
+- [ ] `0231-chao` **O chão pelo uso do solo.** Num estacionamento (o do Shopping Iguatemi ou de um supermercado), num terreno baldio e numa rua de bairro: o estacionamento é asfalto com vagas, o terreno é terra com mato, o bairro tem o chão do lote, e ladrilho só em praça e calçadão. Nada de piso branco paginado ao longo das avenidas.
+- [ ] `0231-calcada` **Calçada.** No Centro, a calçada portuguesa (ondas pretas e brancas); fora dele, concreto liso com junta discreta, sem a faixa grossa.
+- [ ] `0231-pixel` **Mesma grade de pixel.** Parado e logo depois de girar e de dar zoom: paredes, telhados, chão e Ecos com o mesmo tamanho de pixel, nítidos, nada borrado ou esticado. Se ainda aparecer, uma foto de perto e o que estava fazendo (girando, pinçando ou parado).
+- [ ] `0231-paredes` **Prédio alto.** Perto de um prédio alto do Centro, na borda da tela e no meio: a parede escura se lê como lado de prédio e não cobre a rua inteira (o telhado sai no máximo um quarto da distância do centro da tela até a borda).
+- [ ] `0231-materiais` **Materiais.** Os quadrados cinza e brancos viraram sprites (engrenagem de sucata, giz, ervas, frasco de água...): leem bem ao sol e não se confundem com Fagulha nem Eco.
+- [ ] `0231-tela-cheia` **Tela cheia.** Sem barra de status e de navegação no mapa, na sintonia e no celular do jogo; um deslize da borda mostra as barras, que somem de novo sozinhas. O HUD fica fora do recorte da câmera, a bateria aparece ao lado da hora (laranja com 20% ou menos) e o céu aparece inteiro embaixo da barra do HUD. Ajustes, "Barras do Android" ligado: as barras voltam e o mapa não passa por baixo delas.
+- [ ] `0231-california` **Simulador depois do mapa da rede.** Com o GPS real fora das regiões (ou o mapa da rede de qualquer lugar sem pacote), abra o mapa, espere carregar e ligue o simulador pela folha do modo: o app não pode parar de responder. No emulador (2026-11-17) a sequência não travou em duas tentativas; a trava da 0.23.0 coincidiu com o notebook sem memória.
+
 ## 0.23.0
 
 - [ ] `0230-overture-centro` **Centro andando, com os prédios do Overture.** Uma volta de uns 10 minutos no Centro de Campinas (Praça Ramos de Azevedo, Rua 13 de Maio, Largo do Rosário): onde antes havia quarteirão vazio agora há prédios. Anote o endereço de cada **prédio fantasma** (prédio onde a rua tem praça, terreno vazio ou estacionamento) e de cada **prédio faltando** (construção de verdade sem contorno no mapa), e se algum prédio aparece em cima da rua ou da calçada.
 - [ ] `0230-overture-ouro-verde` **Ouro Verde andando.** O mesmo no Ouro Verde (em volta da Avenida Ruy Rodriguez): o bairro passou de 53 para uns 4.950 prédios, quase todos casas detectadas por satélite, sem altura (todas com a altura estimada pelo tamanho). Anote fantasma e faltando como acima, e se os quarteirões cheios de casas ficam legíveis (o Conjurador e os Ecos destacam).
 - [ ] `0230-overture-desempenho` **Desempenho com 30 vezes mais prédios.** Build de profile, Completo, andando no Ouro Verde e no Centro por 5 minutos em cada: fps e p90 do build e do raster (método da 0.22.1) e a linha "Prédios" do Debug, Desempenho (abaixo de 24 MB). Meta: p90 abaixo de 16 ms, como na 0.22.1.
-- [ ] `0230-shade` **Mais lugares para a Shade.** Com a Shade no Círculo, à noite, no Centro: o Eco dela aparece em calçadas de comércio onde antes não aparecia (as células com comércio, bar ou beco passaram de 4.456 para 15.784 em Campinas). Isto vale da época 12 em diante (2026-12-07 16:00 UTC); antes disso, só forçando a época pelo Debug.
+- [ ] `0230-shade` **Mais lugares para a Shade, com teto.** Com a Shade no Círculo, à noite, no Centro: o Eco dela aparece em calçadas de comércio onde antes não aparecia (as células com comércio, bar ou beco passaram de 4.456 para 15.695 em Campinas), mas no máximo 2 por quarteirão (célula z18, desde a 0.23.1). Vale da época 12 em diante, que ainda não tem data (início em 2099 até ser publicada); antes, só forçando a época pelo Debug.
 - [ ] `0230-arvore-sombra` **Sombras das árvores.** Num parque, com o sol baixo (manhã ou fim de tarde) e alto (meio-dia), girando o mapa: a sombra de cada árvore tem a forma da copa dela (ipê, árvores redondas e lobadas), não um oval igual para todas.
 - [ ] `0230-creditos` **Créditos.** Ajustes, botão "Créditos": OpenStreetMap, Overture Maps Foundation, Microsoft, Google Open Buildings, as fontes dos places, Foursquare e SRTM, cada um com a licença; a tela rola até o fim.
 

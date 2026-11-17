@@ -176,3 +176,33 @@ São Paulo leva 96 minutos e passa de 12 GB de memória no arquivo de pontos (a 
 A época 12 lista os de biomas e de pontos (`region_packs`, `traffic_packs`). O de prédios continua fora das épocas (cenário); o app embute o de Campinas no lugar do `campinas_e0_bldg.bin` (no histórico do git), e o `assinar_regioes.py` põe o `_e12_ov_bldg.bin` de São Paulo em `route_files.buildings` quando ele existe. Os `campinas_e12_traffic.bin` e `sao_paulo_e12.bin`/`_traffic.bin` sem Overture deixaram de estar em alguma época (a 12 ainda não foi publicada); o de Campinas saiu dos assets (está no histórico do git).
 
 **Reprodutível:** em 2026-11-17 os três de Campinas foram gerados de novo do zero (a junção com o OSM e o corte dos places refeitos, os guardados afastados, saída noutra pasta): os mesmos três SHA-256 acima, e os arquivos guardados da junção saíram iguais byte a byte.
+
+### 0.23.1: sem os contornos fantasma (`_ov2`)
+
+Os contornos de IA erram. Desde a 0.23.1 (`overture.ghost_filter`), um prédio que só o Overture tem sai quando cai sobre água, parque ou praça do OSM (metade ou mais da área sobre `natural=water`, `landuse=reservoir|basin`, `waterway=riverbank`, `leisure=park|garden|playground`, `place=square` ou `highway=pedestrian`) ou quando é grande demais para a região sem confirmação do OSM (mais de 500 m² e de 8 vezes a mediana dos prédios do tile z15 dele, sem área de indústria, comércio, varejo, ferrovia, instituição, escola, hospital, feira, rodoviária, templo, aeródromo ou fazenda do OSM em volta, nem POI do OSM dentro). Os geradores gravam `_e12_ov2*` (`overture.TAG`), nunca por cima dos `_ov` da 0.23.0, que saíram dos assets (estão no histórico do git). As contagens ficam em `cache/overture/<release>/<região>_ghosts.json`.
+
+| Região | Sem fonte OSM, sem cobrir prédio | Sobre água, parque ou praça | Grandes demais | Entram |
+| --- | --- | --- | --- | --- |
+| Campinas | 901.031 | 1.606 | 5.686 | 893.739 |
+| São Paulo | 2.726.173 | 5.155 | 29.474 | 2.691.544 |
+
+| Arquivo | Conteúdo | Bytes | SHA-256 |
+| --- | --- | --- | --- |
+| `app/assets/regions/campinas_e12_ov2.bin` | biomas: 5 de 87.300 células z18 mudam em relação à época 11 | 441.331 | `a4e437edcc0976127f7d945af92311f90618e964c11e0878aee3acf97358c9b4` |
+| `app/assets/regions/campinas_e12_ov2_traffic.bin` | 35.109 pontos (os de antes; beco 4.176) | 128.524 | `6d6923bed0ef1c1a2fc9fc666ffc4e42f55a583c73c74298d30933a67cf9a664` |
+| `app/assets/regions/campinas_e12_ov2_bldg.bin` | 925.855 prédios (32.116 do OSM, 893.739 do Overture), 1.760 árvores, 1.397 tiles (maior 45.802 bytes); só cenário | 9.235.076 | `6b6aa4c4353000a17deb25d73d81f7600aab94600de568de724a422e5b0e4237` |
+| `out/regions/sao_paulo_e12_ov2.bin` (não embarcado) | biomas: 101 de 179.208 células z18 mudam em relação ao `sao_paulo_e12.bin` sem Overture | 872.033 | `6d0f7ba4ed1d8ba0056d3f4a992a60675d0e8a82da38f77ac5a5b850ae414cf0` |
+| `out/regions/sao_paulo_e12_ov2_traffic.bin` (não embarcado) | 308.698 pontos (beco 65.989; o resto como no `_ov`) | 1.093.283 | `34e3b7441301c7a69ff9e86ff39068bbff0d4d7425f8d66a24d848ee3eb6a1aa` |
+| `out/regions/sao_paulo_e12_ov2_bldg.bin` (não embarcado, não publicado) | 4.891.015 prédios (2.199.471 do OSM, 2.691.544 do Overture), 12.012 árvores, 2.599 tiles (maior 100.817 bytes) | 53.504.142 | `eba851967ca19b08fa682cc6559e0423f913ff5486fc72193cc360c2474291c6` |
+
+O rascunho do catálogo assinado (`out/regions/rascunho-e12/`) foi refeito com os `_ov2`; nada foi publicado.
+
+## Uso do solo do chão (0.23.1, fora das épocas)
+
+`build_ground.py --region <região>` lê do mesmo extrato (MD5 `d4778499…`) as áreas de uso do solo que o chão do estilo Completo desenha por cima do chão neutro do bioma: lote residencial (`landuse=residential`), área comercial (`landuse=commercial|retail`), terreno baldio (`landuse=brownfield|greenfield|construction`), estacionamento de superfície (`amenity=parking`, fora `parking=multi-storey|underground|rooftop`), piso de pedestre (`highway=pedestrian` e `area:highway=pedestrian` em área, `place=square`) e a zona da calçada portuguesa (`mosaic_zone` de `regions.json`: o Centro de Campinas, desenhado à mão porque o OSM não tem a área do bairro). Só cenário, como o `_cycle.bin`: não muda o mundo e pode ser regerado sem época nova. Formato `GRD1` no cabeçalho do script; leitor em `app/lib/data/ground_pack.dart`.
+
+| Arquivo | Áreas | Bytes | SHA-256 |
+| --- | --- | --- | --- |
+| `app/assets/regions/campinas_e0_ground.bin` | 4.722 (residencial 3.363, comercial 310, baldio 178, estacionamento 799, pedestre 71, Centro 1) | 112.747 | `c708f37332a4c769f26e2737fb44c114a8de7d2f22ec63dd94d660a357ea412e` |
+
+São Paulo ainda não tem o arquivo: o app só embute o de Campinas, e o catálogo de regiões não tem o tipo para baixá-lo. Lá vale o chão neutro do bioma, sem calçada portuguesa.

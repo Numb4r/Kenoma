@@ -136,3 +136,24 @@ em `pipeline/overture.py`, testes em `pipeline/test_overture.py`, comandos e SHA
   Urbano, Iluminado ou Sagrado (os places dentro de prédios). Em z21, 0,10%.
 - **Becos e marquises (Shade):** células z20 com âncora de 46.313 para 116.154 (comércio 16.604 → 81.134, bar 6.583 → 37.532,
   beco 51.184 → 67.064). **Postes (Hum):** 29.362, sem mudança.
+
+## 0.23.1: contornos fantasma e teto da Shade
+
+- **Fantasmas.** Os contornos de IA erram (no Ouro Verde, um contorno de 791 m² da Microsoft ao lado da lagoa). Um prédio que só
+  o Overture tem sai quando metade ou mais da área cai sobre água, parque ou praça do OSM, ou quando passa de 500 m² e de 8 vezes
+  a mediana dos prédios do tile z15 dele sem confirmação do OSM (área de indústria, comércio, varejo, ferrovia, instituição,
+  escola, hospital, feira, rodoviária, templo, aeródromo ou fazenda em volta, ou um POI do OSM dentro). Regras em
+  `pipeline/overture.py` (`ghost_filter`), arquivos novos com o sufixo `_ov2`.
+
+| Região | Antes do filtro | Sobre água, parque ou praça | Grandes demais | Entram |
+| --- | --- | --- | --- | --- |
+| Campinas | 901.031 | 1.606 | 5.686 | 893.739 |
+| São Paulo | 2.726.173 | 5.155 | 29.474 | 2.691.544 |
+
+  Campinas com o filtro: 5 das 87.300 células z18 mudam de bioma em relação à época 11 (eram 6), e os becos vão a 4.176 pontos
+  (eram 4.298 com os fantasmas). O arquivo de prédios fica com 925.855 (9,2 MB).
+- **Teto da Shade.** Com o Overture, as células z20 com beco ou marquise em Campinas vão de 4.456 para 15.695, e as z18 com
+  alguma âncora de 2.104 para 6.956. A cobertura maior é o mapa mais fiel; a força em cada lugar fica segura por um teto de 2
+  Ecos da Shade por célula z18 e janela (`shade_max_per_z18` no `balance.json`). Nos quarteirões densos que já tinham âncora
+  antes, a faixa mais alta (20%) dá 1,39 Eco por quarteirão contra 1,57 antes do Overture (1,79 sem teto). Nenhuma outra
+  habilidade lê esses pontos além do Hum, cujos postes (semáforo e ponto de ônibus) não mudaram.

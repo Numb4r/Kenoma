@@ -33,14 +33,15 @@ Três tons por material (`_dark`, base, `_light`), e cada chão num degrau de va
 | Concreto | `concrete` | `#6a707f` `#7c8291` `#8e94a2` | 130 |
 | Grama de quintal | `yard` | `#5a8a4e` `#6fa05e` `#8ab874` | 138 |
 | Cimentado do Residencial | `res` | `#847c6f` `#968e80` `#a8a092` | 143 |
+| Cimento claro (Iluminado sem informação, área comercial) | `cement` | `#808492` `#9094a2` `#a0a4b0` | 148 |
 | Calçada | `sidewalk` | `#8e92a0` `#a3a7b3` `#b6bac4` | 167 |
-| Piso do Iluminado | `lit` | `#adabb9` `#c2c0cc` `#d4d2dc` | 194 |
+| Piso ladrilhado (só `paved`) | `lit` | `#adabb9` `#c2c0cc` `#d4d2dc` | 194 |
 
 Por cima do chão: copa `canopy` (`#1f5a3a` `#2c7048` `#45905a`, sempre mais escura que a grama), mato `weed`, flores `flower_white` `flower_yellow` `flower_pink`, pedrinha `pebble`, faixa `lane` `#c9c4a8` e `lane_worn` `#8f8c7c`, óleo `oil`.
 
 Prédios: paredes `wall_res` (creme), `wall_res_b` (azulado claro), `wall_urban` (cinza), `wall_lit` (quase branco), `wall_sacred` (cal), `wall_bare` (tijolo), cada uma com `_shade`. Telhados `roof_tile` (cerâmica `#a8553d`), `roof_slab` (laje cinza quente `#56525a` `#6e6a70` `#86828a`, luma 108), `roof_tar` (manta escura), `roof_metal`, `roof_slate` (ardósia azulada). Janelas `window_off`, `window_on`, `window_on_cool`. Neon `neon_a` rosa, `neon_b` lima, `neon_c` azul, `neon_off` de dia. Sombra `shadow` é o contorno ameixa a 42%; o renderizador lê o alfa da paleta.
 
-A laje é a massa dominante do Centro e por isso é de valor médio e lisa: mais escura que a calçada (167), que o concreto (130) e que a parede no sol (159). Grade é só de piso (`sidewalk_tile`, `floor_lit`); telhado nenhum tem junta em grade. Quem brilha na cena é a calçada, a parede no sol e a magia.
+A laje é a massa dominante do Centro e por isso é de valor médio e lisa: mais escura que a calçada (167) e que o concreto (130). Grade é só de piso (`floor_lit`, e só no chão `paved`); a calçada comum tem junta discreta (`sidewalk_joint`, luma 157) e telhado nenhum tem junta em grade. Quem brilha na cena é a calçada, o piso das praças e a magia; a parede é sempre mais escura que o telhado dela.
 
 Limite: a cena de um bioma usa no máximo 3 tons de chão, 3 famílias de verde (3 tons cada, todas abaixo da grama), 3 pares de parede e 5 materiais de telhado (3 tons cada). Não crie tom intermediário no código; se faltar cor, ela entra na paleta com nome.
 
@@ -50,27 +51,33 @@ Cada chão é uma `GroundRecipe`: tom base, `ditherPct` de pixels trocados (meta
 
 | Chave | Cara | Receita |
 |---|---|---|
-| `empty` / `void` | terreno baldio: terra batida, mato esparso, pedra | 14% de pontilhado, 25 carimbos |
-| `lot` | lote vazio dentro de quadra: a mesma terra com mais mato | 16%, 45 |
-| `urban` | concreto liso com rachadura e mancha de óleo | 6%, 8 |
+| `empty` / `void` | terra batida neutra, sem carimbo | 10% de pontilhado, 0 carimbos |
+| `lot` / `vacant` | lote vazio e terreno baldio: a mesma terra com mato | 16%, 45 |
+| `urban` | concreto liso neutro, sem carimbo | 5%, 0 |
 | `green` | grama cheia: tufos, três flores, arbusto | 18%, 60 |
 | `water` | azul com reflexos curtos; borda de 1 px `foam` contra a margem | 10%, 20 |
-| `residential` | cimentado quente, pouca coisa no chão; a cara vem de muro, quintal e telha | 8%, 10 |
+| `residential` | cimentado quente neutro, sem carimbo | 6%, 0 |
 | `yard` | grama clara de quintal, uma flor amarela, arbusto | 14%, 35 |
-| `lit` | piso claro paginado (módulo `floor_lit`), limpo | 4%, 3 |
-| `sacred` | pedra violácea, tufo e flor branca nas frestas | 8%, 10 |
-| `sidewalk` | módulo `sidewalk_tile` com rachadura e tufo na junta | 5%, 4 |
+| `lit` | cimento claro liso (148), sem módulo e sem carimbo | 4%, 0 |
+| `sacred` | pedra violácea neutra, sem carimbo | 6%, 0 |
+| `paved` | área de pedestre e praça calçada do OSM: o único chão ladrilhado (módulo `floor_lit`) | 4%, 0 |
+| `parking` | asfalto com vagas pintadas (módulo `parking_bay`, 4 x 16) e óleo raro | 8%, 2 |
+| `lot_res` | lote residencial: terra batida clara com tufo de grama | 12%, 18 |
+| `commercial` | área comercial: cimento claro liso | 3%, 0 |
+| `sidewalk` | concreto liso com junta discreta (módulo `sidewalk_tile`, placas de 8 px) e rachadura rara | 3%, 2 |
 | `road` | asfalto com desgaste, rachadura, óleo e remendo | 10%, 6 |
+
+Desde a 0.23.1 o chão segue o uso do solo do OSM (`pipeline/build_ground.py`, `<região>_e0_ground.bin`, cenário fora das épocas): por cima do chão neutro do bioma vão o lote residencial (`landuse=residential`), a área comercial (`landuse=commercial|retail`), o terreno baldio (`landuse=brownfield|greenfield|construction`), o estacionamento de superfície (`amenity=parking`) e o piso de pedestre (`highway=pedestrian`, `area:highway=pedestrian`, `place=square`), nessa ordem. Onde não há informação, vale o chão neutro do bioma: só o tom e um pontilhado leve, sem módulo e sem carimbo com cara de objeto. Ladrilho só em `paved`. Módulo de chão tem lados que dividem 64.
 
 No mapa (0.22.0), a célula de Vazio só fica de terra batida em campo aberto: com casa dentro, ela leva o chão do Residencial; cercada de cidade (3 ou mais vizinhas de Urbano, Residencial, Iluminado ou Sagrado), leva o chão mais comum delas. Só desenho: a grade lógica não muda.
 
-Como distinguir os quatro que hoje se confundem: **Vazio** é marrom e mato, o único chão de terra; **Urbano** é cinza frio e liso; **Residencial** é bege com manchas verdes de quintal e telhado vermelho; **Iluminado** é o chão mais claro da cidade, paginado, com telhado escuro e neon.
+Como distinguir os quatro que hoje se confundem: **Vazio** é marrom e mato, o único chão de terra; **Urbano** é cinza frio e liso; **Residencial** é bege com manchas verdes de quintal e telhado vermelho; **Iluminado** é cimento claro e liso, com telhado escuro e neon; o piso ladrilhado e mais claro da cidade fica só nas áreas de pedestre e praças calçadas.
 
 ## Rua, faixa e calçada
 
 - Asfalto com a receita `road`. O desgaste é o pontilhado; nas ruas `principal` ele cai para a metade (asfalto mais novo).
 - Faixa central só em `principal` e `secondary`: tracejado de 1 px de largura, 4 px aceso e 6 px apagado, na cor `lane`. Um traço em cada quatro sai em `lane_worn` e um em cada sete some (hash do traço). Rua `local` não tem faixa. Trilha `pedestrian` usa a receita `sidewalk`.
-- Calçada de 2 px de cada lado nas ruas `local` e 3 px nas maiores, com o módulo `sidewalk_tile` e meio-fio de 1 px `sidewalk_dark` do lado do asfalto.
+- Calçada de 2 px de cada lado nas ruas `local` e 3 px nas maiores: concreto liso com o módulo `sidewalk_tile` (junta de 1 px a cada 8 px, num tom vizinho) e meio-fio de 1 px `sidewalk_dark` do lado do asfalto. A calçada portuguesa (`sidewalk_mosaic`) fica só no Centro (a zona `mosaic_zone` de `pipeline/regions.json`, no arquivo de uso do solo).
 - Faixa de pedestre e semáforo ficam de fora: não há dado de cruzamento.
 
 ## Grama, flores, árvore e sombra
@@ -173,9 +180,9 @@ Tudo que é céu de evento fica dentro da faixa, nunca sobre o mapa. As cores s�
 
 ### O que gira e o que fica de pé
 
-- **Gira com o mapa** (o chão): ruas, lotes, grama, calçada, faixas, faixa de pedestre, quintal e muro, as marcas do clima no chão, as sombras (seguem o sol, são do mundo), o contorno dos telhados e a textura de tudo isso (0.22.2: o chão e o telhado levam a textura junto; o telhado, presa à aresta mais longa).
-- **Gira com o rumo** (exceção, à espera da decisão do dono): carros, ônibus, ciclistas e barcos do tráfego, vistos de cima, apontam para onde andam; os nomes de rua acompanham a direção da rua. O modo de debug "Giro dos objetos" escreve a categoria de cada objeto sobre ele.
-- **Fica de pé na tela**: tudo que tem altura ou é sprite. Árvores, postes, ponto de ônibus, banca, props de telhado, janelas, paredes, letreiros, Ecos, avatar, passantes e textos. São desenhados na orientação da tela, na posição girada. As paredes e o deslocamento dos telhados saem sempre do centro da tela para fora, em qualquer giro.
+- **Gira com o mapa** (o chão): ruas, lotes, grama, calçada, faixas, faixa de pedestre, quintal e muro, as marcas do clima no chão, as sombras dos prédios (seguem o sol, são do mundo), o contorno dos telhados e a textura de tudo isso (0.22.2: o chão e o telhado levam a textura junto; o telhado, presa à aresta mais longa).
+- **Gira com o rumo** (exceção aprovada pelo dono na 0.23.0): carros, ônibus, ciclistas e barcos do tráfego, vistos de cima, apontam para onde andam; os nomes de rua acompanham a direção da rua. O modo de debug "Giro dos objetos" escreve a categoria de cada objeto sobre ele.
+- **Fica de pé na tela**: tudo que tem altura ou é sprite. Árvores (e a sombra delas, a silhueta da copa, desde a 0.23.1), postes, ponto de ônibus, banca, props de telhado, letreiros, materiais, janelas, paredes, Ecos, avatar, passantes e textos. O lugar de um prop de telhado sai do chão (células z21, em volta do centro do contorno) e sobe com o telhado: gira e anda com o prédio, e o carimbo fica de pé. Todo carimbo é de pé (`uprightStampKinds`) ou de chão (`groundStampKinds`, em `turn_category.dart`), e o teste `test/ui/upright_turn_test.dart` desenha cada carimbo de pé a 0° e a 90° e exige os mesmos pixels: carimbo novo entra numa das duas listas. São desenhados na orientação da tela, na posição girada. As paredes e o deslocamento dos telhados saem sempre do centro da tela para fora, em qualquer giro.
 - **Pixel nítido**: o chão nunca é uma imagem pronta que gira. Ele é rasterizado já girado, na grade de pixels da tela, em blocos de 4 × 4 células z21 (`city_ground.dart`). No arrasto e na pinça vale o bloco do ângulo mais próximo (passos de 3 graus) e do zoom do começo do gesto, desenhado com o resto do giro e da escala; um quarto de segundo depois de o dedo soltar, os blocos são refeitos no ângulo e no zoom exatos. Com o mapa parado, todo bloco só desliza por pixels inteiros.
 
 ### Cache
@@ -184,7 +191,7 @@ O chão parado (chão, ruas, sombras, a planta dos prédios, a luz da hora, as p
 
 ### Prédios (as regras novas do `criativo`)
 
-1. Escada de valor de todo prédio: telhado > parede no sol > parede na sombra. Lumas: laje 154, zinco 164, ardósia 149, fibrocimento 141, cerâmica clara 134, zinco velho 128, cerâmica 113, manta 99. Paredes: Centro 113 / 87 / 67, reboco 97 / 72, Iluminado 132 / 100, Sagrado 134 / 100, tijolo 115 / 85.
+1. Escada de valor de todo prédio: telhado > parede no sol > parede na sombra. Lumas: laje 154, zinco 164, ardósia 149, fibrocimento 141, cerâmica clara 134, zinco velho 128, cerâmica 113, manta 99. Paredes (0.23.1, escurecidas para lerem como lateral de prédio): Centro 85 / 63 / 46, reboco 78 / 56, reboco azulado 78 / 57, Iluminado 106 / 78, Sagrado 108 / 79, tijolo 90 / 64. A janela apagada (`window_off`) é 36. O telhado sai do pé no máximo um quarto da distância do centro da tela até a borda, na direção dele (`kRoofEdgeShare`, 0.23.1): prédio alto não joga parede por cima da rua inteira.
 2. Telhado por `roofVariantsFor(tipo, bioma)[hash do prédio % length]`. O metal fica no galpão (2 de 6) e no Vazio (1 de 4).
 3. Platibanda: 1 px de `parapet` por dentro da borda, só quando `parapet != 0` (laje e manta).
 4. Props: de `roofProps` (caixa d'água, ar-condicionado, antena), um em telhado de 150 px² ou mais e até 3 acima de 600 px², dentro do telhado. Cerâmica, metal e ardósia nunca têm prop.
@@ -194,7 +201,7 @@ O chão parado (chão, ruas, sombras, a planta dos prédios, a luz da hora, as p
 
 ### Cara de Campinas
 
-8. Calçada do Urbano e do Iluminado: `sidewalk_mosaic` (a calçada portuguesa do Centro). Em calçada de menos de 3 px a onda não se lê; use `sidewalk_tile`.
+8. Calçada portuguesa (`sidewalk_mosaic`) só na zona do Centro. Fora dela, e em calçada de menos de 3 px, vale `sidewalk_tile`.
 9. Faixa de pedestre nos pontos `highway=crossing` do OSM: barras de 1 px `crosswalk` no sentido da rua, 1 px de vão, uns 3 m de comprimento. Portão: 3 a 4 px de `gate` e `gate_dark` no muro, no meio da aresta mais longa do lote.
 10. Árvores: `tree`, `tree_a`, `tree_b`, `tree_c` por hash, sem copas todas iguais; as do OSM (`natural=tree`) e as plantadas nos verdes. Ipê só perto de praça e parque, no máximo um em cada quatro árvores, `kind` por hash e `ipeStamp(kind, mês local)`: ipê-roxo em junho e julho, ipê-amarelo em agosto e setembro, só copa verde no resto. O ipê-roxo é rosa-magenta, nunca o violeta do Véu.
 11. `bus_stop` nos pontos `highway=bus_stop` do OSM; `newsstand` em uma de cada três praças.
@@ -213,6 +220,10 @@ Acima de 65 m de largura de tela (o zoom aberto do GDD vai a 80 m; com o "Zoom a
 ### Completo e Simplificado
 
 O Simplificado (Ajustes, "Gráficos do mapa") é o estilo de antes: plano, sem altura falsa, sem vegetação detalhada, sem horizonte e com metade das partículas. Os dois mostram tudo que importa para o jogo (Ecos, Fagulhas, Aura, alcance, marcas do clima no chão e eventos), usam a mesma lógica e a mesma máscara de ruas, e a camada base de spawn é a mesma. Se o Completo passar de 20 ms por quadro em média por um minuto, o jogo sugere uma vez trocar, sem trocar sozinho.
+
+## Materiais no mapa
+
+Cada material que nasce no chão tem um sprite próprio em `app/lib/ui/sprites/material_sprites.dart` (`materialSprites`, `materialSpriteLegend`, `materialPalette`), de 5 a 8 px de arte, com contorno `outline` fechado. Fica de pé: não gira nem escala, 1 caractere é 1 pixel de arte, e a base do sprite fica no ponto do spawn. Fora da Aura, 60% de opacidade. Não pisca e não usa violeta, ciano nem laranja brasa: quem pulsa é a Fagulha (cruz sem contorno) e quem tem anel é o Eco. Até a 0.23.0 eram caixinhas coloridas (as "caixas cinza e brancas" do mapa).
 
 ## O que não fazer
 
