@@ -11,6 +11,7 @@ import 'package:kenoma/save/save_store.dart';
 import 'package:kenoma/story/local_notifier.dart';
 import 'package:kenoma/story/notification_plan.dart';
 import 'package:kenoma/ui/settings/settings_screen.dart';
+import 'package:kenoma/ui/system_bars.dart';
 
 import '../support/fixtures.dart';
 
@@ -87,6 +88,16 @@ void main() {
     expect(find.text('VERSÃO 0.12.0+18'), findsOneWidget);
     expect(find.text(s.state.founder!.playerId), findsOneWidget);
     expect(find.textContaining('DESATUALIZADO'), findsNothing);
+  });
+
+  testWidgets('0.23.1: "Barras do Android" fica desligado (tela cheia) e grava a escolha', (tester) async {
+    final s = await session(MemorySaveStore());
+    await pump(tester, s);
+    await tester.scrollUntilVisible(find.byKey(const Key('system-bars')), 300);
+    expect(s.state.setting(kSystemBarsSetting), isFalse);
+    await tester.tap(find.byKey(const Key('system-bars')));
+    await tester.pump();
+    expect(s.state.setting(kSystemBarsSetting), isTrue);
   });
 
   testWidgets('o botão Créditos abre a tela com o OpenStreetMap e o Overture', (tester) async {

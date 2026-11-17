@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
+import android.os.BatteryManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
@@ -61,6 +62,11 @@ class DeviceChannels(private val activity: Activity) {
                 "openNotificationSettings" -> result.success(openNotificationSettings())
                 "activeRides" -> result.success(RideNotificationListener.activeRides())
                 "unmeteredWifi" -> result.success(unmeteredWifi())
+                // 0.23.1: a bateria no HUD (o modo imersivo esconde a barra de status). Por cento, ou -1 sem a leitura.
+                "batteryLevel" -> result.success(
+                    (activity.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager)
+                        ?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
+                )
                 "setRideRelay" -> {
                     RideNotificationListener.relayEnabled = call.arguments == true
                     result.success(true)

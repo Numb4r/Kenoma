@@ -6,10 +6,12 @@ import 'package:flutter/services.dart';
 import 'dev/tuning_debug_menu.dart';
 import 'net/signed_feed.dart';
 import 'ui/colors.dart';
+import 'ui/system_bars.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await applySystemBars(show: false); // tela cheia até o save dizer outra coisa (`kSystemBarsSetting`)
   runApp(const KenomaApp());
   // Opcional e silencioso: no máximo uma consulta por dia ao feed assinado; o resultado vale a partir da próxima abertura.
   unawaited(refreshSignedFeed(nowUtc: DateTime.now().millisecondsSinceEpoch ~/ 1000));

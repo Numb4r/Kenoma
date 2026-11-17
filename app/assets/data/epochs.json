@@ -25198,17 +25198,17 @@
     },
     {
       "id": 12,
-      "starts_utc": "2026-12-07T16:00:00Z",
-      "valid_until_utc": "2027-02-14T16:00:00Z",
+      "starts_utc": "2099-01-01T00:00:00Z",
+      "valid_until_utc": "2099-04-01T00:00:00Z",
       "overture_release": "2026-10-21.0",
       "region_packs": {
         "campinas": {
-          "file": "campinas_e12_ov.bin",
-          "sha256": "53109216c4ab6dd4ba21d5fdb4c09d807eb1c9007dfdb204899b4afe45c67854"
+          "file": "campinas_e12_ov2.bin",
+          "sha256": "a4e437edcc0976127f7d945af92311f90618e964c11e0878aee3acf97358c9b4"
         },
         "sao_paulo": {
-          "file": "sao_paulo_e12_ov.bin",
-          "sha256": "2559ee8c888987201cbfbc54143f91f49c7c64eb9532d2353e85159e1ca98ba1"
+          "file": "sao_paulo_e12_ov2.bin",
+          "sha256": "6d0f7ba4ed1d8ba0056d3f4a992a60675d0e8a82da38f77ac5a5b850ae414cf0"
         }
       },
       "visual_packs": {
@@ -25233,12 +25233,12 @@
       },
       "traffic_packs": {
         "campinas": {
-          "file": "campinas_e12_ov_traffic.bin",
-          "sha256": "43ed415d81fc3d8e34a375db56def623b10654a13f832eafed9f0d0995c4892d"
+          "file": "campinas_e12_ov2_traffic.bin",
+          "sha256": "6d6923bed0ef1c1a2fc9fc666ffc4e42f55a583c73c74298d30933a67cf9a664"
         },
         "sao_paulo": {
-          "file": "sao_paulo_e12_ov_traffic.bin",
-          "sha256": "4a489b27bb568b00bcb3716cb0500dbed79afbad2cf934126ee09966219f0cb3"
+          "file": "sao_paulo_e12_ov2_traffic.bin",
+          "sha256": "34e3b7441301c7a69ff9e86ff39068bbff0d4d7425f8d66a24d848ee3eb6a1aa"
         }
       },
       "water": {

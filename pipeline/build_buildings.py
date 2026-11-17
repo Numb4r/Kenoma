@@ -132,7 +132,7 @@ def main() -> None:
     names = sorted(types, key=types.get)
     data = write_bld2(names, [(tid, lv, flags, pts) for _, _, tid, lv, flags, pts in buildings], sorted(trees))
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    out = args.out_dir / f"{args.region}_e{args.epoch}{'_ov' if args.overture else ''}_bldg.bin"
+    out = args.out_dir / f"{args.region}_e{args.epoch}{'_' + overture.TAG if args.overture else ''}_bldg.bin"
     if out.exists():
         raise SystemExit(f"{out} já existe: não regero por cima (apague à mão se for mesmo para trocar)")
     out.write_bytes(data)

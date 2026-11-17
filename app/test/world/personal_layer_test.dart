@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:io';
@@ -65,12 +66,18 @@ void main() {
         levelCapOf: data.progress.levelCapFor,
       );
 
-  PersonalLayer layerOf(Map<String, double> values, {String weather = 'clear', String player = 'jogador-a', TrafficPointSource? pts, bool Function()? hidden}) =>
+  // Sem o teto da Shade por z18 (16: o bloco inteiro), para os testes de faixa e de estabilidade: aqui toda célula tem marquise,
+  // bem mais que qualquer quarteirão de verdade. O teto tem o teste dele, com o balance.json.
+  final uncapped = PersonalBalance.fromJson({
+    ...((jsonDecode(File('assets/data/balance.json').readAsStringSync()) as Map<String, dynamic>)['personal_layer'] as Map<String, dynamic>),
+    'shade_max_per_z18': 16,
+  });
+  PersonalLayer layerOf(Map<String, double> values, {String weather = 'clear', String player = 'jogador-a', TrafficPointSource? pts, bool Function()? hidden, bool capped = false}) =>
       PersonalLayer(
         field: fieldOf(weather: weather),
         playerKey: playerKeyOf(player),
         builds: () => [BuildEntry(fromUtc: 0, values: values)],
-        balance: data.personal,
+        balance: capped ? data.personal : uncapped,
         points: pts ?? points,
         hidden: hidden ?? () => false,
       );
@@ -154,7 +161,7 @@ void main() {
 
     test('trocar o Círculo vale só a partir da janela seguinte da célula', () {
       final builds = <BuildEntry>[];
-      final l = PersonalLayer(field: fieldOf(), playerKey: playerKeyOf('jogador-a'), builds: () => builds, balance: data.personal, points: points);
+      final l = PersonalLayer(field: fieldOf(), playerKey: playerKeyOf('jogador-a'), builds: () => builds, balance: uncapped, points: points);
       final (cx, cy) = cells.first;
       final start = windowIndex(seed, cx, cy, night) * windowSeconds - windowOffset(seed, cx, cy);
       noteBuild(builds, const {}, start - 5000);
@@ -242,6 +249,20 @@ void main() {
       final inAlleys = all(layerOf({kNightEco: 100}, pts: alleys), night);
       expect(inAlleys, hasLength(cells.length));
       expect(inAlleys.every((s) => s.x % 2 == 1 && s.y % 2 == 1), isTrue, reason: 'no beco');
+    });
+
+    test('Shade (0.23.1): no máximo shade_max_per_z18 Ecos por célula z18, com beco ou marquise em todas as células', () {
+      final cap = data.personal.shadeMaxPerZ18;
+      expect(cap, 2, reason: 'balance.json');
+      for (final v in [15.0, 100.0]) {
+        final byZ18 = <(int, int), int>{};
+        for (final s in all(layerOf({kNightEco: v}, capped: true), night)) {
+          final (cx, cy) = (s.x.floor() >>> 1, s.y.floor() >>> 1);
+          byZ18.update((cx >>> 2, cy >>> 2), (n) => n + 1, ifAbsent: () => 1);
+        }
+        expect(byZ18.values.every((n) => n <= cap), isTrue, reason: 'faixa $v: o teto vale');
+        if (v == 100) expect(byZ18.values.where((n) => n == cap), isNotEmpty, reason: 'com 100% o teto enche');
+      }
     });
 
     test('Wisp: na faixa N, N Espectrais por hora em cada bloco com neblina; nada com tempo limpo fora do Sagrado; rastros duram mais', () {

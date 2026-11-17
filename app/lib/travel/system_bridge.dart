@@ -29,6 +29,16 @@ class SystemBridge {
   /// A rede de agora é Wi-Fi e sem cobrança: o fallback pré-carrega os blocos à frente. `false` nos dados móveis ou sem plugin.
   Future<bool> unmeteredWifi() => _call('unmeteredWifi');
 
+  /// 0.23.1: a carga da bateria em %, para o HUD no modo imersivo. `null` sem a leitura (sem plugin, emulador sem bateria).
+  Future<int?> batteryLevel() async {
+    try {
+      final v = await _system.invokeMethod<int>('batteryLevel');
+      return v == null || v < 0 || v > 100 ? null : v;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Se o Android já deu ao Kenoma o acesso às notificações.
   Future<bool> notificationAccess() => _call('notificationAccess');
 

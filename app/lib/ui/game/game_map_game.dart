@@ -61,6 +61,7 @@ import '../../world/city_scene.dart' show roadClassKey;
 import '../../data/visual_pack.dart' show RoadClass;
 import 'package:flutter/painting.dart' show TextPainter, TextSpan, TextStyle, TextDirection;
 import '../lab/lab_art.dart';
+import '../../data/ground_pack.dart';
 
 /// O mapa do jogo em Flame: segue o Conjurador, desenha o marcador e a Aura e repassa os toques para a
 /// câmera. As regras (suavização, giro, limites de zoom) estão em `world/`.
@@ -91,6 +92,7 @@ class GameMapGame extends FlameGame {
     this.overlayTraffic = _off,
     this.overlayRelief = _off,
     this.cycleways,
+    this.ground,
     this.relief,
     this.trafficDensity = _noDensity,
     this.rainFx = _off,
@@ -140,7 +142,7 @@ class GameMapGame extends FlameGame {
   double? Function() forcedWidthM = () => null;
   double? _forcedWidth;
 
-  late final MapCityTiles cityTiles = MapCityTiles(visual: visual, grid: renderer.map.pack, biomes: renderer.map.biomes, buildings: buildings, points: trafficPoints);
+  late final MapCityTiles cityTiles = MapCityTiles(visual: visual, grid: renderer.map.pack, biomes: renderer.map.biomes, buildings: buildings, points: trafficPoints, ground: ground);
   LabArt? _cityArt;
   CityRenderer? _city;
 
@@ -254,6 +256,9 @@ class GameMapGame extends FlameGame {
   final TrafficSimConfig trafficSim;
   final TrafficPointSource? trafficPoints;
   final CyclePack? cycleways;
+
+  /// 0.23.1: o uso do solo da região embutida (o chão do Completo).
+  final GroundPack? ground;
 
   /// A revisão da água no relevo (sobe quando um tile chega do cálculo de fundo). A tela liga.
   int Function() waterRevision = () => 0;
@@ -891,6 +896,7 @@ class GameMapGame extends FlameGame {
         spiritSize: spiritSizePx,
         sparkSize: sparkSizePx,
         dpr: dpr,
+        artPixelDp: balance.artPixelDp,
         wind: creatureWind,
         windDir: _climate.wind,
         localWind: _localWindOf,

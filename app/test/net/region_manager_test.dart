@@ -289,7 +289,7 @@ void main() {
       final json = _schedule().source!;
       final e = (json['epochs'] as List).last as Map<String, dynamic>;
       expect(epochPackFiles(e), isNot(contains('test_e5.bin')));
-      expect(epochPackFiles(e), containsAll(['campinas_e12_ov.bin', 'campinas_e0_vis.bin', 'campinas_e2_nowalk.bin']));
+      expect(epochPackFiles(e), containsAll(['campinas_e12_ov2.bin', 'campinas_e0_vis.bin', 'campinas_e2_nowalk.bin']));
     });
   });
 

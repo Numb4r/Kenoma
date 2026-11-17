@@ -25,6 +25,7 @@ import shapely
 from rasterio.features import rasterize
 from rasterio.transform import Affine
 
+import overture
 from build_region import REGIONS_DIR, ROOT, ensure_source, lonlat_to_tile
 from build_visual import varint, zigzag
 
@@ -185,7 +186,7 @@ def main() -> None:
         body += bytes([kind]) + varint(zigzag(x - px)) + varint(zigzag(y - py))
         px, py = x, y
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    out = args.out_dir / f"{args.region}_e{args.epoch}{'_ov' if args.overture else ''}_traffic.bin"
+    out = args.out_dir / f"{args.region}_e{args.epoch}{'_' + overture.TAG if args.overture else ''}_traffic.bin"
     if args.overture and out.exists():
         raise SystemExit(f"{out} já existe: não regero por cima")
     out.write_bytes(b"TRF1" + gzip.compress(bytes(body), compresslevel=9, mtime=0))

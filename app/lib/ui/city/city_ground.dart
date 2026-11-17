@@ -13,6 +13,7 @@ import '../../world/city_scene.dart';
 import '../../world/lab_block.dart' show shadowOffset;
 import '../lab/lab_art.dart';
 import '../sprites/map_style.dart';
+import '../../data/ground_pack.dart';
 
 /// O quadro de pixels de arte de um giro e de um zoom: `(x, y)` em células z21 vira `R(angle) · (p − o) · kc`, com o eixo
 /// y para baixo (o mesmo do `ArtRenderer`). Dois blocos no mesmo quadro encaixam pixel a pixel.
@@ -202,14 +203,23 @@ RecordedChunk recordGroundChunk({
     return near.entries.reduce((a, b) => b.value > a.value ? b : a).key;
   }
 
-  final mosaicCells = ui.Path();
   for (var y = cy0 - 1; y <= cy0 + size; y++) {
     for (var x = cx0 - 1; x <= cx0 + size; x++) {
-      final g = groundOf(x, y);
       final cell = ui.Path()..addPolygon([s(x + 0.0, y + 0.0), s(x + 1.0, y + 0.0), s(x + 1.0, y + 1.0), s(x + 0.0, y + 1.0)], true);
-      c.drawPath(cell, ground(g));
-      if (g == 'urban' || g == 'lit') mosaicCells.addPath(cell, ui.Offset.zero);
+      c.drawPath(cell, ground(groundOf(x, y)));
     }
+  }
+  // 1b. 0.23.1: o uso do solo do OSM por cima do chão neutro do bioma (lote residencial, comércio, baldio, estacionamento e
+  // piso de pedestre, nessa ordem); a zona do Centro só recorta a calçada portuguesa, mais abaixo.
+  final areas = {for (final t in tiles) ...t.areas}.toList()..sort((a, b) => a.kind.index.compareTo(b.kind.index));
+  final mosaicZone = ui.Path();
+  for (final a in areas) {
+    final recipe = groundRecipeOf[a.kind];
+    if (recipe == null) {
+      mosaicZone.addPath(poly(a.xy), ui.Offset.zero);
+      continue;
+    }
+    c.drawPath(poly(a.xy), ground(recipe));
   }
   // 2. Verdes (com a borda de 1 px) e água.
   for (final t in tiles) {
@@ -234,7 +244,7 @@ RecordedChunk recordGroundChunk({
     c.drawPath(path, ground(ring)..style = ui.PaintingStyle.stroke..strokeWidth = 2 * wpx..strokeJoin = ui.StrokeJoin.miter);
     if (ring == 'yard' && !key.far) _gate(c, b, s, wpx);
   }
-  // 4. Ruas: calçada (a portuguesa por cima nas células do Centro), meio-fio, asfalto, faixa central e faixa de pedestre.
+  // 4. Ruas: calçada (a portuguesa por cima só na zona do Centro), meio-fio, asfalto, faixa central e faixa de pedestre.
   final roads = [for (final t in tiles) ...t.roads];
   final sidewalks = ui.Path();
   for (final r in roads) {
@@ -245,7 +255,7 @@ RecordedChunk recordGroundChunk({
   }
   if (!key.far) {
     c.save();
-    c.clipPath(mosaicCells, doAntiAlias: false);
+    c.clipPath(mosaicZone, doAntiAlias: false);
     for (final r in roads) {
       final sw = sidewalkWidthM(r.cls);
       if (sw > 0) c.drawPath(line(r.xy), ground('sidewalk_mosaic')..style = ui.PaintingStyle.stroke..strokeWidth = (roadWidthM(r.cls) + 2 * sw) * kpm..strokeCap = ui.StrokeCap.square);
@@ -295,25 +305,7 @@ RecordedChunk recordGroundChunk({
         c.drawPath(ui.Path()..addPolygon([a, q, q + d, a + d], true), sp);
       }
     }
-    final tOff = shadowOffset(sunAltDeg, sunAzDeg, 6 * kpm, rotationRad: f.angle);
-    if (tOff != null) {
-      // A sombra da copa é a silhueta do próprio carimbo achatada a 70%, na cor da sombra (0.23.0: casa com as árvores novas).
-      final treeShadow = ui.Paint()
-        ..filterQuality = ui.FilterQuality.none
-        ..colorFilter = ui.ColorFilter.mode(sp.color, ui.BlendMode.srcIn);
-      for (final t in tiles) {
-        for (final p in t.props) {
-          if (!p.kind.startsWith('tree') && !p.kind.startsWith('ipe')) continue;
-          // Pixels de arte, como a copa (não cresce com o zoom), deslocada pelo sol a partir do pé da árvore.
-          final img = art.stamp(p.kind) ?? art.stamp('tree');
-          if (img == null) continue;
-          final sw = img.width.toDouble(), sh = (img.height * 0.7).roundToDouble();
-          final q = s(p.x, p.y) + ui.Offset(tOff.$1, tOff.$2) * 0.5;
-          c.drawImageRect(img, ui.Rect.fromLTWH(0, 0, sw, img.height.toDouble()),
-              ui.Rect.fromLTWH((q.dx - sw / 2).roundToDouble(), (q.dy - sh / 2).roundToDouble(), sw, sh), treeShadow);
-        }
-      }
-    }
+    // 0.23.1: a sombra das árvores saiu do chão: vai de pé, com a copa (`CityUpright`).
     c.restore();
   }
   // 7. À noite, as poças de luz dos postes no chão (sem o tom da hora por cima) e, com chuva, o reflexo no asfalto molhado.

@@ -29,14 +29,14 @@ void main() {
 
   test('a época 12 é a 11 com o pacote novo de São Paulo e os pontos das duas regiões', () {
     expect(e12.startsUtc, greaterThan(e11.startsUtc));
-    expect(e12.regionPacks['sao_paulo']!.file, 'sao_paulo_e12_ov.bin');
-    expect(e12.regionPacks['campinas']!.file, 'campinas_e12_ov.bin', reason: 'Campinas com o Overture');
-    expect(sha256Hex(File('assets/regions/campinas_e12_ov.bin').readAsBytesSync()), e12.regionPacks['campinas']!.sha256);
+    expect(e12.regionPacks['sao_paulo']!.file, 'sao_paulo_e12_ov2.bin');
+    expect(e12.regionPacks['campinas']!.file, 'campinas_e12_ov2.bin', reason: 'Campinas com o Overture');
+    expect(sha256Hex(File('assets/regions/campinas_e12_ov2.bin').readAsBytesSync()), e12.regionPacks['campinas']!.sha256);
     expect(e11.regionPacks['campinas']!.file, 'campinas_e11.bin', reason: 'a época 11 continua como foi publicada');
     expect(e12.visualPacks.map((k, v) => MapEntry(k, v.sha256)), e11.visualPacks.map((k, v) => MapEntry(k, v.sha256)));
     expect(e12.trafficPacks.keys, {'campinas', 'sao_paulo'});
     expect(e11.trafficPacks, isEmpty, reason: 'a época 11 continua como foi publicada');
-    expect(sha256Hex(File('assets/regions/campinas_e12_ov_traffic.bin').readAsBytesSync()), e12.trafficPacks['campinas']!.sha256);
+    expect(sha256Hex(File('assets/regions/campinas_e12_ov2_traffic.bin').readAsBytesSync()), e12.trafficPacks['campinas']!.sha256);
   });
 
   test('a época 12 registra a release do Overture', () {
@@ -47,7 +47,7 @@ void main() {
   });
 
   test('o arquivo da época 12 de Campinas: os pontos de rua iguais, os POIs do OSM todos lá, mais os do Overture e mais becos', () {
-    final e0 = read('campinas_e0_traffic.bin'), e12 = read('campinas_e12_ov_traffic.bin');
+    final e0 = read('campinas_e0_traffic.bin'), e12 = read('campinas_e12_ov2_traffic.bin');
     final all0 = all(e0), all12 = all(e12);
     String key(TrafficPoint p) => '${p.kind.index}|${p.x}|${p.y}';
     const street = {TrafficPointKind.signal, TrafficPointKind.stop, TrafficPointKind.giveWay, TrafficPointKind.crossing, TrafficPointKind.entry, TrafficPointKind.busStop};

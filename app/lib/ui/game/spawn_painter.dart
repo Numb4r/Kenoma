@@ -15,6 +15,7 @@ import '../../world/map_camera.dart';
 import '../../world/spawn_field.dart';
 import '../colors.dart';
 import '../sprites/variant_art.dart' show shinyPulse;
+import '../sprites/material_sprites.dart';
 
 /// Tipo do Eco por espécie, para a cor do anel. Vem de `creatures.json` pelo mapa.
 typedef EcoTypeOf = EcoType? Function(String speciesId);
@@ -75,6 +76,7 @@ void paintSpawns(
   ui.Offset windDir = ui.Offset.zero,
   ui.Offset Function(WorldSpawn s)? localWind,
   double pxPerM = 0,
+  double artPixelDp = 3,
 }) {
   final ordered = [...spawns]..sort((a, b) => a.y.compareTo(b.y));
   final climateWind = windDir;
@@ -118,6 +120,8 @@ void paintSpawns(
     } else if (s.isSpark) {
       _leaning(canvas, center.translate(0, sparkSize / 2), lean, () => _spark(canvas, center, spawnColor(s, typeOf), sparkSize, dpr, near, time + s.uid % 7));
       if (blow) _motes(canvas, center, wind.motes(s.uid, time), windDir, sparkSize * 1.5, spawnColor(s, typeOf));
+    } else if (_materialImage(s.entryId) case final img?) {
+      _materialSprite(canvas, center, img, artPixelDp, near);
     } else {
       _material(canvas, center, spawnColor(s, typeOf), sparkSize, near);
     }
@@ -337,6 +341,35 @@ void _spark(ui.Canvas canvas, ui.Offset c, ui.Color color, double size, double d
 }
 
 /// Ponto de material: uma caixinha de [size] pixels de lado (cerca de 3 m do mundo).
+/// 0.23.1: o sprite de cada material (`material_sprites.dart`), montado uma vez. `null`: o item não tem sprite (vale a caixa).
+final _materialImages = <String, ui.Image?>{};
+
+ui.Image? _materialImage(String id) => _materialImages.putIfAbsent(id, () {
+      final rows = materialSprites[id];
+      if (rows == null) return null;
+      final legend = materialSpriteLegend[id] ?? const {};
+      final rec = ui.PictureRecorder();
+      final c = ui.Canvas(rec);
+      var w = 1;
+      for (final (y, row) in rows.indexed) {
+        if (row.length > w) w = row.length;
+        for (var x = 0; x < row.length; x++) {
+          if (row[x] == '.') continue;
+          c.drawRect(ui.Rect.fromLTWH(x.toDouble(), y.toDouble(), 1, 1), ui.Paint()..isAntiAlias = false..color = ui.Color(materialPalette[legend[row[x]] ?? 'outline'] ?? materialPalette['outline']!));
+        }
+      }
+      return rec.endRecording().toImageSync(w, rows.length);
+    });
+
+/// O material de pé: 1 pixel do sprite é 1 pixel de arte ([px] dp), sem giro, com a base no ponto do spawn; fora da Aura, 60%.
+void _materialSprite(ui.Canvas canvas, ui.Offset c, ui.Image img, double px, bool near) {
+  final w = img.width * px, h = img.height * px;
+  final dst = ui.Rect.fromLTWH((c.dx - w / 2).roundToDouble(), (c.dy - h).roundToDouble(), w, h);
+  canvas.drawImageRect(img, ui.Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble()), dst, ui.Paint()
+    ..filterQuality = ui.FilterQuality.none
+    ..color = ui.Color.fromRGBO(255, 255, 255, near ? 1 : 0.6));
+}
+
 void _material(ui.Canvas canvas, ui.Offset c, ui.Color color, double size, bool near) {
   final side = math.max(6.0, size);
   final r = ui.Rect.fromCenter(center: c, width: side, height: side);

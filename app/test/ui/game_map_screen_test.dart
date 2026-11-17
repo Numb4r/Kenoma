@@ -28,6 +28,7 @@ import 'package:kenoma/save/save_store.dart';
 import 'package:kenoma/world/places.dart';
 
 import '../support/fake_position_source.dart';
+import '../support/fixtures.dart';
 
 class _Bundle extends CachingAssetBundle {
   _Bundle(this.files);
@@ -42,11 +43,13 @@ class _Bundle extends CachingAssetBundle {
   }
 }
 
+/// Os pacotes de biomas de Campinas que alguma época lista (`epochs.json`).
+final campinasPackFiles = {for (final e in loadEpochs().epochs) e.regionPacks['campinas']!.file};
+
 Map<String, List<int>> realAssets() => {
       for (final f in ['epochs', 'biomes', 'balance', 'creatures', 'items', 'recipes', 'mentor', 'forum', 'rituals', 'clima']) 'assets/data/$f.json': File('assets/data/$f.json').readAsBytesSync(),
-      'assets/regions/campinas_e0.bin': File('assets/regions/campinas_e0.bin').readAsBytesSync(),
-      'assets/regions/campinas_e11.bin': File('assets/regions/campinas_e11.bin').readAsBytesSync(), // da época 11 em diante
-      'assets/regions/campinas_e12_ov.bin': File('assets/regions/campinas_e12_ov.bin').readAsBytesSync(), // da época 12 (Overture)
+      // Os pacotes de biomas de Campinas de todas as épocas (o relógio do teste decide qual é lido), pelos nomes de epochs.json.
+      for (final f in campinasPackFiles) 'assets/regions/$f': File('assets/regions/$f').readAsBytesSync(),
       'assets/regions/campinas_e0_vis.bin': File('assets/regions/campinas_e0_vis.bin').readAsBytesSync(),
       'assets/regions/campinas_e2_nowalk.bin': File('assets/regions/campinas_e2_nowalk.bin').readAsBytesSync(),
       'assets/regions/campinas_e9_relief.bin': File('assets/regions/campinas_e9_relief.bin').readAsBytesSync(),
@@ -318,6 +321,17 @@ void main() {
   });
 
   group('HUD', () {
+    testWidgets('0.23.1: o mapa começa embaixo da barra do HUD e termina na borda de baixo; com a barra de status, nada passa por cima', (tester) async {
+      tester.view.padding = const FakeViewPadding(top: 63, bottom: 126); // 24 dp e 48 dp com dpr 2,625
+      addTearDown(tester.view.resetPadding);
+      await pumpGame(tester);
+      final bar = tester.getRect(find.byKey(const Key('hud-bar')));
+      final map = tester.getRect(find.byType(GameWidget<GameMapGame>));
+      expect(map.top, bar.bottom, reason: 'o céu e o mapa começam embaixo da barra');
+      expect(bar.top, greaterThanOrEqualTo(24), reason: 'a barra fica abaixo da barra de status (e do recorte da câmera)');
+      expect(map.bottom, 2400 / 2.625 - 48, reason: 'nada embaixo da barra de navegação');
+    });
+
     for (final dp in const [Size(360, 800), Size(412, 915), Size(480, 1000)]) {
       testWidgets('em ${dp.width.round()}×${dp.height.round()} dp, com simulador, bússola, Radar e viagem, nada do HUD cobre outra peça', (tester) async {
         final env = await pumpGame(tester, screen: dp * 2.625);
@@ -358,7 +372,7 @@ void main() {
     testWidgets('arrastar gira o mapa em torno do Conjurador: a câmera não sai dele e o giro não volta', (tester) async {
       final env = await pumpGame(tester);
       final cam = env.game.follow.camera;
-      final c = env.game.screenCenter;
+      final c = tester.getTopLeft(gameWidget) + env.game.screenCenter; // o centro do jogo, na tela (0.23.1: o mapa começa embaixo da barra)
       // O dedo desce pelo lado direito, a 120 px do Conjurador: um quarto de volta é descer 120 px (45°).
       await tester.dragFrom(c + const Offset(120, 0), const Offset(0, 120));
       await env.settle(2);
@@ -641,7 +655,7 @@ void main() {
       addTearDown(tester.view.reset);
       final files = realAssets();
       // O relógio aqui é o real: adultera o pacote de todas as épocas, para valer antes e depois do começo da 11 e da 12.
-      for (final k in ['assets/regions/campinas_e0.bin', 'assets/regions/campinas_e11.bin', 'assets/regions/campinas_e12_ov.bin']) {
+      for (final k in [for (final f in campinasPackFiles) 'assets/regions/$f']) {
         files[k] = Uint8List.fromList(files[k]!)..[3000] ^= 0xff;
       }
       final tools = DevTools(realSource: FakeGps());
@@ -708,9 +722,10 @@ void main() {
       return eco;
     }
 
-    Offset screenOf(Env env, WorldSpawn s) {
+    // Na tela: o ponto do jogo mais o canto do mapa (0.23.1: o mapa começa embaixo da barra do HUD).
+    Offset screenOf(WidgetTester tester, Env env, WorldSpawn s) {
       final (sx, sy) = env.game.follow.camera.cellToScreen(s.x, s.y, env.game.size.x, env.game.size.y);
-      return Offset(sx, sy);
+      return tester.getTopLeft(gameWidget) + Offset(sx, sy);
     }
 
     testWidgets('o botão do celular abre o menu: apps do nível 1 abertos, o resto bloqueado', (tester) async {
@@ -756,12 +771,12 @@ void main() {
       final eco = await goToEco(env);
       final state = env.game.worldView!.state;
       expect(state.markOf(eco.uid), isNull);
-      await tester.longPressAt(screenOf(env, eco));
+      await tester.longPressAt(screenOf(tester, env, eco));
       await env.settle(4);
       expect(state.markOf(eco.uid), isNotNull);
       expect(find.byKey(Key('mark-${eco.uid}')), findsOneWidget);
       expect(env.game.rotation.angle, 0, reason: 'o toque longo não gira o mapa');
-      await tester.longPressAt(screenOf(env, eco));
+      await tester.longPressAt(screenOf(tester, env, eco));
       await env.settle(4);
       expect(state.markOf(eco.uid), isNull);
       expect(find.byKey(Key('mark-${eco.uid}')), findsNothing);
@@ -771,7 +786,7 @@ void main() {
       final env = await pumpGame(tester);
       final eco = await goToEco(env);
       final state = env.game.worldView!.state;
-      final g = await tester.startGesture(screenOf(env, eco));
+      final g = await tester.startGesture(screenOf(tester, env, eco));
       await g.moveBy(const Offset(60, 0));
       await g.moveBy(const Offset(0, 100)); // já longe do Conjurador: o dedo gira o mapa
       await g.up();
@@ -784,7 +799,7 @@ void main() {
     testWidgets('segurar sem soltar e depois arrastar não vira toque longo', (tester) async {
       final env = await pumpGame(tester);
       final eco = await goToEco(env);
-      final g = await tester.startGesture(screenOf(env, eco));
+      final g = await tester.startGesture(screenOf(tester, env, eco));
       await tester.pump(const Duration(milliseconds: 200));
       await g.moveBy(const Offset(60, 0)); // passa do limiar antes dos 500 ms
       await g.moveBy(const Offset(0, 100));
@@ -802,7 +817,7 @@ void main() {
       await env.simulate(const Duration(seconds: 3), frames: 40);
       final far = env.game.worldView!.spawns.where((s) => s.isEco && !env.game.worldView!.inAura(s));
       if (far.isEmpty) return; // sem Eco à vista fora da Aura nesse trecho
-      await tester.longPressAt(screenOf(env, far.first));
+      await tester.longPressAt(screenOf(tester, env, far.first));
       await env.settle(4);
       expect(env.game.worldView!.state.markOf(far.first.uid), isNull);
       expect(eco.uid, isNotNull);

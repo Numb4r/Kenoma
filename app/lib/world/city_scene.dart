@@ -11,6 +11,7 @@ import '../core/fnv.dart';
 import '../data/building_pack.dart';
 import '../data/traffic_pack.dart';
 import '../data/visual_pack.dart';
+import '../data/ground_pack.dart';
 
 /// Classe da rua pelo nome do estilo.
 String roadClassKey(RoadClass c) => switch (c) {
@@ -130,9 +131,13 @@ class CityProp {
 }
 
 class CityTile {
-  CityTile({required this.roads, required this.greens, required this.waters, required this.buildings, required this.props});
+  CityTile({required this.roads, required this.greens, required this.waters, required this.buildings, required this.props, this.areas = const []});
 
   final List<CityRoad> roads;
+
+  /// 0.23.1: o uso do solo do OSM (`_ground.bin`) que toca o tile: estacionamento, baldio, lote, comércio, piso de pedestre e
+  /// a zona da calçada portuguesa.
+  final List<GroundArea> areas;
 
   /// Anéis em células z21 (o primeiro é o contorno; os outros, buracos).
   final List<List<Float64List>> greens, waters;
@@ -147,6 +152,7 @@ class CityTile {
         waters: [for (final g in waters) if (g.isNotEmpty && _touches(boundsOf(g.first), l, t, r, b)) g],
         buildings: [for (final x in buildings) if (_touches(x.bounds, l, t, r, b)) x],
         props: [for (final p in props) if (p.x >= l && p.x <= r && p.y >= t && p.y <= b) p],
+        areas: [for (final a in areas) if (_touches((a.l, a.t, a.r, a.b), l, t, r, b)) a],
       );
 
   static final empty = CityTile(roads: const [], greens: const [], waters: const [], buildings: const [], props: const []);
@@ -166,6 +172,7 @@ CityTile buildCityTile({
   required String Function(int cx, int cy) biomeAt,
   BuildingSource? buildings,
   TrafficPointSource? points,
+  GroundPack? ground,
 }) {
   final x0 = tx * cellsPerTile.toDouble(), y0 = ty * cellsPerTile.toDouble(), u = cellsPerTile / extent;
   Float64List cells(Int32List xy) {
@@ -255,7 +262,7 @@ CityTile buildCityTile({
         break;
     }
   }
-  return CityTile(roads: roads, greens: greens, waters: waters, buildings: bs, props: props);
+  return CityTile(roads: roads, greens: greens, waters: waters, buildings: bs, props: props, areas: ground?.areasIn(tx, ty) ?? const []);
 }
 
 /// Árvores plantadas nos verdes: uma a cada ~14 m numa grade por hash, 38% das casas da grade, dentro do verde, fora de prédio

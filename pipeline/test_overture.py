@@ -90,6 +90,23 @@ def test_no_duplicate_buildings():
             assert a.intersection(b).area <= ov.OVERLAP * min(a.area, b.area)
 
 
+def test_ghost_filter():
+    k = 1.0  # m² por grau², para o teste: as áreas são as do polígono
+    water = [shapely.box(0, 0, 100, 100)]
+    industrial = [shapely.box(500, 0, 700, 200)]
+    polys = [
+        shapely.box(10, 10, 20, 20),        # dentro da água: sai
+        shapely.box(95, 10, 115, 20),       # 25% sobre a água: fica
+        shapely.box(200, 0, 240, 40),       # 1.600 m², mediana 100: grande demais, sem confirmação: sai
+        shapely.box(520, 20, 560, 60),      # o mesmo tamanho dentro do industrial: fica
+        shapely.box(300, 0, 340, 40),       # grande, com um POI do OSM dentro: fica
+        shapely.box(400, 0, 420, 20),       # 400 m²: abaixo do mínimo, fica
+    ]
+    keep, counts = ov.ghost_filter(polys, water, industrial, [(320, 20)], lambda p: 100.0, k)
+    assert keep == [1, 3, 4, 5], keep
+    assert counts == {"agua_parque_praca": 1, "grande": 1}, counts
+
+
 def test_lift_to_buildings():
     polys = [sq(0, 0, 1), sq(5, 5, 1)]
     assert ov.lift_to_buildings(polys, [(0.5, 0.5, "worship"), (3, 3, "mall"), (5.5, 5.5, "mall")]) == [(0, "worship"), (1, "mall")]

@@ -21,6 +21,9 @@ from pyproj import Transformer
 from rasterio.features import rasterize
 from rasterio.transform import Affine
 
+
+import overture
+
 ROOT = Path(__file__).resolve().parent.parent
 PIPELINE = ROOT / "pipeline"
 CACHE = PIPELINE / "cache"
@@ -210,11 +213,11 @@ def main() -> None:
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     OUT.mkdir(parents=True, exist_ok=True)
-    bin_path = args.out_dir / f"{args.region}_e{args.epoch}{'_ov' if args.overture else ''}.bin"
+    bin_path = args.out_dir / f"{args.region}_e{args.epoch}{'_' + overture.TAG if args.overture else ''}.bin"
     if args.overture and bin_path.exists():
         raise SystemExit(f"{bin_path} já existe: não regero por cima")
     bin_path.write_bytes(data)
-    preview_path = OUT / f"{args.region}{'_ov' if args.overture else ''}_preview.png"
+    preview_path = OUT / f"{args.region}{'_' + overture.TAG if args.overture else ''}_preview.png"
     write_preview(grid, preview_path)
 
     counts = np.bincount(grid.ravel(), minlength=len(PREVIEW_COLORS))

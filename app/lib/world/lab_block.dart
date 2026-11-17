@@ -153,12 +153,24 @@ class LabBlock {
 /// uma câmera a [cameraPx] pixels de altura sobre o centro da tela [center]. No centro, deslocamento zero; para fora, o
 /// telhado se afasta na direção do ponto, proporcional à altura. Como sai do centro da tela, vale com o mapa girando.
 /// O deslocamento é limitado a [maxPx] (o `criativo`: prédio alto na borda virava uma cunha de parede maior que o telhado).
-Pt roofPoint(Pt p, Pt center, double heightPx, {double cameraPx = 160, double maxPx = 16}) {
+Pt roofPoint(Pt p, Pt center, double heightPx, {double cameraPx = 160, double maxPx = 16, Pt? halfScreen}) {
   final dx = p.$1 - center.$1, dy = p.$2 - center.$2, d = math.sqrt(dx * dx + dy * dy);
   var k = heightPx / math.max(heightPx + 1, cameraPx);
   if (d * k > maxPx) k = maxPx / d;
+  if (halfScreen != null && d > 0) {
+    // 0.23.1: o telhado anda no máximo um quarto da distância do centro da tela até a borda, na direção em que ele sai (prédio
+    // alto não joga parede por cima da rua inteira). Medido do centro, igual para todo ponto: um prédio na borda ou fora dela
+    // continua com parede.
+    final ux = (dx / d).abs(), uy = (dy / d).abs();
+    final edge = math.min(ux > 0 ? halfScreen.$1 / ux : double.infinity, uy > 0 ? halfScreen.$2 / uy : double.infinity);
+    final cap = kRoofEdgeShare * edge;
+    if (d * k > cap) k = cap / d;
+  }
   return (p.$1 + dx * k, p.$2 + dy * k);
 }
+
+/// A parte da distância do centro da tela até a borda que o telhado pode andar (0.23.1).
+const double kRoofEdgeShare = 0.25;
 
 /// A parede da aresta `a → b` aparece: a normal de fora dela aponta para longe do centro da tela. [clockwise] é a orientação
 /// do contorno na tela.

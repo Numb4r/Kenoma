@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/world/lab_block.dart';
 
@@ -40,5 +42,22 @@ void main() {
     expect(b('apartments', levels: 20).fakeHeightPx, 32);
     expect(b('yes', shop: true).biome, 'lit');
     expect(b('house').biome, 'residential');
+  });
+
+  test('0.23.1: com a tela, o telhado anda no máximo um quarto da distância do centro até a borda, na direção dele', () {
+    const center = (100.0, 200.0), half = (100.0, 200.0);
+    // Prédio alto (muito deslocamento) à direita: até a borda são 100 px do centro, então no máximo 25 px.
+    final r = roofPoint((180, 200), center, 80, maxPx: 60, halfScreen: half);
+    expect(r.$1 - 180, closeTo(25, 1e-9));
+    expect(r.$2, 200);
+    // Sem a tela, o de antes (até maxPx).
+    expect(roofPoint((180, 200), center, 80, maxPx: 60).$1 - 180, greaterThan(25));
+    // Fora da tela continua com parede (o teto não depende do ponto).
+    expect(roofPoint((260, 200), center, 80, maxPx: 60, halfScreen: half).$1 - 260, closeTo(25, 1e-9));
+    // Na diagonal, a borda mais perto manda: para baixo e um pouco à direita, a de baixo (200 px na vertical).
+    final d = roofPoint((150, 390), center, 80, maxPx: 200, halfScreen: half);
+    final moved = math.sqrt(math.pow(d.$1 - 150, 2) + math.pow(d.$2 - 390, 2));
+    final uy = 190 / math.sqrt(50 * 50 + 190 * 190);
+    expect(moved, closeTo(kRoofEdgeShare * 200 / uy, 1e-9));
   });
 }

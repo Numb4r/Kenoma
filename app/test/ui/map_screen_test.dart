@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/ui/map/map_screen.dart';
+import '../support/fixtures.dart';
 
 /// O jogo de mapa: `GameWidget<MapGame>`, que `find.byType(GameWidget)` não casa.
 final gameWidget = find.byWidgetPredicate((w) => w is GameWidget);
@@ -27,11 +28,8 @@ Map<String, List<int>> realAssets({Uint8List? bin}) => {
       'assets/data/epochs.json': File('assets/data/epochs.json').readAsBytesSync(),
       'assets/data/biomes.json': File('assets/data/biomes.json').readAsBytesSync(),
       'assets/data/balance.json': File('assets/data/balance.json').readAsBytesSync(),
-      'assets/regions/campinas_e0.bin': bin ?? File('assets/regions/campinas_e0.bin').readAsBytesSync(),
-      // Da época 11 em diante o pacote é outro (biomas Iluminado e Sagrado): o relógio do teste decide qual é lido.
-      'assets/regions/campinas_e11.bin': bin ?? File('assets/regions/campinas_e11.bin').readAsBytesSync(),
-      // Da época 12 em diante, com o Overture.
-      'assets/regions/campinas_e12_ov.bin': bin ?? File('assets/regions/campinas_e12_ov.bin').readAsBytesSync(),
+      // Os pacotes de biomas de Campinas de todas as épocas (o relógio do teste decide qual é lido), pelos nomes de epochs.json.
+      for (final f in {for (final e in loadEpochs().epochs) e.regionPacks['campinas']!.file}) 'assets/regions/$f': bin ?? File('assets/regions/$f').readAsBytesSync(),
     };
 
 Future<void> pumpMap(WidgetTester tester, {Map<String, List<int>>? assets, double lat = -22.8174, double lon = -47.0697, int? nowUtc}) async {

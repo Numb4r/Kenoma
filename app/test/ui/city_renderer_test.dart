@@ -214,21 +214,7 @@ void main() {
     expect(bright / changed, greaterThan(0.8));
   });
 
-  testWidgets('o que tem altura fica de pé: a mesma árvore sai igual, pixel a pixel, com o mapa em dois giros', (tester) async {
-    final (x, y) = tiles.toCells(0, 0);
-    final tree = CityTile(roads: const [], greens: const [], waters: const [], buildings: const [], props: [CityProp('tree_c', x, y)]);
-    final c = make(tileAt: (tx, ty) => tx == 0 && ty == 0 ? tree : CityTile.empty);
-    final crops = <List<int>>[];
-    for (final rot in [0.0, 1.3]) {
-      final img = upright(c, camAt(0, 0, rot: rot));
-      final d = await bytes(tester, img);
-      final cx = view.width ~/ 2, cy = view.height ~/ 2;
-      crops.add([for (var yy = cy - 40; yy < cy + 40; yy++) for (var xx = cx - 40; xx < cx + 40; xx++) px(d, xx, yy)]);
-      img.dispose();
-    }
-    expect(crops[0].where((p) => p >>> 24 != 0), isNotEmpty, reason: 'a árvore foi desenhada');
-    expect(crops[1], crops[0], reason: 'o carimbo não gira');
-  });
+  // O teste da árvore de pé em dois giros virou test/ui/upright_turn_test.dart (0.23.1): todo sprite de pé, nas duas artes.
 
   test('zoom aberto: sem janelas e sem props de telhado; zoom fechado: com janelas', () {
     final c = make();

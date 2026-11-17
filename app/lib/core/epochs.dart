@@ -277,11 +277,13 @@ class EpochSchedule {
     return best;
   }
 
-  /// Mundo desatualizado: o relógio está antes da primeira época ou chegou ao `valid_until_utc`
-  /// da última época conhecida. O app mostra o aviso e continua gerando.
-  bool isStale(int tUtc) =>
-      tUtc < epochs.map((e) => e.startsUtc).reduce((a, b) => a < b ? a : b) ||
-      tUtc >= epochs.map((e) => e.validUntilUtc).reduce((a, b) => a > b ? a : b);
+  /// Mundo desatualizado: o relógio está antes da primeira época ou chegou ao `valid_until_utc` da época vigente. O app
+  /// mostra o aviso e continua gerando. 0.23.1: pela vigente, não pela maior validade da lista: a época não publicada fica
+  /// com início em 2099 e não pode esconder um mundo vencido até lá.
+  bool isStale(int tUtc) {
+    final now = current(tUtc);
+    return now == null || tUtc >= now.validUntilUtc;
+  }
 
   /// Época que o app usa no instante `tUtc`: a vigente ou, antes da primeira, a primeira.
   EpochSelection select(int tUtc) {

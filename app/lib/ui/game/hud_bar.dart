@@ -21,7 +21,7 @@ const String kVeilBadgeHelp = 'Aqui o mapa veio da rede: amigos em versões dife
 
 /// A barra única do topo: hora, lua e clima à esquerda (o toque abre o Céu) e o selo de modo à direita.
 class HudBar extends StatefulWidget {
-  const HudBar({required this.nowUtc, required this.lat, required this.seal, this.weather, this.onSky, super.key});
+  const HudBar({required this.nowUtc, required this.lat, required this.seal, this.weather, this.onSky, this.battery, super.key});
 
   final int Function() nowUtc;
   final double Function() lat;
@@ -31,12 +31,16 @@ class HudBar extends StatefulWidget {
   final VoidCallback? onSky;
   final Widget seal;
 
+  /// 0.23.1: a carga da bateria em % (o modo imersivo esconde a barra de status). `null` ou sem leitura: sem indicador.
+  final Future<int?> Function()? battery;
+
   @override
   State<HudBar> createState() => _HudBarState();
 }
 
 class _HudBarState extends State<HudBar> {
-  Timer? _tick;
+  Timer? _tick, _batteryTick;
+  int? _battery;
 
   @override
   void initState() {
@@ -44,11 +48,21 @@ class _HudBarState extends State<HudBar> {
     _tick = Timer.periodic(const Duration(seconds: 5), (_) {
       if (mounted) setState(() {});
     });
+    if (widget.battery != null) {
+      _readBattery();
+      _batteryTick = Timer.periodic(const Duration(minutes: 1), (_) => _readBattery());
+    }
+  }
+
+  Future<void> _readBattery() async {
+    final v = await widget.battery!();
+    if (mounted && v != _battery) setState(() => _battery = v);
   }
 
   @override
   void dispose() {
     _tick?.cancel();
+    _batteryTick?.cancel();
     super.dispose();
   }
 
@@ -69,6 +83,12 @@ class _HudBarState extends State<HudBar> {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(children: [
                 Text(phoneClock(t), key: const Key('hud-clock'), style: _label),
+                if (_battery case final b?) ...[
+                  const SizedBox(width: 6),
+                  CustomPaint(key: const Key('hud-battery'), size: const Size(14, 8), painter: BatteryGlyphPainter(b)),
+                  const SizedBox(width: 3),
+                  Text('$b%', key: const Key('hud-battery-label'), style: _label.copyWith(color: b <= 20 ? kEssence : null)),
+                ],
                 const SizedBox(width: 8),
                 CustomPaint(key: const Key('moon-hud'), size: const Size(20, 20), painter: MoonPainter(moonCycle(t), widget.lat() < 0)),
                 if (w != null) ...[
@@ -152,4 +172,27 @@ class ShortcutChip extends StatelessWidget {
           ),
         ),
       );
+}
+
+
+/// 0.23.1: a bateria no HUD, em pixels: o corpo com contorno, o polo à direita e a carga por dentro (Essência com 20% ou menos).
+class BatteryGlyphPainter extends CustomPainter {
+  BatteryGlyphPainter(this.percent);
+
+  final int percent;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()..isAntiAlias = false;
+    final body = Rect.fromLTWH(0, 0, size.width - 2, size.height);
+    canvas.drawRect(body, p..color = kText);
+    canvas.drawRect(body.deflate(1), p..color = kOutline);
+    canvas.drawRect(Rect.fromLTWH(size.width - 2, size.height / 2 - 2, 2, 4), p..color = kText);
+    final inner = body.deflate(2);
+    final w = (inner.width * percent.clamp(0, 100) / 100).roundToDouble();
+    if (w > 0) canvas.drawRect(Rect.fromLTWH(inner.left, inner.top, w, inner.height), p..color = percent <= 20 ? kEssence : kSignal);
+  }
+
+  @override
+  bool shouldRepaint(BatteryGlyphPainter old) => old.percent != percent;
 }

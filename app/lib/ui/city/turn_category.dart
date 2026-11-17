@@ -59,3 +59,22 @@ String propKindName(String kind) => switch (kind) {
       _ when kind.startsWith('ipe') => 'ipê',
       _ => 'árvore',
     };
+
+/// 0.23.1: os carimbos que ficam de pé (sprites): saem sem giro nem escala, só mudam de posição com o mapa. Todo carimbo de
+/// `mapStamps`, dos ipês e dos PNGs do Aseprite está aqui ou em [groundStampKinds] (o teste de giro confere e desenha cada um
+/// destes a 0° e a 90°).
+const Set<String> uprightStampKinds = {
+  'tree', 'tree_a', 'tree_b', 'tree_c', 'ipe_green', 'ipe_purple', 'ipe_yellow', //
+  'lamp', 'bus_stop', 'newsstand', //
+  'roof_tank', 'roof_ac', 'roof_antenna', //
+  'sign_bar', 'sign_blade', 'neon_ring', 'neon_arrow',
+};
+
+/// Os carimbos e módulos que são chão ou textura (giram com o chão ou com o telhado), ou que o mapa não desenha como sprite.
+const Set<String> groundStampKinds = {
+  'tuft', 'tuft_b', 'flower_a', 'flower_b', 'flower_c', 'weed', 'pebble', 'crack', 'oil', 'patch', 'ripple', 'bush', //
+  'roof_tile', 'roof_tile_b', 'roof_fibro', 'roof_slab', 'roof_tar', 'roof_metal', 'roof_metal_b', 'roof_slate', //
+  'sidewalk_tile', 'sidewalk_mosaic', 'floor_lit', 'parking_bay', //
+  'window_off', 'window_on', 'window_shop_off', 'window_shop_on', 'cloud', //
+  'sacred', 'house', 'shop_lit', 'shop', 'block', 'shed', 'bare',
+};

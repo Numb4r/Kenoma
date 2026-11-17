@@ -48,7 +48,7 @@ void main() {
     final start = DateTime.parse(e12['starts_utc'] as String);
     expect(unpublishedTooSoon([e12], published: published, now: start.subtract(const Duration(days: 8))), isEmpty);
     final soon = unpublishedTooSoon([e12], published: published, now: start.subtract(const Duration(days: 6)));
-    expect(soon.single, 'época 12: sao_paulo_e12_ov.bin');
+    expect(soon.single, 'época 12: sao_paulo_e12_ov2.bin');
     expect(unpublishedTooSoon([e12], published: published, now: start.add(const Duration(days: 1))), isNotEmpty, reason: 'já começou sem publicar');
     expect(unpublishedTooSoon([e12], published: (_, _) => true, now: start), isEmpty, reason: 'com tudo publicado, solta');
     expect(unpublishedTooSoon([epochs.firstWhere((e) => e['id'] == 11)], published: published, now: start), isEmpty, reason: 'a 11 só usa pacotes publicados');

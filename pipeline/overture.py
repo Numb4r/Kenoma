@@ -24,6 +24,9 @@ import shapely
 from shapely.strtree import STRtree
 
 MIN_CONFIDENCE = 0.7
+# O sufixo dos arquivos gerados com o Overture: `ov` na 0.23.0, `ov2` desde a 0.23.1 (sem os contornos fantasma). Muda junto com
+# as regras, para nunca regerar por cima de um arquivo commitado.
+TAG = "ov2"
 CLOSED = {"permanently_closed", "temporarily_closed", "closed"}
 MERGE_M = 30.0
 NAME_RATIO = 0.8
@@ -246,8 +249,46 @@ def overture_buildings(region: str, pbf, bbox, release: str):
         idx = new_footprints(_osm_building_rings(pbf, bbox), [r[1] for r in rows])
         chosen = [rows[i] for i in idx]
         ids_path.write_text("\n".join(r[0] for r in chosen) + "\n")
-    print(f"overture: {len(rows)} contornos sem fonte OSM, {len(chosen)} entram ({len(rows) - len(chosen)} cobrem um prédio já existente)")
+    print(f"overture: {len(rows)} contornos sem fonte OSM, {len(chosen)} não cobrem um prédio já existente ({len(rows) - len(chosen)} cobrem)")
+    chosen = _without_ghosts(region, pbf, bbox, release, chosen)
     return [(p, t, lv) for _, p, t, lv in chosen]
+
+
+def _without_ghosts(region: str, pbf, bbox, release: str, chosen: list):
+    """0.23.1: tira os fantasmas ([ghost_filter]) de [chosen] ((id, polígono, tipo, andares)). Os ids que ficam vão para
+    `<região>_buildings_final.txt` e as contagens por regra para `<região>_ghosts.json`."""
+    import json
+    import numpy as np
+    from build_region import lonlat_to_tile
+    path = _cache_dir(release) / f"{region}_buildings_final.txt"
+    if path.exists():
+        keep = set(path.read_text().split())
+        out = [r for r in chosen if r[0] in keep]
+        print(f"overture: {len(out)} entram, sem os fantasmas ({json.loads((_cache_dir(release) / f'{region}_ghosts.json').read_text())})")
+        return out
+    lat0 = (bbox[1] + bbox[3]) / 2
+    m2 = 111_320.0 ** 2 * np.cos(np.radians(lat0))
+    osm = _osm_building_rings(pbf, bbox)
+    by_tile: dict[tuple[int, int], list[float]] = {}
+
+    def tile_of(p):
+        c = p.centroid
+        x, y = lonlat_to_tile(np.array([c.x]), np.array([c.y]), 15)
+        return int(x[0]), int(y[0])
+
+    for p in osm + [r[1] for r in chosen]:
+        by_tile.setdefault(tile_of(p), []).append(p.area * m2)
+    medians = {k: float(np.median(v)) for k, v in by_tile.items()}
+    no_build = _osm_tagged_areas(pbf, bbox, NO_BUILD)
+    big_ok = _osm_tagged_areas(pbf, bbox, BIG_OK)
+    pois = [(lon, lat) for _, lon, lat, _ in _osm_pois(pbf, bbox)]
+    idx, counts = ghost_filter([r[1] for r in chosen], no_build, big_ok, pois, lambda p: medians[tile_of(p)], m2)
+    out = [chosen[i] for i in idx]
+    counts.update({"antes": len(chosen), "entram": len(out), "areas_agua_parque_praca": len(no_build), "areas_que_confirmam": len(big_ok)})
+    (_cache_dir(release) / f"{region}_ghosts.json").write_text(json.dumps(counts, indent=1))
+    path.write_text("\n".join(r[0] for r in out) + "\n")
+    print(f"overture: fantasmas {counts}")
+    return out
 
 
 OSM_POI_KEYS = ("shop", "amenity", "leisure", "place", "name")
@@ -334,3 +375,67 @@ def overture_places(region: str, pbf, bbox, release: str, min_confidence: float 
     out_path.write_text(json.dumps(result))
     print(f"overture places: {json.dumps(stats)}")
     return result
+
+
+# ---- 0.23.1: contornos fantasma. Os contornos de IA erram: o que só o Overture tem sai quando cai sobre água, parque ou praça
+# do OSM, ou quando é grande demais para a região sem confirmação do OSM. ----
+
+GHOST_COVER = 0.5  # parte do contorno sobre água, parque ou praça do OSM que já o descarta
+BIG_MIN_M2 = 500.0  # abaixo disto nunca é "grande demais"
+BIG_FACTOR = 8.0  # grande demais: mais que isto vezes a mediana dos prédios do tile z15 dele
+# Áreas do OSM onde o contorno de IA é quase sempre engano.
+NO_BUILD = {("natural", "water"), ("landuse", "reservoir"), ("landuse", "basin"), ("waterway", "riverbank"),
+            ("leisure", "park"), ("leisure", "garden"), ("leisure", "playground"),
+            ("place", "square"), ("highway", "pedestrian")}
+# Áreas do OSM onde um prédio grande é esperado: confirmam o contorno grande.
+BIG_OK = {("landuse", v) for v in ("industrial", "commercial", "retail", "railway", "institutional", "education", "military", "farmyard")} | \
+         {("amenity", v) for v in ("school", "university", "college", "hospital", "marketplace", "bus_station", "place_of_worship")} | \
+         {("aeroway", "aerodrome")}
+
+
+def ghost_filter(polys: list, no_build: list, big_ok: list, pois: list[tuple[float, float]], tile_median, m2_per_deg2: float):
+    """Os índices de [polys] (lon/lat) que ficam, e quantos saem por regra: `agua_parque_praca` (metade ou mais sobre [no_build])
+    e `grande` (mais de `BIG_MIN_M2` e de `BIG_FACTOR` vezes `tile_median(polígono)` m², sem área de [big_ok] nem POI do OSM
+    ([pois]) que confirme)."""
+    nb_tree = STRtree(no_build) if no_build else None
+    ok_tree = STRtree(big_ok) if big_ok else None
+    poi_tree = STRtree([shapely.Point(x, y) for x, y in pois]) if pois else None
+    keep, counts = [], {"agua_parque_praca": 0, "grande": 0}
+    for i, p in enumerate(polys):
+        if nb_tree is not None:
+            hits = [no_build[j] for j in nb_tree.query(p)]
+            if hits and shapely.union_all([p.intersection(h) for h in hits]).area >= GHOST_COVER * p.area:
+                counts["agua_parque_praca"] += 1
+                continue
+        m2 = p.area * m2_per_deg2
+        if m2 > BIG_MIN_M2 and m2 > BIG_FACTOR * tile_median(p):
+            c = p.representative_point()
+            confirmed = (ok_tree is not None and any(big_ok[j].contains(c) for j in ok_tree.query(c))) or \
+                        (poi_tree is not None and len(poi_tree.query(p, predicate="contains")) > 0)
+            if not confirmed:
+                counts["grande"] += 1
+                continue
+        keep.append(i)
+    return keep, counts
+
+
+def _osm_tagged_areas(pbf, bbox, pairs: set):
+    """As áreas do OSM com alguma das tags de [pairs] (lon/lat), dentro da bbox."""
+    import osmium
+    keys = sorted({k for k, _ in pairs})
+    clip = shapely.box(*bbox)
+    wkb = osmium.geom.WKBFactory()
+    out = []
+    fp = osmium.FileProcessor(str(pbf)).with_locations().with_areas().with_filter(osmium.filter.KeyFilter(*keys))
+    for obj in fp:
+        if not obj.is_area() or not any((k, obj.tags.get(k)) in pairs for k in keys):
+            continue
+        try:
+            g = shapely.from_wkb(wkb.create_multipolygon(obj))
+        except (RuntimeError, osmium.InvalidLocationError):
+            continue
+        if not g.is_valid:
+            g = g.buffer(0)
+        if g.intersects(clip):
+            out.append(g)
+    return out

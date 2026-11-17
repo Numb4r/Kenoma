@@ -52,6 +52,7 @@ class PersonalBalance {
     this.hiddenEssenceBonus = 2,
     this.buildKeepS = 86400,
     this.rillBands = const [(puddles: 2, ecoChance: 0.25), (puddles: 4, ecoChance: 0.35), (puddles: 6, ecoChance: 0.45)],
+    this.shadeMaxPerZ18 = 2,
   });
 
   factory PersonalBalance.fromJson(Map<String, dynamic>? j) {
@@ -72,6 +73,7 @@ class PersonalBalance {
         for (final b in j['rill_bands'] as List<dynamic>)
           (puddles: (b as Map<String, dynamic>)['puddles'] as int, ecoChance: (b['eco_chance'] as num).toDouble()),
       ],
+      shadeMaxPerZ18: j['shade_max_per_z18'] as int,
     );
   }
 
@@ -95,6 +97,10 @@ class PersonalBalance {
 
   /// As faixas do Rill: poças a mais por célula z18 (uns 150 m) na chuva e a chance de Eco de Água em cada uma.
   final List<({int puddles, double ecoChance})> rillBands;
+
+  /// 0.23.1: no máximo tantos Ecos da Shade por célula z18 (4 × 4 células z20, uns 150 m) e janela: com o Overture há 3,5
+  /// vezes mais becos e marquises, e a habilidade não pode crescer junto. Passam os de menor sorteio.
+  final int shadeMaxPerZ18;
 
   /// A faixa [v] (1, 2, 3...) do Rill; acima da última, a última. `null` com 0.
   ({int puddles, double ecoChance})? rill(num v) => v < 1 ? null : rillBands[(v.round() - 1).clamp(0, rillBands.length - 1)];
@@ -173,19 +179,9 @@ class PersonalLayer {
   /// O Eco da Shade na célula z20 `(cx, cy)` em [t]: à noite, numa célula com beco ou marquise, com a chance da faixa. Os
   /// oito sorteios saem sempre; a build (a do começo da janela da célula) só decide se ele nasce.
   List<WorldSpawn> cell(int cx, int cy, int t, int playerLevel) {
-    final seed = field.seed;
-    final window = windowIndex(seed, cx, cy, t);
-    final ws = _windowStart(cx, cy, window);
-    final b = buildAt(builds(), ws);
-    final pct = (b?.of(kNightEco) ?? 0) / 100;
-    if (b == null || pct <= 0) return const [];
-    final ctx = _context(t);
-    if (ctx == null) return const [];
-    final h = fnv1a64([seed, playerKey, ctx.epoch.id, cx, cy, window, _saltEco]);
-    final rng = Pcg32(h, saltKenoma);
-    final r = _Rolls(rng);
-    final anchors = [for (final p in _points(cx * 2.0, cy * 2.0, 2)) if (balance.shadeKinds.contains(p.kind)) p];
-    if (r.roll >= pct || anchors.isEmpty || !_night(cx, cy, ws)) return const [];
+    final s = _shade(cx, cy, t);
+    if (s == null || !_withinShadeCap(cx, cy, t, s.r.roll, s.h)) return const [];
+    final (:window, :ws, :b, :ctx, :h, :r, :anchors) = s;
     final biome = _biome(cx, cy);
     final climate = field.weatherAt?.call(cx, cy, ws) ?? 'clear';
     final cond = ctx.epoch.ecoV2!.conditions;
@@ -194,6 +190,42 @@ class PersonalLayer {
     final a = anchors[(r.px * anchors.length).floor().clamp(0, anchors.length - 1)];
     final eco = _eco(fnv1a64([h, 1, saltUid]), species, a.x, a.y, window, r, b, ctx, biome, playerLevel);
     return eco == null ? const [] : [eco];
+  }
+
+  /// O que a Shade sorteia na célula z20 `(cx, cy)` em [t], ou `null` se ali não nasce Eco dela: sem a faixa na build do
+  /// começo da janela, de dia, sem beco ou marquise, ou o sorteio não passou.
+  ({int window, int ws, BuildEntry b, ({Epoch epoch, SpawnItemDef def}) ctx, int h, _Rolls r, List<TrafficPoint> anchors})? _shade(int cx, int cy, int t) {
+    final seed = field.seed;
+    final window = windowIndex(seed, cx, cy, t);
+    final ws = _windowStart(cx, cy, window);
+    final b = buildAt(builds(), ws);
+    final pct = (b?.of(kNightEco) ?? 0) / 100;
+    if (b == null || pct <= 0) return null;
+    final ctx = _context(t);
+    if (ctx == null) return null;
+    final h = fnv1a64([seed, playerKey, ctx.epoch.id, cx, cy, window, _saltEco]);
+    final r = _Rolls(Pcg32(h, saltKenoma));
+    if (r.roll >= pct) return null;
+    final anchors = [for (final p in _points(cx * 2.0, cy * 2.0, 2)) if (balance.shadeKinds.contains(p.kind)) p];
+    if (anchors.isEmpty || !_night(cx, cy, ws)) return null;
+    return (window: window, ws: ws, b: b, ctx: ctx, h: h, r: r, anchors: anchors);
+  }
+
+  /// Se o Eco da Shade da célula z20 `(cx, cy)` cabe no teto da célula z18 dela (`shade_max_per_z18`): entram os de menor
+  /// sorteio ([roll], e o hash [h] no empate) entre as 16 células z20 do bloco. Pelo sorteio, a faixa maior só acrescenta:
+  /// quem entra por ela tem sorteio maior que todos os que já entravam.
+  bool _withinShadeCap(int cx, int cy, int t, double roll, int h) {
+    final cap = balance.shadeMaxPerZ18;
+    final x0 = cx >>> 2 << 2, y0 = cy >>> 2 << 2;
+    var before = 0;
+    for (var y = y0; y < y0 + 4; y++) {
+      for (var x = x0; x < x0 + 4; x++) {
+        if (x == cx && y == cy) continue;
+        final o = _shade(x, y, t);
+        if (o != null && (o.r.roll < roll || (o.r.roll == roll && o.h < h)) && ++before >= cap) return false;
+      }
+    }
+    return true;
   }
 
   /// Os Ecos por hora do Hum e do Wisp no bloco z17 `(bx, by)` (uns 300 m) na hora UTC de [t]: até [_hourSlots] vagas de

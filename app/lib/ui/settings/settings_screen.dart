@@ -3,6 +3,8 @@
 /// viagem, Radar, clima) mora no app dele no celular.
 library;
 
+import 'dart:async' show unawaited;
+
 import '../flashes.dart';
 import '../../core/features.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +29,7 @@ import 'credits_screen.dart';
 import 'fresh_start_screen.dart';
 import 'qr_scan_screen.dart';
 import 'regions_section.dart';
+import '../system_bars.dart';
 
 /// Abre a câmera e devolve o código de grupo lido, ou `null`.
 typedef GroupScanner = Future<String?> Function(BuildContext context);
@@ -331,6 +334,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (v) {
                 s.setSetting(kReduceFlashesSetting, v);
                 reduceFlashes.value = v;
+              },
+            ),
+            SwitchListTile(
+              key: const Key('system-bars'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Barras do Android', style: TextStyle(fontSize: 8)),
+              subtitle: const Text('Mostra a barra de status e a de navegação. Desligado, o jogo usa a tela cheia: as barras voltam com um deslize da borda e somem sozinhas', style: TextStyle(fontSize: 8, color: kDim)),
+              value: s.setting(kSystemBarsSetting),
+              activeThumbColor: kSignal,
+              onChanged: (v) {
+                s.setSetting(kSystemBarsSetting, v);
+                unawaited(applySystemBars(show: v));
+                setState(() {});
               },
             ),
             SwitchListTile(

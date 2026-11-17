@@ -75,6 +75,16 @@ void main() {
     expect(schedule.select(e1.validUntilUtc).stale, isTrue);
   });
 
+  test('0.23.1: a época não publicada (início em 2099) não esconde que a vigente venceu', () {
+    final real = loadEpochs();
+    final e12 = real.epochs.firstWhere((e) => e.id == 12), e11 = real.epochs.firstWhere((e) => e.id == 11);
+    expect(e12.startsUtc, utc('2099-01-01T00:00:00Z'), reason: 'época não publicada: CLAUDE.md, regra 5');
+    expect(real.select(e11.validUntilUtc - 1).stale, isFalse);
+    final after = real.select(e11.validUntilUtc);
+    expect((after.epoch.id, after.stale), (11, true), reason: 'a 11 venceu e a 12 ainda não começou');
+    expect(real.select(e12.startsUtc).stale, isFalse);
+  });
+
   group('bordas da época 0 (spec, seção 3)', () {
     // Só a época 0: a 1 (densidade maior) cobre o mundo depois do fim dela.
     final schedule = EpochSchedule([loadEpochs().epochs.first]);

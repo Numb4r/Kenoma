@@ -78,6 +78,10 @@ class CityUpright {
   final roofs = <CityBuilding, ui.Path>{};
   final translucentOf = <CityBuilding>{};
 
+  /// 0.23.1: tudo o que saiu no último quadro, na ordem do desenho: o nome do carimbo (ou `building`), o retângulo no buffer
+  /// e o ponto do chão (células z21) a que ele pertence. O teste de giro compara os pixels de cada sprite de pé em dois giros.
+  final drawn = <({String name, ui.Rect rect, (double, double) anchor})>[];
+
   void paint(ui.Canvas c, UprightView v, List<CityTile> tiles) {
     stats
       ..buildings = 0
@@ -89,6 +93,7 @@ class CityUpright {
     _neon.clear();
     roofs.clear();
     translucentOf.clear();
+    drawn.clear();
     final view = (ui.Offset.zero & v.size).inflate(40);
     final center = ui.Offset(v.size.width / 2, v.size.height / 2);
     final kpm = v.kpm;
@@ -107,10 +112,11 @@ class CityUpright {
     }
     order.sort((a, b) => b.$3.compareTo(a.$3));
     final camPx = 160 * kpm / 1.1, maxPx = 16 * kpm / 1.1;
+    _treeShadows(c, v, tiles, view, split);
     c.saveLayer(null, ui.Paint()); // o tom da hora vai por cima de tudo isto (srcATop), antes das luzes
     for (final (b, base, _) in order) {
       final h = b.look.fakeHeightPx * kpm;
-      final roof = [for (final p in base) () { final r = roofPoint((p.dx, p.dy), (center.dx, center.dy), h, cameraPx: camPx, maxPx: maxPx); return ui.Offset(r.$1, r.$2); }()];
+      final roof = [for (final p in base) () { final r = roofPoint((p.dx, p.dy), (center.dx, center.dy), h, cameraPx: camPx, maxPx: maxPx, halfScreen: (center.dx, center.dy)); return ui.Offset(r.$1, r.$2); }()];
       final roofPath = ui.Path()..addPolygon(roof, true);
       roofs[b] = roofPath;
       // Só os itens dentro da caixa do prédio (base e telhado) chegam ao teste do contorno.
@@ -127,34 +133,35 @@ class CityUpright {
         stats.translucent++;
         c.saveLayer(null, ui.Paint()..color = const ui.Color(0x73FFFFFF)); // 45%
       }
-      _building(c, b, base, roof, roofPath, center, kpm, v, lights, split, shadowDir);
+      drawn.add((name: 'building', rect: ui.Rect.fromPoints(ui.Offset(l, t), ui.Offset(r, bt)), anchor: b.centroid));
+      _building(c, b, base, roof, roofPath, center, kpm, v, lights, split, shadowDir, camPx, maxPx);
       if (see) c.restore();
       stats.buildings++;
     }
     // Árvores (a copa sobe um pouco, como um telhado baixo), postes, ponto de ônibus e banca: de pé, na tela.
-    final stamps = <(String, ui.Offset, bool)>[];
+    final stamps = <(String, ui.Offset, bool, (double, double))>[];
     for (final t in tiles) {
       for (final p in t.props) {
         if (p.kind == 'crosswalk') continue;
         final q = v.at(p.x, p.y);
         if (!view.contains(q)) continue;
         if (p.kind == 'lamp' || p.kind == 'bus_stop' || p.kind == 'newsstand') {
-          stamps.add((p.kind, q, false));
+          stamps.add((p.kind, q, false, (p.x, p.y)));
           continue;
         }
         final kind = switch (p.kind) { 'ipe_purple' => ipeStamp('purple', v.month), 'ipe_yellow' => ipeStamp('yellow', v.month), _ => p.kind };
-        final r = roofPoint((q.dx, q.dy), (center.dx, center.dy), 6 * kpm, cameraPx: camPx, maxPx: maxPx);
+        final r = roofPoint((q.dx, q.dy), (center.dx, center.dy), 6 * kpm, cameraPx: camPx, maxPx: maxPx, halfScreen: (center.dx, center.dy));
         final at = ui.Offset(r.$1, r.$2);
         final img = art.stamp(kind) ?? art.stamp('tree');
         final half = img == null ? 6.0 : img.width / 2 + 1;
-        stamps.add((kind, at, v.items.any((i) => (i - at).dx.abs() < half && (i - at).dy.abs() < half)));
+        stamps.add((kind, at, v.items.any((i) => (i - at).dx.abs() < half && (i - at).dy.abs() < half), (p.x, p.y)));
       }
     }
     // Os mais baixos na tela por cima: a copa da frente cobre a de trás.
     stamps.sort((a, b) => a.$2.dy.compareTo(b.$2.dy));
-    for (final (kind, at, see) in stamps) {
+    for (final (kind, at, see, anchor) in stamps) {
       if (see) c.saveLayer(null, ui.Paint()..color = const ui.Color(0x73FFFFFF));
-      _stamp(c, art.stamp(kind) != null ? kind : 'tree', at, lights);
+      _stamp(c, art.stamp(kind) != null ? kind : 'tree', at, lights, anchor);
       if (see) c.restore();
       stats.props++;
     }
@@ -198,13 +205,46 @@ class CityUpright {
     return inside;
   }
 
-  void _stamp(ui.Canvas c, String name, ui.Offset at, bool lights) {
+  /// Um carimbo de pé: a imagem sem giro nem escala, só na posição. [anchor]: o ponto do chão dele (células z21).
+  void _stamp(ui.Canvas c, String name, ui.Offset at, bool lights, (double, double) anchor) {
     final img = art.stamp(name, lightsOn: lights);
     if (img == null) return;
-    c.drawImage(img, ui.Offset((at.dx - img.width / 2).roundToDouble(), (at.dy - img.height / 2).roundToDouble()), ui.Paint()..filterQuality = ui.FilterQuality.none);
+    final tl = ui.Offset((at.dx - img.width / 2).roundToDouble(), (at.dy - img.height / 2).roundToDouble());
+    c.drawImage(img, tl, ui.Paint()..filterQuality = ui.FilterQuality.none);
+    drawn.add((name: name, rect: tl & ui.Size(img.width.toDouble(), img.height.toDouble()), anchor: anchor));
   }
 
-  void _building(ui.Canvas c, CityBuilding b, List<ui.Offset> base, List<ui.Offset> rp, ui.Path roofPath, ui.Offset center, double kpm, UprightView v, bool lights, ({int warm, double warmAlpha, int cool, double coolAlpha}) split, (double, double)? shadowDir) {
+  /// 0.23.1: a sombra de cada árvore é a silhueta do próprio carimbo achatada a 70%, de pé como a copa (no chão ela girava com
+  /// o mapa e a copa parecia mudar de forma). Sai antes dos prédios, sem o tom quente, num pano só (não escurece duas vezes).
+  void _treeShadows(ui.Canvas c, UprightView v, List<CityTile> tiles, ui.Rect view, ({int warm, double warmAlpha, int cool, double coolAlpha}) split) {
+    if (v.sunAltDeg <= 0) return;
+    final off = shadowOffset(v.sunAltDeg, v.sunAzDeg, 6 * v.kpm, rotationRad: v.frame.angle);
+    if (off == null) return;
+    final shadowA = ((labColor('shadow') >>> 24) & 0xff) / 255;
+    final paint = ui.Paint()
+      ..filterQuality = ui.FilterQuality.none
+      ..colorFilter = ui.ColorFilter.mode(ui.Color(mixArgb(0xFF1A1424, split.cool, split.coolAlpha)), ui.BlendMode.srcIn);
+    var open = false;
+    for (final t in tiles) {
+      for (final p in t.props) {
+        if (!p.kind.startsWith('tree') && !p.kind.startsWith('ipe')) continue;
+        final q = v.at(p.x, p.y) + ui.Offset(off.$1, off.$2) * 0.5;
+        if (!view.contains(q)) continue;
+        final kind = switch (p.kind) { 'ipe_purple' => ipeStamp('purple', v.month), 'ipe_yellow' => ipeStamp('yellow', v.month), _ => p.kind };
+        final img = art.stamp(kind) ?? art.stamp('tree');
+        if (img == null) continue;
+        if (!open) {
+          c.saveLayer(null, ui.Paint()..color = ui.Color(0xFF000000).withValues(alpha: shadowA));
+          open = true;
+        }
+        final sw = img.width.toDouble(), sh = (img.height * 0.7).roundToDouble();
+        c.drawImageRect(img, ui.Rect.fromLTWH(0, 0, sw, img.height.toDouble()), ui.Rect.fromLTWH((q.dx - sw / 2).roundToDouble(), (q.dy - sh / 2).roundToDouble(), sw, sh), paint);
+      }
+    }
+    if (open) c.restore();
+  }
+
+  void _building(ui.Canvas c, CityBuilding b, List<ui.Offset> base, List<ui.Offset> rp, ui.Path roofPath, ui.Offset center, double kpm, UprightView v, bool lights, ({int warm, double warmAlpha, int cool, double coolAlpha}) split, (double, double)? shadowDir, double camPx, double maxPx) {
     final variants = roofVariantsFor(b.look.styleType, b.look.biome);
     final st = variants.isEmpty ? wallStyleFor(b.look.styleType, b.look.biome) : variants[b.hash % variants.length];
     final altWall = b.look.biome == 'residential' && b.hash % 3 == 0;
@@ -259,19 +299,25 @@ class CityUpright {
       c.restore();
     }
     c.drawPath(roofPath, ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 1..isAntiAlias = false..color = ui.Color(st.roofEdge));
-    final rc = rp.fold(ui.Offset.zero, (a, p) => a + p) / rp.length.toDouble();
     if (v.snowRoofs) _snow(c, roofPath, roofTextureMatrix(rp));
     final area = b.length < 3 ? 0.0 : _area(rp);
     if (!v.far && st.roofProps.isNotEmpty && area >= 60) {
-      // De um a três props, perto do centro do telhado e dentro dele (hash do prédio).
+      // De um a três props perto do centro do telhado (hash do prédio). 0.23.1: o lugar sai do chão (células z21, em volta do
+      // centro do contorno) e sobe como o telhado: gira e anda com o prédio; o carimbo fica de pé (antes o deslocamento era
+      // na tela, e o prop corria em volta do telhado ao girar o mapa).
       final n = area >= 400 ? 3 : (area >= 150 ? 2 : 1);
+      final (bx, by) = b.centroid;
+      final spread = math.sqrt(_cellArea(b.xy)) * 0.25;
+      final h = b.look.fakeHeightPx * kpm;
       for (var k = 0; k < n; k++) {
         final hh = cityHash([b.hash, k, 7]);
         final name = st.roofProps[hh % st.roofProps.length];
-        final spread = math.sqrt(area) * 0.25;
-        final at = rc + ui.Offset(((hh >>> 4) % 100 / 50 - 1) * spread, ((hh >>> 11) % 100 / 50 - 1) * spread);
+        final gx = bx + ((hh >>> 4) % 100 / 50 - 1) * spread, gy = by + ((hh >>> 11) % 100 / 50 - 1) * spread;
+        final q = v.at(gx, gy);
+        final r = roofPoint((q.dx, q.dy), (center.dx, center.dy), h, cameraPx: camPx, maxPx: maxPx, halfScreen: (center.dx, center.dy));
+        final at = ui.Offset(r.$1, r.$2);
         if (!roofPath.contains(at)) continue;
-        _stamp(c, name, at, lights);
+        _stamp(c, name, at, lights, (gx, gy));
         stats.roofProps++;
       }
     }
@@ -284,7 +330,7 @@ class CityUpright {
       }
       final m = (rp[best] + rp[(best + 1) % rp.length]) / 2;
       const signs = ['sign_bar', 'sign_blade', 'neon_ring', 'neon_arrow'];
-      _stamp(c, signs[b.hash % signs.length], m, lights);
+      _stamp(c, signs[b.hash % signs.length], m, lights, b.centroid);
       if (lights) _neon.add((m, labColor(const ['neon_a', 'neon_b', 'neon_c'][b.hash % 3])));
     }
   }
@@ -324,6 +370,16 @@ class CityUpright {
 /// 0.22.2: a textura do telhado é do prédio. As linhas do módulo ficam paralelas à aresta mais longa do contorno e a
 /// textura gira e anda exatamente com ele, presa no começo dessa aresta: nunca desliza, nunca gira sozinha, nunca fica
 /// presa à tela.
+/// A área do contorno em células z21 ao quadrado.
+double _cellArea(Float64List xy) {
+  var a = 0.0;
+  for (var i = 0; i < xy.length; i += 2) {
+    final j = (i + 2) % xy.length;
+    a += xy[i] * xy[j + 1] - xy[j] * xy[i + 1];
+  }
+  return a.abs() / 2;
+}
+
 Float64List roofTextureMatrix(List<ui.Offset> rp) {
   var best = 0, len = -1.0;
   for (var i = 0; i < rp.length; i++) {

@@ -99,6 +99,7 @@ import '../../world/steps.dart';
 import '../../world/traffic_graph.dart';
 import '../../patrol/patrol_controller.dart';
 import '../patrol/patrol_hooks.dart';
+import '../system_bars.dart';
 
 /// O mapa do jogo (M5): o Conjurador anda com o GPS e a câmera o segue, com a Aura no chão. A câmera
 /// nunca sai do Conjurador: arrastar com um dedo gira o mapa e a pinça dá zoom numa faixa de jogo.
@@ -632,6 +633,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       return 'Não consegui ler os dados do jogo: $e';
     }
     tools.clock.raiseFloor(session.state.lastSeenUtc);
+    unawaited(applySystemBars(show: session.state.setting(kSystemBarsSetting)));
     session.onSeen = tools.clock.raiseFloor;
     // O clima do mundo: o modelo é o da época ATIVA naquele instante (nunca o da mais nova); o debug pode forçar qualquer id.
     final climate = climateWorldFor(state: session.state, data: data, assets: assets, forced: () => tools.force.weather, forcedEvents: () => tools.force.events, forcedPhase: tools.force.phase);
@@ -680,6 +682,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       trafficSim: assets.balance.trafficSim,
       trafficPoints: assets.trafficPoints,
       cycleways: assets.cycleways,
+      ground: assets.ground,
       noCrossingAt: assets.world == null ? null : (x, y) => (_bridge ??= bridgeTest(assets.world!, data.travel.accessTolM / metersPerCell(_bridgeLat())))(x, y),
       auraM: assets.balance.auraM,
       defaultWidthM: assets.balance.defaultWidthM,
@@ -1172,11 +1175,16 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       radar: _radarUnlocked(r),
       simulator: tools.useSimulator,
     );
-    game.skyRects = hud.sky;
+    // 0.23.1: o mapa e o céu começam embaixo da barra do HUD e terminam acima da barra de navegação (com as barras do Android
+    // à vista); nada do mapa desenha por baixo da barra do HUD nem das do sistema. O que o jogo desenha nas vagas do HUD
+    // (lua, Sol Negro) vem para as coordenadas do mapa.
+    final mapTop = hud.bar.bottom;
+    game.skyRects = {for (final e in hud.sky.entries) e.key: e.value.shift(Offset(0, -mapTop))};
     final warnings = _warnings(r);
     return Stack(
       children: [
-        Listener(
+        const SizedBox.expand(), // a tela inteira: o mapa agora é posicionado e não dá mais o tamanho da pilha
+        Positioned(left: 0, right: 0, top: mapTop, bottom: pad.bottom, child: Listener(
           behavior: HitTestBehavior.opaque,
           onPointerDown: (e) {
             if (_pointers++ == 0) game.touchStart();
@@ -1206,9 +1214,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             onScaleUpdate: (d) {
               if (d.pointerCount >= 2) game.pinch(d.scale);
             },
-            child: GameWidget(game: game),
+            child: ClipRect(child: GameWidget(game: game)), // o Flame não recorta: sem isto o mapa passa por cima da barra
           ),
-        ),
+        )),
         // As zonas fixas do HUD (`hud_layout.dart`): nada aqui cobre outra peça em nenhum tamanho de tela comum.
         Positioned.fromRect(
           rect: hud.bar,
@@ -1218,6 +1226,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
             weather: streetLifeEnabled ? () => _climate!.info : null,
             onSky: () => _openApp(r, PhoneAppId.sky),
             seal: ModeSeal(tools: tools, source: r.layers.source, onTap: () => _openModeSheet(r)),
+            battery: const SystemBridge().batteryLevel,
           ),
         ),
         Positioned.fromRect(

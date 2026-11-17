@@ -13,15 +13,19 @@ import '../../data/traffic_pack.dart';
 import '../../world/city_scene.dart';
 import '../../world/lab_block.dart';
 import '../../world/visual_map.dart';
+import '../../data/ground_pack.dart';
 
 class MapCityTiles {
-  MapCityTiles({required this.visual, required this.grid, required this.biomes, this.buildings, this.points, this.maxTiles = 12});
+  MapCityTiles({required this.visual, required this.grid, required this.biomes, this.buildings, this.points, this.ground, this.maxTiles = 12});
 
   final VisualMap visual;
   final BiomeGrid grid;
   final BiomeSet biomes;
   final BuildingSource? buildings;
   final TrafficPointSource? points;
+
+  /// 0.23.1: o uso do solo da região embutida (`_ground.bin`). `null`: o chão neutro do bioma.
+  final GroundPack? ground;
   final int maxTiles;
   final _tiles = <(int, int), CityTile>{};
   int _revision = -1;
@@ -69,7 +73,7 @@ class MapCityTiles {
     if (hit != null) return _tiles[key] = hit;
     final c = cellsPerTile;
     if (buildings != null && !buildings!.readyAt(tx * c + c / 2, ty * c + c / 2)) _waiting.add(key);
-    final t = buildCityTile(tx: tx, ty: ty, visual: visual.tile(tx, ty), cellsPerTile: visual.cellsPerTile, extent: visual.pack.extent, mpc: mpc, biomeAt: biomeAt, buildings: buildings, points: points);
+    final t = buildCityTile(tx: tx, ty: ty, visual: visual.tile(tx, ty), cellsPerTile: visual.cellsPerTile, extent: visual.pack.extent, mpc: mpc, biomeAt: biomeAt, buildings: buildings, points: points, ground: ground);
     _tiles[key] = t;
     while (_tiles.length > maxTiles) {
       _tiles.remove(_tiles.keys.first);

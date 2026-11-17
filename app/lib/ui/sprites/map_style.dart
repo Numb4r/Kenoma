@@ -10,7 +10,7 @@ library;
 const int _outline = 0xFF1A1424;
 
 // Chão: cada material num degrau de valor (do mais escuro ao mais claro: asfalto, água, sagrado, baldio, grama,
-// concreto, quintal, cimentado, calçada, piso do Iluminado).
+// concreto, quintal, cimentado, cimento claro, calçada, piso ladrilhado).
 const int _asphaltDark = 0xFF2B2F3D, _asphalt = 0xFF343949, _asphaltLight = 0xFF40465A;
 const int _waterDark = 0xFF234A70, _water = 0xFF2A5580, _waterLight = 0xFF3B6C9A;
 const int _sacredDark = 0xFF4A4560, _sacred = 0xFF5A5474, _sacredLight = 0xFF6C668A;
@@ -21,16 +21,21 @@ const int _yardDark = 0xFF5A8A4E, _yard = 0xFF6FA05E, _yardLight = 0xFF8AB874;
 const int _resDark = 0xFF847C6F, _res = 0xFF968E80, _resLight = 0xFFA8A092;
 const int _sidewalkDark = 0xFF8E92A0, _sidewalk = 0xFFA3A7B3, _sidewalkLight = 0xFFB6BAC4;
 const int _litDark = 0xFFADABB9, _lit = 0xFFC2C0CC, _litLight = 0xFFD4D2DC;
+// Cimento claro (148): o chão neutro do Iluminado e o piso de área comercial. Liso, entre o cimentado e a calçada.
+const int _cementDark = 0xFF808492, _cement = 0xFF9094A2, _cementLight = 0xFFA0A4B0;
 
 // Paredes e telhados (0.22.0). O telhado é a face que recebe o sol de cima, então em todo estilo a escada de valor é
 // telhado > parede no sol > parede na sombra. Luma da base entre parênteses.
-// Paredes: reboco (97 / 72), reboco azulado (96 / 72), cinza do Centro em três degraus (113 / 87 / 67; o terceiro é a
-// sombra dos prédios de manta), Iluminado (132 / 100), cal do Sagrado (134 / 100), tijolo do Vazio (115 / 85).
-const int _wallRes = 0xFF6E5F4B, _wallResShade = 0xFF52463A;
-const int _wallUrban = 0xFF6C7084, _wallUrbanShade = 0xFF52566A, _wallUrbanDeep = 0xFF3E4254;
-const int _wallLit = 0xFF84828E, _wallLitShade = 0xFF646270;
-const int _wallSacred = 0xFF8A867C, _wallSacredShade = 0xFF68645C;
-const int _wallBare = 0xFF8E6A58, _wallBareShade = 0xFF6A4E42;
+// Paredes (0.23.1, escurecidas para lerem como lateral de prédio; o cinza do Centro puxa para o ameixa do contorno e
+// não para o azul do asfalto): reboco (78 / 56), reboco azulado (78 / 57), cinza do Centro em três degraus
+// (85 / 63 / 46; o terceiro é a sombra dos prédios de manta), Iluminado (106 / 78), cal do Sagrado (108 / 79), tijolo
+// do Vazio (90 / 64). Todas abaixo do telhado mais escuro (manta, 99), menos a do Iluminado e a do Sagrado, que só
+// andam com laje (154) e ardósia (149).
+const int _wallRes = 0xFF5A4C3C, _wallResShade = 0xFF403630;
+const int _wallUrban = 0xFF57525E, _wallUrbanShade = 0xFF403C48, _wallUrbanDeep = 0xFF2F2B38;
+const int _wallLit = 0xFF6A6876, _wallLitShade = 0xFF4E4C5A;
+const int _wallSacred = 0xFF706C64, _wallSacredShade = 0xFF524E48;
+const int _wallBare = 0xFF74523F, _wallBareShade = 0xFF523A30;
 // Cerâmica: vermelho-terra (113) e a telha mais nova, mais clara (134). Bem menos saturadas que a brasa.
 const int _roofTileDark = 0xFF8A4431, _roofTile = 0xFFB05A40, _roofTileLight = 0xFFCC7655;
 const int _roofTileBDark = 0xFF9A5A40, _roofTileB = 0xFFBC7452, _roofTileBLight = 0xFFD49068;
@@ -122,6 +127,11 @@ const Map<String, int> mapPalette = {
   'sidewalk_dark': _sidewalkDark,
   'sidewalk': _sidewalk,
   'sidewalk_light': _sidewalkLight,
+  // Junta da calçada de concreto (157): só 10 de luma abaixo da calçada, para não virar grade.
+  'sidewalk_joint': 0xFF999DAA,
+  'cement_dark': _cementDark,
+  'cement': _cement,
+  'cement_light': _cementLight,
   'mosaic_light': _mosaicLight,
   'mosaic_dark': _mosaicDark,
   'lit_dark': _litDark,
@@ -137,8 +147,8 @@ const Map<String, int> mapPalette = {
   'gate_dark': 0xFF44505E,
   'wall_res': _wallRes,
   'wall_res_shade': _wallResShade,
-  'wall_res_b': 0xFF586464,
-  'wall_res_b_shade': 0xFF414B4C,
+  'wall_res_b': 0xFF465252,
+  'wall_res_b_shade': 0xFF323C3E,
   'wall_urban': _wallUrban,
   'wall_urban_shade': _wallUrbanShade,
   'wall_urban_deep': _wallUrbanDeep,
@@ -174,7 +184,8 @@ const Map<String, int> mapPalette = {
   'roof_slate_dark': _roofSlateDark,
   'roof_slate': _roofSlate,
   'roof_slate_light': _roofSlateLight,
-  'window_off': 0xFF2B3044,
+  // Janela apagada (36): desceu junto com as paredes (0.23.1) para continuar mais escura que a parede de sombra.
+  'window_off': 0xFF1F2334,
   'window_on': 0xFFFFD98A,
   'window_on_cool': 0xFFDFE8FF,
   // Neon do Iluminado: rosa, lima e azul. De propósito nenhum é violeta do Véu, ciano do sinal ou laranja brasa.
@@ -214,28 +225,46 @@ class GroundRecipe {
   final int stampsPer100Px;
 }
 
-/// Chão por bioma (`biomes.json`; `empty` e `void` são o Vazio) e por superfície (`sidewalk`, `road`, `yard`, `lot`).
+/// Chão por bioma (`biomes.json`; `empty` e `void` são o Vazio), por uso do solo (`paved`, `parking`, `vacant`,
+/// `lot_res`, `commercial`) e por superfície (`sidewalk`, `road`, `yard`, `lot`).
+///
+/// 0.23.1: o chão de bioma do que é cidade ou Vazio (`urban`, `lit`, `residential`, `sacred`, `empty`, `void`) é
+/// neutro: só o tom e um pontilhado leve, sem módulo e sem carimbo. É o que se pinta onde não há informação de uso do
+/// solo. Ladrilho só em `paved`.
 const Map<String, GroundRecipe> groundRecipes = {
   'empty': _emptyGround,
   'void': _emptyGround,
-  'urban': GroundRecipe(base: _concrete, dark: _concreteDark, light: _concreteLight, ditherPct: 6, stamps: ['crack', 'pebble', 'oil'], stampsPer100Px: 8),
+  'urban': GroundRecipe(base: _concrete, dark: _concreteDark, light: _concreteLight, ditherPct: 5, stamps: [], stampsPer100Px: 0),
   'green': GroundRecipe(base: _grass, dark: _grassDark, light: _grassLight, ditherPct: 18, stamps: ['tuft', 'tuft', 'tuft', 'tuft_b', 'tuft_b', 'flower_a', 'flower_b', 'flower_c', 'bush'], stampsPer100Px: 60),
   'water': GroundRecipe(base: _water, dark: _waterDark, light: _waterLight, ditherPct: 10, stamps: ['ripple'], stampsPer100Px: 20),
-  'residential': GroundRecipe(base: _res, dark: _resDark, light: _resLight, ditherPct: 8, stamps: ['pebble', 'tuft_b', 'crack'], stampsPer100Px: 10),
-  'lit': GroundRecipe(base: _lit, dark: _litDark, light: _litLight, ditherPct: 4, stamps: ['pebble'], stampsPer100Px: 3),
-  'sacred': GroundRecipe(base: _sacred, dark: _sacredDark, light: _sacredLight, ditherPct: 8, stamps: ['pebble', 'tuft_b', 'flower_a'], stampsPer100Px: 10),
-  'sidewalk': GroundRecipe(base: _sidewalk, dark: _sidewalkDark, light: _sidewalkLight, ditherPct: 5, stamps: ['crack', 'tuft_b'], stampsPer100Px: 4),
-  // A calçada portuguesa do Centro (Urbano e Iluminado): o pontilhado são pedras soltas ou trocadas, nos tons da calçada.
+  'residential': GroundRecipe(base: _res, dark: _resDark, light: _resLight, ditherPct: 6, stamps: [], stampsPer100Px: 0),
+  // O Iluminado sem informação: cimento claro liso (148), não mais o piso branco ladrilhado (194).
+  'lit': GroundRecipe(base: _cement, dark: _cementDark, light: _cementLight, ditherPct: 4, stamps: [], stampsPer100Px: 0),
+  'sacred': GroundRecipe(base: _sacred, dark: _sacredDark, light: _sacredLight, ditherPct: 6, stamps: [], stampsPer100Px: 0),
+  // Área de pedestre e praça calçada do OSM: o único chão ladrilhado (módulo `floor_lit`), o mais claro da cidade.
+  'paved': GroundRecipe(base: _lit, dark: _litDark, light: _litLight, ditherPct: 4, stamps: [], stampsPer100Px: 0),
+  // Estacionamento: asfalto com as vagas pintadas (módulo `parking_bay`) e uma ou outra mancha de óleo.
+  'parking': GroundRecipe(base: _asphalt, dark: _asphaltDark, light: _asphaltLight, ditherPct: 8, stamps: ['oil'], stampsPer100Px: 2),
+  // Terreno baldio: a terra e o mato de `lot`.
+  'vacant': _lotGround,
+  // Lote residencial: terra batida clara de quintal, com tufo de grama; sem flor nem arbusto (isso é `yard`).
+  'lot_res': GroundRecipe(base: _dirtLight, dark: _dirt, light: _res, ditherPct: 12, stamps: ['tuft_b', 'tuft_b', 'tuft', 'pebble'], stampsPer100Px: 18),
+  // Área comercial: concreto claro liso, sem módulo e sem carimbo.
+  'commercial': GroundRecipe(base: _cement, dark: _cementDark, light: _cementLight, ditherPct: 3, stamps: [], stampsPer100Px: 0),
+  // Calçada comum: concreto liso com junta discreta (módulo `sidewalk_tile`).
+  'sidewalk': GroundRecipe(base: _sidewalk, dark: _sidewalkDark, light: _sidewalkLight, ditherPct: 3, stamps: ['crack'], stampsPer100Px: 2),
+  // A calçada portuguesa, só no Centro: o pontilhado são pedras soltas ou trocadas, nos tons da calçada.
   'sidewalk_mosaic': GroundRecipe(base: _mosaicLight, dark: _sidewalkDark, light: _sidewalkLight, ditherPct: 3, stamps: ['crack'], stampsPer100Px: 2),
   'road': GroundRecipe(base: _asphalt, dark: _asphaltDark, light: _asphaltLight, ditherPct: 10, stamps: ['crack', 'oil', 'patch'], stampsPer100Px: 6),
   'yard': GroundRecipe(base: _yard, dark: _yardDark, light: _yardLight, ditherPct: 14, stamps: ['tuft', 'tuft_b', 'flower_c', 'bush'], stampsPer100Px: 35),
-  'lot': GroundRecipe(base: _dirt, dark: _dirtDark, light: _dirtLight, ditherPct: 16, stamps: ['weed', 'weed', 'tuft', 'pebble'], stampsPer100Px: 45),
+  'lot': _lotGround,
 };
 
-const GroundRecipe _emptyGround = GroundRecipe(base: _dirt, dark: _dirtDark, light: _dirtLight, ditherPct: 14, stamps: ['weed', 'tuft', 'pebble', 'pebble'], stampsPer100Px: 25);
+const GroundRecipe _emptyGround = GroundRecipe(base: _dirt, dark: _dirtDark, light: _dirtLight, ditherPct: 10, stamps: [], stampsPer100Px: 0);
+const GroundRecipe _lotGround = GroundRecipe(base: _dirt, dark: _dirtDark, light: _dirtLight, ditherPct: 16, stamps: ['weed', 'weed', 'tuft', 'pebble'], stampsPer100Px: 45);
 
-/// Os chãos que levam um módulo repetido por baixo dos carimbos (paginação de piso).
-const Map<String, String> groundPatterns = {'sidewalk': 'sidewalk_tile', 'sidewalk_mosaic': 'sidewalk_mosaic', 'lit': 'floor_lit'};
+/// Os chãos que levam um módulo repetido por baixo dos carimbos (paginação de piso). Nenhum chão de bioma está aqui.
+const Map<String, String> groundPatterns = {'sidewalk': 'sidewalk_tile', 'sidewalk_mosaic': 'sidewalk_mosaic', 'paved': 'floor_lit', 'parking': 'parking_bay'};
 
 /// A altura de um andar em pixels de arte: uma fileira de janelas (módulo de 4 x 4) por andar visível da fachada.
 const int floorPx = 4;
@@ -272,8 +301,8 @@ const List<String> _ipe = [
 ];
 
 /// Carimbos de pixel: um caractere por pixel de arte, `.` transparente, o resto pela legenda de [mapStampLegend].
-/// Os de nome `roof_*` (menos os props `roof_tank`, `roof_ac` e `roof_antenna`), `sidewalk_*`, `floor_lit` e `window*`
-/// são módulos que se repetem; os outros são avulsos.
+/// Os de nome `roof_*` (menos os props `roof_tank`, `roof_ac` e `roof_antenna`), `sidewalk_*`, `floor_lit`,
+/// `parking_bay` e `window*` são módulos que se repetem; os outros são avulsos. Módulo de chão tem lados que dividem 64.
 const Map<String, List<String>> mapStamps = {
   // Tufo de grama (três folhas) e o tufo pequeno.
   'tuft': [
@@ -558,12 +587,36 @@ const Map<String, List<String>> mapStamps = {
     'sdls',
     'dddd',
   ],
-  // Paginação da calçada e do piso claro do Iluminado.
+  // Calçada de concreto: placas de 8 px com a junta de 1 px num tom vizinho (`sidewalk_joint`); o resto é o tom da
+  // receita. Numa calçada de 2 a 3 px a junta aparece como um risco de vez em quando, não como grade.
   'sidewalk_tile': [
-    'sssd',
-    'sssd',
-    'sssd',
-    'dddd',
+    '.......j',
+    '.......j',
+    '.......j',
+    '.......j',
+    '.......j',
+    '.......j',
+    '.......j',
+    'jjjjjjjj',
+  ],
+  // Estacionamento: duas fileiras de vagas de 4 x 5 px, costas com costas, e o corredor de 5 px. Tinta gasta.
+  'parking_bay': [
+    'l...',
+    'l...',
+    'l...',
+    'l...',
+    'l...',
+    'llll',
+    'l...',
+    'l...',
+    'l...',
+    'l...',
+    'l...',
+    '....',
+    '....',
+    '....',
+    '....',
+    '....',
   ],
   // Calçada portuguesa do Centro: a onda de basalto de 2 px sobre a pedra clara, num módulo de 8 x 6.
   'sidewalk_mosaic': [
@@ -660,7 +713,8 @@ const Map<String, Map<String, String>> mapStampLegend = {
   'roof_metal_b': {'m': 'roof_metal_b', 'l': 'roof_metal_b_light', 'k': 'roof_metal_b_dark'},
   'sidewalk_mosaic': {'l': 'mosaic_light', 'd': 'mosaic_dark'},
   'roof_slate': {'s': 'roof_slate', 'l': 'roof_slate_light', 'd': 'roof_slate_dark'},
-  'sidewalk_tile': {'s': 'sidewalk', 'd': 'sidewalk_dark'},
+  'sidewalk_tile': {'j': 'sidewalk_joint'},
+  'parking_bay': {'l': 'lane_worn'},
   'floor_lit': {'l': 'lit_light', 'f': 'lit', 'd': 'lit_dark'},
   'window_off': {'o': 'window_off'},
   'window_on': {'n': 'window_on'},

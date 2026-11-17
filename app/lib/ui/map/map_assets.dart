@@ -49,18 +49,22 @@ import '../../world/map_layers.dart';
 import '../../world/region_map.dart';
 import 'biome_textures.dart';
 import 'map_renderer.dart';
+import '../../data/ground_pack.dart';
 
 /// Região da Fase 0: a única com pacote.
 const String kRegion = kBundledRegion;
 
 class MapAssets {
-  MapAssets({required this.map, required this.atlas, required this.balance, required this.stale, this.visual, this.noWalk, this.epoch, this.world, this.fallback, this.codec, this.trafficPoints, this.relief, this.cycleways, this.buildings});
+  MapAssets({required this.map, required this.atlas, required this.balance, required this.stale, this.visual, this.noWalk, this.epoch, this.world, this.fallback, this.codec, this.trafficPoints, this.relief, this.cycleways, this.buildings, this.ground});
 
   /// As ciclovias do OSM para os ciclistas da simulação local (`null`: ficam nos caminhos de pedestre).
   final CyclePack? cycleways;
 
   /// 0.22.0: os prédios e as árvores do estilo Completo (só cenário).
   final BuildingSource? buildings;
+
+  /// 0.23.1: o uso do solo da região embutida, para o chão do Completo (só cenário).
+  final GroundPack? ground;
 
   /// O relevo da região (da primeira época que o lista). `null`: terreno plano.
   final ReliefSource? relief;
@@ -285,6 +289,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
     LayeredWorld? world;
     TrafficPack? trafficPoints;
     CyclePack? cycleways;
+    GroundPack? ground;
     ReliefPack? relief;
     BuildingPack? buildings;
     
@@ -310,6 +315,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       trafficPoints = await loadTrafficPack(region: kRegion, epoch: loaded.epoch, bundle: assets);
       cycleways = await loadCyclePack(region: kRegion, bundle: assets);
       buildings = await loadBuildingPack(region: kRegion, bundle: assets);
+      ground = await loadGroundPack(region: kRegion, bundle: assets);
       world = LayeredWorld(regions: [LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk, access: access, relief: relief, traffic: trafficPoints, buildings: buildings)], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
       visual = VisualMap(world);
     }
@@ -327,6 +333,7 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       codec: world == null ? null : fallbackCodec(biomesJson),
       trafficPoints: world ?? trafficPoints, // com as regiões baixadas: os pontos de cada uma
       cycleways: cycleways,
+      ground: ground,
       buildings: world ?? buildings, // com as regiões baixadas: os prédios de cada uma
       relief: world ?? relief, // com as regiões baixadas: o relevo de cada uma
     );
