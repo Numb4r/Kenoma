@@ -149,6 +149,8 @@ No jogo a câmera segue o Conjurador pela posição real, com movimento suave. A
 
 O mapa tem dois estilos gráficos nos Ajustes: o completo, com prédios de altura falsa, vegetação, luz por hora e horizonte, e o simplificado, plano e leve, para celulares mais fracos ou para poupar bateria. O simplificado mostra tudo que importa para o jogo (Ecos, Fagulhas, Aura, alcance, marcas do clima no chão e eventos) e só tira enfeite. Se o mapa completo ficar lento por um tempo, o jogo sugere uma vez trocar para o simplificado. A lógica é a mesma nos dois.
 
+Nos Ajustes, o "Zoom ampliado" (desligado por padrão) deixa a pinça abrir até 250 m de largura. Acima de 120 m o mapa passa sozinho para o estilo Simplificado e volta ao Completo ao fechar o zoom. O zoom não muda o jogo: Ecos continuam visíveis só dentro da visão (60 m, menos na neblina), o toque continua com alcance de 30 m e a Aura não muda. De longe aparecem Fagulhas, eventos, marcas do clima e o desenho das ruas. O mapa de Rotas usa sempre o Simplificado.
+
 ### Geração determinística
 
 Tudo que existe no mundo sai de `hash(seed_global, época, célula, janela_de_tempo)`. Spawns usam células z20, com cerca de 35 m de lado na latitude de Campinas, compatível com o erro de 5 a 15 m do GPS. Biomas usam z21 e Fendas e dungeons usam z15, com cerca de 1,1 km. Como a seed é compartilhada, amigos veem os mesmos spawns no mesmo lugar e hora sem servidor.
