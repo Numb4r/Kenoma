@@ -1060,3 +1060,28 @@ Novos: `test/world/map_touch_test.dart` (alcance e a pé, limite por dia e por �
 ### Capturas
 
 No emulador, em `/tmp/kenoma-shots/0242_*`: o ponto de ônibus a 0° e girado (`ponto_0`, `ponto_girado`: a rua gira, o ponto fica de pé), o painel do ponto, da placa ("Avenida Francisco Glicério") e da banca, a árvore, o poste à noite ("piscou sozinho, nenhum Hum por perto"), o bando levantando voo (e a pena recusada pela bolsa cheia do emulador) com o vídeo `0242_bando_telhados.mp4`, e o gato largando uma Sucata. Não saíram nas capturas: a poça (a chuva forçada não chegou a formar poça perto) e a folha caindo (as duas árvores tocadas tiraram "nada hoje" no sorteio pessoal); a reação desenhada está coberta pelo teste.
+
+## Fase 1 · fatia 10d · Época em teste e a copa que balança (0.24.3)
+
+Versão 0.24.3+47, mesma chave, save no schema 12 (sem mudança de formato: a época em teste é uma chave nova em `settings`). Feita no emulador; o celular não foi liberado na sessão.
+
+### Respostas à 0.24.2
+
+- **Época em teste.** Item novo no menu de debug, seção Save: "Opções de desenvolvedor nos Ajustes" (`save.dev_options`, grava `settings.dev_options` no save do mapa aberto ou, sem mapa, no do disco). Com ele ligado, os Ajustes ganham a seção **Desenvolvedor** com o interruptor "Época N em teste": liga a época não publicada mais nova (início em 2099) só neste aparelho, também na release. Fica no save (`settings.dev_test_epoch`, o id), o mapa reabre com ela, o HUD mostra **ÉPOCA N EM TESTE** e o painel Dados diz "ÉPOCA N · EM TESTE". Por dentro: `testEpochId` em `core/epochs.dart`, lido do save antes do pacote da região (é ele que escolhe o pacote); `EpochSchedule.current()` devolve a época em teste em todo instante depois da primeira época, sem aviso de mundo vencido. **Some sozinha:** quando a época deixa de começar em 2099 (feed assinado ou APK novo), `testing` vira `null`, todo o app volta à época de todos, e ao abrir o mapa a chave sai do save. Recomeçar mantém a opção (é dos Ajustes).
+- **Regra das épocas** no `CLAUDE.md` com a exceção: o dono testa a época nova pela opção de desenvolvedor; amigos só veem época publicada.
+- **O que só existe na época 12** (e por isso não vale no celular sem a opção): clima e evento em camadas (15 climas viraram eventos por cima do clima, até 2 ao mesmo tempo, teto 3,0 e piso 0,3 na soma dos spawns; Lua Carmim e Prisma do Véu novos; as combinações Vigília com Tempestade, Carmim com Tempestade e Aurora com Neve; o arco-íris na virada de chuva para sol; eclipses como evento); os materiais de clima Meteorito, Runa caída e Galho de gelo; o Caco de vidro (Urbano 2, Iluminado 3) e por isso a primeira garrafa pelo mundo; o pacote lógico com o Overture (`campinas_e12_ov2.bin`, biomas de 6 células z18 de Campinas e São Paulo com os places, os contornos fantasma fora da conta) e os pontos do OSM do Overture (`*_e12_ov2_traffic.bin`: becos de 2.845 para 4.298, células da Shade de 4.456 para 15.784); a família Wyrm na Lua Carmim e a Procissão da Névoa fora da neblina. **Já valem para todos:** os prédios desenhados do Overture com os contornos fantasma tirados (`*_e12_ov2_bldg.bin` não depende da época) e o teto da Shade (`balance.json`).
+- **A copa balança.** Todo toque numa árvore ou ipê (com folha ou sem) balança o carimbo de pé: as linhas da imagem saem do lugar por pixels de arte inteiros, o topo `3·e^(−1,5t)·sen(2π·2t)` por 1,4 s e o terço de baixo parado (a base escura da copa, presa à sombra, que não mexe). Números conferidos pelo `criativo` (ele trocou o amortecimento de 2,2 para 1,5: com 2,2 o topo parava em 0,7 s). A folha e a pétala continuam caindo na frente. Só no estilo Completo; no Simplificado as árvores não balançam.
+
+### Limites
+
+- Com a época 12 em teste, São Paulo pede `sao_paulo_e12_ov2.bin`, que não está no `regions.json` publicado: fora de Campinas a região baixável não abre (Campinas vem no APK).
+- Os blocos do fallback (fora das regiões) montados com a época em teste ficam com o id dela até a época de todos passar dela: ao desligar a opção, o fallback não é refeito.
+- No emulador, as bolinhas verdes dos gramados são arbustos do chão, não árvores: o toque não pega nelas. As árvores tocáveis são os carimbos de pé das calçadas e praças.
+
+### Testes
+
+Novos: `test/ui/tree_sway_test.dart` (o balanço vai para os dois lados e para; o topo sai do lugar e o terço de baixo fica, desenhado pelo `CityRenderer`), o grupo "época em teste" em `test/core/epochs_test.dart` (desligada, ligada, publicada, lida do save) e a seção Desenvolvedor em `test/ui/settings_screen_test.dart` (escondida, liga a não publicada mais nova com confirmação e reabre o mapa, desliga).
+
+### Capturas
+
+No emulador, em `/tmp/kenoma-shots/0243_*`: o item do debug (`debug_devopts`), a seção Desenvolvedor (`ajustes`, cortada antes do player_id), a confirmação, o mapa com **ÉPOCA 12 EM TESTE** no HUD (`hud_epoca12`) e a árvore da praça balançando (`arvore_balanca.mp4`, `.gif` ampliado e `arvore_quadros.png`).

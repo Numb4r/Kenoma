@@ -9,13 +9,21 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.24.3
+
+Não muda o save. Antes de qualquer toque pelo adb: o dono libera o aparelho na sessão, e tudo passa por `scripts/celular.sh`.
+
+- [ ] `0243-epoca-teste` **Época em teste.** Debug, Save, "Opções de desenvolvedor nos Ajustes" ligado: os Ajustes mostram a seção Desenvolvedor; "Época 12 em teste" pede confirmação, o mapa reabre com **ÉPOCA 12 EM TESTE** no HUD e "ÉPOCA 12 · EM TESTE" em Dados. Com ela: eventos por cima do clima no app Céu, Caco de vidro no Urbano e no Iluminado, biomas e becos do Overture. Desligar volta à 11 e tira a etiqueta.
+- [ ] `0243-epoca-some` **Some sozinha** (quando a época 12 for publicada): sem mexer em nada, a etiqueta some e os Ajustes voltam a mostrar a época de todos.
+- [ ] `0243-copa` **A copa balança.** Tocar uma árvore de calçada ou de praça (a até 30 m, a pé): o topo da copa vai e volta umas duas vezes e para em pouco mais de 1 s; a base e a sombra ficam. Vale também sem folha.
+
 ## 0.24.2
 
 Muda o save (schema 12). Antes de qualquer toque pelo adb: o dono libera o aparelho na sessão, e tudo passa por `scripts/celular.sh`.
 
 - [ ] `0242-ponto` **Ponto de ônibus de pé.** Girando o mapa, o ponto fica de pé e só a marca no chão e o meio-fio giram com a rua; nenhum retângulo escuro paralelo à rua.
 - [ ] `0242-passaros` **Pássaros por cima.** Pombos voando e maritacas passam por cima dos telhados e das árvores; pombo que pousa num prédio fica no telhado.
-- [ ] `0242-vidro` **Caco de vidro** (depois que a época 12 for publicada): cai no Urbano e mais no Iluminado; 2 cacos fazem a garrafa; o primeiro caco abre a quest.
+- [ ] `0242-vidro` **Caco de vidro** (com a época 12 em teste, ou depois de publicada): cai no Urbano e mais no Iluminado; 2 cacos fazem a garrafa; o primeiro caco abre a quest.
 - [ ] `0242-toques` **Toques no mapa, a pé e a até 30 m:** ponto (próximo Ônibus Espectral), banca (manchete igual à de um amigo no mesmo dia), placa (nome da rua), bando (voa, às vezes pena), árvore (folha no outono, flor no ipê florido; uma vez por dia), poça na chuva (onda; Eco de Água se vira), poste à noite (pisca; Hum fica à vista), gato (coração, segue um quarteirão, às vezes larga algo). De carro, nada responde.
 - [ ] `0242-limites` **Limites do dia:** depois de 3 penas, 6 árvores e 3 presentes de gato, o aviso do limite aparece; no dia seguinte volta.
 
