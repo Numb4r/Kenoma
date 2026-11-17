@@ -14,7 +14,7 @@ Se a direção ficar, o GDD e o pré-prompt precisam ser atualizados nessas trê
 ## Grade
 
 - Pixel de arte de 3 dp, um número inteiro de pixels físicos, ampliado por vizinho mais próximo. Nada de suavização no chão, nos prédios e nos carimbos.
-- Carimbo nunca gira nem escala: fica alinhado à grade da tela, e só a posição dele acompanha o mapa. Os módulos de chão e de telhado também ficam na grade da tela: o contorno gira, a textura não. A posição e a escolha saem de hash da célula do mundo, nunca de coordenada de tela nem de `Random`.
+- Carimbo nunca gira nem escala: fica alinhado à grade da tela, e só a posição dele acompanha o mapa. Desde a 0.22.2 a textura é do que ela cobre: o módulo de chão gira com o chão (remendo, óleo, junta e onda da calçada nunca ficam presos à tela) e o módulo do telhado fica alinhado à aresta mais longa do contorno e gira e anda exatamente com ele. A posição e a escolha saem de hash da célula do mundo, nunca de coordenada de tela nem de `Random`.
 - O pontilhado (`ditherPct`) também é ancorado no mundo, como a textura de ruído de hoje.
 - Suave só pode ser luz: poça de poste, halo de neon, faixa do céu, tom da hora.
 - Contorno `outline` (`#1a1424`) de 1 px em telhado, copa de árvore, arbusto e letreiro. Chão não tem contorno; a borda entre dois chãos é 1 px do tom `dark` do chão de cima.
@@ -173,7 +173,8 @@ Tudo que é céu de evento fica dentro da faixa, nunca sobre o mapa. As cores s�
 
 ### O que gira e o que fica de pé
 
-- **Gira com o mapa** (o chão): ruas, lotes, grama, calçada, faixas, faixa de pedestre, quintal e muro, as marcas do clima no chão, as sombras (seguem o sol, são do mundo) e o contorno dos telhados.
+- **Gira com o mapa** (o chão): ruas, lotes, grama, calçada, faixas, faixa de pedestre, quintal e muro, as marcas do clima no chão, as sombras (seguem o sol, são do mundo), o contorno dos telhados e a textura de tudo isso (0.22.2: o chão e o telhado levam a textura junto; o telhado, presa à aresta mais longa).
+- **Gira com o rumo** (exceção, à espera da decisão do dono): carros, ônibus, ciclistas e barcos do tráfego, vistos de cima, apontam para onde andam; os nomes de rua acompanham a direção da rua. O modo de debug "Giro dos objetos" escreve a categoria de cada objeto sobre ele.
 - **Fica de pé na tela**: tudo que tem altura ou é sprite. Árvores, postes, ponto de ônibus, banca, props de telhado, janelas, paredes, letreiros, Ecos, avatar, passantes e textos. São desenhados na orientação da tela, na posição girada. As paredes e o deslocamento dos telhados saem sempre do centro da tela para fora, em qualquer giro.
 - **Pixel nítido**: o chão nunca é uma imagem pronta que gira. Ele é rasterizado já girado, na grade de pixels da tela, em blocos de 4 × 4 células z21 (`city_ground.dart`). No arrasto e na pinça vale o bloco do ângulo mais próximo (passos de 3 graus) e do zoom do começo do gesto, desenhado com o resto do giro e da escala; um quarto de segundo depois de o dedo soltar, os blocos são refeitos no ângulo e no zoom exatos. Com o mapa parado, todo bloco só desliza por pixels inteiros.
 
@@ -207,7 +208,7 @@ O chão parado (chão, ruas, sombras, a planta dos prédios, a luz da hora, as p
 
 ### Nível de detalhe
 
-Acima de 65 m de largura de tela (o zoom aberto do GDD vai a 80 m; o do debug, se passar, segue a mesma regra): sem `fineStamps` (flores, tufos, pedrinhas, props de telhado, antenas), metade do pontilhado do chão, sem paginação fina do piso, sem janelas, letreiros, faixa central e portões. O tráfego e os passantes a mais de 40 m do jogador andam no passo maior.
+Acima de 65 m de largura de tela (o zoom aberto do GDD vai a 80 m; com o "Zoom ampliado" dos Ajustes vai a 250 m e acima de 120 m o mapa passa para o Simplificado, sem tráfego, passantes, bichos nem partículas, e as ruas finas somem antes: trilhas acima de 120 m, locais acima de 200 m, secundárias acima de 400 m; o mapa de Rotas é sempre assim): sem `fineStamps` (flores, tufos, pedrinhas, props de telhado, antenas), metade do pontilhado do chão, sem paginação fina do piso, sem janelas, letreiros, faixa central e portões. O tráfego e os passantes a mais de 40 m do jogador andam no passo maior.
 
 ### Completo e Simplificado
 

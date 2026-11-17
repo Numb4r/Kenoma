@@ -1,0 +1,108 @@
+{
+ "release": "2026-10-21.0",
+ "half_deg": 0.0062,
+ "cuts": {
+  "campinas_centro": {
+   "center": [
+    -22.9056,
+    -47.0608
+   ],
+   "osm_buildings": 295,
+   "osm_with_levels": 219,
+   "osm_with_type": 21,
+   "overture_buildings": 3329,
+   "overture_from_osm": 283,
+   "overture_only": 3046,
+   "overture_with_height_or_floors": 209,
+   "overture_only_with_height_or_floors": 0,
+   "overture_with_class_or_subtype": 35,
+   "overture_places_total": 4655,
+   "overture_places": {
+    "comercio": 1201,
+    "bares_restaurantes": 379,
+    "igrejas": 50,
+    "escolas": 198,
+    "pracas": 70
+   },
+   "osm_places": {
+    "comercio": 131,
+    "bares_restaurantes": 48,
+    "igrejas": 13,
+    "escolas": 15,
+    "pracas": 18
+   }
+  },
+  "campinas_ouro_verde": {
+   "center": [
+    -22.9733,
+    -47.1368
+   ],
+   "osm_buildings": 53,
+   "osm_with_levels": 0,
+   "osm_with_type": 3,
+   "overture_buildings": 4950,
+   "overture_from_osm": 52,
+   "overture_only": 4898,
+   "overture_with_height_or_floors": 0,
+   "overture_only_with_height_or_floors": 0,
+   "overture_with_class_or_subtype": 8,
+   "overture_places_total": 280,
+   "overture_places": {
+    "comercio": 56,
+    "bares_restaurantes": 38,
+    "igrejas": 22,
+    "escolas": 18,
+    "pracas": 2
+   },
+   "osm_places": {
+    "comercio": 6,
+    "bares_restaurantes": 2,
+    "igrejas": 4,
+    "escolas": 3,
+    "pracas": 4
+   }
+  },
+  "sao_paulo_paulista": {
+   "center": [
+    -23.5614,
+    -46.6559
+   ],
+   "osm_buildings": 2948,
+   "osm_with_levels": 2864,
+   "osm_with_type": 115,
+   "overture_buildings": 2904,
+   "overture_from_osm": 2805,
+   "overture_only": 99,
+   "overture_with_height_or_floors": 2727,
+   "overture_only_with_height_or_floors": 0,
+   "overture_with_class_or_subtype": 223,
+   "overture_places_total": 13308,
+   "overture_places": {
+    "comercio": 1475,
+    "bares_restaurantes": 1035,
+    "igrejas": 32,
+    "escolas": 564,
+    "pracas": 69
+   },
+   "osm_places": {
+    "comercio": 272,
+    "bares_restaurantes": 195,
+    "igrejas": 3,
+    "escolas": 17,
+    "pracas": 42
+   }
+  }
+ },
+ "regions": {
+  "campinas": {
+   "overture_only": 901480,
+   "bytes_per_building": 13.0,
+   "estimated_bytes": 11711437
+  },
+  "sao_paulo": {
+   "overture_only": 2726835,
+   "bytes_per_building": 13.2,
+   "estimated_bytes": 35882128
+  }
+ }
+}

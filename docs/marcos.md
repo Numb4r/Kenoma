@@ -822,3 +822,46 @@ Versão 0.22.1+39, mesma chave, instalada no moto g54 por cima da 0.21.0 (o save
 - **O que pesa no Completo:** o chão parado custa 0,1 a 0,2 ms por quadro (os blocos prontos); um bloco novo entrando custa uns 5 a 10 ms (é dele parte dos piores quadros); o que fica de pé, 1 a 6 ms; as partículas e as camadas de tela ficam abaixo de 1 ms; o tráfego, 0,2 a 0,3 ms por passo; bichos e vento, 0,1 ms; o véu da neblina, menos de 0,02 ms. Simulações bem dentro dos 4 ms.
 - **Meta de 16 ms:** cumprida no p90 em todos os casos medidos (o pior p90 é 12,1 ms, na pilha cheia). Os piores quadros isolados vão de 17 a 33 ms: blocos entrando na tela e o `refresh` do mundo a cada 0,25 s. O próximo passo, se for preciso, é refazer os blocos fora do quadro.
 - O Simplificado tem o raster mais caro que o Completo (9 a 11 ms contra 4 a 6) porque redesenha as ruas inteiras a cada quadro; o Completo reaproveita os blocos.
+
+## Fase 1 · fatia 9c · Giro, zoom ampliado, prédios por tile, Overture e arte no Aseprite (0.22.2)
+
+GDD rev 359 (commit próprio: o Zoom ampliado depois da Câmera). Versão 0.22.2+40, mesma chave, save no schema 9 (só preferências novas). Feita no notebook, com o emulador; o celular não estava ligado, então as medidas em profile do zoom ampliado e do mapa de Rotas foram para o checklist.
+
+### Giro
+
+- **Modo de debug "Giro dos objetos"** (Mapa e câmera): escreve sobre cada objeto o tipo e a categoria (`ui/city/turn_category.dart`): gira com o chão, de pé, ou gira com o rumo. Capturas do mesmo trecho do Centro a 0°, 30° e 60°.
+- **Os retângulos que giravam:** eram o remendo do asfalto (`patch`, um retângulo escuro com contorno), parte da textura da rua. A textura do chão ficava presa à tela: girando o mapa, os remendos, as manchas de óleo, as juntas e as ondas da calçada ficavam sempre na horizontal da tela e pareciam girar para acompanhar a rua. Agora a textura do chão gira com o chão.
+- **A textura do telhado** fica alinhada à aresta mais longa do contorno e gira e anda exatamente com ele (`roofTextureMatrix`, com teste); a neve no telhado também.
+- **Exceções, para o dono decidir:** os carros, ônibus, ciclistas e barcos do tráfego são vistos de cima e apontam para onde andam (giram com o rumo), e os nomes de rua acompanham a direção da rua. Nenhum prop com altura precisou de exceção: poste, ponto de ônibus, banca, árvore e props de telhado ficam de pé.
+
+### Zoom ampliado e Rotas
+
+- Ajustes, "Zoom ampliado" (desligado por padrão): a pinça vai a 250 m. Acima de 120 m o mapa passa para o Simplificado e volta ao Completo abaixo de 112 m (folga para não trocar no limite); na volta os blocos do Completo continuam no cache, sem tranco.
+- De longe (acima de 120 m e no mapa de Rotas, que agora é sempre Simplificado): sem tráfego, passantes, bichos e partículas; as ruas finas somem antes das avenidas (trilhas acima de 120 m, locais acima de 200 m, secundárias acima de 400 m).
+- O zoom não muda o jogo: os spawns continuam só dentro da visão, o toque e a Aura iguais (teste a 250 m). **Diferença no GDD:** o parágrafo novo diz "visão (60 m, menos na neblina)", mas a tabela dos climas diz que a Neblina *derruba* a visão para 60 m, e o `balance.json` usa 120 m. Ficou como estava (120 m, 60 na Neblina, 40 na Nevasca); se a visão normal for 60 m, é só o `view_m`.
+- Debug "Largura da tela" (50, 80, 120, 250 m, dentro do limite da pinça): o zoom sem pinça, para teste e capturas.
+- **Blocos fora do quadro:** os blocos de chão em volta da tela (um anel de 2) são gravados depois do quadro e rasterizados no thread de raster (`toImage`); o bloco que entra na tela já está pronto. Quando chegam os prédios de um tile, os blocos dele ficam marcados e são refeitos aos poucos, sem sumir.
+
+### Prédios por tile
+
+- Formato `BLD2` (`pipeline/bld_tiles.py`): tiles z15 com índice, cada um com o próprio gzip. O app lê só o índice e carrega os tiles em volta da câmera num `Isolate`, num cache que descarta os mais antigos acima de **24 MB** (estimativa de contornos e objetos); recusa tile acima de 512 KB (o maior de São Paulo tem 97 KB). Enquanto o tile carrega, o pedaço fica sem prédio.
+- Campinas (448 KB, 676 tiles) e São Paulo (28,4 MB, 1.760 tiles, 2.199.471 prédios) convertidos do `BLD1` sem ler o extrato de novo. O de São Paulo não foi publicado.
+- **Paulista no emulador** (build de debug, `rota.py paulista`, catálogo assinado servido localmente, nada publicado): 9 dos 1.760 tiles na memória, 4,2 MB, cada tile em uns 38 ms; a memória do app ficou estável (PSS de 855 a 870 MB em 3 minutos andando; é build de debug, que pesa bem mais que a release).
+- Teste local do feed: a build de debug agora aceita http em `localhost` (`android/app/src/debug`, a release continua só https); `scripts/assinar_regioes.py --local` gera o catálogo com URLs relativas.
+
+### Overture Maps (só medição)
+
+`docs/overture-medicao.md`: no Centro de Campinas o Overture tem 3.046 prédios que o OSM não tem (10 vezes o OSM) e no Ouro Verde 4.898 (92 vezes); na Paulista só 99 (3%). Nenhum prédio só do Overture tem altura ou andares. POIs: de 4 a 30 vezes mais. Somaria uns 11,7 MB ao arquivo de Campinas e 35,9 MB ao de São Paulo. Licenças: prédios ODbL, places CDLA Permissive 2.0. A decisão de usar fica com o dono.
+
+### Arte no Aseprite
+
+O `criativo` viu as ferramentas do Aseprite e do Blender; o Blender não respondeu ao aperto de mão (o programa ou o servidor do addon estava fechado) e não foi usado. No Aseprite ele refez os 23 carimbos e módulos do estilo (telhados com as linhas na horizontal, para girar com a aresta mais longa; caixa d'água, ar-condicionado, antena; quatro árvores de espécies diferentes e o ipê; ponto de ônibus, banca, poste; a calçada portuguesa), em `tools/art/map/` e `app/assets/art/map/`. Debug "Arte do Aseprite" troca a arte em código por eles no mapa (o padrão continua a de código, até o dono escolher). Mudanças: `roof_metal` e `roof_metal_b` ficaram com 4 × 4 e 6 × 6; `roof_tar_light` ganhou módulo, mas não há estilo que o use; as sombras das árvores novas não foram refeitas.
+
+### Também
+
+- Época 13 apagada: a regra do Tornado com Vendaval está na 12, que ainda não saiu. A regra nova das épocas está no `CLAUDE.md`.
+- `.claude/logs/` no `.gitignore`.
+
+### Testes
+
+Novos: `test/ui/turn_and_zoom_test` (categoria de giro de cada tipo, textura do telhado presa ao contorno, troca automática com folga, ruas que somem), o zoom ampliado em `test/ui/map_style_switch_test` (250 m, Simplificado, sem tráfego nem partículas, Ecos só dentro da visão, volta ao Completo), `test/data/building_pack_test` (índice, carga sob demanda, teto de memória, pedaço sem prédio enquanto carrega, tile grande recusado), blocos montados fora do quadro em `test/ui/city_renderer_test`, e o Tornado na época 12 em `test/core/climate_layers_test`.

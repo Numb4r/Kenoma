@@ -1,13 +1,21 @@
 # Checklist do celular
 
 O que precisa ser conferido no moto g54 quando a versão for instalada nele. É cumulativo: cobre tudo desde a última versão
-que está no celular (hoje a **0.22.1**, instalada em 2026-11-16 por cima da 0.21.0; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
+que está no celular (hoje a **0.22.1**, instalada em 2026-11-16 por cima da 0.21.0; a 0.22.2 ainda não foi para o celular; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
 dela. **Um item só sai daqui quando o relatório confirmar que passou.** A ordem vai da versão mais nova para a mais antiga;
 as pendências antigas ficam no fim. O código entre crases é o id do item (o workbench guarda as notas por ele: não mude).
 
 Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`) e o Kenoma em primeiro plano.
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
+
+## 0.22.2
+
+- [ ] `0222-perfil-zoom` **Zoom ampliado e Rotas em profile.** Com a build de profile (mesma chave), Ajustes, "Zoom ampliado" ligado: andando no Centro com a tela em 250 m (Debug, "Largura da tela", 250 m) e o mapa de Rotas aberto no máximo (Rotas, Nova viagem, No mapa). Anote o fps e o p90 do build e do raster (método da 0.22.1, em `docs/marcos.md`). Meta: abaixo de 16 ms no p90.
+- [ ] `0222-zoom-troca` **A troca de estilo pelo zoom, sem tranco.** Com o Zoom ampliado, abra a pinça devagar de 80 m até 250 m e feche de novo: acima de 120 m o mapa fica Simplificado (sem prédios, sem tráfego, sem chuva), e ao voltar abaixo de uns 112 m o Completo reaparece sem um quadro preso.
+- [ ] `0222-sp-predios` **São Paulo com prédios andando de verdade.** Depois que o arquivo de prédios de São Paulo for publicado (hoje não está): na Paulista, os prédios aparecem em volta em menos de um segundo ao chegar num pedaço novo, e o Debug, Desempenho, linha "Prédios", fica abaixo de 24 MB andando por 20 minutos.
+- [ ] `0222-giro-rotulos` **Giro dos objetos.** Debug, "Giro dos objetos" ligado, girando o mapa com o dedo: tudo que diz "gira com o chão" gira junto com o chão, inclusive a textura do asfalto, da calçada e do telhado; o que diz "de pé" fica de pé; carros, ônibus e nomes de rua dizem "gira com o rumo" (exceção esperando a sua decisão).
+- [ ] `0222-arte-aseprite` **A arte do Aseprite no celular.** Debug, "Arte do Aseprite" ligado e desligado no mesmo lugar, de dia e de noite: qual fica melhor ao sol (telhados, árvores, ipês, ponto de ônibus, banca, calçada).
 
 ## 0.22.0 e 0.22.1
 

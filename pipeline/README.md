@@ -128,13 +128,19 @@ No `regions.json` assinado, o relevo de São Paulo entra em `files.relief` da re
 | --- | --- | --- | --- |
 | `app/assets/regions/campinas_e0_cycle.bin` | 665 (ciclovia 339, 134,9 km; ciclofaixa 326, 161,6 km) | 17.169 | `a9fb9657752b0eec699f47b6739b1fea16e35d1205a151bbd4c352cc63a4ccc2` |
 
-## Prédios e árvores (0.22.0, fora das épocas)
+## Prédios e árvores (0.22.0, fora das épocas; por tile desde a 0.22.2)
 
-`build_buildings.py --region <região>` lê do mesmo extrato (MD5 `d4778499e2017add7ee7879dd3b64b3c`, conferido em 2026-11-16) as áreas com `building=*` (contorno simplificado a 0,5 m, sem buracos; tipo, `building:levels` ou `height` em andares de 3 m, e se a própria área tem `shop` ou `amenity` de comércio) e os nós `natural=tree`. Só o estilo Completo do mapa desenha: é cenário, não muda o mundo, não entra em época e pode ser regerado sem época nova, como o `_cycle.bin`. **Não entra no pacote visual**, cujo SHA é mundo. Formato `BLD1` no cabeçalho do script; leitor em `app/lib/data/building_pack.dart`.
+`build_buildings.py --region <região>` lê do mesmo extrato (MD5 `d4778499e2017add7ee7879dd3b64b3c`, conferido em 2026-11-16) as áreas com `building=*` (contorno simplificado a 0,5 m, sem buracos; tipo, `building:levels` ou `height` em andares de 3 m, e se a própria área tem `shop` ou `amenity` de comércio) e os nós `natural=tree`. Só o estilo Completo do mapa desenha: é cenário, não muda o mundo, não entra em época e pode ser regerado sem época nova, como o `_cycle.bin`. **Não entra no pacote visual**, cujo SHA é mundo.
 
-| Arquivo | Prédios | Árvores | Bytes | SHA-256 |
-| --- | --- | --- | --- | --- |
-| `app/assets/regions/campinas_e0_bldg.bin` | 32.116 (66 tipos) | 1.760 | 417.230 | `31a1ac3d5db74b3037da39c7856c2c446d675ce1194c6d09320f183501109402` |
-| `out/regions/sao_paulo_e0_bldg.bin` (`--out-dir out/regions`, não embarcado e **não publicado**) | 2.199.471 (124 tipos) | 12.012 | 28.942.602 | `9e0f2f966cae891925e5fb6112a8666bb0367b843f6a5f67334f557f959a667f` |
+**Formato `BLD2` (0.22.2, `bld_tiles.py`):** os prédios divididos em tiles z15 (o mesmo tile do pacote visual), cada um com o próprio gzip, e um índice no começo. O app lê o índice e carrega só os tiles em volta da câmera, fora da thread de desenho, num cache com teto de 24 MB (`kBuildingCacheBytes`); recusa tile acima de 512 KB (`kMaxBuildingTileBytes`). Os dois arquivos foram convertidos do `BLD1` da 0.22.0 (`bld_tiles.py <bld1> <bld2>`), sem ler o extrato de novo: mesmos prédios, mesmas árvores.
 
-O de São Paulo não vai para o `regions.json` ainda: o leitor (`BuildingPack`) guarda todos os prédios na memória, e 2,2 milhões de contornos passariam de centenas de MB no celular. O app recusa arquivo de prédios acima de 4 MB (`kMaxBuildingFileBytes`). Falta um formato por tile (o índice do pacote visual), lido sob demanda, antes de publicar. Até lá São Paulo sai no estilo Completo sem prédios: chão, ruas, árvores plantadas e props.
+| Arquivo | Prédios | Árvores | Tiles (maior) | Bytes | SHA-256 |
+| --- | --- | --- | --- | --- | --- |
+| `app/assets/regions/campinas_e0_bldg.bin` | 32.116 (66 tipos) | 1.760 | 676 (18.353 bytes) | 448.088 | `416e41cdfbd4b064833ec720588906e07c2ad6d1ab375a62b3000ef810475fa7` |
+| `out/regions/sao_paulo_e0_bldg.bin` (`--out-dir out/regions`, não embarcado e **não publicado**) | 2.199.471 (124 tipos) | 12.012 | 1.760 (97.596 bytes) | 28.366.947 | `6012c45a1f24f8902995468af97caa56aaf99e8ee2d12096b60bb2bac3cc7bef` |
+
+O de São Paulo entra em `route_files.buildings` do `regions.json` assinado (`scripts/assinar_regioes.py` já o põe lá; `--local` gera URLs relativas para o teste com `http.server`, sem publicar). Andando na Paulista no emulador (build de debug), o app tinha 9 dos 1.760 tiles na memória, 4,2 MB, cada tile carregado em uns 38 ms.
+
+## Medição do Overture Maps (0.22.2, só medição)
+
+`measure_overture.py`: temas `buildings` e `places` da release pública do Overture, lidos com DuckDB, contra o OSM acima em três recortes. Resultado e licenças em `docs/overture-medicao.md`. Nada disto vai para o app nem para os pacotes.
