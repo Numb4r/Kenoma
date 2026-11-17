@@ -305,6 +305,31 @@ Existem Leys fixas geradas pela seed, e jogadores experientes podem criar as pr�
 
 Acima de uma velocidade limite o jogo muda de regra em vez de bloquear. Coleta passivamente materiais de viagem e permite marcar criaturas para sintonizar depois.
 
+Veículos do Véu são só aparência. O jogador fabrica bicicleta, skate ou carroça do Véu e equipa no espaço Veículo do loadout. Quando ele já está em velocidade de modo trânsito, o avatar aparece no veículo (bicicleta ou skate em velocidade de bicicleta, carroça acima disso). Nada muda nas recompensas: o modo trânsito continua sem render, e quem dirige continua sem ganhar nada.
+
+### Ônibus nos pontos
+
+Ônibus param nos pontos sozinhos, sem toque: os comuns do tráfego param, os passantes que esperam embarcam e alguns descem. O Ônibus Espectral passa no horário determinístico de cada ponto, igual para o grupo, para e deixa ou leva um passageiro espectral que some na calçada. É só cena: não dá nada e não leva o jogador a lugar nenhum. Tocar no ponto mostra quando o Espectral passa.
+
+### Outros Veilbreakers
+
+NPCs de jogo, por regras, gerados pela seed e iguais para amigos no mesmo lugar e hora. Sem disputa de Eco, sem combate e sem tirar nada do jogador.
+
+- **Presença:** poucos, mais em praças, no Iluminado e no fim da tarde, quase nenhum de madrugada. Andam pelas calçadas, param para sintonizar um Eco e seguem. Só sintonizam Ecos que já iam sumir. Roupa, escola e nome vêm da seed.
+- **Escambo:** tocar num NPC abre uma troca pequena por dia, sempre com perda, como o Mercador.
+- **Rumor:** às vezes soltam uma pista verdadeira, tirada do mesmo mundo determinístico (onde apareceu uma família, quando passa o Ônibus Espectral, um evento chegando).
+- **Conhecidos:** alguns NPCs fixos por bairro, nos mesmos lugares e horários. Lembram do jogador pelas trocas e, com o tempo, oferecem trocas melhores e rumores mais raros.
+
+Fala gerada por LLM fica para depois, opcional e com fala pronta de reserva offline.
+
+### Veículos do Véu
+
+Veículos fabricados são só aparência. Quando o modo trânsito já detecta o jogador numa faixa de velocidade, o avatar aparece no veículo equipado daquela faixa: bicicleta ou skate do Véu na faixa de bicicleta, carroça do Véu na faixa de carro. A pé, o avatar anda a pé. O veículo não muda nenhuma regra do modo trânsito e não rende nada pelo deslocamento real; dirigir continua sem recompensa. Na corrida de Uber ou 99, vale o carro da corrida.
+
+- Fabricados na Bancada com receitas liberadas por nível, como as bolsas maiores.
+- Um espaço de veículo por faixa no loadout, com "mostrar no personagem".
+- A qualidade muda só o visual (brilho, rastro de faíscas), nunca velocidade ou recompensa.
+
 ## Criaturas
 
 As criaturas se dividem em oito camadas que seguem o lore da fragmentação. Quanto mais baixa a camada, mais a entidade se partiu ao atravessar o Véu. São 12 tipos. A maioria deriva dos biomas, e Dracônico, Feérico e Digital vêm de condições especiais do mundo.
@@ -973,7 +998,7 @@ Qualquer receita funciona com material comum; material bom é recompensado, nunc
 - **Coletores plantados:** o jogador deixa um coletor no ponto onde está, a pé. Ele enche com a condição naquele lugar (uns 20 minutos de chuva, uma noite para luz de lua), mesmo com o jogador longe, e a qualidade sai da condição e do lugar. Para colher, é preciso voltar até ele, dentro do alcance de toque. Fica a pelo menos 100 m de outro coletor plantado, o que transforma o plantio em rota. Só o dono vê os próprios coletores (camada pessoal). Conteúdo perecível estraga no lugar no mesmo ritmo da bolsa; a garrafa não some. Rotas e Radar mostram os coletores e o estado deles, e a Patrulha avisa quando um enche.
 - **Limites:** começa com 3 garrafas no cinto e 3 coletores plantados; os dois sobem com equipamento.
 - **Refino situado no improviso:** na fase 1, o refino simples se faz em qualquer lugar, pedindo a condição na hora (giz consagrado à noite, água purificada perto de qualquer água). A bancada de casa fica para os componentes.
-- **Descoberta:** receitas de improviso e refino se descobrem experimentando, e o grimório mostra silhueta e pista depois que o jogador tem um dos ingredientes. Componentes e receitas de lua e estação vêm de páginas de grimório (Fenda, Mercador, quest do mentor). Errar uma combinação nunca gasta material.
+- **Descoberta:** receitas de improviso e refino se descobrem experimentando, e o grimório mostra silhueta e pista depois que o jogador tem um dos ingredientes. Componentes e receitas de lua e estação vêm de páginas de grimório (Fenda, Mercador, quest do mentor). Errar uma combinação nunca gasta material. As receitas básicas (garrafa de vidro, frasco escuro, selo simples) já vêm conhecidas, e uma quest curta do mentor ensina o ciclo de fazer uma garrafa, encher e usar a condição numa receita.
 - **Bolsa:** 40 espaços, pilhas de até 99. Bolsas maiores se fabricam; o nível só libera a receita. Descartar é permitido e rende 1 Pó de Essência a cada 5 itens. Criaturas não ficam na bolsa, ficam na Coleção. A bolsa tem as abas Materiais, Condições, Uso, Equipáveis e Missão.
 - **Loadout:** espaços de bolsa, cinto de coletores, grimório ativo, um amuleto, duas joias e os de gadget. Cada espaço pode aparecer ou não no visual do personagem. Equipamento e aparência são camadas separadas: o efeito de um item com a aparência de outro.
 - **Amuletos de estação:** as datas astronômicas abrem e fecham cada linha, e o tema segue o clima real da região (em Campinas, verão de chuva e tempestade, inverno de seca, neblina e frio). O amuleto de neve se faz no inverno com a neve do calendário (Inverno do Véu e Noite Branca); a Nevasca dá a neve perfeita. Neve engarrafada derrete em alguns dias e vira água de neve, a menos que vá num frasco térmico.
