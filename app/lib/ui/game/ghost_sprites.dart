@@ -372,6 +372,24 @@ class GhostSprites {
     return (pic, g, s.body.frameWidth, s.body.height);
   }
 
+  final Map<String, ({ui.Picture pic, ui.Picture? glow, int w, int h, double ax, double ay})> _extras = {};
+
+  /// 0.26.0: um extra do Aseprite ([name]: `boat`, `canoe`, `dog`, `ride_<tipo>`) no quadro [frame], com as cores dos grupos
+  /// [groups] trocadas por [roles] ([key] distingue as paletas no cache), mais o brilho, o tamanho e a âncora. `null` sem a arte.
+  ({ui.Picture pic, ui.Picture? glow, int w, int h, double ax, double ay})? extra(String name, int frame, List<String> groups, Map<String, ui.Color> roles, {required String key}) {
+    final art = _current, s = art?.sprites[name];
+    if (art == null || s == null) return null;
+    final f = frame % s.body.frames;
+    return _extras['$name/$f/$key'] ??= (
+      pic: recordStrip(s.body, f, art.remap(groups, roles), over: art.outfits['${name}_leash']),
+      glow: s.glow == null ? null : recordStrip(s.glow!, f, const {}),
+      w: s.body.frameWidth,
+      h: s.body.height,
+      ax: s.anchorX,
+      ay: s.anchorY,
+    );
+  }
+
   final Map<int, ui.Picture> _boats = {};
 
   /// O barco (ou a canoa) que o carro [m] vira na rua alagada, com a paleta dele.

@@ -13,6 +13,8 @@ import '../../sprites/sprite_image.dart';
 import '../../tema.dart';
 import '../../type_label.dart';
 import '../screen_frame.dart' show SpeciesImage;
+import '../../craft/ui_art.dart' show UiFrame;
+import '../../kit.dart' show TypeTag;
 
 const TextStyle _tiny = TextStyle(fontFamily: KFonte.pixel, fontSize: 9, height: 12 / 9, letterSpacing: 1, color: KCores.texto);
 
@@ -24,23 +26,32 @@ BoxDecoration kCard({Color line = KCores.contorno, Color fill = KCores.superfici
 
 /// Etiqueta pequena: um quadrado na cor do tipo (ou sem ele) e o texto.
 class KTag extends StatelessWidget {
-  const KTag(this.label, {this.dot, this.color = KCores.texto, super.key});
+  const KTag(this.label, {this.dot, this.color = KCores.texto, this.type, super.key});
 
-  factory KTag.type(EcoType t) => KTag(typeLabel(t), dot: typeColor(t));
+  /// 0.26.0: a etiqueta de tipo é cor + ícone (docs/art/estilo-ui.md, "Cores e ícones dos tipos").
+  factory KTag.type(EcoType t) => KTag(typeLabel(t), dot: typeColor(t), type: t);
 
   final String label;
   final Color? dot;
   final Color color;
+  final EcoType? type;
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-        decoration: BoxDecoration(color: KCores.superficie2, border: Border.all(color: KCores.contorno, width: 2)),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          if (dot != null) Container(width: 6, height: 6, color: dot, margin: const EdgeInsets.only(right: 5)),
-          Text(label.toUpperCase(), style: _tiny.copyWith(color: color)),
-        ]),
-      );
+  Widget build(BuildContext context) {
+    final t = type;
+    if (t != null) return TypeTag(t);
+    // 0.26.0: o chip de condição do kit (`chip_cond`), com o ponto tingido.
+    return UiFrame(
+      name: 'chip_cond',
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      fallbackFill: KCores.superficie2,
+      fallbackLine: KCores.contorno,
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        if (dot != null) Container(width: 6, height: 6, color: dot, margin: const EdgeInsets.only(right: 5)),
+        Text(label.toUpperCase(), style: _tiny.copyWith(color: color)),
+      ]),
+    );
+  }
 }
 
 /// Ficha de filtro que liga e desliga.
@@ -55,19 +66,19 @@ class KChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Pressable(
         onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 36),
+        // 0.26.0: `chip_cond` apagado, `cell_selected` (o aro violeta do jogador) ligado: o estado não é só cor.
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48), // 0.26.0: alvo de toque de 48 dp
+          child: UiFrame(
+          name: on ? 'cell_selected' : 'chip_cond',
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-          decoration: BoxDecoration(
-            color: KCores.superficie2,
-            border: Border.all(color: on ? KCores.veuVioleta : KCores.contorno, width: kContornoDp),
-            boxShadow: on ? KSombra.brilhoVeu : null,
-          ),
+          fallbackFill: KCores.superficie2,
+          fallbackLine: on ? KCores.veuVioleta : KCores.contorno,
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             if (dot != null) Container(width: 6, height: 6, color: dot, margin: const EdgeInsets.only(right: 6)),
             Text(label.toUpperCase(), style: _tiny.copyWith(color: on ? KCores.texto : KCores.textoMudo)),
           ]),
-        ),
+        )),
       );
 }
 
@@ -82,18 +93,19 @@ class KButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final off = onTap == null;
+    // 0.26.0: o botão do kit (`button`, ou `button_disabled` sem ação); o principal se destaca pelo rótulo violeta, como no
+    // guia (o botão de ação principal não tem imagem própria).
     return Pressable(
       onTap: onTap,
-      child: Container(
-        alignment: Alignment.center,
+      child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: kToqueMinDp),
-        padding: const EdgeInsets.symmetric(horizontal: KEspaco.s2),
-        decoration: BoxDecoration(
-          color: primary && !off ? KCores.veuVioleta : KCores.superficie1,
-          border: Border.all(color: primary ? KCores.contorno : (off ? KCores.cidade : KCores.veuVioleta), width: kContornoDp),
-          boxShadow: KSombra.pixel,
+        child: UiFrame(
+          name: off ? 'button_disabled' : 'button',
+          padding: const EdgeInsets.symmetric(horizontal: KEspaco.s2, vertical: 6),
+          fallbackFill: primary && !off ? KCores.veuVioleta : KCores.superficie1,
+          fallbackLine: KCores.contorno,
+          child: Center(heightFactor: 1, child: Text(label.toUpperCase(), style: KTexto.rotulo.copyWith(color: off ? KCores.textoMudo : (primary ? KCores.veuClaro : KCores.texto)))),
         ),
-        child: Text(label.toUpperCase(), style: KTexto.rotulo.copyWith(color: off ? KCores.textoMudo : (primary ? KCores.fundo : KCores.texto))),
       ),
     );
   }
@@ -306,11 +318,16 @@ class KTabs extends StatelessWidget {
                 key: Key('tab-$i'),
                 behavior: HitTestBehavior.opaque,
                 onTap: () => onTap(i),
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 42),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(border: Border(bottom: BorderSide(color: i == index ? KCores.veuVioleta : Colors.transparent, width: kContornoDp))),
-                  child: Text(labels[i].toUpperCase(), style: _tiny.copyWith(color: i == index ? KCores.texto : KCores.textoMudo)),
+                // 0.26.0: a aba do kit (`tab_on` com a linha violeta, `tab_off` rebaixada).
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 48), // 0.26.0: alvo de toque de 48 dp
+                  child: UiFrame(
+                    name: i == index ? 'tab_on' : 'tab_off',
+                    padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 9),
+                    fallbackFill: Colors.transparent,
+                    fallbackLine: i == index ? KCores.veuVioleta : Colors.transparent,
+                    child: Center(heightFactor: 1, child: Text(labels[i].toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: _tiny.copyWith(color: i == index ? KCores.texto : KCores.textoMudo))),
+                  ),
                 ),
               ),
             ),
@@ -336,11 +353,15 @@ class KSegment extends StatelessWidget {
                 key: Key('seg-$i'),
                 behavior: HitTestBehavior.opaque,
                 onTap: () => onTap(i),
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 36),
-                  alignment: Alignment.center,
-                  color: i == index ? KCores.veuVioleta : KCores.superficie1,
-                  child: Text(labels[i].toUpperCase(), style: _tiny.copyWith(fontSize: 10, color: i == index ? KCores.fundo : KCores.textoMudo)),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 48), // 0.26.0: alvo de toque de 48 dp
+                  child: UiFrame(
+                    name: i == index ? 'tab_on' : 'tab_off',
+                    padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
+                    fallbackFill: i == index ? KCores.veuVioleta : KCores.superficie1,
+                    fallbackLine: KCores.contorno,
+                    child: Center(heightFactor: 1, child: Text(labels[i].toUpperCase(), style: _tiny.copyWith(fontSize: 10, color: i == index ? KCores.texto : KCores.textoMudo))),
+                  ),
                 ),
               ),
             ),

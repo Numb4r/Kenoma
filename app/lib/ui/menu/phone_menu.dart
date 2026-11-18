@@ -22,6 +22,7 @@ import 'phone_grid.dart';
 import 'phone_shell.dart';
 import 'phone_status.dart';
 import 'profile_screen.dart';
+import '../kit.dart';
 
 /// O botão do celular: um aparelho pequeno de pixels, no centro de baixo. Um ponto laranja avisa que há mensagem
 /// nova do mentor ou pedido do fórum pronto para entregar.
@@ -35,7 +36,8 @@ class PhoneButton extends StatelessWidget {
   Widget build(BuildContext context) => Pressable(
         onTap: onTap,
         child: Stack(clipBehavior: Clip.none, children: [
-          Container(
+          // 0.26.0: a peça `phone_button` do kit, e a bolinha `badge_dot` de novidade (o desenho de antes fica de reserva).
+          UiPiece('phone_button', box: const Size(56, 56), fallback: Container(
             width: 56,
             height: 56,
             alignment: Alignment.center,
@@ -46,12 +48,15 @@ class PhoneButton extends StatelessWidget {
               boxShadow: KSombra.pixel,
             ),
             child: CustomPaint(size: const Size(20, 32), painter: _PhonePainter()),
-          ),
+          )),
           if (alert)
             Positioned(
               right: -4,
               top: -4,
-              child: Container(key: const Key('phone-alert'), width: 15, height: 15, decoration: BoxDecoration(color: KCores.brasaLaranja, border: Border.all(color: KCores.contorno, width: 3))),
+              child: UiPiece('badge_dot',
+                  key: const Key('phone-alert'),
+                  box: const Size(15, 15),
+                  fallback: Container(width: 15, height: 15, decoration: BoxDecoration(color: KCores.brasaLaranja, border: Border.all(color: KCores.contorno, width: 3)))),
             ),
         ]),
       );

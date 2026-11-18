@@ -16,6 +16,7 @@ import '../sprites/familiar_sprite.dart';
 import '../tema.dart';
 import 'phone_shell.dart';
 import 'profile_widgets.dart';
+import '../kit.dart';
 
 /// A chave em `settings` com os pontos de talento que o jogador já viu no Perfil (a bolinha do app lê daqui).
 const String kProfileSeenTalentKey = 'profile_seen_talent';
@@ -55,7 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final ctl = TextEditingController(text: s.conjurer.playerName);
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => KitAlertDialog(
         backgroundColor: KCores.superficie1,
         shape: const RoundedRectangleBorder(side: BorderSide(color: KCores.contorno, width: kContornoDp)),
         title: Text('NOME DO CONJURADOR', style: KTexto.rotulo.copyWith(color: KCores.veuClaro)),

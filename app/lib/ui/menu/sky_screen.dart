@@ -17,6 +17,8 @@ import '../colors.dart';
 import '../game/moon_hud.dart' show MoonPainter, WeatherGlyphPainter;
 import 'phone_status.dart' show phoneClock;
 import 'screen_frame.dart';
+import '../kit.dart' show UiIcon;
+import '../craft/ui_art.dart' show UiArt;
 
 const _body = TextStyle(fontSize: 8, color: kText, height: 1.8);
 const _dim = TextStyle(fontSize: 8, color: kDim, height: 1.8);
@@ -89,7 +91,9 @@ class _SkyScreenState extends State<SkyScreen> {
     super.dispose();
   }
 
-  Widget _glyph(ClimateInfo i, {double size = 18}) => SizedBox(width: size, height: size, child: FittedBox(child: CustomPaint(size: const Size(18, 18), painter: WeatherGlyphPainter(i))));
+  /// 0.26.0: o ícone do Aseprite do evento (`event/<id>`, a bandeirola) ou do clima (`climate/<id>`); o glifo de antes de reserva.
+  Widget _glyph(ClimateInfo i, {double size = 18}) => UiIcon(UiArt.instance?.image('event/${i.id}') != null ? 'event/${i.id}' : 'climate/${i.id}',
+      size: size, fallback: FittedBox(child: CustomPaint(size: const Size(18, 18), painter: WeatherGlyphPainter(i))));
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +221,8 @@ class _SkyScreenState extends State<SkyScreen> {
         ],
         const SectionTitle('Lua'),
         Row(children: [
-          CustomPaint(key: const Key('sky-moon'), size: const Size(48, 48), painter: MoonPainter(cycle, widget.lat() < 0)),
+          UiIcon('moon/moon_${moonPhaseIndex(cycle)}',
+              key: const Key('sky-moon'), size: 48, flip: widget.lat() >= 0, fallback: CustomPaint(size: const Size(48, 48), painter: MoonPainter(cycle, widget.lat() < 0))),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

@@ -1,14 +1,140 @@
 {
-  "panel": [4, 4, 4, 4],
-  "sheet": [3, 3, 3, 1],
-  "tab_on": [2, 4, 2, 2],
-  "tab_off": [2, 4, 2, 2],
-  "button": [2, 2, 2, 3],
-  "button_pressed": [2, 4, 2, 1],
-  "button_disabled": [2, 2, 2, 3],
-  "cell": [2, 2, 2, 2],
-  "cell_selected": [3, 3, 3, 3],
-  "bar_frame": [2, 2, 2, 2],
-  "bar_fill": [1, 1, 1, 1],
-  "chip": [2, 2, 2, 2]
+  "panel": [
+    4,
+    4,
+    4,
+    4
+  ],
+  "sheet": [
+    3,
+    3,
+    3,
+    1
+  ],
+  "tab_on": [
+    2,
+    4,
+    2,
+    2
+  ],
+  "tab_off": [
+    2,
+    4,
+    2,
+    2
+  ],
+  "button": [
+    2,
+    2,
+    2,
+    3
+  ],
+  "button_pressed": [
+    2,
+    4,
+    2,
+    1
+  ],
+  "button_disabled": [
+    2,
+    2,
+    2,
+    3
+  ],
+  "cell": [
+    2,
+    2,
+    2,
+    2
+  ],
+  "cell_selected": [
+    3,
+    3,
+    3,
+    3
+  ],
+  "bar_frame": [
+    2,
+    2,
+    2,
+    2
+  ],
+  "bar_fill": [
+    1,
+    1,
+    1,
+    1
+  ],
+  "chip": [
+    2,
+    2,
+    2,
+    2
+  ],
+  "hud_bar": [
+    2,
+    2,
+    2,
+    2
+  ],
+  "shortcut_chip": [
+    2,
+    2,
+    2,
+    3
+  ],
+  "shortcut_chip_pressed": [
+    2,
+    4,
+    2,
+    1
+  ],
+  "warn_tag": [
+    5,
+    2,
+    5,
+    2
+  ],
+  "phone_body": [
+    4,
+    4,
+    4,
+    4
+  ],
+  "app_tile": [
+    3,
+    3,
+    3,
+    3
+  ],
+  "app_tile_new": [
+    3,
+    3,
+    3,
+    3
+  ],
+  "dialog": [
+    2,
+    8,
+    2,
+    2
+  ],
+  "card": [
+    2,
+    2,
+    2,
+    2
+  ],
+  "card_selected": [
+    2,
+    2,
+    2,
+    2
+  ],
+  "chip_cond": [
+    2,
+    2,
+    2,
+    2
+  ]
 }

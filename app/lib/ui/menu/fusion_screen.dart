@@ -14,6 +14,7 @@ import '../sprites/sprite_image.dart';
 import '../tema.dart';
 import 'fusion_animation.dart';
 import 'screen_frame.dart' show SpeciesImage;
+import '../kit.dart';
 
 const _blockerText = {
   FusionBlocker.locked: 'Libera no nível 6',
@@ -53,7 +54,7 @@ class _FusionPanelState extends State<FusionPanel> {
   Future<bool> _confirmCircle(int n) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => KitAlertDialog(
         backgroundColor: KCores.superficie1,
         shape: const RoundedRectangleBorder(side: BorderSide(color: KCores.brasaLaranja, width: kContornoDp)),
         title: Text('ECO NO CÍRCULO', style: KTexto.titulo.copyWith(color: KCores.brasaLaranja)),

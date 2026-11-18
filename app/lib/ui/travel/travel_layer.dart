@@ -95,6 +95,8 @@ class TravelLayer {
     }
   }
 
+  final _sprites = GhostSprites();
+
   void paintCar(ui.Canvas canvas, ui.Size view, MapCamera cam, double mpc, {required double utc, required PlayerAvatar avatar}) {
     final ride = session.ride;
     if (ride == null) return;
@@ -107,10 +109,13 @@ class TravelLayer {
     if (car == null) return;
     final type = ride.carType ?? session.patterns.defaultType;
     final color = ride.carColor ?? session.patterns.defaultColor;
+    // 0.26.0: o carro da corrida do Aseprite (o carro do tráfego com a luz do teto, sem marca de aplicativo), na escala dos
+    // carros novos; sem a arte, as matrizes de antes.
+    final ex = _sprites.extra('ride_$type', 0, const ['vehicle'], {'body': ui.Color(color)}, key: '$color');
     final rows = rideCarRows(type);
-    final pic = _cars[(type, color)] ??= recordSprite(rows, rideCarPalette(ui.Color(color)));
-    final unit = math.max(1.0, carM * cam.pixelsPerCell / mpc / carRefPx);
-    final w = rows.first.length * unit, h = rows.length * unit;
+    final pic = ex?.pic ?? (_cars[(type, color)] ??= recordSprite(rows, rideCarPalette(ui.Color(color))));
+    final unit = math.max(1.0, carM * cam.pixelsPerCell / mpc / (ex == null ? carRefPx : _sprites.carRef));
+    final w = (ex?.w ?? rows.first.length) * unit, h = (ex?.h ?? rows.length) * unit;
     final (sx, sy) = cam.cellToScreen(car.x, car.y, view.width, view.height);
     canvas.save();
     canvas.translate(sx, sy);
@@ -118,6 +123,7 @@ class TravelLayer {
     canvas.translate(-w / 2, -h / 2);
     canvas.scale(unit);
     canvas.drawPicture(pic);
+    if (ex?.glow case final g?) canvas.drawPicture(g); // a luz do teto acesa
     canvas.restore();
     final seam = session.boardingAt(utc) ?? session.alightingAt(utc);
     if (seam != null) _seam(canvas, sx, sy, w, unit, seam);

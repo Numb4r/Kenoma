@@ -9,6 +9,8 @@ import '../../data/session_log_store.dart';
 import '../../data/tuning_data.dart';
 import '../colors.dart';
 import '../type_label.dart';
+import '../craft/ui_art.dart' show UiFrame;
+import '../kit.dart' show onButtonFace;
 import 'run_logger.dart';
 import 'tuning_game.dart';
 import 'tuning_layout.dart';
@@ -279,15 +281,39 @@ class PixelButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        alignment: Alignment.center,
-        constraints: const BoxConstraints(minHeight: 48, minWidth: 96),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(border: Border.all(color: color, width: 3)),
-        child: Text(label.toUpperCase(), style: TextStyle(fontSize: 16, color: color)),
-      ),
-    );
+    // 0.26.0: o botão do kit (`button`, e `button_pressed` enquanto o dedo está em cima: a face afunda 2 px). A cor fica no
+    // rótulo, como no guia: o estado nunca é só cor.
+    return Pressable(onTap: onTap, child: _KitButtonFace(label: label, color: color));
   }
+}
+
+class _KitButtonFace extends StatefulWidget {
+  const _KitButtonFace({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  State<_KitButtonFace> createState() => _KitButtonFaceState();
+}
+
+class _KitButtonFaceState extends State<_KitButtonFace> {
+  bool _down = false;
+
+  @override
+  Widget build(BuildContext context) => Listener(
+        onPointerDown: (_) => setState(() => _down = true),
+        onPointerUp: (_) => setState(() => _down = false),
+        onPointerCancel: (_) => setState(() => _down = false),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48, minWidth: 96),
+          child: UiFrame(
+            name: _down ? 'button_pressed' : 'button',
+            fallbackLine: widget.color,
+            fallbackFill: Colors.transparent,
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+            child: Center(widthFactor: 1, heightFactor: 1, child: Text(widget.label.toUpperCase(), style: TextStyle(fontSize: 16, color: onButtonFace(widget.color)))),
+          ),
+        ),
+      );
 }

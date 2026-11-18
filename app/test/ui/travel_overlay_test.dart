@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/ui/kit.dart';
 import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/travel/deep_links.dart';
 import 'package:kenoma/travel/travel_balance.dart';
@@ -119,7 +120,7 @@ void main() {
     expect(find.textContaining('Só Uber e 99'), findsOneWidget);
     expect(find.textContaining('Permitir configurações restritas'), findsOneWidget);
     expect(state.setting(kRideNotifySetting), isFalse);
-    await tester.tap(find.byType(SwitchListTile));
+    await tester.tap(find.byType(KitSwitchTile));
     await tester.pump();
     expect(state.setting(kRideNotifySetting), isTrue);
   });

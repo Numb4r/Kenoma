@@ -1,0 +1,15 @@
+{
+  "_": "Papéis novos dos extras do tráfego (0.26.0), no formato do traffic_keys.json; some grupo a grupo. O barco, a canoa e o carro da corrida usam os papéis de vehicle e rider que já existem.",
+  "vehicle": {
+    "oar": { "hex": "#A9824F", "kind": "fixed", "note": "remo do barco e da canoa; o mesmo hex da bengala" },
+    "ride_light": { "hex": "#5FD3C6", "kind": "fixed", "glow": true, "note": "luz do teto do carro da corrida, a cor do sinal" },
+    "ride_light_core": { "hex": "#B4F0E8", "kind": "fixed", "glow": true }
+  },
+  "dog": {
+    "fur": { "hex": "#B8875A", "kind": "key" },
+    "fur_shade": { "hex": "#795944", "kind": "derived", "of": "fur", "shade": 0.4 },
+    "collar": { "hex": "#E0524A", "kind": "key", "note": "coleira e guia (dog_leash.png)" },
+    "eye": { "hex": "#2B2540", "kind": "fixed" },
+    "nose": { "hex": "#3A2F4A", "kind": "fixed" }
+  }
+}

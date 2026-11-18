@@ -1,22 +1,22 @@
 {
-  "_": "Fagulhas (0.25.1), pixel de 2 dp. spark_<tipo>.png: tira de 4 quadros em laço (repouso, aceso, pico, aceso). spark_<tipo>_glow.png: o que fica aceso de noite, no mesmo quadro. Cores fixas (a do tipo é a de typeColor em colors.dart). O desenho ocupa até 10 x 10 no meio do quadro.",
+  "_": "Fagulhas (0.25.1, cores da 0.26.0), pixel de 2 dp. spark_<tipo>.png: tira de 4 quadros em laço (repouso, aceso, pico, aceso). spark_<tipo>_glow.png: o que fica aceso de noite, no mesmo quadro. Cores fixas: color, dark e light são as do tipo em tools/art/ui/types/palette.lua. O desenho ocupa até 10 x 10 no meio do quadro.",
   "frame": [12, 12],
   "frames": 4,
   "fps": 5,
   "loop": true,
   "anchor": [6, 6],
   "types": {
-    "fire": { "shape": "chama", "color": "#FF5A36", "dark": "#B8321E", "light": "#FFB05A", "core": "#FFF0B0", "glow": "tudo menos o contorno" },
-    "water": { "shape": "gota", "color": "#4AA8FF", "dark": "#2A6FC0", "light": "#A0D4FF", "core": "#FFFFFF", "glow": "só o brilho" },
-    "plant": { "shape": "folha", "color": "#6BD36A", "dark": "#3A8E4A", "light": "#B4F08A", "core": "#F0FFD0", "glow": "só a nervura" },
-    "electric": { "shape": "faísca", "color": "#FFD84A", "dark": "#C89A20", "light": "#FFF0A0", "core": "#FFFFFF", "glow": "tudo menos o contorno" },
-    "earth": { "shape": "pedrinha", "color": "#C79A5B", "dark": "#8A6638", "light": "#E8C890", "core": "#FFF0D0", "glow": "só o brilho" },
-    "metal": { "shape": "lasca", "color": "#9FB3C8", "dark": "#5E7088", "light": "#D4E2F0", "core": "#FFFFFF", "glow": "só o fio" },
-    "light": { "shape": "raio de luz", "color": "#FFF3B0", "dark": "#D8BE6A", "light": "#FFFBE0", "core": "#FFFFFF", "glow": "tudo menos o contorno" },
-    "shadow": { "shape": "fiapo de sombra", "color": "#6B5A8E", "dark": "#3A2E55", "light": "#9B8FC0", "core": "#CFC6E8", "glow": "a borda violeta" },
-    "spectral": { "shape": "chama fria, oca", "color": "#B8C4D6", "dark": "#7F8CA8", "light": "#E4ECF8", "core": "#FFFFFF", "glow": "tudo menos o miolo e o contorno" },
-    "digital": { "shape": "pixel", "color": "#3DFFB0", "dark": "#1E9E78", "light": "#A8FFDC", "core": "#FFFFFF", "glow": "tudo menos o contorno" },
-    "fae": { "shape": "pó de fada", "color": "#FF8FD8", "dark": "#C05A9E", "light": "#FFC8EC", "core": "#FFFFFF", "glow": "tudo menos o contorno" },
-    "draconic": { "shape": "escama", "color": "#D14B4B", "dark": "#8E2A34", "light": "#F08A7A", "core": "#FFD8C8", "glow": "só o brilho" }
+    "fire": { "shape": "chama", "color": "#F0502E", "dark": "#A82E1C", "light": "#FF9C7A", "core": "#FFF0B0", "glow": "tudo menos o contorno" },
+    "water": { "shape": "gota", "color": "#4A9CFF", "dark": "#2A62B8", "light": "#A4D0FF", "core": "#FFFFFF", "glow": "só o brilho" },
+    "plant": { "shape": "folha", "color": "#4DBD62", "dark": "#2B7A40", "light": "#A2E8A0", "core": "#F0FFD0", "glow": "só a nervura" },
+    "electric": { "shape": "faísca", "color": "#FFD23A", "dark": "#B8901C", "light": "#FFEE9A", "core": "#FFFFFF", "glow": "tudo menos o contorno" },
+    "earth": { "shape": "pedrinha", "color": "#C0915A", "dark": "#7E5A32", "light": "#E6C594", "core": "#FFF0D0", "glow": "só o brilho" },
+    "metal": { "shape": "lasca", "color": "#93A1B3", "dark": "#566274", "light": "#CCD6E2", "core": "#FFFFFF", "glow": "só o fio" },
+    "light": { "shape": "raio de luz", "color": "#FFF0B8", "dark": "#CDB468", "light": "#FFFBE6", "core": "#FFFFFF", "glow": "tudo menos o contorno" },
+    "shadow": { "shape": "fiapo de sombra", "color": "#A677AB", "dark": "#68426E", "light": "#D2ABD6", "core": "#F0DCF2", "glow": "a borda ameixa" },
+    "spectral": { "shape": "chama fria, oca", "color": "#D3E2F4", "dark": "#8A9DBA", "light": "#F2F7FF", "core": "#FFFFFF", "glow": "tudo menos o miolo e o contorno" },
+    "digital": { "shape": "pixel", "color": "#A8F040", "dark": "#62A01E", "light": "#DCFA9E", "core": "#FFFFFF", "glow": "tudo menos o contorno" },
+    "fae": { "shape": "pó de fada", "color": "#FFA8E0", "dark": "#C0669E", "light": "#FFD6F1", "core": "#FFFFFF", "glow": "tudo menos o contorno" },
+    "draconic": { "shape": "escama", "color": "#DE4F84", "dark": "#8E2852", "light": "#F797B6", "core": "#FFD8C8", "glow": "só o brilho" }
   }
 }

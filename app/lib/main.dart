@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'dev/tuning_debug_menu.dart';
 import 'net/signed_feed.dart';
 import 'ui/colors.dart';
+import 'ui/craft/ui_art.dart' show UiArt;
 import 'ui/system_bars.dart';
 
 Future<void> main() async {
@@ -13,6 +14,7 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await applySystemBars(show: false); // tela cheia até o save dizer outra coisa (`kSystemBarsSetting`)
   runApp(const KenomaApp());
+  unawaited(UiArt.load()); // 0.26.0: o kit de interface (molduras e ícones) pronto para todas as telas
   // Opcional e silencioso: no máximo uma consulta por dia ao feed assinado; o resultado vale a partir da próxima abertura.
   unawaited(refreshSignedFeed(nowUtc: DateTime.now().millisecondsSinceEpoch ~/ 1000));
 }

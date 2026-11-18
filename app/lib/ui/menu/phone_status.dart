@@ -11,6 +11,7 @@ import '../../core/features.dart';
 import '../../data/climate_catalog.dart';
 import '../game/moon_hud.dart';
 import '../tema.dart';
+import '../kit.dart' show UiIcon;
 
 /// De onde a barra lê a hora, a latitude (o hemisfério espelha a lua) e o clima.
 class PhoneStatusSource {
@@ -80,12 +81,13 @@ class _PhoneStatusBarState extends State<PhoneStatusBar> {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerRight,
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-        CustomPaint(key: const Key('status-moon'), size: Size(ico, ico), painter: MoonPainter(moonCycle(t), src.lat() < 0)),
+        UiIcon('moon/moon_${moonPhaseIndex(moonCycle(t))}',
+            key: const Key('status-moon'), size: ico, flip: src.lat() >= 0, fallback: CustomPaint(painter: MoonPainter(moonCycle(t), src.lat() < 0))),
         const SizedBox(width: KEspaco.s1),
         Text(moonPhaseNames[moonPhase(t)]!.toUpperCase(), key: const Key('status-moon-name'), style: style.copyWith(color: KCores.textoMudo)),
         if (w != null) ...[
           const SizedBox(width: KEspaco.s2),
-          SizedBox(width: ico, height: ico, child: FittedBox(child: CustomPaint(key: const Key('status-weather'), size: const Size(18, 18), painter: WeatherGlyphPainter(w)))),
+          UiIcon('climate/${w.id}', key: const Key('status-weather'), size: ico, fallback: FittedBox(child: CustomPaint(size: const Size(18, 18), painter: WeatherGlyphPainter(w)))),
           const SizedBox(width: KEspaco.s1),
           Text(w.name.toUpperCase(), key: const Key('status-weather-label'), style: style.copyWith(color: KCores.textoMudo)),
         ],

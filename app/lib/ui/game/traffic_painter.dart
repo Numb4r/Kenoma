@@ -271,6 +271,26 @@ class TrafficPainter {
   /// O cachorro do passeio: um corpinho de quatro pixels atrás do dono, do lado para onde ele anda, com a guia.
   void _dog(ui.Canvas canvas, Ghost g, double sx, double sy, double rotation, double pxPerM) {
     final u = math.max(2.0, (pxPerM * 0.2).roundToDouble()), a = g.heading + rotation;
+    // 0.26.0: o cachorro do Aseprite (de lado, dois quadros de passo, a cor do pelo pela identidade do dono), espelhado pelo
+    // lado em que anda, e a guia da ponta até a mão do dono.
+    const furs = [ui.Color(0xFFB8875A), ui.Color(0xFF3A2A2A), ui.Color(0xFFE8E4F4), ui.Color(0xFF8A6A4A)];
+    final fur = furs[g.id % furs.length];
+    final ex = sprites.extra('dog', (g.travelledM / 0.3).floor() & 1, const ['dog'], {'fur': fur, 'collar': const ui.Color(0xFFE0524A)}, key: '${g.id % furs.length}');
+    if (ex != null) {
+      final unit = math.max(1.0, (pedestrianM * pxPerM / sprites.pedRef * 2).round() / 2);
+      final right = math.cos(a) >= 0;
+      final dx = (sx - math.cos(a) * pxPerM * 1.1 - math.sin(a) * pxPerM * 0.5).roundToDouble(), dy = (sy - math.sin(a) * pxPerM * 1.1 + math.cos(a) * pxPerM * 0.5).roundToDouble();
+      final endX = right ? 10.0 : ex.w - 10.0;
+      canvas.drawLine(ui.Offset(sx, sy - pedestrianM * pxPerM * 0.45), ui.Offset(dx + (endX - ex.ax) * unit, dy + (2 - ex.ay) * unit), ui.Paint()..color = const ui.Color(0xFFE0524A)..strokeWidth = math.max(1.0, unit));
+      canvas.save();
+      canvas.translate(dx, dy);
+      if (!right) canvas.scale(-1, 1);
+      canvas.translate(-ex.ax * unit, -ex.ay * unit);
+      canvas.scale(unit);
+      canvas.drawPicture(ex.pic);
+      canvas.restore();
+      return;
+    }
     final dx = (sx - math.cos(a) * pxPerM * 1.1 - math.sin(a) * pxPerM * 0.5).roundToDouble(), dy = (sy - math.sin(a) * pxPerM * 1.1 + math.cos(a) * pxPerM * 0.5).roundToDouble();
     final step = (g.travelledM / 0.3).floor().isEven ? 0.0 : u, right = math.cos(a) >= 0;
     canvas.drawLine(ui.Offset(sx, sy - pedestrianM * pxPerM * 0.45), ui.Offset(dx, dy - u * 2), ui.Paint()..color = kOutline.withValues(alpha: 0.6)..strokeWidth = 1);
@@ -456,9 +476,11 @@ class TrafficPainter {
 
   /// O barco (ou canoa) fantasma na rua alagada, com a esteira atrás.
   void drawBoat(ui.Canvas canvas, Ghost g, double sx, double sy, double rotation, double pxPerM, double t) {
+    // 0.26.0: o barco e a canoa do Aseprite (cores da moto e do carro do fantasma), na escala dos carros novos.
+    final ex = sprites.extra(g.model == GhostModel.moto ? 'canoe' : 'boat', 0, const ['vehicle', 'rider'], artRolesOf(g.model, g.palette), key: '${g.model.name}${g.palette}');
     final rows = boatRowsOf(g.model);
-    final unit = carM * pxPerM / carRefPx;
-    final w = rows.first.length * unit, h = rows.length * unit;
+    final unit = ex == null ? carM * pxPerM / carRefPx : carM * pxPerM / sprites.carRef;
+    final w = (ex?.w ?? rows.first.length) * unit, h = (ex?.h ?? rows.length) * unit;
     final a = g.heading + rotation;
     _fill.color = const ui.Color(0xFFE8E4F4).withValues(alpha: 0.35 * g.alpha);
     for (var i = 1; i <= 3; i++) {
@@ -470,7 +492,7 @@ class TrafficPainter {
     canvas.rotate(a + math.sin(t * 1.7 + (g.id & 0xff)) * 0.06); // balança na água
     canvas.translate(-w / 2, -h / 2);
     canvas.scale(unit);
-    canvas.drawPicture(sprites.boat(g.model, g.palette));
+    canvas.drawPicture(ex?.pic ?? sprites.boat(g.model, g.palette));
     canvas.restore();
   }
 

@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import '../../player/game_state.dart';
 import '../../player/mark.dart';
 import '../colors.dart';
+import '../kit.dart';
+import 'hud_layout.dart' show HudSize;
 
 class PortraitHud extends StatelessWidget {
   const PortraitHud({required this.state, required this.frame, this.onTap, super.key});
@@ -36,7 +38,34 @@ class PortraitHud extends StatelessWidget {
           key: const Key('portrait-hud'),
           behavior: HitTestBehavior.opaque,
           onTap: onTap,
-          child: Column(
+          // 0.26.0: a peça `hud_portrait` do kit (janela, placa do nível, trilho do XP) na escala inteira que cabe na caixa de
+          // antes; o Conjurador, o nível e o XP (`xp_fill`, violeta: progresso do jogador) por cima, nos lugares dela.
+          child: UiPiece(
+            'hud_portrait',
+            box: const Size(size, HudSize.portraitH),
+            overlay: (px, o) => [
+              if (frame != null)
+                Positioned(left: o.dx + 2 * px, top: o.dy + 2 * px, width: 16 * px, height: 16 * px, child: RawImage(image: frame, filterQuality: FilterQuality.none, fit: BoxFit.contain)),
+              Positioned(
+                left: o.dx + 2 * px,
+                top: o.dy + 19 * px,
+                width: 16 * px,
+                height: 4 * px,
+                child: Center(child: FittedBox(child: Text('NV ${state.playerLevel}${overridden ? '*' : ''}', style: const TextStyle(fontSize: 8, color: kText)))),
+              ),
+              Positioned(
+                key: const Key('xp-bar'),
+                left: o.dx + 1 * px,
+                top: o.dy + 24 * px,
+                width: 18 * px,
+                height: 2 * px,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FractionallySizedBox(widthFactor: p.fraction.clamp(0.0, 1.0), child: Container(color: kVeil)),
+                ),
+              ),
+            ],
+            fallback: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -62,7 +91,7 @@ class PortraitHud extends StatelessWidget {
               child: FractionallySizedBox(widthFactor: p.fraction.clamp(0.0, 1.0), child: Container(color: kSignal)),
             ),
           ],
-        ));
+          )        ));
       },
     );
   }

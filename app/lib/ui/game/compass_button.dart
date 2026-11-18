@@ -9,6 +9,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../colors.dart';
+import '../kit.dart';
 
 class CompassButton extends StatelessWidget {
   const CompassButton({required this.angle, required this.follow, required this.onNorth, required this.onToggleFollow, super.key});
@@ -27,7 +28,13 @@ class CompassButton extends StatelessWidget {
   Widget build(BuildContext context) => Pressable(
         onTap: onNorth,
         onDoubleTap: onToggleFollow,
-        child: SizedBox(width: size, height: size, child: CustomPaint(painter: _CompassPainter(angle, follow))),
+        // 0.26.0: o mostrador do kit (`compass_dial`, ou `compass_dial_follow` no "seguir direção") parado e a agulha girando.
+        child: UiPiece(follow ? 'compass_dial_follow' : 'compass_dial',
+            box: const Size(size, size),
+            overlay: (px, o) => [
+                  Positioned(left: o.dx + 6 * px, top: o.dy + 3 * px, width: 6 * px, height: 12 * px, child: UiPiece('compass_needle', box: Size(6 * px, 12 * px), rotation: angle)),
+                ],
+            fallback: SizedBox(width: size, height: size, child: CustomPaint(painter: _CompassPainter(angle, follow)))),
       );
 }
 

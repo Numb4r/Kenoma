@@ -8,6 +8,7 @@ import '../../travel/system_bridge.dart';
 import '../colors.dart';
 import '../menu/screen_frame.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
+import '../kit.dart';
 
 /// Chave do interruptor em `GameState.settings`.
 const kRideNotifySetting = 'ride_notifications';
@@ -71,7 +72,7 @@ class _RideNotificationsScreenState extends State<RideNotificationsScreen> with 
       ),
       const SizedBox(height: 8),
       const Text('Sem isto o fluxo é o mesmo, com botões: você informa o tempo de chegada, toca em Entrei e em Cheguei.', style: TextStyle(fontSize: 8, color: kDim, height: 1.8)),
-      SwitchListTile(
+      KitSwitchTile(
         contentPadding: EdgeInsets.zero,
         title: const Text('Ler notificações de corrida', style: TextStyle(fontSize: 8)),
         value: widget.state.setting(kRideNotifySetting),

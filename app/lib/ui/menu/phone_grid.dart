@@ -12,6 +12,8 @@ import '../tema.dart';
 import 'phone_apps.dart';
 import 'phone_icons.dart';
 import 'phone_status.dart';
+import '../craft/ui_art.dart' show UiFrame;
+import '../kit.dart';
 
 class PhoneSheet extends StatefulWidget {
   const PhoneSheet({required this.state, required this.data, required this.status, required this.onOpen, super.key});
@@ -59,19 +61,22 @@ class _PhoneSheetState extends State<PhoneSheet> with SingleTickerProviderStateM
         alignment: Alignment.bottomCenter,
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: 420, maxHeight: MediaQuery.sizeOf(context).height * 0.9),
-          child: Container(
-            margin: const EdgeInsets.only(top: KEspaco.s2),
+          // 0.26.0: o aparelho na moldura `phone_body` do kit e a tela com o ladrilho `phone_wall`.
+          child: Padding(
+            padding: const EdgeInsets.only(top: KEspaco.s2),
+            child: UiFrame(
+            name: 'phone_body',
             padding: const EdgeInsets.all(KCanto.r2),
-            decoration: BoxDecoration(
-              color: KCores.superficie2,
-              border: Border.all(color: KCores.contorno, width: kContornoDp),
-              borderRadius: BorderRadius.circular(KCanto.r2),
-              boxShadow: KSombra.pixel,
-            ),
+            fallbackFill: KCores.superficie2,
+            fallbackLine: KCores.contorno,
             child: Container(
               key: const Key('phone-screen'),
               clipBehavior: Clip.hardEdge,
-              decoration: BoxDecoration(color: KCores.fundo, border: Border.all(color: KCores.contorno, width: kContornoDp)),
+              decoration: BoxDecoration(
+                color: KCores.fundo,
+                image: const DecorationImage(image: AssetImage('assets/art/ui/phone_wall.png'), repeat: ImageRepeat.repeat, scale: 1 / 3, filterQuality: FilterQuality.none),
+                border: Border.all(color: KCores.contorno, width: kContornoDp),
+              ),
               child: ListenableBuilder(
                 listenable: Listenable.merge([widget.state, _form]),
                 builder: (context, _) => Column(children: [
@@ -90,6 +95,7 @@ class _PhoneSheetState extends State<PhoneSheet> with SingleTickerProviderStateM
                 ]),
               ),
             ),
+          ),
           ),
         ),
       ),
@@ -115,23 +121,33 @@ class _AppTile extends StatelessWidget {
       onTap: locked ? null : () => onOpen(app.id),
       child: FittedBox(fit: BoxFit.scaleDown, child: Column(mainAxisSize: MainAxisSize.min, children: [
         Stack(clipBehavior: Clip.none, children: [
-          Container(
+          // 0.26.0: o ladrilho do kit (`app_tile`, ou `app_tile_new` com novidade) e o ícone do Aseprite (`apps/<id>`; o
+          // bloqueado é a tira `apps/locked`, com glitch). A costura de quem acaba de ser liberado continua o desenho de código.
+          SizedBox(
             width: 72,
             height: 72,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: KCores.superficie1,
-              border: Border.all(color: KCores.contorno, width: kContornoDp),
-              borderRadius: BorderRadius.circular(KCanto.r1),
-              boxShadow: locked ? null : KSombra.pixel,
+            child: UiFrame(
+              name: phoneAppHasBadge(state, app) ? 'app_tile_new' : 'app_tile',
+              padding: EdgeInsets.zero,
+              fallbackFill: KCores.superficie1,
+              fallbackLine: KCores.contorno,
+              child: Center(
+                child: mode == PhoneIconMode.normal
+                    ? UiIcon('apps/${app.id}', size: 48, fallback: CustomPaint(painter: PhoneIconPainter(app.id, mode: mode, t: t)))
+                    : mode == PhoneIconMode.locked
+                        ? UiPiece('apps/locked', box: const Size(48, 48), frames: 3, frame: app.id.length % 3, fallback: CustomPaint(size: const Size(48, 48), painter: PhoneIconPainter(app.id, mode: mode, t: t)))
+                        : CustomPaint(size: const Size(48, 48), painter: PhoneIconPainter(app.id, mode: mode, t: t)),
+              ),
             ),
-            child: CustomPaint(size: const Size(48, 48), painter: PhoneIconPainter(app.id, mode: mode, t: t)),
           ),
           if (phoneAppHasBadge(state, app))
             Positioned(
               right: -4,
               top: -4,
-              child: Container(key: Key('badge-${app.id}'), width: 15, height: 15, decoration: BoxDecoration(color: KCores.brasaLaranja, border: Border.all(color: KCores.contorno, width: 3))),
+              child: UiPiece('badge_dot',
+                  key: Key('badge-${app.id}'),
+                  box: const Size(15, 15),
+                  fallback: Container(width: 15, height: 15, decoration: BoxDecoration(color: KCores.brasaLaranja, border: Border.all(color: KCores.contorno, width: 3)))),
             ),
         ]),
         const SizedBox(height: KEspaco.s1),

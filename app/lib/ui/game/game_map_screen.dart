@@ -119,6 +119,7 @@ import '../../world/traffic_graph.dart';
 import '../../patrol/patrol_controller.dart';
 import '../patrol/patrol_hooks.dart';
 import '../system_bars.dart';
+import '../kit.dart';
 
 /// O mapa do jogo (M5): o Conjurador anda com o GPS e a câmera o segue, com a Aura no chão. A câmera
 /// nunca sai do Conjurador: arrastar com um dedo gira o mapa e a pinça dá zoom numa faixa de jogo.
@@ -382,7 +383,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     if (!mounted) return false;
     final ok = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => KitAlertDialog(
         backgroundColor: kPanel,
         shape: const RoundedRectangleBorder(side: BorderSide(color: kSignal, width: 3)),
         title: Text('BAIXAR ${region.name.toUpperCase()}?', style: const TextStyle(fontSize: 16, color: kSignal)),
@@ -1101,7 +1102,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final go = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (context) => KitAlertDialog(
         backgroundColor: kPanel,
         shape: const RoundedRectangleBorder(side: BorderSide(color: kVeil, width: 3)),
         title: const Text('LOCALIZAÇÃO', style: TextStyle(fontSize: 16, color: kVeil)),
@@ -1484,7 +1485,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                       Container(
                         key: const Key('hud-warning'),
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                        decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.88), border: Border.all(color: kPanelLine, width: 2)),
+                        // 0.26.0: estilo de aviso (aro laranja da Essência): o relógio forçado e o debug nunca parecem o jogo normal.
+                        decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.9), border: Border.all(color: kEssence, width: 3)),
                         child: Text(warnings.join(' · '), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 8, color: kEssence, height: 1.4)),
                       ),
                     if (_toastText != null)

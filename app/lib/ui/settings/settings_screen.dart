@@ -31,6 +31,7 @@ import 'fresh_start_screen.dart';
 import 'qr_scan_screen.dart';
 import 'regions_section.dart';
 import '../system_bars.dart';
+import '../kit.dart';
 
 /// Abre a câmera e devolve o código de grupo lido, ou `null`.
 typedef GroupScanner = Future<String?> Function(BuildContext context);
@@ -97,7 +98,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<bool> _confirm(String title, String body, String yes, {Color color = kEssence}) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => KitAlertDialog(
         backgroundColor: kPanel,
         shape: RoundedRectangleBorder(side: BorderSide(color: color, width: 3)),
         title: Text(title.toUpperCase(), style: TextStyle(fontSize: 16, color: color)),
@@ -118,7 +119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final code = await showDialog<String>(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setLocal) => AlertDialog(
+        builder: (context, setLocal) => KitAlertDialog(
           backgroundColor: kPanel,
           shape: const RoundedRectangleBorder(side: BorderSide(color: kSignal, width: 3)),
           title: const Text('ENTRAR NOUTRO GRUPO', style: TextStyle(fontSize: 16, color: kSignal)),
@@ -282,7 +283,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 4),
             const Text('O Simplificado é plano e leve, para celulares mais fracos ou para poupar bateria: mostra tudo que importa para o jogo e só tira enfeite.',
                 style: TextStyle(fontSize: 8, color: kDim, height: 1.6)),
-            SwitchListTile(
+            KitSwitchTile(
               key: const Key('zoom-wide'),
               contentPadding: EdgeInsets.zero,
               title: const Text('Zoom ampliado', style: TextStyle(fontSize: 8)),
@@ -291,7 +292,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               activeThumbColor: kSignal,
               onChanged: (v) => setState(() => s.setSetting(kWideZoomSetting, v)),
             ),
-            SwitchListTile(
+            KitSwitchTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Nomes de rua', style: TextStyle(fontSize: 8)),
               subtitle: const Text('Rótulos discretos nas ruas principais, que giram com o mapa', style: TextStyle(fontSize: 8, color: kDim)),
@@ -299,7 +300,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               activeThumbColor: kSignal,
               onChanged: (v) => s.setSetting('street_names', v),
             ),
-            SwitchListTile(
+            KitSwitchTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Tráfego do Véu', style: TextStyle(fontSize: 8)),
               subtitle: const Text('Carros e pedestres fantasmas nas ruas. Só visual', style: TextStyle(fontSize: 8, color: kDim)),
@@ -308,7 +309,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (v) => s.setSetting('veil_traffic', v),
             ),
             if (streetLifeEnabled) ...[
-            SwitchListTile(
+            KitSwitchTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Clima no mapa', style: TextStyle(fontSize: 8)),
               subtitle: const Text('Chuva, neve, neblina e o resto do clima desenhados por cima do mapa. Só visual', style: TextStyle(fontSize: 8, color: kDim)),
@@ -316,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               activeThumbColor: kSignal,
               onChanged: (v) => s.setSetting('rain_fx', v),
             ),
-            SwitchListTile(
+            KitSwitchTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Clima pela internet', style: TextStyle(fontSize: 8)),
               subtitle: const Text('Mostra o clima real (Open-Meteo, posição arredondada a ~1 km). Só visual: os spawns usam o clima da seed', style: TextStyle(fontSize: 8, color: kDim)),
@@ -325,7 +326,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (v) => s.setSetting('weather_online', v),
             ),
             ],
-            SwitchListTile(
+            KitSwitchTile(
               key: const Key('reduce-flashes'),
               contentPadding: EdgeInsets.zero,
               title: const Text('Reduzir clarões', style: TextStyle(fontSize: 8)),
@@ -337,7 +338,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 reduceFlashes.value = v;
               },
             ),
-            SwitchListTile(
+            KitSwitchTile(
               key: const Key('system-bars'),
               contentPadding: EdgeInsets.zero,
               title: const Text('Barras do Android', style: TextStyle(fontSize: 8)),
@@ -350,7 +351,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 setState(() {});
               },
             ),
-            SwitchListTile(
+            KitSwitchTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Seguir direção', style: TextStyle(fontSize: 8)),
               subtitle: const Text('O mapa gira com a bússola do celular', style: TextStyle(fontSize: 8, color: kDim)),
@@ -362,7 +363,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
             const SectionTitle('Permissões'),
-            SwitchListTile(
+            KitSwitchTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Avisos no celular', style: TextStyle(fontSize: 8)),
               subtitle: const Text('Diárias renovadas e descanso cheio, às 9 h. Desligado por padrão', style: TextStyle(fontSize: 8, color: kDim)),

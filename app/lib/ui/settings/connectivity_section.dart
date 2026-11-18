@@ -14,6 +14,7 @@ import '../menu/phone_shell.dart' show phoneRoute;
 import '../menu/screen_frame.dart';
 import 'ride_notifications_screen.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
+import '../kit.dart';
 
 /// Chaves dos interruptores em `GameState.settings`.
 const kStepsSetting = 'steps_counter';
@@ -44,7 +45,7 @@ class ConnectivitySection extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
         listenable: state,
         builder: (context, _) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          SwitchListTile(
+          KitSwitchTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Contador de passos', style: TextStyle(fontSize: 8)),
             subtitle: Text(

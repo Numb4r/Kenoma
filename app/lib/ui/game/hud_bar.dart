@@ -13,6 +13,8 @@ import '../../world/layered_world.dart';
 import '../colors.dart';
 import '../menu/phone_status.dart' show phoneClock;
 import 'moon_hud.dart' show MoonPainter, WeatherGlyphPainter;
+import '../craft/ui_art.dart' show UiFrame;
+import '../kit.dart';
 
 const _label = TextStyle(fontSize: 8, color: kText);
 
@@ -80,9 +82,12 @@ class _HudBarState extends State<HudBar> {
   Widget build(BuildContext context) {
     final t = widget.nowUtc();
     final w = widget.weather?.call();
-    return Container(
+    // 0.26.0: a moldura `hud_bar` do kit; a lua e o clima são ícones do Aseprite (o desenho de antes fica de reserva).
+    return UiFrame(
       key: const Key('hud-bar'),
-      decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.85), border: Border.all(color: kPanelLine, width: 2)),
+      name: 'hud_bar',
+      padding: EdgeInsets.zero,
+      fallbackFill: kOutline.withValues(alpha: 0.85),
       child: Row(children: [
         _left(GestureDetector(
             key: const Key('weather-hud'),
@@ -99,10 +104,11 @@ class _HudBarState extends State<HudBar> {
                   Text('$b%', key: const Key('hud-battery-label'), style: _label.copyWith(color: b <= 20 ? kEssence : null)),
                 ],
                 const SizedBox(width: 8),
-                CustomPaint(key: const Key('moon-hud'), size: const Size(20, 20), painter: MoonPainter(moonCycle(t), widget.lat() < 0)),
+                UiIcon('moon/moon_${moonPhaseIndex(moonCycle(t))}',
+                    key: const Key('moon-hud'), size: 20, flip: widget.lat() >= 0, fallback: CustomPaint(painter: MoonPainter(moonCycle(t), widget.lat() < 0))),
                 if (w != null) ...[
                   const SizedBox(width: 8),
-                  CustomPaint(key: const Key('weather-glyph'), size: const Size(18, 18), painter: WeatherGlyphPainter(w)),
+                  UiIcon('climate/${w.id}', key: const Key('weather-glyph'), size: 20, fallback: CustomPaint(painter: WeatherGlyphPainter(w))),
                   const SizedBox(width: 6),
                   Flexible(child: Text(w.name.toUpperCase(), key: const Key('weather-label'), maxLines: 1, overflow: TextOverflow.ellipsis, style: _label)),
                 ],
@@ -146,7 +152,8 @@ class ModeSeal extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 3),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        if (debug) const Text('DEBUG', key: Key('debug-tag'), style: TextStyle(fontSize: 7, color: kEssence)),
+                        // 0.26.0: o aviso (`warn_tag`, faixas laranja nas pontas): nunca se confunde com o jogo normal.
+                        if (debug) const UiFrame(key: Key('debug-tag'), name: 'warn_tag', padding: EdgeInsets.fromLTRB(18, 3, 18, 3), fallbackLine: kEssence, child: Text('DEBUG', style: TextStyle(fontSize: 7, color: kEssence))),
                         if (debug && veil) const SizedBox(width: 6),
                         if (veil) const Text('VÉU INSTÁVEL', key: Key('veil-badge'), style: TextStyle(fontSize: 7, color: kVeil)),
                       ]),
@@ -172,12 +179,15 @@ class ShortcutChip extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: Center(
-          child: Container(
-            height: 32,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(color: kOutline.withValues(alpha: 0.88), border: Border.all(color: color, width: 2)),
-            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 8, color: color)),
+          child: SizedBox(
+            height: 33,
+            child: UiFrame(
+              name: 'shortcut_chip',
+              padding: const EdgeInsets.symmetric(horizontal: 9),
+              fallbackLine: color,
+              fallbackFill: kOutline.withValues(alpha: 0.88),
+              child: Center(widthFactor: 1, child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 8, color: color))),
+            ),
           ),
         ),
       );

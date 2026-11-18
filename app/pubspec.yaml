@@ -1,7 +1,7 @@
 name: kenoma
 description: "Kenoma: Veilbreakers, RPG mobile de exploração via GPS."
 publish_to: 'none'
-version: 0.25.2+52
+version: 0.26.0+53
 
 environment:
   sdk: ^3.13.4
@@ -38,6 +38,11 @@ flutter:
     - assets/art/map/
     - assets/art/ui/
     - assets/art/ui/icons/
+    - assets/art/ui/apps/
+    - assets/art/ui/moon/
+    - assets/art/ui/climate/
+    - assets/art/ui/event/
+    - assets/art/ui/types/
     - assets/art/traffic/
     - assets/art/sparks/
     - assets/art/creatures/

@@ -14,6 +14,7 @@ import '../../player/game_state.dart';
 import '../colors.dart';
 import '../menu/screen_frame.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
+import '../kit.dart' show KitSwitch;
 
 /// Um efeito em palavras: `bag_slots` 20 → "+20 espaços na bolsa".
 String effectText(String key, double v) {
@@ -111,7 +112,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
         Row(children: [
           Expanded(child: Text(slot.label.toUpperCase(), style: const TextStyle(fontSize: 8, color: kDim))),
           const Text('NO PERSONAGEM', style: TextStyle(fontSize: 8, color: kDim)),
-          Switch(
+          KitSwitch(
             key: Key('loadout-show-${slot.name}'),
             value: !c.hidden.contains(slot),
             onChanged: (v) {

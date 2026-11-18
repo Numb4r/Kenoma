@@ -20,6 +20,7 @@ import '../pressable.dart';
 import '../tema.dart';
 import '../tuning/tuning_screen.dart' show PixelButton;
 import 'screen_frame.dart';
+import '../kit.dart';
 
 /// O que o pulso achou, numa linha para o aviso.
 String radarSummary(RadarOutcome o) {
@@ -244,7 +245,15 @@ class _RadarShortcutState extends State<RadarShortcut> {
         widget.onPulse();
         setState(() {});
       },
-      child: CustomPaint(size: const Size(48, 48), painter: _RingPainter(ready.clamp(0.0, 1.0))),
+      // 0.26.0: o anel `radar_ring` do kit (9 quadros, do vazio ao cheio) com o sonar no miolo; o desenho de antes de reserva.
+      child: UiPiece('radar_ring',
+          box: const Size(48, 48),
+          frames: 9,
+          frame: (ready.clamp(0.0, 1.0) * 8).floor(),
+          overlay: (px, o) => [
+                Positioned(left: o.dx + 4 * px, top: o.dy + 4 * px, width: 10 * px, height: 10 * px, child: Opacity(opacity: ready >= 1 ? 1 : 0.4, child: UiIcon('apps/radar', size: 10 * px))),
+              ],
+          fallback: CustomPaint(size: const Size(48, 48), painter: _RingPainter(ready.clamp(0.0, 1.0)))),
     );
   }
 }

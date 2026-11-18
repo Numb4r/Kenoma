@@ -132,6 +132,15 @@ Future<List<String>> runDebugCommands(String text, {required DevTools tools, Fut
       case 'exit':
         // 0.25.0: a saída animada do Eco mais perto (`exit tuned` ou `exit flee`), só no desenho.
         out.add('exit ${tools.exitNearestEco?.call(arg != 'flee') ?? '? sem Eco à vista'}');
+      case 'level':
+        // 0.26.0: `level 20` força o nível (como o debug "Nível"), para abrir todos os apps; `level 0` desliga.
+        final lv = int.tryParse(arg);
+        if (lv == null) {
+          out.add('level? $arg');
+          continue;
+        }
+        tools.setLevelOverride(lv);
+        out.add('level $lv');
       case 'turn':
         // 0.25.2: `turn 30` gira o mapa a 30° (para o "Giro dos objetos" sem pinça de dois dedos).
         final deg = double.tryParse(arg);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/ui/menu/phone_apps.dart' show PhoneAppId;
 import 'package:kenoma/core/astro.dart';
 import 'package:kenoma/core/features.dart';
 import 'package:kenoma/core/weather.dart';
@@ -134,6 +135,24 @@ void main() {
     await tester.tap(find.byKey(const Key('app-forum')));
     await settle(tester);
     expect(find.byType(ForumScreen), findsOneWidget);
+  });
+
+  testWidgets('0.26.0: no nível 20 todo app da grade abre sem erro e volta ao celular', (tester) async {
+    final s = state(20)..setSetting('phone_seen_radar', true);
+    await openPhone(tester, s);
+    final ids = [for (final a in data.phone.apps) if (a.id != PhoneAppId.vision) a.id];
+    expect(ids.length, greaterThanOrEqualTo(12));
+    for (final id in ids) {
+      await tester.ensureVisible(find.byKey(Key('app-$id')));
+      await tester.pump();
+      await tester.tap(find.byKey(Key('app-$id')));
+      await settle(tester);
+      expect(tester.takeException(), isNull, reason: '$id abriu com erro');
+      expect(find.byKey(const Key('phone-back')), findsOneWidget, reason: id);
+      await tester.tap(find.byKey(const Key('phone-back')));
+      await settle(tester);
+      expect(find.byKey(const Key('phone-screen')), findsOneWidget, reason: '$id volta ao celular');
+    }
   });
 
   testWidgets('o Radar fica bloqueado com ??? até o nível 5 e abre a partir dele', (tester) async {

@@ -88,5 +88,10 @@ class SpeciesImage extends StatelessWidget {
 /// Carrega os sprites de todas as espécies; chama [onLoaded] quando terminar.
 Future<Map<String, EcoSprite>> loadSpecies(GameData data) async => {for (final s in data.tuning.species) s.id: await EcoSprite.load(s.id)};
 
-/// Caixa de painel com contorno, o fundo das fichas.
-BoxDecoration panelBox({Color line = kPanelLine}) => BoxDecoration(color: kPanel, border: Border.all(color: line, width: 2));
+/// Caixa de painel, o fundo das fichas. 0.26.0: a moldura `panel` do kit em nove partes (docs/art/estilo-ui.md), cada pixel
+/// de arte com 3 dp; [line] diferente da linha comum pinta o aro por cima (destaque, aviso).
+BoxDecoration panelBox({Color line = kPanelLine}) => BoxDecoration(
+      color: kPanel,
+      image: const DecorationImage(image: AssetImage('assets/art/ui/panel.png'), centerSlice: Rect.fromLTRB(4, 4, 8, 8), scale: 1 / 3, filterQuality: FilterQuality.none),
+      border: line == kPanelLine ? null : Border.all(color: line, width: 3),
+    );

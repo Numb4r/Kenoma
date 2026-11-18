@@ -21,6 +21,7 @@ import '../colors.dart';
 import '../pressable.dart';
 import '../settings/ride_notifications_screen.dart' show kRideNotifySetting;
 import '../tuning/tuning_screen.dart' show PixelButton;
+import '../kit.dart';
 
 const _body = TextStyle(fontSize: 8, color: kText, height: 1.8);
 const _dim = TextStyle(fontSize: 8, color: kDim, height: 1.8);
@@ -331,7 +332,7 @@ class _SearchDialogState extends State<_SearchDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
+  Widget build(BuildContext context) => KitAlertDialog(
         backgroundColor: kPanel,
         shape: const RoundedRectangleBorder(side: BorderSide(color: kSignal, width: 3)),
         title: const Text('BUSCAR LUGAR', style: TextStyle(fontSize: 16, color: kSignal)),

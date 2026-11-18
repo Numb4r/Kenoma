@@ -15,6 +15,7 @@ import 'sealer_test.dart';
 import 'shaman_test.dart';
 import 'techno_test.dart';
 import 'test_shell.dart';
+import '../kit.dart';
 
 /// Abre o fluxo ligado ao [state]: as notas e a escolha vão para o save, e o Familiar comenta o melhor teste.
 Future<void> openSchoolFlow(BuildContext context, GameState state, GameData data) => Navigator.of(context).push(phoneRoute(SchoolFlow(
@@ -112,7 +113,7 @@ class _SchoolFlowState extends State<SchoolFlow> {
   Future<void> _confirm(School s) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => KitAlertDialog(
         backgroundColor: KCores.superficie1,
         title: Text('Ser ${s.label}?', style: KTexto.titulo.copyWith(color: schoolColor(s))),
         content: const Text('A escolha é definitiva até o nível 30.', style: KTexto.corpo),

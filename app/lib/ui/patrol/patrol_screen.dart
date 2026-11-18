@@ -17,6 +17,7 @@ import '../colors.dart';
 import '../menu/screen_frame.dart';
 import '../settings/connectivity_section.dart' show kPocketSetting;
 import '../tuning/tuning_screen.dart' show PixelButton;
+import '../kit.dart';
 
 /// As patrulhas que acabaram, da mais nova para a mais velha: os resumos que o diário entregou no Chat
 /// (`patrol_summary`, com minutos, Fagulhas, materiais e marcas).
@@ -93,7 +94,7 @@ class PatrolScreen extends StatelessWidget {
             },
           ),
         const SizedBox(height: 8),
-        SwitchListTile(
+        KitSwitchTile(
           key: const Key('pocket-switch'),
           contentPadding: EdgeInsets.zero,
           title: const Text('Modo bolso', style: TextStyle(fontSize: 8)),

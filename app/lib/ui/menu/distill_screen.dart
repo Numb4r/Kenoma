@@ -13,6 +13,7 @@ import '../tuning/tuning_screen.dart' show PixelButton;
 import '../type_label.dart';
 import 'fusion_screen.dart';
 import 'screen_frame.dart';
+import '../kit.dart';
 
 class DistillScreen extends StatefulWidget {
   const DistillScreen({required this.state, required this.data, this.openFusion = false, super.key});
@@ -49,7 +50,7 @@ class _DistillScreenState extends State<DistillScreen> {
     final qty = distillQty(widget.state, c.level, widget.data, hidden: c.hidden);
     final ok = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => KitAlertDialog(
         backgroundColor: kPanel,
         shape: const RoundedRectangleBorder(side: BorderSide(color: kEssence, width: 3)),
         title: Text('DESTILAR ${sp.name.toUpperCase()}?', style: const TextStyle(fontSize: 16, color: kEssence)),

@@ -89,6 +89,10 @@ double moonAgeDays(int utcSeconds) {
 /// A fração do ciclo, de 0 (nova) a 1: 0,25 quarto crescente, 0,5 cheia, 0,75 quarto minguante.
 double moonCycle(int utcSeconds) => moonAgeDays(utcSeconds) / synodicMonthDays;
 
+/// 0.26.0: a fase de [cycle] (0 a 1) entre as oito dos ícones: 0 nova, 1 crescente, 2 quarto crescente, 3 crescente gibosa,
+/// 4 cheia, 5 minguante gibosa, 6 quarto minguante, 7 minguante. Cada uma cobre 1/8 do ciclo, centrada no nome.
+int moonPhaseIndex(double cycle) => ((cycle % 1.0) * 8 + 0.5).floor() % 8;
+
 /// A fração iluminada do disco, de 0 a 1.
 double moonIllumination(int utcSeconds) => (1 - math.cos(2 * math.pi * moonCycle(utcSeconds))) / 2;
 

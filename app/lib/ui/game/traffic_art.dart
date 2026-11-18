@@ -94,6 +94,29 @@ class TrafficArt {
         }
       }
     }
+    // 0.26.0: os extras (barco, canoa, cachorro e o carro da corrida) e os papéis de cor deles, somados grupo a grupo.
+    try {
+      final extra = jsonDecode(await b.loadString('${dir}traffic_extra.json')) as Map<String, dynamic>;
+      for (final group in ['top', 'upright']) {
+        for (final e in ((extra[group] as Map<String, dynamic>?) ?? const {}).entries) {
+          if (e.value is! Map<String, dynamic>) continue;
+          final m = e.value as Map<String, dynamic>, frames = m['frames'] as int, anchor = (m['anchor'] as List<dynamic>).cast<num>();
+          final glow = m['glow'] as String?, leash = m['leash'] as String?;
+          sprites[e.key] = TrafficSprite(await decode(b, '$dir${m['file']}', frames), glow == null ? null : await decode(b, '$dir$glow', frames), anchor[0].toDouble(), anchor[1].toDouble());
+          if (leash != null) outfits['${e.key}_leash'] = await decode(b, '$dir$leash', frames);
+        }
+      }
+      final rawExtra = jsonDecode(await b.loadString('${dir}traffic_keys_extra.json')) as Map<String, dynamic>;
+      for (final g in rawExtra.entries) {
+        if (g.value is! Map<String, dynamic>) continue;
+        (keys[g.key] ??= {}).addAll({
+          for (final r in (g.value as Map<String, dynamic>).entries)
+            if (r.value is Map<String, dynamic>) r.key: r.value as Map<String, dynamic>,
+        });
+      }
+    } catch (_) {
+      // sem os extras: barco, cachorro e carro da corrida continuam em código
+    }
     final ref = meta['ref_px'] as Map<String, dynamic>;
     return TrafficArt(sprites: sprites, outfits: outfits, keys: keys, carRefPx: ref['car'] as int, pedRefPx: ref['pedestrian'] as int);
   }

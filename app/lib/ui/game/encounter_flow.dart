@@ -25,6 +25,7 @@ import '../tuning/tuning_game.dart' show TuningRun;
 import '../tuning/tuning_screen.dart';
 import '../tuning/vibration_driver.dart';
 import '../type_label.dart';
+import '../kit.dart';
 
 
 /// O que o jogador escolheu na folha de preparo.
@@ -235,7 +236,7 @@ class _PrepSheetState extends State<PrepSheet> {
                   ),
                 ),
               if (widget.tonics > 0)
-                SwitchListTile(
+                KitSwitchTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text('${widget.tonicLabel ?? 'Tônico'} (×${widget.tonics})', style: const TextStyle(fontSize: 8)),
                   subtitle: Text('+${widget.tonicSeconds.toStringAsFixed(widget.tonicSeconds % 1 == 0 ? 0 : 1)} s na sintonia', style: const TextStyle(fontSize: 8, color: kDim)),
