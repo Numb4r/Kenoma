@@ -7,6 +7,7 @@ import 'motion_model.dart';
 import 'water_model.dart';
 import 'wind_model.dart';
 import 'climate.dart';
+import 'veilbreaker_model.dart';
 import 'features.dart';
 import 'weather.dart';
 
@@ -171,6 +172,7 @@ class Epoch {
     this.walkable,
     this.requiresFeature,
     this.climate,
+    this.veilbreakers,
   });
 
   factory Epoch.fromJson(Map<String, dynamic> json) => Epoch(
@@ -207,6 +209,7 @@ class Epoch {
         requiresFeature: json['requires_feature'] as String?,
         ecoV2: json['eco_v2'] == null ? null : EcoV2.fromJson(json['eco_v2'] as Map<String, dynamic>),
         climate: json['climate'] == null ? null : ClimateModel.fromJson(json['climate'] as Map<String, dynamic>),
+        veilbreakers: json['veilbreakers'] == null ? null : VeilbreakerModel.fromJson(json['veilbreakers'] as Map<String, dynamic>),
         items: [
           for (final i in (json['spawn'] as Map<String, dynamic>)['items'] as List<dynamic>)
             SpawnItemDef.fromJson(i as Map<String, dynamic>),
@@ -264,6 +267,9 @@ class Epoch {
   /// O clima completo (36 climas e as peças de interação), da época 6 em diante. Com ele, o `eco_v2.weather` de quatro
   /// estados (copiado da época 5) não é usado. `null` nas épocas 0 a 5.
   final ClimateModel? climate;
+
+  /// Os Outros Veilbreakers (NPCs que sintonizam Ecos que iam sumir), da época 12 em diante. `null`: nenhum NPC.
+  final VeilbreakerModel? veilbreakers;
 }
 
 class EpochSchedule {

@@ -273,7 +273,7 @@ class TrafficSim {
       ..v = v
       ..length = m == GhostModel.moto ? carLengthM * 0.5 : carLengthM;
     // Nas avenidas, de vez em quando um ônibus (no máximo três na área).
-    if (link.roadClass != RoadClass.local && m != GhostModel.moto && _u() < config.busShare && cars.where((o) => o.bus).length < 3) {
+    if (link.roadClass != RoadClass.local && m != GhostModel.moto && _u() < (busShareOverride ?? config.busShare) && cars.where((o) => o.bus).length < 3) {
       c
         ..bus = true
         ..length = carLengthM * 2.2;
@@ -598,6 +598,7 @@ class TrafficSim {
           if (c.dwell == 0) {
             c.dwell = config.busDwellS;
             _board(link.to, c);
+            _alight(link, c);
           }
           c.dwell -= dt;
           if (c.dwell <= 0) c.dwell = -1;
@@ -1081,6 +1082,40 @@ class TrafficSim {
       boarded++;
     }
   }
+
+  /// 0.24.5: o ônibus [bus] parou antes da esquina de [link]: alguns passantes descem pela porta, do lado da calçada da
+  /// direita (a mão), andam até a esquina e seguem como qualquer passante.
+  void _alight(SimLink link, SimCar bus) {
+    final n = config.busAlightMax <= 0 ? 0 : _rng.nextInt(config.busAlightMax + 1);
+    final e = link.edge, side = link.forward ? 1 : -1, atA = !link.forward;
+    final track = e.walk(side);
+    if (track.length <= 0) return;
+    final out = Float64List(3);
+    track.at(atA ? 0 : track.length, 0, out);
+    for (var i = 0; i < n; i++) {
+      final w = _newWalker(e, side, atA ? 1 : -1, atA ? 0 : track.length)
+        ..mode = WalkerMode.corner
+        ..fx = bus.x
+        ..fy = bus.y
+        ..x = bus.x
+        ..y = bus.y
+        ..tx = out[0]
+        ..ty = out[1]
+        ..tPos = -i * 0.8 // um depois do outro
+        ..tLen = math.sqrt((out[0] - bus.x) * (out[0] - bus.x) + (out[1] - bus.y) * (out[1] - bus.y)) * lanes!.mpc
+        ..tEdge = e
+        ..tSide = side
+        ..atA = atA;
+      if (w.model == GhostModel.cyclist) w.gone = true; // ninguém desce de bicicleta do ônibus
+      alighted++;
+    }
+  }
+
+  /// Debug (0.24.5): a parte dos carros novos de avenida que vira ônibus, por cima da do `balance.json`.
+  double? busShareOverride;
+
+  /// Quantos passantes já desceram de um ônibus (testes e debug).
+  int alighted = 0;
 
   int get _loitering {
     var n = 0;

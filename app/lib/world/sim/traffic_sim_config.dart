@@ -45,6 +45,7 @@ class TrafficSimConfig {
     this.loiter = const {'shop': 3, 'bar': 4, 'school': 6, 'square': 2, 'bus': 2},
     this.busShare = 0.04,
     this.busDwellS = 7,
+    this.busAlightMax = 2,
     this.matchUtc = const [],
     this.matchBeforeS = 7200,
   });
@@ -95,6 +96,7 @@ class TrafficSimConfig {
       loiter: m('loiter', d.loiter),
       busShare: n('bus_share', d.busShare),
       busDwellS: n('bus_dwell_s', d.busDwellS),
+      busAlightMax: (j['bus_alight_max'] as int?) ?? d.busAlightMax,
       matchUtc: [for (final t in (j['match_utc'] as List<dynamic>?) ?? const []) DateTime.parse(t as String).millisecondsSinceEpoch ~/ 1000],
       matchBeforeS: n('match_before_s', d.matchBeforeS),
     );
@@ -160,6 +162,9 @@ class TrafficSimConfig {
 
   /// A fração dos carros de avenida que é ônibus, e quanto ele fica parado no ponto.
   final double busShare, busDwellS;
+
+  /// 0.24.5: até quantos passantes descem em cada parada do ônibus (de 0 a este número).
+  final int busAlightMax;
 
   /// Os jogos em casa da Ponte Preta e do Guarani (início, UTC): nas [matchBeforeS] antes, a multidão anda para o estádio.
   final List<int> matchUtc;

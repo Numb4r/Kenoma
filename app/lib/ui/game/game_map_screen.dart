@@ -29,10 +29,13 @@ import '../../crafting/bag.dart' show acceptable;
 import '../../crafting/collector_tick.dart';
 import '../../crafting/quality.dart' show parseStack;
 import '../../crafting/tutorial.dart' show syncTutorial;
+import '../../crafting/loadout.dart' show rideBandOf;
+import '../../travel/travel_balance.dart' show Vehicle;
 import '../craft/craft_context.dart';
 import '../craft/planted_list.dart';
 import '../craft/ui_art.dart';
 import 'map_touch_flow.dart';
+import 'npc_sheet.dart';
 import '../../crafting/collectors.dart';
 import '../../crafting/crafting_state.dart';
 import '../../crafting/ritual_data.dart';
@@ -58,6 +61,8 @@ import '../../save/fresh_start.dart';
 import '../../save/save_store.dart';
 import '../../world/spawn_field.dart';
 import '../../world/touch_gesture.dart';
+import '../../world/veilbreakers.dart';
+import '../../world/map_touch.dart' show placeKey, spectralBusNext;
 import '../../world/world_view.dart';
 import '../sprites/sprite_image.dart';
 import '../tuning/vibration_driver.dart';
@@ -190,6 +195,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   String _version = 'dev';
 
+  /// 0.24.5: refaz os NPCs quando o debug liga ou desliga "NPC em toda célula".
+  VoidCallback? _npcListener;
+
   /// O clima: o do mundo (peças, pesos de spawn) e o que se vê (HUD e desenho). Ver `climate_driver.dart`.
   ClimateDriver? _climate;
 
@@ -320,26 +328,25 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   /// gato, poça), no alcance de toque e a pé.
   Future<void> _touchMap(_Ready r, Offset at) async {
     final now = tools.clock.nowUtc;
+    // 0.24.5: um dos Outros Veilbreakers sob o dedo abre a folha dele.
     final cw = _climate?.world;
+    MapTouchDeps deps() => MapTouchDeps(
+          state: r.session.state,
+          data: r.data,
+          world: r.world,
+          game: r.game,
+          nowUtc: () => tools.clock.nowUtc,
+          speedMps: r.game.avatar.speedMps,
+          toast: _toast,
+          climate: cw,
+          visual: r.assets.visual,
+        );
+    if (r.game.npcAt(at) case final npc?) return handleNpcTouch(context, npc, deps());
     final (x, y) = latLonToTileFraction(r.game.playerLat, r.game.playerLon, biomeZoom);
     final puddles = cw == null ? const <(double, double)>[] : [for (final p in cw.puddlesNear(x, y, 60 / r.world.metersPerCell21, now)) (p.x, p.y)];
     final hit = r.game.touchAt(at, puddles: puddles);
     if (hit == null) return;
-    await handleMapTouch(
-      context,
-      hit,
-      MapTouchDeps(
-        state: r.session.state,
-        data: r.data,
-        world: r.world,
-        game: r.game,
-        nowUtc: () => tools.clock.nowUtc,
-        speedMps: r.game.avatar.speedMps,
-        toast: _toast,
-        climate: cw,
-        visual: r.assets.visual,
-      ),
-    );
+    await handleMapTouch(context, hit, deps());
   }
 
   void _onBagFull() {
@@ -886,12 +893,102 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     );
     // Com a Patrulha ligada quem coleta é o serviço; o mapa mostra e lê o diário (patrol_controller.dart).
     world.quiet = () => travel.quiet || PatrolController.instance.running;
+    // 0.24.5: os Outros Veilbreakers (só nas épocas com `veilbreakers`), iguais para o grupo. A camada base é consultada no
+    // nível máximo: o que existe no mundo não depende do nível de quem olha.
+    final veil = VeilbreakerField(
+      seed: world.field.seed,
+      modelAt: (t) => switch (data.schedule.select(t).epoch.veilbreakers) { final m? when tools.forceNpcs => m.withChance(1), final m => m },
+      epochAt: (t) => data.schedule.select(t).epoch.id,
+      biomeAt: (cx, cy) => world.field.map.biomes.spawnKey(world.field.map.spawnBiomeAtCell(cx >>> 1, cy >>> 1)),
+      ecosNear: (x, y, t, r) {
+        final (lat, lon) = tileFractionToLatLon(x, y, biomeZoom);
+        return world.field.around(lat: lat, lon: lon, tUtc: t, radiusM: r, playerLevel: 99);
+      },
+      mpcAt: (y) => metersPerCell(tileFractionToLatLon(0, y, biomeZoom).$1),
+      data: data.npc,
+      snapper: world.field.snapper,
+      nicknameChance: data.npcBalance.nicknameChance,
+    );
+    world.veil = veil;
+    tools.openNearestNpc = () {
+      final r = _ready;
+      if (r == null || !game.avatar.hasPosition) return null;
+      final t = tools.clock.nowUtc.toDouble();
+      Veilbreaker? best;
+      var bd = double.infinity;
+      for (final n in game.visibleVeilbreakers) {
+        if (!n.presentAt(t)) continue;
+        final p = n.at(t), d = (p.x - game.avatar.x) * (p.x - game.avatar.x) + (p.y - game.avatar.y) * (p.y - game.avatar.y);
+        if (d < bd) (best, bd) = (n, d);
+      }
+      final n = best;
+      if (n == null) return null;
+      final p = n.at(t);
+      final (lat, lon) = tileFractionToLatLon(p.x, p.y, biomeZoom);
+      tools.simulator.teleport(lat - 12 / 111320, lon);
+      Future<void>.delayed(const Duration(seconds: 2), () {
+        if (!mounted) return;
+        final cw = _climate?.world;
+        unawaited(handleNpcTouch(context, n, MapTouchDeps(state: r.session.state, data: r.data, world: r.world, game: r.game, nowUtc: () => tools.clock.nowUtc, speedMps: 0, toast: _toast, climate: cw, visual: r.assets.visual), anyDistance: true));
+      });
+      return n.id;
+    };
+    tools.nextSpectral = () {
+      if (!game.avatar.hasPosition || game.size.x <= 0) return null;
+      final now = tools.clock.nowUtc;
+      ({int at, double lat, double lon})? best;
+      var bd = double.infinity;
+      for (final tile in game.visibleTiles(Size(game.size.x, game.size.y), game.follow.camera)) {
+        for (final p in tile.props) {
+          if (p.kind != 'bus_stop' || p.roadX == null) continue;
+          final d = (p.x - game.avatar.x) * (p.x - game.avatar.x) + (p.y - game.avatar.y) * (p.y - game.avatar.y);
+          if (d >= bd) continue;
+          bd = d;
+          final next = spectralBusNext(seed: world.field.seed, stopKey: placeKey(p.x, p.y), t: now + 30, b: data.mapTouch, localHourOf: (_) => 12);
+          final (lat, lon) = tileFractionToLatLon(p.x, p.y, biomeZoom);
+          best = (at: next.utc, lat: lat, lon: lon);
+        }
+      }
+      return best;
+    };
+    tools.nextNpcTune = () {
+      if (!game.avatar.hasPosition) return null;
+      final now = tools.clock.nowUtc;
+      VeilTune? best;
+      for (var slot = 0; slot < 8 && best == null; slot++) {
+        for (final v in veil.around(game.avatar.x, game.avatar.y, now + slot * 900, 150)) {
+          for (final u in v.tunes) {
+            if (u.atUtc > now + 5 && (best == null || u.atUtc < best.atUtc)) best = u;
+          }
+        }
+      }
+      if (best == null) return null;
+      final (lat, lon) = tileFractionToLatLon(best.eco.x, best.eco.y, biomeZoom);
+      return (at: best.atUtc, lat: lat, lon: lon);
+    };
+    var forced = tools.forceNpcs;
+    if (_npcListener case final l?) tools.removeListener(l);
+    tools.addListener(_npcListener = () {
+      if (tools.forceNpcs == forced) return;
+      forced = tools.forceNpcs;
+      veil.clear();
+    });
+    game.veil = veil;
+    game.touchBalance = data.mapTouch;
+    game.manyBuses = () => tools.manyBuses;
     world.sandbox = () => tools.sandboxed;
     _patrol = PatrolHooks(state: session.state, balance: data.patrol, nowUtc: () => tools.clock.nowUtc, onMessage: _toast, onFocus: (m) => _startEncounter(m.toSpawn()));
     _pocket.addListener(_pocketFps);
     PatrolController.instance.addListener(_pocketFps);
     world.travelPickupM = () => travel.pickupBonusM;
     game.travelLayer = TravelLayer(travel, carM: assets.balance.ghostCarM);
+    // 0.24.5 (Veículos do Véu): a faixa do modo trânsito escolhe o desenho; os limites são os do Modo Viagem.
+    game.rideBand = () => rideBandOf(
+          speedMps: game.avatar.speedMps,
+          walkMaxMps: data.travel.vehicles[Vehicle.foot]!.maxMps,
+          bikeMaxMps: data.travel.vehicles[Vehicle.bike]!.maxMps,
+          travel: travel.traveling ? travel.vehicle : null,
+        );
     travel.addListener(() {
       game.setTravelView(travel.viewWidthM);
       game.avatar.travelMaxMps = travel.avatarMaxMps;
@@ -1039,6 +1136,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     WidgetsBinding.instance.removeObserver(this);
     if (!_restarting) unawaited(WakelockPlus.disable().catchError((_) {}));
     tools.removeListener(_rebuild);
+    if (_npcListener case final l?) tools.removeListener(l);
     tools.clock.removeListener(_rebuild);
     tools.force.rainbowFoot = null;
     tools.force.tapArcs

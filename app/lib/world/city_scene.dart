@@ -127,13 +127,16 @@ const double kShelterMaxM2 = 40, kShelterNearM = 10;
 bool isBusShelter(double areaM2, double distM) => areaM2 <= kShelterMaxM2 && distM <= kShelterNearM;
 
 class CityProp {
-  const CityProp(this.kind, this.x, this.y, {this.angle = 0, this.widthM = 0, this.hash = 0});
+  const CityProp(this.kind, this.x, this.y, {this.angle = 0, this.widthM = 0, this.hash = 0, this.roadX, this.roadY});
 
   final String kind;
   final double x, y;
   final double angle;
   final double widthM;
   final int hash;
+
+  /// 0.24.5: no ponto de ônibus, o ponto do eixo da rua mais perto (células z21), por onde o Ônibus Espectral passa.
+  final double? roadX, roadY;
 }
 
 class CityTile {
@@ -268,7 +271,8 @@ CityTile buildCityTile({
     switch (p.kind) {
       case TrafficPointKind.busStop:
         // O ângulo da rua mais perto: a base no chão (a marca da calçada e o meio-fio) corre ao longo dela.
-        props.add(CityProp('bus_stop', p.x, p.y, angle: _nearestRoad(roads, p.x, p.y, 25 / mpc)?.$3 ?? 0, hash: h));
+        final road = _nearestRoad(roads, p.x, p.y, 25 / mpc);
+        props.add(CityProp('bus_stop', p.x, p.y, angle: road?.$3 ?? 0, hash: h, roadX: road?.$1, roadY: road?.$2));
       case TrafficPointKind.square when h % 3 == 0:
         props.add(CityProp('newsstand', p.x, p.y, hash: h));
       case TrafficPointKind.crossing:

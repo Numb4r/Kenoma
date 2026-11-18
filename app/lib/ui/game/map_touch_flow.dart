@@ -20,6 +20,8 @@ import '../../player/progression.dart' show localDay;
 import '../../world/climate_outlook.dart';
 import '../../world/climate_world.dart';
 import '../../world/map_touch.dart';
+import '../../world/npc_data.dart';
+import '../../world/spectral_bus.dart';
 import '../../world/personal_layer.dart' show playerKeyOf;
 import '../../world/visual_map.dart';
 import '../../world/spawn_field.dart' show WorldSpawn;
@@ -83,7 +85,12 @@ Future<void> handleMapTouch(BuildContext context, TouchHit h, MapTouchDeps d) as
       final next = spectralBusNext(seed: s.seed, stopKey: placeKey(h.x, h.y), t: now, b: b, localHourOf: (u) => DateTime.fromMillisecondsSinceEpoch(u * 1000).hour);
       final min = ((next.utc - now) / 60).ceil();
       final bus = (d.data.mapTexts['bus'] as Map<String, dynamic>?) ?? const {};
-      final line = (min <= 0 ? bus['now'] : (next.night ? bus['night'] : bus['day'])) as String? ?? '';
+      var line = (min <= 0 ? bus['now'] : (next.night ? bus['night'] : bus['day'])) as String? ?? '';
+      // 0.24.5: o Espectral parado ali agora.
+      final pass = spectralBusAt(seed: s.seed, stopKey: placeKey(h.x, h.y), t: now.toDouble(), b: b);
+      if (pass != null && pass.phase == SpectralPhase.stopped && d.data.npc.busNow.isNotEmpty) {
+        line = fillGaps(NpcData.pickOf({'n': d.data.npc.busNow}, 'n', pass.arriveUtc), {'seg': (pass.arriveUtc + b.busDwellS - now).ceil().clamp(1, 99)});
+      }
       await _panel(context, (bus['title'] as String?) ?? 'Ponto de ônibus', [line.replaceAll('{min}', '$min'), (bus['no_lines'] as String?) ?? '']);
     case TouchKind.newsstand:
       final here = d.world.here(lat, lon, now, waterSearchM: 0);

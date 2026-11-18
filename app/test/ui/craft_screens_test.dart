@@ -130,7 +130,8 @@ void main() {
     expect(s.crafting.equipped[LoadoutSlot.bag], bag.id);
     await tester.scrollUntilVisible(find.byKey(const Key('loadout-effect-bag_slots')), 200);
     expect(find.byKey(const Key('loadout-effect-bag_slots')), findsOneWidget);
-    await tester.scrollUntilVisible(find.byKey(const Key('loadout-show-bag')), -200);
+    await tester.ensureVisible(find.byKey(const Key('loadout-show-bag')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('loadout-show-bag')));
     await tester.pump();
     expect(s.crafting.hidden, contains(LoadoutSlot.bag));

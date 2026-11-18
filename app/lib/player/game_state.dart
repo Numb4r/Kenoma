@@ -13,6 +13,7 @@ import '../story/forum_data.dart';
 import '../story/mentor_script.dart';
 import '../story/story_state.dart';
 import '../world/map_touch.dart' show TouchState;
+import 'npc_state.dart';
 import 'bestiary.dart';
 import 'conjurer.dart';
 import 'conjurer_balance.dart';
@@ -24,7 +25,7 @@ import 'progression.dart';
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 12;
+const int saveSchemaVersion = 13;
 
 /// A chave das células z17 visitadas no save (schema 6).
 const String kVisitedCellsKey = 'celulas_visitadas';
@@ -119,6 +120,7 @@ class GameState extends ChangeNotifier {
     ConjurerState? conjurer,
     CraftingState? crafting,
     TouchState? touches,
+    NpcState? npcs,
     this.radarLastUtc = 0,
     Map<String, int>? hiddenRevealed,
     Map<String, dynamic>? settings,
@@ -139,6 +141,7 @@ class GameState extends ChangeNotifier {
         conjurer = conjurer ?? ConjurerState(),
         crafting = crafting ?? CraftingState(),
         touches = touches ?? TouchState(),
+        npcs = npcs ?? NpcState(),
         hiddenRevealed = {...?hiddenRevealed},
         pins = [...?pins],
         builds = [...?builds],
@@ -151,7 +154,7 @@ class GameState extends ChangeNotifier {
   factory GameState.fromJson(Map<String, dynamic> j, ProgressBalance balance) {
     const known = {
       'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'bestiary_pins', 'personal_builds', 'marks', 'saved_utc',
-      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', kVisitedCellsKey, 'radar', 'conjurer', 'crafting', 'touches',
+      'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', kVisitedCellsKey, 'radar', 'conjurer', 'crafting', 'touches', 'npcs',
     };
     final progress = PlayerProgress.fromJson(j['player'] as Map<String, dynamic>?, balance)..settleBanked();
     final state = GameState(
@@ -176,6 +179,7 @@ class GameState extends ChangeNotifier {
       conjurer: ConjurerState.fromJson(j['conjurer'] as Map<String, dynamic>?),
       crafting: CraftingState.fromJson(j['crafting'] as Map<String, dynamic>?),
       touches: TouchState.fromJson(j['touches'] as Map<String, dynamic>?),
+      npcs: NpcState.fromJson(j['npcs'] as Map<String, dynamic>?),
       radarLastUtc: ((j['radar'] as Map<String, dynamic>?)?['last_utc'] as int?) ?? 0,
       hiddenRevealed: {
         for (final e in (((j['radar'] as Map<String, dynamic>?)?['revealed'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as int,
@@ -293,6 +297,9 @@ class GameState extends ChangeNotifier {
 
   /// O mapa que responde ao toque (0.24.2): o dia e o que cada interação já rendeu nele.
   final TouchState touches;
+
+  /// 0.24.5: as trocas do dia com os Outros Veilbreakers e a relação com os conhecidos.
+  final NpcState npcs;
 
   /// Os números do Conjurador do `balance.json`: desbloqueios, escolas, fusão.
   ConjurerBalance get cb => balance.conjurer;
@@ -687,6 +694,7 @@ class GameState extends ChangeNotifier {
         'conjurer': conjurer.toJson(),
         'crafting': crafting.toJson(),
         'touches': touches.toJson(),
+        'npcs': npcs.toJson(),
         'radar': {'last_utc': radarLastUtc, 'revealed': hiddenRevealed},
         'inventory': inventory,
         'collection': [for (final c in collection) c.toJson()],

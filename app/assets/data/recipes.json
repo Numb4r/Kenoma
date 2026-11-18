@@ -71,12 +71,17 @@
     { "id": "recipe.jewel.meteor", "out": ["item.jewel.meteor", 1], "in": [["item.meteorite", 1], ["item.comp.sun_lens", 1], ["item.comp.cold_setting", 1]], "station": "bench", "discovery": "page", "page": "page.gear", "hint": "algo que caiu do céu" },
     { "id": "recipe.jewel.meteor.alt", "out": ["item.jewel.meteor", 1], "in": [["item.ref.cold_iron", 8], ["item.comp.sun_lens", 1], ["item.comp.cold_setting", 1]], "station": "bench", "discovery": "page", "page": "page.gear" },
     { "id": "recipe.jewel.rune", "out": ["item.jewel.rune", 1], "in": [["item.rune", 1], ["item.wood", 1], ["item.comp.hidden_ink", 1]], "station": "bench", "discovery": "page", "page": "page.gear", "hint": "um sinal que ninguém lê" },
-    { "id": "recipe.jewel.rune.alt", "out": ["item.jewel.rune", 1], "in": [["item.ref.consecrated_chalk", 8], ["item.ref.braided_fiber", 8], ["item.comp.hidden_ink", 1]], "station": "bench", "discovery": "page", "page": "page.gear" }
+    { "id": "recipe.jewel.rune.alt", "out": ["item.jewel.rune", 1], "in": [["item.ref.consecrated_chalk", 8], ["item.ref.braided_fiber", 8], ["item.comp.hidden_ink", 1]], "station": "bench", "discovery": "page", "page": "page.gear" },
+    { "id": "recipe.vehicle.bike", "out": ["item.vehicle.bike", 1], "in": [["item.comp.veil_weave", 2], ["item.ref.braided_fiber", 3], ["item.comp.cold_setting", 1]], "station": "bench", "discovery": "page", "page": "page.vehicle_light" },
+    { "id": "recipe.vehicle.skate", "out": ["item.vehicle.skate", 1], "in": [["item.comp.sigil_ink", 2], ["item.comp.veil_weave", 1], ["item.ref.cold_iron", 2], ["item.ref.braided_fiber", 3]], "station": "bench", "discovery": "page", "page": "page.vehicle_light" },
+    { "id": "recipe.vehicle.cart", "out": ["item.vehicle.cart", 1], "in": [["item.comp.veil_weave", 3], ["item.comp.cold_setting", 2], ["item.comp.ether_filament", 1]], "station": "bench", "discovery": "page", "page": "page.vehicle_cart" }
   ],
   "pages": [
     { "id": "page.components", "name": "Página dos componentes", "desc": "Receitas que se montam na Bancada de casa, com o que já se refinou e um pouco de Essência." },
     { "id": "page.moon", "name": "Página das luas", "desc": "Receitas que pedem a luz engarrafada de uma fase, e se fazem em qualquer hora depois de encher o frasco." },
     { "id": "page.seasons", "name": "Página das estações", "desc": "Receitas que só se fazem na própria estação, e que funcionam o ano inteiro depois de prontas." },
-    { "id": "page.gear", "name": "Página dos equipamentos", "desc": "Bolsas, cinto, grimório e joias para carregar mais da cidade." }
+    { "id": "page.gear", "name": "Página dos equipamentos", "desc": "Bolsas, cinto, grimório e joias para carregar mais da cidade." },
+    { "id": "page.vehicle_light", "name": "Página das duas rodas", "desc": "Bicicleta e skate do Véu, para aparecer bem quando a rua passa depressa." },
+    { "id": "page.vehicle_cart", "name": "Página da carroça", "desc": "Uma carroça do Véu que nada puxa, para as ruas que passam por você." }
   ]
 }

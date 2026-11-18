@@ -2,6 +2,8 @@
 /// JSONs de `assets/data/`. A sintonia usa [tuning].
 library;
 
+import '../world/npc_data.dart';
+import '../world/npc_talk.dart' show NpcBalance;
 import '../world/map_touch.dart' show TouchBalance;
 import '../world/personal_layer.dart' show PersonalBalance;
 import '../player/bestiary.dart';
@@ -95,6 +97,8 @@ class GameData {
     required this.recipes,
     this.craft = const CraftingBook(),
     this.mapTouch = const TouchBalance(),
+    this.npc = const NpcData(),
+    this.npcBalance = const NpcBalance(),
     this.mapTexts = const {},
     required this.progress,
     required this.mentor,
@@ -132,6 +136,7 @@ class GameData {
       climates: await json('clima').then<Map<String, dynamic>?>((j) => j).catchError((_) => null), // sem o arquivo, os quatro climas antigos
       events: await json('eventos').then<Map<String, dynamic>?>((j) => j).catchError((_) => null),
       mapTexts: await json('mapa').catchError((_) => <String, dynamic>{}), // sem o arquivo, o toque no mapa sem textos
+      npc: await json('npc').then<Map<String, dynamic>?>((j) => j).catchError((_) => null), // sem o arquivo, NPCs sem texto
     )..remember();
   }
 
@@ -149,9 +154,12 @@ class GameData {
     Map<String, dynamic>? climates,
     Map<String, dynamic>? events,
     Map<String, dynamic>? mapTexts,
+    Map<String, dynamic>? npc,
   }) =>
       GameData(
         mapTouch: TouchBalance.fromJson(balance['map_touch'] as Map<String, dynamic>?),
+        npc: npc == null ? const NpcData() : NpcData.fromJson(npc),
+        npcBalance: NpcBalance.fromJson(balance['npc'] as Map<String, dynamic>?),
         mapTexts: mapTexts ?? const {},
         climates: ClimateCatalog.fromJson(climates, events),
         climateBalance: ClimateBalance.fromJson(balance['climate'] as Map<String, dynamic>?),
@@ -224,6 +232,10 @@ class GameData {
 
   /// O mapa que responde ao toque (0.24.2): os limites (`map_touch` do `balance.json`) e os textos (`mapa.json`).
   final TouchBalance mapTouch;
+
+  /// 0.24.5: os textos e as trocas dos Outros Veilbreakers (`npc.json`) e os números da conversa (`balance.json`, `npc`).
+  final NpcData npc;
+  final NpcBalance npcBalance;
   final Map<String, dynamic> mapTexts;
 
   /// Um aviso curto do toque no mapa (`mapa.json`, `notices`).

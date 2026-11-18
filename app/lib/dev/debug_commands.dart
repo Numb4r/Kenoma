@@ -5,9 +5,11 @@
 /// dos Ajustes) e `testepoch on|off` (a época não publicada mais nova só neste aparelho; vale ao abrir o mapa).
 library;
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart';
 
 import '../core/epochs.dart';
+import '../crafting/crafting_state.dart' show LoadoutSlot;
 import '../net/signed_feed.dart' show loadEpochsJson;
 import '../save/ksv_save_store.dart';
 import '../save/save_store.dart';
@@ -60,6 +62,52 @@ Future<List<String>> runDebugCommands(String text, {required DevTools tools, Fut
       case 'labels':
         tools.setTurnLabels(arg != 'off');
         out.add('labels $arg');
+      case 'npcs':
+        tools.setForceNpcs(arg != 'off');
+        out.add('npcs ${tools.forceNpcs ? 'on' : 'off'}');
+      case 'speed':
+        final v = double.tryParse(arg);
+        if (v == null) {
+          out.add('speed? $arg');
+          continue;
+        }
+        tools.simulator.speedMps = v;
+        out.add('speed $v');
+      case 'npctune':
+        // Leva o GPS simulado para 45 m ao sul do Eco (longe da proteção de 30 m, ainda na tela) e o relógio para pouco antes.
+        final tu = tools.nextNpcTune?.call();
+        if (tu == null) {
+          out.add('npctune? nenhuma sintonia perto');
+          continue;
+        }
+        tools.simulator.teleport(tu.lat - 45 / 111320, tu.lon);
+        tools.clock.setUtc(tu.at - (int.tryParse(arg) ?? 4));
+        out.add('npctune ${tu.at}');
+      case 'vehicle':
+        // Debug: equipa direto no save aberto, sem passar pela bolsa (`vehicle cart@perfect`).
+        final live = liveGameState();
+        final id = 'item.vehicle.$arg';
+        if (live == null || arg.isEmpty) {
+          out.add('vehicle? $arg');
+          continue;
+        }
+        live.crafting.equipped[arg.startsWith('cart') ? LoadoutSlot.vehicleCar : LoadoutSlot.vehicleBike] = id;
+        live.changed();
+        out.add('vehicle $id');
+      case 'spectral':
+        final sp = tools.nextSpectral?.call();
+        if (sp == null) {
+          out.add('spectral? nenhum ponto perto');
+          continue;
+        }
+        tools.simulator.teleport(sp.lat - 25 / 111320, sp.lon);
+        tools.clock.setUtc(sp.at - (int.tryParse(arg) ?? 12));
+        out.add('spectral ${sp.at}');
+      case 'buses':
+        tools.setManyBuses(arg != 'off');
+        out.add('buses ${tools.manyBuses ? 'on' : 'off'}');
+      case 'npc':
+        out.add('npc ${tools.openNearestNpc?.call() ?? '? nenhum à vista'}');
       case 'devopts':
         await writeSetting(save, kDevOptionsSetting, arg != 'off');
         out.add('devopts ${arg == 'off' ? 'off' : 'on'}');
@@ -90,11 +138,11 @@ Future<List<String>> runDebugCommands(String text, {required DevTools tools, Fut
 /// Liga o canal: pega o comando que abriu o app e os que chegarem depois (`onNewIntent`).
 Future<void> listenDebugCommands({required DevTools tools, required Future<void> Function() openMap}) async {
   debugCommandChannel.setMethodCallHandler((call) async {
-    if (call.method == 'cmd' && call.arguments is String) await runDebugCommands(call.arguments as String, tools: tools, openMap: openMap);
+    if (call.method == 'cmd' && call.arguments is String) debugPrint('kenoma_cmd ${await runDebugCommands(call.arguments as String, tools: tools, openMap: openMap)}');
   });
   try {
     final pending = await debugCommandChannel.invokeMethod<String>('pending');
-    if (pending != null && pending.isNotEmpty) await runDebugCommands(pending, tools: tools, openMap: openMap);
+    if (pending != null && pending.isNotEmpty) debugPrint('kenoma_cmd ${await runDebugCommands(pending, tools: tools, openMap: openMap)}');
   } on MissingPluginException {
     // testes e plataformas sem o canal
   } on PlatformException {

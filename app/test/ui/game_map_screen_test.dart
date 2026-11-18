@@ -1015,6 +1015,12 @@ void main() {
       final (la, lo) = tileFractionToLatLon(target.x + 0.2, target.y + 0.2, biomeZoom);
       env.sim.teleport(la, lo);
       await env.simulate(const Duration(seconds: 6), frames: 120);
+      // 0.24.5: o Eco forçado anda (o movimento da época 9) e o uid dele muda a cada rodada, então em 6 s ele às vezes se
+      // afastava além do alcance da distorção e o teste falhava de vez em quando: chega de novo onde ele está agora.
+      final now = w.allEcos.firstWhere((e) => e.uid == target.uid, orElse: () => target);
+      final (la2, lo2) = tileFractionToLatLon(now.x, now.y, biomeZoom);
+      env.sim.teleport(la2, lo2);
+      await env.simulate(const Duration(seconds: 2), frames: 40);
       w.radar(env.tools.clock.nowUtc);
       // O pulso leva alguns quadros; com o estilo Completo (0.22.0) cada quadro de teste custa mais, e na 0.24.2 a camada do
       // ar (pássaros por cima dos telhados) também: espera até 150, que a suíte inteira ainda alcança com a máquina cheia.

@@ -27,6 +27,7 @@ import 'personal_layer.dart';
 import '../player/personal_build.dart';
 import 'radar.dart';
 import 'spawn_field.dart';
+import 'veilbreakers.dart';
 import 'street_life_balance.dart';
 import 'tracker.dart';
 
@@ -63,6 +64,9 @@ class WorldView {
   });
 
   final SpawnField field;
+
+  /// 0.24.5: os Outros Veilbreakers (quem monta o mapa preenche). `null`: nenhum NPC.
+  VeilbreakerField? veil;
 
   /// A camada pessoal de spawn por cima do [field] (o que as habilidades do Círculo acrescentam só para este jogador).
   /// `null`: só o mundo base (testes).
@@ -340,7 +344,9 @@ class WorldView {
     final base = baseReachM;
     final all = [
       for (final s in [
-        ...field.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel),
+        // 0.24.5: os Ecos da camada base que um dos Outros Veilbreakers já sintonizou somem (nunca a até protect_m daqui).
+        for (final b in field.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel))
+          if (!(veil?.goneAt(b, tUtc, playerDistM: distanceM(b)) ?? false)) b,
         ...?p?.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel),
       ])
         if (visibleTier(s) && (((viewCap == null || !s.isEco || distanceM(s) <= viewCap) && (distanceM(s) <= base || isPinned(s))) || (revealUntil[s.uid] ?? 0) > tUtc)) _withForce(s),

@@ -50,6 +50,7 @@ GameData loadGameData() => GameData.fromJson(
       climates: loadJson('assets/data/clima.json'),
       events: loadJson('assets/data/eventos.json'),
       mapTexts: loadJson('assets/data/mapa.json'),
+      npc: loadJson('assets/data/npc.json'),
     );
 
 /// O visual dos climas e dos eventos (`clima.json` e `eventos.json`, época 12).

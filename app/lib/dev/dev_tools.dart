@@ -45,6 +45,29 @@ class DevTools extends ChangeNotifier {
   /// Desenha o raio lógico da Aura e o alcance de 30 m por cima do mapa.
   bool get showRadii => _showRadii;
 
+  bool _manyBuses = false;
+
+  /// 0.24.5: quase todo carro novo de avenida vira ônibus (só cena, para ver a parada no ponto).
+  bool get manyBuses => _manyBuses;
+
+  void setManyBuses(bool v) {
+    if (v == _manyBuses) return;
+    _manyBuses = v;
+    notifyListeners();
+  }
+
+  bool _forceNpcs = false;
+
+  /// 0.24.5: um dos Outros Veilbreakers em toda célula z18 (só neste aparelho, para conferir e fotografar). Muda o que
+  /// some do mapa aqui; liga a etiqueta DEBUG.
+  bool get forceNpcs => _forceNpcs;
+
+  void setForceNpcs(bool v) {
+    if (v == _forceNpcs) return;
+    _forceNpcs = v;
+    notifyListeners();
+  }
+
   bool _showRelief = false;
 
   /// Desenha o relevo como mapa de calor por cima do mapa do jogo, com a altura de cada célula.
@@ -111,6 +134,16 @@ class DevTools extends ChangeNotifier {
     _testCircle = ids == null ? null : [...ids.take(3)];
     notifyListeners();
   }
+
+  /// 0.24.5: o instante da próxima sintonia de um NPC perto do jogador (quem monta o mapa preenche), para o comando
+  /// `npctune` adiantar o relógio até ela.
+  ({int at, double lat, double lon})? Function()? nextNpcTune;
+
+  /// 0.24.5: vai até o NPC mais perto e abre a folha dele (comando `npc`). Devolve o id, ou `null` sem NPC à vista.
+  String? Function()? openNearestNpc;
+
+  /// 0.24.5: a próxima chegada do Ônibus Espectral no ponto mais perto, e onde fica o ponto (comando `spectral`).
+  ({int at, double lat, double lon})? Function()? nextSpectral;
 
   /// A célula z20 e a janela de agora, com os resumos das camadas base e pessoal (quem monta o mapa do jogo preenche).
   String Function()? layerHashes;
@@ -219,7 +252,7 @@ class DevTools extends ChangeNotifier {
 
   /// Algo forçado está ativo: simulador, relógio, nível, pedidos de spawn, clima ou sobreposições. Liga a etiqueta DEBUG.
   bool get anyForcing =>
-      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || force.events.isNotEmpty || _hidePersonal || _showPuddles || _testCircle != null || _showBiomeGrid || _showGrid20 || _showRadii || _followPiece || _turnLabels || _codeArt || _showRelief || _showTraffic || _trafficDensity != null;
+      _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || force.events.isNotEmpty || _hidePersonal || _showPuddles || _testCircle != null || _showBiomeGrid || _showGrid20 || _showRadii || _followPiece || _turnLabels || _codeArt || _showRelief || _showTraffic || _trafficDensity != null || _forceNpcs || _manyBuses;
 
   Future<void> setUseSimulator(bool value) async {
     if (value == _useSimulator) return;

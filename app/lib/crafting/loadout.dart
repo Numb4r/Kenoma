@@ -3,6 +3,7 @@
 library;
 
 import '../player/game_state.dart';
+import '../travel/travel_balance.dart' show Vehicle;
 import 'conditions.dart';
 import 'crafting_data.dart';
 import 'crafting_state.dart';
@@ -62,4 +63,25 @@ String? lookOf(GameState s, LoadoutSlot slot) => s.crafting.looks[slot] ?? s.cra
     bottles: c.hidden.contains(LoadoutSlot.belt) ? 0 : c.at(VesselPlace.belt).length.clamp(0, 3),
     amuletGlow: shown(LoadoutSlot.amulet),
   );
+}
+
+/// A faixa de velocidade em que o modo trânsito põe o jogador (0.24.5, docs/GDD.md, "Veículos do Véu").
+enum RideBand { foot, bike, car }
+
+/// A faixa de agora: com o Modo Viagem em curso, a do veículo escolhido nele (bicicleta: bicicleta; moto, carro e
+/// ônibus: carro); sem viagem, a velocidade: até [walkMaxMps] a pé, até [bikeMaxMps] bicicleta, acima disso carro. Os
+/// limites são os do Modo Viagem (`travel.vehicles` do `balance.json`). Só escolhe o desenho.
+RideBand rideBandOf({required double speedMps, required double walkMaxMps, required double bikeMaxMps, Vehicle? travel}) => switch (travel) {
+      Vehicle.foot => RideBand.foot,
+      Vehicle.bike => RideBand.bike,
+      Vehicle.moto || Vehicle.car || Vehicle.bus => RideBand.car,
+      null => speedMps <= walkMaxMps ? RideBand.foot : (speedMps <= bikeMaxMps ? RideBand.bike : RideBand.car),
+    };
+
+/// O veículo (a cara do espaço, com a qualidade da pilha) que o avatar mostra na faixa [band], ou `null`: a pé, espaço
+/// vazio ou "mostrar no personagem" desligado. Só aparência: nada no jogo lê isto além do desenho.
+String? vehicleLook(GameState s, RideBand band) {
+  final slot = switch (band) { RideBand.foot => null, RideBand.bike => LoadoutSlot.vehicleBike, RideBand.car => LoadoutSlot.vehicleCar };
+  if (slot == null || s.crafting.hidden.contains(slot)) return null;
+  return lookOf(s, slot);
 }

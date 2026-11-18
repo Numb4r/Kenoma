@@ -25201,6 +25201,15 @@
       "starts_utc": "2099-01-01T00:00:00Z",
       "valid_until_utc": "2099-04-01T00:00:00Z",
       "overture_release": "2026-10-21.0",
+      "veilbreakers": {
+        "slot_s": 900,
+        "base_chance": 0.05,
+        "biome_mult": { "lit": 3, "green": 2, "urban": 1, "residential": 0.5, "sacred": 1, "water": 0 },
+        "hour_mult": [0.05, 0.02, 0.02, 0.02, 0.02, 0.05, 0.3, 0.6, 0.8, 0.8, 0.8, 0.9, 1, 1, 1, 1, 1.3, 1.8, 2, 1.8, 1.4, 1, 0.6, 0.2],
+        "walk_mps": 1.1,
+        "tune": { "radius_m": 45, "lead_s": 120, "chance": 0.5, "max": 2, "pause_s": 6, "anim_s": 2, "protect_m": 30 },
+        "known_per_tile": 2
+      },
       "region_packs": {
         "campinas": {
           "file": "campinas_e12_ov2.bin",

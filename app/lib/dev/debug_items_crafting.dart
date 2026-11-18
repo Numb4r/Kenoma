@@ -41,7 +41,7 @@ Future<int> grantCraftingKit(DebugEnv env) async {
   for (final i in items.where((i) => i.kind == 'vessel')) {
     add(i.id, 3);
   }
-  for (final i in items.where((i) => const {'bag', 'belt', 'grimoire', 'amulet', 'jewel'}.contains(i.kind) && i.id != equipped['bag'])) {
+  for (final i in items.where((i) => const {'bag', 'belt', 'grimoire', 'amulet', 'jewel', 'vehicle_bike', 'vehicle_car'}.contains(i.kind) && i.id != equipped['bag'])) {
     add(i.id, 1);
   }
   // Um recipiente cheio de cada condição, guardado na bolsa (um espaço cada).

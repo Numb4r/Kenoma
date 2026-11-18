@@ -110,14 +110,17 @@ enum LoadoutSlot {
   grimoire('Grimório ativo'),
   amulet('Amuleto'),
   jewel1('Joia'),
-  jewel2('Joia');
+  jewel2('Joia'),
+  // 0.24.5 (Veículos do Véu): um espaço por faixa do modo trânsito. Só aparência: nenhum item deles tem efeito.
+  vehicleBike('Veículo na faixa de bicicleta'),
+  vehicleCar('Veículo na faixa de carro');
 
   const LoadoutSlot(this.label);
 
   final String label;
 
   /// O `kind` de item que o espaço aceita.
-  String get kind => switch (this) { jewel1 || jewel2 => 'jewel', _ => name };
+  String get kind => switch (this) { jewel1 || jewel2 => 'jewel', vehicleBike => 'vehicle_bike', vehicleCar => 'vehicle_car', _ => name };
 }
 
 class CraftingState {

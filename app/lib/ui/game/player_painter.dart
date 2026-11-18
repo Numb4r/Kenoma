@@ -88,3 +88,40 @@ void paintPlayerGear(Canvas canvas, Offset center, {required List<(Image, int dx
   }
   canvas.restore();
 }
+
+/// 0.24.5 (Veículos do Véu): uma camada do veículo montado, `_back` antes do Conjurador e `_front` depois. A tira tem
+/// [frames] quadros de 32 × 24 pixels de arte, com o Conjurador (16 × 16) no canto (8, 2): o quadro sai alinhado ao sprite
+/// dele em [center] com [size] (a altura dos 16 pixels). [glow] (0 a 1): o brilho da qualidade, um contorno na cor do sinal.
+void paintPlayerVehicle(Canvas canvas, Offset center, {required Image strip, required int frame, int frames = 2, required double size, bool mirrored = false, double dpr = 1, double glow = 0}) {
+  final art = size / 16, fw = strip.width / frames;
+  final player = Rect.fromLTWH(_snap(center.dx - size / 2, dpr), _snap(center.dy - size / 2, dpr), size, size);
+  final dst = Rect.fromLTWH(player.left - 8 * art, player.top - 2 * art, fw * art, strip.height * art);
+  final src = Rect.fromLTWH((frame % frames) * fw, 0, fw, strip.height.toDouble());
+  canvas.save();
+  if (mirrored) {
+    canvas.translate(player.center.dx, 0);
+    canvas.scale(-1, 1);
+    canvas.translate(-player.center.dx, 0);
+  }
+  if (glow > 0) {
+    final halo = Paint()
+      ..filterQuality = FilterQuality.none
+      ..colorFilter = ColorFilter.mode(kSignal.withValues(alpha: glow), BlendMode.srcIn);
+    for (final (dx, dy) in const [(-1.0, 0.0), (1.0, 0.0), (0.0, -1.0), (0.0, 1.0)]) {
+      canvas.drawImageRect(strip, src, dst.shift(Offset(dx * art, dy * art)), halo);
+    }
+  }
+  canvas.drawImageRect(strip, src, dst, Paint()..filterQuality = FilterQuality.none..isAntiAlias = false);
+  canvas.restore();
+}
+
+/// O rastro de faíscas da qualidade Perfeita: [n] pixels de arte atrás do veículo, que piscam com o tempo [t].
+void paintVehicleSparks(Canvas canvas, Offset center, {required double size, required bool mirrored, required double t, int n = 4}) {
+  final art = size / 16, back = mirrored ? 1.0 : -1.0;
+  for (var i = 0; i < n; i++) {
+    final phase = (t * 6 + i * 0.37) % 1;
+    final x = center.dx + back * (size * 0.55 + (i + phase) * art * 2.5);
+    final y = center.dy + size * 0.35 - ((i * 7 + (t * 10).floor()) % 3) * art;
+    canvas.drawRect(Rect.fromLTWH(x.roundToDouble(), y.roundToDouble(), art, art), Paint()..color = (i.isEven ? kSignal : kEssence).withValues(alpha: 1 - phase));
+  }
+}

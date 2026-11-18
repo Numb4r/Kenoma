@@ -138,7 +138,7 @@ class ItemDef {
   BagTab get tab => switch (kind) {
         'vessel' || 'condition' => BagTab.conditions,
         'seal' || 'tonic' || 'tool' || 'lure' => BagTab.use,
-        'bag' || 'belt' || 'grimoire' || 'amulet' || 'jewel' || 'gadget' => BagTab.equip,
+        'bag' || 'belt' || 'grimoire' || 'amulet' || 'jewel' || 'gadget' || 'vehicle_bike' || 'vehicle_car' => BagTab.equip,
         'quest' => BagTab.quest,
         _ => BagTab.materials,
       };

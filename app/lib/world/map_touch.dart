@@ -30,6 +30,10 @@ class TouchBalance {
     this.busEveryMin = (15, 35),
     this.busFirstH = 5,
     this.busLastH = 23,
+    this.busApproachS = 8,
+    this.busDwellS = 12,
+    this.busLeaveS = 8,
+    this.busRunM = 70,
   });
 
   factory TouchBalance.fromJson(Map<String, dynamic>? j) {
@@ -58,6 +62,10 @@ class TouchBalance {
       busEveryMin: (every[0] as int, every[1] as int),
       busFirstH: i(bus, 'first_h', 5),
       busLastH: i(bus, 'last_h', 23),
+      busApproachS: d(bus, 'approach_s', 8),
+      busDwellS: d(bus, 'dwell_s', 12),
+      busLeaveS: d(bus, 'leave_s', 8),
+      busRunM: d(bus, 'run_m', 70),
     );
   }
 
@@ -78,6 +86,10 @@ class TouchBalance {
   final double humM;
   final (int, int) busEveryMin;
   final int busFirstH;
+
+  /// 0.24.5, o Ônibus Espectral passando (só cena): segundos chegando, parado e saindo, e os metros que ele anda até o ponto
+  /// e depois dele.
+  final double busApproachS, busDwellS, busLeaveS, busRunM;
   final int busLastH;
 
   /// O limite do dia de [k], ou `null` (sem limite: o que só mostra informação).

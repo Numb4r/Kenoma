@@ -439,6 +439,22 @@ void main() {
       expect(b.every((w) => w.gone), isTrue, reason: 'entraram no ônibus');
     });
 
+    test('0.24.5: alguns descem do ônibus parado, andam da porta até a calçada e seguem andando', () {
+      final s = town(config: const TrafficSimConfig(radiusM: 300, warmupS: 10, busShare: 1, busAlightMax: 2))..forcedDensity = 1.5;
+      s.center(gx(32), gy(32), mpc, hour: 10);
+      final before = s.walkers.map((w) => w.id).toSet();
+      for (var i = 0; i < 12000 && s.alighted == 0; i++) {
+        s.step(0.1, hour: 10);
+      }
+      expect(s.alighted, greaterThan(0));
+      final off = s.walkers.where((w) => !before.contains(w.id) && w.mode == WalkerMode.corner).toList();
+      expect(off, isNotEmpty, reason: 'saindo pela porta');
+      for (var i = 0; i < 200; i++) {
+        s.step(0.1, hour: 10);
+      }
+      expect(off.where((w) => !w.gone).every((w) => w.mode != WalkerMode.corner), isTrue, reason: 'chegaram à calçada e seguiram');
+    });
+
     test('dia de jogo: os passantes chegam mais perto do estádio', () {
       double meanHops(TrafficSim s) {
         var sum = 0, n = 0;

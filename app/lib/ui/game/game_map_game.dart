@@ -1,10 +1,14 @@
 import 'fx.dart';
 import '../../crafting/crafting_state.dart';
-import '../../crafting/loadout.dart' show avatarGear;
+import '../../crafting/loadout.dart' show avatarGear, RideBand, vehicleLook;
+import '../../crafting/quality.dart' show Quality, parseStack;
 import '../../world/city_scene.dart' show CityTile;
 import '../../world/sim/birds.dart' show BirdFlocks;
 import '../craft/ui_art.dart';
 import 'touch_fx.dart';
+import 'veil_painter.dart';
+import '../../world/veilbreakers.dart' show VeilbreakerField, Veilbreaker;
+import '../../world/map_touch.dart' show TouchBalance;
 import '../../core/features.dart';
 import 'dart:ui';
 import 'dart:ui' as ui;
@@ -573,6 +577,7 @@ class GameMapGame extends FlameGame {
       final tc = rainFx() ? climateGround.trafficCover(wv.field.seed, climateShown(), wv.climate) : null; // barcos, dunas, gelo
       final mult = wv.climate.trafficMult <= 0 ? 1.0 : wv.climate.trafficMult; // 0 é o Silêncio: pausa, não lentidão
       _traffic.prepare(view, cam, seed: wv.field.seed, tUtc: nowUtc(), tUtcExact: _exactUtc(), lonDeg: _lon, metersPerCell: mpc, light: light, px: avatar.x, py: avatar.y, dt: _frameDt, paused: _trafficPaused(), speedMult: mult, walkMult: mult * wv.climate.walkerMult, streetState: tc?.state, coverKey: tc?.key, skid: tc?.skid ?? false, outfit: climateShown().outfit, climateId: rainFx() ? climateShown().id : null, windRad: wv.climate.windHeadingRad, forcedDensity: trafficDensity());
+    _traffic.sim?.busShareOverride = manyBuses() ? 1 : null;
       climateGround.cover
         ?..wearOf = _traffic.wearOf
         ..wearStamp = _traffic.wearStamp;
@@ -604,7 +609,17 @@ class GameMapGame extends FlameGame {
       if (wv != null && _hasFix) MapLayer.climateGround: () => _paintClimateGround(canvas, view, cam, wv),
       MapLayer.shadows: climateGround.paintShadows,
       if (here && wv != null) ...{
-        MapLayer.creatures: () => _paintSpawns(canvas, view, cam, wv, center, (s) => s.isEco),
+        MapLayer.creatures: () {
+          // 0.24.5: o Ônibus Espectral (cena do mundo, igual para o grupo) e os Outros Veilbreakers, com a sintonia.
+          paintSpectralBuses(canvas, view, cam, visibleTiles(view, cam), _exactUtc(), seed: wv.field.seed, b: touchBalance, pxPerM: cam.pixelsPerCell / mpc, mpc: mpc, carM: balance.ghostCarM, figure: playerSizePx);
+          _paintSpawns(canvas, view, cam, wv, center, (s) => s.isEco);
+          final v = veil;
+          if (v != null) {
+            final t = _exactUtc();
+            visibleVeilbreakers = v.around(avatar.x, avatar.y, t.floor(), view.longestSide / cam.pixelsPerCell * mpc);
+            paintVeilbreakers(canvas, view, cam, visibleVeilbreakers, t, size: playerSizePx, fallback: playerFrames);
+          }
+        },
         MapLayer.sparks: () {
           // Os redemoinhos das Correntes do Véu ficam por baixo das Fagulhas que giram neles.
           final cw = wv.field.climate;
@@ -936,7 +951,15 @@ class GameMapGame extends FlameGame {
       if (streetLifeEnabled) _paintFamiliar(canvas, cam, view);
       // Parado, o Conjurador respira: dois quadros, o segundo um pixel de arte mais alto.
       final breath = avatar.moving || ((_time / 0.7).floor() % 2 == 0) ? 0.0 : -balance.artPixelDp;
-      paintPlayerMarker(canvas, center.translate(0, breath), sprite: _playerFrame, size: playerSize, mirrored: _facingLeft, dpr: dpr);
+      // 0.24.5: na faixa de bicicleta ou de carro, o veículo equipado dela (só aparência), em volta do Conjurador parado.
+      final veh = _vehicleStrips();
+      final vframe = avatar.moving ? (_stepClock / (_stepS / 2)).floor() % 2 : 0;
+      if (veh != null) paintPlayerVehicle(canvas, center, strip: veh.back, frame: vframe, size: playerSize, mirrored: _facingLeft, dpr: dpr, glow: veh.glow);
+      paintPlayerMarker(canvas, veh == null ? center.translate(0, breath) : center, sprite: veh == null ? _playerFrame : playerFrames.firstOrNull, size: playerSize, mirrored: _facingLeft, dpr: dpr);
+      if (veh != null) {
+        paintPlayerVehicle(canvas, center, strip: veh.front, frame: vframe, size: playerSize, mirrored: _facingLeft, dpr: dpr, glow: veh.glow);
+        if (veh.sparks && avatar.moving) paintVehicleSparks(canvas, center, size: playerSize, mirrored: _facingLeft, t: _time);
+      }
       // O equipamento que lê no tamanho do sprite: a bolsa, as garrafas do cinto e o brilho do amuleto (Loadout).
       final art = UiArt.instance;
       final st = worldView?.state;
@@ -954,6 +977,29 @@ class GameMapGame extends FlameGame {
     }
     travelLayer?.paintCar(canvas, view, cam, metersPerCell(_lat), utc: _exactUtc(), avatar: avatar);
     fx.paint(canvas, view, cam, avatar: center, playerSize: playerSize, sparkSize: sparkSizePx, dpr: dpr);
+  }
+
+  /// 0.24.5: a faixa do modo trânsito agora (quem monta o mapa preenche). `null`: sempre a pé.
+  RideBand Function()? rideBand;
+  RideBand _band = RideBand.foot, _bandWant = RideBand.foot;
+  double _bandWantSince = 0;
+
+  /// As duas camadas do veículo da faixa de agora, ou `null` (a pé, nada equipado, escondido ou sem a arte). A faixa só
+  /// troca depois de 1,5 s na faixa nova, para o GPS que oscila na borda não ficar trocando o desenho.
+  ({ui.Image back, ui.Image front, double glow, bool sparks})? _vehicleStrips() {
+    final want = rideBand?.call() ?? RideBand.foot;
+    if (want != _bandWant) {
+      _bandWant = want;
+      _bandWantSince = _time;
+    }
+    if (want != _band && _time - _bandWantSince >= 1.5) _band = want;
+    final st = worldView?.state, art = UiArt.instance;
+    final key = st == null ? null : vehicleLook(st, _band);
+    if (key == null || art == null) return null;
+    final p = parseStack(key), name = 'veh_${p.id.split('.').last}';
+    final back = art.image('${name}_back'), front = art.image('${name}_front');
+    if (back == null || front == null) return null;
+    return (back: back, front: front, glow: switch (p.q) { Quality.common => 0.0, Quality.good => 0.35, Quality.perfect => 0.6 }, sparks: p.q == Quality.perfect);
   }
 
   /// A luz do dia sobre o desenho do mapa: à noite escurece e esfria (multiplica por um azul profundo), no nascer e
@@ -1123,6 +1169,43 @@ class GameMapGame extends FlameGame {
 
   /// Os bandos e gatos do tráfego (o toque espanta o bando e faz carinho no gato).
   BirdFlocks get flocks => _traffic.birds;
+
+  /// Debug (0.24.5): quase todo carro novo de avenida vira ônibus.
+  bool Function() manyBuses = () => false;
+
+  /// 0.24.5: os Outros Veilbreakers (quem monta o mapa preenche) e os números do Ônibus Espectral (`map_touch`).
+  VeilbreakerField? veil;
+  TouchBalance touchBalance = const TouchBalance();
+
+  /// Os NPCs desenhados no último quadro (o toque procura neles).
+  List<Veilbreaker> visibleVeilbreakers = const [];
+
+  /// Os tiles z15 que a tela toca.
+  List<CityTile> visibleTiles(Size view, MapCamera cam) {
+    final corners = [for (final (x, y) in [(0.0, 0.0), (view.width, 0.0), (0.0, view.height), (view.width, view.height)]) cam.screenToCell(x, y, view.width, view.height)];
+    final n = visual.cellsPerTile;
+    final xs = corners.map((c) => c.$1), ys = corners.map((c) => c.$2);
+    return [
+      for (var ty = (ys.reduce(math.min) / n).floor(); ty <= (ys.reduce(math.max) / n).floor(); ty++)
+        for (var tx = (xs.reduce(math.min) / n).floor(); tx <= (xs.reduce(math.max) / n).floor(); tx++) cityTiles.tileAt(tx, ty),
+    ];
+  }
+
+  /// 0.24.5: o NPC desenhado sob [screen] (a até 36 px do corpo), ou `null`.
+  Veilbreaker? npcAt(Offset screen) {
+    if (size.x <= 0) return null;
+    final cam = follow.camera, t = _exactUtc();
+    Veilbreaker? best;
+    var bd = 36.0;
+    for (final n in visibleVeilbreakers) {
+      if (!n.presentAt(t)) continue;
+      final p = n.at(t);
+      final (sx, sy) = cam.cellToScreen(p.x, p.y, size.x, size.y);
+      final d = (Offset(sx, sy - playerSizePx / 2) - screen).distance;
+      if (d < bd) (best, bd) = (n, d);
+    }
+    return best;
+  }
 
   /// O objeto do mapa sob [screen] (ponto de ônibus, banca, árvore, poste, placa, bando, gato ou poça), ou `null`.
   TouchHit? touchAt(Offset screen, {Iterable<(double, double)> puddles = const []}) {
