@@ -1,0 +1,9 @@
+{
+  "urban": { "map": { "#8e5a50": "#878b98", "#54303a": "#4d505e", "#34202e": "#2a2c34" }, "accessory": "wyrmlet_acc_urban.png" },
+  "green": { "map": { "#8e5a50": "#98b58c", "#54303a": "#506f4d", "#34202e": "#2a3d2c" }, "accessory": "wyrmlet_acc_green.png" },
+  "water": { "map": { "#8e5a50": "#5d8da5", "#54303a": "#1a4056", "#34202e": "#0c2231" }, "accessory": "wyrmlet_acc_water.png" },
+  "residential": { "map": { "#8e5a50": "#cbb49b", "#54303a": "#92745d", "#34202e": "#5a4236" }, "accessory": "wyrmlet_acc_residential.png" },
+  "lit": { "map": { "#8e5a50": "#e8e5de", "#54303a": "#bcb6a9", "#34202e": "#807a70" }, "accessory": "wyrmlet_acc_lit.png" },
+  "sacred": { "map": { "#8e5a50": "#cfcae0", "#54303a": "#9791ad", "#34202e": "#5c5674" }, "accessory": "wyrmlet_acc_sacred.png" },
+  "crimson": { "map": { "#8e5a50": "#792c3a", "#54303a": "#2b0e19", "#34202e": "#140810" }, "accessory": "wyrmlet_acc_crimson.png" }
+}

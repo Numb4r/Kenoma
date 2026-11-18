@@ -1,0 +1,9 @@
+{
+  "urban": { "map": { "#2d5aa0": "#3f434f", "#4a86d6": "#4f5361", "#9fd0f5": "#797d8b", "#1f2a5c": "#30333e", "#d98a6c": "#626674", "#f2c48d": "#7c808e" }, "accessory": "rillet_acc_urban.png" },
+  "green": { "map": { "#2d5aa0": "#588a4f", "#4a86d6": "#73ab63", "#9fd0f5": "#bee3a3", "#1f2a5c": "#3e6a3c", "#d98a6c": "#95c580", "#f2c48d": "#c4e8a8" }, "accessory": "rillet_acc_green.png" },
+  "water": { "map": { "#2d5aa0": "#0d283a", "#4a86d6": "#133a52", "#9fd0f5": "#65abca", "#1f2a5c": "#081824", "#d98a6c": "#396d89", "#f2c48d": "#6cb4d4" }, "accessory": "rillet_acc_water.png" },
+  "residential": { "map": { "#2d5aa0": "#ad896f", "#4a86d6": "#d0ab8f", "#9fd0f5": "#eed8bc", "#1f2a5c": "#8a6850", "#d98a6c": "#dec0a4", "#f2c48d": "#f0dcc0" }, "accessory": "rillet_acc_residential.png" },
+  "lit": { "map": { "#2d5aa0": "#cfcabe", "#4a86d6": "#ece8df", "#9fd0f5": "#fefdfd", "#1f2a5c": "#b2ac9e", "#d98a6c": "#f4f2ec", "#f2c48d": "#ffffff" }, "accessory": "rillet_acc_lit.png" },
+  "sacred": { "map": { "#2d5aa0": "#aca6c5", "#4a86d6": "#cfc9e4", "#9fd0f5": "#ede9fd", "#1f2a5c": "#8a84a6", "#d98a6c": "#ddd8f0", "#f2c48d": "#f0ecff" }, "accessory": "rillet_acc_sacred.png" },
+  "crimson": { "map": { "#2d5aa0": "#260c14", "#4a86d6": "#38111b", "#9fd0f5": "#a73746", "#1f2a5c": "#16080e", "#d98a6c": "#6b222f", "#f2c48d": "#b03a4a" }, "accessory": "rillet_acc_crimson.png" }
+}

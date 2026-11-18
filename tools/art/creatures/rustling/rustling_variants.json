@@ -1,0 +1,9 @@
+{
+  "urban": { "map": { "#3c4552": "#262931", "#66768a": "#424753", "#9fb3c8": "#656c7c", "#5e2a1c": "#281f21", "#8e4424": "#3d3132", "#b8612e": "#514443", "#e08a44": "#685c5a" }, "accessory": "rustling_acc_urban.png" },
+  "green": { "map": { "#3c4552": "#34453a", "#66768a": "#546f5b", "#9fb3c8": "#7ea381", "#5e2a1c": "#383727", "#8e4424": "#525035", "#b8612e": "#6a6a43", "#e08a44": "#858c58" }, "accessory": "rustling_acc_green.png" },
+  "water": { "map": { "#3c4552": "#142735", "#66768a": "#224054", "#9fb3c8": "#35607a", "#5e2a1c": "#171e27", "#8e4424": "#232e37", "#b8612e": "#2f3e47", "#e08a44": "#3b535d" }, "accessory": "rustling_acc_water.png" },
+  "residential": { "map": { "#3c4552": "#5c4e49", "#66768a": "#86776e", "#9fb3c8": "#bbab9b", "#5e2a1c": "#633e31", "#8e4424": "#835841", "#b8612e": "#a17252", "#e08a44": "#c3946a" }, "accessory": "rustling_acc_residential.png" },
+  "lit": { "map": { "#3c4552": "#858687", "#66768a": "#b0b4b6", "#9fb3c8": "#e8ede9", "#5e2a1c": "#977161", "#8e4424": "#b88e75", "#b8612e": "#ceab8c", "#e08a44": "#e8d2ac" }, "accessory": "rustling_acc_lit.png" },
+  "sacred": { "map": { "#3c4552": "#63637d", "#66768a": "#8c8ea9", "#9fb3c8": "#c2c5de", "#5e2a1c": "#6e515f", "#8e4424": "#8e6c73", "#b8612e": "#ac8788", "#e08a44": "#ccaba6" }, "accessory": "rustling_acc_sacred.png" },
+  "crimson": { "map": { "#3c4552": "#26151f", "#66768a": "#49232f", "#9fb3c8": "#743443", "#5e2a1c": "#231016", "#8e4424": "#3c181d", "#b8612e": "#542124", "#e08a44": "#702c2f" }, "accessory": "rustling_acc_crimson.png" }
+}

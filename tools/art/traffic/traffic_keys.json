@@ -1,0 +1,58 @@
+{
+  "_": "Cores-chave do tráfego comum (0.25.1). 'key': o código troca o hex pela cor da paleta do fantasma. 'derived': sai de outra chave (shade = mistura com o contorno, tint = mistura com branco), como ghost_sprites.dart já faz. 'fixed': fica como está.",
+  "outline": { "hex": "#1A1424", "kind": "fixed" },
+  "vehicle": {
+    "body": { "hex": "#B8BCC8", "kind": "key", "old": "b" },
+    "roof": { "hex": "#8E92A4", "kind": "derived", "of": "body", "shade": 0.3, "old": "a" },
+    "body_dark": { "hex": "#6A6E82", "kind": "derived", "of": "body", "shade": 0.5, "old": "d" },
+    "glass": { "hex": "#BFE9F0", "kind": "fixed", "old": "g" },
+    "glass_shade": { "hex": "#7FB4C4", "kind": "fixed" },
+    "headlight": { "hex": "#FFE8A3", "kind": "fixed", "old": "y", "glow": true },
+    "taillight": { "hex": "#E0524A", "kind": "fixed", "glow": true },
+    "tire": { "hex": "#3A2F4A", "kind": "fixed", "old": "k" },
+    "window_lit": { "hex": "#FFE2A0", "kind": "fixed", "note": "só em bus_city_glow.png: janelas e letreiro acesos" }
+  },
+  "rider": {
+    "_": "moto e ciclista; na moto 'body' é a moto, no ciclista 'body' é o quadro da bicicleta",
+    "helmet": { "hex": "#6B4A2F", "kind": "key", "old": "h" },
+    "top": { "hex": "#6C7FB8", "kind": "key", "old": "t" },
+    "skin": { "hex": "#F0C9A6", "kind": "key", "old": "s" }
+  },
+  "pedestrian": {
+    "skin": { "hex": "#F0C9A6", "kind": "key", "old": "s" },
+    "skin_shade": { "hex": "#D9A47C", "kind": "derived", "of": "skin", "shade": 0.2 },
+    "hair": { "hex": "#6B4A2F", "kind": "key", "old": "h" },
+    "hair_shade": { "hex": "#4A3220", "kind": "derived", "of": "hair", "shade": 0.3 },
+    "top": { "hex": "#6C7FB8", "kind": "key", "old": "t" },
+    "top_shade": { "hex": "#4E5C8A", "kind": "derived", "of": "top", "shade": 0.3 },
+    "pants": { "hex": "#4A5578", "kind": "key", "old": "p" },
+    "pants_shade": { "hex": "#363E5A", "kind": "derived", "of": "pants", "shade": 0.3 },
+    "child_top": { "hex": "#E8C14A", "kind": "key", "old": "u" },
+    "child_top_shade": { "hex": "#B8943A", "kind": "derived", "of": "child_top", "shade": 0.3 },
+    "cane": { "hex": "#A9824F", "kind": "fixed", "old": "n" },
+    "eye": { "hex": "#2B2540", "kind": "fixed" },
+    "shoe": { "hex": "#3A2F4A", "kind": "fixed", "note": "o mesmo hex do pneu" }
+  },
+  "outfit": {
+    "umbrella": { "hex": "#8A3B6B", "kind": "key", "old": "w" },
+    "umbrella_rib": { "hex": "#5E2848", "kind": "derived", "of": "umbrella", "shade": 0.35, "old": "W" },
+    "umbrella_handle": { "hex": "#8A8FA3", "kind": "fixed", "old": "r" },
+    "raincoat": { "hex": "#5FA8D3", "kind": "key", "note": "antes trocava a blusa (_raincoats)" },
+    "raincoat_shade": { "hex": "#3F7FA8", "kind": "derived", "of": "raincoat", "shade": 0.3 },
+    "coat": { "hex": "#7A5A3F", "kind": "key", "note": "antes trocava a blusa (_coats)" },
+    "coat_shade": { "hex": "#55402C", "kind": "derived", "of": "coat", "shade": 0.3 },
+    "beanie": { "hex": "#B8484A", "kind": "key", "old": "e" },
+    "beanie_shade": { "hex": "#8A3234", "kind": "derived", "of": "beanie", "shade": 0.3 },
+    "scarf": { "hex": "#E8A04A", "kind": "key", "old": "f" },
+    "scarf_shade": { "hex": "#B8782F", "kind": "derived", "of": "scarf", "shade": 0.3 },
+    "cap": { "hex": "#D8B45A", "kind": "key", "old": "c", "note": "boné e chapéu" },
+    "cap_shade": { "hex": "#A8883C", "kind": "derived", "of": "cap", "shade": 0.3 },
+    "mask": { "hex": "#EEEAF8", "kind": "fixed", "old": "m" },
+    "mask_shade": { "hex": "#C4C0D4", "kind": "fixed" },
+    "light_top": { "hex": "#B5BEDB", "kind": "derived", "of": "top", "tint": 0.45 },
+    "light_top_shade": { "hex": "#8E9AC0", "kind": "derived", "of": "light_top", "shade": 0.2 },
+    "light_child_top": { "hex": "#F3E0A4", "kind": "derived", "of": "child_top", "tint": 0.45 },
+    "light_child_top_shade": { "hex": "#D0B870", "kind": "derived", "of": "light_child_top", "shade": 0.2 },
+    "_light": "a peça 'light' também usa skin e skin_shade (braços e pernas de fora)"
+  }
+}

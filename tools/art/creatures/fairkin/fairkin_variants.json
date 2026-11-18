@@ -1,0 +1,9 @@
+{
+  "urban": { "map": { "#d8a858": "#646877", "#ae7638": "#4d505e", "#774828": "#33353f", "#ff8fd8": "#757988", "#b8508e": "#444754", "#f4d8c8": "#878b98", "#c89898": "#555969", "#8a4a6e": "#3b3e49", "#4e2a4a": "#2a2c34" }, "accessory": "fairkin_acc_urban.png" },
+  "green": { "map": { "#d8a858": "#6b8d65", "#ae7638": "#506f4d", "#774828": "#334a34", "#ff8fd8": "#82a179", "#b8508e": "#466345", "#f4d8c8": "#98b58c", "#c89898": "#597c55", "#8a4a6e": "#3d563d", "#4e2a4a": "#2a3d2c" }, "accessory": "fairkin_acc_green.png" },
+  "water": { "map": { "#d8a858": "#2e5b73", "#ae7638": "#1a4056", "#774828": "#0f2a3a", "#ff8fd8": "#45748c", "#b8508e": "#16394d", "#f4d8c8": "#5d8da5", "#c89898": "#1d485f", "#8a4a6e": "#133143", "#4e2a4a": "#0c2231" }, "accessory": "fairkin_acc_water.png" },
+  "residential": { "map": { "#d8a858": "#ae9076", "#ae7638": "#92745d", "#774828": "#684e40", "#ff8fd8": "#bca289", "#b8508e": "#846753", "#f4d8c8": "#cbb49b", "#c89898": "#9f8067", "#8a4a6e": "#765b4a", "#4e2a4a": "#5a4236" }, "accessory": "fairkin_acc_residential.png" },
+  "lit": { "map": { "#d8a858": "#d6d1c4", "#ae7638": "#bcb6a9", "#774828": "#8f897e", "#ff8fd8": "#dfdbd1", "#b8508e": "#ada79b", "#f4d8c8": "#e8e5de", "#c89898": "#cbc5b7", "#8a4a6e": "#9e988d", "#4e2a4a": "#807a70" }, "accessory": "fairkin_acc_lit.png" },
+  "sacred": { "map": { "#d8a858": "#b3aec8", "#ae7638": "#9791ad", "#774828": "#6b6582", "#ff8fd8": "#c1bcd4", "#b8508e": "#88829f", "#f4d8c8": "#cfcae0", "#c89898": "#a59fbb", "#8a4a6e": "#797391", "#4e2a4a": "#5c5674" }, "accessory": "fairkin_acc_sacred.png" },
+  "crimson": { "map": { "#d8a858": "#6c2838", "#ae7638": "#4c1b29", "#774828": "#2d131e", "#ff8fd8": "#863848", "#b8508e": "#421825", "#f4d8c8": "#a14757", "#c89898": "#571d2d", "#8a4a6e": "#371522", "#4e2a4a": "#22101a" }, "accessory": "fairkin_acc_crimson.png" }
+}

@@ -1,0 +1,9 @@
+{
+  "urban": { "map": { "#2d5aa0": "#30333e", "#4a86d6": "#464956", "#9fd0f5": "#7c808e" }, "accessory": "brookkin_acc_urban.png" },
+  "green": { "map": { "#2d5aa0": "#22402a", "#4a86d6": "#3c6540", "#9fd0f5": "#b4dca0" }, "accessory": "brookkin_acc_green.png" },
+  "water": { "map": { "#2d5aa0": "#081824", "#4a86d6": "#0f2f44", "#9fd0f5": "#6cb4d4" }, "accessory": "brookkin_acc_water.png" },
+  "residential": { "map": { "#2d5aa0": "#8a6850", "#4a86d6": "#bc977d", "#9fd0f5": "#f0dcc0" }, "accessory": "brookkin_acc_residential.png" },
+  "lit": { "map": { "#2d5aa0": "#b2ac9e", "#4a86d6": "#dcd7cc", "#9fd0f5": "#ffffff" }, "accessory": "brookkin_acc_lit.png" },
+  "sacred": { "map": { "#2d5aa0": "#8a84a6", "#4a86d6": "#bbb5d3", "#9fd0f5": "#f0ecff" }, "accessory": "brookkin_acc_sacred.png" },
+  "crimson": { "map": { "#2d5aa0": "#16080e", "#4a86d6": "#2d0e17", "#9fd0f5": "#b03a4a" }, "accessory": "brookkin_acc_crimson.png" }
+}
