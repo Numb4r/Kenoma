@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -40,7 +39,7 @@ void main() {
   });
 
   test('a época 12 registra a release do Overture', () {
-    final raw = jsonDecode(File('assets/data/epochs.json').readAsStringSync()) as Map<String, dynamic>;
+    final raw = epochsJson(); // o histórico (a 11) mais a época de desenvolvimento
     final eps = {for (final e in raw['epochs'] as List<dynamic>) (e as Map<String, dynamic>)['id']: e};
     expect(eps[12]!['overture_release'], '2026-10-21.0');
     expect(eps[11]!.containsKey('overture_release'), isFalse);
@@ -68,6 +67,6 @@ void main() {
     final after = (await loadTrafficPack(region: 'campinas', epoch: e12, bundle: bundle))!;
     bool alleys(TrafficPack p) => all(p).any((x) => x.kind == TrafficPointKind.alley);
     expect((alleys(before), alleys(after)), (false, true));
-    expect(await loadTrafficPack(region: 'sao_paulo', epoch: e12, bundle: bundle), isNull, reason: 'o de São Paulo é baixado, não embutido');
+    expect(await loadTrafficPack(region: 'sao_paulo', epoch: e12, bundle: bundle), isNotNull, reason: '0.25.2: o de São Paulo vem embutido, com o SHA da época');
   });
 }

@@ -139,6 +139,9 @@ class DevTools extends ChangeNotifier {
   /// `npctune` adiantar o relógio até ela.
   ({int at, double lat, double lon})? Function()? nextNpcTune;
 
+  /// 0.25.2: gira o mapa até [deg] graus (sentido horário, 0 = norte), na hora (comando `turn`).
+  void Function(double deg)? turnMapTo;
+
   /// 0.25.0: a saída animada (sintonizado ou fuga) do Eco mais perto, só no desenho (comando `exit`). Devolve o uid.
   int? Function(bool tuned)? exitNearestEco;
 

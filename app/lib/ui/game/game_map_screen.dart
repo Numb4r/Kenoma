@@ -1,6 +1,7 @@
 import '../../dev/tap_latency.dart';
 import '../../core/features.dart';
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/scheduler.dart' show SchedulerBinding, SchedulerPhase;
 
@@ -16,7 +17,6 @@ import 'package:vibration/vibration.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/plural.dart';
-import '../../core/epochs.dart' show kTestEpochSetting, testEpochId, testEpochOf;
 import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
 import '../../core/tiles.dart';
@@ -685,13 +685,6 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   Future<Object> _load() async {
     final dpr = View.of(context).devicePixelRatio;
-    // A época em teste (Ajustes, só neste aparelho) vale antes do pacote da região: ela escolhe o pacote.
-    final store = await _store();
-    try {
-      testEpochId = testEpochOf(await store.read());
-    } catch (_) {
-      testEpochId = null; // save ilegível: o GameSession conta
-    }
     final result = await loadMapAssets(nowUtc: tools.clock.nowUtc, bundle: widget.bundle, withVisual: true);
     if (result is String) return result;
     final assets = result as MapAssets;
@@ -723,7 +716,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         // sem o plugin (testes): a versão fica 'dev'
       }
       session = await GameSession.open(
-        store: store,
+        store: await _store(),
         startInventory: data.startInventory,
         balance: data.progress,
         nowUtc: () => tools.clock.nowUtc,
@@ -732,12 +725,6 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         epochOf: (t) => data.schedule.select(t).epoch.id,
         nextInt: Pcg32(fnv1a64([DateTime.now().microsecondsSinceEpoch]), saltKenoma).nextInt, // só sorteia o código do grupo
       );
-      // A época em teste foi publicada (ou sumiu do epochs.json): a opção desliga sozinha e sai do save.
-      if (testEpochId != null && data.schedule.testing == null) {
-        testEpochId = null;
-        session.state.settings.remove(kTestEpochSetting);
-        session.state.changed();
-      }
     } catch (e) {
       assets.dispose();
       return 'Não consegui ler os dados do jogo: $e';
@@ -925,6 +912,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     );
     world.veil = veil;
     game.debugWalkAt = (s, t, mpc) => tools.force.creatures.walkAt(s, t, mpc);
+    tools.turnMapTo = (deg) => game.rotation
+      ..reset()
+      ..rotateBy(deg * math.pi / 180);
     tools.exitNearestEco = (tuned) {
       if (!game.avatar.hasPosition) return null;
       final ecos = [for (final s in world.spawns) if (s.isEco) s]

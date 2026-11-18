@@ -7,7 +7,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/astro.dart';
-import '../../core/epochs.dart' show testEpochId;
 import '../../data/climate_catalog.dart';
 import '../../dev/dev_tools.dart';
 import '../../world/layered_world.dart';
@@ -130,7 +129,7 @@ class ModeSeal extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
         listenable: Listenable.merge([tools, tools.clock, tools.force, source]),
         builder: (context, _) {
-          final debug = tools.anyForcing, veil = source.value == MapSourceKind.overpass, test = testEpochId;
+          final debug = tools.anyForcing, veil = source.value == MapSourceKind.overpass;
           return GestureDetector(
             key: const Key('mode-seal'),
             behavior: HitTestBehavior.opaque,
@@ -151,12 +150,6 @@ class ModeSeal extends StatelessWidget {
                         if (debug && veil) const SizedBox(width: 6),
                         if (veil) const Text('VÉU INSTÁVEL', key: Key('veil-badge'), style: TextStyle(fontSize: 7, color: kVeil)),
                       ]),
-                    ),
-                  // A época em teste (Ajustes, só neste aparelho): o mundo aqui não é o dos amigos.
-                  if (test != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: Text('ÉPOCA $test EM TESTE', key: const Key('test-epoch-tag'), style: const TextStyle(fontSize: 7, color: kEssence)),
                     ),
                 ]),
               ),

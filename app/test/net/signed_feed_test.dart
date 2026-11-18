@@ -12,12 +12,13 @@ final _pub = File('$_fx/test_pub.hex').readAsStringSync().trim();
 const _rfcPub = 'd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a'; // outra chave
 
 class _Assets extends CachingAssetBundle {
-  _Assets({this.packs = true});
-  final bool packs;
+  _Assets({this.packs = true, this.dev = false});
+  final bool packs, dev;
   @override
   Future<ByteData> load(String key) async {
     if (key == 'assets/data/epochs.json') {
-      return ByteData.sublistView(Uint8List.fromList(File('$_fx/epochs_bundled.json').readAsBytesSync()));
+      final raw = File('$_fx/epochs_bundled.json').readAsBytesSync();
+      return ByteData.sublistView(Uint8List.fromList(dev ? utf8.encode(jsonEncode({..._json('$_fx/epochs_bundled.json'), 'dev': true})) : raw));
     }
     if (packs) return ByteData(1);
     throw Exception('sem $key');
@@ -99,6 +100,12 @@ void main() {
       expect(await n(_cache(tamper: (d) => File('${d.path}/epochs.json.sig').deleteSync())), 4);
       expect(await n(_cache(tamper: (d) => File('${d.path}/epochs.json.sig').writeAsStringSync('zz'))), 4);
       expect(await n(_cache(tamper: (d) => File('${d.path}/epochs.json').writeAsStringSync('{'))), 4);
+    });
+
+    test('0.25.2: em modo de desenvolvimento o feed não traz época nenhuma, nem com o cache assinado certo', () async {
+      final json = await loadEpochsJson(bundle: _Assets(dev: true), dir: _cache(), publicKeyHex: _pub);
+      expect((json['epochs'] as List).length, 4, reason: 'só as embutidas');
+      expect(await loadEpochsJson(bundle: _Assets(), dir: _cache(), publicKeyHex: _pub).then((j) => (j['epochs'] as List).length), 5, reason: 'fora dele, funde');
     });
 
     test('pacote ausente nos assets: época nova ignorada', () async {

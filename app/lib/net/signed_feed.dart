@@ -54,9 +54,12 @@ Future<void> storeVerified(Directory dir, String name, List<int> data, List<int>
 }
 
 /// O `epochs.json` que o app usa: o embutido fundido com o cache do feed (reverificado agora). Sem cache, é o embutido.
+/// 0.25.2: no modo de desenvolvimento (`"dev": true`) vale só o embutido: o feed publicado ainda tem as épocas da fase de
+/// testes, que não podem voltar por cima da época única.
 Future<Map<String, dynamic>> loadEpochsJson({AssetBundle? bundle, Directory? dir, String publicKeyHex = kFeedPublicKeyHex}) async {
   final assets = bundle ?? rootBundle;
   final bundled = jsonDecode(await assets.loadString('assets/data/epochs.json')) as Map<String, dynamic>;
+  if (bundled['dev'] == true) return bundled;
   try {
     final d = dir ?? await _feedDir();
     if (d == null) return bundled;

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flame/game.dart';
@@ -29,7 +28,7 @@ Map<String, List<int>> realAssets({Uint8List? bin}) => {
       'assets/data/biomes.json': File('assets/data/biomes.json').readAsBytesSync(),
       'assets/data/balance.json': File('assets/data/balance.json').readAsBytesSync(),
       // Os pacotes de biomas de Campinas de todas as épocas (o relógio do teste decide qual é lido), pelos nomes de epochs.json.
-      for (final f in {for (final e in loadEpochs().epochs) e.regionPacks['campinas']!.file}) 'assets/regions/$f': bin ?? File('assets/regions/$f').readAsBytesSync(),
+      for (final f in {for (final e in loadShippedEpochs().epochs) e.regionPacks['campinas']!.file}) 'assets/regions/$f': bin ?? File('assets/regions/$f').readAsBytesSync(),
     };
 
 Future<void> pumpMap(WidgetTester tester, {Map<String, List<int>>? assets, double lat = -22.8174, double lon = -47.0697, int? nowUtc}) async {
@@ -193,13 +192,13 @@ void main() {
   });
 
   testWidgets('pacote adulterado: mostra o erro claro com os hashes, sem derrubar o app, e o botão volta', (tester) async {
-    final bad = Uint8List.fromList(File('assets/regions/campinas_e0.bin').readAsBytesSync())..[2000] ^= 0xff;
-    // Um instante da época 10, a última com o campinas_e0.bin (da 11 em diante vale o campinas_e11.bin).
-    await pumpMap(tester, assets: realAssets(bin: bad), nowUtc: DateTime.utc(2026, 11, 1).millisecondsSinceEpoch ~/ 1000);
+    final ref = loadShippedEpochs().epochs.single.regionPacks['campinas']!;
+    final bad = Uint8List.fromList(File('assets/regions/${ref.file}').readAsBytesSync())..[2000] ^= 0xff;
+    await pumpMap(tester, assets: {...realAssets(), 'assets/regions/${ref.file}': bad});
     expect(find.text('MAPA INDISPONÍVEL'), findsOneWidget);
     final message = tester.widgetList<Text>(find.byType(Text)).map((w) => w.data ?? '').firstWhere((t) => t.contains('SHA-256 esperado'));
-    expect(message, contains('campinas_e0.bin'));
-    expect(message, contains('559f3551cf04'), reason: 'o hash da época 0');
+    expect(message, contains(ref.file));
+    expect(message, contains(ref.sha256.substring(0, 12)), reason: 'o hash da época de desenvolvimento');
     expect(gameWidget, findsNothing);
     expect(find.text('VOLTAR'), findsOneWidget);
   });
@@ -214,20 +213,19 @@ void main() {
     expect(find.textContaining('.bin não está no app'), findsOneWidget);
   });
 
-  testWidgets('relógio depois do fim da última época: o mapa abre e avisa que o mundo está desatualizado', (tester) async {
+  testWidgets('0.25.2: em modo de desenvolvimento, nem depois do fim da validade o mapa avisa mundo desatualizado', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 2.625;
     addTearDown(tester.view.reset);
     addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
-    final epochs = jsonDecode(File('assets/data/epochs.json').readAsStringSync()) as Map<String, dynamic>;
-    final end = DateTime.parse(((epochs['epochs'] as List).last as Map)['valid_until_utc'] as String).millisecondsSinceEpoch ~/ 1000;
+    final end = loadShippedEpochs().epochs.single.validUntilUtc;
     await tester.pumpWidget(MaterialApp(home: MapScreen(lat: -22.8174, lon: -47.0697, nowUtc: end + 1000, bundle: _Bundle(realAssets()))));
     for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
       await tester.pump();
     }
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('MUNDO DESATUALIZADO'), findsOneWidget);
+    expect(find.text('MUNDO DESATUALIZADO'), findsNothing);
     expect(gameWidget, findsOneWidget);
   });
 }

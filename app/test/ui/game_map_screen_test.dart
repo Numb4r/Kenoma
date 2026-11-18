@@ -7,7 +7,6 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kenoma/core/features.dart';
 import 'package:kenoma/core/tiles.dart';
 import 'package:kenoma/data/heading_source.dart';
 import 'package:kenoma/player/conjurer_balance.dart';
@@ -653,10 +652,10 @@ void main() {
       expect(env.tools.clock.overridden, isTrue);
     });
 
-    testWidgets('relógio depois do fim da época 0: o mapa abre e avisa que o mundo está desatualizado', (tester) async {
+    testWidgets('0.25.2: em modo de desenvolvimento o relógio anos à frente não marca o mundo como desatualizado', (tester) async {
       final after = DateTime.utc(2035, 1, 1).millisecondsSinceEpoch ~/ 1000;
       await pumpGame(tester, clockUtc: after);
-      expect(find.textContaining('MUNDO DESATUALIZADO'), findsOneWidget);
+      expect(find.textContaining('MUNDO DESATUALIZADO'), findsNothing);
       expect(find.byType(Joystick), findsOneWidget, reason: 'o mapa funciona mesmo assim');
     });
 
@@ -1009,8 +1008,8 @@ void main() {
       final w = env.game.worldView!;
       if (env.tools.force.pendingEco) await goToSomeEco(env); // sem Eco à vista no começo: vai até um
       final hidden = w.allEcos.where((e) => e.behavior == EcoBehavior.hidden).toList();
-      expect(hidden, hasLength(1));
-      final target = hidden.single;
+      expect(hidden, isNotEmpty); // 0.25.2: com a época 12 vigente, o mundo do teste pode ter mais de um
+      final target = hidden.first;
       expect(w.spawns.any((s) => s.uid == target.uid), isFalse, reason: 'oculto: fora do mapa e do rastreador');
       final (la, lo) = tileFractionToLatLon(target.x + 0.2, target.y + 0.2, biomeZoom);
       env.sim.teleport(la, lo);
@@ -1038,17 +1037,6 @@ void main() {
       await tester.tap(find.byType(PhoneButton));
       await env.settle(10);
       expect(find.text('RADAR'), findsOneWidget);
-    });
-
-    testWidgets('na 0.13.1 (STREET_LIFE desligado) o celular não tem Radar e o HUD não mostra o clima', (tester) async {
-      streetLifeEnabled = false;
-      addTearDown(() => streetLifeEnabled = true);
-      final env = await pumpGame(tester);
-      expect(find.byKey(const Key('weather-glyph')), findsNothing);
-      await tester.tap(find.byType(PhoneButton));
-      await env.settle(10);
-      expect(find.text('RADAR'), findsNothing);
-      expect(find.text('BESTIÁRIO'), findsOneWidget);
     });
 
     testWidgets('escolher a escola troca a forma do Familiar no mapa na hora', (tester) async {

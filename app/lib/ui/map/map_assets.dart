@@ -5,6 +5,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'dart:io' show Directory;
 import 'dart:ui' as ui;
 
@@ -322,7 +323,11 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       cycleways = await loadCyclePack(region: kRegion, bundle: assets);
       buildings = await loadBuildingPack(region: kRegion, bundle: assets);
       ground = await loadGroundPack(region: kRegion, bundle: assets);
-      world = LayeredWorld(regions: [LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk, access: access, relief: relief, traffic: trafficPoints, buildings: buildings)], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
+      world = LayeredWorld(regions: [
+        LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk, access: access, relief: relief, traffic: trafficPoints, buildings: buildings),
+        // 0.25.2 (modo de desenvolvimento): as outras regiões da época que vêm no APK (São Paulo), sem baixar nada.
+        for (final id in loaded.epoch.regionPacks.keys.where((id) => id != kRegion)) ?await loadEmbeddedRegion(region: id, epoch: loaded.epoch, bundle: assets),
+      ], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
       visual = VisualMap(world);
     }
     final atlas = withAtlas ? await buildBiomeAtlas(biomes) : null;
@@ -346,4 +351,36 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
   } catch (e) {
     return 'Não consegui ler os dados do mapa: $e';
   }
+}
+
+/// 0.25.2 (modo de desenvolvimento): uma região além de Campinas embutida no APK (São Paulo), montada como a embutida e
+/// conferida pelos SHA-256 da época. `null` se o pacote lógico ou o visual não estão nos assets ou não conferem: a região
+/// continua baixável pelo catálogo, como antes. O relevo, as vias, a rota, os pontos e os prédios são opcionais.
+Future<LoadedRegion?> loadEmbeddedRegion({required String region, required Epoch epoch, AssetBundle? bundle}) async {
+  final assets = bundle ?? rootBundle;
+  final ref = epoch.regionPacks[region];
+  if (ref == null) return null;
+  final Uint8List bytes;
+  try {
+    final data = await assets.load('assets/regions/${ref.file}');
+    bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+  } catch (_) {
+    return null; // não veio no APK
+  }
+  final grid = verifyRegionPack(bytes: bytes, epoch: epoch, region: region);
+  if (grid is! RegionLoaded) return null;
+  final visual = await loadVisualPack(region: region, epoch: epoch, bundle: assets);
+  if (visual is! VisualPack) return null;
+  final noWalk = await loadNoWalkPack(epoch: epoch, bundle: assets, region: region);
+  final relief = await loadReliefPack(epoch: epoch, region: region, bundle: assets);
+  return LoadedRegion(
+    id: region,
+    grid: grid.pack,
+    visual: visual,
+    noWalk: noWalk is NoWalkPack ? noWalk : null,
+    access: await loadAccessPack(region: region, bundle: assets),
+    relief: relief is ReliefPack ? relief : null,
+    traffic: await loadTrafficPack(region: region, epoch: epoch, bundle: assets),
+    buildings: await loadBuildingPack(region: region, bundle: assets),
+  );
 }

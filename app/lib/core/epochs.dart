@@ -14,20 +14,9 @@ import 'weather.dart';
 /// A região embutida nos assets do app. As outras vêm de `regions.json`, baixadas sob demanda.
 const String kBundledRegion = 'campinas';
 
-/// O início das épocas ainda não publicadas (2099-01-01 UTC): a data real só se escreve ao publicar.
+/// O início que uma época ainda não publicada recebe no regime de épocas publicadas (2099-01-01 UTC), depois da
+/// distribuição (`docs/distribuicao.md`). No modo de desenvolvimento não se usa.
 const int kUnpublishedStartUtc = 4070908800;
-
-/// Época em teste (0.24.3): a época não publicada que a opção de desenvolvedor dos Ajustes liga só neste aparelho (o mapa
-/// lê do save antes de abrir). `null`: desligada. Enquanto vale, ela é a vigente em todo instante depois da primeira época;
-/// some sozinha quando a época é publicada (o início deixa de ser 2099). Amigos nunca ligam: só veem época publicada.
-int? testEpochId;
-
-/// As chaves do save (Ajustes): o id da época em teste, e se a seção de desenvolvedor aparece (o menu de debug libera).
-const String kTestEpochSetting = 'dev_test_epoch';
-const String kDevOptionsSetting = 'dev_options';
-
-/// O id da época em teste guardado no save cru (`settings`), ou `null`.
-int? testEpochOf(Map<String, dynamic>? save) => switch (save?['settings']) { {kTestEpochSetting: final int id} => id, _ => null };
 
 class WeightedEntry {
   const WeightedEntry(this.id, this.weight);
@@ -273,55 +262,40 @@ class Epoch {
 }
 
 class EpochSchedule {
-  EpochSchedule(List<Epoch> epochs, {this.source}) : epochs = List.unmodifiable(epochs) {
+  EpochSchedule(List<Epoch> epochs, {this.source, this.dev = false}) : epochs = List.unmodifiable(epochs) {
     assert(epochs.isNotEmpty, 'epochs.json sem épocas');
   }
 
   factory EpochSchedule.fromJson(Map<String, dynamic> json) => EpochSchedule([
         for (final e in json['epochs'] as List<dynamic>)
           if (_available((e as Map<String, dynamic>)['requires_feature'] as String?)) Epoch.fromJson(e),
-      ], source: json);
+      ], source: json, dev: json['dev'] == true);
 
   /// O JSON de onde veio (todas as épocas, também as de funcionalidade desligada). Usado pela fusão do feed assinado.
   final Map<String, dynamic>? source;
+
+  /// 0.25.2 (GDD rev 368, modo de desenvolvimento): uma época só, embarcada e ativa; o mundo nunca fica desatualizado e o
+  /// feed não traz épocas. Vale até a distribuição (`docs/distribuicao.md`).
+  final bool dev;
 
   static bool _available(String? feature) => feature == null || (feature == 'street_life' && streetLifeEnabled);
 
   final List<Epoch> epochs;
 
-  /// A época não publicada mais nova (a que a opção de desenvolvedor liga). `null`: nenhuma.
-  Epoch? get newestUnpublished {
-    Epoch? best;
-    for (final e in epochs) {
-      if (e.startsUtc >= kUnpublishedStartUtc && (best == null || e.id > best.id)) best = e;
-    }
-    return best;
-  }
-
-  /// A época em teste que vale: [testEpochId], se ela existe aqui e ainda não foi publicada. `null`: o mundo de todos.
-  Epoch? get testing {
-    final id = testEpochId;
-    if (id == null) return null;
-    for (final e in epochs) {
-      if (e.id == id && e.startsUtc >= kUnpublishedStartUtc) return e;
-    }
-    return null;
-  }
-
-  /// Época de maior `starts_utc` que já passou (ou a época em teste, ver [testEpochId]). `null` se o relógio está antes da
-  /// primeira.
+  /// Época de maior `starts_utc` que já passou. `null` se o relógio está antes da primeira.
   Epoch? current(int tUtc) {
     Epoch? best;
     for (final e in epochs) {
       if (e.startsUtc <= tUtc && (best == null || e.startsUtc > best.startsUtc)) best = e;
     }
-    return best == null ? null : testing ?? best;
+    return best;
   }
 
   /// Mundo desatualizado: o relógio está antes da primeira época ou chegou ao `valid_until_utc` da época vigente. O app
   /// mostra o aviso e continua gerando. 0.23.1: pela vigente, não pela maior validade da lista: a época não publicada fica
   /// com início em 2099 e não pode esconder um mundo vencido até lá.
   bool isStale(int tUtc) {
+    if (dev) return false; // modo de desenvolvimento: sem feed, nada vence
     final now = current(tUtc);
     return now == null || tUtc >= now.validUntilUtc;
   }

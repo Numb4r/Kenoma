@@ -13,7 +13,25 @@ import 'package:kenoma/world/street_life_balance.dart';
 // `flutter test` roda com o diretório de trabalho em app/.
 Map<String, dynamic> loadJson(String path) => jsonDecode(File(path).readAsStringSync()) as Map<String, dynamic>;
 
-Map<String, dynamic> epochsJson() => loadJson('assets/data/epochs.json');
+/// O `epochs.json` que vai no APK (0.25.2: modo de desenvolvimento, uma época só, ativa desde o começo).
+Map<String, dynamic> shippedEpochsJson() => loadJson('assets/data/epochs.json');
+
+EpochSchedule loadShippedEpochs() => EpochSchedule.fromJson(shippedEpochsJson());
+
+/// As épocas como eram até a 0.25.1, para os testes que usam os modelos antigos como fixture: o histórico 0 a 11
+/// (`test/fixtures/epochs_history.json`, fora do APK) e a época de desenvolvimento no lugar que a 12 tinha (início em 2099,
+/// sem o modo de desenvolvimento). O conteúdo da 12 é sempre o do APK.
+Map<String, dynamic> epochsJson() {
+  final history = loadJson('test/fixtures/epochs_history.json');
+  final shipped = shippedEpochsJson();
+  return {
+    'format': shipped['format'],
+    'epochs': [
+      ...history['epochs'] as List<dynamic>,
+      for (final e in shipped['epochs'] as List<dynamic>) {...(e as Map<String, dynamic>), 'starts_utc': '2099-01-01T00:00:00Z', 'valid_until_utc': '2099-04-01T00:00:00Z'},
+    ],
+  };
+}
 
 EpochSchedule loadEpochs() => EpochSchedule.fromJson(epochsJson());
 
@@ -42,7 +60,7 @@ GameData loadGameData() => GameData.fromJson(
       balanceVersion: 'test',
       creatures: loadJson('assets/data/creatures.json'),
       items: loadJson('assets/data/items.json'),
-      epochs: loadJson('assets/data/epochs.json'),
+      epochs: shippedEpochsJson(),
       recipes: loadJson('assets/data/recipes.json'),
       mentor: loadJson('assets/data/mentor.json'),
       forum: loadJson('assets/data/forum.json'),

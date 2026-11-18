@@ -479,7 +479,7 @@ void main() {
     });
 
 
-    testWidgets('o relógio sobreposto vale também no mapa livre: depois do fim da época o mundo está desatualizado', (tester) async {
+    testWidgets('o relógio sobreposto vale também no mapa livre (0.25.2: em modo de desenvolvimento, sem aviso de mundo desatualizado)', (tester) async {
       final tools = newTools();
       await pumpMenu(tester, tools: tools);
       tools.clock.setUtc(DateTime.utc(2030, 5, 1).millisecondsSinceEpoch ~/ 1000); // depois do fim da última época
@@ -493,7 +493,8 @@ void main() {
         await tester.pump(const Duration(milliseconds: 50));
       }
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('MUNDO DESATUALIZADO'), findsOneWidget);
+      expect(find.text('MUNDO DESATUALIZADO'), findsNothing);
+      expect(find.text('Carregando mapa...'), findsNothing, reason: 'o mapa abriu');
     });
   });
 }

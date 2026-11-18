@@ -150,8 +150,9 @@ Future<Object> loadVisualPack({required String region, required Epoch epoch, Ass
 
 /// Lê o pacote das vias onde não se anda que [epoch] fixa (`walkable.exclude_pack`) e confere o SHA-256. `null` se a época
 /// não usa (épocas 0 e 1); a mensagem de erro (String) se o arquivo falta, não bate ou está corrompido. Nunca lança.
-Future<Object?> loadNoWalkPack({required Epoch epoch, AssetBundle? bundle}) async {
-  final ref = epoch.walkable?.exclude;
+Future<Object?> loadNoWalkPack({required Epoch epoch, AssetBundle? bundle, String? region}) async {
+  // A região embutida usa `exclude_pack`; as outras, `exclude_packs` pelo id (0.25.2: São Paulo embutido).
+  final ref = region == null || region == kBundledRegion ? epoch.walkable?.exclude : epoch.walkable?.excludePacks[region];
   if (ref == null) return null;
   final assets = bundle ?? rootBundle;
   final Uint8List bytes;
@@ -175,12 +176,16 @@ Future<Object?> loadNoWalkPack({required Epoch epoch, AssetBundle? bundle}) asyn
 /// O arquivo de rota da região embutida (`build_noaccess.py`). Só a rota lê e ele não entra em época, então não há SHA a
 /// conferir: falta ou defeito deixam a rota sem os bits (`null`), sem aviso. Nunca lança.
 Future<AccessPack?> loadAccessPack({required String region, AssetBundle? bundle}) async {
-  try {
-    final data = await (bundle ?? rootBundle).load('assets/regions/${region}_e0_noaccess.bin');
-    return AccessPack.parse(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
-  } catch (_) {
-    return null;
+  // 0.25.2: o de São Paulo foi gerado na época 5 (o nome do catálogo); o de Campinas, na 0.
+  for (final file in ['${region}_e0_noaccess.bin', '${region}_e5_noaccess.bin']) {
+    try {
+      final data = await (bundle ?? rootBundle).load('assets/regions/$file');
+      return AccessPack.parse(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
+    } catch (_) {
+      // o próximo nome, ou sem rota
+    }
   }
+  return null;
 }
 
 /// Os pontos do tráfego da região embutida (`build_traffic.py`): semáforos, placas, faixas e entradas do OSM. Só a simulação

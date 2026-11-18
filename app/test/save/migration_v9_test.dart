@@ -47,6 +47,6 @@ void main() {
     final when = session.state.bestiary['wyrm.eco']!.when;
     expect(when.contains('climate:crimson_moon'), isTrue);
     expect(File('assets/data/creatures.json').readAsStringSync(), contains('climate:black_sun|crimson_moon|meteor_shower'), reason: 'a pesquisa pede a Lua Carmim');
-    expect(data.schedule.epochs.length, greaterThan(12));
+    expect((data.schedule.dev, data.schedule.epochs.single.id), (true, 12), reason: '0.25.2: a época de desenvolvimento, com o mundo da 12');
   });
 }

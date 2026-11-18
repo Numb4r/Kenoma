@@ -86,7 +86,8 @@ void main() {
   });
 
   group('loadRegion', () {
-    final epochsText = File('assets/data/epochs.json').readAsStringSync();
+    // As épocas como eram até a 0.25.1 (histórico, fora do modo de desenvolvimento): a época 0 e o aviso de mundo vencido.
+    final epochsText = jsonEncode(epochsJson());
     // 2026-10-02: dentro da época 0.
     final inEpoch = epoch.startsUtc + 10 * 86400;
 

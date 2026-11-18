@@ -6,7 +6,7 @@ import '../player/game_state.dart' show kVisitedCellsKey, saveSchemaVersion;
 
 typedef _Step = Map<String, dynamic> Function(Map<String, dynamic>);
 
-final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8, 8: _v8ToV9, 9: _v9ToV10, 10: _v10ToV11, 11: _v11ToV12, 12: _v12ToV13};
+final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8, 8: _v8ToV9, 9: _v9ToV10, 10: _v10ToV11, 11: _v11ToV12, 12: _v12ToV13, 13: _v13ToV14};
 
 /// Leva [json] ao schema atual. Um save de versão futura passa sem mudar.
 Map<String, dynamic> migrateSave(Map<String, dynamic> json) {
@@ -200,4 +200,14 @@ Map<String, dynamic> _v12ToV13(Map<String, dynamic> j) {
   final out = {...j};
   out['npcs'] ??= <String, dynamic>{'day': 0, 'traded': <dynamic>[], 'rel': <String, dynamic>{}};
   return out;
+}
+
+/// v13 guardava nos Ajustes a época em teste (`dev_test_epoch`) e a seção Desenvolvedor (`dev_options`) da 0.24.3. Na 0.25.2
+/// (modo de desenvolvimento, GDD rev 368) há uma época só, sempre ativa: os dois campos saem. O resto passa intacto.
+Map<String, dynamic> _v13ToV14(Map<String, dynamic> j) {
+  final settings = j['settings'];
+  return {
+    ...j,
+    if (settings is Map) 'settings': <String, dynamic>{for (final e in settings.entries) if (e.key != 'dev_test_epoch' && e.key != 'dev_options') e.key as String: e.value},
+  };
 }

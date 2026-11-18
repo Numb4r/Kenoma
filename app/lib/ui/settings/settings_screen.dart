@@ -12,7 +12,6 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../core/plural.dart';
-import '../../core/epochs.dart' show kDevOptionsSetting, kTestEpochSetting;
 import '../../core/seed.dart';
 import '../../data/game_data.dart';
 import '../../net/region_manager.dart';
@@ -194,26 +193,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
     s.setSetting('notifications', true);
     await widget.notifier.apply(planNotifications(enabled: true, nowUtc: widget.realNowUtc(), progress: s.progress, balance: s.balance));
-  }
-
-  /// A época em teste (só neste aparelho): liga a não publicada mais nova, ou desliga. O mapa reabre com ela.
-  Future<void> _setTestEpoch(bool on) async {
-    final s = widget.session.state, e = widget.data.schedule.newestUnpublished;
-    if (on) {
-      if (e == null) return;
-      final ok = await _confirm(
-        'Ligar a época ${e.id}?',
-        'A época ${e.id} ainda não foi publicada. Ela passa a valer só neste aparelho: spawns, clima, materiais e o mapa dela. Os amigos continuam na época publicada.\n\nDesliga sozinha quando a época ${e.id} for publicada. O mapa reabre.',
-        'Ligar',
-      );
-      if (!ok || !mounted) return;
-      s.setSetting(kTestEpochSetting, e.id);
-    } else {
-      s.settings.remove(kTestEpochSetting);
-      s.changed();
-    }
-    await widget.session.flush();
-    await widget.onRestart();
   }
 
   Future<void> _export() async {
@@ -398,7 +377,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.all(12),
               decoration: panelBox(line: sel.stale ? kEssence : kPanelLine),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(widget.data.schedule.testing == null ? 'ÉPOCA ${sel.epoch.id}' : 'ÉPOCA ${sel.epoch.id} · EM TESTE', style: const TextStyle(fontSize: 16, color: kText)),
+                Text(widget.data.schedule.dev ? 'ÉPOCA ${sel.epoch.id} · DESENVOLVIMENTO' : 'ÉPOCA ${sel.epoch.id}', style: const TextStyle(fontSize: 16, color: kText)),
                 const SizedBox(height: 4),
                 Text('COMEÇOU EM ${_date(sel.epoch.startsUtc)}', style: const TextStyle(fontSize: 8, color: kDim, height: 1.8)),
                 Text('VALE ATÉ ${_date(sel.epoch.validUntilUtc)}', style: const TextStyle(fontSize: 8, color: kDim, height: 1.8)),
@@ -409,23 +388,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
               ]),
             ),
-            // 0.24.3: escondida até o menu de debug liberar. Os amigos só veem época publicada.
-            if (s.setting(kDevOptionsSetting)) ...[
-              const SectionTitle('Desenvolvedor'),
-              SwitchListTile(
-                key: const Key('test-epoch'),
-                contentPadding: EdgeInsets.zero,
-                title: Text(switch (widget.data.schedule.newestUnpublished) { final e? => 'Época ${e.id} em teste', null => 'Época em teste' }, style: const TextStyle(fontSize: 8)),
-                subtitle: Text(
-                    widget.data.schedule.newestUnpublished == null
-                        ? 'Nenhuma época esperando publicação agora'
-                        : 'Liga a época não publicada só neste aparelho, até ela ser publicada. O mapa reabre',
-                    style: const TextStyle(fontSize: 8, color: kDim)),
-                value: s.settings[kTestEpochSetting] != null,
-                activeThumbColor: kEssence,
-                onChanged: widget.data.schedule.newestUnpublished == null && s.settings[kTestEpochSetting] == null ? null : _setTestEpoch,
-              ),
-            ],
             const SectionTitle('App'),
             Container(
               padding: const EdgeInsets.all(12),

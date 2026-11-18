@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kenoma/core/epochs.dart';
 import 'package:kenoma/ui/chime.dart';
 import 'package:kenoma/player/game_session.dart';
 import 'package:kenoma/save/backup.dart';
@@ -85,33 +84,22 @@ void main() {
     await pump(tester, s);
     expect(find.byKey(const Key('group-code')), findsOneWidget);
     expect(find.text('AAAAA-BBBBB'), findsOneWidget);
-    expect(find.text('ÉPOCA 0'), findsOneWidget);
+    expect(find.text('ÉPOCA 12 · DESENVOLVIMENTO'), findsOneWidget);
     expect(find.text('VERSÃO 0.12.0+18'), findsOneWidget);
     expect(find.text(s.state.founder!.playerId), findsOneWidget);
     expect(find.textContaining('DESATUALIZADO'), findsNothing);
   });
 
-  testWidgets('0.24.3: a época em teste fica escondida até o debug liberar; ligar grava a não publicada mais nova e reabre o mapa', (tester) async {
+  testWidgets('0.25.2: sem seção Desenvolvedor nem época em teste, mesmo com os campos antigos no save; a época mostra o modo de desenvolvimento', (tester) async {
     final store = MemorySaveStore();
     final s = await session(store);
+    s.state.settings['dev_options'] = true;
+    s.state.settings['dev_test_epoch'] = 12;
     await pump(tester, s);
-    expect(find.byKey(const Key('test-epoch')), findsNothing, reason: 'amigos não veem');
-    s.state.setSetting(kDevOptionsSetting, true);
-    await tester.pump();
-    final newest = data.schedule.newestUnpublished!.id;
-    await tester.scrollUntilVisible(find.byKey(const Key('test-epoch')), 300);
-    await tester.tap(find.byKey(const Key('test-epoch')));
-    await tester.pumpAndSettle();
-    expect(find.text('LIGAR A ÉPOCA $newest?'), findsOneWidget);
-    await tester.tap(find.text('LIGAR'));
-    await tester.pumpAndSettle();
-    expect(s.state.settings[kTestEpochSetting], newest);
-    expect(testEpochOf(store.json), newest, reason: 'fica no save');
-    expect(restarts, 1);
-    await tester.tap(find.byKey(const Key('test-epoch')));
-    await tester.pumpAndSettle();
-    expect(s.state.settings.containsKey(kTestEpochSetting), isFalse);
-    expect(restarts, 2);
+    expect(find.text('ÉPOCA 12 · DESENVOLVIMENTO'), findsOneWidget);
+    expect(find.text('DESENVOLVEDOR'), findsNothing);
+    expect(find.byKey(const Key('test-epoch')), findsNothing);
+    expect(find.textContaining('EM TESTE'), findsNothing);
   });
 
   testWidgets('0.23.1: "Barras do Android" fica desligado (tela cheia) e grava a escolha', (tester) async {
@@ -147,10 +135,10 @@ void main() {
     expect(kSoundVolume, 0, reason: 'efeitos e música em zero');
   });
 
-  testWidgets('depois do fim da última época avisa que o mundo está desatualizado', (tester) async {
+  testWidgets('0.25.2: em modo de desenvolvimento, nem depois do fim da validade avisa mundo desatualizado', (tester) async {
     final s = await session(MemorySaveStore());
     await pump(tester, s, now: data.schedule.epochs.last.validUntilUtc + 10);
-    expect(find.textContaining('MUNDO DESATUALIZADO'), findsOneWidget);
+    expect(find.textContaining('MUNDO DESATUALIZADO'), findsNothing);
   });
 
   testWidgets('entrar noutro grupo pede confirmação; confirmando troca a seed, limpa o registro e recomeça o mapa', (tester) async {

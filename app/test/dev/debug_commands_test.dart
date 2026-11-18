@@ -1,26 +1,27 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kenoma/core/epochs.dart';
 import 'package:kenoma/dev/debug_commands.dart';
 import 'package:kenoma/dev/dev_tools.dart';
 import 'package:kenoma/save/save_store.dart';
+import 'package:kenoma/world/style_advisor.dart' show kSimpleGraphicsSetting;
 
 import '../support/fake_position_source.dart';
-import '../support/fixtures.dart';
 
-/// 0.24.3: a época em teste se liga por comando (`celular.sh cmd`), sem tocar nos menus do celular.
+/// Os comandos de debug por intent (`celular.sh cmd`), sem tocar nos menus do celular.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('testepoch on grava a não publicada mais nova e libera a seção; off apaga e mantém o resto do save', () async {
+  test('0.25.1: style grava os gráficos do mapa no save, sem mexer no resto', () async {
     final store = MemorySaveStore()..json = {'group_code': 'AAAAA-BBBBB', 'settings': {'street_names': true}};
     final tools = DevTools(realSource: FakeGps());
-    final newest = loadEpochs().newestUnpublished!.id;
-    expect(await runDebugCommands('testepoch on', tools: tools, openSave: () async => store), ['testepoch $newest']);
-    expect(testEpochOf(store.json), newest);
-    expect(store.json!['settings'][kDevOptionsSetting], isTrue);
+    expect(await runDebugCommands('style simple', tools: tools, openSave: () async => store), ['style simple']);
+    expect(store.json!['settings'], {'street_names': true, kSimpleGraphicsSetting: true});
     expect(store.json!['group_code'], 'AAAAA-BBBBB');
-    expect(await runDebugCommands('testepoch off; devopts off', tools: tools, openSave: () async => store), ['testepoch off', 'devopts off']);
-    expect(testEpochOf(store.json), isNull);
-    expect(store.json!['settings'], {'street_names': true, kDevOptionsSetting: false});
+  });
+
+  test('0.25.2: testepoch e devopts saíram com a época em teste (comando desconhecido, nada gravado)', () async {
+    final store = MemorySaveStore()..json = {'settings': {'street_names': true}};
+    final tools = DevTools(realSource: FakeGps());
+    expect(await runDebugCommands('testepoch on; devopts on', tools: tools, openSave: () async => store), ['? testepoch', '? devopts']);
+    expect(store.json!['settings'], {'street_names': true});
   });
 }

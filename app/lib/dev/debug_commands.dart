@@ -1,18 +1,16 @@
 /// Comandos de debug vindos do adb por intent (0.24.2), para dirigir o celular sem teclado: o script nunca digita no
 /// aparelho (no 0.24.1 ele digitou num chat de outro app). `scripts/celular.sh cmd "sim on; clock 2027-01-08T02:00;
 /// weather rain; tp -22.9041,-47.06; width 80; map"` vira `am start ... --es kenoma_cmd "..."`, que só chega a este app.
-/// Comandos separados por `;`. Desconhecido é ignorado e dito no retorno. 0.24.3: `devopts on|off` (a seção Desenvolvedor
-/// dos Ajustes) e `testepoch on|off` (a época não publicada mais nova só neste aparelho; vale ao abrir o mapa).
+/// Comandos separados por `;`. Desconhecido é ignorado e dito no retorno. (0.25.2: saíram `devopts` e `testepoch`, com a
+/// época em teste.)
 library;
 
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart';
 
-import '../core/epochs.dart';
 import '../world/debug_creatures.dart' show DebugCreatureSpec, DebugVariant;
 import '../world/style_advisor.dart' show kSimpleGraphicsSetting;
 import '../crafting/crafting_state.dart' show LoadoutSlot;
-import '../net/signed_feed.dart' show loadEpochsJson;
 import '../save/ksv_save_store.dart';
 import '../save/save_store.dart';
 import '../ui/game/game_map_screen.dart' show liveGameState;
@@ -26,7 +24,6 @@ const debugCommandChannel = MethodChannel('kenoma/debug_cmd');
 Future<List<String>> runDebugCommands(String text, {required DevTools tools, Future<void> Function()? openMap, Future<SaveStore> Function()? openSave}) async {
   final out = <String>[];
   final save = openSave ?? KsvSaveStore.inDocuments;
-  final later = liveGameState() == null ? '' : ' (vale ao reabrir o mapa)';
   for (final raw in text.split(';')) {
     final parts = raw.trim().split(RegExp(r'\s+'));
     if (parts.first.isEmpty) continue;
@@ -135,28 +132,20 @@ Future<List<String>> runDebugCommands(String text, {required DevTools tools, Fut
       case 'exit':
         // 0.25.0: a saída animada do Eco mais perto (`exit tuned` ou `exit flee`), só no desenho.
         out.add('exit ${tools.exitNearestEco?.call(arg != 'flee') ?? '? sem Eco à vista'}');
+      case 'turn':
+        // 0.25.2: `turn 30` gira o mapa a 30° (para o "Giro dos objetos" sem pinça de dois dedos).
+        final deg = double.tryParse(arg);
+        if (deg == null || tools.turnMapTo == null) {
+          out.add('turn? $arg');
+          continue;
+        }
+        tools.turnMapTo!(deg);
+        out.add('turn $deg');
       case 'style':
         // 0.25.1: `style full|simple`, os gráficos do mapa dos Ajustes (para medir os dois estilos sem tocar na tela).
         final simple = arg == 'simple', live = liveGameState();
         live != null ? live.setSetting(kSimpleGraphicsSetting, simple) : await writeSetting(save, kSimpleGraphicsSetting, simple);
         out.add('style ${simple ? 'simple' : 'full'}');
-      case 'devopts':
-        await writeSetting(save, kDevOptionsSetting, arg != 'off');
-        out.add('devopts ${arg == 'off' ? 'off' : 'on'}');
-      case 'testepoch':
-        if (arg == 'off') {
-          await writeSetting(save, kTestEpochSetting, null);
-          out.add('testepoch off$later');
-          continue;
-        }
-        final e = EpochSchedule.fromJson(await loadEpochsJson()).newestUnpublished;
-        if (e == null) {
-          out.add('testepoch? nenhuma época não publicada');
-          continue;
-        }
-        await writeSetting(save, kDevOptionsSetting, true);
-        await writeSetting(save, kTestEpochSetting, e.id);
-        out.add('testepoch ${e.id}$later');
       case 'map':
         await openMap?.call();
         out.add('map');
