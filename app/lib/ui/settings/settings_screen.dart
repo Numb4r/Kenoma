@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../core/plural.dart';
 import '../../core/epochs.dart' show kDevOptionsSetting, kTestEpochSetting;
 import '../../core/seed.dart';
 import '../../data/game_data.dart';
@@ -239,7 +240,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
     final ok = await _confirm(
       'Substituir o jogo?',
-      'BACKUP DE ${_date(p.savedUtc)}\nNÍVEL ${p.level} · ${p.creatures} CRIATURAS\nGRUPO ${p.groupCode}${p.appVersion.isEmpty ? '' : ' · VERSÃO ${p.appVersion}'}\n\nO jogo que está no aparelho agora será substituído por este.',
+      'BACKUP DE ${_date(p.savedUtc)}\nNÍVEL ${p.level} · ${countText(p.creatures, 'criatura').toUpperCase()}\nGRUPO ${p.groupCode}${p.appVersion.isEmpty ? '' : ' · VERSÃO ${p.appVersion}'}\n\nO jogo que está no aparelho agora será substituído por este.',
       'Importar',
     );
     if (!ok || !mounted) return;

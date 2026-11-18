@@ -3,6 +3,8 @@
 /// código. Dart puro.
 library;
 
+import '../core/plural.dart';
+
 /// Um conhecido: fixo por bairro, com rotina por dia da semana e hora local.
 class KnownNpc {
   const KnownNpc({required this.id, required this.name, required this.nickname, required this.gender, required this.school, required this.outfit, required this.about, required this.days, required this.fromH, required this.toH, required this.place, required this.greet});
@@ -91,10 +93,5 @@ class NpcData {
 const List<String> kNpcSchools = ['technomancer', 'shaman', 'sealer', 'none'];
 
 /// Preenche as lacunas `{chave}` de [text] com [values].
-String fillGaps(String text, Map<String, Object> values) {
-  var out = text;
-  for (final e in values.entries) {
-    out = out.replaceAll('{${e.key}}', '${e.value}');
-  }
-  return out;
-}
+/// Preenche as lacunas de [text] com [values] (ver `fillText`: `{dias:dia}` concorda com o número).
+String fillGaps(String text, Map<String, Object> values) => fillText(text, values);

@@ -47,23 +47,23 @@
     ],
     "event": [
       {
-        "title": "{evento} chega em {dias} dias",
+        "title": "{evento} chega em {dias:dia}",
         "body": "Quem tem selo guardado, que confira a bolsa."
       },
       {
-        "title": "Faltam {dias} dias para {evento}",
+        "title": "{dias?Falta|Faltam} {dias:dia} para {evento}",
         "body": "A banca avisa cedo. Depois não diga que não soube."
       },
       {
-        "title": "Contagem: {dias} dias até {evento}",
+        "title": "Contagem: {dias:dia} até {evento}",
         "body": "Dizem que o Véu afina antes. Ninguém mediu."
       },
       {
-        "title": "{evento} em {dias} dias, prepare a Bancada",
+        "title": "{evento} em {dias:dia}, prepare a Bancada",
         "body": "Receitas de calendário não esperam o atrasado."
       },
       {
-        "title": "Bairro se prepara: {evento} em {dias} dias",
+        "title": "Bairro se prepara: {evento} em {dias:dia}",
         "body": "Combine a rota com quem anda na sua frequência."
       },
       {

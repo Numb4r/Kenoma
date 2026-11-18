@@ -12,6 +12,7 @@ import '../../world/spectral_bus.dart';
 import '../../world/veilbreakers.dart';
 import '../colors.dart';
 import '../craft/ui_art.dart';
+import 'spawn_painter.dart' show anchoredRect;
 
 final _px = Paint()
   ..filterQuality = FilterQuality.none
@@ -34,7 +35,7 @@ void _strip(Canvas c, Image img, int frame, Offset foot, double size, {bool left
 
 /// Os NPCs presentes em [t] e a sintonia de cada um (o anel fechando no Eco e o fio do sinal até ele). [fallback]: os quadros
 /// do Conjurador, se a arte do NPC faltar.
-void paintVeilbreakers(Canvas c, Size view, MapCamera cam, List<Veilbreaker> npcs, double t, {required double size, required List<Image> fallback}) {
+void paintVeilbreakers(Canvas c, Size view, MapCamera cam, List<Veilbreaker> npcs, double t, {required double size, required List<Image> fallback, Offset? Function(int uid)? anchorOf, double? ecoSize}) {
   final art = UiArt.instance;
   for (final n in npcs) {
     if (!n.presentAt(t)) continue;
@@ -54,13 +55,18 @@ void paintVeilbreakers(Canvas c, Size view, MapCamera cam, List<Veilbreaker> npc
     }
     final tu = n.tuningAt(t);
     if (tu == null) continue;
-    final (ex, ey) = cam.cellToScreen(tu.eco.x, tu.eco.y, view.width, view.height);
+    // 0.25.0: o anel e o fio se centram no ponto de ancoragem do Eco (onde ele foi desenhado, com o vento).
+    final (rx, ry) = cam.cellToScreen(tu.eco.x, tu.eco.y, view.width, view.height);
+    final eco = anchorOf?.call(tu.eco.uid) ?? Offset(rx.roundToDouble(), ry.roundToDouble());
     final k = ((t - tu.atUtc) / n.animS).clamp(0.0, 0.999);
-    c.drawLine(Offset(sx, sy - size * 0.6), Offset(ex, ey - size * 0.4), Paint()
+    c.drawLine(Offset(sx, sy - size * 0.6), eco, Paint()
       ..color = kSignal.withValues(alpha: 0.5 * (1 - k))
       ..strokeWidth = math.max(1, size / 16));
     final fx = art?.image('fx_npc_tune');
-    if (fx != null) _strip(c, fx, (k * 4).floor(), Offset(ex, ey + size * 0.2), size * 1.2);
+    if (fx != null) {
+      final fw = fx.height.toDouble(), frame = (k * 4).floor() % (fx.width / fw).floor();
+      c.drawImageRect(fx, Rect.fromLTWH(frame * fw, 0, fw, fw), anchoredRect(eco, (ecoSize ?? size) * 1.2), _px);
+    }
   }
 }
 

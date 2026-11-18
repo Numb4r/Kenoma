@@ -3,6 +3,7 @@
 /// as permissões (notificações e localização durante o uso) e liga o serviço.
 library;
 
+import '../../core/plural.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
@@ -107,7 +108,7 @@ class PatrolScreen extends StatelessWidget {
         const SectionTitle('Anteriores'),
         if (patrolHistory(state).isEmpty) const Text('NENHUMA PATRULHA AINDA.', style: TextStyle(fontSize: 8, color: kDim, height: 1.8)),
         for (final p in patrolHistory(state).take(20))
-          Text('${_when(p.endUtc)} · ${p.min} MIN · ${p.sparks} FAGULHAS · ${p.materials} MATERIAIS · ${p.marks} MARCAS', style: body),
+          Text('${_when(p.endUtc)} · ${p.min} MIN · ${[countText(p.sparks, 'Fagulha'), countText(p.materials, 'material'), countText(p.marks, 'marca')].join(' · ').toUpperCase()}', style: body),
         const SectionTitle('Como funciona'),
         const Text(
           'Com a Patrulha ligada o jogo continua com o app fechado ou a tela bloqueada, como um app de corrida. '

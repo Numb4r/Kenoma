@@ -3,6 +3,7 @@
 /// [SkyOutlook] (`world/sky_outlook.dart`).
 library;
 
+import '../../core/plural.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -222,7 +223,7 @@ class _SkyScreenState extends State<SkyScreen> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(moonPhaseNames[moonPhase(now)]!.toUpperCase(), style: const TextStyle(fontSize: 16, color: kText)),
               Text('${(moonIllumination(now) * 100).round()}% ILUMINADA', style: _body),
-              Text('CHEIA EM ${toFull.round()} DIAS · NOVA EM ${toNew.round()} DIAS', style: _dim),
+              Text('CHEIA EM ${countText(toFull.round(), 'dia').toUpperCase()} · NOVA EM ${countText(toNew.round(), 'dia').toUpperCase()}', style: _dim),
             ]),
           ),
         ]),

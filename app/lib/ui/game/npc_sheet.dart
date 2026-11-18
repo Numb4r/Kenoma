@@ -66,7 +66,7 @@ Future<void> handleNpcTouch(BuildContext context, Veilbreaker v, MapTouchDeps d,
   final known = v.known != null, rel = known ? s.npcs.relOf(v.id) : 0;
   final offer = npcOfferFor(npcId: v.id, rel: rel, playerKey: player, day: day, d: npc);
   final rumor = npcRumor(v: v, at: (x: p.x, y: p.y), rel: rel, playerKey: player, day: day, b: b, d: npc, f: rumorFactsFor(d, v, (x: p.x, y: p.y), now));
-  String qty(String id, int n) => '$n ${d.data.itemNames[id] ?? id}';
+  String qty(String id, int n) => d.data.itemCount(id, n);
   final pick = day + v.id.length;
   // Logo depois de sintonizar, ele comenta o Eco que acabou de levar.
   final last = [for (final t in v.tunes) if (now >= t.atUtc && now - t.atUtc < 60) t].lastOrNull;

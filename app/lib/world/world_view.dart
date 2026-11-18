@@ -3,6 +3,7 @@
 /// daqui e repassa os toques.
 library;
 
+import '../core/plural.dart';
 import 'dart:math' as math;
 
 import '../core/features.dart';
@@ -149,6 +150,9 @@ class WorldView {
 
   /// Nome do item na interface.
   final String Function(String id) itemName;
+
+  /// 0.25.0: o plural irregular do item (`plural` em `items.json`), ou `null` para a regra do português.
+  String? Function(String id)? itemPlural;
 
   /// Aviso para o jogador ("+1 Pó de Essência de Fogo").
   final void Function(String message)? onMessage;
@@ -388,7 +392,7 @@ class WorldView {
       _record('spark', s.entryId.replaceFirst('item.dust.', ''), s.quantity);
       collected.add(s);
       onCollected?.call(s);
-      onMessage?.call('+${s.quantity} ${itemName(s.entryId)}${sandbox() ? ' (debug, fora da Bolsa)' : ''}');
+      onMessage?.call('+${countText(s.quantity, itemName(s.entryId), plural: itemPlural?.call(s.entryId))}${sandbox() ? ' (debug, fora da Bolsa)' : ''}');
     }
     _inAura
       ..clear()
@@ -450,7 +454,7 @@ class WorldView {
     _gainXp(state.balance.material, tUtc);
     _record('material', s.entryId, qty);
     spawns = [for (final o in spawns) if (o.uid != s.uid) o];
-    onMessage?.call('+$qty ${itemName(s.entryId)}${sandbox() ? ' (debug, fora da Bolsa)' : ''}');
+    onMessage?.call('+${countText(qty, itemName(s.entryId), plural: itemPlural?.call(s.entryId))}${sandbox() ? ' (debug, fora da Bolsa)' : ''}');
     onCollected?.call(s);
     return TouchResult.collected;
   }

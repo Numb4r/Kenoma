@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/veilbreaker_model.dart';
 import 'package:kenoma/core/windows.dart';
@@ -120,4 +122,46 @@ void main() {
       }
     }
   });
+
+  test('0.25.0: o caminho segue a calçada da rua (dobra na esquina) em vez de cortar em reta', () {
+    // Uma rua em L com a esquina perto da célula do NPC: 6 m de largura, calçada a 4,2 m do eixo.
+    final cx = (x0 / 8).floor(), cy = (y0 / 8).floor();
+    final corner = (cx * 8 + 6.0, cy * 8 + 6.0);
+    final road = [(corner.$1 - 20, corner.$2), corner, (corner.$1, corner.$2 + 20)];
+    final f = VeilbreakerField(
+      seed: seed,
+      modelAt: (_) => const VeilbreakerModel(baseChance: 1),
+      epochAt: (_) => 12,
+      biomeAt: (_, _) => 'lit',
+      ecosNear: (_, _, _, _) => const [],
+      mpcAt: (_) => mpc,
+      data: data,
+      roadsNear: (_, _, _) => [(pts: road, halfM: 3)],
+    );
+    double distToRoad(double x, double y) {
+      var best = double.infinity;
+      for (var i = 0; i + 1 < road.length; i++) {
+        final (ax, ay) = road[i];
+        final (bx, by) = road[i + 1];
+        final dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+        final t = (((x - ax) * dx + (y - ay) * dy) / l2).clamp(0.0, 1.0);
+        best = math.min(best, math.sqrt(math.pow(ax + dx * t - x, 2) + math.pow(ay + dy * t - y, 2)));
+      }
+      return best * mpc;
+    }
+
+    var n = 0;
+    for (var slot = 0; slot < 40; slot++) {
+      for (final v in f.inCell(cx, cy, t0 ~/ 900 + slot, const VeilbreakerModel(baseChance: 1))) {
+        for (var t = v.startUtc.toDouble(); t < v.endUtc; t += 3) {
+          final p = v.at(t);
+          final d = distToRoad(p.x, p.y);
+          expect(d, inInclusiveRange(3.0, 6.1), reason: 'na calçada (fora da rua, sem cortar a esquina), a ${d.toStringAsFixed(1)} m do eixo');
+          n++;
+        }
+      }
+    }
+    expect(n, greaterThan(100));
+  });
 }
+

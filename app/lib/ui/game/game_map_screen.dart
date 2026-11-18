@@ -15,6 +15,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:vibration/vibration.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../core/plural.dart';
 import '../../core/epochs.dart' show kTestEpochSetting, testEpochId, testEpochOf;
 import '../../core/fnv.dart';
 import '../../core/pcg32.dart';
@@ -561,7 +562,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       HapticFeedback.mediumImpact();
       _toast('Sinal preso por ${state.balance.markDurationS ~/ 60} min');
     } else {
-      _toast('Limite de ${state.balance.markMax} marcações. Solte uma com toque longo');
+      _toast('Limite de ${countText(state.balance.markMax, 'marcação')}. Solte uma com toque longo');
     }
   }
 
@@ -908,6 +909,17 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       data: data.npc,
       snapper: world.field.snapper,
       nicknameChance: data.npcBalance.nicknameChance,
+      // 0.25.0: o caminho segue a calçada das ruas do pacote visual (igual para todos), como os passantes.
+      roadsNear: (x, y, r) {
+        final n = game.visual.cellsPerTile, reach = r / metersPerCell(tileFractionToLatLon(0, y, biomeZoom).$1);
+        return [
+          for (var ty = ((y - reach) / n).floor(); ty <= ((y + reach) / n).floor(); ty++)
+            for (var tx = ((x - reach) / n).floor(); tx <= ((x + reach) / n).floor(); tx++)
+              for (final road in game.cityTiles.tileAt(tx, ty).roads)
+                if (road.bounds.$1 <= x + reach && road.bounds.$3 >= x - reach && road.bounds.$2 <= y + reach && road.bounds.$4 >= y - reach)
+                  (pts: [for (var i = 0; i + 1 < road.xy.length; i += 2) (road.xy[i], road.xy[i + 1])], halfM: (assets.balance.roadWidthM[road.cls] ?? 6) / 2),
+        ];
+      },
     );
     world.veil = veil;
     tools.openNearestNpc = () {

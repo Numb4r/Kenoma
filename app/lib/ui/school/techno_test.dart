@@ -2,6 +2,7 @@
 /// marcador dentro da faixa do sinal; o botão de estabilizar segura o ruído por alguns segundos. A nota vem de `TechnoTest`.
 library;
 
+import '../../core/plural.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -20,7 +21,7 @@ class TechnoTestScreen extends StatelessWidget {
         school: School.technomancer,
         title: 'Teste do sinal',
         intro: 'O sinal está sujo. Arraste o dedo na trilha para manter o marcador dentro da faixa. '
-            'O botão ESTABILIZAR segura o ruído por ${balance.stabilizeS.round()} s, e você tem ${balance.stabilizeCharges} cargas.',
+            'O botão ESTABILIZAR segura o ruído por ${balance.stabilizeS.round()} s, e você tem ${countText(balance.stabilizeCharges, 'carga')}.',
         scene: (finish) => TechnoScene(balance: balance, onDone: finish),
       );
 }

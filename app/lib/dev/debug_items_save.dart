@@ -3,6 +3,7 @@
 library;
 
 
+import '../core/plural.dart';
 import 'package:flutter/material.dart';
 
 import '../core/epochs.dart' show kDevOptionsSetting;
@@ -195,7 +196,7 @@ Future<void> _import(BuildContext context, DebugEnv env) async {
       builder: (c) => AlertDialog(
         backgroundColor: KCores.superficie1,
         title: const Text('SUBSTITUIR O JOGO?', style: KTexto.titulo),
-        content: Text('Nível ${p.level} · ${p.creatures} criaturas · grupo ${p.groupCode}.\nO jogo que está no aparelho será substituído.', style: KTexto.corpo),
+        content: Text('Nível ${p.level} · ${countText(p.creatures, 'criatura')} · grupo ${p.groupCode}.\nO jogo que está no aparelho será substituído.', style: KTexto.corpo),
         actions: [
           DebugButton(label: 'Cancelar', color: KCores.textoMudo, onTap: () => Navigator.pop(c, false)),
           DebugButton(label: 'Importar', color: KCores.brasaLaranja, onTap: () => Navigator.pop(c, true)),

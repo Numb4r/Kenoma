@@ -2,6 +2,7 @@
 /// Só desenha e repassa o toque: a regra está em `crafting/fusion.dart`. Antes do nível 6 aparece como ???.
 library;
 
+import '../../core/plural.dart';
 import 'package:flutter/material.dart';
 
 import '../../crafting/fusion.dart';
@@ -110,7 +111,7 @@ class _FusionPanelState extends State<FusionPanel> {
     final essence = essenceOfFamily(_d, _family)!;
     final cost = s.cb.fusionEssenceCost;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('${s.cb.fusionEcoCount} ECOS DA MESMA FAMÍLIA + $cost ${_d.itemName(essence).toUpperCase()} VIRAM UM ESPÍRITO. OS ECOS ESCOLHIDOS SE VÃO.', style: KTexto.corpoPequeno),
+      Text('${countText(s.cb.fusionEcoCount, 'Eco').toUpperCase()} DA MESMA FAMÍLIA + ${_d.itemCount(essence, cost).toUpperCase()} VIRAM UM ESPÍRITO. OS ECOS ESCOLHIDOS SE VÃO.', style: KTexto.corpoPequeno),
       const SizedBox(height: KEspaco.s2),
       Wrap(spacing: KEspaco.s1, runSpacing: KEspaco.s1, children: [
         for (final f in fusionFamilies(_d))

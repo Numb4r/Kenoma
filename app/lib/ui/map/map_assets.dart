@@ -206,7 +206,8 @@ WorldView worldViewFor({
   )
     // O crafting da fase 1: a qualidade do bruto vem da condição e do lugar, e a bolsa cheia deixa o material no mapa.
     ..pickupQuality = ((id, here) => rawQuality(id, here, data.craft.balance))
-    ..bagFits = ((key, n, t) => fits(state, data.craft, t, key, n));
+    ..bagFits = ((key, n, t) => fits(state, data.craft, t, key, n))
+    ..itemPlural = ((id) => data.itemPlurals[id]);
 }
 
 /// As funções do bloco com as regras do OSM ligadas.

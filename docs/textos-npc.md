@@ -164,12 +164,12 @@ Todos verdadeiros: o código só escolhe um modelo quando o fato existe no mundo
 - O ponto mais perto recebe visita em {min} min. Não é linha da prefeitura.
 
 ### evento
-- {evento} chega em {dias} dias. Eu já estou juntando material.
-- Faltam {dias} dias para {evento}. A rua já está diferente, repara.
-- Ouvi que {evento} vem em {dias} dias. Deixa a Bancada pronta.
-- Em {dias} dias, {evento}. Quem guarda selo agora agradece depois.
-- {evento} em {dias} dias. O Véu sempre afina antes.
-- Marca aí: {evento}, daqui a {dias} dias.
+- {evento} chega em {dias:dia}. Eu já estou juntando material.
+- {dias?Falta|Faltam} {dias:dia} para {evento}. A rua já está diferente, repara.
+- Ouvi que {evento} vem em {dias:dia}. Deixa a Bancada pronta.
+- Em {dias:dia}, {evento}. Quem guarda selo agora agradece depois.
+- {evento} em {dias:dia}. O Véu sempre afina antes.
+- Marca aí: {evento}, daqui a {dias:dia}.
 - É hoje: {evento}. Por isso tem tanta gente na rua. (só com `{dias}` = 0)
 - {evento} já começou. Não fica parado aqui comigo. (só com `{dias}` = 0)
 

@@ -9,6 +9,7 @@
 /// Dart puro.
 library;
 
+import '../core/plural.dart';
 import 'dart:convert' show utf8;
 
 import '../core/astro.dart';
@@ -349,7 +350,7 @@ class PersonalLayer {
   }
 
   /// O resumo do debug: o que a camada acrescentou nesta sessão.
-  String get stats => '${addedEcos.length} Ecos · $addedPuddles poças · $addedMaterials materiais';
+  String get stats => '${countText(addedEcos.length, 'Eco')} · ${countText(addedPuddles, 'poça')} · ${countText(addedMaterials, 'material')}';
 }
 
 /// Os oito sorteios de uma vaga, sempre na mesma ordem, nasça ela ou não.

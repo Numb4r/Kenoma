@@ -78,6 +78,7 @@ void paintSpawns(
   double pxPerM = 0,
   double artPixelDp = 3,
   bool Function(int uid)? facingLeftOf,
+  Map<int, ui.Offset>? anchors,
 }) {
   final ordered = [...spawns]..sort((a, b) => a.y.compareTo(b.y));
   final climateWind = windDir;
@@ -97,6 +98,7 @@ void paintSpawns(
     final margin = math.max(spriteSize, 60);
     if (sx < -margin || sy < -margin || sx > view.width + margin || sy > view.height + margin) continue;
     final center = ui.Offset(sx.roundToDouble(), sy.roundToDouble());
+    anchors?[s.uid] = center; // 0.25.0: o ponto de ancoragem desenhado (com o vento): os efeitos na criatura se centram nele
     final near = inAura(s);
     if (s.isEco) {
       final size = isSpiritSpawn(s) ? (spiritSize ?? spriteSize) : spriteSize;
@@ -396,3 +398,8 @@ void paintSeam(ui.Canvas canvas, ui.Offset c, double size, double u) {
     canvas.drawRect(ui.Rect.fromCenter(center: c.translate(sx, 0), width: 2, height: h), ui.Paint()..color = kVeil..isAntiAlias = false);
   }
 }
+
+/// 0.25.0: o retângulo de um efeito de [size] centrado no ponto de ancoragem [anchor] de uma criatura (o centro do sprite
+/// como ele foi desenhado), em pixels inteiros. Todo efeito ancorado em criatura usa isto, não o canto nem a posição crua.
+ui.Rect anchoredRect(ui.Offset anchor, double size) =>
+    ui.Rect.fromLTWH((anchor.dx - size / 2).roundToDouble(), (anchor.dy - size / 2).roundToDouble(), size.roundToDouble(), size.roundToDouble());

@@ -3,6 +3,7 @@
 /// nível forçado), então vale na próxima vez que o mapa abrir.
 library;
 
+import '../core/plural.dart';
 import 'package:flutter/material.dart';
 
 import '../crafting/bag.dart' show acceptableCount, slotsUsedBy;
@@ -90,7 +91,7 @@ List<DebugItem> craftingItems(DebugEnv env) => [
               final messenger = ScaffoldMessenger.maybeOf(context);
               try {
                 final out = await grantCraftingKit(env);
-                messenger?.showSnackBar(SnackBar(content: Text(out == 0 ? 'Kit de crafting no save' : 'Kit de crafting no save. Bolsa cheia: $out itens ficaram de fora')));
+                messenger?.showSnackBar(SnackBar(content: Text(out == 0 ? 'Kit de crafting no save' : 'Kit de crafting no save. Bolsa cheia: ${countText(out, 'item', plural: 'itens')} ficaram de fora')));
               } catch (_) {
                 messenger?.showSnackBar(const SnackBar(content: Text('Sem save para escrever')));
               }

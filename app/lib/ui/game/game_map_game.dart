@@ -611,13 +611,14 @@ class GameMapGame extends FlameGame {
       if (here && wv != null) ...{
         MapLayer.creatures: () {
           // 0.24.5: o Ônibus Espectral (cena do mundo, igual para o grupo) e os Outros Veilbreakers, com a sintonia.
+          if (ecoAnchors.length > 600) ecoAnchors.clear();
           paintSpectralBuses(canvas, view, cam, visibleTiles(view, cam), _exactUtc(), seed: wv.field.seed, b: touchBalance, pxPerM: cam.pixelsPerCell / mpc, mpc: mpc, carM: balance.ghostCarM, figure: playerSizePx);
           _paintSpawns(canvas, view, cam, wv, center, (s) => s.isEco);
           final v = veil;
           if (v != null) {
             final t = _exactUtc();
             visibleVeilbreakers = v.around(avatar.x, avatar.y, t.floor(), view.longestSide / cam.pixelsPerCell * mpc);
-            paintVeilbreakers(canvas, view, cam, visibleVeilbreakers, t, size: playerSizePx, fallback: playerFrames);
+            paintVeilbreakers(canvas, view, cam, visibleVeilbreakers, t, size: playerSizePx, fallback: playerFrames, anchorOf: (uid) => ecoAnchors[uid], ecoSize: ecoSizePx);
           }
         },
         MapLayer.sparks: () {
@@ -938,6 +939,7 @@ class GameMapGame extends FlameGame {
         dpr: dpr,
         artPixelDp: balance.artPixelDp,
         facingLeftOf: (uid) => (ecoFacing[uid]?.$1 ?? -1) > _time && ecoFacing[uid]!.$2,
+        anchors: ecoAnchors,
         wind: creatureWind,
         windDir: _climate.wind,
         localWind: _localWindOf,
@@ -976,7 +978,7 @@ class GameMapGame extends FlameGame {
       }
     }
     travelLayer?.paintCar(canvas, view, cam, metersPerCell(_lat), utc: _exactUtc(), avatar: avatar);
-    fx.paint(canvas, view, cam, avatar: center, playerSize: playerSize, sparkSize: sparkSizePx, dpr: dpr);
+    fx.paint(canvas, view, cam, avatar: center, playerSize: playerSize, sparkSize: sparkSizePx, dpr: dpr, anchorOf: (uid) => ecoAnchors[uid]);
   }
 
   /// 0.24.5: a faixa do modo trânsito agora (quem monta o mapa preenche). `null`: sempre a pé.
@@ -1169,6 +1171,10 @@ class GameMapGame extends FlameGame {
 
   /// Os bandos e gatos do tráfego (o toque espanta o bando e faz carinho no gato).
   BirdFlocks get flocks => _traffic.birds;
+
+  /// 0.25.0: onde cada Eco foi desenhado por último (o centro do sprite, com o vento): os efeitos ancorados nele (anel da
+  /// sintonia do NPC, o desfazer da fuga) se centram aqui.
+  final ecoAnchors = <int, Offset>{};
 
   /// Debug (0.24.5): quase todo carro novo de avenida vira ônibus.
   bool Function() manyBuses = () => false;

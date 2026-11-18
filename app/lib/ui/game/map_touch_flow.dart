@@ -5,6 +5,7 @@
 /// larga uma coisa). As recompensas são da camada pessoal, com limite por dia (`map_touch` no `balance.json`).
 library;
 
+import '../../core/plural.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/astro.dart';
@@ -91,7 +92,7 @@ Future<void> handleMapTouch(BuildContext context, TouchHit h, MapTouchDeps d) as
       if (pass != null && pass.phase == SpectralPhase.stopped && d.data.npc.busNow.isNotEmpty) {
         line = fillGaps(NpcData.pickOf({'n': d.data.npc.busNow}, 'n', pass.arriveUtc), {'seg': (pass.arriveUtc + b.busDwellS - now).ceil().clamp(1, 99)});
       }
-      await _panel(context, (bus['title'] as String?) ?? 'Ponto de ônibus', [line.replaceAll('{min}', '$min'), (bus['no_lines'] as String?) ?? '']);
+      await _panel(context, (bus['title'] as String?) ?? 'Ponto de ônibus', [fillText(line, {'min': min}), (bus['no_lines'] as String?) ?? '']);
     case TouchKind.newsstand:
       final here = d.world.here(lat, lon, now, waterSearchM: 0);
       final climate = d.data.climates.of(here.climates.first).name;

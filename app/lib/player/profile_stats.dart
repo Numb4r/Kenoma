@@ -1,6 +1,7 @@
 /// Apresentação do Perfil: textos e contas curtas que a tela só desenha. Dart puro.
 library;
 
+import '../core/plural.dart';
 import '../save/founder.dart';
 import 'bestiary.dart';
 import 'conjurer_balance.dart';
@@ -17,7 +18,7 @@ String formatKm2(double km2) => '${km2.toStringAsFixed(2).replaceFirst('.', ',')
 int restDays(int restBalance, int daily) => daily <= 0 ? 0 : restBalance ~/ daily;
 
 /// `1 dia` ou `N dias`.
-String daysLabel(int n) => n == 1 ? '1 dia' : '$n dias';
+String daysLabel(int n) => countText(n, 'dia');
 
 /// Só letras, números e espaços; sem espaços nas pontas; no máximo [kPlayerNameMax] caracteres.
 String sanitizeName(String raw) {

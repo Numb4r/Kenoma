@@ -50,11 +50,11 @@ Formato: `- GRUPO | manchete | corpo`. `{clima}` é o nome do clima de hoje ali,
 - CLIMA | {clima} deixa marcas no chão do bairro | Olhe para baixo antes de olhar para o aparelho.
 - CLIMA | Dia de {clima}: sinal oscila | Conjuradores pedem calma no dial.
 - CLIMA | {clima} outra vez, e ninguém reclamou | A cidade muda de cara. Os Ecos mudam junto.
-- EVENTO | {evento} chega em {dias} dias | Quem tem selo guardado, que confira a bolsa.
-- EVENTO | Faltam {dias} dias para {evento} | A banca avisa cedo. Depois não diga que não soube.
-- EVENTO | Contagem: {dias} dias até {evento} | Dizem que o Véu afina antes. Ninguém mediu.
-- EVENTO | {evento} em {dias} dias, prepare a Bancada | Receitas de calendário não esperam o atrasado.
-- EVENTO | Bairro se prepara: {evento} em {dias} dias | Combine a rota com quem anda na sua frequência.
+- EVENTO | {evento} chega em {dias:dia} | Quem tem selo guardado, que confira a bolsa.
+- EVENTO | {dias?Falta|Faltam} {dias:dia} para {evento} | A banca avisa cedo. Depois não diga que não soube.
+- EVENTO | Contagem: {dias:dia} até {evento} | Dizem que o Véu afina antes. Ninguém mediu.
+- EVENTO | {evento} em {dias:dia}, prepare a Bancada | Receitas de calendário não esperam o atrasado.
+- EVENTO | Bairro se prepara: {evento} em {dias:dia} | Combine a rota com quem anda na sua frequência.
 - EVENTO | Hoje: {evento} | Só hoje. Amanhã vira história de banca. (só com `{dias}` = 0)
 - EVENTO | {evento} começou | O que nasce hoje não nasce em outro dia. (só com `{dias}` = 0)
 - EVENTO | É dia de {evento} na cidade | Saia. O resto a rua explica. (só com `{dias}` = 0)

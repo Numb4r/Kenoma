@@ -76,7 +76,7 @@
     { "id": "item.rift_smoke", "name": "Fumaça de Fenda", "kind": "condition", "desc": "Fumaça que sobe para o lado errado e cheira a lugar nenhum.", "gender": "f" },
     { "id": "item.ref.consecrated_chalk", "name": "Giz consagrado", "kind": "refined", "desc": "Giz que passou a noite ao relento e agora risca até no ar." },
     { "id": "item.ref.white_clay", "name": "Barro branco", "kind": "refined", "desc": "Giz amolecido na chuva, que guarda a forma do que encostar nele." },
-    { "id": "item.ref.quicklime", "name": "Cal viva", "kind": "refined", "desc": "Giz queimado de sol, que esquenta quando sente água por perto.", "gender": "f" },
+    { "id": "item.ref.quicklime", "name": "Cal viva", "plural": "Cales vivas", "kind": "refined", "desc": "Giz queimado de sol, que esquenta quando sente água por perto.", "gender": "f" },
     { "id": "item.ref.lustral_water", "name": "Água lustral", "kind": "refined", "desc": "Água pura que ouviu outra água e ficou mais quieta.", "gender": "f" },
     { "id": "item.ref.essence_salt", "name": "Sal de Essência", "kind": "refined", "desc": "Pó de Essência que a umidade juntou em grãos, todos do mesmo tamanho." },
     { "id": "item.ref.dried_herbs", "name": "Ervas secas", "kind": "refined", "desc": "Ervas que o sol secou sem tirar o cheiro.", "gender": "f" },

@@ -13,6 +13,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show AssetBundle, rootBundle;
 
 import '../core/epochs.dart';
+import '../core/plural.dart';
 import '../crafting/crafting_data.dart';
 import '../crafting/ritual_data.dart';
 import '../net/signed_feed.dart';
@@ -89,6 +90,7 @@ class GameData {
     required this.tuning,
     required this.schedule,
     required this.itemNames,
+    this.itemPlurals = const {},
     this.itemSinceEpoch = const {},
     this.families = const [],
     this.lore = const {},
@@ -188,6 +190,10 @@ class GameData {
         progress: ProgressBalance(balance),
         schedule: EpochSchedule.fromJson(epochs),
         itemNames: {for (final i in items['items'] as List<dynamic>) (i as Map<String, dynamic>)['id'] as String: i['name'] as String},
+        itemPlurals: {
+          for (final i in items['items'] as List<dynamic>)
+            if ((i as Map<String, dynamic>)['plural'] case final String pl) i['id'] as String: pl,
+        },
         itemSinceEpoch: {
           for (final i in items['items'] as List<dynamic>)
             if ((i as Map<String, dynamic>)['since_epoch'] case final num e) i['id'] as String: e.toInt(),
@@ -220,6 +226,12 @@ class GameData {
   final TuningData tuning;
   final EpochSchedule schedule;
   final Map<String, String> itemNames;
+
+  /// 0.25.0: o plural dos itens que a regra do português não acerta (`plural` em `items.json`).
+  final Map<String, String> itemPlurals;
+
+  /// "1 Folha seca", "3 Folhas secas": a quantidade de um item, com o nome concordando.
+  String itemCount(String id, int n) => countText(n, itemNames[id] ?? id, plural: itemPlurals[id]);
 
   /// A primeira época em que o item existe para o mundo (`since_epoch`): as peças do clima de épocas anteriores seguem
   /// com o fallback de antes, e o item não muda o que uma época publicada gera.

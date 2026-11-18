@@ -12,6 +12,7 @@
 /// a resposta nada rende. Quem dirige só tem a viagem gravada: sem coleta, sem marcas, sem vibração.
 library;
 
+import '../core/plural.dart';
 import 'dart:math' as math;
 
 import '../core/species_ids.dart';
@@ -63,8 +64,8 @@ class PatrolStatus {
 /// O texto da notificação fixa: "12 Fagulhas · 2 Ecos marcados · 34 min".
 String patrolNotificationText(PatrolStatus s) {
   if (s.asking) return 'De carro ou moto? Até responder, nada rende.';
-  final sparks = s.sparks == 1 ? '1 Fagulha' : '${s.sparks} Fagulhas';
-  final marks = s.marks == 1 ? '1 Eco marcado' : '${s.marks} Ecos marcados';
+  final sparks = countText(s.sparks, 'Fagulha');
+  final marks = countText(s.marks, 'Eco marcado');
   return '$sparks · $marks · ${s.minutes} min';
 }
 

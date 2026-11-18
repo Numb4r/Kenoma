@@ -140,8 +140,8 @@ Conta o evento `walk_m`, meta de 500 a 1500 (cresce com o nível). Recompensa: 1
 ### `sparks` · coletar · static_saint
 Conta o evento `spark`, meta de 5 a 12 (cresce com o nível). Recompensa: 150 XP e 1× `item.dust.fire`.
 
-- preciso de {n} fagulhas de {tipo}. pago bem, e não, não vou dizer para quê.
-- {n} fagulhas de {tipo} até o fim do dia. o que sobrar eu devolvo.
+- preciso de {n:fagulha} de {tipo}. pago bem, e não, não vou dizer para quê.
+- {n:fagulha} de {tipo} até o fim do dia. o que sobrar eu devolvo.
 
 ### `materials` · coletar · candlewick
 Conta o evento `material`, meta de 2 a 5 (cresce com o nível). Recompensa: 150 XP e 1× `item.ectoplasm`.
@@ -152,23 +152,23 @@ Conta o evento `material`, meta de 2 a 5 (cresce com o nível). Recompensa: 150 
 ### `hunt` · cacar · wren_
 Conta o evento `capture`, meta de 1 a 3 (cresce com o nível). Recompensa: 180 XP e 1× `item.seal.simple`.
 
-- quero ver {n} sintonia(s) com um Eco de {tipo} hoje. alguém topa e conta como foi?
-- apostei com o meu Familiar que ninguém aqui sela {n} Eco(s) de {tipo} antes de escurecer.
+- quero ver {n:sintonia} com um Eco de {tipo} hoje. alguém topa e conta como foi?
+- apostei com o meu Familiar que ninguém aqui sela {n:Eco} de {tipo} antes de escurecer.
 
 ### `craft_seal` · casa · vesper
 Conta o evento `craft`, meta de 1 a 2 (cresce com o nível). Recompensa: 150 XP e 1× `item.chalk`, 1× `item.ectoplasm`.
 
-- se estiver chovendo: fabriquem {n} selo(s) simples e me digam se o giz risca diferente.
-- dia de ficar em casa? então faça {n} selo(s) simples. ninguém precisa sair para isso.
+- se estiver chovendo: fabriquem {n:selo simples|selos simples} e me digam se o giz risca diferente.
+- dia de ficar em casa? então faça {n:selo simples|selos simples}. ninguém precisa sair para isso.
 
 ### `craft_tonic` · casa · null_hypothesis
 Conta o evento `craft`, meta de 1 a 1 (cresce com o nível). Recompensa: 150 XP e 1× `item.herbs`.
 
-- alguém faz {n} tônico de foco e me diz se o tempo extra é placebo? eu acho que é só placebo.
-- pedido de cético: {n} tônico de foco, e um relato honesto sobre os 5 segundos a mais.
+- alguém faz {n:tônico de foco} e me diz se o tempo extra é placebo? eu acho que é só placebo.
+- pedido de cético: {n:tônico de foco}, e um relato honesto sobre os 5 segundos a mais.
 
 ### `distill` · casa · candlewick
 Conta o evento `distill`, meta de 1 a 1 (cresce com o nível). Recompensa: 160 XP e 1× `item.dust.plant`.
 
-- pergunta moral, sem resposta certa: destilar {n} Eco que não está no Círculo. como foi?
-- destilem {n} Eco(s) e contem o que sentiram. eu sei o que penso, quero saber o que vocês pensam.
+- pergunta moral, sem resposta certa: destilar {n:Eco} que não está no Círculo. como foi?
+- destilem {n:Eco} e contem o que sentiram. eu sei o que penso, quero saber o que vocês pensam.

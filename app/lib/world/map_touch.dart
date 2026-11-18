@@ -4,6 +4,7 @@
 /// da camada pessoal, com limite por dia no save (`touches`). Dart puro.
 library;
 
+import '../core/plural.dart';
 import '../core/fnv.dart';
 
 /// As interações. A ordem é estável (o save guarda pelo nome).
@@ -201,12 +202,8 @@ Headline? veilHeadline({
   final g = groups[(h >>> 32) % groups.length];
   final m = g[(fnv1a64([h, 0x746d706c]) >>> 32) % g.length];
   final days = event?.days ?? 0;
-  // Concordância (0.24.2): "Faltam 3 dias", mas "Falta 1 dia".
-  String fill(String s) => (days == 1 ? s.replaceAll('Faltam {dias} dias', 'Falta 1 dia').replaceAll('{dias} dias', '1 dia') : s)
-      .replaceAll('{clima}', climate)
-      .replaceAll('{evento}', event?.name ?? '')
-      .replaceAll('{dias}', '${event?.days ?? 0}')
-      .replaceAll('{familia}', family ?? '');
+  // Concordância (0.25.0, `fillText`): "{dias?Falta|Faltam} {dias:dia}" dá "Falta 1 dia" e "Faltam 3 dias".
+  String fill(String s) => fillText(s, {'clima': climate, 'evento': event?.name ?? '', 'dias': days, 'familia': family ?? ''});
   return (title: fill(m['title'] as String), body: fill(m['body'] as String));
 }
 

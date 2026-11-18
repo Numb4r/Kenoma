@@ -125,6 +125,7 @@ class VeilbreakerField {
     required this.data,
     this.snapper,
     this.nicknameChance = 0.4,
+    this.roadsNear,
   });
 
   final int seed;
@@ -144,6 +145,88 @@ class VeilbreakerField {
   final NpcData data;
   final PathSnapper? snapper;
   final double nicknameChance;
+
+  /// 0.25.0: as ruas (eixos em células z21 e a meia largura em metros) a até [radiusM] de ([x], [y]), do pacote visual
+  /// (igual para todos). `null`: sem ruas, o caminho liga pontos de calçada.
+  final List<({List<(double, double)> pts, double halfM})> Function(double x, double y, double radiusM)? roadsNear;
+
+  /// Metros de calçada que o NPC anda, para cada lado do ponto mais perto da rua.
+  static const double walkReachM = 35;
+
+  /// O caminho na calçada da rua mais perto de [at] (até 60 m): [walkReachM] metros para cada lado do ponto mais perto,
+  /// seguindo a linha da rua, deslocado para um dos lados (sorteado por [h]) pela meia largura mais 1,2 m. `null` sem rua.
+  List<(double, double)>? _sidewalkPath((double, double) at, double mpc, int h) {
+    final roads = roadsNear?.call(at.$1, at.$2, 60);
+    if (roads == null || roads.isEmpty) return null;
+    // A rua e o segmento mais perto.
+    ({List<(double, double)> pts, double halfM})? best;
+    var bi = 0, bt = 0.0, bd = double.infinity;
+    for (final r in roads) {
+      for (var i = 0; i + 1 < r.pts.length; i++) {
+        final (ax, ay) = r.pts[i];
+        final (bx, by) = r.pts[i + 1];
+        final dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+        if (l2 < 1e-12) continue;
+        final t = (((at.$1 - ax) * dx + (at.$2 - ay) * dy) / l2).clamp(0.0, 1.0);
+        final qx = ax + dx * t, qy = ay + dy * t, d = (qx - at.$1) * (qx - at.$1) + (qy - at.$2) * (qy - at.$2);
+        if (d < bd) (best, bi, bt, bd) = (r, i, t, d);
+      }
+    }
+    final r = best;
+    if (r == null) return null;
+    final reach = walkReachM / mpc;
+    // Anda pela linha a partir do ponto mais perto, para trás e para a frente.
+    List<(double, double)> walk(int dir) {
+      final out = <(double, double)>[];
+      var (px, py) = (r.pts[bi].$1 + (r.pts[bi + 1].$1 - r.pts[bi].$1) * bt, r.pts[bi].$2 + (r.pts[bi + 1].$2 - r.pts[bi].$2) * bt);
+      var left = reach;
+      var k = dir > 0 ? bi + 1 : bi;
+      while (left > 0 && k >= 0 && k < r.pts.length) {
+        final (nx, ny) = r.pts[k];
+        final seg = math.sqrt((nx - px) * (nx - px) + (ny - py) * (ny - py));
+        if (seg >= left) {
+          out.add((px + (nx - px) * left / seg, py + (ny - py) * left / seg));
+          break;
+        }
+        out.add((nx, ny));
+        left -= seg;
+        (px, py) = (nx, ny);
+        k += dir;
+      }
+      return out;
+    }
+
+    final here = (r.pts[bi].$1 + (r.pts[bi + 1].$1 - r.pts[bi].$1) * bt, r.pts[bi].$2 + (r.pts[bi + 1].$2 - r.pts[bi].$2) * bt);
+    final axis = [...walk(-1).reversed, here, ...walk(1)];
+    if (axis.length < 2) return null;
+    // Sem pontos repetidos (o ponto mais perto pode cair num vértice).
+    final pts = <(double, double)>[];
+    for (final p in axis) {
+      if (pts.isEmpty || (p.$1 - pts.last.$1).abs() + (p.$2 - pts.last.$2).abs() > 0.05) pts.add(p);
+    }
+    if (pts.length < 2) return null;
+    // Deslocada para a calçada em meia-esquadria (como as calçadas do tráfego): a bissetriz das normais dos dois segmentos,
+    // dividida pelo cosseno do meio ângulo, para ficar à mesma distância de cada rua na esquina.
+    final side = (h >>> 28).isEven ? 1.0 : -1.0, off = (r.halfM + 1.2) / mpc * side;
+    (double, double) normal((double, double) a, (double, double) b) {
+      final dx = b.$1 - a.$1, dy = b.$2 - a.$2, l = math.sqrt(dx * dx + dy * dy);
+      return (-dy / l, dx / l);
+    }
+
+    final out = <(double, double)>[];
+    for (var i = 0; i < pts.length; i++) {
+      final n1 = normal(pts[i > 0 ? i - 1 : i], pts[i > 0 ? i : i + 1]);
+      final n2 = normal(pts[i < pts.length - 1 ? i : i - 1], pts[i < pts.length - 1 ? i + 1 : i]);
+      var bx = n1.$1 + n2.$1, by = n1.$2 + n2.$2;
+      final bl = math.sqrt(bx * bx + by * by);
+      if (bl < 1e-6) continue;
+      bx /= bl;
+      by /= bl;
+      final cosHalf = math.max(0.35, bx * n1.$1 + by * n1.$2);
+      out.add((pts[i].$1 + bx * off / cosHalf, pts[i].$2 + by * off / cosHalf));
+    }
+    return out.length < 2 ? null : out;
+  }
 
   final _cache = <(int, int, int), List<Veilbreaker>>{};
   final _knownAnchors = <(int, int), List<(int, KnownNpc, int, int)>>{};
@@ -233,14 +316,19 @@ class VeilbreakerField {
       final (px, py) = s == null || !s.keep ? (0.5, 0.5) : (s.px, s.py);
       pts.add(((zx + px) * 2, (zy + py) * 2));
     }
-    final path = [pts[0], pts[1], pts[2], pts[1], pts[0]];
-    final mpc = mpcAt(pts[1].$2);
+    // 0.25.0: com as ruas à mão, o caminho segue a calçada da rua mais perto (dobra onde a rua dobra), em vez de ligar os
+    // pontos por reta e cortar a quina de um prédio.
+    final street = _sidewalkPath(pts[1], mpcAt(pts[1].$2), h);
+    final line = street ?? pts;
+    final path = [...line, ...line.reversed.skip(1)];
+    final mpc = mpcAt(line[line.length ~/ 2].$2);
     // A sintonia: Ecos da camada base perto do meio do caminho cuja janela termina dentro da fatia (com a antecedência).
     final tunes = <VeilTune>[];
     final q = start + m.tuneLeadS.round();
     final idHash = fnv1a64([for (final c in id.codeUnits) c]);
+    final mid = line[line.length ~/ 2];
     final cands = [
-      for (final e in ecosNear(pts[1].$1, pts[1].$2, q, m.tuneRadiusM))
+      for (final e in ecosNear(mid.$1, mid.$2, q, m.tuneRadiusM))
         if (e.isEco)
           if ((e.window + 1) * windowSeconds - windowOffset(seed, e.cellX, e.cellY) case final end2 when end2 >= q && end2 < end + m.tuneLeadS)
             if (_unit(fnv1a64([seed, e.uid, idHash, _saltTune])) < m.tuneChance) (e, end2 - m.tuneLeadS.round()),

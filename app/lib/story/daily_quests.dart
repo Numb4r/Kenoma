@@ -4,6 +4,7 @@
 /// Um slot de cada dia é sempre de "casa" (dá para fazer sem sair), e há um reroll por dia. Dart puro.
 library;
 
+import '../core/plural.dart';
 import 'dart:math' as math;
 
 import '../core/fnv.dart';
@@ -110,10 +111,7 @@ Quest generateQuest({
   var n = t.targetMin + (span == 0 ? 0 : rng.nextInt(span + 1));
   final scaled = n * (1 + forum.levelScale * (math.max(1, level) - 1));
   n = math.max(t.targetMin, ((scaled / t.step).round()) * t.step);
-  final text = t.texts[rng.nextInt(t.texts.length)]
-      .replaceAll('{n}', '$n')
-      .replaceAll('{tipo}', _typeNames[key] ?? key)
-      .replaceAll('{item}', _itemName(key));
+  final text = fillText(t.texts[rng.nextInt(t.texts.length)], {'n': n, 'tipo': _typeNames[key] ?? key, 'item': _itemName(key)});
   return Quest(
     slot: slot,
     templateId: t.id,

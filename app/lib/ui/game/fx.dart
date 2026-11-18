@@ -36,7 +36,8 @@ class _Plus {
 }
 
 class _Dissolve {
-  _Dissolve(this.x, this.y, this.sprite, this.tint, this.size);
+  _Dissolve(this.uid, this.x, this.y, this.sprite, this.tint, this.size);
+  final int uid;
   final double x, y;
   final ui.Image? sprite;
   final int? tint;
@@ -68,7 +69,7 @@ class Fx {
   void hop(int uid) => _hops[uid] = 0;
 
   /// O Eco fugiu: se desfaz para cima em pixels onde estava.
-  void fled(WorldSpawn s, ui.Image? sprite, int? tint, double size) => _dissolves.add(_Dissolve(s.x, s.y, sprite, tint, size));
+  void fled(WorldSpawn s, ui.Image? sprite, int? tint, double size) => _dissolves.add(_Dissolve(s.uid, s.x, s.y, sprite, tint, size));
 
   /// Os Ecos à vista agora. Os que não estavam na lista anterior surgem com a costura do Véu; a primeira lista (o que já
   /// estava no mapa ao abrir) não anima.
@@ -148,10 +149,11 @@ class Fx {
   static final _flat = ui.Paint()..isAntiAlias = false;
 
   /// Desenha por cima dos spawns: voos, brilhos, "+N" e Ecos se desfazendo. [avatar] é o centro do Conjurador na tela.
-  void paint(ui.Canvas canvas, ui.Size view, MapCamera cam, {required ui.Offset avatar, required double playerSize, required double sparkSize, required double dpr}) {
+  /// [anchorOf]: onde o Eco foi desenhado por último (com o vento); o desfazer sai ali, não na posição crua.
+  void paint(ui.Canvas canvas, ui.Size view, MapCamera cam, {required ui.Offset avatar, required double playerSize, required double sparkSize, required double dpr, ui.Offset? Function(int uid)? anchorOf}) {
     for (final d in _dissolves) {
       final (sx, sy) = cam.cellToScreen(d.x, d.y, view.width, view.height);
-      _paintDissolve(canvas, ui.Offset(sx, sy), d);
+      _paintDissolve(canvas, anchorOf?.call(d.uid) ?? ui.Offset(sx, sy), d);
     }
     for (final f in _flies) {
       final (sx, sy) = cam.cellToScreen(f.x, f.y, view.width, view.height);
