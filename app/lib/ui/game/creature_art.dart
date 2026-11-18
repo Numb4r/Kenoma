@@ -27,7 +27,7 @@ class CreatureStrip {
 }
 
 class CreatureArt {
-  CreatureArt({required this.frame, required this.anims, required this.variants, this.portrait});
+  CreatureArt({required this.frame, required this.anims, required this.variants, this.portrait, this.portraitVariants = const {}, this.spawn});
 
   /// Lado do quadro do mapa (28 na grade de 2 dp).
   final int frame;
@@ -39,13 +39,32 @@ class CreatureArt {
   /// O retrato do Bestiário (96 × 96), pairando com os LEDs.
   final CreatureStrip? portrait;
 
+  /// 0.25.1: o corpo do retrato em cada variante, pela mesma troca de cores do mapa (sem o acessório, que é do quadro de
+  /// 28 px).
+  final Map<String, ui.Image> portraitVariants;
+
+  /// 0.25.1: de onde a criatura nasce no desenho (`assets/art/creatures/index.json`, `spawn`): `lightning_lamp` (o raio
+  /// na tempestade, senão o poste mais perto à noite), `puddle`, `ground`, `fog`. `null`: onde o Eco aparece.
+  final String? spawn;
+
+  /// O corpo do retrato na variante [variant] (`null` ou sem arte: o comum).
+  ui.Image? portraitOf(String? variant) => portraitVariants[variant] ?? portrait?.body;
+
   /// A tira do corpo de [a] na variante [variant] (`null` ou sem arte: a comum).
   ui.Image bodyOf(CreatureAnim a, String? variant) => variants[variant]?[a] ?? anims[a]!.body;
 
   static final _byFolder = <String, CreatureArt>{};
 
-  /// As espécies com arte animada e a pasta de cada uma em `assets/art/creatures/`.
-  static const Map<String, String> folders = {'hum.eco': 'humoth'};
+  /// As espécies com arte animada e a pasta de cada uma em `assets/art/creatures/` (0.25.1: lidas do `index.json`, que
+  /// também diz o gatilho de nascer de cada uma).
+  static final Map<String, String> folders = {'hum.eco': 'humoth'};
+  static final Map<String, String> _spawns = {'hum.eco': 'lightning_lamp'};
+
+  /// 0.25.1: os climas que valem como raio, poça e neblina para o gatilho de nascer, e até onde se procura o poste (m).
+  static final Map<String, Set<String>> triggerClimates = {
+    'lightning': {'storm', 'dry_thunder', 'hurricane'},
+  };
+  static double lampM = 30;
 
   /// A arte de [speciesId], se já carregada.
   static CreatureArt? of(String speciesId) => _byFolder[folders[speciesId]] ?? _testing[speciesId];
@@ -59,10 +78,25 @@ class CreatureArt {
   /// Carrega tudo o que há (uma vez). Pasta sem o JSON ou com arquivo faltando fica sem arte: a criatura usa o sprite de
   /// sempre.
   static Future<void> loadAll([AssetBundle? bundle]) async {
-    for (final folder in folders.values) {
+    final b = bundle ?? rootBundle;
+    try {
+      final index = jsonDecode(await b.loadString('assets/art/creatures/index.json')) as Map<String, dynamic>;
+      for (final e in ((index['climates'] as Map<String, dynamic>?) ?? const {}).entries) {
+        triggerClimates[e.key] = {...(e.value as List<dynamic>).cast<String>()};
+      }
+      lampM = (index['lamp_m'] as num?)?.toDouble() ?? lampM;
+      for (final e in ((index['species'] as Map<String, dynamic>?) ?? const {}).entries) {
+        final m = e.value as Map<String, dynamic>;
+        folders[e.key] = m['folder'] as String;
+        if (m['spawn'] case final String s) _spawns[e.key] = s;
+      }
+    } catch (_) {
+      // sem índice (testes): só o que já está na lista
+    }
+    for (final MapEntry(key: id, value: folder) in folders.entries.toList()) {
       if (_byFolder.containsKey(folder)) continue;
       try {
-        final a = await _load(bundle ?? rootBundle, folder);
+        final a = await _load(b, folder, spawn: _spawns[id]);
         if (a != null) _byFolder[folder] = a;
       } catch (_) {
         // sem a arte (testes, ou pasta incompleta): fica o sprite de sempre
@@ -72,7 +106,7 @@ class CreatureArt {
 
   static Future<ui.Image> _image(Uint8List bytes) async => (await (await ui.instantiateImageCodec(bytes)).getNextFrame()).image;
 
-  static Future<CreatureArt?> _load(AssetBundle b, String folder) async {
+  static Future<CreatureArt?> _load(AssetBundle b, String folder, {String? spawn}) async {
     final base = 'assets/art/creatures/$folder/$folder';
     final meta = jsonDecode(await b.loadString('$base.json')) as Map<String, dynamic>;
     Future<ui.Image?> opt(String path) async {
@@ -106,11 +140,12 @@ class CreatureArt {
     final frame = (meta['frame'] as int?) ?? 28;
     // As variantes: troca de cores do corpo e o acessório por cima de cada quadro, acompanhando o corpo.
     final variants = <String, Map<CreatureAnim, ui.Image>>{};
+    final maps = <String, Map<int, int>>{};
     try {
       final vj = jsonDecode(await b.loadString('${base}_variants.json')) as Map<String, dynamic>;
       for (final v in vj.entries) {
         final spec = v.value as Map<String, dynamic>;
-        final map = {for (final c in ((spec['map'] as Map<String, dynamic>?) ?? const {}).entries) _hex(c.key): _hex(c.value as String)};
+        final map = maps[v.key] = {for (final c in ((spec['map'] as Map<String, dynamic>?) ?? const {}).entries) _hex(c.key): _hex(c.value as String)};
         final accName = spec['accessory'] as String?;
         final acc = accName == null ? null : await opt('assets/art/creatures/$folder/$accName');
         variants[v.key] = {
@@ -121,11 +156,23 @@ class CreatureArt {
       // sem variantes: todas usam o corpo comum
     }
     CreatureStrip? portrait;
+    final portraitVariants = <String, ui.Image>{};
     final pb = await opt('${base}_portrait.png');
     if (pb != null) {
-      portrait = CreatureStrip(body: pb, leds: await opt('${base}_portrait_leds.png'), glow: await opt('${base}_portrait_glow.png'), frames: (pb.width / pb.height).floor(), fps: 6, bodyDy: const []);
+      final pm = meta['portrait'] as Map<String, dynamic>?;
+      portrait = CreatureStrip(
+        body: pb,
+        leds: await opt('${base}_portrait_leds.png'),
+        glow: await opt('${base}_portrait_glow.png'),
+        frames: (pm?['frames'] as int?) ?? (pb.width / pb.height).floor(),
+        fps: (pm?['fps'] as num?)?.toDouble() ?? 6,
+        bodyDy: const [],
+      );
+      for (final e in maps.entries) {
+        portraitVariants[e.key] = await _variant(portrait, e.value, null, pb.height);
+      }
     }
-    return CreatureArt(frame: frame, anims: anims, variants: variants, portrait: portrait);
+    return CreatureArt(frame: frame, anims: anims, variants: variants, portrait: portrait, portraitVariants: portraitVariants, spawn: spawn);
   }
 
   static int _hex(String s) => int.parse(s.replaceFirst('#', ''), radix: 16) & 0xFFFFFF;

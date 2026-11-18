@@ -1,0 +1,23 @@
+{
+  "_": "Tráfego comum (0.25.1), pixel de 2 dp. frame = tamanho do quadro [l, a]; a tira tem frames quadros lado a lado. anchor em pixels do quadro a partir do canto de cima à esquerda (centro nos vistos de cima, pés nos de pé). content = a caixa do desenho dentro do quadro [x, y, l, a]. ref_px: a medida que vale ghost_car_m (comprimento do sedan) e ghost_pedestrian_m (altura do adulto).",
+  "ref_px": { "car": 24, "pedestrian": 20 },
+  "top": {
+    "hatch": { "file": "hatch.png", "glow": "hatch_glow.png", "frame": [23, 15], "frames": 1, "anchor": [11.5, 7.5], "content": [1, 1, 21, 13] },
+    "sedan": { "file": "sedan.png", "glow": "sedan_glow.png", "frame": [26, 15], "frames": 1, "anchor": [13, 7.5], "content": [1, 1, 24, 13] },
+    "pickup": { "file": "pickup.png", "glow": "pickup_glow.png", "frame": [28, 16], "frames": 1, "anchor": [14, 8], "content": [1, 1, 26, 14] },
+    "suv": { "file": "suv.png", "glow": "suv_glow.png", "frame": [26, 16], "frames": 1, "anchor": [13, 8], "content": [1, 1, 24, 14] },
+    "moto": { "file": "moto.png", "glow": "moto_glow.png", "frame": [20, 11], "frames": 1, "anchor": [10, 5.5], "content": [1, 1, 18, 9] },
+    "cyclist": { "file": "cyclist.png", "glow": null, "frame": [17, 9], "frames": 1, "anchor": [8.5, 4.5], "content": [1, 1, 15, 7] },
+    "bus_city": { "file": "bus_city.png", "glow": "bus_city_glow.png", "frame": [55, 19], "frames": 1, "anchor": [27.5, 9.5], "content": [1, 1, 53, 17] }
+  },
+  "upright": {
+    "_": "content é o corpo sem roupa; o guarda-chuva sobe até a linha 1 (adulto e dupla) ou 2 (idoso) do quadro.",
+    "ped_adult": { "file": "ped_adult.png", "frame": [17, 30], "frames": 2, "anchor": [8.5, 29], "content": [3, 9, 11, 20] },
+    "ped_pair": { "file": "ped_pair.png", "frame": [23, 30], "frames": 2, "anchor": [12, 29], "content": [3, 9, 18, 20] },
+    "ped_elder": { "file": "ped_elder.png", "frame": [17, 30], "frames": 2, "anchor": [9.5, 29], "content": [4, 10, 12, 19] }
+  },
+  "outfits": {
+    "_": "ped_<modelo>_<peça>.png: tira de 2 quadros do tamanho do corpo, só a peça (com o contorno dela), desenhada por cima do corpo no mesmo ponto. Na dupla a criança também veste a peça, menos o guarda-chuva.",
+    "pieces": ["umbrella", "raincoat", "coat", "beanie", "scarf", "light", "cap", "hat", "mask"]
+  }
+}

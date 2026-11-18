@@ -1,0 +1,9 @@
+{
+  "urban": { "map": { "#a9b2cc": "#6b6f7e", "#727c9e": "#464956", "#4e5678": "#383a45", "#333a58": "#2a2c34", "#e4dccb": "#878b98", "#b0a696": "#535766" }, "accessory": "hollowkin_acc_urban.png" },
+  "green": { "map": { "#a9b2cc": "#74956d", "#727c9e": "#486546", "#4e5678": "#395139", "#333a58": "#2a3d2c", "#e4dccb": "#98b58c", "#b0a696": "#577954" }, "accessory": "hollowkin_acc_green.png" },
+  "water": { "map": { "#a9b2cc": "#37657d", "#727c9e": "#173a4e", "#4e5678": "#112e40", "#333a58": "#0c2231", "#e4dccb": "#5d8da5", "#b0a696": "#1c465d" }, "accessory": "hollowkin_acc_water.png" },
+  "residential": { "map": { "#a9b2cc": "#b4977e", "#727c9e": "#866a55", "#4e5678": "#705646", "#333a58": "#5a4236", "#e4dccb": "#cbb49b", "#b0a696": "#9d7d65" }, "accessory": "hollowkin_acc_residential.png" },
+  "lit": { "map": { "#a9b2cc": "#d9d5c9", "#727c9e": "#b0aa9e", "#4e5678": "#989287", "#333a58": "#807a70", "#e4dccb": "#e8e5de", "#b0a696": "#c8c2b4" }, "accessory": "hollowkin_acc_lit.png" },
+  "sacred": { "map": { "#a9b2cc": "#b9b3cd", "#727c9e": "#8b85a2", "#4e5678": "#736d8b", "#333a58": "#5c5674", "#e4dccb": "#cfcae0", "#b0a696": "#a29cb8" }, "accessory": "hollowkin_acc_sacred.png" },
+  "crimson": { "map": { "#a9b2cc": "#762e3e", "#727c9e": "#441826", "#4e5678": "#331420", "#333a58": "#22101a", "#e4dccb": "#a14757", "#b0a696": "#541d2c" }, "accessory": "hollowkin_acc_crimson.png" }
+}

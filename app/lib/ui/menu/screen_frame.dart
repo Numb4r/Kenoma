@@ -47,7 +47,10 @@ class SectionTitle extends StatelessWidget {
 
 /// O sprite de uma espécie; [silhouette] pinta só a forma, para o que o jogador ainda não viu.
 class SpeciesImage extends StatelessWidget {
-  const SpeciesImage({required this.sprite, this.silhouette = false, this.size = 64, this.tint, this.aura = false, this.speciesId, super.key});
+  const SpeciesImage({required this.sprite, this.silhouette = false, this.size = 64, this.tint, this.aura = false, this.speciesId, this.variant, super.key});
+
+  /// 0.25.1: a chave da variante (`urban`...), para o retrato animado trocar as cores como no mapa em vez do [tint].
+  final String? variant;
 
   /// 0.25.0: a espécie, para o retrato animado das que têm arte animada (o Humoth). `null`: o sprite de sempre.
   final String? speciesId;
@@ -65,7 +68,7 @@ class SpeciesImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final animated = speciesId == null || silhouette ? null : CreatureArt.of(speciesId!);
-    if (animated?.portrait != null) return CreaturePortrait(art: animated!, size: size, tint: tint);
+    if (animated?.portrait != null) return CreaturePortrait(art: animated!, size: size, variant: variant);
     final img = sprite == null ? null : RawImage(image: sprite!.normal, filterQuality: FilterQuality.none, fit: BoxFit.contain);
     return Container(
       width: size,

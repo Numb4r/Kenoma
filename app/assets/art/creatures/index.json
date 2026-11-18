@@ -1,0 +1,119 @@
+{
+  "climates": {
+    "lightning": [
+      "storm",
+      "dry_thunder",
+      "hurricane"
+    ],
+    "puddle": [
+      "drizzle",
+      "rain",
+      "storm",
+      "deluge",
+      "acid_rain",
+      "crimson_rain",
+      "prismatic_drizzle",
+      "freezing_rain",
+      "inverted_sky"
+    ],
+    "fog": [
+      "fog",
+      "smog",
+      "smoke",
+      "veil_ash"
+    ]
+  },
+  "lamp_m": 30,
+  "species": {
+    "bit.eco": {
+      "folder": "bitling"
+    },
+    "bit.spirit": {
+      "folder": "glitchkin"
+    },
+    "clod.eco": {
+      "folder": "pebblet",
+      "spawn": "ground"
+    },
+    "clod.spirit": {
+      "folder": "bouldkin",
+      "spawn": "ground"
+    },
+    "frond.eco": {
+      "folder": "frondling"
+    },
+    "frond.ritual": {
+      "folder": "rootseer"
+    },
+    "frond.spirit": {
+      "folder": "thicketkin"
+    },
+    "glare.eco": {
+      "folder": "glimlet"
+    },
+    "glare.spirit": {
+      "folder": "prismkin"
+    },
+    "hum.eco": {
+      "folder": "humoth",
+      "spawn": "lightning_lamp"
+    },
+    "hum.spirit": {
+      "folder": "coilkin",
+      "spawn": "lightning_lamp"
+    },
+    "rill.eco": {
+      "folder": "rillet",
+      "spawn": "puddle"
+    },
+    "rill.ritual": {
+      "folder": "wellmirror",
+      "spawn": "puddle"
+    },
+    "rill.spirit": {
+      "folder": "brookkin",
+      "spawn": "puddle"
+    },
+    "rust.eco": {
+      "folder": "rustling"
+    },
+    "rust.spirit": {
+      "folder": "gratekin"
+    },
+    "shade.eco": {
+      "folder": "umbrel"
+    },
+    "shade.spirit": {
+      "folder": "shadekin"
+    },
+    "soot.eco": {
+      "folder": "sootling"
+    },
+    "soot.ritual": {
+      "folder": "kilnshade"
+    },
+    "soot.spirit": {
+      "folder": "cinderkin"
+    },
+    "sprig.eco": {
+      "folder": "sprigglet"
+    },
+    "sprig.spirit": {
+      "folder": "fairkin"
+    },
+    "wisp.eco": {
+      "folder": "wisplet",
+      "spawn": "fog"
+    },
+    "wisp.spirit": {
+      "folder": "hollowkin",
+      "spawn": "fog"
+    },
+    "wyrm.eco": {
+      "folder": "wyrmlet"
+    },
+    "wyrm.spirit": {
+      "folder": "wyrmkin"
+    }
+  }
+}

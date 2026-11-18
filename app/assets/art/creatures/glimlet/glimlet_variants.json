@@ -1,0 +1,9 @@
+{
+  "urban": { "map": { "#a8873c": "#3f3c39", "#d6b658": "#51504c", "#f4de88": "#60605f", "#fff8d6": "#696b73", "#5a4630": "#232223" }, "accessory": "glimlet_acc_urban.png" },
+  "green": { "map": { "#a8873c": "#52603c", "#d6b658": "#687b4d", "#f4de88": "#799260", "#fff8d6": "#83a275", "#5a4630": "#313a29" }, "accessory": "glimlet_acc_green.png" },
+  "water": { "map": { "#a8873c": "#23373e", "#d6b658": "#2c4850", "#f4de88": "#345662", "#fff8d6": "#386073", "#5a4630": "#132028" }, "accessory": "glimlet_acc_water.png" },
+  "residential": { "map": { "#a8873c": "#836949", "#d6b658": "#9f835d", "#f4de88": "#b59a73", "#fff8d6": "#c2aa8d", "#5a4630": "#594334" }, "accessory": "glimlet_acc_residential.png" },
+  "lit": { "map": { "#a8873c": "#b3a381", "#d6b658": "#cfc19b", "#f4de88": "#e4dbb9", "#fff8d6": "#f1ecda", "#5a4630": "#877866" }, "accessory": "glimlet_acc_lit.png" },
+  "sacred": { "map": { "#a8873c": "#8c7e7d", "#d6b658": "#a89b96", "#f4de88": "#bdb3b0", "#fff8d6": "#cac4ce", "#5a4630": "#625663" }, "accessory": "glimlet_acc_sacred.png" },
+  "crimson": { "map": { "#a8873c": "#411e20", "#d6b658": "#582729", "#f4de88": "#6b2e32", "#fff8d6": "#77333d", "#5a4630": "#201217" }, "accessory": "glimlet_acc_crimson.png" }
+}

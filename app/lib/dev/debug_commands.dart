@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 
 import '../core/epochs.dart';
 import '../world/debug_creatures.dart' show DebugCreatureSpec, DebugVariant;
+import '../world/style_advisor.dart' show kSimpleGraphicsSetting;
 import '../crafting/crafting_state.dart' show LoadoutSlot;
 import '../net/signed_feed.dart' show loadEpochsJson;
 import '../save/ksv_save_store.dart';
@@ -114,10 +115,12 @@ Future<List<String>> runDebugCommands(String text, {required DevTools tools, Fut
         arg == 'off' ? tools.force.clearEvents() : tools.force.toggleEvent(arg);
         out.add('event ${tools.force.events.join('+')}');
       case 'creature':
-        // 0.25.0: `creature hum.eco [biome|crimson|shiny] [n]`, como o "Criar criatura" do debug (fora do mundo).
+        // 0.25.0: `creature hum.eco [biome|crimson|shiny] [walk] [n]`, como o "Criar criatura" do debug (fora do mundo).
+        // 0.25.1: `walk` anda em laço (a deriva).
         final a = arg.split(' ');
-        final shiny = a.contains('shiny'), n = a.length > 1 ? int.tryParse(a.last) ?? 1 : 1;
-        tools.force.creatures.request(DebugCreatureSpec(speciesId: a.first, shiny: shiny, variant: DebugVariant.parse(a.length > 1 ? a[1] : null), count: n), [a.first]);
+        final shiny = a.contains('shiny'), walk = a.contains('walk'), n = a.length > 1 ? int.tryParse(a.last) ?? 1 : 1;
+        tools.force.creatures.request(
+            DebugCreatureSpec(speciesId: a.first, shiny: shiny, variant: DebugVariant.parse(a.length > 1 ? a[1] : null), count: n, walk: walk), [a.first]);
         out.add('creature ${a.first}');
       case 'seen':
         // 0.25.0: marca a espécie como vista no save aberto (o retrato no Bestiário), só para conferir.
@@ -132,6 +135,11 @@ Future<List<String>> runDebugCommands(String text, {required DevTools tools, Fut
       case 'exit':
         // 0.25.0: a saída animada do Eco mais perto (`exit tuned` ou `exit flee`), só no desenho.
         out.add('exit ${tools.exitNearestEco?.call(arg != 'flee') ?? '? sem Eco à vista'}');
+      case 'style':
+        // 0.25.1: `style full|simple`, os gráficos do mapa dos Ajustes (para medir os dois estilos sem tocar na tela).
+        final simple = arg == 'simple', live = liveGameState();
+        live != null ? live.setSetting(kSimpleGraphicsSetting, simple) : await writeSetting(save, kSimpleGraphicsSetting, simple);
+        out.add('style ${simple ? 'simple' : 'full'}');
       case 'devopts':
         await writeSetting(save, kDevOptionsSetting, arg != 'off');
         out.add('devopts ${arg == 'off' ? 'off' : 'on'}');

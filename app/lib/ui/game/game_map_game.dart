@@ -24,6 +24,7 @@ import '../../core/astro.dart';
 import '../../core/weather.dart';
 import '../../world/companion.dart';
 import '../../world/creature_wind.dart';
+import '../../world/debug_creatures.dart' show isDebugUid;
 import '../../core/tiles.dart';
 import '../../world/climate_world.dart' show Puddle;
 import '../../world/aura.dart';
@@ -44,10 +45,12 @@ import '../sprites/sprite_image.dart' show mapEcoPx, mapPlayerPx, mapSpiritPx;
 import 'art_renderer.dart';
 import 'art_style.dart';
 import 'spawn_painter.dart';
+import 'spawn_trigger.dart';
 import 'climate_fx.dart';
 import 'climate_ground.dart';
 import 'draw_order.dart';
 import 'climate_painter.dart';
+import 'creature_art.dart';
 import 'rainbow_painter.dart';
 import '../../data/climate_catalog.dart';
 import 'street_label_painter.dart';
@@ -935,7 +938,7 @@ class GameMapGame extends FlameGame {
         canvas,
         view,
         cam,
-        [for (final s in w.spawns) if (only(s)) s],
+        [for (final s in w.spawns) if (only(s)) _walked(s)],
         sprites: sprites,
         typeOf: typeOf,
         inAura: w.canReach,
@@ -954,6 +957,7 @@ class GameMapGame extends FlameGame {
         facingLeftOf: (uid) => (ecoFacing[uid]?.$1 ?? -1) > _time ? ecoFacing[uid]!.$2 : (_ecoMotion[uid]?.left ?? false),
         anchors: ecoAnchors,
         movingOf: (uid) => _ecoMotion[uid]?.moving ?? false,
+        triggerOf: (s) => _triggerOf(s, cam, view),
         bodyTone: light.night > 0.004 ? Color.lerp(const Color(0xFFFFFFFF), const Color(0xFF3F4A8C), light.night) : null,
         emissive: _emissive,
         wind: creatureWind,
@@ -1194,13 +1198,53 @@ class GameMapGame extends FlameGame {
   /// 0.25.0: se cada Eco está andando (a deriva) e para que lado olha na tela, pela posição dos últimos quadros.
   final _ecoMotion = <int, ({double x, double y, double t, bool moving, bool left})>{};
 
+  /// 0.25.1: o gatilho de nascer de cada Eco, escolhido uma vez quando ele começa a aparecer (o clima e o poste daquele
+  /// instante; o efeito não troca no meio).
+  final _triggers = <int, SpawnTrigger?>{};
+
+  (SpawnTrigger, Offset?)? _triggerOf(WorldSpawn s, MapCamera cam, Size view) {
+    final spec = CreatureArt.of(s.entryId)?.spawn;
+    if (spec == null) return null;
+    if (_triggers.length > 300) _triggers.clear();
+    final t = _triggers.putIfAbsent(
+      s.uid,
+      () => resolveSpawnTrigger(spec,
+          climateId: climateShown().id, night: light.night > 0.5, climates: CreatureArt.triggerClimates, lamp: spec == 'lightning_lamp' ? _nearestLamp(s.x, s.y) : null),
+    );
+    if (t == null) return null;
+    final o = t.origin;
+    if (o == null) return (t, null);
+    final (x, y) = cam.cellToScreen(o.$1, o.$2, view.width, view.height);
+    return (t, Offset(x, y - 4 * ecoSizePx / mapEcoPx)); // a cabeça do poste
+  }
+
+  /// O poste do mapa mais perto de ([x], [y]) (células z21) até `lamp_m` do `index.json` das criaturas.
+  (double, double)? _nearestLamp(double x, double y) {
+    final n = city.cellsPerTile, tx = (x / n).floor(), ty = (y / n).floor();
+    return nearestPoint([
+      for (var j = ty - 1; j <= ty + 1; j++)
+        for (var i = tx - 1; i <= tx + 1; i++)
+          for (final p in city.tileAt(i, j).props)
+            if (p.kind == 'lamp') (p.x, p.y),
+    ], x, y, CreatureArt.lampM / metersPerCell(_lat));
+  }
+
   /// Para que lado o Eco [uid] olha agora na tela (a saída animada continua para o mesmo lado).
   bool facingLeftOfEco(int uid) => _ecoMotion[uid]?.left ?? false;
+
+  /// 0.25.1: as criaturas do "Criar criatura" que andam (`walk`), no ponto do instante exato. Debug, só no desenho.
+  (double, double)? Function(WorldSpawn s, double t, double metersPerCell21)? debugWalkAt;
+
+  WorldSpawn _walked(WorldSpawn s) {
+    if (debugWalkAt == null || !isDebugUid(s.uid)) return s;
+    final p = debugWalkAt!(s, _exactUtc(), metersPerCell(_lat));
+    return p == null ? s : s.movedTo(p.$1, p.$2);
+  }
 
   void _trackEcoMotion(WorldView wv, MapCamera cam) {
     if (_ecoMotion.length > 600) _ecoMotion.clear();
     final r = cam.rotation, c = math.cos(r), s = math.sin(r);
-    for (final e in wv.spawns) {
+    for (final e in wv.spawns.map(_walked)) {
       if (!e.isEco) continue;
       final last = _ecoMotion[e.uid];
       if (last == null) {

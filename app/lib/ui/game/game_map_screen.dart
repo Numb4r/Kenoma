@@ -38,6 +38,7 @@ import '../craft/ui_art.dart';
 import 'map_touch_flow.dart';
 import 'npc_sheet.dart';
 import 'creature_art.dart';
+import 'traffic_art.dart';
 import '../../crafting/collectors.dart';
 import '../../crafting/crafting_state.dart';
 import '../../crafting/ritual_data.dart';
@@ -923,6 +924,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       },
     );
     world.veil = veil;
+    game.debugWalkAt = (s, t, mpc) => tools.force.creatures.walkAt(s, t, mpc);
     tools.exitNearestEco = (tuned) {
       if (!game.avatar.hasPosition) return null;
       final ecos = [for (final s in world.spawns) if (s.isEco) s]
@@ -1029,7 +1031,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     world.onCollected = game.onCollected;
     world.onBagFull = _onBagFull;
     unawaited(UiArt.load()); // os ícones dos coletores plantados no mapa
-    unawaited(CreatureArt.loadAll(widget.bundle)); // 0.25.0: as criaturas com arte animada (o Humoth)
+    unawaited(CreatureArt.loadAll(widget.bundle)); // 0.25.0: as criaturas com arte animada
+    unawaited(TrafficArt.load(widget.bundle)); // 0.25.1: o tráfego e as Fagulhas do Aseprite
+    unawaited(SparkArt.load(widget.bundle));
     world.onShiny = _onShiny;
     world.onEnteredRange = _onEnteredRange;
     _climate = ClimateDriver(data: data, world: climate, online: () => session.state.setting('weather_online'));

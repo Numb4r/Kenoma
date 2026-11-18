@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 
 import '../../world/veil_traffic.dart';
 import '../colors.dart';
+import 'traffic_art.dart';
 
 /// Papéis de cor das matrizes: `.` vazio, `o` contorno, `b` corpo, `a` teto/detalhe, `d` corpo escuro, `g` vidro,
 /// `y` farol, `k` pneu, `h` cabelo/capacete, `s` pele, `t` blusa, `p` calça, `u` blusa da criança, `n` bengala.
@@ -270,21 +271,105 @@ ui.Picture recordSprite(SpriteRows rows, Map<String, ui.Color> colors) {
   return rec.endRecording();
 }
 
-/// Guarda uma `Picture` por (modelo, paleta, quadro), gravada com 1 unidade por pixel de arte.
+/// 0.25.1: o arquivo do Aseprite de cada modelo (`assets/art/traffic/`).
+String artNameOf(GhostModel m) => switch (m) {
+      GhostModel.adult => 'ped_adult',
+      GhostModel.childPair => 'ped_pair',
+      GhostModel.elder => 'ped_elder',
+      _ => m.name,
+    };
+
+/// 0.25.1: as cores de cada papel de `traffic_keys.json` para o modelo [m] na paleta [p], as mesmas listas das matrizes.
+Map<String, ui.Color> artRolesOf(GhostModel m, int p) {
+  final i = p % m.paletteCount;
+  final top = _tops[i % _tops.length];
+  if (m.kind == GhostKind.car) {
+    return {'body': _carBodies[i], 'helmet': _shade(_tops[(i + 2) % _tops.length], 0.1), 'top': top, 'skin': _skin[i % _skin.length]};
+  }
+  if (m == GhostModel.cyclist) return {'body': _shade(_tops[(i + 3) % _tops.length], 0.2), 'helmet': _tops[(i + 1) % _tops.length], 'top': top, 'skin': _skin[i % _skin.length]};
+  return {
+    'skin': _skin[i % _skin.length],
+    'hair': m == GhostModel.elder ? const ui.Color(0xFFCFCFD8) : _hair[i % _hair.length],
+    'top': top,
+    'pants': _shade(const ui.Color(0xFF6C7FB8), 0.35 + 0.1 * (i % 3)),
+    'child_top': _tops[(i + 2) % _tops.length],
+    'umbrella': _umbrellas[i % _umbrellas.length],
+    'raincoat': _raincoats[i % _raincoats.length],
+    'coat': _coats[i % _coats.length],
+    'beanie': _knits[i % _knits.length],
+    'scarf': _knits[(i + 2) % _knits.length],
+    'cap': _caps[i % _caps.length],
+  };
+}
+
+List<String> _artGroups(GhostModel m) => switch (m) {
+      GhostModel.moto || GhostModel.cyclist => const ['vehicle', 'rider'],
+      _ when m.kind == GhostKind.car => const ['vehicle'],
+      _ => const ['pedestrian', 'outfit'],
+    };
+
+/// Guarda uma `Picture` por (modelo, paleta, quadro), gravada com 1 unidade por pixel de arte. 0.25.1: com a arte do
+/// Aseprite carregada (`TrafficArt`), as tiras dela com as cores-chave trocadas; sem ela, as matrizes de sempre.
 class GhostSprites {
   final Map<int, ui.Picture> _pictures = {};
+  final Map<int, ui.Picture?> _glows = {};
+  TrafficArt? _art;
 
-  /// Colunas e linhas da matriz do modelo.
-  /// Com a roupa [o], o guarda-chuva deixa o passante mais alto.
+  TrafficArt? get _current {
+    final a = TrafficArt.current;
+    if (!identical(a, _art)) {
+      _art = a;
+      _pictures.clear();
+      _glows.clear();
+    }
+    return a;
+  }
+
+  /// A medida que vale `ghost_car_m` e `ghost_pedestrian_m`, em pixels do sprite.
+  int get carRef => _current?.carRefPx ?? carRefPx;
+  int get pedRef => _current?.pedRefPx ?? pedRefPx;
+
+  /// Colunas e linhas do quadro do modelo. Com a roupa [o], nas matrizes, o guarda-chuva deixa o passante mais alto (na
+  /// arte o quadro já tem o lugar dele).
   (int, int) sizeOf(GhostModel m, [GhostOutfit o = GhostOutfit.none]) {
+    final s = _current?.sprites[artNameOf(m)];
+    if (s != null) return (s.body.frameWidth, s.body.height);
     final rows = spriteRows(m, 0, o);
     return (rows.first.length, rows.length);
+  }
+
+  /// O ponto do quadro que fica sobre a posição (pés dos de pé, centro dos vistos de cima). `null`: o padrão.
+  (double, double)? anchorOf(GhostModel m) {
+    final s = _current?.sprites[artNameOf(m)];
+    return s == null ? null : (s.anchorX, s.anchorY);
   }
 
   ui.Picture picture(GhostModel m, int palette, int frame, [GhostOutfit o = GhostOutfit.none]) {
     final f = frame % framesOf(m);
     final key = ((m.index * 8 + palette % m.paletteCount) * 2 + f) * 16 + o.index;
+    final art = _current, s = art?.sprites[artNameOf(m)];
+    if (art != null && s != null) {
+      return _pictures[key] ??= recordStrip(s.body, f, art.remap(_artGroups(m), artRolesOf(m, palette)), over: o == GhostOutfit.none ? null : art.outfits['${artNameOf(m)}_${o.name}']);
+    }
     return _pictures[key] ??= recordSprite(spriteRows(m, f, o), paletteOf(m, palette, o));
+  }
+
+  /// O brilho de [m] (faróis e lanternas, de noite), ou `null`.
+  ui.Picture? glow(GhostModel m, int frame) {
+    final art = _current, s = art?.sprites[artNameOf(m)];
+    final g = s?.glow;
+    if (g == null) return null;
+    return _glows[m.index * 2 + frame % framesOf(m)] ??= recordStrip(g, frame, const {});
+  }
+
+  /// 0.25.1: o ônibus comum do Aseprite, na cor [body], e o brilho dele. `null` sem a arte (o desenho em código).
+  (ui.Picture, ui.Picture?, int, int)? bus(ui.Color body) {
+    final art = _current, s = art?.sprites['bus_city'];
+    if (art == null || s == null) return null;
+    final key = 0x7000 + body.toARGB32() % 997;
+    final pic = _pictures[key] ??= recordStrip(s.body, 0, art.remap(const ['vehicle'], {'body': body}));
+    final g = s.glow == null ? null : (_glows[-1] ??= recordStrip(s.glow!, 0, const {}));
+    return (pic, g, s.body.frameWidth, s.body.height);
   }
 
   final Map<int, ui.Picture> _boats = {};

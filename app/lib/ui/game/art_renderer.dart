@@ -150,26 +150,24 @@ class ArtRenderer {
       final fill = ui.Paint()..color = mat.base..isAntiAlias = false;
       final edge = ui.Paint()
         ..style = ui.PaintingStyle.stroke
-        ..strokeWidth = 1 / sc
+        ..strokeWidth = 1
         ..strokeJoin = ui.StrokeJoin.miter
         ..color = mat.edge
         ..isAntiAlias = false;
+      // 0.25.1: as áreas de todos os tiles num caminho só, já no buffer: um recorte e um ruído por material, em vez de
+      // um ruído da tela inteira por tile (com o buffer de 2 dp, o Simplificado a 80 m passava de 16 ms no g54).
+      final all = ui.Path();
       for (final (tx, ty, art) in tiles) {
         final path = kind == AreaKind.green ? art.green : art.water;
-        if (path == null) continue;
-        final m = tileMatrix(tx, ty);
-        c.save();
-        c.transform(m);
-        c.drawPath(path, fill);
-        c.clipPath(path, doAntiAlias: false);
-        c.transform(_inverse(m)); // de volta ao buffer, com o recorte da área: o ruído não gira com o tile
-        c.drawRect(low, noise);
-        c.restore();
-        c.save();
-        c.transform(m);
-        c.drawPath(path, edge);
-        c.restore();
+        if (path != null) all.addPath(path, ui.Offset.zero, matrix4: tileMatrix(tx, ty));
       }
+      if (all.getBounds().isEmpty) continue;
+      c.drawPath(all, fill);
+      c.save();
+      c.clipPath(all, doAntiAlias: false);
+      c.drawRect(low, noise);
+      c.restore();
+      c.drawPath(all, edge);
     }
 
     // Ruas: primeiro todas as calçadas, depois o asfalto, do mais estreito para o mais largo. A largura vem
@@ -293,14 +291,6 @@ class ArtRenderer {
         RoadClass.local => 'local',
         RoadClass.pedestrian => 'pedestrian',
       };
-
-  /// Inversa de uma matriz 4 x 4 que só tem parte afim 2D (as que este renderizador monta).
-  static Float64List _inverse(Float64List m) {
-    final a = m[0], b = m[1], c = m[4], d = m[5], tx = m[12], ty = m[13];
-    final det = a * d - b * c;
-    final ia = d / det, ib = -b / det, ic = -c / det, id = a / det;
-    return Float64List.fromList([ia, ib, 0, 0, ic, id, 0, 0, 0, 0, 1, 0, -(ia * tx + ic * ty), -(ib * tx + id * ty), 0, 1]);
-  }
 
   /// Textura de ruído de um material: pixels escuros e claros espalhados sobre transparente. Sempre a mesma,
   /// porque o gerador é semeado pelo material.

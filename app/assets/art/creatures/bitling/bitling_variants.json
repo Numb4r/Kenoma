@@ -1,0 +1,9 @@
+{
+  "urban": { "map": { "#4e9a86": "#878b98", "#2f6a62": "#4d505e", "#1f4648": "#2a2c34" }, "accessory": "bitling_acc_urban.png" },
+  "green": { "map": { "#4e9a86": "#98b58c", "#2f6a62": "#506f4d", "#1f4648": "#2a3d2c" }, "accessory": "bitling_acc_green.png" },
+  "water": { "map": { "#4e9a86": "#5d8da5", "#2f6a62": "#1a4056", "#1f4648": "#0c2231" }, "accessory": "bitling_acc_water.png" },
+  "residential": { "map": { "#4e9a86": "#cbb49b", "#2f6a62": "#92745d", "#1f4648": "#5a4236" }, "accessory": "bitling_acc_residential.png" },
+  "lit": { "map": { "#4e9a86": "#e8e5de", "#2f6a62": "#bcb6a9", "#1f4648": "#807a70" }, "accessory": "bitling_acc_lit.png" },
+  "sacred": { "map": { "#4e9a86": "#cfcae0", "#2f6a62": "#9791ad", "#1f4648": "#5c5674" }, "accessory": "bitling_acc_sacred.png" },
+  "crimson": { "map": { "#4e9a86": "#a14757", "#2f6a62": "#4c1b29", "#1f4648": "#22101a" }, "accessory": "bitling_acc_crimson.png" }
+}

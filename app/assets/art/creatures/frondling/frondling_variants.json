@@ -1,0 +1,9 @@
+{
+  "urban": { "map": { "#2f6b45": "#404350", "#4c9a5a": "#545866", "#86d37c": "#7c808e", "#3e3026": "#30333e", "#5a4636": "#3b3e4a", "#8a6a4a": "#4d515f" }, "accessory": "frondling_acc_urban.png" },
+  "green": { "map": { "#2f6b45": "#5a8c50", "#4c9a5a": "#7db36c", "#86d37c": "#c4e8a8", "#3e3026": "#3e6a3c", "#5a4636": "#51814a", "#8a6a4a": "#70a760" }, "accessory": "frondling_acc_green.png" },
+  "water": { "map": { "#2f6b45": "#0d293b", "#4c9a5a": "#1f4962", "#86d37c": "#6cb4d4", "#3e3026": "#081824", "#5a4636": "#0c2434", "#8a6a4a": "#12374e" }, "accessory": "frondling_acc_water.png" },
+  "residential": { "map": { "#2f6b45": "#af8b71", "#4c9a5a": "#d4b195", "#86d37c": "#f0dcc0", "#3e3026": "#8a6850", "#5a4636": "#a38067", "#8a6a4a": "#cda78b" }, "accessory": "frondling_acc_residential.png" },
+  "lit": { "map": { "#2f6b45": "#d1ccc0", "#4c9a5a": "#efebe3", "#86d37c": "#ffffff", "#3e3026": "#b2ac9e", "#5a4636": "#c7c2b5", "#8a6a4a": "#eae6db" }, "accessory": "frondling_acc_lit.png" },
+  "sacred": { "map": { "#2f6b45": "#aea8c7", "#4c9a5a": "#d3cde8", "#86d37c": "#f0ecff", "#3e3026": "#8a84a6", "#5a4636": "#a39dbd", "#8a6a4a": "#cbc5e1" }, "accessory": "frondling_acc_sacred.png" },
+  "crimson": { "map": { "#2f6b45": "#270c14", "#4c9a5a": "#471621", "#86d37c": "#b03a4a", "#3e3026": "#16080e", "#5a4636": "#220b12", "#8a6a4a": "#35101a" }, "accessory": "frondling_acc_crimson.png" }
+}

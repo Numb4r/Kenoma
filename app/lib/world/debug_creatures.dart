@@ -45,6 +45,7 @@ class DebugCreatureSpec {
     this.variant = DebugVariant.none,
     this.behavior = EcoBehavior.passive,
     this.count = 1,
+    this.walk = false,
   });
 
   factory DebugCreatureSpec.fromJson(Map<String, dynamic> j) => DebugCreatureSpec(
@@ -56,6 +57,7 @@ class DebugCreatureSpec {
         variant: DebugVariant.parse(j['variant'] as String?),
         behavior: EcoBehavior.parse(j['behavior'] as String?),
         count: ((j['count'] as num?)?.toInt() ?? 1).clamp(1, 10),
+        walk: j['walk'] == true,
       );
 
   final String? speciesId;
@@ -73,6 +75,9 @@ class DebugCreatureSpec {
   /// 1 a 10, cada uma num ponto diferente da Aura.
   final int count;
 
+  /// 0.25.1: anda em laço em volta de onde nasceu (só no desenho), para ver a deriva.
+  final bool walk;
+
   Map<String, dynamic> toJson() => {
         if (speciesId != null) 'species': speciesId,
         if (type != null) 'type': type,
@@ -82,6 +87,7 @@ class DebugCreatureSpec {
         'variant': variant.id,
         'behavior': behavior.id,
         'count': count,
+        if (walk) 'walk': true,
       };
 }
 
@@ -89,7 +95,21 @@ class DebugCreatures {
   final _pending = <({DebugCreatureSpec spec, List<String> ecoIds})>[];
   final _live = <WorldSpawn>[];
   final _until = <int, int>{};
+  final _walkers = <int, (double, double, double)>{};
   int _n = 0;
+
+  /// O raio do laço de quem anda, em metros, e quanto tempo leva uma volta.
+  static const double walkRadiusM = 6, walkPeriodS = 24;
+
+  /// 0.25.1: onde a criatura [s] que anda está no instante exato [t] (células z21); `null` se ela não anda. O laço é uma
+  /// elipse em volta de onde nasceu: cruza a tela para os dois lados, e o mapa a espelha pela direção.
+  (double, double)? walkAt(WorldSpawn s, double t, double metersPerCell21) {
+    final w = _walkers[s.uid];
+    if (w == null) return null;
+    final (x0, y0, phase) = w;
+    final a = 2 * math.pi * t / walkPeriodS + phase, r = walkRadiusM / metersPerCell21;
+    return (x0 + r * math.cos(a), y0 + r * 0.6 * math.sin(a));
+  }
 
   /// Pedidos à espera da próxima atualização do mapa (o mapa pode nem estar aberto).
   int get pending => _pending.fold(0, (a, p) => a + p.spec.count);
@@ -104,6 +124,7 @@ class DebugCreatures {
     _pending.clear();
     _live.clear();
     _until.clear();
+    _walkers.clear();
   }
 
   /// As criaturas de debug vivas em [tUtc]. Os pedidos pendentes nascem agora em pontos sorteados dentro de um círculo de
@@ -114,6 +135,7 @@ class DebugCreatures {
       for (var i = 0; i < p.spec.count; i++) {
         final s = _place(p.spec, p.ecoIds, px, py, metersPerCell21, radiusM, tUtc, biomeAt);
         _live.add(s);
+        if (p.spec.walk) _walkers[s.uid] = (s.x, s.y, (s.uid % 628) / 100);
         _until[s.uid] = tUtc + kDebugCreatureS;
       }
     }

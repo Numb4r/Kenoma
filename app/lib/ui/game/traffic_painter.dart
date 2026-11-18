@@ -234,6 +234,21 @@ class TrafficPainter {
 
   /// O ônibus fantasma: comprido, com a faixa de janelas, visto de cima e girando com a rua.
   void _bus(ui.Canvas canvas, Ghost g, double sx, double sy, double rotation, double pxPerM, double night) {
+    // 0.25.1: o ônibus do Aseprite (mesma escala dos carros), com as janelas e os faróis acesos de noite.
+    final art = sprites.bus(const ui.Color(0xFF7B6BD0));
+    if (art != null) {
+      final (pic, glow, fw, fh) = art;
+      final unit = carM * pxPerM / sprites.carRef;
+      canvas.save();
+      canvas.translate(sx, sy);
+      canvas.rotate(g.heading + rotation);
+      canvas.translate(-fw * unit / 2, -fh * unit / 2);
+      canvas.scale(unit);
+      canvas.drawPicture(pic);
+      if (night > 0.5 && glow != null) canvas.drawPicture(glow);
+      canvas.restore();
+      return;
+    }
     final len = carM * 2.2 * pxPerM, wid = 2.6 * pxPerM, u = math.max(2.0, (pxPerM * 0.3).roundToDouble());
     canvas.save();
     canvas.translate(sx, sy);
@@ -467,12 +482,15 @@ class TrafficPainter {
     final upright = isUpright(m);
     final dress = upright ? ghostOutfit(outfit, g.id) : GhostOutfit.none;
     final (cols, rows) = sprites.sizeOf(m, dress);
-    var unit = (m.kind == GhostKind.car ? carM * pxPerM / carRefPx : pedestrianM * pxPerM / pedRefPx);
+    var unit = (m.kind == GhostKind.car ? carM * pxPerM / sprites.carRef : pedestrianM * pxPerM / sprites.pedRef);
     if (upright) unit = math.max(1.0, (unit * 2).round() / 2);
     final frame = upright ? (g.travelledM / 0.6).floor() & 1 : 0;
     final pic = sprites.picture(m, g.palette, frame, dress);
     final fading = g.phase != GhostPhase.alive;
     final w = cols * unit, h = rows * unit;
+    // 0.25.1: a arte do Aseprite diz onde ficam os pés (de pé) ou o centro (de cima); as matrizes, o meio da base.
+    final anchor = sprites.anchorOf(m);
+    final ax = anchor == null ? w / 2 : anchor.$1 * unit, ay = anchor == null ? (upright ? h : h / 2) : (upright ? (anchor.$2 + 1) * unit : anchor.$2 * unit);
     if (fading) {
       final pad = 2 * unit;
       canvas.saveLayer(ui.Rect.fromCenter(center: ui.Offset(sx, sy), width: 2 * (math.max(w, h) + pad), height: 2 * (math.max(w, h) + pad)), _layer..color = ui.Color.fromARGB((g.alpha * 255).round(), 255, 255, 255));
@@ -481,14 +499,18 @@ class TrafficPainter {
     if (upright) {
       _fill.color = kOutline.withValues(alpha: 0.28);
       canvas.drawRect(ui.Rect.fromLTWH(sx - w * 0.45, sy - unit, w * 0.9, unit * 1.6), _fill);
-      canvas.translate(sx - w / 2, sy - h);
+      canvas.translate(sx - ax, sy - ay);
     } else {
       canvas.translate(sx, sy);
       canvas.rotate(g.heading + rotation);
-      canvas.translate(-w / 2, -h / 2);
+      canvas.translate(-ax, -ay);
     }
     canvas.scale(unit);
     canvas.drawPicture(pic);
+    if (night > 0.5) {
+      final glow = sprites.glow(m, frame);
+      if (glow != null) canvas.drawPicture(glow); // faróis e lanternas acesos
+    }
     canvas.restore();
     if (night > 0.5 && m.kind == GhostKind.car) {
       final a = g.heading + rotation;

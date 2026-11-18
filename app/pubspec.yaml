@@ -1,7 +1,7 @@
 name: kenoma
 description: "Kenoma: Veilbreakers, RPG mobile de exploração via GPS."
 publish_to: 'none'
-version: 0.25.0+50
+version: 0.25.1+51
 
 environment:
   sdk: ^3.13.4
@@ -38,7 +38,36 @@ flutter:
     - assets/art/map/
     - assets/art/ui/
     - assets/art/ui/icons/
+    - assets/art/traffic/
+    - assets/art/sparks/
+    - assets/art/creatures/
+    - assets/art/creatures/bitling/
+    - assets/art/creatures/bouldkin/
+    - assets/art/creatures/brookkin/
+    - assets/art/creatures/cinderkin/
+    - assets/art/creatures/coilkin/
+    - assets/art/creatures/fairkin/
+    - assets/art/creatures/frondling/
+    - assets/art/creatures/glimlet/
+    - assets/art/creatures/glitchkin/
+    - assets/art/creatures/gratekin/
+    - assets/art/creatures/hollowkin/
     - assets/art/creatures/humoth/
+    - assets/art/creatures/kilnshade/
+    - assets/art/creatures/pebblet/
+    - assets/art/creatures/prismkin/
+    - assets/art/creatures/rillet/
+    - assets/art/creatures/rootseer/
+    - assets/art/creatures/rustling/
+    - assets/art/creatures/shadekin/
+    - assets/art/creatures/sootling/
+    - assets/art/creatures/sprigglet/
+    - assets/art/creatures/thicketkin/
+    - assets/art/creatures/umbrel/
+    - assets/art/creatures/wellmirror/
+    - assets/art/creatures/wisplet/
+    - assets/art/creatures/wyrmkin/
+    - assets/art/creatures/wyrmlet/
     - assets/lab/
     - assets/regions/
     - assets/fonts/OFL-Silkscreen.txt

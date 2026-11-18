@@ -2,8 +2,6 @@
 /// pontos de material como caixinhas. Só desenha; quem decide o que existe é `world/`.
 library;
 
-import 'creature_anim.dart';
-import 'creature_art.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -18,6 +16,10 @@ import '../../world/spawn_field.dart';
 import '../colors.dart';
 import '../sprites/variant_art.dart' show shinyPulse;
 import '../sprites/material_sprites.dart';
+import 'creature_anim.dart';
+import 'creature_art.dart';
+import 'spawn_trigger.dart';
+import 'traffic_art.dart' show SparkArt;
 
 /// Tipo do Eco por espécie, para a cor do anel. Vem de `creatures.json` pelo mapa.
 typedef EcoTypeOf = EcoType? Function(String speciesId);
@@ -82,6 +84,7 @@ void paintSpawns(
   bool Function(int uid)? facingLeftOf,
   Map<int, ui.Offset>? anchors,
   bool Function(int uid)? movingOf,
+  (SpawnTrigger, ui.Offset?)? Function(WorldSpawn s)? triggerOf,
   ui.Color? bodyTone,
   List<void Function()>? emissive,
 }) {
@@ -114,7 +117,7 @@ void paintSpawns(
       // brilha na camada emissiva, depois do clima.
       final anim = CreatureArt.of(s.entryId);
       if (anim != null) {
-        _animatedEco(canvas, center.translate(0, hop), s, anim, size, near, time, appear: appear, moving: movingOf?.call(s.uid) ?? false, flip: facingLeftOf?.call(s.uid) ?? false, tone: bodyTone, emissive: emissive, lean: lean);
+        _animatedEco(canvas, center.translate(0, hop), s, anim, size, near, time, appear: appear, moving: movingOf?.call(s.uid) ?? false, flip: facingLeftOf?.call(s.uid) ?? false, tone: bodyTone, emissive: emissive, lean: lean, trigger: appear < 1 ? triggerOf?.call(s) : null);
         if (marked?.call(s) ?? false) _markRing(canvas, center, size);
         if (pinned?.call(s) ?? false) _pinMarker(canvas, center, size, time);
         if (near) _touchRingOf(canvas, center, s, size, avoid, spawnColor(s, typeOf));
@@ -136,7 +139,13 @@ void paintSpawns(
       if (marked?.call(s) ?? false) _markRing(canvas, center, size);
       if (pinned?.call(s) ?? false) _pinMarker(canvas, center, size, time);
     } else if (s.isSpark) {
-      _leaning(canvas, center.translate(0, sparkSize / 2), lean, () => _spark(canvas, center, spawnColor(s, typeOf), sparkSize, dpr, near, time + s.uid % 7));
+      final art = SparkArt.current, strip = art?.strips[s.entryId.startsWith('item.dust.') ? s.entryId.substring(10) : ''];
+      if (art != null && strip != null) {
+        // 0.25.1: a Fagulha do Aseprite (a forma do tipo, pulsando), com o brilho aceso por cima da noite.
+        _leaning(canvas, center.translate(0, sparkSize / 2), lean, () => _sparkArt(canvas, center, art, strip, sparkSize, dpr, near, time, s.uid, emissive: bodyTone == null ? null : emissive));
+      } else {
+        _leaning(canvas, center.translate(0, sparkSize / 2), lean, () => _spark(canvas, center, spawnColor(s, typeOf), sparkSize, dpr, near, time + s.uid % 7));
+      }
       if (blow) _motes(canvas, center, wind.motes(s.uid, time), windDir, sparkSize * 1.5, spawnColor(s, typeOf));
     } else if (_materialImage(s.entryId) case final img?) {
       _materialSprite(canvas, center, img, artPixelDp, near);
@@ -334,6 +343,19 @@ void paintSparkIcon(ui.Canvas canvas, ui.Offset c, ui.Color color, double size, 
 void paintMaterialIcon(ui.Canvas canvas, ui.Offset c, ui.Color color, double size) => _material(canvas, c, color, size, true);
 
 /// Fagulha: uma faísca de [size] pixels de ponta a ponta (cerca de 3 m do mundo).
+void _sparkArt(ui.Canvas canvas, ui.Offset c, SparkArt art, (ui.Image, ui.Image?) strip, double size, double dpr, bool near, double time, int uid, {List<void Function()>? emissive}) {
+  final f = art.frame.toDouble(), px = math.max(1, (size / f * dpr).round()) / dpr, side = f * px;
+  final frame = loopFrame(time, art.frames, art.fps, uid: uid);
+  final src = ui.Rect.fromLTWH(frame * f, 0, f, f);
+  final dst = ui.Rect.fromCenter(center: c, width: side, height: side);
+  canvas.drawImageRect(strip.$1, src, dst, ui.Paint()..filterQuality = ui.FilterQuality.none..color = ui.Color.fromRGBO(255, 255, 255, near ? 1 : 0.7));
+  final glow = strip.$2;
+  if (glow != null && emissive != null) {
+    // Como o das criaturas: a camada emissiva já leva o tremor do impacto; a inclinação do vento fica de fora.
+    emissive.add(() => canvas.drawImageRect(glow, src, dst, ui.Paint()..filterQuality = ui.FilterQuality.none));
+  }
+}
+
 void _spark(ui.Canvas canvas, ui.Offset c, ui.Color color, double size, double dpr, bool near, double time) {
   final px = math.max(1, (size / 5 * dpr).round()) / dpr; // 5 pixels de ponta a ponta com o braço maior
   final pulse = 0.65 + 0.35 * math.sin(time * 4);
@@ -406,7 +428,10 @@ ui.Rect anchoredRect(ui.Offset anchor, double size) =>
 /// e o contorno de alcance; os ocelos (piscando como letreiro com mau contato, fixos no alerta), os veios e o brilho do
 /// Brilhante vão para [emissive], que o mapa desenha depois do clima.
 void _animatedEco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, CreatureArt art, double size, bool near, double time,
-    {required double appear, required bool moving, required bool flip, ui.Color? tone, List<void Function()>? emissive, double lean = 0}) {
+    {required double appear, required bool moving, required bool flip, ui.Color? tone, List<void Function()>? emissive, double lean = 0, (SpawnTrigger, ui.Offset?)? trigger}) {
+  // 0.25.1: o gatilho de nascer (só durante a abertura): a poça e o chão por baixo do corpo; o raio, as faíscas do poste e
+  // a neblina por cima, acesos depois do tom.
+  if (trigger != null) paintSpawnTrigger(canvas, trigger.$1, c, appear, size, s.uid, origin: trigger.$2, behind: true);
   canvas.drawOval(
     ui.Rect.fromCenter(center: c.translate(0, size * 0.42), width: size * 0.55, height: size * 0.14),
     ui.Paint()..color = kOutline.withValues(alpha: 0.45)..isAntiAlias = false,
@@ -471,6 +496,10 @@ void _animatedEco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, CreatureArt art, 
         }
       });
   emissive == null ? light() : emissive.add(light);
+  if (trigger != null) {
+    void lit() => paintSpawnTrigger(canvas, trigger.$1, c, appear, size, s.uid, origin: trigger.$2, behind: false);
+    emissive == null ? lit() : emissive.add(lit);
+  }
 }
 
 /// O anel de alcance e o rótulo de nível (tamanho fixo de tela). Perto do Conjurador ficam de fora: nada cobre o marcador.

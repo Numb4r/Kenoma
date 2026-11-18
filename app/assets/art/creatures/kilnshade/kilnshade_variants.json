@@ -1,0 +1,9 @@
+{
+  "urban": { "map": { "#2a2e3c": "#1e2028", "#3d4254": "#272a33", "#5a6072": "#353943", "#8a8fa3": "#6a6e7c" }, "accessory": "kilnshade_acc_urban.png" },
+  "green": { "map": { "#2a2e3c": "#3e6a3c", "#3d4254": "#54844c", "#5a6072": "#74ab64", "#8a8fa3": "#c4e8a8" }, "accessory": "kilnshade_acc_green.png" },
+  "water": { "map": { "#2a2e3c": "#081824", "#3d4254": "#0c2536", "#5a6072": "#143b53", "#8a8fa3": "#6cb4d4" }, "accessory": "kilnshade_acc_water.png" },
+  "residential": { "map": { "#2a2e3c": "#8a6850", "#3d4254": "#a7836a", "#5a6072": "#d1ab8f", "#8a8fa3": "#f0dcc0" }, "accessory": "kilnshade_acc_residential.png" },
+  "lit": { "map": { "#2a2e3c": "#b2ac9e", "#3d4254": "#cac5b8", "#5a6072": "#ece9df", "#8a8fa3": "#ffffff" }, "accessory": "kilnshade_acc_lit.png" },
+  "sacred": { "map": { "#2a2e3c": "#8a84a6", "#3d4254": "#a6a0c0", "#5a6072": "#cfc9e5", "#8a8fa3": "#f0ecff" }, "accessory": "kilnshade_acc_sacred.png" },
+  "crimson": { "map": { "#2a2e3c": "#16080e", "#3d4254": "#230b13", "#5a6072": "#39111b", "#8a8fa3": "#b03a4a" }, "accessory": "kilnshade_acc_crimson.png" }
+}

@@ -1,0 +1,9 @@
+{
+  "urban": { "map": { "#b4c0d8": "#878b98", "#8490b0": "#585c6c", "#5c688e": "#414450", "#3e476c": "#2a2c34" }, "accessory": "wisplet_acc_urban.png" },
+  "green": { "map": { "#b4c0d8": "#98b58c", "#8490b0": "#5c8058", "#5c688e": "#435f42", "#3e476c": "#2a3d2c" }, "accessory": "wisplet_acc_green.png" },
+  "water": { "map": { "#b4c0d8": "#5d8da5", "#8490b0": "#1e4a62", "#5c688e": "#15364a", "#3e476c": "#0c2231" }, "accessory": "wisplet_acc_water.png" },
+  "residential": { "map": { "#b4c0d8": "#cbb49b", "#8490b0": "#a4846a", "#5c688e": "#7f6350", "#3e476c": "#5a4236" }, "accessory": "wisplet_acc_residential.png" },
+  "lit": { "map": { "#b4c0d8": "#e8e5de", "#8490b0": "#d0cabc", "#5c688e": "#a8a296", "#3e476c": "#807a70" }, "accessory": "wisplet_acc_lit.png" },
+  "sacred": { "map": { "#b4c0d8": "#cfcae0", "#8490b0": "#aaa4c0", "#5c688e": "#837d9a", "#3e476c": "#5c5674" }, "accessory": "wisplet_acc_sacred.png" },
+  "crimson": { "map": { "#b4c0d8": "#a14757", "#8490b0": "#5a1e2e", "#5c688e": "#3e1724", "#3e476c": "#22101a" }, "accessory": "wisplet_acc_crimson.png" }
+}
