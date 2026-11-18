@@ -1110,3 +1110,46 @@ Novos: o Voltar do menu de debug em `test/dev/debug_menu_test.dart` (limpa a bus
 ### Capturas
 
 `/tmp/kenoma-shots/0244_humoth_mapa.png` (os três conceitos e o atual sobre o mapa de noite, ao lado do Conjurador, em 19 px a 3 dp e 28 px a 2 dp, na escala do jogo) e `0244_humoth_retratos.png` (os retratos de 96 px, com os de 19 e 28 px e o atual).
+
+## Fase 1 · fatia 11 · Ônibus nos pontos, Outros Veilbreakers e Veículos do Véu (0.24.5)
+
+Versão 0.24.5+49, mesma chave, **save no schema 13** (bloco `npcs`: as trocas do dia e a relação com os conhecidos). Teste de migração com `test/fixtures/save_v12_0244.json`, gravado pelo código real da 0.24.4. GDD rev 365 no repositório (`docs: GDD rev 365`): **o anexo não veio na mensagem**; o `docs/GDD.md` da árvore de trabalho já tinha as três seções novas (sem número de revisão no texto) e foi esse que entrou. Feita no emulador; o celular não foi tocado.
+
+### Ônibus nos pontos (só cena)
+
+- **Ônibus comuns:** já paravam no ponto e levavam quem esperava (0.19.0). Conferido no emulador: o ônibus encosta ao lado do ponto desenhado (os dois saem dos mesmos pontos do OSM) e espera. **Faltava descer:** agora de 0 a `bus_alight_max` (2) passantes descem pela porta, do lado da calçada da direita, andam até a esquina e seguem como os outros (`TrafficSim._alight`).
+- **Ônibus Espectral** (`world/spectral_bus.dart`): passa de verdade no horário de cada ponto que a 0.24.2 já mostrava, freia até o ponto, fica parado, acelera e some; um passageiro espectral desce e some na calçada, ou aparece nela e embarca. Só seed, ponto e tempo: igual para o grupo, sem recompensa, sem levar o jogador. Anda na faixa do lado do ponto (mão direita), pelo ponto da rua mais perto guardado no prop (`CityProp.roadX/roadY`). Não depende do interruptor "Tráfego do Véu". Tocar no ponto com ele parado mostra uma das falas `bus_now`. Números em `map_touch.bus` do `balance.json` (`approach_s`, `dwell_s`, `leave_s`, `run_m`; só cena, por aparelho, mas o horário é o da seed).
+- Arte do `criativo`: `bus_spectral.png` (32×12, de cima) e `spectral_passenger.png`.
+
+### Outros Veilbreakers
+
+- **Mundo** (`world/veilbreakers.dart`, números no bloco `veilbreakers` da **época 12**, que ainda não foi publicada: eles fazem Ecos sumirem, então moram na época e não no `balance.json`). Cada célula z18 em cada fatia de 15 min tem um NPC com chance `base_chance` × bioma (Iluminado ×3, verde ×2) × hora local (UTC-3, quase nada de madrugada, pico no fim da tarde). Identidade (nome, apelido, escola, roupa) e caminho saem de `hash(seed, época, célula, fatia)`: três células z20 em fila, cada ponto levado à calçada mais perto (o mesmo snapper dos spawns), ida e volta a 1,1 m/s. A posição é função do tempo: igual para amigos.
+- **Sintonia:** só Ecos da camada base a até 45 m do caminho cuja janela fecha dentro da fatia; somem 120 s antes do fim da janela (chance 0,5, até 2 por fatia). O NPC para, os anéis do sinal fecham sobre o Eco (`fx_npc_tune.png`) e ele some. Nunca um Eco a até 30 m do jogador (local: no outro aparelho, longe, some). A camada pessoal não é tocada.
+- **Conhecidos:** 2 por tile z15, sorteados entre os 8 do `npc.json`, presos à primeira célula z18 do tile com o bioma do lugar deles, só nos dias e horas da rotina.
+- **Folha** (toque a até 30 m, a pé): nome, título da escola, a saudação (pela relação), a troca do dia e às vezes um rumor. **Troca:** uma por NPC por dia, sempre com perda (o valor de cada item é o custo nas receitas, material bruto = 1; um teste confere as 24 trocas), recusada sem material ou com a bolsa cheia. **Relação** (só conhecidos) sobe 1 por troca até 10, no save; com 3 as trocas ficam melhores, com 6 ainda melhores e entram os rumores raros. **Rumor** (35% por NPC por dia): família de um Eco da camada base perto (distância e rumo verdadeiros), minutos até o Espectral no ponto mais perto, o próximo evento do calendário; raros: um Brilhante ou um Oculto perto.
+- Textos do `criativo` em `docs/textos-npc.md` (para revisão), nos dados em `app/assets/data/npc.json` (`conteudista`); números da conversa em `balance.json` (`npc`). Arte: 8 tiras de NPC (`npc_<escola>_<0|1>.png`, 3 quadros de 16×16, quatro escolas contando "sem escola").
+
+### Veículos do Véu (só aparência)
+
+- `item.vehicle.bike` e `item.vehicle.skate` (faixa de bicicleta) e `item.vehicle.cart` (faixa de carro), sem efeito nenhum; receitas na Bancada nas páginas `page.vehicle_light` (mentor no nível 6) e `page.vehicle_cart` (nível 11). Loadout com dois espaços novos (`vehicleBike`, `vehicleCar`), com "mostrar no personagem".
+- A faixa (`rideBandOf`): com o Modo Viagem em curso, a do veículo escolhido; sem viagem, a velocidade do avatar contra os limites do Modo Viagem (a pé até 7 km/h, bicicleta até 25 km/h). Troca só depois de 1,5 s na faixa nova. A pé nada muda; na corrida de Uber ou 99 continua o carro da corrida. Duas camadas por veículo (`veh_*_back/front.png`, 32×24 com o Conjurador em (8, 2)), espelhadas como o avatar. Qualidade: Boa ganha brilho na cor do sinal, Perfeita brilho e rastro de faíscas.
+
+### Debug (todas as builds, só neste aparelho)
+
+Comandos novos no `celular.sh cmd` (agora o resultado sai no logcat, `kenoma_cmd [...]`): `npcs on|off` (um NPC em toda célula), `npctune [s]` (leva o GPS simulado para 45 m do próximo Eco que um NPC vai sintonizar e o relógio para pouco antes), `npc` (abre a folha do NPC mais perto), `spectral [s]` (perto do ponto mais perto, pouco antes do Espectral), `buses on|off` (quase todo carro de avenida vira ônibus), `speed <m/s>` (GPS simulado), `vehicle bike|skate|cart[@good|@perfect]` (equipa direto no save aberto).
+
+### Limites
+
+- **O anexo do GDD não veio**: o que entrou é o `docs/GDD.md` que já estava na árvore de trabalho.
+- Ninguém esperava no ponto da gravação: o embarque e a descida dos ônibus comuns estão cobertos pelos testes, não pela captura.
+- O caminho do NPC liga três pontos de calçada por retas: numa esquina fechada ele pode cortar o canto de um prédio.
+- Textos com concordância a revisar no `docs/textos-npc.md`: "1 dias" nos rumores de evento e "3 Folha seca" na oferta (o nome do item vai sem plural).
+- O anel da sintonia sai um pouco acima e à esquerda do centro do Eco.
+
+### Testes
+
+Novos: `test/crafting/vehicles_test.dart` (faixa por velocidade e por viagem; veículo certo por faixa; nenhum efeito; a mesma viagem de bicicleta, carro como passageiro e motorista, e ônibus dá o mesmo save, o mesmo baú, as mesmas Fagulhas e marcas e a mesma velocidade máxima com e sem veículo), `test/world/spectral_bus_test.dart` (no minuto do painel, igual em dois aparelhos), `test/world/veilbreakers_test.dart` (mesmo NPC em dois aparelhos, só Ecos que iam sumir, a pausa, madrugada contra fim da tarde, rotina dos conhecidos), `test/world/npc_talk_test.dart` (toda troca com perda, uma por NPC por dia, relação no save, rumor verdadeiro), `test/save/migration_v13_test.dart`, e a descida do ônibus em `test/world/sim/traffic_sim_test.dart`. **Teste intermitente corrigido:** o do Eco oculto (`game_map_screen_test`) falhava 1 vez em 5 já no código da 0.24.4: o Eco forçado anda e tem uid novo a cada rodada, e em 6 s às vezes saía do alcance da distorção; agora o jogador chega de novo onde ele está antes do pulso.
+
+### Capturas
+
+No emulador, em `/tmp/kenoma-shots/0245_*`: ônibus comum parado no ponto (`onibus_ponto.png` e `.mp4`), o Espectral passando (`onibus_espectral.mp4` e `_quadros.png`), um NPC sintonizando (`npc_sintonia.mp4` e `_quadros.png`), a folha (`npc_folha.png`), um rumor (`npc_rumor.png`), a troca recusada pela bolsa cheia (`npc_troca.png`), o avatar de bicicleta Perfeita e de carroça pelo GPS simulado (`veiculo_bicicleta.png`, `veiculo_carroca.png`).

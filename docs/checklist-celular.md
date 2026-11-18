@@ -1,13 +1,24 @@
 # Checklist do celular
 
 O que precisa ser conferido no moto g54 quando a versão for instalada nele. É cumulativo: cobre tudo desde a última versão
-que está no celular (hoje a **0.24.3**, instalada em 2026-11-17 por cima da 0.24.1, com o save mantido; a 0.24.2 nunca foi para o celular, então os itens dela continuam; a 0.24.1 tinha entrado por cima da 0.24.0 (e esta da 0.23.2, e esta da 0.23.1, e esta da 0.23.0, que entrou por cima da 0.22.1), com o save mantido; a 0.22.2 nunca foi para o celular, então os itens dela continuam; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
+que está no celular (hoje a **0.24.3**, instalada em 2026-11-17 por cima da 0.24.1 (a 0.24.4 e a 0.24.5 ainda não foram para o celular), com o save mantido; a 0.24.2 nunca foi para o celular, então os itens dela continuam; a 0.24.1 tinha entrado por cima da 0.24.0 (e esta da 0.23.2, e esta da 0.23.1, e esta da 0.23.0, que entrou por cima da 0.22.1), com o save mantido; a 0.22.2 nunca foi para o celular, então os itens dela continuam; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
 dela. **Um item só sai daqui quando o relatório confirmar que passou.** A ordem vai da versão mais nova para a mais antiga;
 as pendências antigas ficam no fim. O código entre crases é o id do item (o workbench guarda as notas por ele: não mude).
 
 Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`) e o Kenoma em primeiro plano.
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
+
+## 0.24.5
+
+Muda o save (schema 13). Os NPCs e a sintonia são da época 12: com a Época em teste ligada no celular.
+
+- [ ] `0245-onibus` **Ônibus nos pontos.** Num ponto de avenida, o ônibus comum encosta ao lado do ponto desenhado, quem espera embarca e às vezes alguém desce e segue andando.
+- [ ] `0245-espectral` **Ônibus Espectral.** No minuto que o painel do ponto mostra, ele chega translúcido, para, deixa ou leva um passageiro que some na calçada, e segue; tocando no ponto com ele parado, a fala de "parado agora". Igual no celular de um amigo no mesmo ponto e hora.
+- [ ] `0245-npcs` **Outros Veilbreakers.** No fim da tarde, nas praças e no Iluminado, de vez em quando um NPC andando pela calçada; quase nenhum de madrugada. Às vezes ele para e um Eco perto some com o anel do sinal (nunca um Eco a menos de 30 m de você).
+- [ ] `0245-folha` **Folha do NPC.** Tocando a até 30 m, a pé: nome, escola, fala, a troca do dia (uma por NPC por dia, recusada sem material ou com a bolsa cheia) e às vezes um rumor que confere (o Espectral no minuto dito, a família perto).
+- [ ] `0245-conhecidos` **Conhecidos.** Um conhecido aparece no mesmo bairro nos dias e horas dele; trocando com ele dias seguidos, a relação sobe e fica depois de fechar o app.
+- [ ] `0245-veiculos` **Veículos do Véu.** Fabricar bicicleta ou skate (nível 6) e a carroça (nível 11), equipar nos espaços novos do Loadout; de bicicleta o avatar aparece nela, de ônibus ou carro (Modo Viagem) na carroça, a pé nada; o baú e as Fagulhas da viagem iguais aos de sem veículo.
 
 ## 0.24.4
 
