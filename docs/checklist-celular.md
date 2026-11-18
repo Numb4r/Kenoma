@@ -1,13 +1,22 @@
 # Checklist do celular
 
 O que precisa ser conferido no moto g54 quando a versão for instalada nele. É cumulativo: cobre tudo desde a última versão
-que está no celular (hoje a **0.24.3**, instalada em 2026-11-17 por cima da 0.24.1 (a 0.24.4 e a 0.24.5 ainda não foram para o celular), com o save mantido; a 0.24.2 nunca foi para o celular, então os itens dela continuam; a 0.24.1 tinha entrado por cima da 0.24.0 (e esta da 0.23.2, e esta da 0.23.1, e esta da 0.23.0, que entrou por cima da 0.22.1), com o save mantido; a 0.22.2 nunca foi para o celular, então os itens dela continuam; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
+que está no celular (hoje a **0.25.0**, release instalada em 2026-11-18 por cima da 0.24.3, com o save mantido, e depois uma build de profile da medição da 0.25.1; a 0.25.1 não chegou a ser instalada; a 0.24.3 tinha entrado em 2026-11-17 por cima da 0.24.1, com o save mantido; a 0.24.2 nunca foi para o celular, então os itens dela continuam; a 0.24.1 tinha entrado por cima da 0.24.0 (e esta da 0.23.2, e esta da 0.23.1, e esta da 0.23.0, que entrou por cima da 0.22.1), com o save mantido; a 0.22.2 nunca foi para o celular, então os itens dela continuam; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
 dela. **Um item só sai daqui quando o relatório confirmar que passou.** A ordem vai da versão mais nova para a mais antiga;
 as pendências antigas ficam no fim. O código entre crases é o id do item (o workbench guarda as notas por ele: não mude).
 
 Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`) e o Kenoma em primeiro plano.
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
+
+## 0.25.2
+
+Muda o save (schema 14: saem a época em teste e a seção Desenvolvedor). Antes de qualquer toque pelo adb: o dono libera o aparelho na sessão, e tudo passa por `scripts/celular.sh`.
+
+- [ ] `0252-dev` **Modo de desenvolvimento.** Depois de instalar por cima: o save continua (nível, Familiar, Bolsa); os Ajustes mostram "ÉPOCA 12 · DESENVOLVIMENTO" em Dados, sem a seção Desenvolvedor; o HUD não mostra "Época 12 em teste"; o mundo novo (NPCs, Ônibus Espectral, Caco de vidro) aparece sem ligar nada; nenhum aviso de mundo desatualizado.
+- [ ] `0252-ponto` **Ponto de ônibus inteiro de pé.** Girando o mapa com dois dedos (ou "Giro dos objetos" no debug): poste com a placa azul, cobertura, painel e banco saem iguais em qualquer ângulo; nada no chão gira com a rua embaixo dele. Banca e placas de rua também.
+- [ ] `0252-sp` **São Paulo sem baixar.** No simulador, em São Paulo (Paulista): o mapa abre direto, com prédios, relevo e tráfego, sem pedir download; nos Ajustes a região aparece pronta.
+- [ ] `0252-apk` **APK de 170 MB.** A instalação por cima cabe e não demora demais (antes, 100 MB).
 
 ## 0.25.1
 
@@ -30,7 +39,7 @@ O mapa passa a pixel de 2 dp. Antes de qualquer toque pelo adb: o dono libera o 
 
 ## 0.24.5
 
-Muda o save (schema 13). Os NPCs e a sintonia são da época 12: com a Época em teste ligada no celular.
+Muda o save (schema 13). Os NPCs e a sintonia são da época 12 (desde a 0.25.2, a época de desenvolvimento, sempre ativa).
 
 - [ ] `0245-onibus` **Ônibus nos pontos.** Num ponto de avenida, o ônibus comum encosta ao lado do ponto desenhado, quem espera embarca e às vezes alguém desce e segue andando.
 - [ ] `0245-espectral` **Ônibus Espectral.** No minuto que o painel do ponto mostra, ele chega translúcido, para, deixa ou leva um passageiro que some na calçada, e segue; tocando no ponto com ele parado, a fala de "parado agora". Igual no celular de um amigo no mesmo ponto e hora.
@@ -47,17 +56,14 @@ Muda o save (schema 13). Os NPCs e a sintonia são da época 12: com a Época em
 
 Não muda o save. Antes de qualquer toque pelo adb: o dono libera o aparelho na sessão, e tudo passa por `scripts/celular.sh`.
 
-- [ ] `0243-epoca-teste` **Época em teste.** Debug, Save, "Opções de desenvolvedor nos Ajustes" ligado: os Ajustes mostram a seção Desenvolvedor; "Época 12 em teste" pede confirmação, o mapa reabre com **ÉPOCA 12 EM TESTE** no HUD e "ÉPOCA 12 · EM TESTE" em Dados. Com ela: eventos por cima do clima no app Céu, Caco de vidro no Urbano e no Iluminado, biomas e becos do Overture. Desligar volta à 11 e tira a etiqueta.
-- [ ] `0243-epoca-some` **Some sozinha** (quando a época 12 for publicada): sem mexer em nada, a etiqueta some e os Ajustes voltam a mostrar a época de todos.
 - [ ] `0243-copa` **A copa balança.** Tocar uma árvore de calçada ou de praça (a até 30 m, a pé): o topo da copa vai e volta umas duas vezes e para em pouco mais de 1 s; a base e a sombra ficam. Vale também sem folha.
 
 ## 0.24.2
 
 Muda o save (schema 12). Antes de qualquer toque pelo adb: o dono libera o aparelho na sessão, e tudo passa por `scripts/celular.sh`.
 
-- [ ] `0242-ponto` **Ponto de ônibus de pé.** Girando o mapa, o ponto fica de pé e só a marca no chão e o meio-fio giram com a rua; nenhum retângulo escuro paralelo à rua.
 - [ ] `0242-passaros` **Pássaros por cima.** Pombos voando e maritacas passam por cima dos telhados e das árvores; pombo que pousa num prédio fica no telhado.
-- [ ] `0242-vidro` **Caco de vidro** (com a época 12 em teste, ou depois de publicada): cai no Urbano e mais no Iluminado; 2 cacos fazem a garrafa; o primeiro caco abre a quest.
+- [ ] `0242-vidro` **Caco de vidro:** cai no Urbano e mais no Iluminado; 2 cacos fazem a garrafa; o primeiro caco abre a quest.
 - [ ] `0242-toques` **Toques no mapa, a pé e a até 30 m:** ponto (próximo Ônibus Espectral), banca (manchete igual à de um amigo no mesmo dia), placa (nome da rua), bando (voa, às vezes pena), árvore (folha no outono, flor no ipê florido; uma vez por dia), poça na chuva (onda; Eco de Água se vira), poste à noite (pisca; Hum fica à vista), gato (coração, segue um quarteirão, às vezes larga algo). De carro, nada responde.
 - [ ] `0242-limites` **Limites do dia:** depois de 3 penas, 6 árvores e 3 presentes de gato, o aviso do limite aparece; no dia seguinte volta.
 
@@ -152,14 +158,12 @@ Muda o save (schema 10): instalar por cima da 0.23.2 e conferir que nada some.
 - [ ] `0203-agua-relevo` **A água do relevo nas baixadas, sem tranco.** Chuva forçada perto da Lagoa do Taquaral e Dilúvio forçado na Norte-Sul (perto da Orosimbo Maia): as poças nas baixadas e a rua alagada aparecem; entrar de bicicleta simulada num bloco novo não dá tranco (o tile da água é calculado fora do quadro e chega em menos de um segundo na build de release).
 - [ ] `0203-hum-noite` **Hum à noite perto de postes, e na tempestade.** À noite (ou com o relógio do debug à noite), numa rua com semáforos ou pontos de ônibus, com um Hum no Círculo: Ecos Elétricos a mais junto dos postes, em postes diferentes. De dia com tempo limpo, nenhum; de dia com tempestade forçada, aparecem.
 - [ ] `0203-hash-camadas` **Hash da camada base igual no celular e no emulador.** Ponha o emulador no lugar do celular (`scripts/emulador/rota.py --fixo=lat,lon`, com o lat e lon do celular), e compare no debug ("Camada pessoal de spawn") a célula, a janela e os dois hashes: a `base` tem de ser igual e a `pessoal`, diferente.
-- [ ] `0203-epoca12-adiada` **A época 12 não começou em 16/nov.** Debug, Assinaturas, "Identidade e época": a época vigente é a 11, e a 12 aparece com início em 2026-12-07 16:00 UTC.
 
 ## 0.20.2
 
 - [ ] `0202-shade-becos` **Shade em becos à noite.** À noite, com um Shade no Círculo, num beco (`service=alley`) ou num caminho estreito entre prédios: às vezes um Eco a mais ali, como sob as marquises. Só na época 12 em diante (os becos vêm no arquivo de pontos dela).
 - [ ] `0202-hum-wisp-hora` **Hum e Wisp por hora.** Com um Hum (à noite, perto de postes) ou um Wisp (na neblina ou no Sagrado) no Círculo, 1, 2 e 3 Ecos a mais por quadra de uns 300 m e por hora, nas três faixas; os da mesma hora continuam lá a hora inteira.
 - [ ] `0202-trabalho-gdd` **O Trabalho das famílias com o texto do GDD**, na aba Atributos do Bestiário: "Trabalho: forja e fornalha (em breve)" para o Soot e a frase depois, e assim nas doze.
-- [ ] `0202-sao-paulo-e12` **São Paulo na época 12, depois de publicada.** Só quando a época 12 estiver publicada (feed, catálogo e release `regions-e12`): em São Paulo o mapa baixa o pacote novo (Iluminado e Sagrado aparecem na grade de biomas do debug) e o arquivo de pontos (Hum e Shade passam a ter onde nascer).
 
 ## 0.20.1
 

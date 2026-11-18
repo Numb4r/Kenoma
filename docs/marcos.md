@@ -1250,3 +1250,31 @@ Novos: `test/ui/creature_art_test.dart` (substitui o `humoth_art_test`: as 27 es
 ### Capturas e vídeos
 
 Em `/tmp/kenoma-shots/0251_*`: uma folha por família (`familia_<família>.png`, todas as formas e variantes, 5×), o mapa de noite com dez criaturas de famílias diferentes (`familias_noite`), o tráfego na chuva e de noite (`trafego_chuva`, `trafego_noite`), o Simplificado a 80 m no celular (`cel_simples_80`); vídeos do Humoth no tom da noite: sintonizado (`humoth_tuned_noite.mp4`), fuga (`humoth_flee_noite.mp4`), deriva com a criatura de debug que anda (`humoth_deriva_noite.mp4`), nascendo no raio (`humoth_nasce_raio.mp4`) e no poste (`humoth_nasce_poste.mp4`).
+
+## Fase 1 · fatia 14 · Modo de desenvolvimento das épocas e o ponto de ônibus (0.25.2)
+
+Versão 0.25.2+52, mesma chave, save no schema 14. GDD rev 368 (`docs: GDD rev 368`): o anexo não veio e as duas cópias de `~/Downloads` são de outubro; o `docs/GDD.md` da árvore de trabalho já tinha o parágrafo "Enquanto só o desenvolvedor joga, o jogo fica em modo de desenvolvimento" (Épocas) e foi esse que entrou. Feita no notebook, no emulador; o celular não foi liberado nesta sessão.
+
+### 1. Épocas: modo de desenvolvimento
+
+- **Uma época só.** `app/assets/data/epochs.json` tem só a época de desenvolvimento, com `"dev": true`: o conteúdo inteiro da 12 (spawns, coleta, `eco_v2`, clima, NPCs, pacotes e SHA), início em 2026-09-22 (o começo do jogo) e validade até 2100. O id continua 12 porque ele entra no hash do mundo e nos `since_epoch`: o mundo é o mesmo que o dono jogava com a "Época 12 em teste", agora sem opção nenhuma.
+- **Mudança de mundo entra nela direto** (`CLAUDE.md`, regra 5, reescrita; a linha da pipeline sobre não regerar `.bin` também, porque era a regra de congelar o SHA).
+- **Saiu:** a época em teste (`testEpochId`, a opção dos Ajustes, a seção Desenvolvedor, o item do debug que a liberava, os comandos `testepoch` e `devopts`, a etiqueta do HUD), a trava de release (`test/release_guard_test.dart`) e o aviso de mundo desatualizado (`EpochSchedule.isStale` é sempre falso com `"dev"`). Os Ajustes mostram "ÉPOCA 12 · DESENVOLVIMENTO". Migração 13 → 14: tira `dev_test_epoch` e `dev_options` do save, o resto igual (teste com um save v13 da 0.25.1 que tinha os dois ligados).
+- **Feed:** o código e os certificados continuam; com `"dev"` o app não funde as épocas do feed (o `docs/pages/epochs.json` publicado ainda tem as 0 a 7, que passariam por cima: a 7 começa depois de 2026-09-22). Os eventos do feed continuam lidos.
+- **Épocas 0 a 11** saíram do APK e viraram fixture dos testes que usam os modelos antigos (clima, eclipse, água, arco-íris): `app/test/fixtures/epochs_history.json`. `epochsJson()` nos testes é o histórico mais a 12 no lugar de antes; `shippedEpochsJson()` é o arquivo do APK.
+- **São Paulo embutido:** os sete arquivos da época 12 de SP (lógico, visual, relevo, vias, rota, pontos e prédios, todos conferidos pelo SHA da época) vão em `app/assets/regions/` e o mapa monta SP junto com Campinas (`loadEmbeddedRegion`); o catálogo não baixa o que já está no mundo. **O APK de release foi de 100,5 MB para 170,8 MB (+70,3 MB)**: os pacotes entram sem compressão, e os prédios de SP sozinhos são 53,5 MB. Esse arquivo também pesa no git (o GitHub avisa acima de 50 MB por arquivo).
+- **Distribuição:** o passo a passo de quando o dono disser que vai distribuir (backup das chaves antes, a 12 vira a primeira publicada, voltam a trava e a regra antiga, o feed é republicado só com ela, SP pode sair do APK) está em `docs/distribuicao.md`.
+
+### 2. O ponto de ônibus girava
+
+- **O que girava:** com o "Giro dos objetos" sobre o ponto de -22.904769, -47.059802 (Centro) a 0°, 30° e 90° (comando de debug novo `turn <graus>`), o ponto tinha duas peças: o abrigo visto de cima (o carimbo `bus_stop`, 14 × 8, rotulado "ponto de ônibus · de pé", igual nos três ângulos) e, embaixo dele, a marca de calçada da 0.24.2 (4 × 1,6 m e o meio-fio), pintada no bloco do chão e girando com a rua. Ela não tinha rótulo no "Giro dos objetos" porque fazia parte do chão; era o retângulo que girava.
+- **Agora:** a marca saiu (`city_ground.dart`) e o `criativo` redesenhou o ponto inteiro de pé (21 × 16): poste com a placa azul, cobertura, painel de trás e banco, no Aseprite e na matriz de reserva. Uma peça só, "de pé".
+- **Teste no caminho real** (`test/ui/upright_turn_test.dart`): o trecho desenhado como o mapa desenha (o chão em blocos de cache e a camada de pé, na grade de 2 dp) com e sem o objeto, a 0°, 30° e 90°; o que o objeto põe na tela tem de ser a mesma imagem, pixel a pixel, podendo só deslizar até 1 pixel de arte (o mapa encaixa tudo na grade). Vale para o ponto de ônibus, a banca, a placa de rua e o poste, com a arte em código e com a do Aseprite. Com a marca de volta, o teste falha no ponto a 30°.
+
+### Testes
+
+Novos: `test/core/epochs_test.dart` (o grupo do modo de desenvolvimento), `test/world/dev_world_test.dart` (dois aparelhos da mesma versão, cada um lendo os próprios arquivos, veem o mesmo mundo do começo do jogo até 2030; outra seed, outro mundo), `test/save/migration_v14_test.dart`, `test/data/embedded_region_test.dart` (SP sai dos assets com tudo, e todo pacote da época está no APK), o feed ignorado em modo de desenvolvimento (`signed_feed_test`) e o caminho real do giro. Os testes de mundo desatualizado viraram "sem aviso no modo de desenvolvimento"; saíram os da época em teste e o da 0.13.1 sem rua viva (a época única pede a rua viva).
+
+### Capturas
+
+Em `/tmp/kenoma-shots/0252_*`: o ponto antes (`ponto_antes_0`, `_30`, `_90` e `ponto_antes_zoom`) e depois (`ponto_depois_0`, `_30`, `_90` e `ponto_depois_zoom`, com e sem os rótulos).

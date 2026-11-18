@@ -204,7 +204,7 @@ O chão parado (chão, ruas, sombras, a planta dos prédios, a luz da hora, as p
 8. Calçada portuguesa (`sidewalk_mosaic`) só na zona do Centro. Fora dela, e em calçada de menos de 3 px, vale `sidewalk_tile`.
 9. Faixa de pedestre nos pontos `highway=crossing` do OSM: barras de 1 px `crosswalk` no sentido da rua, 1 px de vão, uns 3 m de comprimento. Portão: 3 a 4 px de `gate` e `gate_dark` no muro, no meio da aresta mais longa do lote.
 10. Árvores: `tree`, `tree_a`, `tree_b`, `tree_c` por hash, sem copas todas iguais; as do OSM (`natural=tree`) e as plantadas nos verdes. Ipê só perto de praça e parque, no máximo um em cada quatro árvores, `kind` por hash e `ipeStamp(kind, mês local)`: ipê-roxo em junho e julho, ipê-amarelo em agosto e setembro, só copa verde no resto. O ipê-roxo é rosa-magenta, nunca o violeta do Véu.
-11. `bus_stop` nos pontos `highway=bus_stop` do OSM; `newsstand` em uma de cada três praças.
+11. `bus_stop` nos pontos `highway=bus_stop` do OSM (desde a 0.25.2 o ponto inteiro de pé, 21 × 16: poste com placa, cobertura, painel e banco; sem marca no chão); `newsstand` em uma de cada três praças.
 
 ### Luz, chuva e horizonte
 
