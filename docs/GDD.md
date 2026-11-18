@@ -1533,7 +1533,9 @@ A câmera tem ângulo 3/4 fixo e só gira em torno do eixo vertical. O jogador g
 
 - Personagem, criaturas e efeitos são sprites 2D sempre em pé e virados para a tela, em qualquer rotação. O tamanho é em metros do mundo, numa escala que exagera tudo um pouco mas mantém as proporções entre si: Conjurador e Familiar com 6 m de altura, sempre menores que a largura da rua, pedestres fantasmas com 4,5 m, carros fantasmas com 6 m de comprimento, Ecos com 7 m (Espíritos e camadas acima maiores) e Fagulhas com 3 m. A área de toque de qualquer coisa tocável tem no mínimo 48 dp, mesmo quando o sprite é menor.
 - Prédios são desenhados em 2D a partir dos contornos do OSM, projetando telhado e paredes conforme o ângulo atual. Com inclinação fixa essa projeção é simples e roda no Flame, sem motor 3D.
-- A cena é renderizada numa resolução baixa, com o pixel de arte valendo 3 dp na tela, e ampliada por vizinho mais próximo, mantendo os pixels nítidos e sem tremor durante o giro.
+- A cena é renderizada numa resolução baixa, com o pixel de arte valendo 2 dp na tela (era 3 dp até a 0.24; mudou na 0.25 para dar mais detalhe a criaturas e props), e ampliada por vizinho mais próximo, mantendo os pixels nítidos e sem tremor durante o giro.
+- Partes que brilham (ocelos, LEDs, faíscas, janelas, neon) ficam numa camada emissiva desenhada depois do tom da noite e do clima, para continuarem acesas no escuro.
+- Toda criatura tem, no mínimo, animação de parado, de movimento, de alerta, de fuga, de nascer e de ser sintonizada, além do retrato animado no Bestiário. O Humoth (conceito "Letreiro": mariposa-esfinge índigo, asas em delta, ocelos de LED ciano, veios amarelos) é a referência de acabamento para as outras.
 - Girar a câmera também é a forma principal de ver atrás de um prédio. O esmaecimento continua para quando o jogador não girar.
 - A interface nunca gira. A bússola aparece só enquanto o mapa estiver fora do norte.
 
