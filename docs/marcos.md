@@ -1153,3 +1153,48 @@ Novos: `test/crafting/vehicles_test.dart` (faixa por velocidade e por viagem; ve
 ### Capturas
 
 No emulador, em `/tmp/kenoma-shots/0245_*`: ônibus comum parado no ponto (`onibus_ponto.png` e `.mp4`), o Espectral passando (`onibus_espectral.mp4` e `_quadros.png`), um NPC sintonizando (`npc_sintonia.mp4` e `_quadros.png`), a folha (`npc_folha.png`), um rumor (`npc_rumor.png`), a troca recusada pela bolsa cheia (`npc_troca.png`), o avatar de bicicleta Perfeita e de carroça pelo GPS simulado (`veiculo_bicicleta.png`, `veiculo_carroca.png`).
+
+## Fase 1 · fatia 12 · Pixel de 2 dp e o Humoth oficial animado (0.25.0)
+
+Versão 0.25.0+50, mesma chave, save no schema 13 (sem mudança). Feita no notebook, no emulador; o celular não foi tocado. GDD rev 367 (`docs: GDD rev 367`): **o anexo não veio** e o `~/Downloads/GDD.md` era antigo (1º de outubro); o `docs/GDD.md` da árvore de trabalho já tinha as regras novas (2 dp, camada emissiva, animações mínimas) e foi esse que entrou.
+
+### 0. Sobras da 0.24.5
+
+- **Quantidade com substantivo numa função só** (`core/plural.dart`): `countText(n, singular)` ("1 dia", "2 dias", "3 Folhas secas", "2 Cacos de vidro", "2 Pós de Essência de Fogo"), o plural pelas regras do português no núcleo e nos adjetivos dele (o complemento depois de "de" não muda) e `plural` em `items.json` quando a regra erra (só "Cal viva" → "Cales vivas"). Nos dados, a lacuna de contagem é `{n:singular}` ou `{n:singular|plural}`, e `{n?Falta|Faltam}` concorda só a palavra; `mapa.json`, `npc.json`, `forum.json` e os `docs/textos-*.md` passaram a usá-la ("Faltam {dias} dias" virou `{dias?Falta|Faltam} {dias:dia}`; "{n} selo(s) simples" virou `{n:selo simples|selos simples}`). No código, a folha do NPC, o "+N item" das coletas, a fusão, o Perfil, a Patrulha, o Céu, o backup, o teste do Tecnomante e o limite de marcações. **Teste** (`test/core/plural_test.dart`): percorre todo texto de dados com 0, 1 e 2 e falha com "1 dias", "2 dia", lacuna de número junto de substantivo fora da função ou substantivo sem plural; e todo item tem plural.
+- **Caminho dos NPCs pela calçada:** o caminho segue a rua mais perto do pacote visual (igual para todos), 35 m para cada lado do ponto mais perto, deslocado para a calçada em meia-esquadria (dobra onde a rua dobra, à mesma distância das duas ruas na esquina). Sem rua por perto, os pontos de calçada de antes. Teste com uma rua em L: o NPC fica sempre entre 3 m e 6,1 m do eixo (nunca na rua, nunca cortando a quina).
+- **Efeitos centrados na criatura:** o pintor dos spawns guarda o centro em que desenhou cada Eco (com o empurrão do vento) e o anel da sintonia do NPC e o desfazer da fuga se centram nele (`anchoredRect`); antes iam pela posição crua e subiam 0,4 do tamanho. A marca e o destaque já saíam do mesmo centro.
+
+### 1. Pixel de arte de 2 dp
+
+- `map.art_pixel_dp` 3 → 2. Os tamanhos no mundo não mudaram: Conjurador e Familiar 24 px (eram 16), Eco 28 (19), Espírito 36 (24), material 15 (10). O `criativo` redesenhou na grade nova, com mais detalhe e nada ampliado: os 23 carimbos e texturas de `tools/art/map/` e as matrizes de `map_style.dart` (1,5×), o Conjurador de 24 × 24 à mão nos três quadros e o equipamento (bolsa, garrafas, amuleto), o Familiar, os 12 materiais, os 8 NPCs, o anel da sintonia, os três veículos (quadros 48 × 36 com o Conjurador em (12, 3)), o Ônibus Espectral e o passageiro.
+- No renderizador: as janelas (largura, altura e passo) e a poça de luz do poste em 1,5×; o módulo de chão 96 (`labPatternPx`); a borda da calçada 1,5 px. A altura dos andares (`floorPx`) continua 4 m: é metro, não pixel. Os padrões em metros (poças, telhados, calçadas) já acompanhavam.
+- **Ficou para a 0.25.1:** as 27 formas das famílias (exceto o Humoth) saem das matrizes de 48 reduzidas para 28 e 36 px por código (mais pixels a partir da arte de 48, não o 19 ampliado), sem o acabamento à mão; os carros, os passantes, os ônibus comuns e as Fagulhas continuam desenhados em código (não são carimbos), no tamanho em metros.
+- **Desempenho** (emulador, build de profile, p50 do raster; o build fica em 5 a 6 ms): zoom fechado 15,2–15,9 ms em 3 dp → 14,4–15,9 em 2 dp; zoom aberto 18,4–19,6 → 18,1–20,4; Vigília com Tempestade 15,8–17,8 → 16,2–17,1. Sem piora; o raster do emulador (GPU do notebook) já passava de 16 ms antes. O dono decidiu seguir; a medida que vale, no celular, está no checklist.
+- Testes de grade, giro, HUD e tamanho passaram para 2 dp (`city_renderer_test`, `upright_turn_test`, `map_balance_test`, `art_renderer_test`, `spirit_sprite_test`, `player_gear_test`, `familiar_form_test`).
+
+### 2. Humoth oficial (conceito A, "Letreiro")
+
+- Arte do `criativo` em `tools/art/creatures/humoth/` (gerada por `build.lua`): seis animações de 28 px, cada uma em três camadas (corpo, LEDs, brilho): `idle` (4 quadros, 8 fps), `drift` (4, 8), `alert` (3, 6), `flee` (6, 12), `spawn` (6, 10), `tuned` (6, 10); sete variantes por troca de cores e acessório (Urbano com braçadeiras, Verde com gola de folhas, Água com colar e gota, Residencial claro com cachecol, Iluminado o mais claro com gravata, Sagrado com auréola, Carmesim o mais escuro com o crescente da Lua Carmim); retrato de 96 px em 4 quadros. O padrão para as outras famílias está em `docs/art/estilo-criaturas.md`.
+- **Camada emissiva** (`MapLayer.emissive`, depois de `climateScreen` e antes do HUD): o corpo recebe o tom da noite (multiplicado) e o clima da tela passa por cima dele; os ocelos, os veios, as faíscas e o brilho do Brilhante vêm depois, acesos. Vale para toda criatura com arte animada daqui para a frente.
+- **No mapa** (`creature_anim.dart`, `creature_art.dart`): nascendo, a animação `spawn`; ao alcance de toque, `alert` (ocelos fixos); andando (pela posição dos últimos quadros), `drift`; senão `idle`, com a fase própria de cada um. Os LEDs piscam num ritmo próprio, fora de fase com as asas, com apagões e tremidas de mau contato. Espelhado pelo lado em que anda; de pé no giro. Fuga e sintonia que deu certo terminam com a saída animada (`Fx.exit`): a fuga sobe e sai de lado; a sintonia se desfaz e as faíscas voam até o Conjurador. O Brilhante é o único com brilho animado (uma faixa de luz que passa pelo corpo).
+- **Bestiário:** o retrato animado (pairando, LEDs piscando) no cartão, na linha da família e no detalhe, com a cor da variante escolhida por cima, como as outras.
+- **Sintonia:** o retrato no lugar do sprite; os LEDs acendem a cada salto de frequência do padrão Elétrico e ficam acesos fixos quando o sinal trava.
+- O ciano dos ocelos é permitido (o Humoth não é ameaça). **Sem a costura do Véu:** o conceito aprovado não a tem; se for para ter, cabe como uma linha violeta na camada de brilho.
+
+### Debug (todas as builds, só neste aparelho)
+
+Comandos novos no `celular.sh cmd`: `event <id>|off` (os eventos do clima, como "Todos os eventos"), `creature <espécie> [biome|crimson|shiny] [n]` (como "Criar criatura"), `exit tuned|flee` (a saída animada do Eco mais perto, só no desenho) e `seen <espécie>` (marca como vista).
+
+### Limites
+
+- **Deriva sem vídeo:** as criaturas do "Criar criatura" não andam; a deriva está na folha de quadros e aparece nos Humoth do mundo, que andam pelo modelo de movimento.
+- As variantes no retrato do Bestiário usam o tom por cima (como as outras criaturas), não a troca de cores do mapa.
+- O nascer não espera o raio nem o poste: é a animação de quando o Eco aparece, onde ele aparecer.
+
+### Testes
+
+Novos: `test/core/plural_test.dart`, o caminho pela calçada em `test/world/veilbreakers_test.dart`, `test/ui/creature_anchor_test.dart` (efeito centrado na âncora do sprite), `test/ui/creature_emissive_test.dart` (a camada emissiva depois do tom e do clima; de noite o corpo escurece e o LED sai na cor cheia por cima do tom da tela), `test/ui/humoth_art_test.dart` (as seis animações na grade de 28 px com as três camadas do mesmo tamanho, o retrato de 96; cada variante distinta das outras e da comum em escala de cinza).
+
+### Capturas e vídeos
+
+Em `/tmp/kenoma-shots/0250_*`: o mesmo trecho do Centro em 3 dp e em 2 dp, de dia e de noite (`3dp_day`, `2dp_day`, `3dp_night`, `2dp_night`) e o Conjurador ampliado nas quatro (`conjurador_3dp_2dp`); o Humoth de noite (`humoth_noite`) e de dia com chuva (`humoth_dia_chuva`), a folha com todos os quadros e as variantes em cor e em cinza (`humoth_folha`), o retrato no Bestiário (`humoth_bestiario`, `humoth_bestiario_detalhe`), a sintonia com os LEDs acesos no salto (`humoth_sintonia`); vídeos: nascendo e pairando de noite (`humoth_nascer_noite.mp4`), sintonizado (`humoth_tuned.mp4`), fuga (`humoth_flee.mp4`) e a sintonia (`humoth_sintonia.mp4`).

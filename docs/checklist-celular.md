@@ -9,6 +9,16 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.25.0
+
+O mapa passa a pixel de 2 dp. Antes de qualquer toque pelo adb: o dono libera o aparelho na sessão, e tudo passa por `scripts/celular.sh`.
+
+- [ ] `0250-2dp` **Mapa em 2 dp andando na rua.** Conjurador, Familiar, árvores, postes, telhados, NPCs e materiais com mais detalhe e o mesmo tamanho de antes; nada borrado nem com pixel desigual, parado e girando.
+- [ ] `0250-custo` **Custo por quadro** (build de profile): zoom fechado, zoom aberto e Vigília com Tempestade abaixo de 16 ms; no emulador ficou igual ao de 3 dp.
+- [ ] `0250-humoth` **Humoth de noite.** Perto de poste, de noite: o corpo escuro, os ocelos ciano piscando como letreiro com mau contato e os veios amarelos acesos por cima da noite e da chuva; em alerta com você perto; nascendo em faíscas; se desfazendo em faíscas que vêm até você ao sintonizar; subindo de lado ao fugir.
+- [ ] `0250-humoth-sintonia` **Sintonia do Humoth.** Os LEDs acendem a cada salto de frequência e ficam fixos quando o sinal trava.
+- [ ] `0250-plural` **Concordância.** "Falta 1 dia" e "Faltam 3 dias" na banca e nos rumores; "1 Folha seca", "3 Folhas secas" na troca dos NPCs.
+
 ## 0.24.5
 
 Muda o save (schema 13). Os NPCs e a sintonia são da época 12: com a Época em teste ligada no celular.
