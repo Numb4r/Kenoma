@@ -1612,6 +1612,8 @@ Sem servidor, amigos com versões diferentes do app gerariam mundos diferentes a
 
 Se o app não tiver as tabelas da Época vigente, ele mostra o aviso de mundo desatualizado e segue gerando pela última Época conhecida, deixando claro que os spawns podem diferir dos amigos. Correções que não mudam o mundo, como interface, bugs e balanceamento de crafting, saem a qualquer momento.
 
+Enquanto só o desenvolvedor joga, o jogo fica em modo de desenvolvimento: existe uma época só, embarcada no APK e sempre ativa, e toda mudança de mundo entra nela direto, sem época nova, sem data futura e sem publicação. O regime de épocas congeladas e publicadas começa no dia da distribuição para os amigos, quando essa época vira a primeira publicada.
+
 ### Assinaturas, fundadores e controles
 
 Sem servidor, a confiança vem de assinatura digital. O desenvolvedor tem um par de chaves Ed25519: a chave privada fica só com ele, fora do repositório, e o app leva só a chave pública. O app consegue verificar o que foi assinado, mas não consegue assinar nada, nem desmontado. Hash embutido no app não serve para isso, porque qualquer segredo dentro do APK pode ser extraído.
