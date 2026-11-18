@@ -1198,3 +1198,55 @@ Novos: `test/core/plural_test.dart`, o caminho pela calçada em `test/world/veil
 ### Capturas e vídeos
 
 Em `/tmp/kenoma-shots/0250_*`: o mesmo trecho do Centro em 3 dp e em 2 dp, de dia e de noite (`3dp_day`, `2dp_day`, `3dp_night`, `2dp_night`) e o Conjurador ampliado nas quatro (`conjurador_3dp_2dp`); o Humoth de noite (`humoth_noite`) e de dia com chuva (`humoth_dia_chuva`), a folha com todos os quadros e as variantes em cor e em cinza (`humoth_folha`), o retrato no Bestiário (`humoth_bestiario`, `humoth_bestiario_detalhe`), a sintonia com os LEDs acesos no salto (`humoth_sintonia`); vídeos: nascendo e pairando de noite (`humoth_nascer_noite.mp4`), sintonizado (`humoth_tuned.mp4`), fuga (`humoth_flee.mp4`) e a sintonia (`humoth_sintonia.mp4`).
+
+## Fase 1 · fatia 13 · Resto da arte em 2 dp e desempenho no celular (0.25.1)
+
+Versão 0.25.1+51, mesma chave, save no schema 13 (sem mudança). GDD rev 367: o `docs/GDD.md` já tinha "com o pixel de arte valendo 2 dp na tela" e a seção "Veículos do Véu"; o `~/Downloads/GDD.md` é de 1º de outubro e não tem nenhuma das duas.
+
+### 1. Celular
+
+O dono liberou o aparelho na sessão; tudo pelo `scripts/celular.sh`. A release da 0.25.0 foi instalada por cima da 0.24.3 (assinada com a chave de release) e o save ficou: nível 16, Familiar do Tecnomante, favoritos do debug. **A época 12 em teste está desligada no save do celular** (o HUD não mostra "Época 12 em teste"); não mexi.
+
+Medido em build de profile com a mesma chave e uma sonda temporária (`FrameTiming` agregado a cada 3 s, nunca commitada), no Centro de Campinas às 20 h locais, simulador andando com o joystick seguro por 30 s em cada caso. O g54 renderizou até ~90 fps nesta sessão (na 0.22.1 chegava a ~118). p50 / p90 em ms:
+
+| Estilo | Caso | fps | build | raster | quadros > 16 ms |
+|---|---|---|---|---|---|
+| Completo | 40 m | 86 a 89 | 5,7 a 6,5 / 7,0 a 8,2 | 6,7 a 8,7 / 8,2 a 9,4 | 0 a 1 por janela |
+| Completo | 80 m | 58 a 65 | 7,3 a 8,9 / 9,5 a 11,8 | 11,3 a 13,1 / 12,1 a 14,8 | 1 a 7 por janela |
+| Completo | Vigília com Tempestade, 40 m | 53 a 69 | 6,8 a 7,2 / 8,8 a 11,8 | 6,3 a 11,5 / 6,9 a 12,2 | 0 a 5 por janela |
+| Simplificado | 40 m | 84 a 90 | 1,9 a 2,1 / 2,6 a 3,2 | 9,1 a 9,9 / 10,7 a 11,4 | 0 a 1 |
+| Simplificado | 80 m, antes | 46 a 49 | 2,6 a 2,9 / 3,8 a 5,4 | 18,9 a 20,0 / 19,8 a 21,7 | **todos** |
+| Simplificado | 80 m, depois | 65 a 71 | 2,1 a 2,4 / 3,1 a 4,1 | 12,2 a 12,5 / 14,0 a 14,6 | 0 a 3 |
+| Simplificado | Vigília com Tempestade, 40 m | 52 a 59 | 3,1 a 3,5 / 4,5 a 9,2 | 10,6 a 12,2 / 11,5 a 14,4 | 0 a 8 |
+
+- **O Completo não passa de 16 ms no p90 em nenhum caso** (o pior p90 é 14,8 ms, a 80 m): a otimização não precisou vir antes da seção 2. Uma primeira rodada seguida deu o Completo a 80 m com p90 de 17,3 ms no fim: era calor (CPU a 62 °C depois de ~15 min de carga). A frio, com a ordem trocada, os números acima.
+- **Contra a 0.22.1 (3 dp):** o raster do Completo subiu de 4,2–6,4 para 6,7–8,7 ms a 40 m e de 3,8–4,7 para 11,3–13,1 ms a 80 m; o build, de 3,4–4,6 para 5,7–6,5 ms. O que pesa (inferência, sem medir camada por camada): os blocos do chão e o que fica de pé têm 2,25 vezes mais pixels na grade de 2 dp, e a 80 m entram mais blocos na tela.
+- **O Simplificado a 80 m passava de 16 ms em todo quadro.** Ele refaz o buffer da arte a cada quadro, e cada tile com área verde ou água preenchia o buffer inteiro com o ruído do material, recortado pela área: a 80 m são muitos tiles, e o buffer de 2 dp tem 2,25 vezes mais pixels. Agora as áreas de todos os tiles viram um caminho só por material, com um recorte e um preenchimento (`art_renderer.dart`); o desenho é o mesmo (teste do renderizador e captura).
+- Debug novo: `style full|simple` (os gráficos do mapa dos Ajustes, sem tocar na tela).
+
+### 2. O resto da arte em 2 dp
+
+Quatro `criativo`s em paralelo, em pastas separadas, no Aseprite, pelo `docs/art/estilo-criaturas.md`.
+
+- **As 26 formas** que faltavam (todas: Soot, Rill e Frond com Eco, Espírito e Ritual; as nove da fase 1 com Eco e Espírito), cada uma com as seis animações nas três camadas, sete variantes por troca de cor e acessório, retrato de 96 animado e folha de conferência. Eco em 28 px; Espírito e Ritual em 36 (o código trata o Ritual como Espírito). As fontes ficam em `tools/art/creatures/<nome>/` com um kit por grupo (`sootling/_kit.lua`, `pebblet/kit.lua`, `wisplet/_fase1.lua`: não apagar essas pastas sem levar o kit). `scripts/sync_creature_art.py` copia para o app e reescreve o índice e o `pubspec`.
+- **Criatura sem arte nenhuma:** nenhuma; as 27 espécies têm arte do Aseprite. As matrizes de 48 px continuam como reserva (testes, pasta incompleta).
+- **Tráfego e Fagulhas:** carros (hatch, sedan, pickup, suv), moto, ciclista, ônibus comum e os três passantes (adulto, dupla, idoso) com as nove roupas do clima como camadas por cima; as cores-chave (`traffic_keys.json`) trocam pela paleta de cada fantasma, como faziam as matrizes; faróis, lanternas e janelas do ônibus acesos de noite. Uma Fagulha por tipo (chama, gota, folha, faísca, pedrinha, lasca, raio de luz, fiapo de sombra, chama fria, pixel, pó de fada, escama), 12 × 12 em 4 quadros, com contorno e brilho por cima da noite. Os NPCs Veilbreakers já eram do Aseprite desde a 0.25.0.
+- **Retrato do Bestiário:** a variante troca as cores pelo mesmo mapa do mapa (sem o acessório), não um tom por cima.
+- **Nascer com gatilho** (só no desenho; o Eco continua no ponto da seed, igual para os amigos, nenhuma época muda): o Humoth e o Coilkin nascem num raio que cai neles na tempestade, ou, à noite, nas faíscas que saem do poste mais perto (até 30 m); o Rill na poça que ondula (com chuva), o Clod do chão revirado, o Wisp de fiapos de neblina que se juntam. Sem gatilho que valha, nasce onde aparece, como antes. A escolha é pura e testada (`spawn_trigger.dart`); os climas de cada gatilho e o alcance do poste estão no `index.json` das criaturas.
+- **Debug:** `creature <espécie> ... walk` cria uma criatura que anda em laço de 6 m (só no desenho), para ver a deriva e o espelhamento.
+
+### Limites
+
+- Continuam em código, na grade antiga: o barco e a canoa do Dilúvio, o cachorro do passeio e o carro da corrida do Modo Viagem.
+- O retrato do Glitchkin usa blocos de 3 px de propósito (é feito de quadros repetidos); foge da regra de um tamanho de pixel só. Os retratos das 26 são o desenho da espécie refeito a 96 px, abaixo do acabamento do retrato do Humoth.
+- O criativo apontou dois pontos fracos: os tufos do Thicketkin lembram pedra rachada, e o laço escuro da variante Iluminada quase some no Thicketkin e no Sootling.
+- Os Rituais não têm entrada no Bestiário; o desenho deles saiu das falas do mentor.
+- O raio do nascer dura ~0,1 s: só se vê inteiro no vídeo quadro a quadro.
+
+### Testes
+
+Novos: `test/ui/creature_art_test.dart` (substitui o `humoth_art_test`: as 27 espécies, grade, seis animações, três camadas, retrato, variantes distintas em cinza, retrato da variante com a silhueta igual), `test/ui/spawn_trigger_test.dart`, `test/ui/traffic_art_test.dart` (todo modelo com sprite, as nove roupas, a troca de cores, as Fagulhas, e cada fantasma desenhado com os pés na posição).
+
+### Capturas e vídeos
+
+Em `/tmp/kenoma-shots/0251_*`: uma folha por família (`familia_<família>.png`, todas as formas e variantes, 5×), o mapa de noite com dez criaturas de famílias diferentes (`familias_noite`), o tráfego na chuva e de noite (`trafego_chuva`, `trafego_noite`), o Simplificado a 80 m no celular (`cel_simples_80`); vídeos do Humoth no tom da noite: sintonizado (`humoth_tuned_noite.mp4`), fuga (`humoth_flee_noite.mp4`), deriva com a criatura de debug que anda (`humoth_deriva_noite.mp4`), nascendo no raio (`humoth_nasce_raio.mp4`) e no poste (`humoth_nasce_poste.mp4`).

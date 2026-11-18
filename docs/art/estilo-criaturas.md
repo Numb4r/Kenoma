@@ -4,7 +4,7 @@ O padrão que o Humoth fixou na 0.25.0 (GDD, "Direção de arte", Câmera). Toda
 
 ## Grade e tamanho
 
-- Pixel de arte de 2 dp. No mapa, quadro de **28 × 28 px**; no Bestiário, retrato de **96 × 96 px**. Um tamanho de pixel só por sprite.
+- Pixel de arte de 2 dp. No mapa, quadro de **28 × 28 px** para o Eco e de **36 × 36 px** para o Espírito e o Ritual (o código trata `.ritual` como a camada de cima); no Bestiário, retrato de **96 × 96 px**. Um tamanho de pixel só por sprite.
 - A criatura olha para a **direita**; o código espelha. O centro do corpo fica em (14, 14) no quadro 0 do `idle`.
 - Deixe 2 px livres em cima e 1 px embaixo no quadro 0 do `idle`: o corpo sobe e desce dentro do quadro e nada pode cortar na borda.
 - Contorno de 1 px em `#1a1424` por fora da forma, nunca preto. Faísca solta não tem contorno.
@@ -64,3 +64,10 @@ A variante tem de se ler em **escala de cinza**: muda o **valor** do corpo e gan
 ## Conferência
 
 A folha `<especie>_folha.png` (4×, vizinho mais próximo, fundo de asfalto com o tom da noite) traz uma fileira por animação, na ordem da tabela, com o corpo no tom da noite e `leds` e `glow` por cima; depois três fileiras de variantes (base, `urban`, `green`, `water`, `residential`, `lit`, `sacred`, `crimson`): em cor, em cinza e com o tom da noite. Antes de entregar: `lint_sprite` na camada `corpo` sem peça solta nem pixel sozinho, e nenhum quadro encostando na borda.
+
+## No app (0.25.1)
+
+- `scripts/sync_creature_art.py` copia as pastas completas (json, variantes, retrato e folha) para `app/assets/art/creatures/`, sem as fontes nem a folha, e reescreve o `index.json` (espécie → pasta e gatilho de nascer) e as pastas do `pubspec.yaml`.
+- Gatilho de nascer, por família, só no desenho (o Eco continua no ponto da seed): Hum `lightning_lamp` (o raio na tempestade; à noite, faíscas do poste mais perto até `lamp_m`), Rill `puddle` (a poça ondula, com chuva), Clod `ground` (o chão se revira), Wisp `fog` (a neblina se junta). Os climas de cada gatilho estão no `index.json`.
+- O retrato no Bestiário troca as cores pelo mesmo `map` da variante (sem o acessório, que é do quadro do mapa).
+- `test/ui/creature_art_test.dart` cobre toda espécie do índice: grade, as seis animações nas três camadas, retrato de 96, variantes distintas em cinza (no mínimo 12 pixels por par) e o retrato da variante com a silhueta igual.

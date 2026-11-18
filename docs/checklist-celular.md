@@ -9,12 +9,21 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.25.1
+
+- [ ] `0251-criaturas` **As famílias em 2 dp.** Soot, Rill e Frond (as que você mais encontra) e as da fase 1 com as animações novas: paradas, andando, em alerta perto de você, nascendo, fugindo e se desfazendo ao sintonizar; de noite os olhos e as brasas acesos por cima do escuro. Os Rituais do tamanho dos Espíritos.
+- [ ] `0251-nascer` **Gatilhos de nascer.** Na tempestade o Humoth nasce num raio; de noite, perto de poste, nas faíscas que saem dele; na chuva o Rill numa poça que ondula; o Clod do chão revirado; na neblina o Wisp de fiapos que se juntam.
+- [ ] `0251-trafego` **Tráfego novo.** Carros, motos, ciclistas, ônibus e passantes do Aseprite, girando com as ruas sem tremer; roupas de chuva, frio e calor por cima; faróis e janelas do ônibus acesos de noite.
+- [ ] `0251-fagulhas` **Fagulhas.** Uma forma por tipo (chama, gota, folha, faísca...), legíveis na calçada clara e no asfalto, de dia e de noite.
+- [ ] `0251-bestiario` **Retratos.** Todo cartão do Bestiário animado; no detalhe, escolher uma variante troca as cores do retrato como no mapa.
+- [ ] `0251-simples` **Simplificado a 80 m** (build de profile): caiu de 19,5 para 12,3 ms de raster no p50; conferir que as áreas verdes e a água continuam com textura e borda.
+
 ## 0.25.0
 
 O mapa passa a pixel de 2 dp. Antes de qualquer toque pelo adb: o dono libera o aparelho na sessão, e tudo passa por `scripts/celular.sh`.
 
 - [ ] `0250-2dp` **Mapa em 2 dp andando na rua.** Conjurador, Familiar, árvores, postes, telhados, NPCs e materiais com mais detalhe e o mesmo tamanho de antes; nada borrado nem com pixel desigual, parado e girando.
-- [ ] `0250-custo` **Custo por quadro** (build de profile): zoom fechado, zoom aberto e Vigília com Tempestade abaixo de 16 ms; no emulador ficou igual ao de 3 dp.
+- [ ] `0250-custo` **Custo por quadro** (build de profile): zoom fechado, zoom aberto e Vigília com Tempestade abaixo de 16 ms; no emulador ficou igual ao de 3 dp. *Medido no g54 na 0.25.1, a frio: o Completo passou nos três (p90 até 14,8 ms); números em `docs/marcos.md`. Falta a sua conferência andando de verdade.*
 - [ ] `0250-humoth` **Humoth de noite.** Perto de poste, de noite: o corpo escuro, os ocelos ciano piscando como letreiro com mau contato e os veios amarelos acesos por cima da noite e da chuva; em alerta com você perto; nascendo em faíscas; se desfazendo em faíscas que vêm até você ao sintonizar; subindo de lado ao fugir.
 - [ ] `0250-humoth-sintonia` **Sintonia do Humoth.** Os LEDs acendem a cada salto de frequência e ficam fixos quando o sinal trava.
 - [ ] `0250-plural` **Concordância.** "Falta 1 dia" e "Faltam 3 dias" na banca e nos rumores; "1 Folha seca", "3 Folhas secas" na troca dos NPCs.

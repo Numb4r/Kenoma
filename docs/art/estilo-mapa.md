@@ -223,7 +223,7 @@ O Simplificado (Ajustes, "Gráficos do mapa") é o estilo de antes: plano, sem a
 
 ## Materiais no mapa
 
-Cada material que nasce no chão tem um sprite próprio em `app/lib/ui/sprites/material_sprites.dart` (`materialSprites`, `materialSpriteLegend`, `materialPalette`), numa matriz de 15 × 15 com o desenho de 10 a 12 px de arte (0.25.0; eram 5 a 8 px na grade de 3 dp), com contorno `outline` fechado. Fica de pé: não gira nem escala, 1 caractere é 1 pixel de arte, e a base do sprite fica no ponto do spawn. Fora da Aura, 60% de opacidade. Não pisca e não usa violeta, ciano nem laranja brasa: quem pulsa é a Fagulha (cruz sem contorno) e quem tem anel é o Eco. Até a 0.23.0 eram caixinhas coloridas (as "caixas cinza e brancas" do mapa).
+Cada material que nasce no chão tem um sprite próprio em `app/lib/ui/sprites/material_sprites.dart` (`materialSprites`, `materialSpriteLegend`, `materialPalette`), numa matriz de 15 × 15 com o desenho de 10 a 12 px de arte (0.25.0; eram 5 a 8 px na grade de 3 dp), com contorno `outline` fechado. Fica de pé: não gira nem escala, 1 caractere é 1 pixel de arte, e a base do sprite fica no ponto do spawn. Fora da Aura, 60% de opacidade. Não pisca e não usa violeta, ciano nem laranja brasa: quem pulsa é a Fagulha (desde a 0.25.1 um sprite do Aseprite por tipo, com contorno, em `tools/art/sparks/`) e quem tem anel é o Eco. Até a 0.23.0 eram caixinhas coloridas (as "caixas cinza e brancas" do mapa).
 
 ## O que não fazer
 
