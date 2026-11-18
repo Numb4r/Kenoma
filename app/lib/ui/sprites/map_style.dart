@@ -496,17 +496,26 @@ const Map<String, List<String>> mapStamps = {
   'ipe_purple': _ipe,
   'ipe_yellow': _ipe,
   'ipe_green': _ipe,
-  // Abrigo de ônibus visto de cima (14 x 8): a metade clara da cobertura, a espinha escura, a metade de trás e as
-  // emendas dos painéis. Na calçada das ruas principais.
+  // Ponto de ônibus de pé (0.25.2, 21 x 16), de frente e levemente de cima: o poste com a placa azul sem texto, a
+  // cobertura (tampo claro, testeira escura), o painel de trás com as emendas e o banco entre os pés. Uma peça só;
+  // não gira com a rua. Nos pontos `highway=bus_stop` do OSM.
   'bus_stop': [
-    'OOOOOOOOOOOOOO',
-    'OlllkllllklllO',
-    'OlllkllllklllO',
-    'OkkkkkkkkkkkkO',
-    'OmmmkmmmmkmmmO',
-    'OmmmkmmmmkmmmO',
-    'OmmmkmmmmkmmmO',
-    'OOOOOOOOOOOOOO',
+    'OOOOO................',
+    'ObbbO................',
+    'OhhhOOOOOOOOOOOOOOOOO',
+    'ObbbOllllllllllllllmO',
+    'OOOOOlllllllllllllmmO',
+    '..p.OkkkkkkkkkkkkkkkO',
+    '..p.OOOOOOOOOOOOOOOOO',
+    '..p..OkkkkkkkkkkkkkO.',
+    '..p..OmmmmkmmmkmmmmO.',
+    '..p..OmmmmkmmmkmmmmO.',
+    '..p..OmmmmkmmmkmmmmO.',
+    '..p..OmOOOOOOOOOOOmO.',
+    '..p..OmOfffffffffOmO.',
+    '..p..OmOdddddddddOmO.',
+    '..p..OOOOOOOOOOOOOOO.',
+    '..p..O..O.......O..O.',
   ],
   // Banca de jornal (11 x 9): a caixa de metal com o brilho no canto e o toldo listrado embaixo. Na calçada do Centro
   // e nas praças.
@@ -870,7 +879,7 @@ const Map<String, Map<String, String>> mapStampLegend = {
   'ipe_purple': {'O': 'outline', 'l': 'ipe_purple_light', 'g': 'ipe_purple', 'd': 'ipe_purple_dark'},
   'ipe_yellow': {'O': 'outline', 'l': 'ipe_yellow_light', 'g': 'ipe_yellow', 'd': 'ipe_yellow_dark'},
   'ipe_green': {'O': 'outline', 'l': 'canopy_warm_light', 'g': 'canopy_warm', 'd': 'canopy_warm_dark'},
-  'bus_stop': {'O': 'outline', 'l': 'roof_metal_light', 'k': 'roof_metal_dark', 'm': 'roof_metal'},
+  'bus_stop': {'O': 'outline', 'l': 'roof_metal_light', 'k': 'roof_metal_dark', 'm': 'roof_metal', 'p': 'pole', 'h': 'pole_head', 'b': 'sign_blue', 'f': 'fence', 'd': 'fence_dark'},
   'newsstand': {'O': 'outline', 'g': 'gate', 'h': 'pole_head', 'k': 'gate_dark', 'a': 'lane'},
   'bush': {'O': 'outline', 'l': 'canopy_light', 'g': 'canopy', 'd': 'canopy_dark'},
   'lamp': {'h': 'pole_head', 'g': 'lamp_glow', 'p': 'pole'},

@@ -11,6 +11,10 @@ import 'package:kenoma/ui/sprites/map_style.dart';
 import 'package:kenoma/world/city_scene.dart';
 import 'package:kenoma/world/map_camera.dart';
 
+/// 0.25.2: o ponto de ônibus ainda girava, e este teste não pegou porque só desenhava a camada de pé: a marca de calçada da
+/// 0.24.2 vinha pintada no bloco do chão, girando com a rua. O teste do fim passa pelo caminho do mapa de verdade (o chão em
+/// blocos de cache e a camada de pé, na grade de 2 dp) e compara tudo o que o objeto põe na tela.
+///
 /// 0.23.1: o que fica de pé não gira. O mesmo trecho desenhado a 0° e a 90° tem os pixels de cada sprite de pé idênticos, só
 /// em outra posição: árvores, ipês, poste, ponto de ônibus, banca, caixa d'água, ar-condicionado, antena e letreiros, com a
 /// arte em código e com a do Aseprite. Todo carimbo novo entra em `uprightStampKinds` ou `groundStampKinds`, e todo carimbo de
@@ -127,4 +131,66 @@ void main() {
       expect(seen, containsAll(uprightStampKinds), reason: 'todo sprite de pé foi desenhado e conferido');
     });
   }
+
+  group('caminho de desenho do mapa (chão em cache + de pé, grade de 2 dp)', () {
+    // Uma rua local de leste a oeste e o objeto na calçada, com o ângulo da rua (o ponto de ônibus guarda esse ângulo).
+    const x0 = 40.0, y0 = 40.0;
+    CityTile scene(String? kind) => CityTile(
+          roads: [CityRoad('local', Float64List.fromList([x0 - 20, y0 + 0.35, x0 + 20, y0 + 0.35]))],
+          greens: const [],
+          waters: const [],
+          buildings: const [],
+          props: [if (kind != null) CityProp(kind, x0, y0, angle: 0.4, hash: 7)],
+        );
+
+    /// O mapa inteiro como o jogo desenha: o chão (com o cache de blocos) e por cima o que fica de pé.
+    Future<ByteData> frame(WidgetTester tester, LabArt art, String? kind, double rot) async {
+      final tile = scene(kind);
+      final c = CityRenderer(art: art, tileAt: (tx, ty) => tx == 0 && ty == 0 ? tile : CityTile.empty, biomeAt: (_, _) => 'urban', cellsPerTile: 64, budgetMs: 1000);
+      final cam = MapCamera(centerX: x0, centerY: y0, pixelsPerCell: view.width / (40 / mpc), rotation: rot);
+      final rec = ui.PictureRecorder();
+      final canvas = ui.Canvas(rec);
+      c.paintGround(canvas, view, cam, dpr: 1, artPixelDp: k.toDouble(), mpc: mpc, sunAltDeg: 40, sunAzDeg: 80, wet: false, touching: false);
+      c.paintUpright(canvas, view, cam, dpr: 1, artPixelDp: k.toDouble(), mpc: mpc, sunAltDeg: 40, sunAzDeg: 80, localHour: 10, month: 11, snowRoofs: false, items: const []);
+      final img = rec.endRecording().toImageSync(view.width.toInt(), view.height.toInt());
+      final b = await bytesOf(tester, img);
+      img.dispose();
+      return b;
+    }
+
+    /// O que o objeto põe na tela: os pixels de uma janela em volta dele (no centro da tela) que mudam com ele, com a cor.
+    Future<Map<(int, int), int>> footprint(WidgetTester tester, LabArt art, String kind, double rot) async {
+      final a = await frame(tester, art, kind, rot), b = await frame(tester, art, null, rot);
+      final cx = view.width ~/ 2, cy = view.height ~/ 2, w = view.width.toInt();
+      return {
+        for (var dy = -70; dy <= 70; dy++)
+          for (var dx = -70; dx <= 70; dx++)
+            if (a.getUint32(((cy + dy) * w + cx + dx) * 4) != b.getUint32(((cy + dy) * w + cx + dx) * 4)) (dx, dy): a.getUint32(((cy + dy) * w + cx + dx) * 4),
+      };
+    }
+
+    for (final useAse in [false, true]) {
+      testWidgets('${useAse ? 'arte do Aseprite' : 'arte em código'}: ponto de ônibus, banca, placa e poste põem na tela exatamente o mesmo a 0°, 30° e 90°', (tester) async {
+        final art = LabArt.build(overrides: useAse ? await aseprite(tester) : const {});
+        addTearDown(art.dispose);
+        for (final kind in ['bus_stop', 'newsstand', 'street_sign', 'lamp']) {
+          final f0 = await footprint(tester, art, kind, 0);
+          for (final deg in [30, 90]) {
+            final f = await footprint(tester, art, kind, deg * math.pi / 180);
+            // O mapa encaixa tudo na grade de 2 dp: com o giro, o ponto do objeto cai noutra fração do pixel e ele pode sair
+            // até 1 pixel de arte (2 px aqui) para o lado, como o chão em volta. A imagem do objeto tem de ser a mesma.
+            (int, int) corner(Map<(int, int), int> m) => (m.keys.map((p) => p.$1).reduce(math.min), m.keys.map((p) => p.$2).reduce(math.min));
+            final (ax, ay) = corner(f0);
+            final (bx, by) = corner(f);
+            expect(((bx - ax).abs() <= k, (by - ay).abs() <= k), (true, true), reason: '$kind a $deg°: saiu do lugar (${bx - ax}, ${by - ay})');
+            final moved = [
+              for (final p in {...f0.keys.map((p) => (p.$1 - ax, p.$2 - ay)), ...f.keys.map((p) => (p.$1 - bx, p.$2 - by))})
+                if (f0[(p.$1 + ax, p.$2 + ay)] != f[(p.$1 + bx, p.$2 + by)]) p,
+            ];
+            expect(moved, isEmpty, reason: '$kind a $deg°: ${moved.length} pixels mudaram (alguma peça gira com o chão)');
+          }
+        }
+      });
+    }
+  });
 }
