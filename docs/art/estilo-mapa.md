@@ -13,7 +13,7 @@ Se a direção ficar, o GDD e o pré-prompt precisam ser atualizados nessas trê
 
 ## Grade
 
-- Pixel de arte de 3 dp, um número inteiro de pixels físicos, ampliado por vizinho mais próximo. Nada de suavização no chão, nos prédios e nos carimbos.
+- Pixel de arte de **2 dp** (0.25.0; era 3 dp), um número inteiro de pixels físicos, ampliado por vizinho mais próximo. Nada de suavização no chão, nos prédios e nos carimbos. Os tamanhos no mundo são os mesmos de antes: carimbos, texturas e sprites têm 1,5 vez os pixels (árvore `tree` 21×20, Conjurador 24×24, Eco 28, Espírito 36, material 15), redesenhados, não ampliados. Os números em pixels deste documento escritos antes da 0.25.0 são da grade de 3 dp: multiplique por 1,5.
 - Carimbo nunca gira nem escala: fica alinhado à grade da tela, e só a posição dele acompanha o mapa. Desde a 0.22.2 a textura é do que ela cobre: o módulo de chão gira com o chão (remendo, óleo, junta e onda da calçada nunca ficam presos à tela) e o módulo do telhado fica alinhado à aresta mais longa do contorno e gira e anda exatamente com ele. A posição e a escolha saem de hash da célula do mundo, nunca de coordenada de tela nem de `Random`.
 - O pontilhado (`ditherPct`) também é ancorado no mundo, como a textura de ruído de hoje.
 - Suave só pode ser luz: poça de poste, halo de neon, faixa do céu, tom da hora.

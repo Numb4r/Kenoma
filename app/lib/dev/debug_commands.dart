@@ -108,6 +108,10 @@ Future<List<String>> runDebugCommands(String text, {required DevTools tools, Fut
         out.add('buses ${tools.manyBuses ? 'on' : 'off'}');
       case 'npc':
         out.add('npc ${tools.openNearestNpc?.call() ?? '? nenhum à vista'}');
+      case 'event':
+        // 0.25.0: os eventos do clima por cima (até dois, como no debug): `event vigil`, `event off`.
+        arg == 'off' ? tools.force.clearEvents() : tools.force.toggleEvent(arg);
+        out.add('event ${tools.force.events.join('+')}');
       case 'devopts':
         await writeSetting(save, kDevOptionsSetting, arg != 'off');
         out.add('devopts ${arg == 'off' ? 'off' : 'on'}');

@@ -35,7 +35,7 @@ void main() {
       final rows = familiarRows(s);
       expect(rows.length, mapPlayerPx);
       expect(rows.every((r) => r.length == mapPlayerPx), isTrue);
-      expect('A'.allMatches(rows.join()).length, familiarAccessory[s]!.length, reason: s.id);
+      expect('A'.allMatches(rows.join()).length, (mapPlayerPx == 24 ? familiarAccessory24 : familiarAccessory)[s]!.length, reason: s.id);
       forms.add(rows.join('\n'));
     }
     expect(forms.length, 4);

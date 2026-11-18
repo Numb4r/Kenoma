@@ -317,25 +317,25 @@ RecordedChunk recordGroundChunk({
         if (p.kind != 'lamp') continue;
         final l = s(p.x, p.y);
         if (!key.far) {
-          final r0 = 8 * z;
+          final r0 = 12 * z; // 0.25.0: raios em pixels de arte na grade de 2 dp (1,5 × os de 3 dp)
           final dot = _fill(glow)..color = ui.Color(glow).withValues(alpha: 0.10);
           for (var y = -r0; y <= r0; y++) {
             for (var x = -r0; x <= r0; x++) {
               final d = math.sqrt(x * x + y * y);
-              if (d > r0 || d < 5 * z || (x + y).toInt().isOdd) continue;
+              if (d > r0 || d < 7.5 * z || (x + y).toInt().isOdd) continue;
               c.drawRect(ui.Rect.fromLTWH((l.dx + x).floorToDouble(), (l.dy + y).floorToDouble(), 1, 1), dot);
             }
           }
         }
-        c.drawCircle(l, 5 * z, ui.Paint()..color = ui.Color(glow).withValues(alpha: 0.20));
-        c.drawCircle(l, 3 * z, ui.Paint()..color = ui.Color(glow).withValues(alpha: 0.34));
+        c.drawCircle(l, 7.5 * z, ui.Paint()..color = ui.Color(glow).withValues(alpha: 0.20));
+        c.drawCircle(l, 4.5 * z, ui.Paint()..color = ui.Color(glow).withValues(alpha: 0.34));
         if (key.wet) {
           // O reflexo: uma faixa vertical curta e quebrada embaixo do poste (vertical na tela, como a luz refletida).
           final refl = _fill(labColor('lamp_reflect'));
-          for (var y = 2; y < 2 + 7 * z; y++) {
+          for (var y = 3; y < 3 + 10.5 * z; y++) {
             if ((y + p.hash) % 3 == 0) continue;
-            final wv = y < 5 ? 2.0 : 1.0;
-            c.drawRect(ui.Rect.fromLTWH(l.dx.floorToDouble() - (wv > 1 ? 1 : 0), l.dy.floorToDouble() + y, wv, 1), refl..color = ui.Color(labColor('lamp_reflect')).withValues(alpha: 0.55 - y * 0.04));
+            final wv = y < 8 ? 3.0 : 1.0;
+            c.drawRect(ui.Rect.fromLTWH(l.dx.floorToDouble() - (wv > 1 ? 1 : 0), l.dy.floorToDouble() + y, wv, 1), refl..color = ui.Color(labColor('lamp_reflect')).withValues(alpha: (0.55 - y * 0.027).clamp(0.0, 1.0)));
           }
         }
       }

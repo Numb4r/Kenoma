@@ -7,7 +7,7 @@ import 'package:kenoma/ui/sprites/sprite_image.dart' show mapPlayerPx;
 
 /// 0.24.0: o equipamento do Conjurador no mapa (bolsa, garrafas do cinto, brilho do amuleto) entra no teste de giro como
 /// sprite de pé. Ele é desenhado no espaço da tela, junto com o Conjurador: não recebe o giro do mapa, tem o tamanho do
-/// quadro dele, espelha junto quando ele vira e cada garrafa a mais vai 2 pixels de arte para o lado.
+/// quadro dele, espelha junto quando ele vira e cada garrafa a mais vai largura / 8 pixels de arte para o lado (2 na grade de 16, 3 na de 24).
 void main() {
   Future<ui.Image> png(WidgetTester tester, String name) async => (await tester.runAsync(() async {
         final codec = await ui.instantiateImageCodec(File('assets/art/ui/$name.png').readAsBytesSync());
@@ -22,7 +22,7 @@ void main() {
     return bytes!.buffer.asUint8List().toList();
   }
 
-  int alphaAt(List<int> rgba, int x, int y) => rgba[(y * 96 + x) * 4 + 3];
+  int alphaAt(List<int> rgba, double x, double y) => rgba[(y.floor() * 96 + x.floor()) * 4 + 3];
 
   testWidgets('o equipamento tem o tamanho do quadro do Conjurador e fica de pé', (tester) async {
     for (final n in ['gear_bag', 'gear_bottle', 'gear_amulet_glow']) {
@@ -30,15 +30,27 @@ void main() {
       expect((img.width, img.height), (mapPlayerPx, mapPlayerPx), reason: n);
     }
     final bottle = await png(tester, 'gear_bottle');
+    // 0.25.0: a garrafa é achada na própria arte (na grade de 24 ela está em (9, 18)); o quadro tem 48 dp e começa em 24,
+    // então cada pixel de arte vale 48 / 24 = 2 dp. A segunda garrafa vem `largura / 8` pixels depois (3 na grade de 24).
+    final bytes = (await tester.runAsync(() => bottle.toByteData()))!;
+    var col = -1, row = -1;
+    for (var y = 0; y < bottle.height && col < 0; y++) {
+      for (var x = 0; x < bottle.width; x++) {
+        if (bytes.getUint8((y * bottle.width + x) * 4 + 3) > 0) (col, row) = (x, y);
+        if (col >= 0) break;
+      }
+    }
+    expect(col, greaterThanOrEqualTo(0));
+    final step = bottle.width ~/ 8, px = 48 / mapPlayerPx;
+    double at(int c) => 24 + c * px + px / 2;
     final one = await paint(tester, [(bottle, 0)]);
-    final two = await paint(tester, [(bottle, 0), (bottle, 2)]);
-    // A garrafa ocupa a coluna 6 do quadro (3 dp por pixel de arte, o quadro começa em 24): a segunda, a coluna 8.
-    expect(alphaAt(one, 24 + 6 * 3 + 1, 24 + 12 * 3 + 1), greaterThan(0));
-    expect(alphaAt(one, 24 + 8 * 3 + 1, 24 + 12 * 3 + 1), 0);
-    expect(alphaAt(two, 24 + 8 * 3 + 1, 24 + 12 * 3 + 1), greaterThan(0));
-    // Virado para a esquerda, a garrafa vai para o outro lado do quadro (coluna 15 - 6 = 9).
+    final two = await paint(tester, [(bottle, 0), (bottle, step)]);
+    expect(alphaAt(one, at(col), at(row)), greaterThan(0));
+    expect(alphaAt(one, at(col + step), at(row)), 0);
+    expect(alphaAt(two, at(col + step), at(row)), greaterThan(0));
+    // Virado para a esquerda, a garrafa vai para o outro lado do quadro (coluna largura - 1 - col).
     final left = await paint(tester, [(bottle, 0)], mirrored: true);
-    expect(alphaAt(left, 24 + 9 * 3 + 1, 24 + 12 * 3 + 1), greaterThan(0));
-    expect(alphaAt(left, 24 + 6 * 3 + 1, 24 + 12 * 3 + 1), 0);
+    expect(alphaAt(left, at(bottle.width - 1 - col), at(row)), greaterThan(0));
+    expect(alphaAt(left, at(col), at(row)), 0);
   });
 }

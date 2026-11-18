@@ -38,13 +38,13 @@ void main() {
 
   ui.Image ground(CityRenderer c, MapCamera cam, {double alt = 39, double az = 80, bool wet = false, bool touching = false}) {
     final rec = ui.PictureRecorder();
-    c.paintGround(ui.Canvas(rec), view, cam, dpr: 1, artPixelDp: 3, mpc: tiles.mpc, sunAltDeg: alt, sunAzDeg: az, wet: wet, touching: touching);
+    c.paintGround(ui.Canvas(rec), view, cam, dpr: 1, artPixelDp: 2, mpc: tiles.mpc, sunAltDeg: alt, sunAzDeg: az, wet: wet, touching: touching);
     return rec.endRecording().toImageSync(view.width.toInt(), view.height.toInt());
   }
 
   ui.Image upright(CityRenderer c, MapCamera cam, {List<ui.Offset> items = const [], bool snow = false}) {
     final rec = ui.PictureRecorder();
-    c.paintUpright(ui.Canvas(rec), view, cam, dpr: 1, artPixelDp: 3, mpc: tiles.mpc, sunAltDeg: 40, sunAzDeg: 80, localHour: 10, month: 11, snowRoofs: snow, items: items);
+    c.paintUpright(ui.Canvas(rec), view, cam, dpr: 1, artPixelDp: 2, mpc: tiles.mpc, sunAltDeg: 40, sunAzDeg: 80, localHour: 10, month: 11, snowRoofs: snow, items: items);
     return rec.endRecording().toImageSync(view.width.toInt(), view.height.toInt());
   }
 
@@ -85,7 +85,7 @@ void main() {
       nowUs += 16000;
       final cam = camAt(0, 0, widthM: 60 - i * 1.6); // pinça abrindo: mais zoom a cada quadro
       ground(c, cam, touching: true).dispose();
-      final exact = cam.pixelsPerCell / 3; // dpr 1, pixel de arte de 3 dp
+      final exact = cam.pixelsPerCell / 2; // dpr 1, pixel de arte de 2 dp (0.25.0)
       final steps = math.log(c.targetKc / start) / math.log(zoomStep);
       expect((steps - steps.round()).abs(), lessThan(1e-9), reason: 'o zoom dos blocos anda em passos');
       expect((exact / c.targetKc - 1).abs(), lessThanOrEqualTo(math.sqrt(zoomStep) - 1 + 1e-9), reason: 'estica no máximo meio passo');
@@ -94,7 +94,7 @@ void main() {
     nowUs += 300000;
     final cam = camAt(0, 0, widthM: 60 - 12 * 1.6);
     ground(c, cam).dispose();
-    expect(c.targetKc, closeTo(cam.pixelsPerCell / 3, 1e-9), reason: 'soltou: o zoom exato');
+    expect(c.targetKc, closeTo(cam.pixelsPerCell / 2, 1e-9), reason: 'soltou: o zoom exato');
     expect(c.onGrid, isTrue);
     c.dispose();
   });
@@ -219,7 +219,7 @@ void main() {
     final b = c.upright.roofs.keys.single;
     final roof = c.upright.roofs[b]!.getBounds();
     final (bx, by) = cam.cellToScreen(b.centroid.$1, b.centroid.$2, view.width, view.height);
-    final k = CityRenderer.pixelSize(3, 1).toDouble();
+    final k = CityRenderer.pixelSize(2, 1).toDouble(); // 2 dp (0.25.0)
     expect(roof.center.dx * k, greaterThan(bx), reason: 'o telhado sai para a direita (prédio à direita do centro)');
     expect(roof.center.dy * k, lessThan(by), reason: 'e para cima (prédio acima do centro)');
     final plain = upright(c, cam);
@@ -260,7 +260,7 @@ void main() {
     expect(((labColor('shadow') >>> 24) & 0xff) / 255, lessThanOrEqualTo(0.35), reason: 'a sombra escurece sem apagar o chão');
     final c = make(tileAt: (_, _) => CityTile.empty);
     final rec = ui.PictureRecorder();
-    c.paintUpright(ui.Canvas(rec), view, camAt(0, 0), dpr: 1, artPixelDp: 3, mpc: tiles.mpc, sunAltDeg: 40, sunAzDeg: 80, localHour: 10, month: 11, snowRoofs: false, items: const [], skyFraction: 0.06);
+    c.paintUpright(ui.Canvas(rec), view, camAt(0, 0), dpr: 1, artPixelDp: 2, mpc: tiles.mpc, sunAltDeg: 40, sunAzDeg: 80, localHour: 10, month: 11, snowRoofs: false, items: const [], skyFraction: 0.06);
     final img = rec.endRecording().toImageSync(view.width.toInt(), view.height.toInt());
     final d = await bytes(tester, img);
     final sky = (view.height ~/ 3 * 0.06).floor(); // em pixels de arte (3 px de tela cada)

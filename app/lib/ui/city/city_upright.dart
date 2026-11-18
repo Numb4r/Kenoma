@@ -295,18 +295,18 @@ class CityUpright {
       if (v.far || st.window.isEmpty) continue;
       // Janelas: uma fileira por andar que aparece; fachada baixa (menos de 2 andares à vista) leva uma fileira no meio.
       final hv = (((rp[i] + rp[j]) / 2) - ((base[i] + base[j]) / 2)).distance;
-      if (hv < 3) continue;
+      if (hv < 4.5) continue; // 0.25.0: os números das janelas em pixels de arte estão na grade de 2 dp (1,5 × os de 3 dp)
       final floors = math.max(1, b.look.fakeHeightPx ~/ floorPx);
-      final rows = hv >= 2 * floorH && floors >= 2 ? math.min(floors, (hv / math.max(3, hv / floors)).floor()) : 1;
+      final rows = hv >= 2 * floorH && floors >= 2 ? math.min(floors, (hv / math.max(4.5, hv / floors)).floor()) : 1;
       final len = (base[j] - base[i]).distance, shop = st.window == 'window_shop';
-      final step = shop ? 7.0 : 5.0;
+      final step = shop ? 10.0 : 8.0;
       for (var row = 0; row < rows; row++) {
         final up = rows == 1 ? 0.5 : (row + 0.55) / rows;
         if (shop && row > 0) continue; // vitrine só no térreo
         for (var u = step / 2; u < len - 1; u += step) {
           final t = u / len;
           final p = ui.Offset.lerp(ui.Offset.lerp(base[i], base[j], t), ui.Offset.lerp(rp[i], rp[j], t), up)!;
-          final r = ui.Rect.fromCenter(center: ui.Offset(p.dx.roundToDouble(), p.dy.roundToDouble()), width: shop ? 3 : 2, height: rows > 1 ? 1 : 2);
+          final r = ui.Rect.fromCenter(center: ui.Offset(p.dx.roundToDouble(), p.dy.roundToDouble()), width: shop ? 5 : 3, height: rows > 1 ? 2 : 3);
           final hh = cityHash([b.hash, (u * 10).round(), i, row]);
           final on = lights && hh % 100 < litPct && !(b.look.biome == 'residential' && v.localHour < 5 && cityHash([b.hash, i]) % 2 == 0);
           stats.windows++;

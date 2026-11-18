@@ -20,9 +20,9 @@ void main() {
     }
   });
 
-  test('no mapa o Espírito tem 24 pixels (9 m) e o Eco 19 (7 m), sem filtro', () {
-    expect(downscaleRows(ecoSpriteRows('soot.spirit'), mapSpiritPx).length, 24);
-    expect(downscaleRows(ecoSpriteRows('soot.eco'), mapEcoPx).length, 19);
+  test('no mapa o Espírito tem 36 pixels (9 m) e o Eco 28 (7 m), sem filtro (2 dp, 0.25.0)', () {
+    expect(downscaleRows(ecoSpriteRows('soot.spirit'), mapSpiritPx).length, 36);
+    expect(downscaleRows(ecoSpriteRows('soot.eco'), mapEcoPx).length, 28);
     expect(mapSpiritPx / mapEcoPx, closeTo(9 / 7, 0.05));
   });
 }

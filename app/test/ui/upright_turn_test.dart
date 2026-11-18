@@ -18,7 +18,7 @@ import 'package:kenoma/world/map_camera.dart';
 void main() {
   const view = ui.Size(360, 780);
   const mpc = 17.6;
-  const k = 3; // dpr 1, pixel de arte de 3 dp
+  const k = 2; // dpr 1, pixel de arte de 2 dp (0.25.0; era 3)
 
   // Um prédio quadrado de 12 m a cada 4 células (uns 70 m), cada um com outro hash; os props entre eles.
   final buildings = <CityBuilding>[];

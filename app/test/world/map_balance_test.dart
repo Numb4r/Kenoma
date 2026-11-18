@@ -20,7 +20,7 @@ void main() {
     expect(b.defaultWidthM, inInclusiveRange(b.cameraMinWidthM, b.cameraMaxWidthM));
     expect((b.playerHeightM, b.familiarHeightM, b.ecoHeightM), (6.0, 6.0, 7.0), reason: 'Conjurador e Familiar 6 m, Ecos 7 m');
     expect((b.ghostPedestrianM, b.ghostCarM), (4.5, 6.0), reason: 'pedestre fantasma 4,5 m, carro fantasma 6 m');
-    expect(b.artPixelDp, 3.0, reason: 'o pixel de arte é de 3 dp');
+    expect(b.artPixelDp, 2.0, reason: 'o pixel de arte é de 2 dp (0.25.0; era 3)');
     for (final m in [b.playerHeightM, b.familiarHeightM, b.ecoHeightM, b.ghostCarM]) {
       expect(m, lessThan(b.roadWidthM['principal']!), reason: 'nenhum sprite passa da largura de uma rua principal');
     }
@@ -40,10 +40,11 @@ void main() {
     expect(px(b.ecoHeightM, b.cameraMinWidthM), greaterThan(px(b.ecoHeightM, b.cameraMaxWidthM)));
     expect(px(b.ecoHeightM, b.cameraMinWidthM) / px(b.ecoHeightM, b.cameraMaxWidthM), closeTo(80 / 40, 1e-9));
     expect(px(b.sparkSizeM, b.defaultWidthM), closeTo(24.7, 0.1), reason: '3 m em 50 m');
-    // O pixel de arte de 3 dp vale ~0,37 m na largura padrão: o Conjurador de 6 m tem ~16 pixels de arte e o Eco de 7 m, ~19.
-    expect(b.artPixelDp / px(1, b.defaultWidthM), closeTo(0.365, 0.02));
-    expect(16 * b.artPixelDp / px(1, b.defaultWidthM), closeTo(b.playerHeightM, 0.3));
-    expect(19 * b.artPixelDp / px(1, b.defaultWidthM), closeTo(b.ecoHeightM, 0.3));
+    // O pixel de arte de 2 dp (0.25.0) vale ~0,24 m na largura padrão: o Conjurador de 6 m tem ~24 pixels de arte e o Eco
+    // de 7 m, ~28 (eram 16 e 19 com 3 dp).
+    expect(b.artPixelDp / px(1, b.defaultWidthM), closeTo(0.243, 0.02));
+    expect(24 * b.artPixelDp / px(1, b.defaultWidthM), closeTo(b.playerHeightM, 0.3));
+    expect(28 * b.artPixelDp / px(1, b.defaultWidthM), closeTo(b.ecoHeightM, 0.3));
   });
 
   test('conversão: metros visíveis e pixels por célula são inversos, e a Aura de 10 m ocupa 20 m dos 50', () {

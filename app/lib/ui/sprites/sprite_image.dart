@@ -138,19 +138,19 @@ class EcoSprite {
       EcoSprite(await spriteToImage(rows, palette: palette), await spriteToImage(rows, brightSeams: true, palette: palette));
 }
 
-/// Lado, em pixels, dos sprites do mapa: Ecos e Conjurador/Familiar. Com o pixel de arte em 2 dp (~0,44 m a 90 m de
-/// largura), 20 pixels dão ~9 m e 18 pixels ~8 m.
-const int mapEcoPx = 19;
-const int mapPlayerPx = 16;
+/// Lado, em pixels, dos sprites do mapa: Ecos e Conjurador/Familiar. 0.25.0: o pixel de arte passou de 3 dp para 2 dp
+/// (`map.art_pixel_dp`) com os mesmos metros no mundo, então cada sprite tem 1,5 vez os pixels (19 → 28, 16 → 24).
+const int mapEcoPx = 28;
+const int mapPlayerPx = 24;
 
-/// O Espírito (9 m, contra 7 m do Eco) é o mesmo sprite ampliado para 24 pixels: 19 × 9 / 7.
-const int mapSpiritPx = 24;
+/// O Espírito (9 m, contra 7 m do Eco): 28 × 9 / 7 = 36 pixels.
+const int mapSpiritPx = 36;
 
-/// Os quadros do Conjurador para o mapa, redesenhados em [mapPlayerPx] pixels.
+/// Os quadros do Conjurador para o mapa: os de 24 × 24 desenhados à mão na grade de 2 dp (0.25.0), ou os reduzidos por
+/// código se [mapPlayerPx] não for 24.
 Future<List<ui.Image>> loadPlayerFramesMap() async => [
-      await spriteToImage(downscaleRows(playerSprite, mapPlayerPx, keep: 'C'), palette: playerPalette),
-      await spriteToImage(downscaleRows(playerStepASprite, mapPlayerPx, keep: 'C'), palette: playerPalette),
-      await spriteToImage(downscaleRows(playerStepBSprite, mapPlayerPx, keep: 'C'), palette: playerPalette),
+      for (final (hand, big) in [(playerMap24, playerSprite), (playerMapStepA24, playerStepASprite), (playerMapStepB24, playerStepBSprite)])
+        await spriteToImage(mapPlayerPx == 24 ? hand : downscaleRows(big, mapPlayerPx, keep: 'C'), palette: playerPalette),
     ];
 
 /// Os quadros do Conjurador: parado e os dois do passo, nesta ordem.

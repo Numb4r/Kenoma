@@ -8,7 +8,7 @@ import 'dart:ui' as ui;
 
 import '../sprites/map_style.dart';
 
-const int labPatternPx = 64;
+const int labPatternPx = 96; // 0.25.0: os módulos de chão na grade de 2 dp (12, 6, 24, 8) dividem 96
 
 int _hash(int x, int y, int salt) {
   var h = (x * 73856093) ^ (y * 19349663) ^ (salt * 83492791) ^ 0x5bd1e995;

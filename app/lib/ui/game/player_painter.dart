@@ -90,12 +90,13 @@ void paintPlayerGear(Canvas canvas, Offset center, {required List<(Image, int dx
 }
 
 /// 0.24.5 (Veículos do Véu): uma camada do veículo montado, `_back` antes do Conjurador e `_front` depois. A tira tem
-/// [frames] quadros de 32 × 24 pixels de arte, com o Conjurador (16 × 16) no canto (8, 2): o quadro sai alinhado ao sprite
-/// dele em [center] com [size] (a altura dos 16 pixels). [glow] (0 a 1): o brilho da qualidade, um contorno na cor do sinal.
+/// [frames] quadros de largura `w` com o Conjurador (`w/2` × `w/2` pixels) em `(w/4, w/16)` (32 × 24 com ele em (8, 2) na
+/// grade de 3 dp; 48 × 36 com ele em (12, 3) na de 2 dp): o quadro sai alinhado ao sprite dele em [center] com [size].
+/// [glow] (0 a 1): o brilho da qualidade, um contorno na cor do sinal.
 void paintPlayerVehicle(Canvas canvas, Offset center, {required Image strip, required int frame, int frames = 2, required double size, bool mirrored = false, double dpr = 1, double glow = 0}) {
-  final art = size / 16, fw = strip.width / frames;
+  final fw = strip.width / frames, art = size / (fw / 2);
   final player = Rect.fromLTWH(_snap(center.dx - size / 2, dpr), _snap(center.dy - size / 2, dpr), size, size);
-  final dst = Rect.fromLTWH(player.left - 8 * art, player.top - 2 * art, fw * art, strip.height * art);
+  final dst = Rect.fromLTWH(player.left - fw / 4 * art, player.top - fw / 16 * art, fw * art, strip.height * art);
   final src = Rect.fromLTWH((frame % frames) * fw, 0, fw, strip.height.toDouble());
   canvas.save();
   if (mirrored) {
@@ -116,8 +117,8 @@ void paintPlayerVehicle(Canvas canvas, Offset center, {required Image strip, req
 }
 
 /// O rastro de faíscas da qualidade Perfeita: [n] pixels de arte atrás do veículo, que piscam com o tempo [t].
-void paintVehicleSparks(Canvas canvas, Offset center, {required double size, required bool mirrored, required double t, int n = 4}) {
-  final art = size / 16, back = mirrored ? 1.0 : -1.0;
+void paintVehicleSparks(Canvas canvas, Offset center, {required double size, required bool mirrored, required double t, int n = 4, int playerPx = 24}) {
+  final art = size / playerPx, back = mirrored ? 1.0 : -1.0;
   for (var i = 0; i < n; i++) {
     final phase = (t * 6 + i * 0.37) % 1;
     final x = center.dx + back * (size * 0.55 + (i + phase) * art * 2.5);

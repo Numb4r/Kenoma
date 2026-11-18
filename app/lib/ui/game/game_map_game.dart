@@ -971,7 +971,7 @@ class GameMapGame extends FlameGame {
           if (g.bag)
             if (art.image('gear_bag') case final b?) (b, 0),
           for (var i = 0; i < g.bottles; i++)
-            if (art.image('gear_bottle') case final b?) (b, 2 * i),
+            if (art.image('gear_bottle') case final b?) (b, b.width ~/ 8 * i), // 2 px na grade de 16, 3 px na de 24
           if (g.amuletGlow)
             if (art.image('gear_amulet_glow') case final b?) (b, 0),
         ]);

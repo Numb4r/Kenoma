@@ -37,6 +37,42 @@ const List<String> familiarSprite = [
   '..................',
 ];
 
+/// O Familiar no mapa (0.25.0, pixel de arte de 2 dp): 24 × 24 desenhado à mão, com as letras de [familiarPalette]. O
+/// mesmo fiapo, com brilho no alto da cabeça, reflexo nos olhos, boca e a cauda afinando para a direita.
+const List<String> familiarMap24 = [
+  '........................',
+  '.........OOOOOO.........',
+  '.......OOvvvvvvOO.......',
+  '......OvvvvvvvvvvO......',
+  '.....OvvWWvvvvvvvvO.....',
+  '....OvvWWvvvvvvvvvvO....',
+  '....OvvWvvvvvvvvvvvO....',
+  '....OvvvvvvvvvvvvvpO....',
+  '....OvvvWCvvvvWCvvpO....',
+  '....OvvvCCvvvvCCvvpO....',
+  '....OvvvCCvvvvCCvvpO....',
+  '....OvvvvvvppvvvvppO....',
+  '....OpvvvvvvvvvvvppO....',
+  '.....OpvvvvvvvvvppO.....',
+  '.....OppvvvvvvvpppO.....',
+  '......OppvvvvvpppO......',
+  '......OOpppvvppppO......',
+  '........OOpppvpppO......',
+  '..........OOpppppO......',
+  '............OOpppO......',
+  '.............OOppO......',
+  '..............OOO.......',
+  '........................',
+  '........................',
+];
+
+/// Pixels do acessório da escola sobre [familiarMap24] (linha, coluna), no lugar de [familiarAccessory] da grade de 16.
+const Map<School, List<(int, int)>> familiarAccessory24 = {
+  School.technomancer: [(1, 16), (0, 16), (0, 17), (0, 18)], // antena
+  School.shaman: [(1, 7), (1, 8), (0, 7), (0, 8), (0, 9)], // folha
+  School.sealer: [(13, 9), (14, 10), (13, 11), (14, 12), (13, 13), (14, 14)], // pontos de costura em ziguezague
+};
+
 /// A paleta do Familiar na escola: o corpo (`v` e a sombra `p`) vai para a cor da escola, e `A` é o acessório. Sem escola,
 /// a forma de antes (violeta com olhos ciano).
 Map<String, int> familiarPaletteFor(School? school) => switch (school) {
@@ -53,12 +89,14 @@ const Map<School, List<(int, int)>> familiarAccessory = {
   School.sealer: [(9, 6), (10, 7), (9, 8), (10, 9)], // pontos de costura em X
 };
 
-/// A grade 16 × 16 do Familiar da [school] (ou a forma atual, sem escola).
+/// A grade do Familiar da [school] no mapa (ou a forma atual, sem escola): a de 24 × 24 desenhada à mão na grade de 2 dp
+/// (0.25.0), ou a reduzida por código se [mapPlayerPx] não for 24.
 List<String> familiarRows(School? school) {
-  final rows = downscaleRows(familiarSprite, mapPlayerPx, keep: 'C');
+  final hand = mapPlayerPx == 24;
+  final rows = hand ? familiarMap24 : downscaleRows(familiarSprite, mapPlayerPx, keep: 'C');
   if (school == null) return rows;
   final grid = [for (final r in rows) r.split('')];
-  for (final (y, x) in familiarAccessory[school]!) {
+  for (final (y, x) in (hand ? familiarAccessory24 : familiarAccessory)[school]!) {
     grid[y][x] = 'A';
   }
   return [for (final r in grid) r.join()];

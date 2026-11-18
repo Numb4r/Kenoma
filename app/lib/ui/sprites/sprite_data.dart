@@ -261,6 +261,11 @@ const Map<String, int> playerPalette = {
   'k': 0xFF22304A, // corpo do celular
   'g': 0xFF2F5F66, // luz do celular sobre o manto
   'S': 0xFFE0A878, // mão
+  // 0.25.0, só nas matrizes 24 × 24 do mapa:
+  's': 0xFFB07A58, // mão na sombra
+  'd': 0xFF1F6B66, // rosto na sombra do capuz
+  'b': 0xFF7A6658, // bota
+  'v': 0xFF9B7BFF, // fecho do manto (o violeta do Véu)
 };
 
 /// Conjurador (placeholder): figura de capuz escuro com o celular na mão, o brilho ciano no rosto.
@@ -417,4 +422,92 @@ const List<String> playerStepBSprite = [
   '................................................',
   '................................................',
   '................................................',
+];
+
+/// Conjurador no mapa (0.25.0, pixel de arte de 2 dp): 24 × 24 desenhado à mão, não reduzido das matrizes 48 × 48.
+/// Olha para a direita, de três quartos: capuz com os dois olhos ciano e o queixo aceso pelo celular, fecho violeta no
+/// peito, a manga e a mão segurando o celular, botas. As solas ficam na última linha (23) nos três quadros.
+const List<String> playerMap24 = [
+  '........................',
+  '........OOOOOO..........',
+  '......OOmmnnnnOO........',
+  '.....OmmmnnnnnnwO.......',
+  '....OmmmnnnnnnnnwO......',
+  '....OmmnnnnnwwwwwO......',
+  '...OmmnnnnnwwwwwwnO.....',
+  '...OmnnnnnwwwCwwCnO.....',
+  '...OmnnnnnwwwCwwCnO.....',
+  '...OmnnnnnwwdDDDDnO.....',
+  '...OnnnnnnnwdDDDnO......',
+  '...OnnnnnnnnOOOOO.......',
+  '..OmmnnnnnnnvnnwwO......',
+  '..OmnnnnnnnnnngggOOOO...',
+  '..OmnnnnnnnnnggggkWWO...',
+  '..OmnnnwnnnmmmggSkWCO...',
+  '..OnnnnwnnnnnnngSSCCO...',
+  '..OnnnnwnnnnOOOOskkkO...',
+  '..OnnnnwnnnnnwwwOOOO....',
+  '.OmnnnnwnnnnnwwwwO......',
+  '.OnnnnnwnnnnnnwwwO......',
+  '.OwwwwwwwwwwwwwwwO......',
+  '..OOOObbOOObbOOOO.......',
+  '......OOO..OOO..........',
+];
+
+/// Conjurador no mapa andando, quadro A: o corpo sobe uma linha, a barra do manto vai para trás, o pé da frente pisa
+/// e o de trás sai do chão.
+const List<String> playerMapStepA24 = [
+  '........OOOOOO..........',
+  '......OOmmnnnnOO........',
+  '.....OmmmnnnnnnwO.......',
+  '....OmmmnnnnnnnnwO......',
+  '....OmmnnnnnwwwwwO......',
+  '...OmmnnnnnwwwwwwnO.....',
+  '...OmnnnnnwwwCwwCnO.....',
+  '...OmnnnnnwwwCwwCnO.....',
+  '...OmnnnnnwwdDDDDnO.....',
+  '...OnnnnnnnwdDDDnO......',
+  '...OnnnnnnnnOOOOO.......',
+  '..OmmnnnnnnnvnnwwO......',
+  '..OmnnnnnnnnnngggOOOO...',
+  '..OmnnnnnnnnnggggkWWO...',
+  '..OmnnnwnnnmmmggSkWCO...',
+  '..OnnnnwnnnnnnngSSCCO...',
+  '..OnnnnwnnnnOOOOskkkO...',
+  '..OnnnnwnnnnnwwwOOOO....',
+  'OmnnnnwnnnnnwwwwO.......',
+  'OnnnnnwnnnnnnwwwO.......',
+  'OwwwwwwwwwwwwwwwO.......',
+  '.OOOObbOOOObbOOO........',
+  '....OOO....ObbO.........',
+  '............OOO.........',
+];
+
+/// Conjurador no mapa andando, quadro B: o corpo sobe uma linha, a barra do manto vai para a frente, o pé de trás pisa
+/// e o da frente sai do chão.
+const List<String> playerMapStepB24 = [
+  '........OOOOOO..........',
+  '......OOmmnnnnOO........',
+  '.....OmmmnnnnnnwO.......',
+  '....OmmmnnnnnnnnwO......',
+  '....OmmnnnnnwwwwwO......',
+  '...OmmnnnnnwwwwwwnO.....',
+  '...OmnnnnnwwwCwwCnO.....',
+  '...OmnnnnnwwwCwwCnO.....',
+  '...OmnnnnnwwdDDDDnO.....',
+  '...OnnnnnnnwdDDDnO......',
+  '...OnnnnnnnnOOOOO.......',
+  '..OmmnnnnnnnvnnwwO......',
+  '..OmnnnnnnnnnngggOOOO...',
+  '..OmnnnnnnnnnggggkWWO...',
+  '..OmnnnwnnnmmmggSkWCO...',
+  '..OnnnnwnnnnnnngSSCCO...',
+  '..OnnnnwnnnnOOOOskkkO...',
+  '..OnnnnwnnnnnwwwOOOO....',
+  '..OmnnnnwnnnnnwwwwO.....',
+  '..OnnnnnwnnnnnnwwwO.....',
+  '..OwwwwwwwwwwwwwwwO.....',
+  '...OOOObbOOOObbOOO......',
+  '......ObbO....OOO.......',
+  '.......OOO..............',
 ];
