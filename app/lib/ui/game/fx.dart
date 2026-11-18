@@ -3,6 +3,8 @@
 /// coleta e de fuga vive em `world/`. Cada efeito é curto (80 a 400 ms) para o jogador ver o resultado na hora.
 library;
 
+import 'creature_anim.dart';
+import 'creature_art.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -45,6 +47,18 @@ class _Dissolve {
   double t = 0;
 }
 
+/// 0.25.0: a saída animada de uma criatura com arte animada: fuga (sobe e sai de lado) ou sintonizada (se desfaz em
+/// faíscas que vão para o Conjurador).
+class _Exit {
+  _Exit(this.uid, this.entryId, this.x, this.y, this.variant, this.tuned, this.left);
+  final int uid;
+  final String entryId;
+  final double x, y;
+  final String? variant;
+  final bool tuned, left;
+  double t = 0;
+}
+
 class Fx {
   final _flies = <_Fly>[];
   final _glints = <double>[]; // idade de cada brilho, no avatar
@@ -64,6 +78,14 @@ class Fx {
   /// Uma Fagulha ou material foi coletado em ([x], [y]) (células z21): voa até o Conjurador e vira "+N".
   void collected(WorldSpawn s, ui.Color color) =>
       _flies.add(_Fly(s.x, s.y, color, s.isSpark, s.entryId, s.quantity));
+
+  final _exits = <_Exit>[];
+
+  /// 0.25.0: a criatura [s] sai do mapa animada (se tiver arte animada): [tuned] é a sintonia que deu certo, senão a fuga.
+  void exit(WorldSpawn s, {required bool tuned, bool facingLeft = false}) {
+    if (CreatureArt.of(s.entryId) == null) return;
+    _exits.add(_Exit(s.uid, s.entryId, s.x, s.y, s.shiny ? null : s.variant, tuned, facingLeft));
+  }
 
   /// O Eco [uid] foi tocado: dá um pulo curto.
   void hop(int uid) => _hops[uid] = 0;
@@ -100,6 +122,10 @@ class Fx {
   }
 
   void update(double dt) {
+    for (final e in _exits) {
+      e.t += dt;
+    }
+    _exits.removeWhere((e) => e.t >= _exitS(e));
     for (final f in _flies) {
       f.t += dt;
     }
@@ -150,7 +176,11 @@ class Fx {
 
   /// Desenha por cima dos spawns: voos, brilhos, "+N" e Ecos se desfazendo. [avatar] é o centro do Conjurador na tela.
   /// [anchorOf]: onde o Eco foi desenhado por último (com o vento); o desfazer sai ali, não na posição crua.
-  void paint(ui.Canvas canvas, ui.Size view, MapCamera cam, {required ui.Offset avatar, required double playerSize, required double sparkSize, required double dpr, ui.Offset? Function(int uid)? anchorOf}) {
+  void paint(ui.Canvas canvas, ui.Size view, MapCamera cam, {required ui.Offset avatar, required double playerSize, required double sparkSize, required double dpr, ui.Offset? Function(int uid)? anchorOf, double? ecoSize, List<void Function()>? emissive, ui.Color? tone}) {
+    for (final e in _exits) {
+      final (sx, sy) = cam.cellToScreen(e.x, e.y, view.width, view.height);
+      _paintExit(canvas, anchorOf?.call(e.uid) ?? ui.Offset(sx, sy), e, ecoSize ?? playerSize, avatar, emissive, tone);
+    }
     for (final d in _dissolves) {
       final (sx, sy) = cam.cellToScreen(d.x, d.y, view.width, view.height);
       _paintDissolve(canvas, anchorOf?.call(d.uid) ?? ui.Offset(sx, sy), d);
@@ -231,4 +261,61 @@ class Fx {
       }
     }
   }
+}
+
+
+/// A duração da saída: os quadros da animação a [fps], e na sintonia mais o voo das faíscas até o Conjurador.
+double _exitS(_Exit e) {
+  final a = CreatureArt.of(e.entryId)?.anims[e.tuned ? CreatureAnim.tuned : CreatureAnim.flee];
+  final anim = a == null ? 0.6 : a.frames / a.fps;
+  return anim + (e.tuned ? 0.45 : 0);
+}
+
+void _paintExit(ui.Canvas canvas, ui.Offset c0, _Exit e, double size, ui.Offset avatar, List<void Function()>? emissive, ui.Color? tone) {
+  final art = CreatureArt.of(e.entryId);
+  final kind = e.tuned ? CreatureAnim.tuned : CreatureAnim.flee;
+  final strip = art?.anims[kind];
+  if (art == null || strip == null) return;
+  final animS = strip.frames / strip.fps, u = (e.t / animS).clamp(0.0, 1.0);
+  // A fuga sobe e sai de lado; a sintonia fica no lugar.
+  final c = e.tuned ? c0 : c0.translate((e.left ? -1 : 1) * size * 1.6 * u * u, -size * 1.2 * u);
+  if (e.t < animS) {
+    final frame = onceFrame(u, strip.frames), f = art.frame.toDouble();
+    final src = ui.Rect.fromLTWH(frame * f, 0, f, f), dst = ui.Rect.fromCenter(center: c, width: size, height: size);
+    void draw(ui.Image img, {ui.Color? tone}) {
+      canvas.save();
+      if (e.left) {
+        canvas.translate(dst.center.dx, 0);
+        canvas.scale(-1, 1);
+        canvas.translate(-dst.center.dx, 0);
+      }
+      canvas.drawImageRect(img, src, dst, ui.Paint()
+        ..filterQuality = ui.FilterQuality.none
+        ..colorFilter = tone == null ? null : ui.ColorFilter.mode(tone, ui.BlendMode.modulate));
+      canvas.restore();
+    }
+
+    draw(art.bodyOf(kind, e.variant), tone: tone); // o corpo no tom da noite, como no mapa
+    void light() {
+      if (strip.glow case final g?) draw(g);
+      if (strip.leds case final l?) draw(l);
+    }
+
+    emissive == null ? light() : emissive.add(light);
+    return;
+  }
+  // Sintonizada: as faíscas vão da criatura até o Conjurador.
+  final v = ((e.t - animS) / 0.45).clamp(0.0, 1.0), ease = v * v * (3 - 2 * v);
+  final target = avatar.translate(0, -size * 0.3);
+  void sparks() {
+    for (var i = 0; i < 6; i++) {
+      final a = i * math.pi / 3 + e.uid % 7;
+      final from = c.translate(math.cos(a) * size * 0.3, math.sin(a) * size * 0.3);
+      final p = ui.Offset.lerp(from, target, (ease * (1 + i * 0.06)).clamp(0.0, 1.0))!;
+      final px = (size / 14).roundToDouble().clamp(2.0, 6.0);
+      canvas.drawRect(ui.Rect.fromCenter(center: ui.Offset(p.dx.roundToDouble(), p.dy.roundToDouble()), width: px, height: px), ui.Paint()..color = (i.isEven ? kSignal : const ui.Color(0xFFFFD84A)).withValues(alpha: 1 - v * 0.5));
+    }
+  }
+
+  emissive == null ? sparks() : emissive.add(sparks);
 }

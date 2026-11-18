@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart';
 
 import '../core/epochs.dart';
+import '../world/debug_creatures.dart' show DebugCreatureSpec, DebugVariant;
 import '../crafting/crafting_state.dart' show LoadoutSlot;
 import '../net/signed_feed.dart' show loadEpochsJson;
 import '../save/ksv_save_store.dart';
@@ -112,6 +113,25 @@ Future<List<String>> runDebugCommands(String text, {required DevTools tools, Fut
         // 0.25.0: os eventos do clima por cima (até dois, como no debug): `event vigil`, `event off`.
         arg == 'off' ? tools.force.clearEvents() : tools.force.toggleEvent(arg);
         out.add('event ${tools.force.events.join('+')}');
+      case 'creature':
+        // 0.25.0: `creature hum.eco [biome|crimson|shiny] [n]`, como o "Criar criatura" do debug (fora do mundo).
+        final a = arg.split(' ');
+        final shiny = a.contains('shiny'), n = a.length > 1 ? int.tryParse(a.last) ?? 1 : 1;
+        tools.force.creatures.request(DebugCreatureSpec(speciesId: a.first, shiny: shiny, variant: DebugVariant.parse(a.length > 1 ? a[1] : null), count: n), [a.first]);
+        out.add('creature ${a.first}');
+      case 'seen':
+        // 0.25.0: marca a espécie como vista no save aberto (o retrato no Bestiário), só para conferir.
+        final live = liveGameState();
+        if (live == null || arg.isEmpty) {
+          out.add('seen? $arg');
+          continue;
+        }
+        live.markSeen(arg);
+        live.changed();
+        out.add('seen $arg');
+      case 'exit':
+        // 0.25.0: a saída animada do Eco mais perto (`exit tuned` ou `exit flee`), só no desenho.
+        out.add('exit ${tools.exitNearestEco?.call(arg != 'flee') ?? '? sem Eco à vista'}');
       case 'devopts':
         await writeSetting(save, kDevOptionsSetting, arg != 'off');
         out.add('devopts ${arg == 'off' ? 'off' : 'on'}');

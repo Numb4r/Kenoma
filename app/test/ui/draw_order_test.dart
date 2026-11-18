@@ -26,6 +26,7 @@ void main() {
       'player', // avatar e Familiar
       'air', // arco-íris, olho do furacão, figuras altas
       'climateScreen', // gotas, flocos, tom
+      'emissive', // 0.25.0: o que brilha nas criaturas, depois do tom da noite e do clima
       'hud',
     ]);
   });

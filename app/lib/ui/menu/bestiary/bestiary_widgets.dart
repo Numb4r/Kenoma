@@ -131,7 +131,10 @@ class _TickPainter extends CustomPainter {
 /// A arte de uma forma com o estado dela: colorida com a marca ciano (capturada), colorida com o olho (vista) ou
 /// silhueta (nunca vista).
 class FormArt extends StatelessWidget {
-  const FormArt({required this.sprite, required this.state, this.size = 58, this.selected = false, this.pinned = false, super.key});
+  const FormArt({required this.sprite, required this.state, this.size = 58, this.selected = false, this.pinned = false, this.speciesId, super.key});
+
+  /// 0.25.0: a espécie, para o retrato animado (ver `SpeciesImage.speciesId`).
+  final String? speciesId;
 
   final EcoSprite? sprite;
   final FormStatus state;
@@ -152,7 +155,7 @@ class FormArt extends StatelessWidget {
               height: size,
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(color: KCores.superficie2, border: Border.all(color: selected ? KCores.veuVioleta : KCores.contorno, width: kContornoDp)),
-              child: SpeciesImage(sprite: sprite, silhouette: state == FormStatus.unknown, size: size - 12),
+              child: SpeciesImage(sprite: sprite, silhouette: state == FormStatus.unknown, size: size - 12, speciesId: speciesId),
             ),
           ),
           if (state != FormStatus.unknown)
@@ -219,7 +222,7 @@ class FamilyCard extends StatelessWidget {
               child: Pressable(
                 onTap: () => onTap(forms[i]),
                 child: Column(key: Key('form-${forms[i].id}'), children: [
-                  FormArt(sprite: sprites[forms[i].spriteKey], state: states[i], pinned: pinned.contains(forms[i].id)),
+                  FormArt(sprite: sprites[forms[i].spriteKey], state: states[i], pinned: pinned.contains(forms[i].id), speciesId: forms[i].spriteKey),
                   const SizedBox(height: 4),
                   Text(
                     states[i] == FormStatus.unknown ? '???' : forms[i].name,
@@ -259,7 +262,7 @@ class SpeciesCell extends StatelessWidget {
           child: Stack(children: [
             Column(mainAxisSize: MainAxisSize.min, children: [
               Align(alignment: Alignment.centerLeft, child: Text(form.number.toString().padLeft(3, '0'), style: _tiny.copyWith(fontSize: 7, color: KCores.textoMudo))),
-              SpeciesImage(sprite: sprite, silhouette: state == FormStatus.unknown, size: 42),
+              SpeciesImage(sprite: sprite, silhouette: state == FormStatus.unknown, size: 42, speciesId: form.spriteKey),
               const SizedBox(height: 2),
               Text(
                 state == FormStatus.unknown ? '???' : form.name,

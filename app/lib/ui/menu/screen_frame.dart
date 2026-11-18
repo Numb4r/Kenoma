@@ -2,6 +2,8 @@
 /// carregador de sprites. No estilo das telas que já existem (painel ameixa, pixel, Silkscreen).
 library;
 
+import '../game/creature_art.dart';
+import '../game/creature_portrait.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/game_data.dart';
@@ -45,7 +47,10 @@ class SectionTitle extends StatelessWidget {
 
 /// O sprite de uma espécie; [silhouette] pinta só a forma, para o que o jogador ainda não viu.
 class SpeciesImage extends StatelessWidget {
-  const SpeciesImage({required this.sprite, this.silhouette = false, this.size = 64, this.tint, this.aura = false, super.key});
+  const SpeciesImage({required this.sprite, this.silhouette = false, this.size = 64, this.tint, this.aura = false, this.speciesId, super.key});
+
+  /// 0.25.0: a espécie, para o retrato animado das que têm arte animada (o Humoth). `null`: o sprite de sempre.
+  final String? speciesId;
 
   final EcoSprite? sprite;
   final bool silhouette;
@@ -59,6 +64,8 @@ class SpeciesImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final animated = speciesId == null || silhouette ? null : CreatureArt.of(speciesId!);
+    if (animated?.portrait != null) return CreaturePortrait(art: animated!, size: size, tint: tint);
     final img = sprite == null ? null : RawImage(image: sprite!.normal, filterQuality: FilterQuality.none, fit: BoxFit.contain);
     return Container(
       width: size,

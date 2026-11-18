@@ -34,6 +34,11 @@ enum MapLayer {
   /// A camada de tela do clima: gotas, flocos, raios e o tom de cor, por cima do mapa inteiro.
   climateScreen,
 
+  /// 0.25.0: a camada emissiva das criaturas (ocelos de LED, veios acesos, faíscas, o brilho do Brilhante), desenhada
+  /// depois do tom da noite e do clima para continuar acesa no escuro e na chuva. O corpo da criatura recebe o tom; o que
+  /// brilha, não.
+  emissive,
+
   /// O que é HUD dentro do canvas (as marcas do Radar na borda). O resto do HUD é widget, por cima.
   hud,
 }

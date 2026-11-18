@@ -139,6 +139,9 @@ class DevTools extends ChangeNotifier {
   /// `npctune` adiantar o relógio até ela.
   ({int at, double lat, double lon})? Function()? nextNpcTune;
 
+  /// 0.25.0: a saída animada (sintonizado ou fuga) do Eco mais perto, só no desenho (comando `exit`). Devolve o uid.
+  int? Function(bool tuned)? exitNearestEco;
+
   /// 0.24.5: vai até o NPC mais perto e abre a folha dele (comando `npc`). Devolve o id, ou `null` sem NPC à vista.
   String? Function()? openNearestNpc;
 

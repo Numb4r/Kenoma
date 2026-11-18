@@ -1,6 +1,8 @@
 /// Desenho da tela de sintonia. Só lê o estado e pinta: nenhuma regra do jogo mora aqui.
 library;
 
+import '../game/creature_anim.dart';
+import '../game/creature_art.dart';
 import '../flashes.dart';
 import 'dart:math' as math;
 import 'dart:ui';
@@ -71,11 +73,11 @@ class TuningView {
 
 const String _font = 'Silkscreen';
 
-void paintTuning(Canvas canvas, Size size, TuningView v, EcoSprite? sprite) {
+void paintTuning(Canvas canvas, Size size, TuningView v, EcoSprite? sprite, {CreatureArt? art}) {
   final layout = TuningLayout(size);
   canvas.drawRect(Offset.zero & size, Paint()..color = kOutline);
   _hud(canvas, layout, v);
-  _creature(canvas, layout, v, sprite);
+  art?.portrait != null ? _animatedCreature(canvas, layout, v, art!) : _creature(canvas, layout, v, sprite);
   _waves(canvas, layout, v);
   _dial(canvas, layout, v);
 }
@@ -267,4 +269,24 @@ void _glyph(Canvas canvas, Offset at, int index, double angle) {
     i == 0 ? p.moveTo(o.dx, o.dy) : p.lineTo(o.dx, o.dy);
   }
   canvas.drawPath(p, _stroke(kSignal.withValues(alpha: 0.7), 2));
+}
+
+
+/// 0.25.0: a criatura com arte animada na sintonia (o Humoth), pairando e reagindo ao sinal: os LEDs acendem a cada salto
+/// de frequência do padrão Elétrico e ficam acesos fixos quando o sinal trava.
+void _animatedCreature(Canvas canvas, TuningLayout l, TuningView v, CreatureArt art) {
+  final c = l.creatureCenter;
+  final ring = Rect.fromCircle(center: c, radius: l.ringRadius);
+  canvas.drawArc(ring, 0, 2 * math.pi, false, _stroke(kPanelLine, 6));
+  if (v.progress > 0) canvas.drawArc(ring, -math.pi / 2, 2 * math.pi * v.progress, false, _stroke(kVeil, 6));
+  if (v.aligned) canvas.drawArc(Rect.fromCircle(center: c, radius: l.ringRadius + 8), 0, 2 * math.pi, false, _stroke(kSignal, 2));
+  final p = art.portrait!, f = p.body.height.toDouble();
+  final frame = loopFrame(v.clock, p.frames, p.fps);
+  final s = l.spriteScale, side = 48.0 * s;
+  final dst = Rect.fromCenter(center: c, width: side, height: side), src = Rect.fromLTWH(frame * f, 0, f, f);
+  final px = Paint()..filterQuality = FilterQuality.none;
+  canvas.drawImageRect(p.body, src, dst, px);
+  if (p.glow case final g?) canvas.drawImageRect(g, src, dst, px);
+  final lit = v.aligned || v.typeFx.hopFlash > 0.5;
+  if (lit && p.leds != null) canvas.drawImageRect(p.leds!, src, dst, px);
 }

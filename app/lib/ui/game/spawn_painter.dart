@@ -2,6 +2,8 @@
 /// pontos de material como caixinhas. Só desenha; quem decide o que existe é `world/`.
 library;
 
+import 'creature_anim.dart';
+import 'creature_art.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -79,6 +81,9 @@ void paintSpawns(
   double artPixelDp = 3,
   bool Function(int uid)? facingLeftOf,
   Map<int, ui.Offset>? anchors,
+  bool Function(int uid)? movingOf,
+  ui.Color? bodyTone,
+  List<void Function()>? emissive,
 }) {
   final ordered = [...spawns]..sort((a, b) => a.y.compareTo(b.y));
   final climateWind = windDir;
@@ -105,6 +110,16 @@ void paintSpawns(
       final tint = tintOf?.call(s);
       final appear = appearOf?.call(s.uid) ?? 1.0;
       final hop = hopOf?.call(s.uid) ?? 0.0;
+      // 0.25.0: a criatura com arte animada (o Humoth) desenha a animação do estado, com o corpo no tom da noite e o que
+      // brilha na camada emissiva, depois do clima.
+      final anim = CreatureArt.of(s.entryId);
+      if (anim != null) {
+        _animatedEco(canvas, center.translate(0, hop), s, anim, size, near, time, appear: appear, moving: movingOf?.call(s.uid) ?? false, flip: facingLeftOf?.call(s.uid) ?? false, tone: bodyTone, emissive: emissive, lean: lean);
+        if (marked?.call(s) ?? false) _markRing(canvas, center, size);
+        if (pinned?.call(s) ?? false) _pinMarker(canvas, center, size, time);
+        if (near) _touchRingOf(canvas, center, s, size, avoid, spawnColor(s, typeOf));
+        continue;
+      }
       if (appear < 1) {
         // A costura abre do centro para fora e o Eco aparece dentro dela.
         canvas.save();
@@ -311,25 +326,7 @@ void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double 
   }
   if (flip) canvas.restore();
   if (leaning) canvas.restore();
-  if (!near) return;
-  // Anel e rótulo têm tamanho fixo de tela. Perto do Conjurador ficam de fora: nada cobre o marcador.
-  final ring = ui.Rect.fromCenter(center: c.translate(0, size * 0.42), width: kRingRadiusDp * 2, height: kRingRadiusDp * 2);
-  if (!ring.overlaps(avoid)) {
-    canvas.drawCircle(
-      ring.center,
-      kRingRadiusDp,
-      ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 2..color = color..isAntiAlias = false,
-    );
-  }
-  final label = TextPainter(
-    text: TextSpan(text: 'NV ${s.level}', style: const TextStyle(fontFamily: 'Silkscreen', fontSize: 8, color: kText)),
-    textDirection: TextDirection.ltr,
-  )..layout();
-  final x = c.dx - label.width / 2;
-  final above = ui.Rect.fromLTWH(x, c.dy - size * 0.5 - 12, label.width, label.height);
-  final below = ui.Rect.fromLTWH(x, c.dy + size * 0.5 + 4, label.width, label.height);
-  final spot = !above.overlaps(avoid) ? above : (!below.overlaps(avoid) ? below : null);
-  if (spot != null) label.paint(canvas, spot.topLeft);
+  if (near) _touchRingOf(canvas, c, s, size, avoid, color);
 }
 
 /// A Fagulha e o material fora do mapa (o efeito de coleta os reaproveita).
@@ -403,3 +400,96 @@ void paintSeam(ui.Canvas canvas, ui.Offset c, double size, double u) {
 /// como ele foi desenhado), em pixels inteiros. Todo efeito ancorado em criatura usa isto, não o canto nem a posição crua.
 ui.Rect anchoredRect(ui.Offset anchor, double size) =>
     ui.Rect.fromLTWH((anchor.dx - size / 2).roundToDouble(), (anchor.dy - size / 2).roundToDouble(), size.roundToDouble(), size.roundToDouble());
+
+
+/// 0.25.0: a criatura com arte animada (docs/art/estilo-criaturas.md). O corpo recebe o tom da noite ([tone], multiplicado)
+/// e o contorno de alcance; os ocelos (piscando como letreiro com mau contato, fixos no alerta), os veios e o brilho do
+/// Brilhante vão para [emissive], que o mapa desenha depois do clima.
+void _animatedEco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, CreatureArt art, double size, bool near, double time,
+    {required double appear, required bool moving, required bool flip, ui.Color? tone, List<void Function()>? emissive, double lean = 0}) {
+  canvas.drawOval(
+    ui.Rect.fromCenter(center: c.translate(0, size * 0.42), width: size * 0.55, height: size * 0.14),
+    ui.Paint()..color = kOutline.withValues(alpha: 0.45)..isAntiAlias = false,
+  );
+  final kind = animOf(appear: appear, alert: near, moving: moving);
+  final strip = art.anims[kind] ?? art.anims[CreatureAnim.idle]!;
+  final frame = kind == CreatureAnim.spawn ? onceFrame(appear, strip.frames) : loopFrame(time, strip.frames, strip.fps, uid: s.uid);
+  final f = art.frame.toDouble();
+  final src = ui.Rect.fromLTWH(frame * f, 0, f, f);
+  final dst = ui.Rect.fromCenter(center: c, width: size, height: size);
+  final body = art.bodyOf(kind, s.shiny ? null : s.variant);
+  final alpha = near ? 1.0 : 0.8;
+  void flipped(ui.Canvas cv, void Function() draw) {
+    final leaning = lean.abs() >= 1e-3;
+    if (leaning) {
+      cv.save();
+      cv.translate(dst.center.dx, dst.bottom);
+      cv.skew(-math.tan(lean), 0);
+      cv.translate(-dst.center.dx, -dst.bottom);
+    }
+    if (flip) {
+      cv.save();
+      cv.translate(dst.center.dx, 0);
+      cv.scale(-1, 1);
+      cv.translate(-dst.center.dx, 0);
+    }
+    draw();
+    if (flip) cv.restore();
+    if (leaning) cv.restore();
+  }
+
+  flipped(canvas, () {
+    if (near) {
+      final px = size / f;
+      final pulse = 0.45 + 0.55 * (0.5 + 0.5 * math.sin(time * 4.5 + s.uid % 7));
+      final outline = ui.Paint()
+        ..filterQuality = ui.FilterQuality.none
+        ..colorFilter = ui.ColorFilter.mode(kVeil.withValues(alpha: pulse), ui.BlendMode.srcIn);
+      for (final (dx, dy) in [(px, 0.0), (-px, 0.0), (0.0, px), (0.0, -px)]) {
+        canvas.drawImageRect(body, src, dst.shift(ui.Offset(dx, dy)), outline);
+      }
+    }
+    canvas.drawImageRect(body, src, dst, ui.Paint()
+      ..filterQuality = ui.FilterQuality.none
+      ..color = ui.Color.fromRGBO(255, 255, 255, alpha)
+      ..colorFilter = tone == null ? null : ui.ColorFilter.mode(tone, ui.BlendMode.modulate));
+  });
+  final leds = strip.leds, glow = strip.glow;
+  final lit = ledLit(s.uid, time, fixed: kind == CreatureAnim.alert);
+  void light() => flipped(canvas, () {
+        final p = ui.Paint()..filterQuality = ui.FilterQuality.none;
+        if (glow != null) canvas.drawImageRect(glow, src, dst, p);
+        if (leds != null && lit) canvas.drawImageRect(leds, src, dst, p);
+        if (s.shiny) {
+          // O Brilhante: uma faixa de luz que passa pelo corpo (o único brilho animado).
+          final k = creatureShine(s.uid, time);
+          if (k > 0) {
+            canvas.drawImageRect(body, src, dst, ui.Paint()
+              ..filterQuality = ui.FilterQuality.none
+              ..colorFilter = ui.ColorFilter.mode(const ui.Color(0xFFFFF4C8).withValues(alpha: 0.55 * k), ui.BlendMode.srcIn));
+          }
+        }
+      });
+  emissive == null ? light() : emissive.add(light);
+}
+
+/// O anel de alcance e o rótulo de nível (tamanho fixo de tela). Perto do Conjurador ficam de fora: nada cobre o marcador.
+void _touchRingOf(ui.Canvas canvas, ui.Offset c, WorldSpawn s, double size, ui.Rect avoid, ui.Color color) {
+  final ring = ui.Rect.fromCenter(center: c.translate(0, size * 0.42), width: kRingRadiusDp * 2, height: kRingRadiusDp * 2);
+  if (!ring.overlaps(avoid)) {
+    canvas.drawCircle(
+      ring.center,
+      kRingRadiusDp,
+      ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 2..color = color..isAntiAlias = false,
+    );
+  }
+  final label = TextPainter(
+    text: TextSpan(text: 'NV ${s.level}', style: const TextStyle(fontFamily: 'Silkscreen', fontSize: 8, color: kText)),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  final x = c.dx - label.width / 2;
+  final above = ui.Rect.fromLTWH(x, c.dy - size * 0.5 - 12, label.width, label.height);
+  final below = ui.Rect.fromLTWH(x, c.dy + size * 0.5 + 4, label.width, label.height);
+  final spot = !above.overlaps(avoid) ? above : (!below.overlaps(avoid) ? below : null);
+  if (spot != null) label.paint(canvas, spot.topLeft);
+}

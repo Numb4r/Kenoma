@@ -37,6 +37,7 @@ import '../craft/planted_list.dart';
 import '../craft/ui_art.dart';
 import 'map_touch_flow.dart';
 import 'npc_sheet.dart';
+import 'creature_art.dart';
 import '../../crafting/collectors.dart';
 import '../../crafting/crafting_state.dart';
 import '../../crafting/ritual_data.dart';
@@ -605,7 +606,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     if (isRitualOnlyId(spawn.entryId)) return _startRitual(spawn); // não responde à sintonia
     _busy = true;
     try {
-      await runEncounter(context, eco: spawn, world: r.world, state: r.session.state, data: r.data, nowUtc: () => tools.clock.nowUtc, vibration: widget.vibration, onMessage: _toast);
+      await runEncounter(context, eco: spawn, world: r.world, state: r.session.state, data: r.data, nowUtc: () => tools.clock.nowUtc, vibration: widget.vibration, onMessage: _toast, onExit: (eco, {required tuned}) => r.game.fx.exit(eco, tuned: tuned, facingLeft: r.game.facingLeftOfEco(eco.uid)));
     } finally {
       _busy = false;
     }
@@ -922,6 +923,15 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       },
     );
     world.veil = veil;
+    tools.exitNearestEco = (tuned) {
+      if (!game.avatar.hasPosition) return null;
+      final ecos = [for (final s in world.spawns) if (s.isEco) s]
+        ..sort((a, b) => ((a.x - game.avatar.x) * (a.x - game.avatar.x) + (a.y - game.avatar.y) * (a.y - game.avatar.y)).compareTo((b.x - game.avatar.x) * (b.x - game.avatar.x) + (b.y - game.avatar.y) * (b.y - game.avatar.y)));
+      if (ecos.isEmpty) return null;
+      game.fx.exit(ecos.first, tuned: tuned, facingLeft: game.facingLeftOfEco(ecos.first.uid));
+      world.remove(ecos.first);
+      return ecos.first.uid;
+    };
     tools.openNearestNpc = () {
       final r = _ready;
       if (r == null || !game.avatar.hasPosition) return null;
@@ -1019,6 +1029,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     world.onCollected = game.onCollected;
     world.onBagFull = _onBagFull;
     unawaited(UiArt.load()); // os ícones dos coletores plantados no mapa
+    unawaited(CreatureArt.loadAll(widget.bundle)); // 0.25.0: as criaturas com arte animada (o Humoth)
     world.onShiny = _onShiny;
     world.onEnteredRange = _onEnteredRange;
     _climate = ClimateDriver(data: data, world: climate, online: () => session.state.setting('weather_online'));

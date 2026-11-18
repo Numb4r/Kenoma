@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:math' as math;
+import '../game/creature_art.dart';
 import 'dart:ui';
 
 import 'package:flame/events.dart';
@@ -91,6 +93,7 @@ class TuningGame extends FlameGame with DragCallbacks {
     for (final s in pool) {
       _sprites[s.id] = await EcoSprite.load(s.id);
     }
+    unawaited(CreatureArt.loadAll()); // 0.25.0: o Humoth animado na sintonia (sem esperar: some no primeiro quadro se faltar)
     if (hidden) _neutral = await EcoSprite.loadNeutral();
     restart();
   }
@@ -165,6 +168,7 @@ class TuningGame extends FlameGame with DragCallbacks {
         typeFx: hidden ? TypeFx.none : s.signal.typeFxAt(s.t),
       ),
       hidden ? _neutral : _sprites[species.id],
+      art: hidden ? null : CreatureArt.of(species.id),
     );
   }
 

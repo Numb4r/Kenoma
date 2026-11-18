@@ -39,6 +39,7 @@ Future<void> runEncounter(
   required int Function() nowUtc,
   VibrationPlayer? vibration,
   void Function(String message)? onMessage,
+  void Function(WorldSpawn eco, {required bool tuned})? onExit,
 }) async {
   final species = data.species(eco.entryId);
   if (species == null) return;
@@ -114,6 +115,7 @@ Future<void> runEncounter(
       onMessage?.call(isDebugUid(eco.uid)
           ? '${species.name} de debug na coleção: não conta para o progresso'
           : '${species.name} com GPS simulado na coleção: não conta para o progresso');
+      onExit?.call(eco, tuned: true);
       world.remove(eco);
       return;
     }
@@ -140,6 +142,7 @@ Future<void> runEncounter(
         for (final c in awardCircleXp(state)) '${data.species(c.speciesId)?.name ?? c.speciesId} nível ${c.level}',
       ];
       if (notes.isNotEmpty) onMessage?.call(notes.join(' · '));
+      onExit?.call(eco, tuned: true); // 0.25.0: a criatura se desfaz em faíscas que vão para o Conjurador
       world.remove(eco);
       return;
     }
@@ -151,6 +154,7 @@ Future<void> runEncounter(
     // Xamã Urbano: o Eco não foge depois de uma sintonia falha.
     if (o.fled && state.conjurer.school != School.shaman) {
       state.markDone(eco.uid, nowUtc()); // a fuga entra no registro
+      onExit?.call(eco, tuned: false); // 0.25.0: a animação de fuga
       world.remove(eco);
       return;
     }

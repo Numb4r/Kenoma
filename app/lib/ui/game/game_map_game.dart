@@ -612,6 +612,8 @@ class GameMapGame extends FlameGame {
         MapLayer.creatures: () {
           // 0.24.5: o Ônibus Espectral (cena do mundo, igual para o grupo) e os Outros Veilbreakers, com a sintonia.
           if (ecoAnchors.length > 600) ecoAnchors.clear();
+          _trackEcoMotion(wv, cam);
+          _emissive.clear();
           paintSpectralBuses(canvas, view, cam, visibleTiles(view, cam), _exactUtc(), seed: wv.field.seed, b: touchBalance, pxPerM: cam.pixelsPerCell / mpc, mpc: mpc, carM: balance.ghostCarM, figure: playerSizePx);
           _paintSpawns(canvas, view, cam, wv, center, (s) => s.isEco);
           final v = veil;
@@ -671,6 +673,17 @@ class GameMapGame extends FlameGame {
       MapLayer.climateScreen: () {
         climateFx.paintSky(canvas, view, cam);
         _climate.paint(canvas, view, player: here ? center : null, sky: skyRects);
+      },
+      // 0.25.0: o que brilha nas criaturas (ocelos, veios, faíscas), depois do tom da noite e do clima.
+      MapLayer.emissive: () {
+        // Presa ao mundo: o mesmo tremor do impacto que o corpo levou.
+        canvas.save();
+        canvas.translate(climateFx.shakeOffset.dx, climateFx.shakeOffset.dy);
+        for (final light in _emissive) {
+          light();
+        }
+        canvas.restore();
+        _emissive.clear();
       },
       if (wv != null && here && (wv.pulse != null || wv.state.pins.isNotEmpty))
         MapLayer.hud: () {
@@ -938,8 +951,11 @@ class GameMapGame extends FlameGame {
         sparkSize: sparkSizePx,
         dpr: dpr,
         artPixelDp: balance.artPixelDp,
-        facingLeftOf: (uid) => (ecoFacing[uid]?.$1 ?? -1) > _time && ecoFacing[uid]!.$2,
+        facingLeftOf: (uid) => (ecoFacing[uid]?.$1 ?? -1) > _time ? ecoFacing[uid]!.$2 : (_ecoMotion[uid]?.left ?? false),
         anchors: ecoAnchors,
+        movingOf: (uid) => _ecoMotion[uid]?.moving ?? false,
+        bodyTone: light.night > 0.004 ? Color.lerp(const Color(0xFFFFFFFF), const Color(0xFF3F4A8C), light.night) : null,
+        emissive: _emissive,
         wind: creatureWind,
         windDir: _climate.wind,
         localWind: _localWindOf,
@@ -978,7 +994,7 @@ class GameMapGame extends FlameGame {
       }
     }
     travelLayer?.paintCar(canvas, view, cam, metersPerCell(_lat), utc: _exactUtc(), avatar: avatar);
-    fx.paint(canvas, view, cam, avatar: center, playerSize: playerSize, sparkSize: sparkSizePx, dpr: dpr, anchorOf: (uid) => ecoAnchors[uid]);
+    fx.paint(canvas, view, cam, avatar: center, playerSize: playerSize, sparkSize: sparkSizePx, dpr: dpr, anchorOf: (uid) => ecoAnchors[uid], ecoSize: ecoSizePx, emissive: _emissive, tone: light.night > 0.004 ? Color.lerp(const Color(0xFFFFFFFF), const Color(0xFF3F4A8C), light.night) : null);
   }
 
   /// 0.24.5: a faixa do modo trânsito agora (quem monta o mapa preenche). `null`: sempre a pé.
@@ -1171,6 +1187,33 @@ class GameMapGame extends FlameGame {
 
   /// Os bandos e gatos do tráfego (o toque espanta o bando e faz carinho no gato).
   BirdFlocks get flocks => _traffic.birds;
+
+  /// 0.25.0: a camada emissiva das criaturas deste quadro (o pintor dos spawns junta, a camada `emissive` desenha).
+  final _emissive = <void Function()>[];
+
+  /// 0.25.0: se cada Eco está andando (a deriva) e para que lado olha na tela, pela posição dos últimos quadros.
+  final _ecoMotion = <int, ({double x, double y, double t, bool moving, bool left})>{};
+
+  /// Para que lado o Eco [uid] olha agora na tela (a saída animada continua para o mesmo lado).
+  bool facingLeftOfEco(int uid) => _ecoMotion[uid]?.left ?? false;
+
+  void _trackEcoMotion(WorldView wv, MapCamera cam) {
+    if (_ecoMotion.length > 600) _ecoMotion.clear();
+    final r = cam.rotation, c = math.cos(r), s = math.sin(r);
+    for (final e in wv.spawns) {
+      if (!e.isEco) continue;
+      final last = _ecoMotion[e.uid];
+      if (last == null) {
+        _ecoMotion[e.uid] = (x: e.x, y: e.y, t: _time, moving: false, left: false);
+        continue;
+      }
+      final dt = _time - last.t;
+      if (dt < 0.25) continue;
+      final dx = e.x - last.x, dy = e.y - last.y, moved = math.sqrt(dx * dx + dy * dy) * metersPerCell(_lat) / dt;
+      final screenDx = dx * c - dy * s;
+      _ecoMotion[e.uid] = (x: e.x, y: e.y, t: _time, moving: moved > 0.15, left: moved > 0.15 ? screenDx < 0 : last.left);
+    }
+  }
 
   /// 0.25.0: onde cada Eco foi desenhado por último (o centro do sprite, com o vento): os efeitos ancorados nele (anel da
   /// sintonia do NPC, o desfazer da fuga) se centram aqui.

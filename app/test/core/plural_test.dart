@@ -30,8 +30,16 @@ void main() {
   final texts = <(String, String)>[];
   void walk(Object? o, String file) {
     if (o is String) texts.add((file, o));
-    if (o is List) o.forEach((x) => walk(x, file));
-    if (o is Map) o.values.forEach((x) => walk(x, file));
+    if (o is List) {
+      for (final x in o) {
+        walk(x, file);
+      }
+    }
+    if (o is Map) {
+      for (final x in o.values) {
+        walk(x, file);
+      }
+    }
   }
 
   for (final f in Directory('assets/data').listSync().whereType<File>().where((f) => f.path.endsWith('.json'))) {
