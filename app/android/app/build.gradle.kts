@@ -75,3 +75,11 @@ dependencies {
 flutter {
     source = "../.."
 }
+
+// 0.26.0: os pacotes de região (app/assets/regions/*.bin) não moram no git: vêm da GitHub Release `regioes-dev`, conferidos
+// pela lista scripts/regioes.sha256. O build roda o script antes de empacotar; com tudo no disco e o SHA certo, só confere.
+val baixarRegioes = tasks.register<Exec>("baixarRegioes") {
+    workingDir = rootProject.file("../..")
+    commandLine("bash", "scripts/baixar_regioes.sh")
+}
+tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(baixarRegioes) }

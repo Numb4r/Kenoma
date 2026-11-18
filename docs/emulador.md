@@ -6,7 +6,10 @@ Quando o celular não está por perto, o desenvolvimento roda num emulador no no
 
 ```
 scripts/emulador/setup.sh
+scripts/baixar_regioes.sh
 ```
+
+O segundo baixa os pacotes de região (`app/assets/regions/*.bin`, fora do git desde a 0.26.0) da GitHub Release `regioes-dev` e confere o SHA-256 de cada um pela lista `scripts/regioes.sha256`. Uma vez por máquina; o build do Android roda o mesmo script antes de empacotar.
 
 Idempotente. Confere a virtualização (`vmx` na CPU e `/dev/kvm` acessível), o Flutter e o Android SDK, instala pelo `sdkmanager` o platform-tools, o emulator e a imagem `system-images;android-34;google_apis;x86_64`, e cria o AVD `kenoma_g54` com o perfil do moto g54: 1080×2400, densidade 400, 4 GB de RAM. O que precisa de sudo (pacotes de KVM, grupo `kvm`) ele só lista. Neste notebook, em 2026-11-15, nada precisou de sudo: o `/dev/kvm` já era acessível.
 

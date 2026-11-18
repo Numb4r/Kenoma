@@ -1,5 +1,10 @@
 # Pipeline de região
 
+> **Pacotes fora do git (0.26.0).** Os `.bin` de `app/assets/regions/` ficam na GitHub Release `regioes-dev`, conferidos pela lista
+> versionada `scripts/regioes.sha256` (`scripts/baixar_regioes.sh` baixa). Ao regerar um pacote: copie o `.bin` novo para
+> `app/assets/regions/`, atualize o SHA na época de desenvolvimento (`epochs.json`, regra 5 do `CLAUDE.md`), rode
+> `scripts/subir_regioes.sh` (sobe o arquivo e reescreve a lista) e commite a lista. Os SHA citados abaixo são históricos.
+
 Gera `app/assets/regions/<região>_e<época>.bin` a partir do extrato da Geofabrik e de `shared/biomes.json`. O `build_visual.py` gera, do mesmo extrato, o pacote visual `<região>_e<época>_vis.bin` (ruas, água e verde, só desenho).
 Comandos em `CLAUDE.md`.
 
