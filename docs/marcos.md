@@ -1278,3 +1278,48 @@ Novos: `test/core/epochs_test.dart` (o grupo do modo de desenvolvimento), `test/
 ### Capturas
 
 Em `/tmp/kenoma-shots/0252_*`: o ponto antes (`ponto_antes_0`, `_30`, `_90` e `ponto_antes_zoom`) e depois (`ponto_depois_0`, `_30`, `_90` e `ponto_depois_zoom`, com e sem os rótulos).
+
+## Fase 1 · fatia 15 · HUD e celular no estilo da bolsa (0.26.0)
+
+Versão 0.26.0+53, mesma chave, save no schema 14 (sem mudança). Só visual, salvo onde está escrito. Feita no notebook, no emulador; o celular não foi liberado nesta sessão. A sessão de arte paralela (`../kenoma-arte`, `arte-criaturas`) não teve arquivo tocado aqui, e `docs/art/pendencias-codigo.md` ainda não existe.
+
+### 0. Pacotes de região fora do git
+
+- `app/assets/regions/*.bin` (19 arquivos, 82 MB) saíram do controle de versão daqui para a frente (`.gitignore`, `git rm --cached`), sem reescrever o histórico. A lista versionada `scripts/regioes.sha256` diz o arquivo e o SHA-256 de cada um.
+- `scripts/baixar_regioes.sh` baixa da GitHub Release `regioes-dev` só o que falta ou não confere, e confere o SHA (testado com uma release local: baixa, recusa arquivo errado com erro). O build do Android roda o script antes de empacotar (`baixarRegioes` no `build.gradle.kts`). `README.md` (novo) e `docs/emulador.md` dizem que ele roda uma vez por máquina; o `pipeline/README.md`, como regerar e subir.
+- `scripts/subir_regioes.sh [--todos | arquivos]` sobe na release e reescreve a lista. **A release ainda não existe:** esta máquina não tem o GitHub CLI autenticado (o push é por SSH, e a API pede token). Até ela existir, o commit que tira os pacotes do git fica só local: com ele no `main`, um `git pull` apagaria os `.bin` da pasta de trabalho de quem já os tem (o worktree `kenoma-arte` inclusive), sem ter de onde baixar.
+- Tamanho: os arquivos versionados vão de 98,8 MB para 16,9 MB. O `.git` continua com 120 MB (pacote de 36,4 MiB), porque o histórico fica como está; um clone novo baixa o histórico, e os 82 MB de pacotes passam a vir da release.
+
+### 1 e 2. HUD e celular
+
+A arte é de cinco `criativo`s no Aseprite (`tools/art/ui/apps`, `moon`, `climate`, `event`, `kit`, `types`, e `tools/art/traffic/build_extra.lua`); o guia (`docs/art/estilo-ui.md`) ganhou as seções "Kit do HUD e do celular", "Cores e ícones dos tipos" e "Como a integração usa o kit".
+
+- **Ícones:** 17 apps e o bloqueado (tira de 3 quadros com glitch), as 8 fases da lua (mais Lua Carmim e Lua Dupla), os 31 climas e os 15 eventos (todo evento é uma bandeirola, para não confundir com clima), todos de 16 × 16.
+- **HUD:** barra do topo (`hud_bar`) com lua e clima em ícone, selo DEBUG no aviso (`warn_tag`, faixas laranja), painel do relógio forçado com aro laranja, retrato (`hud_portrait`, XP em violeta: progresso do jogador), botão do celular com a bolinha (`phone_button`, `badge_dot`), anel do Radar em 9 quadros de recarga, bússola com mostrador parado e agulha girando, marcas do Radar na borda (seta `edge_mark`, tingida na distorção e no Brilhante), faixa de atalhos (`shortcut_chip`).
+- **Sem crescer:** as peças fixas entram na caixa de antes na maior escala inteira de pixel físico (`UiPiece`, `UiIcon` em `app/lib/ui/kit.dart`): o `HudSize` não mudou e o teste de não sobreposição nos três tamanhos passa como antes.
+- **Celular:** moldura `phone_body`, fundo `phone_wall`, ladrilhos `app_tile` e `app_tile_new`, ícones do Aseprite; barra de status e Céu com os ícones de lua, clima e evento.
+- **Apps:** o visual muda pelas peças comuns, sem tocar na estrutura das telas: `panelBox()` virou a moldura `panel` em nove partes; `PixelButton` e `KButton`, o botão do kit (apertado afunda, desativado sem realce); `KTabs` e `KSegment`, as abas; `KChip`, o chip de condição (ligado com o aro violeta); `KTag` de tipo, a etiqueta de tipo; `SwitchListTile` e `AlertDialog` deram lugar a `KitSwitchTile` e `KitAlertDialog` (mesmos parâmetros); o interruptor solto do Loadout, a `KitSwitch`. O menu de debug ficou como estava.
+- **O que ainda está no estilo antigo:** as telas montam boa parte do conteúdo com `BoxDecoration` próprios (54 ocorrências): os cartões de família do Bestiário, as fichas do Perfil, os espaços do Loadout e do Círculo, o sonar do Radar, o Chat e o Fórum continuam com o desenho deles dentro das molduras novas. O cartão de criatura (`card`, `card_selected`) e o diálogo estão no kit, prontos para a próxima passada.
+- **Selo "Época 12 em teste":** não existe mais desde a 0.25.2 (modo de desenvolvimento); ficaram o DEBUG e o relógio forçado no estilo de aviso.
+
+### 3. Cores dos tipos
+
+A paleta nova dos 12 tipos (principal, claro, escuro) está em `typeColor`, `typeColorLight` e `typeColorDark` e no guia; nenhum tipo usa o ciano das ferramentas nem o violeta do jogador (o Digital foi para o verde-limão, a Sombra para o ameixa, o Fogo para o vermelho). As Fagulhas do mapa foram regeradas com ela. A etiqueta de tipo é ícone de 8 + nome no tom claro sobre o fundo neutro com o aro do tipo: a proposta de nome claro sobre o escuro do próprio tipo dava de 2,0:1 a 4,2:1.
+
+### 4. Arte que ficou em código
+
+Barco e canoa do Dilúvio, cachorro do passeio (dois quadros, a guia em tira própria até a mão do dono) e o carro da corrida (`ride_hatch`, `ride_sedan`, `ride_suv`: o carro do tráfego com a luz do teto acesa, sem marca de aplicativo) saem do Aseprite na grade de 2 dp, com as cores trocadas pela paleta como o resto do tráfego.
+
+### Medidas
+
+- **Custo do HUD** (emulador, build de profile, mesma cena com o HUD inteiro na tela, builds alternadas): antes build p50 4,5 ms e raster p50 14,0–15,7 ms; depois build 4,1 ms e raster 13,3–13,9 ms. Não subiu (o limite era +1 ms); a diferença é ruído do emulador.
+- **Contraste:** todo texto corrido sobre os painéis com 4,5:1 ou mais. Os rótulos violeta, cinza e laranja na face do botão (3,7, 3,6 e 4,49) passaram ao tom claro.
+- **Alvo de toque:** 48 dp em tudo que se toca; ficha de filtro, abas e segmento subiram de 36 e 42 dp.
+
+### Testes
+
+Novos: `test/ui/contrast_test.dart`, `test/ui/tap_target_test.dart`, `test/ui/ui_icons_test.dart` (todo app, clima, evento, tipo e lua com ícone; a fase da lua; os extras do tráfego), e "no nível 20 todo app da grade abre sem erro e volta ao celular" em `phone_menu_test.dart`. O de não sobreposição do HUD nos três tamanhos continua.
+
+### Capturas
+
+Em `/tmp/kenoma-shots/0260_*`: antes e depois do HUD, do celular e de dez apps (`antes_depois_<tela>.png`; o depois do Céu foi tirado antes dos ícones de lua e clima entrarem nele), `folha_icones.png` (apps, lua, climas e eventos), `folha_tipos.png`, `folha_kit.png` e `folha_extras_trafego.png`.

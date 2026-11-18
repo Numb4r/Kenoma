@@ -9,6 +9,16 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.26.0
+
+Não muda o save. Antes de qualquer toque pelo adb: o dono libera o aparelho na sessão, e tudo passa por `scripts/celular.sh`.
+
+- [ ] `0260-hud-sol` **HUD ao sol.** Na rua, de dia e com sol forte: a barra do topo (hora, bateria, lua, clima), o retrato com o nível, o botão do celular e a bússola se leem sem esforço; o selo DEBUG e o aviso do relógio forçado nunca parecem o jogo normal.
+- [ ] `0260-icones` **Ícones pequenos.** A lua e o clima na barra (uns 18 dp) se reconhecem: lua nova, crescente, cheia; chuva, tempestade, neblina; os ícones dos apps na grade, e o bloqueado com glitch.
+- [ ] `0260-telas` **As telas no estilo da bolsa.** Bestiário, Círculo, Loadout, Perfil, Rotas, Patrulha, Céu, Chat, Fórum, Ajustes, Destilar e Fusão: painéis, botões (apertar afunda), abas, interruptores e diálogos novos; nada cortado nem sobreposto.
+- [ ] `0260-tipos` **Cores dos tipos.** As etiquetas de tipo (ícone + nome) e as Fagulhas do mapa nas cores novas, distinguíveis entre si.
+- [ ] `0260-dilúvio` **Barco, cachorro e corrida.** Na rua alagada o barco e a canoa; o passante com cachorro e a guia; o carro da corrida com a luz do teto acesa.
+
 ## 0.25.2
 
 Muda o save (schema 14: saem a época em teste e a seção Desenvolvedor). Antes de qualquer toque pelo adb: o dono libera o aparelho na sessão, e tudo passa por `scripts/celular.sh`.
