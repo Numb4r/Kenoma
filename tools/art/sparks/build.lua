@@ -1,6 +1,7 @@
 -- Fagulhas (0.25.1): uma por tipo, 4 quadros de 12x12 em laço (repouso, aceso, pico, aceso), forma própria por tipo.
 -- Camadas: base (com contorno) e glow (o que brilha de noite). Rodar: aseprite -b --script build.lua
--- Letras: d escuro, m cor do tipo, l claro (os três de tools/art/ui/types/palette.lua, 0.26.0), w miolo. No repouso
+-- Tipo refeito por uma família (electric, fire): o desenho vem de spark_<tipo>.lua, carregado quando existir.
+-- Letras do genérico: d escuro, m cor do tipo, l claro (os três de tools/art/ui/types/palette.lua, 0.26.0), w miolo. No repouso
 -- '1' é m e '2' é l; no quadro aceso '1' vira l e '2' vira w. O pico é desenho próprio.
 -- Rodar pelo MCP: KENOMA_ART='<worktree>/tools/art/'; SPARKS_ONLY='electric' (opcional: só regrava esse tipo e a
 -- folha); dofile(KENOMA_ART .. 'sparks/build.lua')
@@ -22,22 +23,8 @@ local TYPES = {
   { 'plant', w = '#F0FFD0',  -- folha
     a = { '..........', '.....mmm..', '...mm11m..', '..mm1lmm..', '..m1lmmm..', '..mlmmmd..', '..mmmmdd..', '.dmmddd...', '.d........', '..........' },
     c = { '..........', '....mmmmm.', '...mmllwm.', '..mmllwmm.', '..mllwmmm.', '..mlwmmmd.', '..mwmmmdd.', '.dmmmddd..', '.d........', '..........' } },
-  -- Arc Mote (arte final da família Hum): um ocelo de LED arrancado da asa do Humoth, com o veio pendurado soltando
-  -- faísca. Quadros de 12x12 desenhados inteiros (pairando: desce 1 px e volta, o veio balança). Maiúsculas H I J Y
-  -- acendem no glow com o par apagado (h i j) no corpo; S e s são faísca solta, só no glow.
-  { 'electric',
-    leg = { A = O, E = '#7672B8', F = '#4D4A8A', G = '#34305E', P = '#28244A', h = '#17444C', i = '#245A62', j = '#6B5A44',
-      H = '#5FD3C6', I = '#D9FFF6', J = '#FFD23A', Y = '#FFEE9A', S = '#FFD23A', s = '#FFEE9A' },
-    frames = {
-      { '............', '.....AA.....', '....AEEA....', '...AEFFFA...', '..AEFHHGPA..', '..AFHIIHGA..', '..AFHIIHPA..',
-        '..AGGHHPA...', '...AGJPA.S..', '....AJA.....', '.....S......', '............' },
-      { '............', '............', '.....AA.....', '....AEEA....', '...AEFFFA...', '..AEFHHGPA..', '..AFHIIHGA..',
-        '..AFHIIHPA..', '..AGGHHPA...', '...AGJPA....', '...AJAA..s..', '............' },
-      { '............', '............', '.....AA.....', '....AEEA....', '...AEFFFA...', '..AEFIIGPA..', '..AFIIIIGA..',
-        '..AFIIIIPA..', '..AGGIIPA...', '...AGYPA....', '.S..AYA..s..', '............' },
-      { '............', '.....AA.....', '....AEEA....', '...AEFFFA...', '..AEFHHGPA..', '..AFHIIHGA..', '..AFHIIHPA..',
-        '..AGGHHPA...', '...AGJPA....', '....AAJA....', '.......S....', '............' },
-    } },
+  -- Arc Mote (arte final da família Hum): o desenho está em spark_electric.lua.
+  { 'electric' },
   { 'earth', w = '#FFF0D0',  -- pedrinha
     a = { '..........', '..........', '...mmmm...', '..m11mmd..', '.mm1mmmdd.', '.mmmmmddd.', '.mmmmdddd.', '..mddddd..', '..........', '..........' },
     c = { '..........', '...mmmm...', '..mllmmd..', '.mmlwmmdd.', '.mmlmmmdd.', '.mmmmmddd.', '..mmdddd..', '...dd.m...', '..........', '..........' } },
@@ -82,15 +69,23 @@ local items = {}
 for i, t in ipairs(TYPES) do
   local name = 'spark_' .. t[1]
   local c = PAL[t[1]]
-  local leg, frames, glow = t.leg, {}, {}
-  if t.frames then
-    for f, rows in ipairs(t.frames) do
+  -- Fagulha refeita por uma família: o desenho fica em spark_<tipo>.lua (leg, lit, loose, frames) e vale no lugar do
+  -- genérico da tabela acima.
+  local own = io.open(DIR .. name .. '.lua')
+  if own then own:close(); own = dofile(DIR .. name .. '.lua') end
+  local leg, frames, glow = own and own.leg, {}, {}
+  if own then
+    local lit, body = '', ''
+    for ch in pairs(own.lit) do lit = lit .. ch end
+    for ch in pairs(own.leg) do if not own.loose:find(ch, 1, true) then body = body .. ch end end
+    for f, rows in ipairs(own.frames) do
       local g = L.frame(rows, 12, 12, name .. ' q' .. f)
-      glow[f] = S.pick(g, 'HIJYSs')
-      frames[f] = S.pick(g, 'AEFGPHIJY', { H = 'h', I = 'i', J = 'j', Y = 'j' })
+      glow[f] = S.pick(g, lit .. own.loose)
+      frames[f] = S.pick(g, body, own.lit)
       S.check(name .. ' q' .. f, frames[f])
     end
   else
+    assert(t.a, name .. ': falta ' .. name .. '.lua')
     leg = { o = O, m = c.m, d = c.d, l = c.l, w = t.w }
     local rest = frame(conv(t.a, 'm', 'l'), name .. ' q1')
     local lit = frame(conv(t.a, 'l', 'w'), name .. ' q2')

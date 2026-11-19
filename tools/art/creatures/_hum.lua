@@ -235,16 +235,18 @@ function K.run(spec)
   local H, PW = W, spec.PW
   local DIR = ART .. 'creatures/' .. name .. '/'
   local CC, SC = (W - 1) / 2, W / 28
-  local EM = K.LIT
+  -- Outra família (_soot.lua) troca os emissivos (LIT), o que não puxa contorno (NOPULL) e o brilho que cresce
+  -- (heat); ownDy: a espécie aplica o body_dy sozinha no draw (bicho de chão: o tronco sobe, os pés ficam).
+  local EM = spec.LIT or K.LIT
   local SOLID = ''
   for ch in pairs(LEG) do
-    if not NOPULL:find(ch, 1, true) then SOLID = SOLID .. ch end
+    if not (spec.NOPULL or NOPULL):find(ch, 1, true) then SOLID = SOLID .. ch end
   end
   local leanFn = spec.lean or function(y)
     return (y < W * 0.25 and 2) or (y < W * 0.46 and 1) or (y >= W * 0.8 and -1) or 0
   end
 
-  local function heat(g, lv)
+  local heat = spec.heat or function(g, lv)
     if lv == 0 then return end
     for y = 0, g.h - 1 do for x = 0, g.w - 1 do
       if g[y][x] == 'J' and (lv == 2 or (x + y) % 2 == 0) then g[y][x] = 'Y' end
@@ -304,7 +306,8 @@ function K.run(spec)
       end
       if o.erode then erode(g, sg, o.erode[1], o.erode[2]) end
       local lean = o.lean and not spec.ownLean
-      g = move(g, lean, o.dy or 0); sg = move(sg, lean, o.dy or 0)
+      local mdy = spec.ownDy and 0 or (o.dy or 0)
+      g = move(g, lean, mdy); sg = move(sg, lean, mdy)
       L.outline(g, 'A', SOLID)
     end
     for _, p in ipairs(o.sparks or {}) do
@@ -561,9 +564,10 @@ function K.run(spec)
       heat(big, o.hot)
       L.outline(big, 'A', SOLID)
       local g, sg = L.grid(PW, PW), L.grid(PW, PW)
+      local pdy = spec.ownDy and 0 or o.dy
       for y = 0, big.h - 1 do for x = 0, big.w - 1 do
-        if big[y][x] ~= '.' then L.set(g, x + ox, y + oy + o.dy, big[y][x]) end
-        if bsg[y][x] ~= '.' then L.set(sg, x + ox, y + oy + o.dy, bsg[y][x]) end
+        if big[y][x] ~= '.' then L.set(g, x + ox, y + oy + pdy, big[y][x]) end
+        if bsg[y][x] ~= '.' then L.set(sg, x + ox, y + oy + pdy, bsg[y][x]) end
       end end
       local b, l, w = split(g, sg)
       if edge(b) then warn = warn + 1; print('BORDA retrato ' .. f) end
