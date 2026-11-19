@@ -29,10 +29,14 @@ local function draw(g, sg, k, o)
   local ty = alert and -1 or (crouch and 1.5 or 0)
   local hb = b + (alert and -0.8 or (crouch and 1 or 0))     -- a cabeça
   local grow = alert and 1 or ({ [0] = 0, 0.5, 1, 0.5 })[ph]
-  -- o rabo: a chaminé
-  local tip = { 5.6 + sw * 0.7 + lx * 0.5, 7.2 + b + ty }
-  P:limb({ { 9, 30 + m }, { 5.8, 29 + m }, { 4.2, 24.5 + b }, { 3.9 + sw * 0.2, 18 + b + ty * 0.3 },
-    { 4.4 + sw * 0.5 + lx * 0.3, 12 + b + ty * 0.7 }, tip }, 1.6, 0.9, 't')
+  -- o rabo de saruê: sai grosso e peludo da anca, deita no chão, sobe em S afinando e a ponta, fina, enrola para
+  -- fora segurando a bituca (a chaminé é só a ponta)
+  local tx = sw * 0.6 + lx * 0.4
+  local tip = { 3.4 + tx, 7.6 + b + ty }
+  local tail = { { 10, 30.4 + m }, { 6.6, 31 + m }, { 4.4, 28.6 + m }, { 4, 24.4 + b }, { 5.6 + tx * 0.3, 20 + b + ty * 0.3 },
+    { 7.2 + tx * 0.6, 16 + b + ty * 0.6 }, { 7 + tx * 0.9, 12.4 + b + ty * 0.8 }, { 5.4 + tx, 9.4 + b + ty }, tip }
+  P:limb(tail, 2.0, 0.55, 't')
+  P:limb({ tail[1], tail[2], { 5.4, 30 + m } }, 2.0, 1.75, 'g')   -- a base ainda tem pelo
   S.leg(P, 12.5, 30 + m, 15.5, 31.8 + m, 17, 32.6 + f, 1.3, 0.9, 'g', -st)   -- o pé de trás
   P:ell(14.5, 24 + b, 6.6, 6.2, 'f')
   P:ell(17 + lx * 0.5, 17.4 + b, 5.6, 6.4, 'f')
@@ -40,15 +44,16 @@ local function draw(g, sg, k, o)
   P:limb({ { 20.5 + lx, 16 + b }, { 23.8 + lx, 19.4 + b }, { 23.4 + lx, 21.6 + b } }, 1.1, 0.7, 'g')   -- o braço de trás
   -- a boca da fornalha no tronco: o arco de ferro e, por dentro, só o fogo
   local cx, hw, spring, base = 14.8 + lx * 0.3, 4.5, 19.4 + b, 27.2 + b
-  local fr = 1.05
+  local fr, bed = 1.05, 2
   for y = floor(P:Y(spring - hw - 1)), floor(P:Y(base)) do for x = floor(P:X(cx - hw - 1)), floor(P:X(cx + hw + 1)) do
     if L.get(g, x, y) == 'f' then
       local u, v = (x - P.ox) / k, (y - P.oy) / k
       local d = v < spring and sqrt((u - cx) ^ 2 + (v - spring) ^ 2) or abs(u - cx)
       if d <= hw and v <= base then
         if d > hw - fr or v > base - fr then g[y][x] = 'y'
+        elseif v > base - fr - bed then g[y][x] = 'k'        -- o leito de carvão: escuro, para as brasas aparecerem
         else
-          local h = (base - fr - v) / (base - fr - (spring - hw + fr))   -- 0 no chão do forno, 1 no alto do arco
+          local h = (base - fr - bed - v) / (base - fr - bed - (spring - hw + fr))   -- 0 no leito, 1 no alto do arco
           local col = floor(x / math.max(1, floor(k)))
           local heat = 1 - h * 1.35 + F.rnd(col, ph, 9) * 0.35 + grow * 0.14 - abs(u - cx) / hw * 0.25
           g[y][x] = heat > 0.85 and 'Y' or heat > 0.45 and 'E' or heat > 0.1 and 'R' or (heat > -0.25 and 'r' or 'k')
@@ -60,8 +65,9 @@ local function draw(g, sg, k, o)
   P:ell(11.6, 29.6 + m, 5.6, 3.4, 'f')
   S.leg(P, 15, 30.6 + m, 18.6, 32 + m, 20.6, 32.6 + f, 1.5, 1.0, 'f', st)
   P:limb({ { 19.4 + lx, 16.6 + b }, { 22.4 + lx, 20.4 + b }, { 21.6 + lx, 22.8 + b } }, 1.3, 0.8, 'f')
-  local T = S.head(P, k, 22.6 + lx, 10.4 + hb, 12, 1.08, { open = alert and 1.5 or nil, ear = 2 })
-  P:ell(19.6 + lx, 9.4 + hb, 2.6, 2.6, 'f')
+  local HS = 1.3                                             -- cabeça grande: a cara precisa de 4 linhas para o olho
+  local T = S.head(P, k, 21.6 + lx, 11.2 + hb, 12, HS, { open = alert and 1.3 or nil, ear = 2 })
+  P:ell(18.6 + lx, 10.4 + hb, 2.8, 3.0, 'f')
   S.paw(P, k, 17 - st, 33 + f, 'q', 0.55); S.paw(P, k, 20.6 + st, 33 + f, 'p', 0.55)
   S.furShade(g, k, 'f', S.FUR, { zones = 3, within = 'fygYERrk' })
   S.furShade(g, k, 'g', 'ba', { zones = 1 })
@@ -71,10 +77,13 @@ local function draw(g, sg, k, o)
   -- ferrugem e a pedra de fecho do arco
   P:px(cx, spring - hw + 0.3, 'I', S.IRON)
   P:px(cx - hw + 0.4, spring + 2, 'N', S.IRON); P:px(cx + hw - 0.4, spring + 5, 'n', S.IRON)
-  -- as brasas no chão do forno (piscam)
+  -- as brasas no leito de carvão (piscam): três pontos claros no escuro, com uma linha escura entre elas e o fogo
   for n = -1, 1 do
-    P:px(cx + n * 2.2, base - fr - 0.6, (ph + n) % 4 == 1 and 'G' or 'B', 'YERrk')
-    if k > 1 then P:disc(cx + n * 2.2, base - fr - 0.6, 0.45, (ph + n) % 4 == 1 and 'G' or 'B', 'YERrk') end
+    local ex, ey = cx + n * 2.4, base - fr - 0.6
+    P:px(ex, ey, (ph + n) % 4 == 1 and 'B' or 'G', 'k')
+    if k > 1 then
+      P:disc(ex, ey, 0.5, 'B', 'k'); P:disc(ex, ey, 0.25, (ph + n) % 4 == 1 and 'B' or 'G', 'kB')
+    end
   end
   -- as mãos juntas na frente do fogo
   P:limb({ { 21.6 + lx, 22.8 + b }, { 22.8 + lx, 23.8 + b } }, 0.6, 0.45, 'P')
@@ -83,11 +92,12 @@ local function draw(g, sg, k, o)
     for n = 0, 2 do L.line(g, P:X(22.8 + lx), P:Y(23.8 + b), P:X(23.6 + lx + n * 0.4), P:Y(25 + b - n * 0.5), 'P') end
   end
   -- o olho fechado
-  S.headFinish(P, k, T, 1.08, {})
-  local e0, e1 = T(1.0, -0.8), T(2.8, -0.3)
-  P:limb({ e0, e1 }, 0.3, 0.3, 'k', S.FACE)
-  if k > 1 then local e2 = T(1.9, 0.2); P:limb({ e0, e2, e1 }, 0.3, 0.3, 'K', S.FACE) end
-  S.buttTip(P, k, tip[1], tip[2], -0.2, 0.95, ph == 2)
+  S.headFinish(P, k, T, HS, {})
+  -- a pálpebra clara limpa a hachura da cara e a fresta escura, em arco para baixo, fica por cima
+  local ec = T(1.5, -0.5)
+  P:ell(ec[1], ec[2], 2.4, 1.9, 'V', S.FACE)
+  P:limb({ T(0.4, -0.9), T(1.1, -0.2), T(1.9, -0.2), T(2.6, -0.9) }, 0.3, 0.3, 'k', S.FACE)
+  S.buttTip(P, k, tip[1], tip[2], -0.5, -0.85, ph == 2)
   -- costuras do Véu: duas, de 2 px
   local w = math.max(1, floor(2 * k + 0.5))
   S.seam(P, { { 8.8, 20.4 + b }, { 9.4, 26.4 + b } }, w, 'X', S.FUR, k > 1 and 2 or nil)
@@ -95,7 +105,7 @@ local function draw(g, sg, k, o)
   -- fumaça da chaminé, sem contorno
   if not o.jump and not crouch then
     local n1 = k > 1 and 12 or 4
-    local ax, ay = tip[1] + 0.4, tip[2] - (k > 1 and 1.3 or 2.2)   -- encostada no alto do rabo
+    local ax, ay = tip[1] + 0.2, tip[2] - (k > 1 and 0.8 or 1.9)   -- encostada na ponta do rabo
     local px, py
     for n = 0, n1 do
       local t = n / n1
@@ -121,7 +131,9 @@ S.run {
     return g, sg, 0, 0
   end,
   acc = {
-    urban = { 8, 28 }, green = { 11, 13 }, water = { 15, 12 }, residential = { 13, 14 }, lit = { 14, 15 },
-    sacred = { 19, 3 }, crimson = { 6, 21 },
+    -- espalhados: braçadeiras no meio do rabo, guirlanda na anca, colar no pescoço, pano vermelho amarrado no alto
+    -- do rabo, óculos na testa, auréola, marca na base do rabo
+    urban = { 3, 20 }, green = { 8, 28 }, water = { 15, 14 }, residential = { 3, 12 }, lit = { 19, 7 },
+    sacred = { 18, 1 }, crimson = { 5, 27 },
   },
 }
