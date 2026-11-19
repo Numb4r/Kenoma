@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/game_data.dart';
 import '../colors.dart';
+import '../craft/ui_art.dart' show KitDecoration;
 import '../sprites/sprite_image.dart';
 import 'phone_shell.dart';
 
@@ -90,8 +91,10 @@ Future<Map<String, EcoSprite>> loadSpecies(GameData data) async => {for (final s
 
 /// Caixa de painel, o fundo das fichas. 0.26.0: a moldura `panel` do kit em nove partes (docs/art/estilo-ui.md), cada pixel
 /// de arte com 3 dp; [line] diferente da linha comum pinta o aro por cima (destaque, aviso).
-BoxDecoration panelBox({Color line = kPanelLine}) => BoxDecoration(
-      color: kPanel,
-      image: const DecorationImage(image: AssetImage('assets/art/ui/panel.png'), centerSlice: Rect.fromLTRB(4, 4, 8, 8), scale: 1 / 3, filterQuality: FilterQuality.none),
-      border: line == kPanelLine ? null : Border.all(color: line, width: 3),
-    );
+Decoration panelBox({Color line = kPanelLine}) => KitDecoration('panel', line: line == kPanelLine ? null : line);
+
+/// O cartão do kit (`card`, ou `card_selected` com o aro violeta): cartões de família, fichas, mensagens, espaços de criatura.
+Decoration cardBox({bool selected = false, Color? line}) => KitDecoration(selected ? 'card_selected' : 'card', line: line);
+
+/// A célula do kit (`cell`, rebaixada, ou `cell_selected`): grades, espaços vazios, campos. Lado mínimo de 24 dp.
+Decoration cellBox({bool selected = false, Color? line}) => KitDecoration(selected ? 'cell_selected' : 'cell', line: line, fallbackFill: kOutline);

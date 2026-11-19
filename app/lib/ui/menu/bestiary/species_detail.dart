@@ -20,7 +20,7 @@ import '../../tema.dart';
 import '../../type_label.dart';
 import '../distill_screen.dart';
 import '../phone_shell.dart';
-import '../screen_frame.dart' show SpeciesImage;
+import '../screen_frame.dart' show SpeciesImage, cardBox, cellBox;
 import 'bestiary_widgets.dart';
 
 const Map<String, String> _unlockLabels = {'lore1': 'Lore I', 'where': 'Onde aparece', 'attributes': 'Atributos', 'tolerance': '+Tolerância', 'lore3': 'Lore III'};
@@ -233,7 +233,7 @@ class _SpeciesDetailScreenState extends State<SpeciesDetailScreen> {
   Widget _loreBox(String text, String label) => Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.fromLTRB(9, 8, 9, 8),
-        decoration: BoxDecoration(color: KCores.superficie1, border: Border.all(color: KCores.contorno, width: kContornoDp)),
+        decoration: cardBox(),
         child: Text.rich(TextSpan(children: [
           TextSpan(text: '$text ', style: KTexto.corpoPequeno.copyWith(color: KCores.texto)),
           TextSpan(text: label, style: KTexto.corpoPequeno.copyWith(fontSize: 12)),
@@ -254,7 +254,7 @@ class _SpeciesDetailScreenState extends State<SpeciesDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(4),
                 alignment: Alignment.center,
-                decoration: BoxDecoration(color: KCores.superficie2, border: Border.all(color: KCores.contorno, width: 2)),
+                decoration: cellBox(),
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Text(label.toUpperCase(), style: KTexto.rotulo.copyWith(fontSize: 7, color: KCores.textoMudo)),
                   Text(open ? f.where[k]! : '???', style: KTexto.corpoPequeno.copyWith(fontSize: 10, height: 1.2, color: KCores.texto), textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),

@@ -107,7 +107,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
       key: Key('loadout-slot-${slot.name}'),
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
-      decoration: panelBox(line: equipped == null ? kPanelLine : kSignal),
+      decoration: equipped == null ? cellBox() : cardBox(line: kSignal),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Expanded(child: Text(slot.label.toUpperCase(), style: const TextStyle(fontSize: 8, color: kDim))),

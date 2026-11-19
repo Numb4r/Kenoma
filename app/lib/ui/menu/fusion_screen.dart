@@ -13,7 +13,7 @@ import '../pressable.dart';
 import '../sprites/sprite_image.dart';
 import '../tema.dart';
 import 'fusion_animation.dart';
-import 'screen_frame.dart' show SpeciesImage;
+import 'screen_frame.dart' show SpeciesImage, cardBox;
 import '../kit.dart';
 
 const _blockerText = {
@@ -101,7 +101,7 @@ class _FusionPanelState extends State<FusionPanel> {
       return Container(
         key: const Key('fusion-locked'),
         padding: const EdgeInsets.all(KEspaco.s2),
-        decoration: BoxDecoration(color: KCores.superficie1, border: Border.all(color: KCores.contorno, width: kContornoDp)),
+        decoration: cardBox(),
         child: Text('??? LIBERADA NO NÍVEL ${s.cb.fusionLevel}', style: KTexto.rotulo.copyWith(color: KCores.textoMudo)),
       );
     }
@@ -156,7 +156,7 @@ class _Summary extends StatelessWidget {
       key: const Key('fusion-summary'),
       margin: const EdgeInsets.only(top: KEspaco.s2),
       padding: const EdgeInsets.all(KEspaco.s2),
-      decoration: BoxDecoration(color: KCores.superficie1, border: Border.all(color: KCores.veuVioleta, width: kContornoDp)),
+      decoration: cardBox(selected: true),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         SpeciesImage(sprite: sprite, size: 64, aura: true),
         const SizedBox(width: KEspaco.s2),
@@ -192,7 +192,7 @@ class _EcoTile extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: KEspaco.s1),
           padding: const EdgeInsets.all(KEspaco.s1),
           constraints: const BoxConstraints(minHeight: kToqueMinDp),
-          decoration: BoxDecoration(color: picked ? KCores.superficie2 : KCores.superficie1, border: Border.all(color: picked ? KCores.veuVioleta : KCores.contorno, width: kContornoDp)),
+          decoration: cardBox(selected: picked),
           child: Row(children: [
             SpeciesImage(sprite: sprite, size: 48),
             const SizedBox(width: KEspaco.s2),

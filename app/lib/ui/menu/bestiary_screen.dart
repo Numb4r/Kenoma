@@ -17,6 +17,7 @@ import '../type_label.dart';
 import 'bestiary/bestiary_widgets.dart';
 import 'bestiary/species_detail.dart';
 import 'phone_shell.dart';
+import 'screen_frame.dart' show cellBox;
 
 /// Os sprites de todas as formas do Bestiário, pela chave do sprite (`hum.eco`, `hum.mote`).
 Future<Map<String, EcoSprite>> loadBestiarySprites(GameData data) async => {for (final f in bestiaryForms(data)) f.spriteKey: await EcoSprite.load(f.spriteKey)};
@@ -89,7 +90,7 @@ class _BestiaryScreenState extends State<BestiaryScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(KEspaco.s2, 0, KEspaco.s2, 8),
               child: Container(
-                decoration: BoxDecoration(color: KCores.superficie1, border: Border.all(color: KCores.contorno, width: kContornoDp)),
+                decoration: cellBox(),
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: TextField(
                   key: const Key('bestiary-search'),

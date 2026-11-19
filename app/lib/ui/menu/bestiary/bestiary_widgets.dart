@@ -12,17 +12,11 @@ import '../../pressable.dart';
 import '../../sprites/sprite_image.dart';
 import '../../tema.dart';
 import '../../type_label.dart';
-import '../screen_frame.dart' show SpeciesImage;
+import '../screen_frame.dart' show SpeciesImage, cardBox, cellBox;
 import '../../craft/ui_art.dart' show UiFrame;
 import '../../kit.dart' show TypeTag;
 
 const TextStyle _tiny = TextStyle(fontFamily: KFonte.pixel, fontSize: 9, height: 12 / 9, letterSpacing: 1, color: KCores.texto);
-
-BoxDecoration kCard({Color line = KCores.contorno, Color fill = KCores.superficie1, bool glow = false}) => BoxDecoration(
-      color: fill,
-      border: Border.all(color: line, width: kContornoDp),
-      boxShadow: glow ? KSombra.brilhoVeu : KSombra.pixel,
-    );
 
 /// Etiqueta pequena: um quadrado na cor do tipo (ou sem ele) e o texto.
 class KTag extends StatelessWidget {
@@ -166,7 +160,7 @@ class FormArt extends StatelessWidget {
               width: size,
               height: size,
               padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(color: KCores.superficie2, border: Border.all(color: selected ? KCores.veuVioleta : KCores.contorno, width: kContornoDp)),
+              decoration: cellBox(selected: selected),
               child: SpeciesImage(sprite: sprite, silhouette: state == FormStatus.unknown, size: size - 12, speciesId: speciesId),
             ),
           ),
@@ -210,7 +204,7 @@ class FamilyCard extends StatelessWidget {
       key: Key('family-${family.id}'),
       margin: const EdgeInsets.only(bottom: KEspaco.s2),
       padding: const EdgeInsets.fromLTRB(9, 8, 9, 9),
-      decoration: kCard(),
+      decoration: cardBox(),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Text(known ? family.name.toUpperCase() : 'FAMÍLIA ???', style: KTexto.rotulo.copyWith(fontWeight: FontWeight.w700)),
@@ -270,7 +264,7 @@ class SpeciesCell extends StatelessWidget {
         child: Container(
           key: Key('cell-${form.id}'),
           padding: const EdgeInsets.fromLTRB(3, 4, 3, 4),
-          decoration: BoxDecoration(color: KCores.superficie1, border: Border.all(color: pinned ? KCores.brasaLaranja : KCores.contorno, width: kContornoDp)),
+          decoration: cardBox(line: pinned ? KCores.brasaLaranja : null),
           child: Stack(children: [
             Column(mainAxisSize: MainAxisSize.min, children: [
               Align(alignment: Alignment.centerLeft, child: Text(form.number.toString().padLeft(3, '0'), style: _tiny.copyWith(fontSize: 7, color: KCores.textoMudo))),

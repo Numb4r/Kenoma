@@ -72,7 +72,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   width: 40,
                   height: 40,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(color: kOutline, border: Border.all(color: kVeil, width: 2)),
+                  decoration: cellBox(line: kVeil),
                   child: const Text('?', style: TextStyle(fontSize: 24, color: kVeil)),
                 ),
                 const SizedBox(width: 12),
@@ -96,7 +96,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.82),
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: kPanel, border: Border.all(color: m.from == 'familiar' ? kSignal : kVeil, width: 2)),
+                    decoration: cardBox(line: m.from == 'familiar' ? kSignal : null),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       if (m.from == 'familiar') const Text('FAMILIAR', style: TextStyle(fontSize: 8, color: kSignal)),
                       Text(e.fill(m.text), style: const TextStyle(fontSize: 8, color: kText, height: 1.8)),

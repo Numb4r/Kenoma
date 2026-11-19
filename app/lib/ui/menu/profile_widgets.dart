@@ -3,7 +3,9 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../kit.dart' show KitBar;
 import '../tema.dart';
+import 'screen_frame.dart' show cardBox;
 
 /// Um painel do Perfil: `superficie1`, contorno de 3 dp e sombra dura.
 class ProfilePanel extends StatelessWidget {
@@ -16,10 +18,7 @@ class ProfilePanel extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         margin: const EdgeInsets.only(bottom: KEspaco.s2 + 3),
         padding: const EdgeInsets.all(KEspaco.s2),
-        decoration: BoxDecoration(
-          color: KCores.superficie1,
-          border: Border.all(color: KCores.contorno, width: kContornoDp),
-          boxShadow: KSombra.pixel,
+        decoration: cardBox(
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(title.toUpperCase(), style: KTexto.rotulo.copyWith(color: KCores.veuClaro)),
@@ -36,14 +35,7 @@ class XpBar extends StatelessWidget {
   final double fraction;
 
   @override
-  Widget build(BuildContext context) => Container(
-        height: 18,
-        decoration: BoxDecoration(color: KCores.fundo, border: Border.all(color: KCores.contorno, width: kContornoDp)),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: FractionallySizedBox(widthFactor: fraction.clamp(0.0, 1.0), heightFactor: 1, child: const ColoredBox(color: KCores.sinalCiano)),
-        ),
-      );
+  Widget build(BuildContext context) => KitBar(fraction: fraction);
 }
 
 /// Rótulo pequeno em cima e valor grande embaixo.

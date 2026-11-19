@@ -112,7 +112,7 @@ class _Slot extends StatelessWidget {
     return Container(
       height: 116,
       padding: const EdgeInsets.all(6),
-      decoration: panelBox(line: c == null ? kPanelLine : kSignal),
+      decoration: c == null ? cellBox() : cardBox(line: kSignal),
       child: c == null || sp == null
           ? const Center(child: Text('VAZIO', style: TextStyle(fontSize: 8, color: kDim)))
           : Column(children: [
@@ -148,7 +148,7 @@ class _Tile extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(8),
-        decoration: panelBox(line: active ? kSignal : kPanelLine),
+        decoration: cardBox(line: active ? kSignal : null),
         child: Row(children: [
           SpeciesImage(sprite: sprites[creature.speciesId]),
           const SizedBox(width: 12),

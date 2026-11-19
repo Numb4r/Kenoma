@@ -269,3 +269,29 @@ ColorFilter lumaTint(Color c) => ColorFilter.matrix([
       0.299 * c.b, 0.587 * c.b, 0.114 * c.b, 0, 0, //
       0, 0, 0, 1, 0,
     ]);
+
+/// A barra do kit (`bar_frame` com `bar_fill` por dentro): capacidade, XP, progresso. [fraction] de 0 a 1.
+class KitBar extends StatelessWidget {
+  const KitBar({required this.fraction, this.height = 6 * kUiPixel, super.key});
+
+  final double fraction;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final f = fraction.isNaN ? 0.0 : fraction.clamp(0.0, 1.0);
+    // Largura cheia mesmo numa coluna solta: o Stack não pode encolher até o preenchimento (0 XP sumia com a moldura).
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: Stack(children: [
+        const Positioned.fill(child: UiFrame(name: 'bar_frame', padding: EdgeInsets.zero, child: SizedBox.expand())),
+        if (f > 0)
+          FractionallySizedBox(
+            widthFactor: f,
+            child: const UiFrame(name: 'bar_fill', padding: EdgeInsets.zero, fallbackFill: kSignal, fallbackLine: kOutline, child: SizedBox.expand()),
+          ),
+      ]),
+    );
+  }
+}

@@ -16,6 +16,7 @@ import '../../crafting/tutorial.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
 import '../colors.dart';
+import '../kit.dart' show KitBar;
 import '../menu/phone_shell.dart';
 import 'bag_detail.dart';
 import 'craft_context.dart';
@@ -94,7 +95,7 @@ class _BagScreenState extends State<BagScreen> {
                   Text((bag == null ? 'Bolsa de pano' : widget.data.itemName(parseStack(bag).id)).toUpperCase(), style: const TextStyle(fontSize: 16, color: kText)),
                   const SizedBox(height: 8),
                   Row(children: [
-                    Expanded(child: _CapacityBar(used: used, cap: cap)),
+                    Expanded(child: KitBar(fraction: cap <= 0 ? 1.0 : used / cap)),
                     const SizedBox(width: 8),
                     Text(used >= cap ? '$used/$cap · CHEIA' : '$used/$cap', key: const Key('bag-capacity'), style: TextStyle(fontSize: 8, color: used >= cap ? kText : kSignal)),
                   ]),
@@ -287,28 +288,6 @@ class _VesselRow extends StatelessWidget {
           if (action != null) _Small(label: action!.$1, onTap: action!.$2),
         ]),
       ),
-    );
-  }
-}
-
-class _CapacityBar extends StatelessWidget {
-  const _CapacityBar({required this.used, required this.cap});
-
-  final int used;
-  final int cap;
-
-  @override
-  Widget build(BuildContext context) {
-    final frac = cap <= 0 ? 1.0 : (used / cap).clamp(0.0, 1.0);
-    return SizedBox(
-      height: 6 * kUiPixel,
-      child: Stack(children: [
-        const Positioned.fill(child: UiFrame(name: 'bar_frame', padding: EdgeInsets.zero, child: SizedBox.expand())),
-        FractionallySizedBox(
-          widthFactor: frac,
-          child: const UiFrame(name: 'bar_fill', padding: EdgeInsets.zero, fallbackFill: kSignal, fallbackLine: kOutline, child: SizedBox.expand()),
-        ),
-      ]),
     );
   }
 }

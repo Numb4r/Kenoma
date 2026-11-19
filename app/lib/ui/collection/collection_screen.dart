@@ -10,6 +10,7 @@ import '../../player/attributes.dart';
 import '../../player/game_state.dart';
 import '../colors.dart';
 import '../menu/phone_shell.dart';
+import '../menu/screen_frame.dart' show cardBox;
 import '../sprites/sprite_image.dart';
 import '../type_label.dart';
 
@@ -88,7 +89,7 @@ class _CreatureTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(color: kPanel, border: Border.all(color: kPanelLine, width: 2)),
+      decoration: cardBox(),
       child: Row(children: [
         Container(
           width: 64,

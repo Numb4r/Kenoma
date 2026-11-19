@@ -92,6 +92,55 @@ class NineSlicePainter extends CustomPainter {
   bool shouldRepaint(NineSlicePainter old) => old.image != image;
 }
 
+/// Uma peça do kit em nove partes como `decoration` de um `Container` (0.26.0): desenha pelo [NineSlicePainter], que estica
+/// certo (o `DecorationImage` com `centerSlice` e `scale` deixava o miolo em blocos). [line] pinta um aro de 1 pixel de arte
+/// por cima (destaque, aviso). Sem a arte carregada, uma caixa com [fallbackFill] e contorno.
+class KitDecoration extends Decoration {
+  const KitDecoration(this.name, {this.line, this.fallbackFill = kPanel});
+
+  final String name;
+  final Color? line;
+  final Color fallbackFill;
+
+  @override
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) => _KitBoxPainter(this);
+
+  @override
+  bool operator ==(Object other) => other is KitDecoration && other.name == name && other.line == line && other.fallbackFill == fallbackFill;
+
+  @override
+  int get hashCode => Object.hash(name, line, fallbackFill);
+}
+
+class _KitBoxPainter extends BoxPainter {
+  _KitBoxPainter(this.d);
+
+  final KitDecoration d;
+
+  @override
+  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
+    final size = configuration.size;
+    if (size == null || size.isEmpty) return;
+    final art = UiArt.instance;
+    final img = art?.image(d.name), ins = art?.insets[d.name];
+    final rect = offset & size;
+    final stroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = kUiPixel
+      ..isAntiAlias = false;
+    if (img == null || ins == null) {
+      canvas.drawRect(rect, Paint()..color = d.fallbackFill);
+      canvas.drawRect(rect.deflate(kUiPixel / 2), stroke..color = d.line ?? kPanelLine);
+      return;
+    }
+    canvas.save();
+    canvas.translate(offset.dx, offset.dy);
+    NineSlicePainter(img, ins).paint(canvas, size);
+    canvas.restore();
+    if (d.line != null) canvas.drawRect(rect.deflate(kUiPixel / 2), stroke..color = d.line!);
+  }
+}
+
 /// Um painel com a moldura [name] (`panel`, `sheet`, `tab_on`, `button`...). Sem a arte, uma caixa com contorno.
 class UiFrame extends StatelessWidget {
   const UiFrame({required this.name, required this.child, this.padding = const EdgeInsets.all(12), this.fallbackLine = kPanelLine, this.fallbackFill = kPanel, super.key});

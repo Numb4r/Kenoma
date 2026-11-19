@@ -8,6 +8,7 @@ import '../../data/game_data.dart';
 import '../../player/game_state.dart';
 import '../../story/daily_quests.dart';
 import '../colors.dart';
+import '../kit.dart' show KitBar;
 import '../tuning/tuning_screen.dart' show PixelButton;
 import 'screen_frame.dart';
 
@@ -58,7 +59,7 @@ class _Post extends StatelessWidget {
       key: Key('quest-${q.slot}'),
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
-      decoration: panelBox(line: color),
+      decoration: cardBox(line: color == kPanelLine ? null : color),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(q.user, style: const TextStyle(fontSize: 16, color: kVeil)),
         const SizedBox(height: 6),
@@ -66,10 +67,7 @@ class _Post extends StatelessWidget {
         const SizedBox(height: 8),
         Row(children: [
           Expanded(
-            child: Stack(children: [
-              Container(height: 6, color: kPanelLine),
-              FractionallySizedBox(widthFactor: (q.progress / q.target).clamp(0.0, 1.0), child: Container(height: 6, color: kSignal)),
-            ]),
+            child: KitBar(fraction: q.progress / q.target),
           ),
           const SizedBox(width: 8),
           Text('${q.progress}/${q.target}', style: const TextStyle(fontSize: 8, color: kText)),
