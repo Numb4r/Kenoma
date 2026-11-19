@@ -26,3 +26,12 @@
 |---|---|---|
 | Entidade Maior | O portão inteiro: duas folhas de grade (élitros), chapa da fechadura no meio com o buraco aceso como rosto e três parafusos de olho, chifre de lança, seis patas de ferrugem. Uma costura larga embaixo da chapa. Luz do Metal da paleta. | a corrente fica de pé e o cadeado cai para cima |
 | Arquétipo | Besouro de frente, élitros abertos como folhas de portão, espelhado; entre elas o vão em arco, com portão dentro de portão. Três chifres, seis patas de aço fora do chão. | física: a luz acende atrás das barras sem haver nada atrás; geometria: portão dentro de portão |
+
+## Rodada 3 (substitui a rodada 2 nestas etapas; aguarda aprovação)
+
+A luz de todas as peças desta rodada é só a da paleta do tipo.
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Entidade Maior | Besouro-rinoceronte de perfil com os élitros levantados; cada élitro é uma folha de portão com barras, travessa e lanças. O abdome fica aberto e aceso; costura na dobradiça. | as patas não são dele: sete vergalhões saem do chão e seguram o corpo por onde alcançam |
+| Arquétipo | Besouro em pé, alto e torto, sem cabeça (um colar vazio). O casco é só grade, com o vão atrás das barras; um élitro fechado, o outro aberto como folha de portão. Nove patas finas, seis de um lado e três do outro. | física: as patas saem de dentro do vão e nenhuma toca o chão; geometria: a folha aberta e o casco fechado são a mesma grade |

@@ -386,7 +386,101 @@ local R = dofile(KENOMA_ART .. 'creatures/conceitos/_r2.lua')(C)
 -- está em quatro lugares ao mesmo tempo, como cacos em leque, e o bico são três agulhas. Não tem olho. No papo, onde
 -- ficava a lente do farol, a figura não fecha: o vão, aberto para a frente, e dentro dele o mesmo beija-flor virado
 -- para o outro lado. A luz em volta dele faz curva.
+-- RODADA 3. A luz é a do tipo Luz na paleta (P m, Q l, D d); o vão é o único violeta.
+LEG.P, LEG.Q, LEG.D = '#FFF0B8', '#FFFBE6', '#CDB468'
+LEG.p, LEG.k, LEG.i = '#77735E', '#8A8774', '#5A5440'         -- os pares apagados
+LEG.E, LEG.F = '#FFF0B8', '#FFFBE6'                           -- soltos
+LIT.P = 'p'; LIT.Q = 'k'; LIT.D = 'i'; LOOSE = LOOSE .. 'EF'
+local SOL3 = solid('EF')
+local function vor(x, y, s, seed)
+  local gx, gy = floor(x / s), floor(y / s)
+  local b1, b2, id = 1e9, 1e9, 0
+  for j = -1, 1 do
+    for i = -1, 1 do
+      local h = hash(gx + i, gy + j, seed)
+      local px = (gx + i + 0.15 + 0.7 * ((h & 255) / 255)) * s
+      local py = (gy + j + 0.15 + 0.7 * (((h >> 8) & 255) / 255)) * s
+      local dd = (x - px) ^ 2 + (y - py) ^ 2
+      if dd < b1 then b2 = b1; b1 = dd; id = h elseif dd < b2 then b2 = dd end
+    end
+  end
+  return id, sqrt(b2) - sqrt(b1)
+end
+
+-- ARQUÉTIPO: a silhueta do beija-flor do Eco, pairando, do tamanho do quadro, feita de cacos grandes de vitrine que
+-- não se tocam. A cabeça não tem olho e só ela e a cauda guardam a cor. No lugar do coração os cacos não fecham: o
+-- vão. O reflexo atravessa os cacos em linha reta, como se fossem um vidro só, e a ponta do bico, que aponta para
+-- fora, aparece dentro do vão.
 local function arquetipo(k, S, ox, oy)
+  ox, oy = ox or 0, oy or 0
+  local g = L.grid(S, S)
+  local SC, BX, BY = 2.3, 1.5, 1.5
+  local VX, VY, VR = BX + 17.2 * SC, BY + 13.6 * SC, 5.4
+  local function UV(x, y) return (x + 0.5 - ox) / k, (y + 0.5 - oy) / k end
+  for y = 0, S - 1 do for x = 0, S - 1 do
+    local u, v = UV(x, y)
+    local bu, bv = (u - BX) / SC, (v - BY) / SC
+    local c = bird(bu, bv, 1)
+    if c then
+      local st = (x // k + y // k) % 3 == 0
+      if c == 'z' or c == 'Z' then g[y][x] = c
+      elseif ('efnoW'):find(c, 1, true) then                                        -- cabeça (sem olho) e cauda
+        if c == 'o' or c == 'W' then c = 'f' end
+        g[y][x] = st and (c == 'e' and 'f' or 'n') or c
+      else
+        local base = inpoly(bu, bv, WN) and 1 or (inpoly(bu, bv, WF) and 3 or 2)
+        local id, e = vor(x, y, 9.5 * k, 5)
+        local rim = (id >> 3) % 4
+        if k > 1 then st = (x + y) % 4 == 0 end
+        local q = u + v
+        if base == 1 and (abs(q - 37) < 0.8 or abs(q - 52) < 0.8) then g[y][x] = 'Q'  -- o reflexo, reto por cima dos cacos
+        elseif base == 1 and (abs(q - 39.6) < 0.55 or abs(q - 54.6) < 0.55) then g[y][x] = 'P'
+        elseif base == 2 and abs(q - 79) < 0.7 then g[y][x] = 'P'
+        elseif e < 0.5 * k then g[y][x] = '0'                                        -- a fresta entre dois cacos
+        elseif e < 1.3 * k and rim < 2 then g[y][x] = 'D'                            -- o fio do caco que pega a luz
+        elseif e < 1.3 * k and rim == 2 then g[y][x] = st and 'g' or 'G'             -- e o verde da espessura do vidro
+        else
+          local tone = base + (id >> 5) % 2
+          if (id >> 7) % 2 == 0 then st = k > 1 and (x - y) % 4 == 0 or (k == 1 and (x - y) % 3 == 0) end
+          g[y][x] = ('67890'):sub(tone + (st and 1 or 0), tone + (st and 1 or 0))
+        end
+      end
+    end
+  end end
+  -- a estrela de quatro pontas na asa
+  for i = -4, 4 do for _, q in ipairs({ { i, 0 }, { 0, i } }) do
+    local x, y = floor((14 + q[1]) * k + ox), floor((13 + q[2]) * k + oy)
+    for dy = 0, k - 1 do for dx = 0, k - 1 do
+      if L.get(g, x + dx, y + dy) ~= '.' then g[y + dy][x + dx] = abs(i) < 2 and 'Q' or 'P' end
+    end end
+  end end
+  prune(g)
+  L.outline(g, 'A', SOL3)
+  -- o vão no lugar do coração; as frestas em volta dele abrem
+  local pk = max(1, floor(k / 2 + 0.5))
+  for y = 0, S - 1 do for x = 0, S - 1 do
+    local u, v = UV(x, y)
+    local r = sqrt((u - VX) ^ 2 + (v - VY) ^ 2)
+    local t = r / VR
+    if t <= 1 then
+      local was = g[y][x] ~= '.'
+      g[y][x] = '.'
+      if t > 0.8 then if was then g[y][x] = 'X' end
+      elseif dseg(u, v, VX + 3.6, VY - 2.6, VX + 0.4, VY - 0.2) < 0.45 then g[y][x] = 'F'  -- a ponta do bico
+      elseif (x // pk + y // pk) % 2 == 0 and t > 0.34 then g[y][x] = 'x' end
+    elseif t <= 2.1 and g[y][x] == '0' then g[y][x] = 'x'
+    end
+  end end
+  local n = max(1, floor(k * 0.6 + 0.5))
+  for i = 1, 14 do                                                                  -- lascas soltas, em volta
+    local a = i * 2.39996
+    local r = 25 + (i * 7) % 6
+    local x, y = floor((32 + cos(a) * r) * k + ox), floor((32 + sin(a) * r * 0.95) * k + oy)
+    L.rect(g, x, y, x + n - 1, y + n - 1, i % 3 == 0 and 'F' or 'E', '.')
+  end
+  return g
+end
+local function arquetipoR2(k, S, ox, oy)
   ox, oy = ox or 0, oy or 0
   local g = L.grid(S, S)
   local SC, BX, BY = 2, 6, 6
@@ -476,6 +570,6 @@ out('espirito', 'retrato', espirito(2.55, 96, 2.1))
 out('entidade', 'mapa', entidade(1, 48, 0))
 out('entidade', 'retrato', entidade(2, 96, 0))
 out('arquetipo', 'mapa', arquetipo(1, 64))
-out('arquetipo', 'retrato', arquetipo(3, 128, -63, -27))                            -- busto: a cabeça sem olho, as agulhas e o vão do papo
+out('arquetipo', 'retrato', arquetipo(3, 128, -64, -30))                            -- busto: a cabeça sem olho, o bico e o vão no lugar do coração
 print('RESUMO ' .. table.concat(RES, ' | '))
 print('ok glare')

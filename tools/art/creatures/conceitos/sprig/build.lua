@@ -356,7 +356,93 @@ LIT.Z = 'v'; LOOSE = LOOSE .. 'V'; SOLID = SOLID .. 'Zv'
 -- ENTIDADE MAIOR: a árvore da calçada de cabeça para baixo. A copa é um bando fundido (três cabeças de maritaca, uma
 -- delas virada, sem olhos) e anda sobre as pontas das asas de folha; o tronco sobe e as raízes, que são pés de ave,
 -- seguram no alto o pedaço de calçada de onde ela saiu. As folhas que caem dela caem para cima.
+-- RODADA 3. A luz é a do tipo Feérico na paleta: W (m), L (l), O (d); M e C são os soltos. fae() troca o pólen verde
+-- e o rosa antigo pelos tons da paleta, depois do contorno.
+LEG.W, LEG.L, LEG.O = '#FFA8E0', '#FFD6F1', '#C0669E'
+LEG.h, LEG.g = '#6A4A58', '#3E2632'                          -- pares apagados de L e de O (o de W é o e)
+LEG.M, LEG.C = '#FFA8E0', '#FFD6F1'
+LIT.W = 'e'; LIT.L = 'h'; LIT.O = 'g'; LOOSE = LOOSE .. 'MC'
+local function fae(g)
+  local M = { Y = 'L', H = 'W', I = 'L', S = 'M', s = 'C', N = 'M' }
+  for y = 0, g.h - 1 do for x = 0, g.w - 1 do
+    local c = g[y][x]
+    if c == 'J' then g[y][x] = (x + y) % 3 == 0 and 'O' or 'W' elseif M[c] then g[y][x] = M[c] end
+  end end
+end
+
+-- ENTIDADE MAIOR: o bando fundido. Um corpo só de pena verde-oliva, do tamanho de cinco maritacas, com cinco cabeças
+-- viradas cada uma para um lado, todas de bico aberto, gritando, a garganta acesa. Sete asas de folha seca saem dele
+-- em todas as direções, cada uma num ponto diferente da batida; dois rabos, pés que seguram uns nos outros.
 local function entidade(k, S)
+  local d = R.ctx(S, k)
+  local g = d.g
+  local function P(v) return v * k + (k - 1) / 2 end
+  local rich = k > 1
+  local p = rich and 2 or 1
+  local function wing(x, y, ang, len, pal, n, wid)
+    leaf(g, { x = P(x), y = P(y), ang = ang, len = k * len, wid = k * (wid or 3.6), pal = pal, k = k, notch = rich and n or nil,
+      spots = rich and 3 or nil, litv = 0.64 })
+  end
+  -- bico aberto, gritando: o de baixo caído, a garganta acesa entre os dois. f = -1 espelha (cabeça virada para trás)
+  local function scream(bx, by, ang, s, f)
+    local a = rad(ang)
+    local ca, sa = cos(a), sin(a)
+    local function pts(list)
+      local out = {}
+      for i, q in ipairs(list) do out[i] = { bx + s * (q[1] * ca - q[2] * f * sa), by + s * (q[1] * sa + q[2] * f * ca) } end
+      return out
+    end
+    C.poly(g, pts({ { 0, 0.6 }, { 2.1, 0.9 }, { 1.7, 2.6 }, { 0, 2.4 } }), 'H')
+    C.poly(g, pts({ { 0, 2.1 }, { 1.5, 2.4 }, { 1.8, 3.1 }, { 0.9, 3.8 }, { 0, 3.3 } }), 'K')
+    C.poly(g, pts({ { 0, -1.4 }, { 1.6, -1.5 }, { 2.7, -0.6 }, { 3.2, 0.8 }, { 2.9, 2.4 }, { 2.3, 1.3 }, { 1.6, 0.9 }, { 0, 0.9 } }), 'k')
+    C.poly(g, pts({ { 2.3, 1.3 }, { 2.9, 2.4 }, { 3.2, 0.8 }, { 2.6, 0.5 } }), 'K')
+    C.poly(g, pts({ { 0, -1.4 }, { 0.5, -1.4 }, { 0.5, 0.9 }, { 0, 0.9 } }), 'q')
+  end
+  local function head(x, y, r, ang, s, nx, ny)
+    local a = rad(ang)
+    local f = cos(a) < 0 and -1 or 1
+    if nx then                                                                      -- o pescoço, até o corpo
+      tube(g, seg(P(nx), P(ny), P(x), P(y)), function(t) return k * r * (1 - 0.25 * sin(pi * t)) * 0.8 end, function(x2, y2, t, dn, ds, rr, l)
+        return feather(BODY, p)(x2, y2, 0, 0, l)
+      end)
+    end
+    ell(g, P(x), P(y), k * r, k * r * 0.94, 0, feather(HEAD, p))
+    ell(g, P(x - sin(a) * f * r * 0.75 + cos(a) * r * 0.2), P(y + cos(a) * f * r * 0.75 + sin(a) * r * 0.2), k * r * 0.62, k * r * 0.32, ang, stripes('u', 'U', p))
+    scream(P(x + cos(a) * r * 0.62), P(y + sin(a) * r * 0.62), ang, k * s, f)
+    eyeAt(g, P(x + cos(a) * r * 0.25 + sin(a) * f * r * 0.35), P(y + sin(a) * r * 0.25 - cos(a) * f * r * 0.35), max(k, 1.01) * 1.6)
+  end
+  -- as asas de trás, em leque
+  wing(22, 25, -78, 21, FAR, 1); wing(20.6, 25, -104, 22.6, DARK, 2); wing(19, 26, -156, 17.6, FAR, 3)
+  -- dois rabos, com o crisso vermelho
+  for _, q in ipairs({ { 13, 31, 5, 38 }, { 17, 34, 12, 42.6 } }) do
+    tube(g, seg(P(q[1]), P(q[2]), P(q[3]), P(q[4])), function(t) return k * (2 - 0.5 * t) end, function(x, y, t, dn, ds, r, l)
+      return (floor(ds / p) % 2 == 0) and (l > 0 and '2' or '3') or (l > 0 and '3' or '4')
+    end)
+    ell(g, P(q[1] - 1.6), P(q[2] + 2.6), k * 2.4, k * 1.2, -40, stripes('r', 'R', p))
+  end
+  -- pés que seguram uns nos outros
+  for _, q in ipairs({ { 19, 34, 20.6, 39 }, { 23, 35, 20.6, 39 }, { 20.6, 39, 19, 42 }, { 20.6, 39, 22.6, 41.6 } }) do
+    wire(g, { { P(q[1]), P(q[2]) }, { P(q[3]), P(q[4]) } }, 'T', 'x', k * 0.8)
+  end
+  -- o corpo: os peitos num só
+  ell(g, P(21), P(28), k * 10, k * 7.4, -10, feather(BODY, p))
+  -- as cabeças, gritando, cada uma para um lado
+  head(33.6, 38, 3.8, 42, 1.3, 26, 31)
+  head(36.6, 13.6, 4.2, -24, 1.45, 27, 23)
+  head(38, 26.6, 4.5, 6, 1.6, 27, 28)
+  d:suture({ { 22.6, 22 }, { 25.6, 27.6 }, { 23.6, 33 } }, 'Z', 1.4, nil, '1234')
+  -- a asa de cá
+  wing(19.6, 26, -130, 21.6, NEAR, 9, 4.4)
+  ell(g, P(20), P(27.6), k * 3.2, k * 2.2, -30, feather(BODY, p))
+  head(7.6, 28.6, 3.4, 186, 1.2, 14, 28)                                            -- e uma virada para trás
+  L.outline(g, 'A', SOLID .. 'JY')
+  fae(g)
+  for n, q in ipairs({ { 4, 8 }, { 44, 9 }, { 42.6, 33 }, { 3, 21 }, { 36, 4 }, { 10, 4.6 }, { 44.6, 41 }, { 15, 44 }, { 38.6, 44.6 }, { 2.6, 43 } }) do
+    dot(g, P(q[1]), P(q[2]), k * 0.6, n % 3 == 0 and 'C' or 'M')
+  end
+  return g
+end
+local function entidadeR2(k, S)
   local d = R.ctx(S, k)
   local g = d.g
   local function P(v) return v * k + (k - 1) / 2 end
@@ -422,7 +508,219 @@ end
 -- de costas um para o outro, e entre eles não há cabeça: o vão, em forma de folha, desce do pescoço ao peito, e dentro
 -- dele os bicos se repetem, cada par menor. As asas são folha morta que para a ponta é só nervura; o galho em que ela
 -- pousa nasce da própria cauda.
+-- RODADA 3. ARQUÉTIPO: o bando inteiro como uma criatura só, sem corpo. Seis maritacas cinza, sem olho, de tamanhos
+-- diferentes, cada uma gritando para um lado, e os pescoços delas saem todos de um mesmo anel de pena. Dentro do anel,
+-- onde ficaria o coração, não há peito: o vão. As asas são folhas mortas que da metade para a ponta são só nervura.
 local function arquetipo(k, S, ox, oy)
+  local d = R.ctx(S, k, ox, oy)
+  local g = d.g
+  local function PX(v) return d:X(v) end
+  local function PY(v) return d:Y(v) end
+  local p = k > 1 and 2 or 1
+  local CX, CY = 34, 32.6
+  local ASHL, ASHD = { 'D', 'E', 'G', 'E' }, { 'D', 'E', 'G', 'G' }
+  local ashf, ashd = feather(ASH, p), feather(ASHD, p)
+  local function pol(a, r) return CX + cos(rad(a)) * r, CY + sin(rad(a)) * r end
+  local function scream(bx, by, ang, s, f)
+    local a = rad(ang)
+    local ca, sa = cos(a), sin(a)
+    local function pts(list)
+      local out = {}
+      for i, q in ipairs(list) do out[i] = { bx + s * (q[1] * ca - q[2] * f * sa), by + s * (q[1] * sa + q[2] * f * ca) } end
+      return out
+    end
+    C.poly(g, pts({ { 0, 0.6 }, { 2.1, 0.9 }, { 1.7, 2.6 }, { 0, 2.4 } }), 'H')
+    C.poly(g, pts({ { 0, 2.1 }, { 1.5, 2.4 }, { 1.8, 3.1 }, { 0.9, 3.8 }, { 0, 3.3 } }), 'K')
+    C.poly(g, pts({ { 0, -1.4 }, { 1.6, -1.5 }, { 2.7, -0.6 }, { 3.2, 0.8 }, { 2.9, 2.4 }, { 2.3, 1.3 }, { 1.6, 0.9 }, { 0, 0.9 } }), 'k')
+    C.poly(g, pts({ { 2.3, 1.3 }, { 2.9, 2.4 }, { 3.2, 0.8 }, { 2.6, 0.5 } }), 'K')
+    C.poly(g, pts({ { 0, -1.4 }, { 0.5, -1.4 }, { 0.5, 0.9 }, { 0, 0.9 } }), 'q')
+  end
+  -- uma do bando: ang e dist dizem onde está a cabeça; face, para onde ela grita
+  local function one(ang, dist, r, s, face)
+    local hx, hy = pol(ang, dist)
+    local nx, ny = pol(ang, 10)
+    local a = rad(face)
+    local f = cos(a) < 0 and -1 or 1
+    tube(g, seg(PX(nx), PY(ny), PX(hx), PY(hy)), function(t) return k * r * (0.95 - 0.3 * sin(pi * t)) end, function(x2, y2, t, dn, ds, rr, l)
+      return ashf(x2, y2, 0, 0, l)
+    end)
+    ell(g, PX(hx), PY(hy), k * r, k * r * 0.94, 0, ashd)
+    ell(g, PX(hx - cos(a) * r * 0.3 + sin(a) * f * r * 0.5), PY(hy - sin(a) * r * 0.3 - cos(a) * f * r * 0.5), k * r * 0.62, k * r * 0.36, face, stripes('6', '7', p))
+    ell(g, PX(hx - sin(a) * f * r * 0.75 + cos(a) * r * 0.2), PY(hy + cos(a) * f * r * 0.75 + sin(a) * r * 0.2), k * r * 0.6, k * r * 0.3, face, stripes('u', 'U', p))
+    scream(PX(hx + cos(a) * r * 0.62), PY(hy + sin(a) * r * 0.62), face, k * s, f)
+  end
+  -- as asas: folha morta, da metade para a ponta só nervura
+  for n, q in ipairs({ { -160, 23 }, { -134, 21 }, { 174, 24 }, { 150, 21 }, { 126, 16 }, { -112, 15 } }) do
+    local x, y = pol(q[1], 8)
+    leaf(g, { x = PX(x), y = PY(y), ang = q[1] + (n % 2 == 0 and 5 or -4), len = k * q[2], wid = k * 5.2, pal = n % 2 == 0 and { 'B', 'D', 'E', 'G' } or ASHL, k = k,
+      skel = true, skelFrom = 0.66, litv = 0.3, vp = max(3, k * 1.5) })
+  end
+  -- dois rabos, o crisso ainda vermelho
+  for _, a in ipairs({ 163, 200 }) do
+    local x0, y0 = pol(a, 10)
+    local x1, y1 = pol(a + 6, 21)
+    tube(g, seg(PX(x0), PY(y0), PX(x1), PY(y1)), function(t) return k * (2.2 - 0.7 * t) end, function(x, y, t, dn, ds, r, l)
+      return (floor(ds / p) % 2 == 0) and (l > 0 and 'D' or 'E') or (l > 0 and 'E' or 'G')
+    end)
+    local xr, yr = pol(a - 8, 13.6)
+    ell(g, PX(xr), PY(yr), k * 2.2, k * 1.1, a, stripes('r', 'R', p))
+  end
+  -- o anel de pena de onde saem os pescoços
+  ell(g, PX(CX), PY(CY), k * 12.6, k * 10.6, 0, ashf)
+  one(-150, 15, 3, 1.1, 205)                                                        -- uma olha para trás
+  one(-98, 15, 3.4, 1.25, -78)
+  one(98, 14.6, 3.3, 1.2, 84)
+  one(-46, 17, 4.1, 1.5, -28)
+  one(44, 16.6, 3.9, 1.45, 32)
+  one(-3, 17.6, 5.4, 1.9, 2)
+  L.outline(g, 'A', SOLID .. 'JY')
+  fae(g)
+  -- o vão, onde ficaria o coração; dentro dele as cabeças se repetem, viradas para dentro
+  local function hole(u, v)
+    local a = math.atan(v - CY, u - CX)
+    local r = sqrt((u - CX) ^ 2 + ((v - CY) * 1.1) ^ 2) / (7.4 + 1.2 * sin(a * 3 + 0.6) + 0.7 * sin(a * 5))
+    return r <= 1 and r or nil
+  end
+  d:vao(hole, 'X', 'V', 0.8)
+  for _, q in ipairs({ { -78, 4.6, 1.6 }, { 104, 4.4, 1.5 }, { -2, 4.8, 2 }, { -168, 4.6, 1.3 } }) do
+    local hx, hy = pol(q[1], q[2])
+    local t = L.grid(S, S)
+    L.disc(t, PX(hx), PY(hy), k * q[3], 'X')
+    L.disc(t, PX(hx), PY(hy), k * q[3] - max(1, k * 0.5), '.')
+    local bx, by = pol(q[1], q[2] - q[3] - 0.6)
+    L.disc(t, PX(bx), PY(by), max(0.6, k * 0.6), 'X')
+    for y = 0, S - 1 do for x = 0, S - 1 do
+      if t[y][x] == 'X' and (g[y][x] == '.' or g[y][x] == 'V') then g[y][x] = 'X' end
+    end end
+  end
+  for n = 0, 17 do
+    local a, r = n * 2.4, 26 + (n * 7) % 5
+    d:dot(31 + cos(a) * r * 1.08, 31.5 + sin(a) * r, n % 3 == 0 and 'C' or 'M')
+  end
+  return g
+end
+-- tentativa descartada na rodada 3 (o bando em mosaico dentro da silhueta de uma maritaca grande: virou pedra)
+local function arquetipoMosaico(k, S, ox, oy)
+  local d = R.ctx(S, k, ox, oy)
+  local g = d.g
+  local WN = { { 23, 33 }, { 11, 22 }, { 4, 5 }, { 16, 3.6 }, { 27, 13 }, { 33, 28 } }
+  local WF = { { 30, 27 }, { 27, 12 }, { 30, 6 }, { 35, 14 }, { 35, 26 } }
+  local TL = { { 18, 39 }, { 2.6, 53 }, { 7, 58 }, { 23, 46 } }
+  local function inpoly(u, v, P)
+    local c, j = false, #P
+    for i = 1, #P do
+      local a, b = P[i], P[j]
+      if ((a[2] > v) ~= (b[2] > v)) and (u < (b[1] - a[1]) * (v - a[2]) / (b[2] - a[2]) + a[1]) then c = not c end
+      j = i
+    end
+    return c
+  end
+  local cb, sb = cos(rad(-20)), sin(rad(-20))
+  local function big(u, v)                                                          -- a maritaca grande: onde há bando
+    if (u - 47) ^ 2 + (v - 22.6) ^ 2 <= 56 then return 'h' end
+    local a, b = (u - 31) * cb + (v - 36) * sb, -(u - 31) * sb + (v - 36) * cb
+    if (a / 16) ^ 2 + (b / 9.4) ^ 2 <= 1 then return 'b' end
+    if inpoly(u, v, WN) or inpoly(u, v, WF) then return 'w' end
+    if inpoly(u, v, TL) then return 't' end
+  end
+  -- uma maritaca do bando, virada para a direita: asa erguida, corpo, bico (W, aceso), rabo
+  local BIRD = {
+    '...EE......',
+    '...EDE.....',
+    '...EDDE....',
+    '....EDDEDD.',
+    '..EEEDDBBBW',
+    '.EDDBBBBBD.',
+    'EDDDBBBDD..',
+    'EE.EDDD....',
+  }
+  local TONE = { {}, { B = 'D', D = 'E', E = 'G' }, { B = '1', D = '2', E = 'r' }, { B = 'D', D = 'E', E = 'G' } }
+  local kk = max(1, floor(k + 0.5))
+  for y = 0, S - 1 do for x = 0, S - 1 do                                           -- o escuro entre elas
+    local u, v = (x - d.ox - (k - 1) / 2) / k, (y - d.oy - (k - 1) / 2) / k
+    if big(u, v) and big(u - 1.6, v) and big(u + 1.6, v) and big(u, v - 1.6) and big(u, v + 1.6) then g[y][x] = 'G' end
+  end end
+  for j = -1, 11 do for i = 8, -1, -1 do
+    local h = hash(i, j, 7)
+    local u0 = i * 8.4 + (j % 2) * 4.2 + (h % 3) - 1
+    local v0 = j * 5.6 + ((h >> 4) % 3) - 1
+    local part = big(u0 + 5.6, v0 + 5)
+    if part then
+      local lightv = 0.5 - (v0 - 30) * 0.02 - (u0 - 30) * 0.008 + ((h >> 8) % 5 - 2) * 0.12
+      local tone = TONE[(h >> 12) % 7 == 0 and 3 or (lightv < 0.42 and 2 or 1)]
+      for gy, row in ipairs(BIRD) do
+        for gx = 1, #row do
+          local c = row:sub(gx, gx)
+          if c ~= '.' then
+            c = tone[c] or c
+            local x0, y0 = floor(d:X(u0 + gx - 1) - (k - 1) / 2), floor(d:Y(v0 + gy - 1) - (k - 1) / 2)
+            for yy = y0, y0 + kk - 1 do for xx = x0, x0 + kk - 1 do
+              local cc = c
+              if k > 1 and c ~= 'W' and (xx + yy) % 4 == 0 then cc = ({ B = 'D', D = 'E', E = 'G', ['1'] = '2', ['2'] = '3', ['3'] = '4' })[c] or c end
+              L.set(g, xx, yy, cc)
+            end end
+          end
+        end
+      end
+    end
+  end end
+  -- o bico: a única peça inteira
+  d:poly({ { 52.6, 16.6 }, { 58.6, 18.6 }, { 61.4, 24 }, { 60, 32 }, { 57, 27.6 }, { 53, 27 } }, function(x, y, u, v)
+    return R.pick('qKk', 0.75 - (v - 18) / 13 - (u - 56) / 20, R.hor(d:pp())(x, y))
+  end)
+  d:poly({ { 52.6, 27.6 }, { 56.6, 28.6 }, { 55.6, 32.6 }, { 52.6, 31.4 } }, R.mat('qK', R.hor(d:pp()), 0.3))
+  -- a asa ainda é folha: a nervura acesa passa por cima do bando
+  for _, q in ipairs({ { { 25, 31 }, { 17, 17 }, { 9, 6 } }, { { 17, 17 }, { 24, 13.6 } }, { { 21, 24 }, { 29, 23 } }, { { 13, 11 }, { 17.6, 6.6 } },
+    { { 14.6, 13.6 }, { 8.6, 12 } }, { { 19.6, 21 }, { 12.6, 20.4 } } }) do
+    d:wire(q, 'W', 'L', 0.5, 'BDEG123')
+  end
+  -- só a peça maior fica
+  do
+    local seen, best, comps = {}, nil, {}
+    for y = 0, S - 1 do for x = 0, S - 1 do
+      if g[y][x] ~= '.' and not seen[y * S + x] then
+        local list, stack = {}, { { x, y } }
+        seen[y * S + x] = true
+        while #stack > 0 do
+          local q = table.remove(stack)
+          list[#list + 1] = q
+          for dy = -1, 1 do for dx = -1, 1 do
+            local nx, ny = q[1] + dx, q[2] + dy
+            if nx >= 0 and ny >= 0 and nx < S and ny < S and g[ny][nx] ~= '.' and not seen[ny * S + nx] then
+              seen[ny * S + nx] = true; stack[#stack + 1] = { nx, ny }
+            end
+          end end
+        end
+        comps[#comps + 1] = list
+        if not best or #list > #best then best = list end
+      end
+    end end
+    for _, list in ipairs(comps) do if list ~= best then for _, q in ipairs(list) do g[q[2]][q[1]] = '.' end end end
+  end
+  L.outline(g, 'A', SOLID .. 'WLO')
+  -- o vão, onde ficaria o coração; as que estão na beira dele acendem
+  local VX, VY = 33, 34.6
+  local function hole(u, v, s)
+    local a = math.atan(v - VY, u - VX)
+    local r = sqrt((u - VX) ^ 2 + ((v - VY) * 1.15) ^ 2) / ((6.6 + 1.3 * sin(a * 3 + 0.6) + 0.8 * sin(a * 5)) * (s or 1))
+    return r <= 1 and r or nil
+  end
+  for y = 0, S - 1 do for x = 0, S - 1 do
+    local u, v = (x - d.ox - (k - 1) / 2) / k, (y - d.oy - (k - 1) / 2) / k
+    if not hole(u, v) and hole(u, v, 1.22) and g[y][x] ~= '.' and g[y][x] ~= 'A' then g[y][x] = (x // kk + y // kk) % 2 == 0 and 'W' or 'O' end
+  end end
+  d:vao(function(u, v) return hole(u, v) end, 'X', 'V', 0.74)
+  for y = 0, S - 1 do for x = 0, S - 1 do                                           -- o mesmo bando, lá dentro
+    local u, v = (x - d.ox - (k - 1) / 2) / k, (y - d.oy - (k - 1) / 2) / k
+    if (g[y][x] == '.' or g[y][x] == 'V') and big((u - VX) / 0.15 + 32, (v - VY) / 0.15 + 30) and hole(u, v, 0.8) then g[y][x] = 'X' end
+  end end
+  for n = 0, 17 do
+    local a, r = n * 2.4, 25 + (n * 7) % 6
+    d:dot(31 + cos(a) * r * 1.1, 31 + sin(a) * r, n % 3 == 0 and 'C' or 'M')
+  end
+  return g
+end
+local function arquetipoR2(k, S, ox, oy)
   local d = R.ctx(S, k, ox, oy)
   local g = d.g
   local function PX(v) return d:X(v) end
@@ -510,5 +808,5 @@ out('espirito', 'retrato', espirito(96 / 36, 96))
 out('entidade', 'mapa', entidade(1, 48))
 out('entidade', 'retrato', entidade(2, 96))
 out('arquetipo', 'mapa', arquetipo(1, 64))
-out('arquetipo', 'retrato', arquetipo(3, 128, -31, -14))                     -- busto: os dois perfis e o vão
+out('arquetipo', 'retrato', arquetipo(3, 128, -60, -36))                     -- busto: a cabeça maior, gritando, e o vão atrás dela
 print('ok sprig')

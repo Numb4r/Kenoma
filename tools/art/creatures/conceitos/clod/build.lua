@@ -359,10 +359,138 @@ local function keratin(d, y0, y1) return R.mat('MlK', R.hor(d:pp()), function(u,
 -- ENTIDADE MAIOR: o monte de entulho da obra, de ponta-cabeça em cima do tatu. O bicho ficou pequeno embaixo, com seis
 -- patas; a carapaça sobe e vira o monte, que alarga para cima (cascalho, entulho, guia de concreto, um pedaço de
 -- parede) e passa dos dois lados dele. Um segundo rosto, virado, saiu no alto do monte. O cascalho rola morro acima.
+-- RODADA 3. ENTIDADE MAIOR: o tatu fechado em bola, e a bola é de entulho (escudo de cascalho, um pedaço de parede,
+-- vergalhão), com as três cintas no meio e a junta acesa. A bola não abre, mas três cabeças e cinco patas saem dela
+-- por onde não há abertura: uma cabeça para cima, uma para baixo, patas no alto e nas costas. Cada uma sai de uma
+-- trinca acesa. A costura fecha a bola onde ela devia abrir.
 local function entidade(k, S, off)
   local d = R.ctx(S, k)
   local p = d:pp()
-  local MOUND = { { 13.5, 31.5 }, { 34.5, 31.5 }, { 41, 21 }, { 44, 11 }, { 38, 6 }, { 24, 4.2 }, { 11, 6.4 }, { 4, 13 }, { 7, 23 } }
+  local CX, CY, RR = 23, 28, 15.5
+  local ca, sa = cos(math.rad(-24)), sin(math.rad(-24))
+  local function head(t, x0, y0, x1, y1, eye)
+    local dx, dy = x1 - x0, y1 - y0
+    local len = sqrt(dx * dx + dy * dy)
+    local ux, uy = dx / len, dy / len
+    local nx, ny = -uy, ux
+    if ny > 0 then nx, ny = -nx, -ny end
+    for e = 0, 1 do                                                                 -- duas orelhas em pé
+      local bx, by = x0 + ux * (0.2 + e * 2.2) + nx * 2.6, y0 + uy * (0.2 + e * 2.2) + ny * 2.6
+      local sp = e == 0 and -1.6 or 0.8
+      t:cap(bx, by, bx + nx * 4.6 + ux * sp, by + ny * 4.6 + uy * sp, 1.15, 0.5, e == 0 and 'R' or 'r')
+    end
+    t:cap(x0, y0, x1, y1, 3.4, 1.2, function(x, y, u, v)
+      local a = ((u - x0) * ux + (v - y0) * uy) / len
+      local b = (u - x0) * nx + (v - y0) * ny
+      if a > 0.9 then return 'o' end
+      if b > 0.3 and a < 0.7 then return stone(x, y, 1.5 * k, 11, { '12K', '1Kl' }, 'l', 0.25 * k, k) end
+      return b < -1.2 and 'R' or (a > 0.55 and b > -0.2 and 'C' or 'r')
+    end)
+    local ex, ey = x0 + dx * 0.45 - nx * 0.6, y0 + dy * 0.45 - ny * 0.6
+    t:ell(ex, ey, 1, 1, eye or 'o')
+    if k > 1 and not eye then t:ell(ex - 0.2, ey - 0.2, 0.25, 0.25, 'W') end
+  end
+  local function leg(t, x0, y0, x1, y1)
+    local a = math.atan(y1 - y0, x1 - x0)
+    t:cap(x0, y0, x1, y1, 1.9, 1.4, R.mat('fMl', R.hor(p), 0.5))
+    for c = -1, 1 do
+      t:cap(x1, y1, x1 + cos(a + c * 0.6) * 2.6, y1 + sin(a + c * 0.6) * 2.6, 0.7, 0.3, R.mat('DC', R.ver(p), c == 1 and 0 or 1))
+    end
+  end
+  -- de onde sai cada coisa (na bola) e para onde aponta
+  local HEADS = { { 35.5, 32.6, 45, 34.6 }, { 11.6, 19.4, 2.4, 18.6, 'Y' }, { 29.6, 13.4, 29.8, 3.4 } }
+  local LEGS = { { 18, 14, 15.6, 7.6 }, { 9.6, 33.4, 4.6, 36 }, { 37, 22.6, 43.4, 20 } }
+  -- no mapa a cabeça é desenhada pixel a pixel (focinho para a direita); no retrato ela é a função head()
+  local HEAD = {
+    '..R...R.....',
+    '..RR..RR....',
+    '..rR1.rR1...',
+    '.11KK11K11..',
+    '.1K1o11KrrC.',
+    '.KK1KKrrrrCo',
+    '..RRrrrrrroo',
+    '...RRRRRR...',
+  }
+  local function stamp(t, x0, y0, mode, lit)
+    for j, row in ipairs(HEAD) do
+      for i = 1, #row do
+        local c = row:sub(i, i)
+        if c ~= '.' then
+          if lit and (c == 'o' and i < 8 or c == 'W') then c = 'Y' end
+          local x, y = i - 1, j - 1
+          if mode == 'left' then x = #row - 1 - x elseif mode == 'up' then x, y = #HEAD - 1 - (j - 1), #row - 1 - (i - 1) end
+          t.g[y0 + y][x0 + x] = c
+        end
+      end
+    end
+  end
+  LEG.r, LEG.R = '#B5978A', '#86675E'                           -- pele da orelha e do focinho das cabeças
+  SOLID = SOLID .. 'rR'
+  d:layer(function(t)                                                              -- a bola
+    t:ell(CX, CY, RR, RR, function(x, y, u, v)
+      local a = (u - CX) * ca + (v - CY) * sa
+      local b = -(u - CX) * sa + (v - CY) * ca
+      local hw = RR * sqrt(max(0.02, 1 - (b / RR) ^ 2))
+      local lon = a / hw
+      local sh = (u - CX) / RR * 0.45 + (v - CY) / RR * 0.9
+      for _, q in ipairs(HEADS) do                                                  -- a trinca em volta de cada saída
+        local r = sqrt((u - q[1]) ^ 2 + (v - q[2]) ^ 2)
+        if r < 3.7 then return r > 3 and 'H' or 'J' end
+      end
+      for _, q in ipairs(LEGS) do
+        local r = sqrt((u - q[1]) ^ 2 + (v - q[2]) ^ 2)
+        if r < 2.5 then return r > 1.9 and 'H' or 'J' end
+      end
+      for n, sx in ipairs({ -0.12, 0.12, -0.36, 0.36 }) do
+        local dd = abs(lon - sx) * hw
+        if dd < (k > 1 and 0.5 or 0.62) then
+          if sh > 0.35 then return 'H' end
+          return (sh < -0.35 and dd < 0.3) and 'Y' or 'J'
+        end
+      end
+      if abs(lon) < 0.36 then
+        local pp = ((lon + 0.36) / 0.24) % 1
+        if k > 1 and (b * 0.62) % 1 < 0.18 then return 'M' end
+        local i = (pp < 0.4 and 1 or 2) + (sh > 0.4 and 1 or 0)
+        return ('KlM'):sub(i, i)
+      end
+      if lon > 0 then                                                               -- o escudo da frente: parede e entulho
+        if b < -1 then
+          local row = floor(v / 1.7)
+          local bx = (u + (row % 2) * 1.7) % 3.4
+          if bx < 0.5 or v % 1.7 < 0.45 then return '4' end
+          return R.pick('tqp', 0.6 - sh * 0.5, R.noise(p, 8)(x, y))
+        end
+        return stone(x, y, 3 * k, 21, sh > 0.3 and RUBD or RUB, '5', 0.32 * k, k)
+      end
+      return stone(x, y, 2.3 * k, 7, sh > 0.4 and GRAVD or GRAV, '5', 0.3 * k, k)
+    end)
+    t:suture({ { 14.6, 37 }, { 19, 41.4 }, { 26, 42.4 } }, 'Z', 1.3, nil)
+  end, SOLID)
+  for _, b in ipairs({ { 36, 26, 42.6, 25.6, 44.6, 27.4 } }) do                     -- vergalhão
+    d:wire({ { b[1], b[2] }, { b[3], b[4] }, { b[5], b[6] } }, 'e', 'E', 0.6, '.')
+  end
+  d:layer(function(t)
+    for _, q in ipairs(LEGS) do leg(t, q[1], q[2], q[3], q[4]) end
+    if k == 1 then
+      stamp(t, 34, 29, nil); stamp(t, 1, 15, 'left', true); stamp(t, 26, 2, 'up')
+    else
+      for _, q in ipairs(HEADS) do head(t, q[1], q[2], q[3], q[4], q[5]) end
+    end
+  end, SOLID)
+  dust(d.g, k, 0, { { 3, 12 }, { 6, 40, 's' }, { 40, 41 }, { 44.6, 8, 's' }, { 13, 4 }, { 2.4, 33 }, { 37, 44.6, 's' }, { 45, 38 }, { 26, 2.6 } })
+  -- a luz é a do tipo Terra na paleta (m, l, d), no lugar do âmbar das etapas de baixo
+  LEG.T, LEG.U, LEG.V, LEG.F, LEG.B = '#C0915A', '#E6C594', '#7E5A32', '#C0915A', '#E6C594'
+  LIT.T = 'j'; LIT.U = 'y'; LIT.V = 'h'
+  if not LOOSE:find('F', 1, true) then LOOSE = LOOSE .. 'FB' end
+  local M = { J = 'T', Y = 'U', H = 'V', S = 'F', s = 'B' }
+  for y = 0, S - 1 do for x = 0, S - 1 do if M[d.g[y][x]] then d.g[y][x] = M[d.g[y][x]] end end end
+  return d.g
+end
+local function entidadeR2(k, S, off)
+  local d = R.ctx(S, k)
+  local p = d:pp()
+  local MOUND ={ { 13.5, 31.5 }, { 34.5, 31.5 }, { 41, 21 }, { 44, 11 }, { 38, 6 }, { 24, 4.2 }, { 11, 6.4 }, { 4, 13 }, { 7, 23 } }
   d:layer(function(t)                                                              -- as patas de trás
     for _, x in ipairs({ 14.5, 23, 31.5 }) do
       t:cap(x, 37, x + 0.6, 42.4, 1.2, 0.9, 'M'); t:cap(x + 0.6, 42.4, x + 1.6, 44.4, 0.7, 0.4, 'D')

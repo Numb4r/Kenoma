@@ -286,7 +286,86 @@ end
 -- concreto sobrou o dorso de verruga com dois olhos. Seis membros: duas pernas de sapo dobradas nas pontas, dois braços
 -- saindo da boca, dois agarrados na guia. A água sai da boca de lobo e sobe: a enxurrada corre para o céu e junta
 -- numa poça que fica deitada no ar, em cima dela, com o terceiro olho boiando no reflexo.
+-- RODADA 3. A luz é a do tipo Água na paleta: P (m), L (l), H (d); C, l, t são os mesmos tons, soltos.
+LEG.P, LEG.L, LEG.H = '#4A9CFF', '#A4D0FF', '#2A62B8'
+LEG.C, LEG.l, LEG.t = '#4A9CFF', '#A4D0FF', '#2A62B8'
+LIT.P = 'q'; LIT.L = 'u'; LIT.H = 'r'; LOOSE = LOOSE .. 'Clt'; THIN = THIN .. 'Clt'
+local function sky3(p, cy, ry)
+  return function(x, y, u, v)
+    local b = (v - cy) / ry
+    if R.hash(x // (3 * p), y // p, 5) > 0.72 and b < 0.3 then return 'L' end
+    return b < -0.2 and (y // p % 2 == 0 and 'L' or 'P') or (b < 0.4 and 'P' or (y // p % 2 == 0 and 'H' or 'P'))
+  end
+end
+local function drop3(d, x, y, up)
+  local px, py = floor(d:X(x)), floor(d:Y(y))
+  local n = math.max(1, floor(d.k * 0.6 + 0.5))
+  local s = up and 1 or -1
+  for i, ch in ipairs({ 'l', 'C', 't' }) do
+    L.rect(d.g, px, py + (i - 1) * s * n, px + n - 1, py + (i - 1) * s * n + n - 1, ch, '.')
+  end
+end
+
+-- ENTIDADE MAIOR: o cururu de frente, agachado, virando a própria sarjeta. A boca, de um lado ao outro do corpo, é a
+-- boca de lobo: o lábio de cima é a verga de concreto com a tinta amarela gasta, o de baixo é a soleira. Os calombos
+-- dos olhos continuam no alto, mas cegos; os olhos estão lá dentro, atrás da grade, três. A poça do dorso reflete os
+-- três olhos, que estão do outro lado do corpo.
 local function entidade(k)
+  local d = R.ctx(48 * k, k)
+  local p = d:pp()
+  local SOL = solid()
+  local cx = 23.5
+  d:layer(function(t)                                                              -- pernas de trás dobradas, o joelho para cima
+    for _, s in ipairs({ -1, 1 }) do
+      t:cap(cx + s * 13, 37, cx + s * 18.8, 28.4, 3.6, 2.6, hide('abcd', p, cx + s * 16, 32, 5, 6))
+      t:cap(cx + s * 18.8, 28.4, cx + s * 17.4, 41.6, 2, 1.3, hide('abcd', p, cx + s * 18, 35, 3, 8))
+      for i = -1, 1 do t:wire({ { cx + s * 17.4, 41.6 }, { cx + s * (18.2 + i * 2.2), 44.8 } }, 'c', 'd', 0.6) end
+    end
+  end, SOL)
+  local function bow(u) return 3.4 * ((u - cx) / 16) ^ 2 end                         -- a boca cai nos cantos, como a do sapo
+  d:layer(function(t)
+    t:ell(cx, 40.4, 10.6, 3.2, R.mat('vwWV', R.noise(p, 6), R.lum(cx, 40.4, 10.6, 3.2)))                          -- o papo
+    t:ell(cx, 26.4, 17, 13, hide('abcde', p, cx, 24, 17, 12))                                                     -- cabeça e dorso, uma coisa só
+    for _, s in ipairs({ -1, 1 }) do                                                                              -- calombos cegos
+      t:ell(cx + s * 9, 14.6, 3.6, 3.1, hide('bcde', p, cx + s * 9, 14.6, 3.6, 3.1))
+      t:wire({ { cx + s * 6.6, 15.4 }, { cx + s * 11.4, 15.4 } }, 'a', nil, 0.5)
+    end
+    t:ell(cx, 18.8, 7, 2.9, 'r'); t:ell(cx, 18.6, 6.2, 2.2, sky3(p, 18.6, 2.2))                                   -- a poça do dorso
+    for i = -1, 1 do t:ell(cx + i * 3.4, 18.9, 0.7, 0.5, i == 0 and 'k' or 'O') end                               -- os olhos, refletidos
+    t:rect(cx - 16, 22, cx + 16, 41, function(x, y, u, v)                                                         -- a boca de lobo, só por cima da pele
+      local a = abs(u - cx)
+      local w = v - bow(u)
+      if a > 15.6 or w < 23.6 or w > 38 then return nil end
+      if w < 25 then return (R.hash(x // (2 * p), 0, 7) > 0.4) and R.pick('gG', 0, R.chk(p)(x, y)) or R.pick('iI', 0, R.noise(p, 4)(x, y)) end
+      if w < 28.4 then return R.pick('Jji', 0.8 - (w - 25) / 5, R.noise(p, 4)(x, y)) end                          -- a verga
+      if w < 34 then                                                                                              -- a grade e a água atrás
+        if a > 14.6 then return 'J' end
+        if (floor(u * 2) % 6) == 0 then return w < 29.6 and 'j' or 'J' end
+        if w < 29.4 then return 'k' end
+        if w > 31.8 then return (y // p) % 2 == 0 and 'P' or 'H' end
+        return (y // p) % 2 == 0 and 'H' or 'k'
+      end
+      if w < 35 then return (x // p) % 4 == 0 and 'i' or 'L' end                                                  -- a água passa a soleira
+      return R.pick('Jji', 0.5 - (w - 35) / 5, R.noise(p, 4)(x, y))
+    end, SKIN)
+    t:suture({ { 15.6, 22.6 }, { 17.6, 26 }, { 16.6, 29.4 } }, 'Q', 1.3, nil)                                     -- a costura
+    for i = -1, 1 do ceye(t, cx + i * 9.6, 31.2 + bow(cx + i * 9.6), 2, i == 0) end                               -- os olhos na grade
+    for _, s in ipairs({ -1, 1 }) do                                                                              -- a água escorre dos cantos
+      t:cap(cx + s * 13.4, 38.6, cx + s * 13, 42.4, 0.9, 0.6, function(x, y) return (y // p) % 3 == 0 and 'L' or 'P' end)
+    end
+  end, SOL)
+  d:layer(function(t)                                                              -- os braços, na frente
+    for _, s in ipairs({ -1, 1 }) do
+      t:cap(cx + s * 7.6, 38, cx + s * 9.6, 42.6, 1.6, 1.1, hide('bcde', p, cx + s * 8.6, 40, 3, 4))
+      for i = -1, 1 do t:wire({ { cx + s * 9.6, 42.6 }, { cx + s * (10 + i * 2), 45 } }, 'd', 'c', 0.5) end
+    end
+  end, SOL)
+  for _, q in ipairs({ { 4, 18 }, { 8.6, 9 }, { 39.6, 8 }, { 43.6, 17 }, { 23, 6.6 }, { 15, 5 }, { 32.6, 4.6 } }) do
+    drop3(d, q[1], q[2], true)
+  end
+  return d.g
+end
+local function entidadeR2(k)
   local d = R.ctx(48 * k, k)
   local p = d:pp()
   local SOL = solid()
@@ -336,7 +415,78 @@ end
 -- ARQUÉTIPO: o sapo de frente, sentado em cima do próprio reflexo. O de cima é pequeno, pele sem cor, e não tem rosto:
 -- os calombos dos olhos estão lá, cegos. O de baixo, de ponta-cabeça, é maior que ele e tem o que ele não tem: os
 -- olhos abertos, um terceiro, dois braços a mais. Entre os dois, na linha d'água, a imagem não fecha: o vão.
+-- RODADA 3. ARQUÉTIPO: o sapo de frente, com a boca aberta do tamanho do corpo. A boca é a poça: uma lâmina d'água em
+-- pé, que não escorre, e o que ela reflete é um céu que não é o daqui (o vão). A poça é mais larga que a cabeça que a
+-- segura e passa do contorno de um lado. A pele está do lado avesso: fibra em vez de verruga, cova em vez de calombo,
+-- as veias por fora, acesas. Não tem olho: no lugar dos calombos, dois buracos. Braços a mais de um lado só.
 local function arquetipo(k, S, ox, oy)
+  local d = R.ctx(S or 64 * k, k, ox, oy)
+  local p = d:pp()
+  local SOL = solid()
+  local cx = 32.5
+  local function flesh(pal, fx, lx, ly, rx, ry)                                      -- fibra em espinha, com covas
+    local lm, fib = R.lum(lx, ly, rx, ry), R.chev(d:X(fx), 2 * p)
+    return function(x, y, u, v)
+      if R.hash(x // p, y // p, 11) > 0.93 and (x // p + y // p) % 2 == 0 then return 'a' end
+      return R.pick(pal, lm(u, v), fib(x, y))
+    end
+  end
+  local function hand(t, x, y, sp, len)
+    for i = -1, 1 do t:wire({ { x, y }, { x + i * sp, y + len - abs(i) * 0.6 } }, '2', '3', 0.6) end
+  end
+  d:layer(function(t)                                                              -- pernas de trás, o joelho para cima
+    for _, s in ipairs({ -1, 1 }) do
+      t:cap(cx + s * 15, 47, cx + s * 24, 36 - s, 5, 3.4, flesh('4321', cx + s * 20, cx + s * 19, 41, 8, 9))
+      t:cap(cx + s * 24, 36 - s, cx + s * 22, 55, 2.5, 1.5, flesh('4321', cx + s * 23, cx + s * 23, 45, 4, 10))
+      hand(t, cx + s * 22, 55, 2.6, 5 + (s < 0 and 1 or 0))
+    end
+  end, SOL)
+  d:layer(function(t)                                                              -- o queixo e o corpo
+    t:cap(cx + 16.6, 21, cx + 17.6, 42, 3.4, 4.4, flesh('b321', cx + 17, cx + 17, 32, 4, 12))                      -- o canto da boca, que segura a cabeça
+    t:ell(cx, 44.6, 19.6, 11.6, flesh('4321', cx, cx, 44, 19.6, 11.6))
+    t:ell(cx - 1, 37.6, 17, 4.6, R.mat('vwWV', R.noise(p, 6), R.lum(cx, 38, 17, 5)))                               -- o beiço de baixo, forro da boca
+    t:wire({ { cx - 13, 44 }, { cx - 8, 48 }, { cx - 9, 53 } }, 'H', 'P', 0.5); t:wire({ { cx - 8, 48 }, { cx - 2, 50 } }, 'H', 'P', 0.5)
+    t:wire({ { cx + 14, 43 }, { cx + 9, 47.6 }, { cx + 11, 53 } }, 'H', 'P', 0.5); t:wire({ { cx + 9, 47.6 }, { cx + 3, 46.4 } }, 'H', 'P', 0.5)
+  end, SOL)
+  d:layer(function(t)                                                              -- o alto da cabeça, virado para trás
+    t:ell(cx + 1, 19.4, 16.6, 8.6, flesh('4321', cx + 1, cx + 1, 19, 16.6, 8.6))
+    t:ell(cx - 8, 12, 4.2, 3.8, flesh('c21', cx - 8, cx - 8, 12, 4.2, 3.8)); t:ell(cx + 10.6, 13, 3.6, 3.2, flesh('c21', cx + 10.6, cx + 10.6, 13, 3.6, 3.2))
+    t:ell(cx - 8, 12.2, 2.9, 2.5, 'd'); t:ell(cx + 10.6, 13.2, 2.4, 2.1, 'd')
+    t:ell(cx - 8, 12.4, 2.3, 1.9, 'k'); t:ell(cx + 10.6, 13.4, 1.9, 1.6, 'k')                                      -- os buracos dos olhos
+    t:ell(cx - 0.6, 25.4, 15, 3.4, R.mat('vwWV', R.noise(p, 6), R.lum(cx, 25, 15, 4)))                             -- o beiço de cima
+    t:wire({ { cx - 4, 12.6 }, { cx - 1, 16.4 }, { cx - 5, 20.6 } }, 'H', 'P', 0.5); t:wire({ { cx - 1, 16.4 }, { cx + 5, 18 }, { cx + 6.6, 22 } }, 'H', 'P', 0.5)
+  end, SOL)
+  d:layer(function(t)                                                              -- braços: um de um lado, três do outro
+    for _, q in ipairs({ { -10, 52, -12.6, 57.6 }, { 6, 53.6, 5, 58.4 }, { 10.6, 52.6, 12, 58 }, { 15, 50.6, 18, 56.4 } }) do
+      t:cap(cx + q[1], q[2], cx + q[3], q[4], 1.7, 1.1, flesh('c21', cx + q[1], cx + q[1], q[2] + 2, 3, 5))
+      hand(t, cx + q[3], q[4], 1.9, 3.4)
+    end
+  end, SOL)
+  -- a boca: a poça em pé. Mais larga que a cabeça, sai do contorno do lado esquerdo
+  local MX, MY, MRX, MRY = cx - 5.4, 31.4, 19.6, 7.4
+  d:vao(function(u, v)
+    local t = sqrt(((u - MX) / MRX) ^ 2 + ((v - MY) / MRY) ^ 2)
+    return t <= 1 and t or nil
+  end, 'X', 'Y', 0.86)
+  -- o céu de lá: duas luas e a linha de uma cidade de ponta-cabeça
+  for _, q in ipairs({ { MX - 9, MY - 1.6, 2.2 }, { MX + 7, MY + 0.6, 1.3 } }) do
+    for y = floor(d:Y(q[2] - q[3])), floor(d:Y(q[2] + q[3])) do for x = floor(d:X(q[1] - q[3])), floor(d:X(q[1] + q[3])) do
+      local u, v = (x - d.ox - (k - 1) / 2) / k, (y - d.oy - (k - 1) / 2) / k
+      local r = sqrt((u - q[1]) ^ 2 + (v - q[2]) ^ 2)
+      if r <= q[3] and sqrt((u - q[1] - q[3] * 0.5) ^ 2 + (v - q[2] + q[3] * 0.3) ^ 2) > q[3] * 0.8 and L.get(d.g, x, y) ~= 'X' then d.g[y][x] = 'l' end
+    end end
+  end
+  for i = 0, 11 do
+    local h = 1 + R.hash(i, 3, 9) * 2.6
+    d:wire({ { MX - 4 + i * 1.4, MY - MRY * 0.78 }, { MX - 4 + i * 1.4, MY - MRY * 0.78 + h } }, 'X', nil, 0.5, '.Y')
+  end
+  for n2 = 0, 9 do                                                                  -- a água da poça cai para cima
+    local x = cx + ((n2 * 37) % 54) - 27
+    drop3(d, x, (abs(x - cx - 1) < 18 and 2 or 14) + (n2 * 7) % 4, true)
+  end
+  return d.g
+end
+local function arquetipoR2(k, S, ox, oy)
   local d = R.ctx(S or 64 * k, k, ox, oy)
   local p = d:pp()
   local SOL = solid()
@@ -409,5 +559,5 @@ out('espirito', 'retrato', function() return espirito(2.6, 1, 1) end)
 out('entidade', 'mapa', function() return entidade(1) end)
 out('entidade', 'retrato', function() return entidade(2) end)
 out('arquetipo', 'mapa', function() return arquetipo(1) end)
-out('arquetipo', 'retrato', function() return arquetipo(3, 128, -31, -14) end)     -- busto: o sapo sem rosto, a linha d'água e o alto do reflexo
+out('arquetipo', 'retrato', function() return arquetipo(3, 128, -30, -14) end)     -- busto: os buracos dos olhos e a boca que é a poça
 print('ok rill')

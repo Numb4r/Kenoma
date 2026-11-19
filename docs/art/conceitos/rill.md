@@ -28,3 +28,12 @@
 |---|---|---|
 | Entidade Maior | A sarjeta: corpo de guia e asfalto, boca de lobo como boca, dorso de verruga com dois olhos, seis membros. Uma costura larga no dorso. | a enxurrada sobe da boca de lobo e junta numa poça deitada no ar, com o terceiro olho no reflexo |
 | Arquétipo | Sapo de frente, pequeno e de olhos fechados, sentado no próprio reflexo, que é maior e tem olhos abertos, um terceiro olho e braços a mais; o vão é a linha d'água. | física: ele se apoia num reflexo; geometria: o reflexo é maior e tem mais do que o refletido |
+
+## Rodada 3 (substitui a rodada 2 nestas etapas; aguarda aprovação)
+
+A luz de todas as peças desta rodada é só a da paleta do tipo.
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Entidade Maior | Cururu de frente, agachado; a boca de um lado ao outro é a boca de lobo (verga com tinta amarela, soleira, grade). Os calombos dos olhos estão cegos; os três olhos estão atrás da grade. Costura larga na verga. | a poça do dorso reflete os três olhos, que estão do outro lado do corpo |
+| Arquétipo | Sapo de frente, cinza, sem olho (dois buracos), pele em fibra com covas e veias acesas por fora. A boca aberta é a poça, e nela está o vão com duas luas e uma cidade de ponta-cabeça. Braços a mais de um lado só. | física: a poça está em pé e não escorre, e a água cai para cima; geometria: a poça é mais larga que a cabeça que a segura |

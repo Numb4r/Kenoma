@@ -25,3 +25,12 @@
 |---|---|---|
 | Entidade Maior | Árvore de calçada de cabeça para baixo: a copa é um bando fundido (três cabeças, uma virada e sem olhos) sobre pontas de asa-folha; as raízes, pés de ave, seguram a calçada no alto. Duas costuras largas no tronco. | a calçada fica no ar e as folhas caem para cima |
 | Arquétipo | Maritaca de frente, asas erguidas, espelhada: dois perfis sem olho de costas um para o outro; entre eles o vão em forma de folha, com bicos repetidos para dentro. | física: pousa num galho que nasce da própria cauda, sem nada embaixo; geometria: os dois perfis da mesma cabeça ao mesmo tempo |
+
+## Rodada 3 (substitui a rodada 2 nestas etapas; aguarda aprovação)
+
+A luz de todas as peças desta rodada é só a da paleta do tipo.
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Entidade Maior | Bando fundido num corpo só de pena verde-oliva: quatro cabeças de maritaca em pescoços próprios, todas de bico aberto com a garganta acesa, uma virada para trás. Leque de asas de folha seca, dois rabos, pés que se seguram. Costura larga no peito. | as asas estão cada uma num ponto diferente da batida e o corpo não cai |
+| Arquétipo | Seis maritacas cinza, sem olho, de tamanhos diferentes, gritando para a frente e para os lados; os pescoços saem de um mesmo anel de pena. Dentro do anel está o vão, com as cabeças repetidas para dentro. Asas de folha morta varridas para trás. | geometria: os pescoços saem de um corpo que não está lá; física: as asas são só nervura da metade para a ponta e ele paira |

@@ -25,3 +25,11 @@
 |---|---|---|
 | Entidade Maior | Tatu pequeno, seis patas, cintas acesas; a carapaça vira um monte de entulho que alarga para cima (cascalho, entulho, guia, parede), com um segundo rosto virado no alto. Uma costura larga entre o tatu e o monte. | o monte é mais largo em cima e não cai; o cascalho rola morro acima |
 | Arquétipo | Tatu de perfil partido no meio: dois escudos de osso, no lugar das cintas o vão em ampulheta com as cintas repetidas menores; cabeça pequena demais e sem rosto, garras grandes demais. | física: as metades andam sem estar ligadas, e o cascalho cai de lado para dentro do vão; geometria: as cintas não chegam ao fundo |
+
+## Rodada 3 (substitui a rodada 2 nestas etapas; aguarda aprovação)
+
+A luz de todas as peças desta rodada é só a da paleta do tipo.
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Entidade Maior | Tatu fechado em bola de entulho (escudo de cascalho, pedaço de parede, vergalhão, as três cintas com a junta acesa). Três cabeças e três patas saem dela por onde não há abertura, cada uma de uma trinca acesa. A costura fecha a bola embaixo. | a bola não abre, e o que está dentro dela está fora |

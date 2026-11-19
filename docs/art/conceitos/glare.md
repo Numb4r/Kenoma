@@ -25,3 +25,11 @@
 | Etapa | O que é | Regra quebrada |
 |---|---|---|
 | Arquétipo | Beija-flor do Eco em vidro cinza (só cabeça e cauda com cor), asa em quatro posições, três bicos de agulha, sem olho; no papo, o vão com o mesmo beija-flor virado. | física: a luz em volta faz curva; geometria: a ave dentro do próprio papo, ao contrário |
+
+## Rodada 3 (substitui a rodada 2 nestas etapas; aguarda aprovação)
+
+A luz de todas as peças desta rodada é só a da paleta do tipo.
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Arquétipo | Silhueta do beija-flor do Eco, do tamanho do quadro, feita de cacos grandes de vitrine cinza; só a cabeça (sem olho) e a cauda guardam a cor. O vão fica no lugar do coração. Luz só da paleta (sem o multicolor). | física: os cacos não se tocam e guardam a forma; geometria: o reflexo atravessa os cacos em linha reta, e a ponta do bico aparece dentro do vão |

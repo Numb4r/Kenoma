@@ -37,3 +37,11 @@ O Eco do mapa é desenhado pixel a pixel. O glitch (`tear`) só passa por partes
 |---|---|---|
 | Entidade Maior | Pombo cujo peito é o painel de LED; o pescoço sobe, dá a volta e entra no painel como cabo, sem cabeça; o rosto está na tela, um olho só. Uma costura larga onde o pescoço entra. Verde do Digital da paleta. | os blocos da cauda ficam parados no ar em grade |
 | Arquétipo | Pombo de perfil fora de registro: corpo em fatias deslocadas, cabeça em três lugares (ave, varredura, matriz), pernas e caudas a mais; no peito, o vão é um recorte aberto para a frente com o mesmo pombo dentro. | física: as fatias ficam fora do lugar sem nada que as segure; geometria: o pombo inteiro dentro do próprio peito |
+
+## Rodada 3 (substitui a rodada 2 nestas etapas; aguarda aprovação)
+
+A luz de todas as peças desta rodada é só a da paleta do tipo.
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Entidade Maior | Pombo de perfil com a cabeça certa e inteira; a traseira e a barriga escorrem em blocos, e atrás dele ficam três cópias de si mesmo, cada uma num quadro atrasado, mais escura e mais afundada. Uma costura larga onde o quadro de agora rasga do anterior. | o que já passou não sai do lugar; o corpo está em quatro instantes ao mesmo tempo |

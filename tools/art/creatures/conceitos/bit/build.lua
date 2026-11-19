@@ -404,7 +404,95 @@ end
 -- ENTIDADE MAIOR: o painel de LED com o pombo em volta. O peito e a barriga viraram a tela; o pescoço sobe, dá a volta
 -- e entra por cima no próprio painel, como um cabo, e não tem cabeça na ponta: o rosto está na tela, grande e deitado,
 -- um olho só. A cauda se desfaz em blocos, e os blocos ficam parados no ar, em grade, sem cair.
+-- RODADA 3. A luz é só a do Digital na paleta: P (m), Q (d), R (l); nada de magenta, azul ou branco nas peças novas.
+LEG.Q, LEG.k, LEG.R, LEG.l = '#62A01E', '#1F2A1A', '#DCFA9E', '#454C3A'
+LEG.y, LEG.t = '#62A01E', '#DCFA9E'                           -- soltos
+LIT.Q = 'k'; LIT.R = 'l'; LOOSE = LOOSE .. 'yt'; SOLID = SOLID .. 'QkRl'
+local function digital(g)
+  local M = { G = 'P', M = 'Q', B = 'Q', W = 'R', g = 'p', m = 'y', n = 'y', x = 't' }
+  for y = 0, g.h - 1 do for x = 0, g.w - 1 do if M[g[y][x]] then g[y][x] = M[g[y][x]] end end end
+end
+-- quadro em blocos de b pixels: cada bloco fica com a cor do próprio centro
+local function mosaic(t, b, y0)
+  b = max(1, floor(b + 0.5))
+  if b < 2 then return end
+  local s = L.grid(t.w, t.h)
+  for by = 0, t.h - 1, b do for bx = 0, t.w - 1, b do
+    local c2 = L.get(t, bx + b // 2, by + b // 2)
+    for y = by, min(t.h - 1, by + b - 1) do for x = bx, min(t.w - 1, bx + b - 1) do
+      s[y][x] = (y0 and y < y0) and t[y][x] or c2
+    end end
+  end end
+  for y = 0, t.h - 1 do for x = 0, t.w - 1 do t[y][x] = s[y][x] end end
+end
+-- o corpo escorre: cada coluna de b pixels desce do ponto mais baixo, escurecendo, com a ponta acesa
+local function melt(t, b, len, seed, x0, x1)
+  b = max(1, floor(b + 0.5))
+  for bx = (x0 or 0) - (x0 or 0) % b, (x1 or t.w - 1), b do
+    local yb
+    for y = t.h - 1, 0, -1 do if t[y][bx + b // 2] and t[y][bx + b // 2] ~= '.' then yb = y; break end end
+    local n = floor(hash(bx // b, seed, 2) * len + 0.5)
+    if yb and n > 0 and hash(bx // b, seed, 5) > 0.25 then
+      for i = 1, n do
+        local ch = i > n - b and 'P' or (i > n * 0.55 and 'Q' or ((i // b) % 2 == 0 and 'a' or '2'))
+        for x = bx, bx + b - 1 do L.set(t, x, yb + i, ch) end
+      end
+    end
+  end
+end
+local DARK = { e = 'd', d = 'c', c = 'b', b = 'a', a = '2', h = 'd', j = 'i' }
+local function darken(t, n)
+  for _ = 1, n do for y = 0, t.h - 1 do for x = 0, t.w - 1 do if DARK[t[y][x]] then t[y][x] = DARK[t[y][x]] end end end end
+end
+
+-- ENTIDADE MAIOR: o pombo que não sai dos quadros por onde passou. A cabeça está certa e inteira, no quadro de agora;
+-- o corpo escorre em blocos, e atrás dele ficam três cópias de si mesmo, cada uma num quadro atrasado do mesmo balanço
+-- de cabeça, cada uma mais escura, em blocos maiores e mais afundada no chão. Ele se arrasta puxando as cópias.
 local function entidade(k)
+  local S = 48 * k
+  local d = R.ctx(S, k)
+  local g = d.g
+  local s = 1.15 * k
+  local OX, OY = 17.5, 4
+  local function ghost(t, dx, dy, o, dark, blk, drip, seed)
+    local c2 = L.grid(S, S)
+    pigeon(c2, s, (OX + dx) * k, (OY + dy) * k, o)
+    digital(c2); darken(c2, dark)
+    mosaic(c2, blk * k)
+    for y = 0, S - 1 do for x = 0, S - 1 do                                         -- varredura, e a franja do lado de trás
+      if c2[y][x] ~= '.' then
+        if L.get(c2, x - 1, y) == '.' and (y // k) % 2 == 0 then c2[y][x] = 'Q'
+        elseif (y // k) % 3 == 2 and not ('PQR'):find(c2[y][x], 1, true) then c2[y][x] = ({ [0] = 'a', '2', '1' })[dark] end
+      end
+    end end
+    melt(c2, max(1, blk) * k, drip * k, seed)
+    blit(t, c2)
+  end
+  layer(g, function(t)
+    ghost(t, -21, 6, { legs = {}, tails = {}, heads = { { 18.6, 12, 18.2, 7.4, 'scan' } } }, 1, 2, 4, 11)
+    ghost(t, -14, 4, { legs = {}, heads = { { 18.6, 12, 18.4, 7, 'scan' } } }, 1, 1, 5, 12)
+    ghost(t, -7, 2, { legs = { 12.6 }, heads = { { 18.6, 12, 18.6, 6.6, 'scan' } } }, 1, 0, 5, 13)
+    keepMain(t)
+  end)
+  layer(g, function(t)                                                              -- o quadro de agora
+    pigeon(t, s, OX * k, OY * k)
+    local m2 = L.grid(S, S)
+    blit(m2, t); mosaic(m2, 2 * k)
+    for y = floor(d:Y(21)), S - 1 do for x = 0, floor(d:X(31)) do                    -- a traseira e a barriga já em blocos
+      if (x - d:X(31)) + (y - d:Y(21)) * 1.2 < 6 * k or y > d:Y(25) then t[y][x] = m2[y][x] end
+    end end
+    melt(t, 2 * k, 6 * k, 14, floor(d:X(21)), floor(d:X(33)))
+  end)
+  tear(g, d:Y(23) - (k - 1) / 2, d:Y(24) + (k - 1) / 2, -2 * k)
+  -- a costura: onde o quadro de agora rasga do anterior
+  d:suture({ { 27, 17 }, { 25, 23 }, { 26.4, 29 } }, 'Z', 1.3, nil, SOLID)
+  digital(g)
+  for n2, e in ipairs({ { 3, 14 }, { 6, 44.6 }, { 41, 6 }, { 44.6, 30 }, { 12, 10 }, { 20, 45.4 }, { 31, 44 }, { 8.6, 18 }, { 36.6, 3 } }) do
+    d:dot(e[1], e[2], n2 % 3 == 0 and 'y' or (n2 % 3 == 1 and 'p' or 't'))
+  end
+  return g
+end
+local function entidadeR2(k)
   local S = 48 * k
   local d = R.ctx(S, k)
   local g = d.g

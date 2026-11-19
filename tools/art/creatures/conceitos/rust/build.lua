@@ -387,7 +387,87 @@ local function diamond(t, x, y, w, h, fn) t:poly({ { x - w, y }, { x, y - h * 0.
 -- encontram, a chapa da fechadura é o que sobrou do besouro: o buraco da fechadura aceso é o rosto, com três parafusos
 -- de olho, e o chifre é a lança do meio. Seis patas de ferrugem saem dos montantes. A corrente do cadeado fica de pé:
 -- o cadeado cai para cima.
+-- RODADA 3. A limalha solta também é da paleta do Metal: C (l) e F (m).
+LEG.C, LEG.F = '#CCD6E2', '#93A1B3'
+LOOSE = LOOSE .. 'CF'
+-- Folha de portão em perspectiva: O é o pé da dobradiça, A vai até a ponta, B sobe. nb barras, lanças em cima.
+local function gateLeaf(t, k, O, A, B, nb, glow, pal)
+  local det = A[1] * B[2] - A[2] * B[1]
+  local la, lb = sqrt(A[1] ^ 2 + A[2] ^ 2), sqrt(B[1] ^ 2 + B[2] ^ 2)
+  local pw = t:pp()
+  for i = 1, (glow > 0 and nb - 1 or 0) do
+    local s = (i + 0.16) / nb
+    local bx, by = O[1] + A[1] * s + B[1], O[2] + A[2] * s + B[2]
+    t:wire({ { bx, by }, { bx + B[1] / lb * 1.6, by + B[2] / lb * 1.6 } }, '3', '4', 0.5)
+    diamond(t, bx + B[1] / lb * 2.8, by + B[2] / lb * 2.8, 1, 3, R.mat(pal and '987' or '234', R.ver(pw), 0.5))
+  end
+  t:poly({ O, { O[1] + A[1], O[2] + A[2] }, { O[1] + A[1] + B[1], O[2] + A[2] + B[2] }, { O[1] + B[1], O[2] + B[2] } }, function(x, y, u, v)
+    local s = ((u - O[1]) * B[2] - (v - O[2]) * B[1]) / det
+    local tt = (A[1] * (v - O[2]) - A[2] * (u - O[1])) / det
+    local sh = (0.5 - tt) * 0.8 + (s - 0.5) * 0.5
+    local ds, dt = min(s, 1 - s) * la, min(tt, 1 - tt) * lb
+    if ds < 1 or dt < 1 then return iron(min(ds, dt) - 0.5, 0.5, x, y, sh, k, pal) end
+    local f = (s * nb) % 1
+    if f < 0.34 then return iron((f - 0.17) * la / nb, 0.5, x, y, sh, k, pal) end
+    if abs(tt - 0.45) < 0.6 / lb then return iron(0, 0.5, x, y, sh + 0.3, k, pal) end
+    if s > glow then return nil end                                                 -- longe da dobradiça o vão é vão mesmo
+    return s < glow * 0.4 and 'M' or 'D'
+  end)
+end
+
+-- ENTIDADE MAIOR: o besouro-rinoceronte de perfil, com os élitros levantados como quem vai voar, e cada élitro é uma
+-- folha de portão inteira, com barras, travessa e lanças, girando na dobradiça das costas. Onde eles estavam, o abdome
+-- está aberto e aceso. As patas não são dele: são vergalhões que saem do chão, cada um num lugar, e seguram o corpo
+-- por onde alcançam: a barriga, a ponta da folha, o chifre.
 local function entidade(k, S, off)
+  local d = R.ctx(S, k)
+  local p = d:pp()
+  d:layer(function(t)                                                              -- a folha de lá, mais fechada
+    gateLeaf(t, k, { 28.6, 24.6 }, { -9.6, -11.6 }, { 2, -8.6 }, 3, 0, IRONP)
+  end, SOLID)
+  d:layer(function(t)                                                              -- o besouro
+    t:ell(18, 31.6, 11, 5, function(x, y, u, v)                                     -- o abdome aberto: anéis de ferro, luz dentro
+      local e = ((u - 18) / 11) ^ 2 + ((v - 31.6) / 5) ^ 2
+      local sh = (v - 31.6) / 5
+      if e > 0.7 or v > 33.6 then return iron(0, 1, x, y, sh, k) end
+      if (u - 8.4) % 3.4 < 0.9 then return iron(0, 0.5, x, y, sh, k) end
+      local gl = ((u - 19.4) / 9) ^ 2 + ((v - 30.2) / 3.2) ^ 2
+      return gl < 0.2 and 'L' or (gl < 0.6 and 'M' or 'D')
+    end)
+    t:cap(33, 24, 37.4, 21.6, 1.1, 0.5, function(x, y, u, v) return iron(0, 1, x, y, -0.2, k, IRONP) end)                       -- o chifre do pronoto
+    t:ell(31, 29.6, 5, 6.6, function(x, y, u, v) return plate(x, y, (v - 29.6) / 6.6 * 0.85 + (u - 31) / 5 * 0.3, k) end)       -- pronoto
+    t:ell(37.6, 32.2, 2.8, 3, function(x, y, u, v) return v < 31.2 and '4' or (v < 33.2 and '3' or '2') end)                    -- cabeça
+    t:ell(38.6, 31.6, 0.8, 0.8, 'o'); if k > 1 then t:ell(38.4, 31.4, 0.3, 0.3, 'W') end
+    t:cap(38.4, 30, 42, 27, 1.3, 1.1, function(x, y, u, v) return iron(0, 1, x, y, (v - 28) * 0.4, k, IRONP) end)               -- o chifre: lança de portão
+    t:cap(42, 27, 43.6, 20, 1.1, 0.8, function(x, y, u, v) return iron(0, 1, x, y, (u - 43) * 0.6, k, IRONP) end)
+    t:ell(43.6, 19.6, 1.6, 0.8, 'q')
+    diamond(t, 43.8, 17.4, 1.8, 6, function(x, y, u, v) return iron(u - 43.8, 1.7, x, y, (v - 16) / 5, k, IRONP) end)
+    t:cap(39.6, 34, 41.4, 35.2, 0.5, 0.4, '3')
+    t:suture({ { 12.6, 26.8 }, { 25.6, 26 } }, 'Z', 1.3, nil, SOLID)                  -- a costura, na dobradiça
+  end, SOLID)
+  d:layer(function(t)                                                              -- a folha de cá, aberta
+    gateLeaf(t, k, { 25.6, 25.6 }, { -19, -6 }, { -1, -13 }, 4, 0.55)
+    t:ell(25.6, 25, 1.3, 1.3, R.mat('345', R.chk(p), 0.6))                           -- a dobradiça
+  end, SOLID)
+  local legs = {}
+  local function rebar(pts)
+    leg(legs, pts, 0.55, 'e', 'E', 4)
+    legs[#legs + 1] = { pts[1][1] - 1.4, 45.5, pts[1][1] + 1.4, 45.5, 0.75, 0.75, '2', '1' }   -- o asfalto rachado no pé
+  end
+  rebar({ { 6, 45.5 }, { 5, 39 }, { 8.6, 34 } })
+  rebar({ { 13, 45.5 }, { 15.4, 41 }, { 14, 36 } })
+  rebar({ { 22.4, 45.5 }, { 20.4, 41.4 }, { 22.6, 36.2 } })
+  rebar({ { 29, 45.5 }, { 32.4, 41.4 }, { 31, 35.6 } })
+  rebar({ { 39, 45.5 }, { 36.4, 41 }, { 37.8, 34.6 } })
+  rebar({ { 43.6, 45.5 }, { 45, 37 }, { 44.6, 28 }, { 44, 22 } })                   -- esta segura o chifre
+  rebar({ { 3, 45.5 }, { 2.6, 34 }, { 4.6, 26 }, { 7, 20.4 } })                     -- e esta, a ponta da folha
+  behind(d.g, k, 0, legs)
+  for n, q in ipairs({ { 45.4, 11 }, { 3, 6 }, { 24, 3 }, { 44, 5 }, { 27, 41 }, { 9.6, 42 }, { 42.6, 42.4 }, { 18, 44 } }) do
+    d:dot(q[1], q[2], n % 3 == 0 and 'C' or 'F')
+  end
+  return d.g
+end
+local function entidadeR2(k, S, off)
   local d = R.ctx(S, k)
   local p = d:pp()
   local cx = 23.5
@@ -444,7 +524,96 @@ end
 -- Entre as folhas não há corpo: o vão, em arco de portão, e dentro dele outro portão aberto, e outro, cada um menor.
 -- Do besouro sobram três chifres de lança e seis patas finas de aço que não chegam ao chão. A luz acende por trás das
 -- barras sem haver nada atrás delas.
+-- RODADA 3. ARQUÉTIPO: o besouro em pé, alto, torto e sem cabeça. O casco é só a grade, e atrás das barras não há
+-- corpo: o vão. Um élitro fechado, o outro aberto como folha de portão, e as barras de um continuam nas do outro.
+-- O pronoto ficou, com o chifre dele; onde a cabeça encaixava, um colar vazio. Nove patas finas de aço, seis de um lado
+-- e três do outro, saem de dentro do vão por entre as barras e nenhuma chega ao chão.
 local function arquetipo(k, S, ox, oy)
+  local d = R.ctx(S, k, ox, oy)
+  local p = d:pp()
+  local CX, CY, RX, RY = 25, 40.5, 12.6, 20
+  local cr, sr = cos(math.rad(12)), sin(math.rad(12))
+  local ASH3 = { '6789', '7890', '6789', '5432', '7890', '4321', 'qRr1', 'Gg09' }
+  local iron0 = iron
+  local function iron(d0, w, x, y, sh, kk, pal)                                      -- aço fosco: hachura de dois tons
+    return iron0(d0, w, x, y, sh + (((x + y) // p) % 3 == 0 and 0.5 or 0), kk, ASH3)
+  end
+  local function rim(th, f)                                                         -- ponto da borda do casco
+    local a, b = RX * cos(th) * (f or 1), RY * sin(th) * (f or 1)
+    return CX + a * cr - b * sr, CY + a * sr + b * cr
+  end
+  d:layer(function(t)                                                              -- a folha aberta, do lado de lá
+    gateLeaf(t, k, { 17.6, 31 }, { -12, -4.6 }, { 3.4, -17 }, 4, 0.001, ASH3)
+  end, SOLID)
+  d:layer(function(t)
+    t:cap(29.6, 22.6, 35, 17, 3.6, 3.4, function(x, y, u, v) return iron(0, 1, x, y, (u - 32) * 0.2, k, ASH) end)   -- a cintura
+    t:cap(40.6, 9.6, 47.4, 6, 1.4, 1, function(x, y, u, v) return iron(0, 1, x, y, (v - 8) * 0.4, k, ASH) end)      -- o chifre do pronoto
+    t:cap(47.4, 6, 51, 8.6, 1, 0.4, function(x, y, u, v) return iron(0, 1, x, y, 0.3, k, ASH) end)
+    t:ell(37.6, 13.6, 7.6, 6, function(x, y, u, v)                                                                 -- o pronoto
+      local sh = (v - 13.6) / 6 * 0.85 + (u - 37.6) / 7.6 * 0.3
+      if abs(((u - 37.6) / 7.6) ^ 2 + ((v - 13.6) / 6) ^ 2 - 0.55) < 0.07 then return sh < 0 and '6' or '8' end
+      return iron(0, 1, x, y, sh, k, ASH)
+    end)
+    t:rect(0, 0, 63, 63, function(x, y, u, v)                                       -- o casco: só barras
+      local a = (u - CX) * cr + (v - CY) * sr
+      local b = -(u - CX) * sr + (v - CY) * cr
+      local e = (a / RX) ^ 2 + (b / RY) ^ 2
+      if e > 1 then return nil end
+      local hw = RX * sqrt(max(0.02, 1 - (b / RY) ^ 2))
+      local lon = a / hw
+      local sh = lon * 0.6 + b / RY * 0.5
+      if (1 - sqrt(e)) * RX < 1.5 then return iron(0, 1, x, y, sh, k, ASH) end
+      for _, s in ipairs({ -0.66, -0.33, 0, 0.33, 0.66 }) do
+        local dd = (lon - s) * hw
+        if abs(dd) < 0.75 then
+          if abs(b + 7) < 0.9 or abs(b - 6) < 0.9 then return 'L' end                -- o rebite, aceso
+          local i = (dd < 0 and 1 or 3) + (sh > 0.2 and 1 or 0)                      -- barra de aço limpo: aresta clara, aresta escura
+          return ('6789'):sub(i, i)
+        end
+      end
+      if abs(b + 7) < 0.7 or abs(b - 6) < 0.7 then return (y // p) % 2 == 0 and '8' or '9' end
+      local pk = t:pp()
+      local r = sqrt((lon * 0.8) ^ 2 + (b / RY) ^ 2)                                 -- atrás das barras: o vão
+      if (y // pk) % 3 == 0 then return nil end
+      return r < 0.36 and 'X' or 'x'
+    end)
+  end, SOLID)
+  -- o colar vazio, onde a cabeça encaixava
+  d:vao(function(u, v)
+    local t = sqrt(((u - 44.4) / 2.7) ^ 2 + ((v - 16.6) / 3.3) ^ 2)
+    return t <= 1 and t or nil
+  end, 'X', 'x', 0.6)
+  local legs = {}
+  local function steel(th, pts)
+    local x0, y0 = rim(math.rad(th), 0.93)
+    table.insert(pts, 1, { x0, y0 })
+    leg(legs, pts, 0.55, 'm', 'n', 4)
+    local e = pts[#pts]                                                             -- a garra
+    legs[#legs + 1] = { e[1], e[2], e[1] + 1.4, e[2] - 1.5, 0.4, 0.3, 'm', 'n' }
+  end
+  steel(-34, { { 46, 28.6 }, { 50, 34.4 }, { 52.6, 33.4 } })
+  steel(-17, { { 48, 35 }, { 51, 41.4 }, { 54, 41 } })
+  steel(-2, { { 49.6, 42 }, { 51.4, 48.4 }, { 54.4, 48.4 } })
+  steel(13, { { 49, 48.6 }, { 49.6, 54.6 }, { 52.6, 55 } })
+  steel(30, { { 46, 54 }, { 45.4, 59.4 }, { 48.4, 60.4 } })
+  steel(50, { { 40.6, 58 }, { 39, 60.6 }, { 41.6, 61.6 } })
+  steel(165, { { 6.6, 47.6 }, { 5, 53.6 }, { 2.6, 53 } })
+  steel(142, { { 8, 55 }, { 8.6, 60 }, { 6, 60.6 } })
+  steel(118, { { 13.6, 60 }, { 15.6, 61.6 }, { 13.4, 62 } })
+  for y = 0, S - 1 do for x = 0, S - 1 do                                           -- as patas, só no vazio (ox e oy separados)
+    if d.g[y][x] == '.' then
+      local c = caps((x + 0.5 - d.ox) / k, (y + 0.5 - d.oy) / k, legs)
+      if c then d.g[y][x] = c end
+    end
+  end end
+  prune(d.g)
+  for n = 0, 15 do
+    local a = n * 2.4
+    d:dot(30 + cos(a) * (26 + (n * 7) % 5), 32 + sin(a) * (27 + (n * 5) % 4), n % 3 == 0 and 'C' or 'F')
+  end
+  return d.g
+end
+local function arquetipoR2(k, S, ox, oy)
   local d = R.ctx(S, k, ox, oy)
   local p = d:pp()
   local cx, HX = 31.5, 25
@@ -533,6 +702,6 @@ out('espirito', 'retrato', espirito(2.55, 96, 2.1))
 out('entidade', 'mapa', entidade(1, 48, 0))
 out('entidade', 'retrato', entidade(2, 96, 0))
 out('arquetipo', 'mapa', arquetipo(1, 64, 0))
-out('arquetipo', 'retrato', arquetipo(3, 128, -31, -31))                           -- busto: os chifres, o arco do vão e o alto das folhas
+out('arquetipo', 'retrato', arquetipo(3, 128, -42, 0))                             -- busto: o pronoto, o colar vazio e o alto da grade
 print('RESUMO ' .. table.concat(RES, ' | '))
 print('ok rust')
