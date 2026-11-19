@@ -5,6 +5,8 @@
 -- fechado. O tronco é uma boca de fornalha: um arco de ferro fundido, e por dentro ele é só o fogo, com as brasas
 -- no chão do forno. O rabo sobe reto atrás dele como chaminé, com a bituca acesa no alto e a fumaça. As duas mãos
 -- (as que parecem de gente) ficam juntas na frente do fogo.
+-- A CARA (o que se lê a 36 px): a cabeça é grande (HS 1,55), a cara branca passa de 8×7 px, as duas orelhas ficam
+-- separadas e a fresta do olho fechado tem 4 px sobre a pálpebra clara.
 -- Costuras do Véu: duas, de 2 px (no lombo, atrás do forno, e na nuca), só no glow.
 -- Camadas: corpo; leds = as brasas no chão do forno e a bituca (piscam); glow = o fogo, a garganta no alerta, as
 -- costuras e as faíscas.
@@ -65,9 +67,18 @@ local function draw(g, sg, k, o)
   P:ell(11.6, 29.6 + m, 5.6, 3.4, 'f')
   S.leg(P, 15, 30.6 + m, 18.6, 32 + m, 20.6, 32.6 + f, 1.5, 1.0, 'f', st)
   P:limb({ { 19.4 + lx, 16.6 + b }, { 22.4 + lx, 20.4 + b }, { 21.6 + lx, 22.8 + b } }, 1.3, 0.8, 'f')
-  local HS = 1.3                                             -- cabeça grande: a cara precisa de 4 linhas para o olho
-  local T = S.head(P, k, 21.6 + lx, 11.2 + hb, 12, HS, { open = alert and 1.3 or nil, ear = 2 })
-  P:ell(18.6 + lx, 10.4 + hb, 2.8, 3.0, 'f')
+  local HS = 1.55                                            -- cabeça grande: a cara branca passa de 8×7 px no mapa
+  -- as duas orelhas, separadas (as do kit crescem com a cabeça e viravam um gorro)
+  do
+    local hx, hy, ca, sa = 20.8 + lx, 12 + hb, math.cos(math.rad(12)), math.sin(math.rad(12))
+    for _, e in ipairs({ { -2.2, -3.2 }, { 1.0, -3.3 } }) do
+      local u, v = e[1] * HS, e[2] * HS
+      local ex, ey = hx + u * ca - v * sa, hy + u * sa + v * ca
+      P:ell(ex, ey, 1.8, 2.3, 'q'); P:ell(ex + 0.2, ey + 0.4, 0.9, 1.3, 'p')
+    end
+  end
+  local T = S.head(P, k, 20.8 + lx, 12 + hb, 12, HS, { open = alert and 1.3 or nil, ear = 0 })
+  P:ell(16.6 + lx, 11 + hb, 2.4, 3.6, 'f')
   S.paw(P, k, 17 - st, 33 + f, 'q', 0.55); S.paw(P, k, 20.6 + st, 33 + f, 'p', 0.55)
   S.furShade(g, k, 'f', S.FUR, { zones = 3, within = 'fygYERrk' })
   S.furShade(g, k, 'g', 'ba', { zones = 1 })
@@ -95,13 +106,13 @@ local function draw(g, sg, k, o)
   S.headFinish(P, k, T, HS, {})
   -- a pálpebra clara limpa a hachura da cara e a fresta escura, em arco para baixo, fica por cima
   local ec = T(1.5, -0.5)
-  P:ell(ec[1], ec[2], 2.4, 1.9, 'V', S.FACE)
-  P:limb({ T(0.4, -0.9), T(1.1, -0.2), T(1.9, -0.2), T(2.6, -0.9) }, 0.3, 0.3, 'k', S.FACE)
+  P:ell(ec[1], ec[2], 2.9, 2.2, 'V', S.FACE)
+  P:limb({ T(0.1, -1.0), T(0.9, -0.1), T(2.1, -0.1), T(2.9, -1.0) }, 0.3, 0.3, 'k', S.FACE)
   S.buttTip(P, k, tip[1], tip[2], -0.5, -0.85, ph == 2)
   -- costuras do Véu: duas, de 2 px
   local w = math.max(1, floor(2 * k + 0.5))
   S.seam(P, { { 8.8, 20.4 + b }, { 9.4, 26.4 + b } }, w, 'X', S.FUR, k > 1 and 2 or nil)
-  S.seam(P, { { 17.8 + lx, 10.6 + hb }, { 18.6 + lx, 14.8 + hb } }, w, 'X', S.FUR, k > 1 and 2 or nil)
+  S.seam(P, { { 16 + lx, 9 + hb }, { 16.8 + lx, 13.4 + hb } }, w, 'X', S.FUR, k > 1 and 2 or nil)
   -- fumaça da chaminé, sem contorno
   if not o.jump and not crouch then
     local n1 = k > 1 and 12 or 4

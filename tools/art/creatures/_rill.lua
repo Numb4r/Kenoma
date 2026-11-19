@@ -31,6 +31,7 @@ Rl.LEG = {
   H = WATER.m, Z = WATER.l,                                                   -- estrela (leds: pisca)
   M = WATER.l, L = WATER.m,                                                   -- a lua e o rastro dela (glow)
   m = '#93A5BD', l = '#5C7696',                                               -- a lua e o rastro apagados: de dia o papo não é um disco escuro
+  F = WATER.m, G = WATER.l,                                                   -- o luar na borda da cabeça (glow; apagado: pele e pálpebra)
   T = WATER.d, S = WATER.m, s = WATER.l,                                      -- gota solta (só no glow)
   ['5'] = '#5E586A', ['8'] = '#5F5C6B',                                       -- costura do Véu apagada: pele, concreto
   X = VEU, ['9'] = VEU,                                                       -- costura acesa (glow)
@@ -39,7 +40,7 @@ Rl.LEG = {
 -- aceso = { apagado, camada }: 'l' leds (pisca), 'w' glow.
 Rl.LIT = {
   B = { 'r', 'w' }, D = { 'q', 'w' }, E = { 'u', 'w' }, H = { 'q', 'l' }, Z = { 'u', 'l' },
-  M = { 'm', 'w' }, L = { 'l', 'w' },
+  M = { 'm', 'w' }, L = { 'l', 'w' }, F = { 'e', 'w' }, G = { 'W', 'w' },
   X = { '5', 'w' }, ['9'] = { '8', 'w' },
 }
 Rl.NOPULL = 'ATSs'

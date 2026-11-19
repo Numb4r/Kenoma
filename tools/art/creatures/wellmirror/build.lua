@@ -11,7 +11,7 @@
 -- o rastro continuam claros dentro dele.
 -- Costuras do Véu: duas, de 2 px (no dorso e na parede da manilha), só no glow.
 -- Camadas: corpo; leds = as estrelas no espelho (piscam); glow = a borda do espelho, a lua, o rastro dela na água,
--- os fios que transbordam, as costuras e as gotas.
+-- o luar no alto dos dois calombos dos olhos (a cabeça à noite), os fios que transbordam, as costuras e as gotas.
 -- Bicho de chão: o sapo sobe e desce dentro da manilha (body_dy) e ela fica; na deriva a manilha ginga; na fuga,
 -- salta com ela. Encolhido, o papo esvazia mas continua um disco inteiro acima da borda.
 -- Rodar: KENOMA_ART='<repo>/tools/art/'; dofile(KENOMA_ART .. 'creatures/wellmirror/build.lua')
@@ -119,6 +119,13 @@ local function draw(g, sg, k, o)
     P:ell(e[1] + 0.4, e[2] + 0.3, e[3] - 0.9, 0.6, 'W', 'V')
     P:limb({ { e[1] - e[3] + 0.3, e[2] + 0.9 }, { e[1], e[2] + 1.4 }, { e[1] + e[3] - 0.3, e[2] + 0.9 } }, 0.3, 0.3, 'a',
       Rl.SKIN .. Rl.BELLY)
+  end
+  -- o luar na borda da cabeça (glow): um arco no alto de cada calombo, para a cabeça de sapo se ler à noite; a pele
+  -- fica apagada
+  for _, e in ipairs(EYES) do
+    P:limb({ { e[1] - e[3] + 0.5, e[2] - 0.7 }, { e[1] - 0.2, e[2] - e[4] + 0.2 }, { e[1] + e[3] - 0.5, e[2] - 0.7 } }, 0.3, 0.3, 'F',
+      Rl.SKIN .. Rl.BELLY)
+    P:limb({ { e[1] - 0.8, e[2] - e[4] + 0.2 }, { e[1] + 0.4, e[2] - e[4] + 0.2 } }, 0.3, 0.3, 'G', 'F')
   end
   -- costuras do Véu: duas, de 2 px
   local w = math.max(1, floor(2 * k + 0.5))

@@ -6,7 +6,10 @@
 -- Fica parada, alta, em cima de seis raízes compridas abertas no chão, que é por onde ela escuta; o talo passa por
 -- dentro de uma placa de calçada que ela levantou. No alerta o olho abre (a espiral desenrola, a pupila cresce);
 -- encolhida, fecha.
--- Costuras do Véu: duas, de 2 px (atravessando a placa, e nos lobos de fora do disco), só no glow.
+-- A SILHUETA (o que se lê de dia): um "?" com três vazios no contorno (debaixo do báculo, atrás do pescoço nu e
+-- entre a pina de baixo e a placa). O tronco (as duas pinas por lado, só na metade de baixo do talo) é um degrau de
+-- valor mais escuro que a copa; debaixo da placa o vão entre as raízes é sombra (junta), não vazio.
+-- Costuras do Véu: duas, de 2 px (atravessando a placa, e ao longo da pina de cima do tronco), só no glow.
 -- Camadas: corpo; leds = o broto (a pupila); glow = a nervura em espiral, as costuras e os esporos.
 -- Bicho de chão: a placa e o olho sobem e descem (body_dy) e as raízes ficam; na deriva as raízes andam e o olho
 -- fica para trás; na fuga, salta.
@@ -18,6 +21,18 @@ local sin, cos, rad, floor = math.sin, math.cos, math.rad, math.floor
 -- seis raízes compridas, em arco: a placa fica alta em cima delas
 local ROOTS = { { 10.6, 26.6, 5.4, 27.2, 3.6, 32.8 }, { 13, 27.6, 9.4, 29.6, 9, 32.8 }, { 16.6, 28, 15.6, 30.4, 16.2, 32.8 },
   { 21, 27.6, 22.6, 30.2, 22.2, 32.8 }, { 24, 26.6, 27.8, 28.8, 28, 32.8 }, { 25.6, 25.6, 30.6, 26.2, 32.4, 32.6 } }
+
+-- Contorno interno em cor de corpo: o vão de 1 px entre duas partes (entre raízes, entre pina e talo) vira junta
+-- ('k'), não contorno. Os vazios da silhueta (2 px ou mais) ficam.
+local function seal(g)
+  local hit = {}
+  for y = 1, g.h - 2 do for x = 1, g.w - 2 do
+    if g[y][x] == '.' and ((g[y][x - 1] ~= '.' and g[y][x + 1] ~= '.') or (g[y - 1][x] ~= '.' and g[y + 1][x] ~= '.')) then
+      hit[#hit + 1] = { x, y }
+    end
+  end end
+  for _, q in ipairs(hit) do g[q[2]][q[1]] = 'k' end
+end
 
 local function draw(g, sg, k, o)
   local off = k > 1 and 1 or 0
@@ -33,18 +48,27 @@ local function draw(g, sg, k, o)
   for n, r in ipairs(ROOTS) do
     local s = (n % 2 == 0) and st or -st
     P:limb({ { r[1], r[2] + b }, { r[3] + s * 0.5, r[4] + (b + f) / 2 }, { math.max(3.6, math.min(32.4, r[5] + s)), r[6] + f } },
-      1.6, 0.75, 'h')
+      1.7, 0.8, 'h')
+  end
+  -- a sombra debaixo da placa: o vão entre as raízes é escuro (junta), não vazio; só o pé de cada raiz fica solto
+  local gy, sy = floor(P:Y(31.5 + f)), floor(P:Y(27.6 + b))
+  for x = floor(P:X(ROOTS[1][5])), floor(P:X(ROOTS[6][5])) do
+    local top
+    for y = 0, gy do
+      if g[y][x] == 'h' or y >= sy then top = true end
+      if top and g[y][x] == '.' then g[y][x] = 'k' end
+    end
   end
   -- a placa de calçada que o talo atravessou
-  P:poly({ { 9.6, 24 + b }, { 24.6, 22.4 + b }, { 26.6, 25 + b }, { 11.6, 27 + b } }, 'y')
+  P:poly({ { 9.6, 23.4 + b }, { 24.6, 21.8 + b }, { 26.6, 25 + b }, { 11.6, 27 + b } }, 'y')
   P:poly({ { 11.6, 27 + b }, { 26.6, 25 + b }, { 26.6, 26.8 + b }, { 11.8, 28.8 + b } }, 'J')
-  P:poly({ { 9.6, 24 + b }, { 11.6, 27 + b }, { 11.8, 28.8 + b }, { 9.8, 26 + b } }, 'j')
+  P:poly({ { 9.6, 23.4 + b }, { 11.6, 27 + b }, { 11.8, 28.8 + b }, { 9.8, 26 + b } }, 'j')
   -- a fronde: o talo sobe vergado, com os lobos alternados da família (compridos do lado de fora, curtos do lado do
   -- báculo), e a ponta enrola no sentido do relógio. O báculo pende para a frente, fora do eixo do talo (um "?", não
   -- uma flor no cabo), e os lobos de fora dele vão sumindo ao longo da volta: sem coroa de pétalas.
-  local R0 = alert and 6.1 or (crouch and 4.6 or 5.6 + sw * 0.2)
+  local R0 = alert and 6.2 or (crouch and 4.6 or 5.8 + sw * 0.2)
   local turns = alert and 1.25 or (crouch and 1.8 or 1.5 - sw * 0.05)
-  local cx, cy = 14.8 + R0 + ln, 11.6 + b + (crouch and 1.6 or 0)
+  local cx, cy = 15.8 + R0 + ln, 10.7 + b + (crouch and 1.6 or 0)
   local coil = {}
   local n1 = floor(turns * 12 + 0.5)
   for n = 0, n1 do
@@ -53,16 +77,19 @@ local function draw(g, sg, k, o)
     local r = R0 * (1 - t) ^ 0.85 + 1.0 * t
     coil[#coil + 1] = { cx + cos(a) * r, cy + sin(a) * r }
   end
-  local stalk = { { 16.4, 25.4 + b }, { 14.6 + ln * 0.2, 21.2 + b }, { 13.6 + ln * 0.5, 17.6 + b },
-    { 13.8 + ln * 0.8, 14.6 + b + (crouch and 0.8 or 0) }, coil[1] }
+  local stalk = { { 16.8, 25.4 + b }, { 14.6 + ln * 0.2, 21.4 + b }, { 13.4 + ln * 0.5, 17.6 + b },
+    { 13.8 + ln * 0.8, 14 + b + (crouch and 0.8 or 0) }, coil[1] }
   local function wag(n) return alert and (n % 2 == 0 and -10 or 0) or (still and 0 or 4 * sin(ph * 1.571 + n * 0.9)) end
+  -- o tronco: duas pinas por lado, só na metade de baixo do talo (o pescoço fica nu, com vão dos dois lados), e um
+  -- degrau de valor abaixo da copa (base 'F', rampa escura)
   local i = -1
-  local lobes = Fr.frond(P, stalk, { n = 3, t0 = 0.14, t1 = 0.98, ang = 50, r0 = 0.7, r1 = 0.55, fat = 1.35, wag = wag,
+  local lobes = Fr.frond(P, stalk, { n = 2, t0 = 0.08, t1 = 0.74, ang = 56, r0 = 0.7, r1 = 0.55, fat = 0.85, wag = wag,
     w = function(t)                                          -- pinas separadas, com vão entre elas
       i = i + 1
-      return i % 2 == 0 and (6.6 - 1.6 * t) or (3.8 - 1.0 * t)
+      return i % 2 == 0 and (7 - 1.6 * t) or (3.6 - 1.0 * t)
     end,
-    mat = function(n) if n == 3 then return 'g', 'n' end return 'f', 'a' end })
+    mat = function(n) if n == 3 then return 'g', 'n' end return 'F', 'a' end })
+  F.shade(g, 'F', 'cba', { p = k > 1 and 2 or 1, ax = 1, ay = 0.4, zones = 2, within = 'F', jit = k > 1 and 2 or 0, jw = 2 })
   local j = -1
   local inner = Fr.frond(P, coil, { n = 8, t0 = 0.03, t1 = 0.84, ang = 58, r0 = 0.55, r1 = 0.45, fat = 2.6, wag = wag,
     w = function(t)                                          -- os de fora somem ao longo da volta; os de dentro enchem o rolo
@@ -71,6 +98,9 @@ local function draw(g, sg, k, o)
     end,
     mat = function(n) if n % 7 == 3 then return 'y', 'J' elseif n % 7 == 6 then return 'g', 'n' end return 'f', 'a' end })
   for _, q in ipairs(inner) do lobes[#lobes + 1] = q end
+  -- a copa um degrau acima do tronco: o sombreado da família, puxado para o claro
+  F.shade(g, 'f', Fr.LEAF, { p = k > 1 and 2 or 1, ax = 1, ay = 0.4, zones = 3, within = 'f', jit = k > 1 and 2 or 0, jw = 2,
+    bias = -0.16 })
   Fr.shadeAll(g, k)
   Fr.veins(g, P, k > 1 and lobes or nil, Fr.LEAF .. Fr.DRY, ph, 4)
   -- a pupila: o escuro da junta em volta do broto
@@ -87,8 +117,10 @@ local function draw(g, sg, k, o)
   -- costuras do Véu: duas, de 2 px
   local w = math.max(1, floor(2 * k + 0.5))
   Fr.seam(P, { { 12.6, 23.8 + b }, { 14, 28.4 + b } }, w, '9', Fr.CONC, k > 1 and 2 or nil)
-  local a0, a1 = lobes[1], lobes[3]
-  Fr.seam(P, { { a0[3], a0[4] }, { a1[3], a1[4] } }, w, 'X', Fr.LEAF, k > 1 and 2 or nil)
+  local a0 = lobes[3]                                        -- ao longo da pina de cima do tronco
+  Fr.seam(P, { { a0[1] + (a0[3] - a0[1]) * 0.35, a0[2] + (a0[4] - a0[2]) * 0.35 }, { a0[3], a0[4] } }, w, 'X', Fr.LEAF,
+    k > 1 and 2 or nil)
+  seal(g)
   Fr.clean(g, 'rootseer', 'a', 4 * k * k)
   Fr.spores(P, sg, { { 31.6, 16 }, { 5.4, 14.4 }, { 30, 8 }, { 6.4, 21 }, { 32.6, 23 } }, ph, 4)
 end
@@ -106,7 +138,7 @@ Fr.run {
   acc = {
     -- espalhados: braçadeiras no talo, guirlanda nas raízes, colar pendurado no báculo, pano na placa, óculos no
     -- olho do báculo, auréola, marca na placa
-    urban = { 11, 18 }, green = { 12, 29 }, water = { 17, 14 }, residential = { 10, 24 }, lit = { 17, 10 },
-    sacred = { 16, 1 }, crimson = { 22, 23 },
+    urban = { 11, 17 }, green = { 12, 29 }, water = { 18, 13 }, residential = { 10, 24 }, lit = { 18, 9 },
+    sacred = { 17, 1 }, crimson = { 22, 23 },
   },
 }
