@@ -147,19 +147,19 @@ Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de dia; 3. Sintonizar em
 
 Onde aparece: Residencial; hora: Noite; clima: + Nublado; lua: —.
 
-**Dusk Mote** (Fagulha). Pedaço de sombra que ficou solto.
+**Dusk Mote** (Fagulha). Lasca de marquise com um pedaço de sombra que não é dela.
 
-**Umbrel** (Eco). A sombra que fica quando a pessoa vai embora.
+**Umbrel** (Eco). Morcego que dorme pendurado enquanto a sombra dele fica acordada.
 
-- Lore I: Alguém parou ali, foi embora, e a sombra não foi junto. Fica nos bairros, perto de muro e de portão.
-- Lore II: De dia se esconde debaixo das sombras de nuvem e anda com elas. De noite não precisa se esconder.
-- Lore III: No Sol Negro as sombras ficam claras e as Umbrel aparecem todas de uma vez, como quem acorda.
+- Lore I: Dorme de cabeça para baixo debaixo das marquises dos bairros, fechado como um guarda-chuva. A sombra não dorme: fica ao lado, de asa aberta, e é ela que tem os olhos.
+- Lore II: Quatro costuras finas prendem a sombra ao corpo. De dia ela se encolhe debaixo das sombras de nuvem; de noite não precisa se esconder e estica as costuras até onde dão.
+- Lore III: No Sol Negro as sombras ficam claras e as dos Umbrel arregalam os olhos todas de uma vez, como quem acorda. Os corpos continuam dormindo.
 
-**Shadekin** (Espírito). Vulto alto de braços longos.
+**Shadekin** (Espírito). Morcego de pé com um braço de laje e uma sombra maior que ele.
 
-- Lore I: Alto demais para a porta, com braços que chegam ao chão. Nunca se vê o rosto: ele está sempre de costas.
-- Lore II: Onde ele passa a luz do poste falha por um segundo.
-- Lore III: Ors é o nome que os cadernos dão à escuridão de onde ele vem. Não é um lugar: é o que sobra quando a luz desiste.
+- Lore I: De pé, tem três orelhas e nenhum olho. Um braço virou laje de marquise, com a lâmpada acesa por baixo e vergalhão no lugar dos dedos; o outro chega ao chão.
+- Lore II: A lâmpada do braço falha por um segundo, e a do poste mais perto falha junto. A sombra dele, de três olhos e braços para cima, é a única que não pisca.
+- Lore III: Ors é o nome que os cadernos dão à escuridão de onde a sombra vem. Não é um lugar: é o que sobra quando a luz desiste. O morcego só a carrega.
 
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de noite; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
 

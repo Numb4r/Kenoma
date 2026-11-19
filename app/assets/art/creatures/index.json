@@ -21,6 +21,9 @@
       "smog",
       "smoke",
       "veil_ash"
+    ],
+    "crater": [
+      "meteor_shower"
     ]
   },
   "lamp_m": 30,
@@ -40,19 +43,24 @@
       "spawn": "ground"
     },
     "frond.archetype": {
-      "folder": "frond_arquetipo"
+      "folder": "frond_arquetipo",
+      "spawn": "crack"
     },
     "frond.eco": {
-      "folder": "frondling"
+      "folder": "frondling",
+      "spawn": "crack"
     },
     "frond.major": {
-      "folder": "frond_entidade"
+      "folder": "frond_entidade",
+      "spawn": "crack"
     },
     "frond.ritual": {
-      "folder": "rootseer"
+      "folder": "rootseer",
+      "spawn": "crack"
     },
     "frond.spirit": {
-      "folder": "thicketkin"
+      "folder": "thicketkin",
+      "spawn": "crack"
     },
     "glare.eco": {
       "folder": "glimlet"
@@ -107,19 +115,24 @@
       "folder": "shadekin"
     },
     "soot.archetype": {
-      "folder": "soot_arquetipo"
+      "folder": "soot_arquetipo",
+      "spawn": "manhole"
     },
     "soot.eco": {
-      "folder": "sootling"
+      "folder": "sootling",
+      "spawn": "manhole"
     },
     "soot.major": {
-      "folder": "soot_entidade"
+      "folder": "soot_entidade",
+      "spawn": "manhole"
     },
     "soot.ritual": {
-      "folder": "kilnshade"
+      "folder": "kilnshade",
+      "spawn": "manhole"
     },
     "soot.spirit": {
-      "folder": "cinderkin"
+      "folder": "cinderkin",
+      "spawn": "manhole"
     },
     "sprig.eco": {
       "folder": "sprigglet"
@@ -144,16 +157,20 @@
       "spawn": "fog"
     },
     "wyrm.archetype": {
-      "folder": "wyrm_arquetipo"
+      "folder": "wyrm_arquetipo",
+      "spawn": "crater_crack"
     },
     "wyrm.eco": {
-      "folder": "wyrmlet"
+      "folder": "wyrmlet",
+      "spawn": "crater_crack"
     },
     "wyrm.major": {
-      "folder": "wyrm_entidade"
+      "folder": "wyrm_entidade",
+      "spawn": "crater_crack"
     },
     "wyrm.spirit": {
-      "folder": "wyrmkin"
+      "folder": "wyrmkin",
+      "spawn": "crater_crack"
     }
   }
 }

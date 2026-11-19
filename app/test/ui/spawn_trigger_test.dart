@@ -8,6 +8,7 @@ void main() {
     'lightning': {'storm'},
     'puddle': {'rain', 'storm'},
     'fog': {'fog'},
+    'crater': {'meteor_shower'},
   };
   SpawnTrigger? of(String? spec, String climate, {bool night = true, (double, double)? lamp}) =>
       resolveSpawnTrigger(spec, climateId: climate, night: night, climates: climates, lamp: lamp);
@@ -26,6 +27,13 @@ void main() {
     expect(of('fog', 'fog')?.kind, SpawnTriggerKind.fog);
     expect(of('fog', 'rain'), isNull);
     expect(of(null, 'storm'), isNull);
+  });
+
+  test('0.26.0: Soot sempre do bueiro, Frond sempre da rachadura, Wyrm da cratera na chuva de meteoros, senão do asfalto rachado', () {
+    expect(of('manhole', 'clear')?.kind, SpawnTriggerKind.manhole);
+    expect(of('crack', 'rain', night: false)?.kind, SpawnTriggerKind.crack);
+    expect(of('crater_crack', 'meteor_shower')?.kind, SpawnTriggerKind.crater);
+    expect(of('crater_crack', 'clear')?.kind, SpawnTriggerKind.emberCrack);
   });
 
   test('o poste mais perto dentro do alcance', () {

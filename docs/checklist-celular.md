@@ -22,6 +22,9 @@ Não muda o save. Antes de qualquer toque pelo adb: o dono libera o aparelho na 
 - [ ] `0260-criaturas-28` **Ecos novos a 28 px, de noite e de dia.** Sootling (saruê), Frondling (fronde), Umbrel (morcego com a sombra presa: de noite lê quase só pela borda e pelos olhos), Wisplet (coruja; a ponta da chama no concreto), Wyrmlet (teú; as costuras não podem roubar a brasa) e o Humoth no amarelo novo. Os Espíritos novos a 36 px: a grelha do Cinderkin, a raiz-mão do Thicketkin, o braço de laje do Shadekin, a vela no peito do Hollowkin, o buraco de rua do Wyrmkin e o olho no peito do Coilkin.
 - [ ] `0260-sombra-shade` **Shade sem sombra no chão.** O Umbrel e o Shadekin no mapa sem a sombra oval embaixo; as outras criaturas continuam com ela.
 - [ ] `0260-fagulhas` **Fagulhas novas.** Elétrica (ocelo de LED), fogo (tufo com a brasa), planta (lobo da fronde), sombra (lasca com o olho), espectral (toco de vela) e dracônica (escama com a junta acesa), pairando e legíveis no mapa.
+- [ ] `0260-gatilhos` **De onde nascem.** O Sootling sai do bueiro (a tampa desliza, fagulhas e fumaça), o Frondling da rachadura da calçada (a luz verde corre por dentro), o Wyrmlet do asfalto rachado com brasa e, na chuva de meteoros, da cratera rosa; legíveis embaixo do corpo, de noite e de dia.
+- [ ] `0260-rituais` **Espécies de ritual.** Kilnshade (saruê sentado com a boca de fornalha), Rootseer (a fronde enrolada em olho sobre a placa de calçada) e Wellmirror (o sapo na manilha com a lua no papo) a 36 px; o Wellmirror é o que mais corre risco de não ler.
+- [ ] `0260-textos-shade` **Bestiário do Shade.** O Umbrel e o Shadekin com o texto do morcego (sem "vulto").
 
 ## 0.25.2
 

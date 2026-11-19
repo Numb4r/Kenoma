@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC, DST = ROOT / 'tools/art/creatures', ROOT / 'app/assets/art/creatures'
-SPAWN = {'hum': 'lightning_lamp', 'rill': 'puddle', 'clod': 'ground', 'wisp': 'fog'}  # GDD: de onde cada família nasce
+SPAWN = {'hum': 'lightning_lamp', 'rill': 'puddle', 'clod': 'ground', 'wisp': 'fog', 'soot': 'manhole', 'frond': 'crack', 'wyrm': 'crater_crack'}  # GDD: de onde cada família nasce
 
 
 def main() -> None:
