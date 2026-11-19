@@ -9,15 +9,15 @@ Onde aparece: Urbano; hora: Qualquer; clima: + Sol forte; lua: —.
 
 **Ember Mote** (Fagulha). Brasa de bituca e de asfalto quente.
 
-**Sootling** (Eco). Bicho de fuligem com uma brasa no peito, que vive em bueiros.
+**Sootling** (Eco). Saruê de bueiro com uma brasa de bituca no peito.
 
-- Lore I: Mora nos bueiros e sai quando o asfalto esquenta. A brasa do peito nunca apaga, só diminui.
+- Lore I: Mora nos bueiros e sai quando o asfalto esquenta. A brasa aparece pelas falhas do pelo do peito e nunca apaga, só diminui; a ponta do rabo pelado queima como bituca.
 - Lore II: Na chuva some das ruas. Na fumaça de queimada aparece aos montes, como se a cinza o chamasse.
 - Lore III: Os cadernos antigos dizem que cada um guarda uma faísca das chamas ardentes de Ialprg, e que por isso não queima quem o segura.
 
-**Cinderkin** (Espírito). A fuligem que aprendeu a ficar de pé em volta da brasa.
+**Cinderkin** (Espírito). Saruê com uma grelha de bueiro no flanco e a brasa atrás das barras.
 
-- Lore I: Cinco brasas juntas fazem um corpo. O Cinderkin anda devagar para não se desfazer.
+- Lore I: Por dentro é oco como um bueiro: atrás da grelha só há a brasa. Anda devagar, com os filhotes de fuligem agarrados no lombo e um dos dois rabos arrastando.
 - Lore II: Onde ele dorme o chão fica morno até de manhã.
 - Lore III: Quem fundiu um jura que ouviu, na hora, um nome dito em língua que não é de gente.
 
@@ -35,10 +35,10 @@ Onde aparece: Verde; hora: Qualquer; clima: + Chuva; lua: —.
 - Lore II: Cresce durante a sintonia: quanto mais demora, mais raízes ele põe no caminho.
 - Lore III: A forma é mais velha que qualquer planta. Há quem diga que é a lembrança de um bicho, não de uma folha.
 
-**Thicketkin** (Espírito). Moita que se fecha em volta de quem ela escolhe.
+**Thicketkin** (Espírito). Pedaço de calçada levantado pelas raízes, com frondes saindo da rachadura.
 
-- Lore I: Não anda: avança. De um dia para o outro está três passos adiante.
-- Lore II: Dentro da moita a temperatura é sempre a da sombra.
+- Lore I: Não anda: avança. De um dia para o outro a laje está três passos adiante, e as raízes não deixaram marca.
+- Lore II: Uma das frondes não é fronde: é uma raiz que cresceu para cima e abre como mão. Debaixo dela a temperatura é sempre a da sombra.
 - Lore III: Dizem que Peab plantou a primeira e que todas as outras são a mesma, espalhada.
 
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de dia; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
@@ -49,15 +49,15 @@ Onde aparece: Água; hora: Qualquer; clima: + Chuva; lua: —.
 
 **Drip Mote** (Fagulha). Pingo que não chega ao chão.
 
-**Rillet** (Eco). Gota que reflete o céu e faz um som de pingo.
+**Rillet** (Eco). Sapo-cururu de poça com o dorso que reflete o céu.
 
-- Lore I: Uma gota do tamanho de um punho. O que ela reflete é o céu de agora, mesmo debaixo de marquise.
+- Lore I: Um cururu cor de barro, do tamanho de um punho. O dorso é um espelho d'água, e o que ele reflete é o céu de agora, mesmo debaixo de marquise.
 - Lore II: Na chuva ronda as poças e a sarjeta. Quando a rua seca, volta para o lago.
-- Lore III: O som de pingo que ela faz é o mesmo em todo lugar. Quem mediu diz que é a nota dos mares de Zumvi.
+- Lore III: Do queixo dele pinga, e o som do pingo é o mesmo em todo lugar. Quem mediu diz que é a nota dos mares de Zumvi.
 
-**Brookkin** (Espírito). Um fio de córrego que anda sem leito.
+**Brookkin** (Espírito). Cururu com uma boca de lobo no lugar da boca, de onde corre um fio de córrego.
 
-- Lore I: Corre para cima se quiser. O que parece leito é só o caminho que ele escolheu.
+- Lore I: A boca virou boca de lobo, de concreto e tinta amarela gasta, e despeja água sem parar. A água corre para cima se ele quiser: o que parece leito é só o caminho que ele escolheu.
 - Lore II: Carrega coisas pequenas e as devolve longe: chaves, moedas, uma vez um anel.
 - Lore III: Os antigos seguiam um Brookkin para achar água boa. Ele sempre soube onde ela está.
 
@@ -75,9 +75,9 @@ Onde aparece: Urbano; hora: Noite; clima: + Tempestade; lua: —.
 - Lore II: O zumbido que ela faz é o da rede elétrica, meio tom acima. Perto de um transformador, some dentro dele.
 - Lore III: Não é a luz que a atrai. É o intervalo entre um piscar e o outro, onde o Véu fica mais fino.
 
-**Coilkin** (Espírito). Um corpo feito de fios desencapados.
+**Coilkin** (Espírito). A mariposa tomada pela bobina, com um olho de LED no peito aberto.
 
-- Lore I: Fios soltos que se enrolaram uns nos outros e não largaram mais.
+- Lore I: Os fios soltos se enrolaram nela e não largaram mais. O abdômen virou bobina de cobre, o peito abriu, e lá do meio um olho de LED olha para fora.
 - Lore II: Anda aos trancos, como lâmpada com mau contato. Cada tranco é um salto de frequência.
 - Lore III: Os ventos de Ozongon passam por dentro dele. Quem encosta sente o cabelo levantar e ouve o próprio nome.
 
@@ -89,13 +89,13 @@ Onde aparece: Verde; hora: Qualquer; clima: + Poeira seca; lua: —; lugar: Morr
 
 **Grit Mote** (Fagulha). Cascalho que rola sozinho.
 
-**Pebblet** (Eco). Bicho de cascalho que se fecha em bola.
+**Pebblet** (Eco). Tatu-bola com placas de cascalho.
 
-- Lore I: Um punhado de cascalho que resolveu andar junto. Com medo, fecha em bola e rola morro abaixo.
+- Lore I: Um tatu-bola que trocou a carapaça por placas de cascalho. Com medo, fecha em bola e rola morro abaixo.
 - Lore II: Gosta de lugar alto e de terra seca. Na poeira dos redemoinhos aparece em bando.
 - Lore III: Cada pedrinha veio de um lugar diferente. Juntas, lembram de um chão que não existe mais.
 
-**Bouldkin** (Espírito). Pedra com musgo que anda devagar.
+**Bouldkin** (Espírito). Tatu tomado por musgo e galhos, que anda devagar.
 
 - Lore I: Anda um passo por minuto, e ninguém nunca o viu chegar: ele só está lá.
 - Lore II: O musgo das costas cresce do lado de onde vem a chuva. Serve de bússola a quem sabe ler.
@@ -109,16 +109,16 @@ Onde aparece: Urbano; hora: Qualquer; clima: + Smog; lua: —.
 
 **Filing Mote** (Fagulha). Limalha que se junta sem ímã.
 
-**Rustling** (Eco). Ferrugem viva em grades e portões.
+**Rustling** (Eco). Besouro-rinoceronte com casco de grade enferrujada.
 
-- Lore I: Uma mancha de ferrugem que muda de portão durante a noite. Deixa o ferro mais limpo do que achou.
-- Lore II: Ar sujo a faz crescer: no smog e na chuva ácida ela sai das grades e anda pela calçada.
+- Lore I: Um besouro com o casco de grade e o chifre em ponta de lança. Muda de portão durante a noite e deixa o ferro mais limpo do que achou.
+- Lore II: Ar sujo o chama: no smog e na chuva ácida ele sai das grades e anda pela calçada.
 - Lore III: Come o tempo do metal, não o metal. O portão por onde passou volta a ter a idade do dia em que foi feito.
 
-**Gratekin** (Espírito). Grade retorcida com olhos de parafuso.
+**Gratekin** (Espírito). Besouro que carrega um pedaço de portão nas costas, com olhos de parafuso.
 
-- Lore I: Uma grade que se soltou do muro e se dobrou até caber em si mesma.
-- Lore II: Os olhos são dois parafusos que giram devagar. Quando param, ele levantou a blindagem.
+- Lore I: Um pedaço de portão que se soltou do muro e não achou outro lugar: ficou de pé nas costas dele, com as lanças para cima.
+- Lore II: Os olhos são parafusos que giram devagar. Quando param, ele levantou a blindagem.
 - Lore III: Vaoan e Oxiayal disputam quem o fez. Ele não responde a nenhum dos dois.
 
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de dia; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
@@ -129,15 +129,15 @@ Onde aparece: Iluminado; hora: Dia; clima: + Sol forte; lua: —.
 
 **Glint Mote** (Fagulha). Reflexo que se soltou do vidro.
 
-**Glimlet** (Eco). Reflexo vivo em vitrines e faróis.
+**Glimlet** (Eco). Beija-flor-tesoura de vidro de vitrine.
 
-- Lore I: Mora nas vitrines e nos faróis. De dia pula de um vidro para o outro; de noite quase não se vê.
+- Lore I: Mora nas vitrines e nos faróis. De dia voa de um vidro para o outro, com as asas de caco; de noite quase não se vê.
 - Lore II: No sol forte fica tão claro que apaga o que está em volta por um instante. É assim que foge.
 - Lore III: No pé do arco-íris há sempre um. Ninguém sabe se ele vai até lá ou se o arco nasce onde ele está.
 
-**Prismkin** (Espírito). Prisma que separa a luz em cores.
+**Prismkin** (Espírito). Beija-flor que separa a luz em cores pela cauda.
 
-- Lore I: Um prisma do tamanho de uma criança. A luz que entra branca sai em sete, e cada cor vai para um lado.
+- Lore I: O corpo virou prisma. A luz entra branca pelo papo e sai pela cauda, uma cor em cada pena, cada uma para um lado.
 - Lore II: Dá para ler as horas pelas cores que ele joga no chão.
 - Lore III: Iaida, o altíssimo, não desce. O Prismkin é o que chega aqui embaixo quando ele olha.
 
@@ -169,15 +169,15 @@ Onde aparece: Sagrado; hora: Qualquer; clima: + Neblina; lua: —; lugar: Vales.
 
 **Chill Mote** (Fagulha). Um frio que se vê.
 
-**Wisplet** (Eco). Vulto de névoa.
+**Wisplet** (Eco). Coruja-buraqueira de olhos de vela.
 
-- Lore I: Um pedaço de névoa que não se desfaz com o vento. Fica perto de igreja e de cemitério.
+- Lore I: Uma coruja de pernas compridas, parada na névoa, com uma chama de vela no lugar de cada olho. Fica perto de igreja e de cemitério, e o vento não apaga as chamas.
 - Lore II: Na neblina desce para o fundo dos vales. Imita o que estiver perto, sempre um instante atrasado.
 - Lore III: Quem segue a Procissão até o fim encontra um. Não é coincidência: é ele quem fecha a fila.
 
-**Hollowkin** (Espírito). Manto vazio com uma vela dentro.
+**Hollowkin** (Espírito). Coruja oca, com uma vela no lugar do peito.
 
-- Lore I: Um manto de pé, sem ninguém dentro. No lugar do peito, uma vela acesa que o vento não apaga.
+- Lore I: Um manto de penas de pé, sem ninguém dentro. No capuz sobrou o bico; no lugar do peito, uma vela acesa que o vento não apaga.
 - Lore II: A vela é o que se sintoniza. O manto só serve para confundir.
 - Lore III: Teloch não leva ninguém. O Hollowkin é quem acompanha, e só até a metade do caminho.
 
@@ -189,15 +189,15 @@ Onde aparece: Iluminado; hora: Qualquer; clima: + Estática; lua: —.
 
 **Static Mote** (Fagulha). Um pixel solto.
 
-**Bitling** (Eco). Glitch que vive em letreiros e telas.
+**Bitling** (Eco). Pombo com glitch na plumagem.
 
-- Lore I: Um defeito de imagem que saiu da tela. Mora em letreiro, caixa eletrônico e painel de ônibus.
+- Lore I: Um pombo com um defeito de imagem: uma faixa do corpo anda fora do lugar. Pousa em letreiro, caixa eletrônico e painel de ônibus.
 - Lore II: Faz cópias de si mesmo para despistar. As cópias têm um defeito que a original não tem.
 - Lore III: Na Estática aparece por toda parte. Os Tecnomantes dizem que ele não nasce: é transmitido.
 
-**Glitchkin** (Espírito). Criatura feita de quadros repetidos.
+**Glitchkin** (Espírito). Pombo com a cabeça em glitch, presa em quadros repetidos.
 
-- Lore I: O mesmo quadro repetido muitas vezes, cada vez um pouco fora do lugar.
+- Lore I: O balanço da cabeça travou: o mesmo quadro repetido muitas vezes, cada vez um pouco fora do lugar.
 - Lore II: Ele não anda: some de um ponto e aparece no outro, e o meio do caminho nunca existiu.
 - Lore III: Há um Glitchkin em cada cidade que tem telas. Talvez seja o mesmo, visto de lugares diferentes.
 
@@ -209,13 +209,13 @@ Onde aparece: Verde; hora: Crepúsculo; clima: + Arco-íris; lua: + Cheia.
 
 **Pollen Mote** (Fagulha). Pólen que brilha.
 
-**Sprigglet** (Eco). Fada pequena do crepúsculo.
+**Sprigglet** (Eco). Maritaca de asas de folha seca.
 
 - Lore I: Só aparece quando o sol está na linha do horizonte, de manhã e de tarde, nas áreas verdes.
 - Lore II: Na lua cheia vêm mais, e o vento as espalha. O pó que soltam faz a mão girar o dial para o lado errado.
 - Lore III: Falam Aklo entre si. Quem ouve não entende, mas passa o resto do dia com uma palavra na ponta da língua.
 
-**Fairkin** (Espírito). Fada de asas de folha seca.
+**Fairkin** (Espírito). Maritaca brotando folhas pelo corpo.
 
 - Lore I: Asas de folha seca, que estalam quando ela vira. Do tamanho de um gato.
 - Lore II: Troca de jogo no meio: quando você aprende o passo, ela muda a música.
@@ -229,15 +229,15 @@ Onde aparece: Qualquer; hora: Qualquer; clima: Eclipses; lua: —; lugar: Crater
 
 **Scale Mote** (Fagulha). Uma escama viva.
 
-**Wyrmlet** (Eco). Brasa que respira.
+**Wyrmlet** (Eco). Teú jovem de escamas em brasa.
 
-- Lore I: Uma brasa do tamanho de um ovo, que incha e desincha. Só se mostra a quem já tem nome entre os Conjuradores.
+- Lore I: Um teú jovem, que não parece dragão. Só as escamas das costelas estão em brasa, e incham e desincham com ele. Só se mostra a quem já tem nome entre os Conjuradores.
 - Lore II: Nasce nas crateras dos meteoros e debaixo dos eclipses. Fora disso, ninguém nunca viu.
 - Lore III: Os dragões foram os que mais se partiram ao atravessar o Véu. Isto é um pedaço. Há quem esteja juntando os outros.
 
-**Wyrmkin** (Espírito). Filhote de dragão ainda sem forma inteira.
+**Wyrmkin** (Espírito). Teú com um buraco de rua e um olho no flanco.
 
-- Lore I: Tem cabeça e tem cauda, e no meio ainda está decidindo. As escamas mudam de lugar enquanto você olha.
+- Lore I: Tem cabeça e tem cauda de teú, e no meio abriu um buraco de rua, com a borda de asfalto. Do fundo dele, um olho olha para fora.
 - Lore II: Começa manso. A cada terço da sintonia lembra de mais uma coisa que sabia fazer.
 - Lore III: Vovina, o dragão, é um só. Tudo o que tem escama deste lado é ele tentando se lembrar da forma.
 
