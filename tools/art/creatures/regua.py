@@ -25,7 +25,7 @@ PISO = {
 }
 REFEITAS_FAGULHA = {'electric', 'fire', 'plant', 'shadow', 'spectral', 'draconic'}
 PENDENTES = {
-    'bitling', 'bouldkin', 'brookkin', 'fairkin', 'glimlet', 'glitchkin', 'gratekin', 'kilnshade', 'pebblet', 'prismkin', 'rillet', 'rootseer', 'rustling', 'sprigglet', 'wellmirror',
+    'bitling', 'bouldkin', 'brookkin', 'fairkin', 'glimlet', 'glitchkin', 'gratekin', 'pebblet', 'prismkin', 'rillet', 'rustling', 'sprigglet',
 }
 
 

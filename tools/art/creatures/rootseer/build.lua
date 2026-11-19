@@ -1,131 +1,98 @@
--- Rootseer (frond.ritual), 0.25.1: um no de raizes com um olho so, coroado de brotos, de pe em quatro raizes.
--- Rodar: aseprite -b --script build.lua
--- corpo: o no de raiz, as pernas, os brotos, o branco do olho. leds: a iris. glow: a seiva nas raizes e os esporos.
-local K = dofile('/home/yuri/Documentos/kenoma/tools/art/creatures/sootling/_kit.lua')
-local L = K.L
-local S = K.S(36)
+-- Rootseer (frond.ritual), arte final: a fronde de ritual da família Frond, ligada a Peab.
+-- Na linguagem das peças finais do Frond (_frond.lua): Charnia, verde de calçada, folha seca, raiz, concreto; só a
+-- nervura tem cor, e a luz é a do tipo Planta.
+-- O QUE ELA TEM DE PRÓPRIO (e o Thicketkin não): uma fronde só, e ela nunca abriu. O báculo continuou enrolando até
+-- virar um disco, e o disco é um olho: a nervura acesa é a íris em espiral e o broto, no meio, a pupila (pisca).
+-- Fica parada, alta, em cima de seis raízes compridas abertas no chão, que é por onde ela escuta; o talo passa por
+-- dentro de uma placa de calçada que ela levantou. No alerta o olho abre (a espiral desenrola, a pupila cresce);
+-- encolhida, fecha.
+-- Costuras do Véu: duas, de 2 px (atravessando a placa, e nos lobos de fora do disco), só no glow.
+-- Camadas: corpo; leds = o broto (a pupila); glow = a nervura em espiral, as costuras e os esporos.
+-- Bicho de chão: a placa e o olho sobem e descem (body_dy) e as raízes ficam; na deriva as raízes andam e o olho
+-- fica para trás; na fuga, salta.
+-- Rodar: KENOMA_ART='<repo>/tools/art/'; dofile(KENOMA_ART .. 'creatures/rootseer/build.lua')
+local Fr = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_frond.lua')
+local L, F = Fr.L, Fr.F
+local sin, cos, rad, floor = math.sin, math.cos, math.rad, math.floor
 
-local LEG = {
-  A = '#1A1424',
-  t = '#3E3026', r = '#5A4636', u = '#8A6A4A',   -- raiz
-  d = '#2F6B45', e = '#4C9A5A', f = '#86D37C',   -- broto
-  x = '#F0EEF8',                                 -- olho
-  n = '#3E6A58', P = '#9AF0C0', Q = '#E0FFF0',   -- iris apagada (corpo) e acesa (leds)
-  v = '#4A5A3A', V = '#A8F090', U = '#E8FFC0',   -- seiva apagada (corpo) e acesa (glow)
-  S = '#B8F28A', s = '#F0FFC8',
-}
-local EMIT = { P = { 'n', 'l' }, Q = { 'n', 'l' }, V = { 'v', 'w' }, U = { 'v', 'w' } }
-local LEGS = { { 9, 18, 5.5, 22, 3.8, 24 }, { 12, 20, 11, 23, 9.8, 24.4 }, { 16, 20, 17.5, 23, 18.6, 24.4 }, { 19, 18, 22.5, 22, 24.2, 24 } }
+local ROOTS = { { 11, 28.6, 6.4, 29.4, 3.8, 33 }, { 13.6, 29.6, 10.6, 31.2, 9.6, 33.4 }, { 17, 30, 16.2, 31.8, 16.6, 33.4 },
+  { 21.4, 29.6, 22.4, 31.6, 22.2, 33.4 }, { 24.4, 28.6, 27.4, 30.6, 27.8, 33.2 }, { 25.8, 27.6, 30.4, 28.4, 32.2, 32.8 } }
 
--- Em unidades de 28 px vezes [s]. p: 0 a 3, as raizes trocam o passo e os brotos balancam. bob: o no sobe.
-local function seer(g, s, p, bob, glow, nh, nl)
-  local sw = ({ 0, 0.5, 0, -0.5 })[p + 1]
-  local mids = {}
-  for k, r in ipairs(LEGS) do
-    local sx = (k % 2 == 0) and sw or -sw
-    local pts = { { r[1] * s, (r[2] + bob) * s }, { r[3] * s, r[4] * s }, { (r[5] + sx) * s, r[6] * s } }
-    K.stroke(g, pts, 1.9 * s, 0.6 * s, 'r')
-    mids[k] = pts
+local function draw(g, sg, k, o)
+  local off = k > 1 and 1 or 0
+  local P = F.pen(g, k, off, off)
+  local ph = (o.ph or 0) % 4
+  local alert, crouch = o.pose == 'alert', o.pose == 'crouch'
+  local still = alert or crouch
+  local b = (o.dy or 0) / k + (crouch and 1 or 0)            -- a placa e o que nasce dela
+  local f = o.jump and (o.dy or 0) / k or 0                  -- as raízes
+  local st = o.lean and ({ [0] = 1, 0, -1, 0 })[ph] or 0
+  local sw = still and 0 or ({ [0] = 0, 0.5, 1, 0.5 })[ph]
+  local ln = -(o.lean and 1.4 or 0) - sw * 0.4               -- o olho fica para trás
+  for n, r in ipairs(ROOTS) do
+    local s = (n % 2 == 0) and st or -st
+    P:limb({ { r[1], r[2] + b }, { r[3] + s * 0.5, r[4] + (b + f) / 2 }, { math.max(3.4, math.min(32.6, r[5] + s)), r[6] + f } },
+      1.5, 0.5, 'h')
   end
-  K.ell(g, 14 * s, (14 + bob) * s, 7 * s, 7 * s, 'r')
-  for _, b in ipairs({ { 8.5, 10 }, { 20, 11.5 }, { 8, 17 }, { 19.5, 18 } }) do L.disc(g, b[1] * s, (b[2] + bob) * s, 1.5 * s, 'r') end
-  for _, c in ipairs({ { 11, 8, 8, 5.2 }, { 14, 7.5, 14.5, 4.6 }, { 17, 8, 20.5, 5.6 } }) do
-    K.stroke(g, { { c[1] * s, (c[2] + bob) * s }, { (c[3] + sw) * s, (c[4] + bob) * s } }, 1.3 * s, 0.5 * s, 'e')
+  -- a placa de calçada que o talo atravessou
+  P:poly({ { 9.6, 25.4 + b }, { 24.6, 23.8 + b }, { 26.6, 26.4 + b }, { 11.6, 28.4 + b } }, 'y')
+  P:poly({ { 11.6, 28.4 + b }, { 26.6, 26.4 + b }, { 26.6, 28.2 + b }, { 11.8, 30.2 + b } }, 'J')
+  P:poly({ { 9.6, 25.4 + b }, { 11.6, 28.4 + b }, { 11.8, 30.2 + b }, { 9.8, 27.4 + b } }, 'j')
+  -- o báculo que virou disco: o talo sobe e enrola, no sentido do relógio, até o meio
+  local cx, cy = 19 + ln, 13.6 + b + (crouch and 1.4 or 0)
+  local R0 = alert and 7.1 or (crouch and 5.4 or 6.5 + sw * 0.3)
+  local turns = alert and 1.3 or (crouch and 1.8 or 1.55 - sw * 0.05)
+  local stem = { { 17, 27 + b }, { 16.2 + ln * 0.4, 23.4 + b } }
+  local n1 = floor(turns * 12 + 0.5)
+  for n = 0, n1 do
+    local t = n / n1
+    local a = rad(118 + t * turns * 360)
+    local r = R0 * (1 - t) ^ 0.85 + 1.0 * t
+    stem[#stem + 1] = { cx + cos(a) * r, cy + sin(a) * r }
   end
-  K.relight(g, { 'tru', 'def' }, nh, nl)
-  -- seiva: sobe pelas pernas conforme o brilho cresce
-  for k, pts in ipairs(mids) do
-    if glow >= 2 or k % 2 == 0 then
-      local c = glow == 3 and 'U' or 'V'
-      L.line(g, pts[3][1], pts[3][2] - s * 0.3, pts[2][1], pts[2][2], c)
-      if glow >= 2 then L.line(g, pts[2][1], pts[2][2], (pts[1][1] + pts[2][1]) / 2, (pts[1][2] + pts[2][2]) / 2, 'V') end
-    end
+  local i = -1
+  local lobes = Fr.frond(P, stem, { n = 11, t0 = 0.17, t1 = 0.82, ang = 58, r0 = 0.55, r1 = 0.45, fat = 2.7,
+    w = function(t)                                          -- os lobos de fora são os cílios; os de dentro enchem o disco
+      i = i + 1
+      local out = i % 2 == 0
+      return (out and 4.1 or 2.4) * (1 - t) ^ 0.7 + 1.1
+    end,
+    wag = function(n) return alert and (n % 2 == 0 and -10 or 0) or (still and 0 or 4 * sin(ph * 1.571 + n * 0.9)) end,
+    mat = function(n) if n % 7 == 2 then return 'y', 'J' elseif n % 7 == 5 then return 'g', 'n' end return 'f', 'a' end })
+  Fr.shadeAll(g, k)
+  Fr.veins(g, P, k > 1 and lobes or nil, Fr.LEAF .. Fr.DRY, ph, 4)
+  -- a pupila: o escuro da junta em volta do broto
+  local tip = stem[#stem]
+  local pr = alert and 2.1 or 1.5
+  if not crouch then
+    P:disc(tip[1], tip[2], pr, 'k')
+    if k > 1 then P:disc(tip[1], tip[2], 0.6, 'H') end
+    P:px(tip[1], tip[2], 'G')
+    if k > 1 then L.set(g, P:X(tip[1]) - 1, P:Y(tip[2]) - 1, 'G') end
   end
-  return mids
+  -- trinca na placa
+  P:limb({ { 20.4, 24.6 + b }, { 21.4, 26.2 + b }, { 20.8, 27.6 + b } }, 0.3, 0.3, 'k', Fr.CONC)
+  -- costuras do Véu: duas, de 2 px
+  local w = math.max(1, floor(2 * k + 0.5))
+  Fr.seam(P, { { 13.2, 25.2 + b }, { 14.6, 29.8 + b } }, w, '9', Fr.CONC, k > 1 and 2 or nil)
+  local a0, a1 = lobes[3], lobes[7]
+  Fr.seam(P, { { a0[3], a0[4] }, { a1[3], a1[4] } }, w, 'X', Fr.LEAF, k > 1 and 2 or nil)
+  Fr.clean(g, 'rootseer', 'a', 4 * k * k)
+  Fr.spores(P, sg, { { 31.6, 16 }, { 5.4, 14.4 }, { 30, 8 }, { 6.4, 21 }, { 32.6, 23 } }, ph, 4)
 end
 
--- Mapa em 36 px: o no e as raizes saem da mesma curva; os veios da casca e o olho sao postos a mao.
-local function pose(o)
-  local g = L.grid(36, 36)
-  local bob = o.bob or 0
-  seer(g, 36 / 28, o.p or 0, bob / (36 / 28), o.glow or 1, 2, 3)
-  for k = 0, 3 do
-    for a = k * 90 + 30, k * 90 + 70, 6 do
-      local r = math.rad(a)
-      K.put(g, math.floor(18 + 7.4 * math.cos(r) + 0.5), math.floor(18 + bob + 7.4 * math.sin(r) + 0.5), { 't' }, 'r')
-    end
-  end
-  K.ell(g, 18.5, 18 + bob, 5.6, 3.4, 't')
-  if o.wide then
-    L.put(g, 14, 15 + bob, { '..xxxxxx.', '.xxxxxxxx', 'xxxxPPPxx', 'xxxPQAQPx', 'xxxxPPPxx', '.xxxxxxxx', '..xxxxxx.' })
-  else
-    L.put(g, 14, 16 + bob, { '..xxxxxx.', 'xxxxPPPxx', 'xxxPPAPPx', 'xxxxPPPxx', '..xxxxxx.' })
-  end
-  return g
-end
-
-local function portrait(f)
-  local g, sg = L.grid(96, 96), L.grid(96, 96)
-  local s = 92 / 28
-  local bob = ({ 0, -0.3, -0.6, -0.3 })[f]
-  local body = L.grid(96, 96)
-  seer(body, s, f - 1, bob, f == 3 and 3 or 2, 4, 6)
-  -- casca: veios escuros em arco em volta do olho
-  for k = 0, 5 do
-    local a0 = k * 60 + 20
-    for a = a0, a0 + 34 do
-      local rr = math.rad(a)
-      K.put(body, math.floor(14 * s + 19.5 * math.cos(rr) + 0.5), math.floor((14 + bob) * s + 19.5 * math.sin(rr) + 0.5), { 't' }, 'r')
-    end
-  end
-  -- o olho: palpebra de casca, branco, iris que varre, pupila em fenda
-  local ex, ey = 14.6 * s, (14 + bob) * s
-  K.ell(body, ex, ey, 14, 10.5, 't')
-  K.ell(body, ex, ey, 12.5, 9, 'x')
-  local ix = ex + ({ 1, 2, 3, 2 })[f]
-  L.disc(body, ix, ey, 6.5, 'P')
-  L.disc(body, ix, ey, 4.2, 'Q')
-  L.ring(body, ix, ey, 6.5, 'P')
-  K.ell(body, ix, ey, 1.6, 5, 'A')
-  L.rect(body, ix - 4, ey - 4, ix - 3, ey - 3, 'x')
-  K.stamp(g, body, 2, 1)
-  local loose = { { 8, 30 }, { 88, 28 }, { 10, 64 }, { 86, 58 }, { 70, 12 }, { 24, 14 } }
-  for k, pt in ipairs(loose) do
-    local y = pt[2] - ((f + k) % 4) * 3
-    if (f + k) % 4 ~= 3 then L.rect(sg, pt[1], y, pt[1] + 1, y + 1, (f + k) % 2 == 0 and 's' or 'S') end
-  end
-  return g, sg
-end
-
-K.build {
-  name = 'rootseer', size = 36, leg = LEG, emit = EMIT, keys = { 't', 'r', 'u', 'd', 'e', 'f' }, dark = 't',
-  pose = pose, portrait = portrait,
-  idle = { { p = 0, bob = 0 }, { p = 1, bob = -1 }, { p = 2, bob = -1 }, { p = 3, bob = 0 } },
-  alert = { p = 0, bob = -1, wide = true },
-  alert2 = { { 4, 14 }, { 32, 13, 's' }, { 24, 4 } },
-  alert3 = S.cat(S.plus(4, 12), S.plus(32, 11), { { 24, 3, 's' }, { 10, 4 }, { 3, 23 }, { 33, 24 } }),
-  sq = 27,
-  variants = {
-    { key = 'urban', -- raiz de calcada, cinza; faixa rebitada na testa
-      legend = { W = '#B6BAC4', w = '#8E92A0' },
-      put = { { 13, 12, { 'WwWWwWWwWWw' } } } },
-    { key = 'green', -- raiz coberta de musgo; florzinha clara a esquerda do olho
-      legend = { L = '#F4F8D0', l = '#F2C84A' },
-      put = { { 10, 17, { '.L.', 'LlL', '.L.' } } } },
-    { key = 'water', -- raiz encharcada, escura; gotas de orvalho no alto, a esquerda
-      legend = { U = '#E8F8FF', u = '#9FD4F0' },
-      put = { { 11, 13, { 'U.', 'Uu', '.u' } } } },
-    { key = 'residential', -- raiz de quintal, clara; cachecol telha debaixo do olho
-      legend = { O = '#A03C2C', o = '#6E261E' },
-      put = { { 12, 24, { 'OOOOOOOOOOOOo', '..Oo.........', '..oo.........' } } } },
-    { key = 'lit', -- creme de vitrine, a mais clara; gravata-borboleta escura debaixo do olho
-      legend = { N = '#2B2F3D', M = '#40465A' },
-      put = { { 16, 21, { 'NN.NN', 'NNMNN', 'NN.NN' } } } },
-    { key = 'sacred', -- lilas; aureola dourada em volta dos brotos
-      legend = { G = '#F2E6B0', g = '#C8B878' }, outline = true,
-      put = { { 12, 6, { '.GGGGGGGGGG.', 'G..........G', '.gggggggggg.' } } } },
-    { key = 'crimson', -- vinho; crescente da Lua Carmim a direita do olho
-      legend = { R = '#FF5A6A', r = '#C03048' },
-      put = { { 23, 16, { '.RR', 'Rr.', 'R..', 'Rr.', '.RR' } } } },
+Fr.run {
+  name = 'rootseer', stage = 'espirito', W = 36, PW = 96, draw = draw, ownLean = true,
+  fleeDy = { 1, 0, -1, -1, -1, -1 },
+  over = { flee = function(_, os) for i = 2, #os do os[i].jump = true end return os end },
+  -- o retrato é o desenho de 36 ampliado 2,6 vezes num quadro de 96
+  portrait = function(o)
+    local g, sg = L.grid(96, 96), L.grid(96, 96)
+    draw(g, sg, 2.6, o)
+    return g, sg, 0, 0
+  end,
+  acc = {
+    urban = { 16, 26 }, green = { 12, 23 }, water = { 15, 17 }, residential = { 15, 20 }, lit = { 14, 24 },
+    sacred = { 15, 2 }, crimson = { 22, 25 },
   },
 }
