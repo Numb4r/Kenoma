@@ -33,3 +33,5 @@ A luz de todas as peças desta rodada é só a da paleta do tipo.
 | Etapa | O que é | Regra quebrada |
 |---|---|---|
 | Arquétipo | Silhueta do beija-flor do Eco, do tamanho do quadro, feita de cacos grandes de vitrine cinza; só a cabeça (sem olho) e a cauda guardam a cor. O vão fica no lugar do coração. Luz só da paleta (sem o multicolor). | física: os cacos não se tocam e guardam a forma; geometria: o reflexo atravessa os cacos em linha reta, e a ponta do bico aparece dentro do vão |
+
+**Decisão do dono, depois da rodada 3: o multicolor volta na arte final.** O Glare é a única exceção à regra "luz do tipo sempre da paleta" (`docs/art/estilo-criaturas.md`, "Cores emissivas"). A base é a luz do tipo Luz de `tools/art/ui/types/palette.lua` (`#FFF0B8`, `#FFFBE6`, `#CDB468`), no lugar do amarelo-pálido do conceito, e o espectro do prisma vai por cima dela, em cores claras, longe dos três tons da magia. Vale para a frase "A luz de todas as peças desta rodada é só a da paleta do tipo" e para o "sem o multicolor" do Arquétipo acima: a arte final não os segue.

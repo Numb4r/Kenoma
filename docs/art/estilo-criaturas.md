@@ -81,8 +81,8 @@ Em toda etapa: proporção natural do bicho, sem olho grande de mascote; contras
 - **Espírito:** um elemento claramente errado que o Eco não tem (o objeto tomando o corpo por dentro, uma parte no lugar errado, um olho a mais), não só o bicho maior com mais objeto.
 - **Entidade Maior:** a anatomia cede de verdade (o poste do Hum, o saruê enrolado na brasa do Soot, a marquise com morcegos do Shade são a medida).
 - **Retratos:** o desenho do mapa ampliado com detalhe; composição própria (busto ou pose) só no Arquétipo.
-- **Ângulo:** bicho que voa pode ser visto de cima; bicho que anda fica de perfil.
-- **Cores emissivas:** a luz do tipo segue `tools/art/ui/types/palette.lua`. O ciano `#5fd3c6` fica só para o sinal e o Hum. Exceções que ficam: o Glare multicolor e o vão quase preto do Hum (`#0d0914`). O Rust troca o azul-aço por outra luz do tipo Metal.
+- **Ângulo:** bicho que voa pode ser visto de cima; bicho que anda fica de perfil. **Exceção aceita pelo dono:** a Entidade Maior e o Arquétipo do Rill ficam de frente (rodada 3, `docs/art/conceitos/rill.md`); o Rillet e o Brookkin seguem a regra.
+- **Cores emissivas:** a luz do tipo é sempre a de `tools/art/ui/types/palette.lua`. O ciano `#5fd3c6` fica só para o sinal e o Hum. **A única exceção é o Glare multicolor (decisão do dono):** a base é a luz do tipo Luz (`#FFF0B8`, `#FFFBE6`, `#CDB468`) e o espectro do prisma vai por cima dela, em cores claras, longe do violeta do Véu, do ciano do sinal e do laranja da Essência. A rodada 3 dos conceitos tinha tirado o multicolor; a arte final o devolve. O vão quase preto do Hum (`#0d0914`) continua, e não é luz. O Rust troca o azul-aço por outra luz do tipo Metal.
 - **Exceções de tamanho e forma:** aceitas, desde que os Ecos continuem legíveis a 28 px, de noite e de dia.
 
 ## As três camadas
@@ -151,5 +151,6 @@ A variante tem de se ler em **escala de cinza**: muda o **valor** do corpo e gan
 
 - `scripts/sync_creature_art.py` copia as pastas completas (json, variantes, retrato e folha) para `app/assets/art/creatures/`, sem as fontes nem a folha, e reescreve o `index.json` (espécie → pasta e gatilho de nascer) e as pastas do `pubspec.yaml`.
 - Gatilho de nascer, por família, só no desenho (o Eco continua no ponto da seed): Hum `lightning_lamp` (o raio na tempestade; à noite, faíscas do poste mais perto até `lamp_m`), Rill `puddle` (a poça ondula, com chuva), Clod `ground` (o chão se revira), Wisp `fog` (a neblina se junta). Os climas de cada gatilho estão no `index.json`.
+- Gatilhos decididos pelo dono depois da arte final (0.26.0): Soot `manhole` (sai do bueiro), Frond `crack` (sai da rachadura da calçada), Wyrm `crater_crack` (da cratera de meteoro, na chuva de meteoros; do asfalto rachado com brasa, fora dela). Bit, Glare, Rust, Shade e Sprig seguem sem gatilho: nascem onde o Eco aparece.
 - O retrato no Bestiário troca as cores pelo mesmo `map` da variante (sem o acessório, que é do quadro do mapa).
 - `test/ui/creature_art_test.dart` cobre toda espécie do índice: grade (28 no Eco, 36 no Espírito), as seis animações nas três camadas, retrato de 96, variantes distintas em cinza (no mínimo 12 pixels por par) e o retrato da variante com a silhueta igual. Os quadros de 48 e 64, o retrato de 128 e os pisos da régua ainda não estão no teste.

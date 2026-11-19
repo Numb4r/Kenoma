@@ -37,3 +37,5 @@ A luz de todas as peças desta rodada é só a da paleta do tipo.
 |---|---|---|
 | Entidade Maior | Cururu de frente, agachado; a boca de um lado ao outro é a boca de lobo (verga com tinta amarela, soleira, grade). Os calombos dos olhos estão cegos; os três olhos estão atrás da grade. Costura larga na verga. | a poça do dorso reflete os três olhos, que estão do outro lado do corpo |
 | Arquétipo | Sapo de frente, cinza, sem olho (dois buracos), pele em fibra com covas e veias acesas por fora. A boca aberta é a poça, e nela está o vão com duas luas e uma cidade de ponta-cabeça. Braços a mais de um lado só. | física: a poça está em pé e não escorre, e a água cai para cima; geometria: a poça é mais larga que a cabeça que a segura |
+
+**Decisão do dono: a Entidade Maior e o Arquétipo de frente estão aceitos** como exceção à regra "bicho que anda fica de perfil" (`docs/art/estilo-criaturas.md`, "Ângulo"). O Rillet e o Brookkin seguem a regra. O resto da rodada continua aguardando aprovação.
