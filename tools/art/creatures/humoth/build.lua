@@ -16,7 +16,7 @@ local LEG = {
   P = '#28244A', Q = '#3D3A70',                               -- asa de tras (so no retrato)
   h = '#17444C', i = '#245A62', j = '#6B5A44',                -- ocelo e veio apagados (camada corpo)
   H = '#5FD3C6', I = '#D9FFF6',                               -- ocelo aceso (camada leds)
-  J = '#FFD84A', Y = '#FFF3A8', S = '#FFD84A', s = '#FFF3A8', -- veio e faisca (camada glow)
+  J = '#FFD23A', Y = '#FFEE9A', S = '#FFD23A', s = '#FFEE9A', -- veio e faisca (camada glow): Eletrico de ui/types/palette.lua
   v = '#3A2E5A', V = '#9B7BFF',                               -- costura do Veu: apagada (corpo) e acesa (glow)
 }
 -- Costura do Veu: uma so, de 1 px, em diagonal no abdomen (parte do tronco: acompanha o corpo em toda animacao).
@@ -410,6 +410,7 @@ do
   local simg = Image(src.spec); simg:drawSprite(src, 1)
   local rev = {}
   for _, ch in ipairs({ 'A', 'B', 'T', 'C', 'D', 'R', 'G', 'F', 'E', 'P', 'Q', 'h', 'H', 'I', 'J', 'Y' }) do rev[LEG[ch]] = ch end
+  rev['#FFD84A'] = 'J'; rev['#FFF3A8'] = 'Y' -- o conceito de origem ainda tem os amarelos antigos: saem na cor da paleta
   local S = 96
   local base = L.grid(S, S)
   for y = 0, S - 1 do for x = 0, S - 1 do

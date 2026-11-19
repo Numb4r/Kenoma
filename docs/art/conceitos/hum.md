@@ -15,7 +15,7 @@
 
 ## Arte final (rodada 1 aprovada)
 
-Kit da família: `tools/art/creatures/_hum.lua` (as formas dos conceitos com pose, no formato do Humoth). Rodar cada `build.lua` com `KENOMA_ART='<worktree>/tools/art/'`. A luz amarela das quatro peças novas é a do tipo (`#FFD23A`, `#FFEE9A`); o Humoth mantém a dele.
+Kit da família: `tools/art/creatures/_hum.lua` (as formas dos conceitos com pose, no formato do Humoth). Rodar cada `build.lua` com `KENOMA_ART='<worktree>/tools/art/'`. A luz amarela das cinco peças é a do tipo (`#FFD23A`, `#FFEE9A`); o Humoth passou para ela depois da rodada 2 (o build aceita os amarelos antigos do `humoth_portrait_src.aseprite` e grava os novos).
 
 | Etapa | Pasta | O que mudou em relação ao conceito |
 |---|---|---|
