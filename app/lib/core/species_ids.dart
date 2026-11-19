@@ -13,6 +13,13 @@ SpeciesTier tierOfId(String id) => switch (id.split('.').last) {
       _ => SpeciesTier.spirit,
     };
 
+/// Se a espécie aparece no mapa comum: Eco e Espírito. A Entidade Maior e o Arquétipo ainda não (e o Arquétipo nunca: só
+/// evento e Incursão), então o mapa não monta sprite nem variante para eles.
+bool appearsOnMap(String id) => switch (tierOfId(id)) {
+      SpeciesTier.eco || SpeciesTier.spirit => true,
+      SpeciesTier.major || SpeciesTier.archetype => false,
+    };
+
 /// Espécies que só respondem ao ritual, não à sintonia.
 bool isRitualOnlyId(String id) => id.endsWith('.ritual');
 

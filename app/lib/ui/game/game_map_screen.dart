@@ -25,7 +25,7 @@ import '../../world/style_advisor.dart';
 import '../../world/climate_world.dart' show nearestPuddle;
 import '../../core/weather.dart';
 import '../../core/astro.dart' show moonPhase;
-import '../../core/species_ids.dart' show isRitualOnlyId;
+import '../../core/species_ids.dart' show appearsOnMap, isRitualOnlyId;
 import '../../crafting/bag.dart' show acceptable;
 import '../../crafting/collector_tick.dart';
 import '../../crafting/quality.dart' show parseStack;
@@ -698,12 +698,13 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       data = await GameData.load(widget.bundle);
       playerFrames = await loadPlayerFramesMap();
       familiar = await loadFamiliarImage();
-      for (final s in data.tuning.species) {
+      final onMap = [for (final s in data.tuning.species) if (appearsOnMap(s.id)) s];
+      for (final s in onMap) {
         sprites[s.id] = (await EcoSprite.loadMap(s.id)).normal;
       }
       // 0.21.0: cada variante com o valor e o acessório dela (`species@variante`) e o neon da Iluminada (`@lit#glow`),
       // montados na hora (sem fila de decodificação).
-      for (final s in data.tuning.species) {
+      for (final s in onMap) {
         for (final v in mapVariantKeys) {
           sprites['${s.id}@$v'] = EcoSprite.loadMapVariant(s.id, v);
         }
