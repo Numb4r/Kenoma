@@ -41,6 +41,8 @@
       "ability": { "kind": "night_eco_pct", "bands": [5, 10, 15] } },
     { "id": "shade.spirit", "name": "Shadekin", "family": "shade", "type": "shadow", "tier": "spirit", "since_epoch": 11,
       "ability": { "kind": "night_eco_pct", "bands": [10, 15, 20] } },
+    { "id": "shade.major", "name": "Entidade Maior de Umbrel", "family": "shade", "type": "shadow", "tier": "major", "since_epoch": 11 },
+    { "id": "shade.archetype", "name": "Arquétipo de Umbrel", "family": "shade", "type": "shadow", "tier": "archetype", "since_epoch": 11 },
     { "id": "wisp.eco", "name": "Wisplet", "family": "wisp", "type": "spectral", "tier": "eco", "god": "Teloch", "since_epoch": 11,
       "ability": { "kind": "fog_ecos_per_hour", "bands": [1, 2, 3] } },
     { "id": "wisp.spirit", "name": "Hollowkin", "family": "wisp", "type": "spectral", "tier": "spirit", "god": "Teloch", "since_epoch": 11,

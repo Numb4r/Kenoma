@@ -94,8 +94,14 @@
     "rust.spirit": {
       "folder": "gratekin"
     },
+    "shade.archetype": {
+      "folder": "shade_arquetipo"
+    },
     "shade.eco": {
       "folder": "umbrel"
+    },
+    "shade.major": {
+      "folder": "shade_entidade"
     },
     "shade.spirit": {
       "folder": "shadekin"
