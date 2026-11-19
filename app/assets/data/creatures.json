@@ -47,6 +47,8 @@
       "ability": { "kind": "fog_ecos_per_hour", "bands": [1, 2, 3] } },
     { "id": "wisp.spirit", "name": "Hollowkin", "family": "wisp", "type": "spectral", "tier": "spirit", "god": "Teloch", "since_epoch": 11,
       "ability": { "kind": "fog_ecos_per_hour", "bands": [2, 3, 4] } },
+    { "id": "wisp.major", "name": "Entidade Maior de Wisplet", "family": "wisp", "type": "spectral", "tier": "major", "god": "Teloch", "since_epoch": 11 },
+    { "id": "wisp.archetype", "name": "Arquétipo de Wisplet", "family": "wisp", "type": "spectral", "tier": "archetype", "god": "Teloch", "since_epoch": 11 },
     { "id": "bit.eco", "name": "Bitling", "family": "bit", "type": "digital", "tier": "eco", "since_epoch": 11,
       "ability": { "kind": "hidden_chance_pct", "bands": [5, 10, 15] } },
     { "id": "bit.spirit", "name": "Glitchkin", "family": "bit", "type": "digital", "tier": "spirit", "since_epoch": 11,

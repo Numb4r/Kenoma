@@ -36,3 +36,18 @@ O Eco do mapa é desenhado pixel a pixel (a coruja é estreita: 266 opacos, cont
 | Etapa | O que é | Regra quebrada |
 |---|---|---|
 | Entidade Maior | Velário de pé: tronco de cera, asas abertas como duas prateleiras de tocos de vela, cara de ponta-cabeça com órbitas ocas, tripé de pernas saindo da toca. Uma costura larga na raiz da asa. | a chama queima para baixo e a cera pinga para cima |
+
+## Arte final (rodadas 1 e 2 aprovadas)
+
+Kit da família: `tools/art/creatures/_wisp.lua` (a legenda, os emissivos e as ferramentas dos conceitos com pose; a saída é a do `_hum.lua`, no formato do Humoth). Rodar cada `build.lua` com `KENOMA_ART='<repo>/tools/art/'`. A luz das cinco peças é a do tipo (`#8A9DBA`, `#D3E2F4`, `#F2F7FF`); o azul do conceito saiu. Os olhos de vela vão em `leds` (piscam); as outras chamas, em `glow`. A chama não tem contorno. Bicho de chão: no Wisplet, no Hollowkin e na Entidade o `body_dy` é o tronco que sobe com os pés plantados; na deriva andam, na fuga saltam.
+
+| Etapa | Pasta | O que mudou em relação ao conceito |
+|---|---|---|
+| Fagulha | `tools/art/sparks/spark_spectral*` (desenho em `spark_spectral.lua`) | O Chill Mote substitui a chama oca antiga: o toco de vela com a chama fria, 4 quadros a 5 fps pairando (desce 1 px e volta); a chama inclina e cresce até o pico, a cera clareia do lado da luz e um grão de frio sobe. |
+| Eco | `tools/art/creatures/wisplet/` | A coruja-buraqueira substitui o vulto de névoa. **Três costuras do Véu** de 1 px (asa, barriga, alto da cabeça), `#9B7BFF` no `glow` e `#735C4C` apagadas na pena. Cada chama treme no seu passo; no alerta o pescoço estica e as chamas crescem; encolhida, afunda a cabeça (a reverência da buraqueira). |
+| Espírito | `tools/art/creatures/hollowkin/` | **Elemento errado: a vela tomou o corpo por dentro.** O manto de penas está oco e no lugar do peito queima uma vela inteira, que ilumina a borda da fenda; sobram o bico no escuro do capuz e três olhos de vela, dois do mesmo lado. Duas costuras de 2 px (o lado de penas e o ombro de cera). |
+| Entidade Maior | `tools/art/creatures/wisp_entidade/` (provisório) | O velário da rodada 2. Duas costuras largas: 3 px na raiz da asa esquerda e 2 px numa cinta no tronco de cera. As asas balançam em gangorra, cada chama cresce e encolhe no seu passo, os olhos soltam fogo que cai, os fios de cera sobem e recolhem. `idle` e `drift` com 6 quadros a 6 fps. |
+| Arquétipo | `tools/art/creatures/wisp_arquetipo/` (provisório) | Sem costura. O vão é escuro no corpo (`#150F20`), com o violeta só no `glow` (o aro junto das chamas, que respira, e o xadrez do fundo). As nove chamas dos tocos são o olho de vela e vão em `leds`. Os três capuzes dão um terço de volta por laço, o disco e os tocos giram devagar, a roda de 21 chamas soltas gira ao contrário. `idle` e `drift` com 8 quadros a 5 fps. **Retrato:** busto de 128 em escala 3, o olho de vela no quadro, capuzes, pernas e tiras cortados num rasgo em volta. |
+
+A Entidade sobe no máximo 1 px na fuga. O Arquétipo não sobe: o `body_dy` dele desce 1 px, porque os capuzes girando não deixam folga em cima. O Wisplet e o Hollowkin antigos e a Fagulha espectral foram substituídos por estes.
+

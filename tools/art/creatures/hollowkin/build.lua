@@ -1,126 +1,132 @@
--- Hollowkin (wisp.spirit), manto vazio com uma vela dentro. Rodar pelo Aseprite: aseprite -b --script build.lua
--- Mapa 36 x 36, olhando para a direita: manto de pe com capuz pontudo, sem ninguem dentro; a frente aberta
--- mostra a vela acesa no lugar do peito. A barra em farrapos balanca.
--- leds: o miolo da chama (a vela tremula). glow: a chama por fora e a luz quente no forro do manto, que cresce no alerta.
-local F = dofile('/home/yuri/Documentos/kenoma/tools/art/creatures/wisplet/_fase1.lua')
-local L = F.L
+-- Hollowkin (wisp.spirit), arte final: o Espírito da família Wisp, a partir do conceito aprovado. O manto de penas da
+-- coruja ficou de pé e vazio.
+-- ELEMENTO ERRADO (o que o Eco não tem): a vela tomou o corpo por dentro. Não há coruja dentro das penas: o peito é
+-- uma fenda oca e, no lugar dele, queima uma vela inteira, que ilumina a borda da fenda por dentro. Do bicho sobram o
+-- bico no escuro do capuz e os olhos de vela, agora três (dois do mesmo lado). Um ombro derreteu em cera, sobra uma
+-- perna só, e no lugar da outra escorre cera.
+-- Costuras do Véu: duas, de 2 px (o lado de penas do manto e o ombro de cera), só no glow.
+-- Camadas: corpo; leds = os três olhos de vela (piscam, cada chama no seu passo); glow = a vela do peito, a luz dela
+-- na borda da fenda, as costuras e o frio solto.
+-- Bicho de chão: o manto sobe e desce (body_dy) e a perna e a coluna de cera ficam; a barra em farrapos balança; na
+-- deriva o capuz vai à frente e ela anda na perna só; na fuga, salta. No alerta a fenda abre e as chamas crescem.
+-- Rodar: KENOMA_ART='<repo>/tools/art/'; dofile(KENOMA_ART .. 'creatures/hollowkin/build.lua')
+local Wi = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_wisp.lua')
+local L, F = Wi.L, Wi.F
+local floor, abs, max = math.floor, math.abs, math.max
 
-local CLOAK = { -- linhas 4..29
-  '...............WWM..................',
-  '..............WWMMMN................',
-  '............WWMMMMMNN...............',
-  '...........WWMMMMMMMMNN.............',
-  '..........WMMMMMMMMMMMNN............',
-  '..........WMMMMooooooooNN...........',
-  '.........WMMMMooooooooooN...........',
-  '.........WMMMMooooooooooNN..........',
-  '.........WMMMMooooooooooNN..........',
-  '.........WMMMMMoooooooooNN..........',
-  '.........WMMMMMMoooooooNNN..........',
-  '.........WMMMMMMMMNNNNNNND..........',
-  '........WMMMMMMDoooooDNNNNN.........',
-  '........WMMMMMDoooJoooDNNNN.........',
-  '.......WMMMMMMDoOJYJOoDNNNNN........',
-  '.......WMMMMMMDOOJYJOODNNNNN........',
-  '.......WMMMMMMDoOOJOOoDNNNNN........',
-  '.......WMMMMMMDooXXxooDNNNNN........',
-  '.......WMMMMMMDooXXxooDNNNNN........',
-  '.......WMMMMMMDooXXxooDNNNNN........',
-  '......WMMMMMMMDooXXxooDNNNNNN.......',
-  '......WMMMMMMMMDoXXxoDNNNNNNN.......',
-  '......WMMMMMMMMMDDDDDNNNNNNND.......',
-  '......WMMMMMMMMMMMNNNNNNNNNDD.......',
-  '.....WMMMMMMMMMMMNNNNNNNNNNDDD......',
-  '.....MMMNMMMMMDMMNNNNDNNNNNDDD......',
-}
-local HEM = { 'MMN.MMMDD.MNNND.NNNDD.DDD', 'MN...MDD...NND...NDD...DD', 'N.....D.....N.....D.....D' } -- linhas 30..32
-local SWAY = { [0] = 0, [1] = 1, [2] = -1 }
+-- o manto: { x, y, lado da barra (a ponta balança) }
+local CLOAK = { { 14.6, 2.4 }, { 18, 3 }, { 21, 4.6 }, { 22.6, 8 }, { 21.6, 11.8 }, { 26.4, 14.6 }, { 27.2, 22 }, { 26.6, 29.6 },
+  { 25, 31.4, 1 }, { 23.4, 29.4 }, { 21.8, 31.6, -1 }, { 20, 29.6 }, { 18.4, 31.2, 1 }, { 16.6, 29.4 }, { 15, 31.6, -1 }, { 13.2, 29.6 },
+  { 11.6, 31.4, 1 }, { 10, 29.4 }, { 8.4, 30.6, -1 }, { 7.8, 22 }, { 8.6, 14.6 }, { 13.4, 11.8 }, { 12.4, 8 }, { 13.4, 4.6 } }
+local MELT = { { 20.4, 4.4 }, { 22.6, 8 }, { 22.4, 11.6 }, { 26.4, 14.6 }, { 27, 20.4 }, { 25.8, 17.6 }, { 24.8, 22.4 }, { 23.6, 16.6 },
+  { 22.6, 19.4 }, { 21.8, 13 }, { 20.8, 10 } }
 
-local function pose(p)
-  local n = p == 'alert' and 0 or p
-  local g = L.grid(36, 36)
-  F.rows(g, 4, CLOAK, 'manto')
-  L.put(g, 5 + SWAY[n], 30, HEM)
-  if n == 1 then L.set(g, 18, 17, 'o'); L.set(g, 19, 17, 'J') end
-  if n == 2 then L.set(g, 18, 17, 'o'); L.set(g, 17, 17, 'J') end
-  if p == 'alert' then L.set(g, 18, 16, 'J'); L.set(g, 18, 17, 'Y'); L.set(g, 16, 17, 'O'); L.set(g, 20, 17, 'O') end
-  return g
+local function draw(g, sg, k, o)
+  local X, Y = Wi.scale(k, o.ox, o.oy)
+  local P = F.pen(g, k, o.ox or 0, o.oy or 0)
+  local p = Wi.pp(k)
+  Wi.flat = o.dark
+  local ph = (o.ph or 0) % 4
+  local alert, crouch = o.pose == 'alert', o.pose == 'crouch'
+  local still = alert or crouch
+  local b = (o.dy or 0) / k                                   -- o manto
+  local f = o.jump and b or 0                                 -- a perna, a cera e a névoa
+  local hd = alert and -0.6 or (crouch and 1.4 or 0)          -- o capuz
+  local hx = o.lean and 0.8 or 0
+  local st = o.lean and ({ [0] = 0.8, 0, -0.8, 0 })[ph] or 0
+  local sw = still and 0 or ({ [0] = 0, 0.7, 0, -0.7 })[ph]   -- a barra
+  local SW = { [0] = 0, 7, 0, -7 }
+  local fl = alert and 1.4 or (crouch and -1.2 or ({ [0] = 0, 0.4, 0.8, 0.3 })[ph])
+  local op = alert and 0.6 or 0                               -- a fenda abre
+  -- o manto cabe 1 px mais baixo no alto (2 px livres em cima) e igual na barra
+  local function V(v) return v + 1 - (v - 2.4) / 29.2 + b end
+  local function hood(x, y)                                   -- acima dos ombros o capuz baixa, sobe e vai à frente
+    if y < 12 then local t = (12 - y) / 9.6; return x + hx * t, y + hd * t end
+    return x, y
+  end
+  local function T(list)
+    local q = {}
+    for i, a in ipairs(list) do
+      local x, y = hood(a[1], a[2])
+      q[i] = { X(x + (a[3] or 0) * sw), Y(V(y)) }
+    end
+    return q
+  end
+  local function H(x, y) x, y = hood(x, y); return X(x), Y(V(y)) end
+  Wi.layer(g, function(t)
+    Wi.mist(t, X(8.6), Y(31.2 + f), 5.4 * k, 2 * k, 4, p); Wi.mist(t, X(27), Y(31.4 + f), 5 * k, 1.9 * k, 5, p)
+  end)
+  Wi.layer(g, function(t)
+    Wi.wire(t, { { X(14.4), Y(V(28)) }, { X(14.2 + st), Y(32.4 + f) } }, 'l', 'f', Wi.th(k, 0.7))
+    for _, q in ipairs({ { -1.6, 0.6 }, { 0.2, 0.8 }, { 1.7, 0.5 } }) do
+      Wi.wire(t, { { X(14.2 + st), Y(32.4 + f) }, { X(14.2 + st + q[1]), Y(32.4 + f + q[2]) } }, 'l', nil, Wi.th(k, 0.5))
+    end
+    Wi.cap(t, X(21.2), Y(V(28)), X(21.4), Y(32.2 + f), 1.2 * k, 0.7 * k, Wi.wax(p, X(20), 3 * k))
+    Wi.ell(t, X(21.5), Y(32.8 + f), 1 * k, 0.8 * k, '2')
+  end)
+  Wi.layer(g, function(t)
+    local fe = Wi.feather('abcd', p, 3)
+    local y0 = b * k
+    Wi.poly(t, T(CLOAK), function(x, y)
+      -- fileiras de penas: a ponta de cada uma é escura
+      local v = y - y0 + abs(x - X(17.5)) * 0.25
+      if v % (2 * k) >= 2 * k - p then return (floor(x / p) + floor(v / (2 * k))) % 3 == 0 and 'b' or 'a' end
+      return fe(x, y, 0.85 - (x - X(8)) / (19 * k) * 0.75)
+    end)
+    Wi.poly(t, T(MELT), Wi.wax(p, X(20), 7 * k))              -- o ombro que derreteu
+    -- o oco do capuz e a fenda do peito, com a vela no lugar do corpo
+    local ox, oy = H(18.2, 8.2)
+    Wi.ell(t, ox, oy, 3.3 * k, 3.5 * k, 'k')
+    Wi.poly(t, T({ { 17.6, 13.4 }, { 20.2 + op, 21 }, { 20.6 + op, 29 }, { 18.4, 30.6 }, { 16.6, 29 }, { 14.8 - op, 29 }, { 15 - op, 21 } }), 'k')
+    -- a luz da vela na borda de dentro
+    local add = {}
+    for y = floor(Y(V(13))), g.h - 1 do for x = 0, g.w - 1 do
+      if t[y][x] == 'k' then
+        for _, q in ipairs({ 1, -1 }) do
+          local c = L.get(t, x + q, y)
+          if c ~= 'k' and c ~= '.' and Wi.hash(x // p, floor(y - y0) // p, 8) > (k > 1 and 0.2 or (alert and 0.3 or 0.55)) then add[#add + 1] = { x, y } end
+        end
+      end
+    end end
+    for _, q in ipairs(add) do t[q[2]][q[1]] = 'B' end
+    -- bico no escuro
+    local bx, by = H(18.3, 9.8)
+    Wi.poly(t, { { bx - 0.7 * k, by }, { bx + 0.7 * k, by }, { bx, by + 2.4 * k } }, function(x) return x < bx and 'l' or 'f' end)
+    -- a vela de dentro
+    Wi.cap(t, X(17.7), Y(V(24.6)), X(17.7), Y(V(28.2)), 1.3 * k, 1.5 * k, Wi.wax(p, X(16.2), 3 * k))
+    Wi.wire(t, { { X(17.7), Y(V(23.6)) }, { X(17.7), Y(V(22.6)) } }, 'k', nil, Wi.th(k, 0.4))
+    Wi.cap(t, X(16.5), Y(V(25)), X(16.4), Y(V(26.6)), 0.45 * k, 0.3 * k, '3')
+    Wi.flame(t, X(17.7), Y(V(22.8)), -90 + (still and 0 or SW[ph]), (6.4 + fl) * k, 2.8 * k, 'BDE')
+    -- três olhos de vela, dois do mesmo lado
+    for n, e in ipairs({ { 16.4, 9.2, -92, 3.4 }, { 17.4, 6.8, -88, 2.8 }, { 20.4, 8.8, -86, 3.4 } }) do
+      local ex, ey = H(e[1], e[2])
+      Wi.flame(t, ex, ey, e[3] + (still and 0 or SW[(ph + n) % 4]), (e[4] + fl * 0.5) * k, 1.6 * k, 'FGH')
+    end
+    if k > 1 then
+      Wi.wire(t, { { X(10), Y(V(15)) }, { X(9.2), Y(V(22)) }, { X(9.6), Y(V(28.4)) } }, 'a')
+      Wi.wire(t, { { X(13), Y(V(12.4)) }, { X(12.6), Y(V(20)) } }, 'a')
+    end
+  end)
+  Wi.layer(g, function(t) Wi.mist(t, X(17.6), Y(32.6 + f), 4 * k, 1.2 * k, 6, p) end)
+  -- costuras do Véu: duas, de 2 px
+  local w = k > 1 and 4 or 2
+  Wi.seam(P, { { 10, V(15.6) }, { 12.2, V(25.4) } }, w, 'X', Wi.FEATHER, k > 1 and 2 or nil)
+  Wi.seam(P, { { 22.4, V(12.4) }, { 25.8, V(18) } }, w, '9', Wi.WAX, k > 1 and 2 or nil)
+  Wi.motes(g, sg, X, Y, k, { { 4, 12 }, { 30, 9 }, { 31, 22 }, { 5, 24 }, { 26, 4 }, { 10, 6 } }, ph, 4)
 end
 
-local function portrait(f)
-  local g, sg = L.grid(96, 96), L.grid(96, 96)
-  local by = ({ 0, -1, -1, 0 })[f]
-  local sw = ({ 0, 2, 0, -2 })[f]
-  local fl = ({ 0, 1.5, 0, -1.5 })[f]
-  local function Y(pts)
-    local o = {}
-    for i, p in ipairs(pts) do o[i] = { p[1], p[2] + by } end
-    return o
-  end
-  F.poly(g, Y { { 46, 8 }, { 58, 13 }, { 66, 25 }, { 69, 40 }, { 73, 50 }, { 77, 66 }, { 80, 84 }, { 16, 84 }, { 19, 66 },
-    { 23, 50 }, { 27, 40 }, { 30, 25 }, { 36, 13 } }, 'M')
-  for i = 0, 4 do F.poly(g, { { 16 + 13 * i, 84 + by }, { 22 + 13 * i + sw, 92 }, { 29 + 13 * i, 84 + by } }, 'M') end
-  -- luz da esquerda: lado direito na sombra, borda esquerda clara, dobras
-  for y = 0, 95 do for x = 0, 95 do
-    if g[y][x] == 'M' then
-      if x > 70 + (y - 40) * 0.12 then g[y][x] = 'D'
-      elseif x > 57 + (y - 8) * 0.1 then g[y][x] = 'N'
-      elseif L.get(g, x - 1, y) == '.' or L.get(g, x - 2, y) == '.' or L.get(g, x - 3, y) == '.' then g[y][x] = 'W' end
-    end
-  end end
-  L.line(g, 33, 50 + by, 28, 88, 'N', 'M'); L.line(g, 39, 60 + by, 37, 90, 'N', 'M')
-  L.line(g, 69, 52 + by, 73, 88, 'D', 'N'); L.line(g, 40, 14 + by, 34, 30 + by, 'W', 'M')
-  -- capuz: aba e o vazio
-  F.ell(g, 53, 31 + by, 15, 16, 'N', 'MNW')
-  L.ring(g, 53, 31 + by, 15.4, 'W', 'N')
-  F.ell(g, 54, 32 + by, 12, 13, 'o')
-  -- frente aberta, com a luz da vela no forro
-  F.poly(g, Y { { 47, 50 }, { 60, 50 }, { 64, 82 }, { 44, 82 } }, 'o')
-  L.line(g, 46, 50 + by, 43, 82 + by, 'D'); L.line(g, 61, 50 + by, 65, 82 + by, 'D')
-  F.ell(g, 53, 58 + by, 7.5, 12, 'O', 'o')
-  if f == 2 or f == 3 then F.ell(g, 53, 58 + by, 5, 8, 'Q', 'O') end
-  -- vela
-  L.rect(g, 49, 64 + by, 56, 81 + by, 'X'); L.rect(g, 55, 64 + by, 56, 81 + by, 'x')
-  L.rect(g, 50, 64 + by, 50, 69 + by, 'x'); L.rect(g, 53, 64 + by, 53, 66 + by, 'x')
-  L.rect(g, 52, 61 + by, 53, 63 + by, 'D')
-  F.ell(g, 52.5, 56 + by, 3.2, 5, 'J')
-  F.poly(g, { { 49, 55 + by }, { 52.5 + fl, 44 + by }, { 56, 55 + by } }, 'J')
-  if f == 3 then F.ell(g, 52.5, 55 + by, 2.4, 4.5, 'B', 'J') end
-  F.ell(g, 52.5, 57 + by, 1.4, 3, 'Y')
-  for k, p in ipairs({ { 12, 30 }, { 84, 20 }, { 88, 56 }, { 8, 66 }, { 74, 6 }, { 22, 12 } }) do
-    if (k + f) % 4 ~= 0 then
-      local c = (k + f) % 4 == 2 and 's' or 'S'
-      L.set(sg, p[1], p[2] - f, c)
-      if k % 2 == 1 then L.set(sg, p[1] + 1, p[2] - f, c) end
-    end
-  end
-  return g, sg
-end
-
-F.build {
-  name = 'hollowkin', W = 36,
-  LEG = {
-    A = '#1A1424',
-    W = '#A9B2CC', M = '#727C9E', N = '#4E5678', D = '#333A58', -- manto
-    X = '#E4DCCB', x = '#B0A696',                               -- cera da vela
-    o = '#221A33', y = '#6A4A30', j = '#5A3A28',                -- o vazio (forro sem luz), miolo e chama apagados
-    Y = '#FFF6D0',                                              -- miolo da chama (leds)
-    J = '#FFB040', B = '#FFE9A8', O = '#8A4E30', Q = '#C87A3C', -- chama e luz no forro (glow)
-    S = '#FFB040', s = '#FFE9A8',
-  },
-  BODY_KEYS = { 'W', 'M', 'N', 'D', 'X', 'x' },
-  EMIT = { Y = { 'y', 'leds' }, J = { 'j', 'glow' }, B = { 'j', 'glow' }, O = { 'o', 'glow' }, Q = { 'o', 'glow' } },
-  BRIGHT = { J = 'B', O = 'Q' },
-  DARK = 'D',
-  pose = pose,
+Wi.run {
+  name = 'hollowkin', stage = 'espirito', W = 36, PW = 96, draw = draw, fleeDy = { 1, 0, -1, -1, -1, -1 },
+  over = { flee = function(_, os) for i = 2, #os do os[i].jump = true end return os end },
+  -- o retrato é o desenho do mapa ampliado 2,5 vezes, com detalhe (dobras do manto, pontos nas costuras)
+  portrait = function(o)
+    local g, sg = L.grid(96, 96), L.grid(96, 96)
+    o.ox, o.oy = 3, 3
+    draw(g, sg, 2.5, o)
+    return g, sg, 0, 0
+  end,
   acc = {
-    urban = { { 6, 27, { 'wWWWWWWWWWWWWWWWWWWWWWw' } } },                           -- bracadeira na barra
-    green = { { 14, 4, { 'L..L', 'lLLl', '.dd.' } } },                             -- broto na ponta do capuz
-    water = { { 9, 15, { 'u.u.u.u.U.u.u.u.u' } }, { 12, 16, { 'U', 'v' } } },       -- colar de contas na gola, com gota
-    residential = { { 9, 15, { 'OOOOOOOOOOOOOOOOo' } }, { 10, 16, { 'Oo', 'Oo', 'Oo', 'oo' } } }, -- cachecol
-    lit = { { 8, 19, { 'NN..NN', 'NNMMNN', 'NN..NN' } } },                         -- laco no ombro
-    sacred = { { 12, 5, { '.GGGGGGGG.', 'G........G', '.gggggggg.' } } },          -- aureola no capuz
-    crimson = { { 23, 20, { '.RR', 'Rr.', 'R..', 'Rr.', '.RR' } } },               -- crescente no lado
+    urban = { 8, 24 }, green = { 10, 27 }, water = { 13, 11 }, residential = { 9, 13 }, lit = { 8, 19 },
+    sacred = { 14, 3 }, crimson = { 23, 22 },
   },
-  portrait = portrait,
 }

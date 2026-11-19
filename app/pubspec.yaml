@@ -78,6 +78,8 @@ flutter:
     - assets/art/creatures/thicketkin/
     - assets/art/creatures/umbrel/
     - assets/art/creatures/wellmirror/
+    - assets/art/creatures/wisp_arquetipo/
+    - assets/art/creatures/wisp_entidade/
     - assets/art/creatures/wisplet/
     - assets/art/creatures/wyrmkin/
     - assets/art/creatures/wyrmlet/

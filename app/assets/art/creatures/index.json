@@ -127,8 +127,16 @@
     "sprig.spirit": {
       "folder": "fairkin"
     },
+    "wisp.archetype": {
+      "folder": "wisp_arquetipo",
+      "spawn": "fog"
+    },
     "wisp.eco": {
       "folder": "wisplet",
+      "spawn": "fog"
+    },
+    "wisp.major": {
+      "folder": "wisp_entidade",
       "spawn": "fog"
     },
     "wisp.spirit": {
