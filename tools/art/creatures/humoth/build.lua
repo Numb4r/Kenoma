@@ -2,8 +2,10 @@
 -- Mapa: quadros de 28x28, tres camadas por animacao (corpo, leds, glow). Retrato: 96x96, 4 quadros,
 -- a partir de humoth_portrait_src.aseprite (o conceito aprovado), com as asas flexionando por faixas de coluna.
 -- Um caractere por pixel; a metade esquerda e desenhada e a direita e espelho.
-local L = dofile('/home/yuri/Documentos/kenoma/tools/art/npc/_lib.lua')
-local DIR = L.ROOT .. 'creatures/humoth/'
+-- Rodar: KENOMA_ART='<worktree>/tools/art/'; dofile(KENOMA_ART .. 'creatures/humoth/build.lua')
+local ART = assert(KENOMA_ART, 'defina KENOMA_ART (tools/art/ do worktree, com a barra no fim)')
+local L = dofile(ART .. 'npc/_lib.lua')
+local DIR = ART .. 'creatures/humoth/'
 local W, H = 28, 28
 
 local LEG = {
@@ -15,7 +17,10 @@ local LEG = {
   h = '#17444C', i = '#245A62', j = '#6B5A44',                -- ocelo e veio apagados (camada corpo)
   H = '#5FD3C6', I = '#D9FFF6',                               -- ocelo aceso (camada leds)
   J = '#FFD84A', Y = '#FFF3A8', S = '#FFD84A', s = '#FFF3A8', -- veio e faisca (camada glow)
+  v = '#3A2E5A', V = '#9B7BFF',                               -- costura do Veu: apagada (corpo) e acesa (glow)
 }
+-- Costura do Veu: uma so, de 1 px, em diagonal no abdomen (parte do tronco: acompanha o corpo em toda animacao).
+local SEAM = { { 11, 15 }, { 12, 16 }, { 13, 17 }, { 14, 18 }, { 15, 19 }, { 16, 20 } }
 -- Cores do corpo que as variantes trocam (as apagadas e as emissivas ficam iguais em todas).
 local BODY_KEYS = { 'P', 'Q', 'G', 'F', 'E', 'C', 'D', 'R', 'B', 'T' }
 
@@ -114,6 +119,7 @@ local function compose(lp, rp)
   end
   half(WING[lp], 9, false, 'asa' .. lp); half(WING[rp], 9, true, 'asa' .. rp)
   half(BODY, 3, false, 'corpo'); half(BODY, 3, true, 'corpo')
+  for _, p in ipairs(SEAM) do g[p[2]][p[1]] = 'V' end
   return g
 end
 
@@ -162,6 +168,7 @@ local function split(g, sg)
       if c == 'H' then b[y][x] = 'h'; l[y][x] = 'H'
       elseif c == 'I' then b[y][x] = 'i'; l[y][x] = 'I'
       elseif c == 'J' or c == 'Y' then b[y][x] = 'j'; w[y][x] = c
+      elseif c == 'V' then b[y][x] = 'v'; w[y][x] = 'V'
       else b[y][x] = c end
       local s = sg and sg[y][x]
       if s and s ~= '.' then w[y][x] = s end
@@ -178,7 +185,7 @@ local function frame(o)
     if o.veins then veins(g, o.veins) end
     if o.dark then
       for y = 0, H - 1 do for x = 0, W - 1 do
-        if g[y][x] ~= '.' and not ('HIJY'):find(g[y][x], 1, true) then g[y][x] = 'C' end
+        if g[y][x] ~= '.' and not ('HIJYV'):find(g[y][x], 1, true) then g[y][x] = 'C' end
       end end
     end
     if o.erode then erode(g, sg, o.erode[1], o.erode[2]) end
@@ -413,6 +420,11 @@ do
     end
   end end
   src:close()
+  -- A costura do Veu, no mesmo lugar do mapa: 1 px em diagonal no abdomen (dentro da faixa que sobe com o corpo).
+  for n = 0, 17 do
+    local x, y = 39 + n, 50 + n
+    if ('CDR'):find(base[y][x], 1, true) then base[y][x] = 'V' end
+  end
   -- Faiscas soltas: grupos de amarelo que nao encostam no corpo.
   local comp, ncomp, spark = {}, 0, {}
   local function yellow(x, y) local c = L.get(base, x, y); return c == 'J' or c == 'Y' end

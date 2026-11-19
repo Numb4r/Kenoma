@@ -1,7 +1,8 @@
 -- Grade de caracteres para as folhas de NPC, veículo e ônibus (0.25.0, pixel de 2 dp).
 -- Um caractere por pixel, '.' vazio. Rodar pelo Aseprite: aseprite -b --script build.lua
 local L = {}
-L.ROOT = '/home/yuri/Documentos/kenoma/tools/art/'
+-- KENOMA_ART (global, com a barra no fim): o tools/art/ do worktree em que se está trabalhando.
+L.ROOT = KENOMA_ART or '/home/yuri/Documentos/kenoma/tools/art/'
 
 function L.grid(w, h)
   local g = { w = w, h = h }

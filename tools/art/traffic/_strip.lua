@@ -1,6 +1,6 @@
 -- Apoio do tráfego e das Fagulhas (0.25.1): quadros de verdade no .aseprite, tira em PNG por camada,
 -- conferência (um pedaço só, nada na borda) e folha de conferência. A grade de caracteres é a do npc/_lib.lua.
-local L = dofile('/home/yuri/Documentos/kenoma/tools/art/npc/_lib.lua')
+local L = dofile((KENOMA_ART or '/home/yuri/Documentos/kenoma/tools/art/') .. 'npc/_lib.lua')
 local S = { L = L }
 
 local function rgb(hex)

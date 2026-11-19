@@ -9,7 +9,7 @@
     "fire": { "shape": "chama", "color": "#F0502E", "dark": "#A82E1C", "light": "#FF9C7A", "core": "#FFF0B0", "glow": "tudo menos o contorno" },
     "water": { "shape": "gota", "color": "#4A9CFF", "dark": "#2A62B8", "light": "#A4D0FF", "core": "#FFFFFF", "glow": "só o brilho" },
     "plant": { "shape": "folha", "color": "#4DBD62", "dark": "#2B7A40", "light": "#A2E8A0", "core": "#F0FFD0", "glow": "só a nervura" },
-    "electric": { "shape": "faísca", "color": "#FFD23A", "dark": "#B8901C", "light": "#FFEE9A", "core": "#FFFFFF", "glow": "tudo menos o contorno" },
+    "electric": { "shape": "Arc Mote: ocelo de LED arrancado, com o veio pendurado (pairando: repouso, desce, pico, volta)", "color": "#FFD23A", "dark": "#B8901C", "light": "#FFEE9A", "core": "#D9FFF6", "glow": "o olho de LED, o veio e a faísca solta (a faísca só existe no glow; o corpo é pó de asa, não troca de cor)" },
     "earth": { "shape": "pedrinha", "color": "#C0915A", "dark": "#7E5A32", "light": "#E6C594", "core": "#FFF0D0", "glow": "só o brilho" },
     "metal": { "shape": "lasca", "color": "#93A1B3", "dark": "#566274", "light": "#CCD6E2", "core": "#FFFFFF", "glow": "só o fio" },
     "light": { "shape": "raio de luz", "color": "#FFF0B8", "dark": "#CDB468", "light": "#FFFBE6", "core": "#FFFFFF", "glow": "tudo menos o contorno" },

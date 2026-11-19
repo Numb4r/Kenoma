@@ -2,9 +2,12 @@
 -- Camadas: base (com contorno) e glow (o que brilha de noite). Rodar: aseprite -b --script build.lua
 -- Letras: d escuro, m cor do tipo, l claro (os três de tools/art/ui/types/palette.lua, 0.26.0), w miolo. No repouso
 -- '1' é m e '2' é l; no quadro aceso '1' vira l e '2' vira w. O pico é desenho próprio.
-local S = dofile('/home/yuri/Documentos/kenoma/tools/art/traffic/_strip.lua')
+-- Rodar pelo MCP: KENOMA_ART='<worktree>/tools/art/'; SPARKS_ONLY='electric' (opcional: só regrava esse tipo e a
+-- folha); dofile(KENOMA_ART .. 'sparks/build.lua')
+local ART = assert(KENOMA_ART, 'defina KENOMA_ART (tools/art/ do worktree, com a barra no fim)')
+local S = dofile(ART .. 'traffic/_strip.lua')
 local L = S.L
-local DIR = L.ROOT .. 'sparks/'
+local DIR = ART .. 'sparks/'
 local O = '#1A1424'
 local PAL = {}
 for _, c in ipairs(dofile(L.ROOT .. 'ui/types/palette.lua')) do PAL[c.id] = c end
@@ -19,9 +22,22 @@ local TYPES = {
   { 'plant', w = '#F0FFD0',  -- folha
     a = { '..........', '.....mmm..', '...mm11m..', '..mm1lmm..', '..m1lmmm..', '..mlmmmd..', '..mmmmdd..', '.dmmddd...', '.d........', '..........' },
     c = { '..........', '....mmmmm.', '...mmllwm.', '..mmllwmm.', '..mllwmmm.', '..mlwmmmd.', '..mwmmmdd.', '.dmmmddd..', '.d........', '..........' } },
-  { 'electric', w = '#FFFFFF', lum = true,  -- faísca
-    a = { '..........', '.....m1m..', '....m1m...', '...m1m....', '..m1111m..', '....m1m...', '...m1m....', '..m1m.....', '..mm......', '..........' },
-    c = { '..........', '.m...mwm..', '..m.mwm...', '...mwm....', '..mwwwwm..', '....mwm.m.', '...mwm.m..', '..mwm.....', '..mm......', '..........' } },
+  -- Arc Mote (arte final da família Hum): um ocelo de LED arrancado da asa do Humoth, com o veio pendurado soltando
+  -- faísca. Quadros de 12x12 desenhados inteiros (pairando: desce 1 px e volta, o veio balança). Maiúsculas H I J Y
+  -- acendem no glow com o par apagado (h i j) no corpo; S e s são faísca solta, só no glow.
+  { 'electric',
+    leg = { A = O, E = '#7672B8', F = '#4D4A8A', G = '#34305E', P = '#28244A', h = '#17444C', i = '#245A62', j = '#6B5A44',
+      H = '#5FD3C6', I = '#D9FFF6', J = '#FFD23A', Y = '#FFEE9A', S = '#FFD23A', s = '#FFEE9A' },
+    frames = {
+      { '............', '.....AA.....', '....AEEA....', '...AEFFFA...', '..AEFHHGPA..', '..AFHIIHGA..', '..AFHIIHPA..',
+        '..AGGHHPA...', '...AGJPA.S..', '....AJA.....', '.....S......', '............' },
+      { '............', '............', '.....AA.....', '....AEEA....', '...AEFFFA...', '..AEFHHGPA..', '..AFHIIHGA..',
+        '..AFHIIHPA..', '..AGGHHPA...', '...AGJPA....', '...AJAA..s..', '............' },
+      { '............', '............', '.....AA.....', '....AEEA....', '...AEFFFA...', '..AEFIIGPA..', '..AFIIIIGA..',
+        '..AFIIIIPA..', '..AGGIIPA...', '...AGYPA....', '.S..AYA..s..', '............' },
+      { '............', '.....AA.....', '....AEEA....', '...AEFFFA...', '..AEFHHGPA..', '..AFHIIHGA..', '..AFHIIHPA..',
+        '..AGGHHPA...', '...AGJPA....', '....AAJA....', '.......S....', '............' },
+    } },
   { 'earth', w = '#FFF0D0',  -- pedrinha
     a = { '..........', '..........', '...mmmm...', '..m11mmd..', '.mm1mmmdd.', '.mmmmmddd.', '.mmmmdddd.', '..mddddd..', '..........', '..........' },
     c = { '..........', '...mmmm...', '..mllmmd..', '.mmlwmmdd.', '.mmlmmmdd.', '.mmmmmddd.', '..mmdddd..', '...dd.m...', '..........', '..........' } },
@@ -66,17 +82,28 @@ local items = {}
 for i, t in ipairs(TYPES) do
   local name = 'spark_' .. t[1]
   local c = PAL[t[1]]
-  local leg = { o = O, m = c.m, d = c.d, l = c.l, w = t.w }
-  local rest = frame(conv(t.a, 'm', 'l'), name .. ' q1')
-  local lit = frame(conv(t.a, 'l', 'w'), name .. ' q2')
-  local peak = frame(t.c, name .. ' q3')
-  local frames = { rest, lit, peak, lit }
-  local glow = {}
-  for f, g in ipairs(frames) do glow[f] = S.pick(g, t.lum and 'mlw' or 'lw') end
-  S.save(DIR .. name, leg, {
-    { name = 'base', frames = frames, png = DIR .. name .. '.png' },
-    { name = 'glow', frames = glow, png = DIR .. name .. '_glow.png' },
-  }, 5)
+  local leg, frames, glow = t.leg, {}, {}
+  if t.frames then
+    for f, rows in ipairs(t.frames) do
+      local g = L.frame(rows, 12, 12, name .. ' q' .. f)
+      glow[f] = S.pick(g, 'HIJYSs')
+      frames[f] = S.pick(g, 'AEFGPHIJY', { H = 'h', I = 'i', J = 'j', Y = 'j' })
+      S.check(name .. ' q' .. f, frames[f])
+    end
+  else
+    leg = { o = O, m = c.m, d = c.d, l = c.l, w = t.w }
+    local rest = frame(conv(t.a, 'm', 'l'), name .. ' q1')
+    local lit = frame(conv(t.a, 'l', 'w'), name .. ' q2')
+    local peak = frame(t.c, name .. ' q3')
+    frames = { rest, lit, peak, lit }
+    for f, g in ipairs(frames) do glow[f] = S.pick(g, t.lum and 'mlw' or 'lw') end
+  end
+  if not SPARKS_ONLY or SPARKS_ONLY == t[1] then
+    S.save(DIR .. name, leg, {
+      { name = 'base', frames = frames, png = DIR .. name .. '.png' },
+      { name = 'glow', frames = glow, png = DIR .. name .. '_glow.png' },
+    }, 5)
+  end
   -- Folha: os 4 quadros no asfalto, na grama e na calçada.
   for f = 1, 4 do
     for b = 0, 2 do
