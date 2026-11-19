@@ -27,7 +27,7 @@ Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de dia; 3. Sintonizar em
 
 Onde aparece: Verde; hora: Qualquer; clima: + Chuva; lua: —.
 
-**Seed Mote** (Fagulha). Semente que brilha antes de cair.
+**Seed Mote** (Fagulha). Lobo de fronde que se soltou.
 
 **Frondling** (Eco). Fronde fractal que anda sobre as raízes.
 
@@ -95,10 +95,10 @@ Onde aparece: Verde; hora: Qualquer; clima: + Poeira seca; lua: —; lugar: Morr
 - Lore II: Gosta de lugar alto e de terra seca. Na poeira dos redemoinhos aparece em bando.
 - Lore III: Cada pedrinha veio de um lugar diferente. Juntas, lembram de um chão que não existe mais.
 
-**Bouldkin** (Espírito). Tatu tomado por musgo e galhos, que anda devagar.
+**Bouldkin** (Espírito). Tatu tomado por guia de concreto quebrada e vergalhão, que anda devagar.
 
-- Lore I: Anda um passo por minuto, e ninguém nunca o viu chegar: ele só está lá.
-- Lore II: O musgo das costas cresce do lado de onde vem a chuva. Serve de bússola a quem sabe ler.
+- Lore I: A frente da carapaça virou guia de calçada quebrada, com o vergalhão à mostra. Anda um passo por minuto, e ninguém nunca o viu chegar: ele só está lá.
+- Lore II: O musgo da guia cresce do lado de onde vem a chuva. Serve de bússola a quem sabe ler.
 - Lore III: Sintonizar um é ouvir camadas: a de cima é de ontem, a de baixo é de antes das cidades.
 
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de dia e de noite; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
@@ -187,7 +187,7 @@ Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver na neblina; 3. Sintoniza
 
 Onde aparece: Iluminado; hora: Qualquer; clima: + Estática; lua: —.
 
-**Static Mote** (Fagulha). Um pixel solto.
+**Static Mote** (Fagulha). Pena de pombo se desfazendo em pixels.
 
 **Bitling** (Eco). Pombo com glitch na plumagem.
 
