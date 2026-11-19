@@ -244,6 +244,10 @@ void _pinMarker(ui.Canvas canvas, ui.Offset c, double size, double time) {
   canvas.drawPath(arrow, ui.Paint()..style = ui.PaintingStyle.stroke..strokeWidth = 1..color = kOutline..isAntiAlias = false);
 }
 
+/// Se a criatura [speciesId] tem a sombra oval no chão. O Shade não tem: o traço dele é a sombra que não acompanha o corpo,
+/// desenhada no próprio sprite (docs/art/conceitos/shade.md), e uma segunda sombra no chão a desmentiria.
+bool castsGroundShadow(String speciesId) => familyOfId(speciesId) != 'shade';
+
 /// As variantes com arte própria no mapa (`variant_art.dart`): valor e acessório, legíveis em cinza.
 const List<String> mapVariantKeys = ['urban', 'green', 'water', 'residential', 'lit', 'sacred', 'crimson', 'shiny'];
 
@@ -257,10 +261,12 @@ ui.Image? _spriteOf(Map<String, ui.Image> sprites, WorldSpawn s) => (_variantKey
 void _eco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, ui.Image? sprite, double size, EcoTypeOf typeOf, bool near, double time, ui.Rect avoid, {int? tint, double lean = 0, ui.Image? glow, bool flip = false}) {
   final color = spawnColor(s, typeOf);
   // Sombra no chão.
-  canvas.drawOval(
-    ui.Rect.fromCenter(center: c.translate(0, size * 0.42), width: size * 0.7, height: size * 0.18),
-    ui.Paint()..color = kOutline.withValues(alpha: 0.55)..isAntiAlias = false,
-  );
+  if (castsGroundShadow(s.entryId)) {
+    canvas.drawOval(
+      ui.Rect.fromCenter(center: c.translate(0, size * 0.42), width: size * 0.7, height: size * 0.18),
+      ui.Paint()..color = kOutline.withValues(alpha: 0.55)..isAntiAlias = false,
+    );
+  }
   final bob = near ? (math.sin(time * 3 + s.uid % 5) * 2).roundToDouble() : 0.0;
   final dst = ui.Rect.fromCenter(center: c.translate(0, bob), width: size, height: size);
   if (isSpiritSpawn(s)) {
@@ -432,10 +438,12 @@ void _animatedEco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, CreatureArt art, 
   // 0.25.1: o gatilho de nascer (só durante a abertura): a poça e o chão por baixo do corpo; o raio, as faíscas do poste e
   // a neblina por cima, acesos depois do tom.
   if (trigger != null) paintSpawnTrigger(canvas, trigger.$1, c, appear, size, s.uid, origin: trigger.$2, behind: true);
-  canvas.drawOval(
-    ui.Rect.fromCenter(center: c.translate(0, size * 0.42), width: size * 0.55, height: size * 0.14),
-    ui.Paint()..color = kOutline.withValues(alpha: 0.45)..isAntiAlias = false,
-  );
+  if (castsGroundShadow(s.entryId)) {
+    canvas.drawOval(
+      ui.Rect.fromCenter(center: c.translate(0, size * 0.42), width: size * 0.55, height: size * 0.14),
+      ui.Paint()..color = kOutline.withValues(alpha: 0.45)..isAntiAlias = false,
+    );
+  }
   final kind = animOf(appear: appear, alert: near, moving: moving);
   final strip = art.anims[kind] ?? art.anims[CreatureAnim.idle]!;
   final frame = kind == CreatureAnim.spawn ? onceFrame(appear, strip.frames) : loopFrame(time, strip.frames, strip.fps, uid: s.uid);

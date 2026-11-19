@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/species_ids.dart';
 import 'package:kenoma/ui/game/creature_anim.dart';
 import 'package:kenoma/ui/game/creature_art.dart';
-import 'package:kenoma/ui/sprites/sprite_image.dart' show mapEcoPx, mapSpiritPx;
+import 'package:kenoma/ui/sprites/sprite_image.dart' show mapPxOf;
 
 /// Lê os assets direto do disco (a arte de verdade, sem o bundle do Flutter).
 class _DiskBundle extends CachingAssetBundle {
@@ -50,10 +50,10 @@ void main() {
 
   for (final MapEntry(key: id, value: folder) in species.entries) {
     group('$id ($folder)', () {
-      testWidgets('as seis animações na grade do mapa, com corpo, LEDs e brilho do mesmo tamanho, e o retrato de 96', (tester) async {
+      testWidgets('as seis animações na grade do mapa, com corpo, LEDs e brilho do mesmo tamanho, e o retrato de 96 (128 no Arquétipo)', (tester) async {
         await tester.runAsync(() => CreatureArt.loadAll(_DiskBundle()));
         final art = CreatureArt.of(id)!;
-        expect(art.frame, tierOfId(id) == SpeciesTier.spirit ? mapSpiritPx : mapEcoPx, reason: 'Espírito 36, Eco e Ritual 28: o tamanho no mundo não muda');
+        expect(art.frame, mapPxOf(id), reason: 'Eco 28, Espírito 36, Entidade Maior 48, Arquétipo 64: o tamanho no mundo não muda');
         expect(art.anims.keys.toSet(), CreatureAnim.values.toSet(), reason: 'parado, deriva, alerta, fuga, nascer, sintonizado');
         for (final e in art.anims.entries) {
           final s = e.value;
@@ -63,7 +63,7 @@ void main() {
             expect((layer!.width, layer.height), (s.body.width, s.body.height), reason: e.key.name);
           }
         }
-        expect(art.portrait!.body.height, 96);
+        expect(art.portrait!.body.height, tierOfId(id) == SpeciesTier.archetype ? 128 : 96, reason: 'retrato de 96; o do Arquétipo, 128');
         expect(art.portrait!.frames, greaterThanOrEqualTo(2));
       });
 

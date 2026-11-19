@@ -52,11 +52,15 @@ flutter:
     - assets/art/creatures/cinderkin/
     - assets/art/creatures/coilkin/
     - assets/art/creatures/fairkin/
+    - assets/art/creatures/frond_arquetipo/
+    - assets/art/creatures/frond_entidade/
     - assets/art/creatures/frondling/
     - assets/art/creatures/glimlet/
     - assets/art/creatures/glitchkin/
     - assets/art/creatures/gratekin/
     - assets/art/creatures/hollowkin/
+    - assets/art/creatures/hum_arquetipo/
+    - assets/art/creatures/hum_entidade/
     - assets/art/creatures/humoth/
     - assets/art/creatures/kilnshade/
     - assets/art/creatures/pebblet/
@@ -65,6 +69,8 @@ flutter:
     - assets/art/creatures/rootseer/
     - assets/art/creatures/rustling/
     - assets/art/creatures/shadekin/
+    - assets/art/creatures/soot_arquetipo/
+    - assets/art/creatures/soot_entidade/
     - assets/art/creatures/sootling/
     - assets/art/creatures/sprigglet/
     - assets/art/creatures/thicketkin/

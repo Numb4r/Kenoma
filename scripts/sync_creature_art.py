@@ -26,7 +26,11 @@ def main() -> None:
         if not all((d / f).exists() for f in (f'{n}.json', f'{n}_variants.json', f'{n}_portrait.png', f'{n}_folha.png')):
             print(f'incompleta, fica de fora: {n}')
             continue
-        sid = by_name.get(n)
+        # As etapas altas ainda sem nome moram em <familia>_entidade e <familia>_arquetipo (docs/art/estilo-criaturas.md).
+        fam, _, stage = n.partition('_')
+        sid = by_name.get(n) or {'entidade': f'{fam}.major', 'arquetipo': f'{fam}.archetype'}.get(stage)
+        if sid not in {s['id'] for s in species}:
+            sid = None
         if sid is None:
             print(f'sem espécie com o nome {n}')
             continue

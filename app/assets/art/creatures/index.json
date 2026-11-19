@@ -39,8 +39,14 @@
       "folder": "bouldkin",
       "spawn": "ground"
     },
+    "frond.archetype": {
+      "folder": "frond_arquetipo"
+    },
     "frond.eco": {
       "folder": "frondling"
+    },
+    "frond.major": {
+      "folder": "frond_entidade"
     },
     "frond.ritual": {
       "folder": "rootseer"
@@ -54,8 +60,16 @@
     "glare.spirit": {
       "folder": "prismkin"
     },
+    "hum.archetype": {
+      "folder": "hum_arquetipo",
+      "spawn": "lightning_lamp"
+    },
     "hum.eco": {
       "folder": "humoth",
+      "spawn": "lightning_lamp"
+    },
+    "hum.major": {
+      "folder": "hum_entidade",
       "spawn": "lightning_lamp"
     },
     "hum.spirit": {
@@ -86,8 +100,14 @@
     "shade.spirit": {
       "folder": "shadekin"
     },
+    "soot.archetype": {
+      "folder": "soot_arquetipo"
+    },
     "soot.eco": {
       "folder": "sootling"
+    },
+    "soot.major": {
+      "folder": "soot_entidade"
     },
     "soot.ritual": {
       "folder": "kilnshade"

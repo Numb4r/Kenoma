@@ -79,6 +79,10 @@ Future<Uint8List> spriteToPng(List<String> rows) async {
 /// As famílias da fase 1 (e as Fagulhas, `hum.mote`) têm o sprite provisório de `phase1_sprites.dart`, com a paleta de
 /// [spritePaletteOf].
 List<String> ecoSpriteRows(String speciesId) {
+  // A Entidade Maior e o Arquétipo só têm a arte do Aseprite: o placeholder (o que o código gera quando falta arte) é o do
+  // Espírito da família.
+  final tier = tierOfId(speciesId);
+  if (tier == SpeciesTier.major || tier == SpeciesTier.archetype) return ecoSpriteRows('${familyOfId(speciesId)}.spirit');
   if (hasPhase1Sprite(speciesId)) return phase1Rows(speciesId);
   final rows = ecoSprites[speciesId] ?? ecoSprites['${speciesId.split('.').first}.eco'] ?? (throw StateError('Sem sprite para $speciesId'));
   return tierOfId(speciesId) == SpeciesTier.spirit && !ecoSprites.containsKey(speciesId) ? spiritRows(rows) : rows;
@@ -117,12 +121,12 @@ class EcoSprite {
 
   /// O Eco redesenhado na grade do mapa ([mapEcoPx] pixels de lado), para o mapa de jogo.
   static Future<EcoSprite> loadMap(String speciesId) =>
-      _from(downscaleRows(ecoSpriteRows(speciesId), tierOfId(speciesId) == SpeciesTier.spirit ? mapSpiritPx : mapEcoPx), spritePaletteOf(speciesId));
+      _from(downscaleRows(ecoSpriteRows(speciesId), mapPxOf(speciesId)), spritePaletteOf(speciesId));
 
   /// 0.21.0: a variante [variant] (`urban`, `lit`, `shiny`...) no tamanho do mapa, com o valor e o acessório de
   /// `variant_art.dart`. O acessório entra na votação da redução, senão some.
   static ui.Image loadMapVariant(String speciesId, String variant) {
-    final px = tierOfId(speciesId) == SpeciesTier.spirit ? mapSpiritPx : mapEcoPx;
+    final px = mapPxOf(speciesId);
     return spriteToImageSync(downscaleRows(variantRows(ecoSpriteRows(speciesId), variant), px, keep: ecoIdentity + variantIdentity), palette: variantPalette(spritePaletteOf(speciesId), variant));
   }
 
@@ -130,7 +134,7 @@ class EcoSprite {
   static ui.Image? loadMapGlow(String speciesId, String variant) {
     final glow = variantGlowRows(ecoSpriteRows(speciesId), variant);
     if (glow == null) return null;
-    final px = tierOfId(speciesId) == SpeciesTier.spirit ? mapSpiritPx : mapEcoPx;
+    final px = mapPxOf(speciesId);
     return spriteToImageSync(downscaleRows(glow, px, keep: 'N'), palette: variantPalette(spritePaletteOf(speciesId), variant));
   }
 
@@ -145,6 +149,18 @@ const int mapPlayerPx = 24;
 
 /// O Espírito (9 m, contra 7 m do Eco): 28 × 9 / 7 = 36 pixels.
 const int mapSpiritPx = 36;
+
+/// A Entidade Maior (12 m) e o Arquétipo (16 m), a 4 pixels por metro (docs/art/estilo-criaturas.md).
+const int mapMajorPx = 48;
+const int mapArchetypePx = 64;
+
+/// O lado do quadro do mapa da espécie [speciesId], pela camada.
+int mapPxOf(String speciesId) => switch (tierOfId(speciesId)) {
+      SpeciesTier.eco => mapEcoPx,
+      SpeciesTier.spirit => mapSpiritPx,
+      SpeciesTier.major => mapMajorPx,
+      SpeciesTier.archetype => mapArchetypePx,
+    };
 
 /// Os quadros do Conjurador para o mapa: os de 24 × 24 desenhados à mão na grade de 2 dp (0.25.0), ou os reduzidos por
 /// código se [mapPlayerPx] não for 24.
