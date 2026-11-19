@@ -23,3 +23,11 @@ O que a arte das criaturas (branch `arte-criaturas`, `docs/art/estilo-criaturas.
 
 4. **Sombra no chão desligada no Shade.** **Feito (0.26.0):** `castsGroundShadow` em `ui/game/spawn_painter.dart` (testado em `test/ui/ground_shadow_test.dart`) tira a sombra oval das espécies do Shade, no Eco gerado e no animado.
 10. **Textos do Bestiário do Shade:** `docs/textos-bestiario.md` pode ainda descrever o Umbrel e o Shadekin antigos (vultos); agora são o morcego pendurado e o morcego de pé com o braço de laje. Fica para o criativo.
+
+## Famílias Wisp e Wyrm
+
+11. **Etapas altas do Wisp e do Wyrm:** **feito**, como no item 1 (`wisp.major`, `wisp.archetype`, `wyrm.major`, `wyrm.archetype`). O Arquétipo do Wisp tem `idle` e `drift` de 8 quadros e `body_dy` positivo (desce 1 px): o leitor já usa `frames` e `fps` do json.
+12. **Gatilho de nascer do Wyrm:** não existe no `index.json` (o do Wisp, `fog`, continua). Decisão do dono.
+13. **`leds` vazio:** o `wyrm_arquetipo_*_leds.png` sai sem pixel de propósito (o Arquétipo do Wyrm não tem olho).
+14. **Mapa sem as camadas altas:** **feito (0.26.0):** `appearsOnMap` (`core/species_ids.dart`, com teste) faz o mapa montar sprite e variante só de Eco e Espírito; antes ele gerava os provisórios das 14 espécies de 48 e 64 px a cada abertura do mapa.
+

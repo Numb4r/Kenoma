@@ -18,6 +18,10 @@ Não muda o save. Antes de qualquer toque pelo adb: o dono libera o aparelho na 
 - [ ] `0260-telas` **As telas no estilo da bolsa.** Bestiário, Círculo, Loadout, Perfil, Rotas, Patrulha, Céu, Chat, Fórum, Ajustes, Destilar e Fusão: painéis, botões (apertar afunda), abas, interruptores e diálogos novos; nada cortado nem sobreposto.
 - [ ] `0260-tipos` **Cores dos tipos.** As etiquetas de tipo (ícone + nome) e as Fagulhas do mapa nas cores novas, distinguíveis entre si.
 - [ ] `0260-dilúvio` **Barco, cachorro e corrida.** Na rua alagada o barco e a canoa; o passante com cachorro e a guia; o carro da corrida com a luz do teto acesa.
+- [ ] `0260-molduras` **Molduras que esticam.** Os espaços vazios do Círculo e do Loadout, os cartões de família do Bestiário, as fichas do Perfil, as mensagens do Chat e os pedidos do Fórum com a moldura inteira, sem blocos claros e escuros no meio; a barra de XP do Perfil com a moldura mesmo em 0 XP.
+- [ ] `0260-criaturas-28` **Ecos novos a 28 px, de noite e de dia.** Sootling (saruê), Frondling (fronde), Umbrel (morcego com a sombra presa: de noite lê quase só pela borda e pelos olhos), Wisplet (coruja; a ponta da chama no concreto), Wyrmlet (teú; as costuras não podem roubar a brasa) e o Humoth no amarelo novo. Os Espíritos novos a 36 px: a grelha do Cinderkin, a raiz-mão do Thicketkin, o braço de laje do Shadekin, a vela no peito do Hollowkin, o buraco de rua do Wyrmkin e o olho no peito do Coilkin.
+- [ ] `0260-sombra-shade` **Shade sem sombra no chão.** O Umbrel e o Shadekin no mapa sem a sombra oval embaixo; as outras criaturas continuam com ela.
+- [ ] `0260-fagulhas` **Fagulhas novas.** Elétrica (ocelo de LED), fogo (tufo com a brasa), planta (lobo da fronde), sombra (lasca com o olho), espectral (toco de vela) e dracônica (escama com a junta acesa), pairando e legíveis no mapa.
 
 ## 0.25.2
 
