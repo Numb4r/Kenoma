@@ -1,15 +1,89 @@
 # Estilo das criaturas
 
-O padrão que o Humoth fixou na 0.25.0 (GDD, "Direção de arte", Câmera). Toda família nova segue este formato; o Humoth (`tools/art/creatures/humoth/`, gerado por `build.lua`) é a referência de acabamento.
+O formato e a régua de acabamento das criaturas (GDD, "Direção visual das criaturas" e "Direção de arte", Formas por camada e Câmera). O Humoth (`tools/art/creatures/humoth/`, gerado por `build.lua`) é a régua do Eco: os números abaixo saem dele, e toda etapa de toda família é medida contra eles.
 
-## Grade e tamanho
+## Etapas e tamanhos
 
-- Pixel de arte de 2 dp. No mapa, quadro de **28 × 28 px** para o Eco e de **36 × 36 px** para o Espírito e o Ritual (o código trata `.ritual` como a camada de cima); no Bestiário, retrato de **96 × 96 px**. Um tamanho de pixel só por sprite.
-- A criatura olha para a **direita**; o código espelha. O centro do corpo fica em (14, 14) no quadro 0 do `idle`.
-- Deixe 2 px livres em cima e 1 px embaixo no quadro 0 do `idle`: o corpo sobe e desce dentro do quadro e nada pode cortar na borda.
-- Contorno de 1 px em `#1a1424` por fora da forma, nunca preto. Faísca solta não tem contorno.
+Toda família tem quatro etapas de criatura (Eco, Espírito, Entidade Maior, Arquétipo) e a Fagulha, que não é etapa: é o fragmento solto que carrega o traço-assinatura. Pixel de arte de 2 dp, um tamanho de pixel só por sprite, 4 px por metro do mundo.
+
+| Etapa | Quadro no mapa | Altura no mundo | Retrato | Onde aparece |
+|---|---|---|---|---|
+| Fagulha | 12 × 12 | 3 m | 96 × 96 | mapa comum |
+| Eco | 28 × 28 (fixo) | 7 m | 96 × 96 | mapa comum |
+| Espírito | 36 × 36 | 9 m | 96 × 96 | mapa comum |
+| Entidade Maior | 48 × 48 | 12 m | 96 × 96 | mapa comum, rara: ocupa a rua de calçada a calçada |
+| Arquétipo | 64 × 64 | 16 m | 128 × 128 | só evento e Incursão |
+
+- O Arquétipo não nasce no mapa comum. Com a câmera de 40 a 80 m de largura, 16 m são de 20% a 40% da tela (128 dp num aparelho de 360 dp): ele é a cena, não um ponto dela. No mapa comum ele só existe pelos pedaços (as Fagulhas e as etapas de baixo); o sprite de 64 entra em evento e Incursão.
+- A criatura olha para a **direita**; o código espelha. O centro do corpo fica no centro do quadro no quadro 0 do `idle`.
+- Deixe 2 px livres em cima e 1 px embaixo no quadro 0 do `idle`; nada do corpo encosta na borda. Só o emissivo solto do Arquétipo pode sair do quadro.
 - Sem sombra no desenho.
-- Paleta do corpo curta: até 10 cores trocáveis (no Humoth: 3 de asa, 2 de asa de trás, 3 de pelo, 2 de antena). São elas as chaves do mapa de variantes.
+
+## A régua em números
+
+Medidas sobre o quadro parado (quadro 0 do `idle` e do retrato), nas camadas `corpo` e emissiva (`leds` + `glow`):
+
+- **opacos**: pixels opacos do corpo.
+- **cores**: cores distintas na camada corpo (o contorno e os emissivos apagados contam).
+- **detalhe interno**: fração dos pixels de dentro (opacos, fora o contorno) que têm um vizinho de lado, também de dentro, de outra cor.
+- **contorno**: fração dos opacos na cor `#1a1424`.
+- **emissivo**: pixels da camada emissiva divididos pelos opacos do corpo.
+- **degraus**: valores distintos por material (asa, pelo, metal).
+
+O Humoth mede, no mapa: 404 opacos, 10 cores (3 de asa, 2 de pelo, 1 de antena, contorno e 3 apagadas; o retrato soma 2 de asa de trás, 1 de pelo e 1 de antena), 3 degraus na asa, detalhe 0,88, contorno 0,23, emissivo 0,10 (24 pixels em `leds` com 2 cores, 16 em `glow` com 1). No retrato: 14 cores, detalhe 0,44, contorno 0,19, emissivo 0,08. O "mascote" a evitar (o Sootling antigo) mede detalhe 0,54 no mapa.
+
+Pisos no mapa (`tools/art/creatures/conceitos/_conceito.lua` traz a mesma tabela em `PISO` e avisa ao gravar; `python3 tools/art/creatures/regua.py` confere a arte final com os mesmos números e sai com erro abaixo do piso):
+
+| Etapa | Cores (mín.) | Degraus no material principal (mín.) | Detalhe interno (mín.) | Contorno (máx.) | Emissivo (faixa) | Cores emissivas (mín.) |
+|---|---|---|---|---|---|---|
+| Fagulha | 6 | 2 | 0,85 | 0,45 | 0,15 a 0,50 | 2 |
+| Eco | 10 | 3 | 0,80 | 0,28 | 0,06 a 0,14 | 3 |
+| Espírito | 12 | 3 | 0,75 | 0,28 | 0,09 a 0,18 | 3 |
+| Entidade Maior | 14 | 3 | 0,70 | 0,26 | 0,12 a 0,24 | 3 |
+| Arquétipo | 14 | 3 | 0,65 | 0,24 | 0,16 a 0,40 | 4 |
+
+Pisos no retrato: contorno no máximo 0,22 em toda etapa; o teto de emissivo é o do mapa.
+
+| Etapa | Cores (mín.) | Detalhe interno (mín.) | Emissivo (mín.) |
+|---|---|---|---|
+| Fagulha | 10 | 0,40 | 0,10 |
+| Eco | 14 | 0,40 | 0,05 |
+| Espírito | 16 | 0,45 | 0,07 |
+| Entidade Maior | 16 | 0,50 | 0,09 |
+| Arquétipo | 16 | 0,50 | 0,14 |
+
+Além dos números, em toda etapa: `lint_sprite` na camada corpo sem peça solta nem pixel sozinho; nenhuma cor do corpo com saturação de desenho animado (as cores vêm do material: pó de asa, cobre, aço, porcelana, fuligem); o traço-assinatura da família visível no tamanho do mapa, inclusive na Fagulha.
+
+Contorno: 1 px em `#1a1424` por fora da forma, nunca preto. Faísca solta não tem contorno. Do Espírito para cima o contorno é seletivo: peça fina (fio, pelo solto, filamento) pode ficar sem ele, desde que se leia no asfalto de noite e no concreto de dia.
+
+## Escada de tom
+
+O Eco é simpático, elegante e só um pouco errado; cada etapa é mais sinistra; o Arquétipo é a forma original, horror cósmico.
+
+| | Fagulha | Eco | Espírito | Entidade Maior | Arquétipo |
+|---|---|---|---|---|---|
+| O que é | um pedaço solto com o traço-assinatura | o bicho, com um detalhe estranho | o bicho tomado pelo pedaço da cidade | o lugar inteiro faz parte dela | o bicho e o objeto são máscaras de outra coisa |
+| Anatomia | não tem: é um fragmento | natural | partes em número errado (olhos, antenas, asas) | rosto fora do lugar, membros a mais | rosto ausente; no lugar do corpo, um vão |
+| Simetria | livre | bilateral | bilateral quebrada (um lado não repete o outro) | tripla ou radial, em cata-vento | tripla ou radial sobre uma forma que não fecha |
+| Bicho : objeto | só o traço | 9 : 1 | 6 : 4 | 4 : 6 | o objeto é a armação; do bicho sobram pedaços |
+| Regra quebrada | nenhuma | nenhuma | nenhuma | uma regra física, visível parada | geometria impossível mais uma regra física |
+| Emissivo | 15% a 50% | 6% a 14% | 9% a 18% | 12% a 24% | 16% a 40% |
+| Paleta | a do Eco | cor do material, 3 degraus | a do Eco mais o material do objeto | mais escura, o objeto domina | dessaturada (cinza, osso, aço); a cor é quase só luz |
+| Costura do Véu | várias, finas (1 px), só no `glow` | menos e mais largas | menos e mais largas | uma ou duas, largas | nenhuma: o vão |
+| Violeta do Véu | não | só na costura | só na costura | só na costura | o vão, no emissivo |
+
+Em toda etapa: proporção natural do bicho, sem olho grande de mascote; contraste pelo valor e pela luz do tipo; o que brilha vai na camada emissiva. A regra física da Entidade Maior e do Arquétipo fica escrita no `docs/art/conceitos/<familia>.md`.
+
+## Decisões da rodada 1 de conceitos
+
+- **Costura do Véu** (GDD, "Costura do Véu"): violeta `#9b7bff`, sempre na camada `glow`, com o par apagado no `corpo` num tom quase igual ao do material, para sumir de dia e acender à noite. O Eco tem mais costuras, finas; a cada etapa ficam menos numerosas e mais largas. O Arquétipo não tem costura: tem o vão. O Humoth ganha uma costura fina só no `glow`, sem mudar o resto.
+- **Arquétipo:** só em evento e Incursão. O vão violeta é o elemento comum; o bicho e o objeto da cidade são máscaras que não dão conta do que está atrás: a silhueta ainda lembra o bicho, mas errada (escala, simetria demais ou de menos, partes que se repetem para dentro do vão), e o vão é onde a máscara não fecha. Disco radial só no Hum, no Wisp e no Wyrm; os outros nove têm silhueta própria. Nada de mandala nem de objeto (armário, mesa, painel, ave).
+- **Espírito:** um elemento claramente errado que o Eco não tem (o objeto tomando o corpo por dentro, uma parte no lugar errado, um olho a mais), não só o bicho maior com mais objeto.
+- **Entidade Maior:** a anatomia cede de verdade (o poste do Hum, o saruê enrolado na brasa do Soot, a marquise com morcegos do Shade são a medida).
+- **Retratos:** o desenho do mapa ampliado com detalhe; composição própria (busto ou pose) só no Arquétipo.
+- **Ângulo:** bicho que voa pode ser visto de cima; bicho que anda fica de perfil.
+- **Cores emissivas:** a luz do tipo segue `tools/art/ui/types/palette.lua`. O ciano `#5fd3c6` fica só para o sinal e o Hum. Exceções que ficam: o Glare multicolor e o vão quase preto do Hum (`#0d0914`). O Rust troca o azul-aço por outra luz do tipo Metal.
+- **Exceções de tamanho e forma:** aceitas, desde que os Ecos continuem legíveis a 28 px, de noite e de dia.
 
 ## As três camadas
 
@@ -23,11 +97,13 @@ Cada animação sai em três tiras horizontais com os mesmos quadros, uma por ca
 
 Regras: um pixel aceso em `leds` ou `glow` tem sempre o par apagado embaixo dele em `corpo` (menos a faísca solta, que só existe em `glow`). As cores apagadas e as emissivas não entram no mapa de variantes: ficam iguais em todas. Quando a animação pede brilho que cresce (alerta, fuga), ele é desenhado quadro a quadro em `glow`.
 
+Os conceitos (um quadro parado por etapa) saem com as duas camadas emissivas juntas, em `<familia>_<etapa>_<mapa|retrato>_emissivo.png`; a separação em `leds` e `glow` é feita na animação.
+
 ## Animações
 
-Seis no mapa, mais o retrato. Os quadros e os fps do Humoth são o padrão; outra família pode mudar o fps no `<especie>.json`, não a lista.
+Seis no mapa, mais o retrato. Os quadros abaixo são os do Humoth e são o **mínimo** de toda etapa; outra espécie pode mudar o fps no `<especie>.json`, não a lista. A Fagulha tem um laço só, de 4 quadros a 5 fps.
 
-| Animação | Quadros | fps | O que mostra |
+| Animação | Quadros (mín.) | fps | O que mostra |
 |---|---|---|---|
 | `idle` | 4 | 8 | parado: o movimento próprio da espécie em laço (bater de asa, respirar), o corpo sobe e desce 1 px |
 | `drift` | 4 | 8 | deriva: o mesmo laço, inclinado na direção do movimento |
@@ -37,6 +113,8 @@ Seis no mapa, mais o retrato. Os quadros e os fps do Humoth são o padrão; outr
 | `tuned` | 6 | 10 | 1 quadro inteiro e aceso, 3 se desfazendo de fora para dentro, 2 só de faíscas, a última juntando no centro |
 | retrato | 4 | 6 | pairando: corpo e asas sobem em passos diferentes, os LEDs varrem, os veios pulsam |
 
+Quanto mais alta a etapa, mais lento o laço: Entidade Maior e Arquétipo usam `idle` e `drift` de 6 quadros ou mais, a 6 fps ou menos.
+
 O `<especie>.json` lista `frame`, `anims` (quadros e fps) e `body_dy` (quanto o corpo sobe em cada quadro, em pixels, negativo para cima). O do Humoth traz ainda `body_visible` (0 nos quadros que são só faísca, onde o acessório da variante não deve aparecer) e `portrait`.
 
 ## Variantes
@@ -44,7 +122,7 @@ O `<especie>.json` lista `frame`, `anims` (quadros e fps) e `body_dy` (quanto o 
 A variante tem de se ler em **escala de cinza**: muda o **valor** do corpo e ganha um **acessório**; trocar só o matiz não vale.
 
 - `<especie>_variants.json`: por chave (`urban`, `green`, `water`, `residential`, `lit`, `sacred`, `crimson`), o `map` de cor para cor do corpo e o `accessory`.
-- O acessório é um PNG de 28 × 28 desenhado sobre o quadro 0 do `idle`. Fica no tronco (a parte que só se move por `body_dy`), nunca numa parte que bate ou balança, e tem forma e lugar próprios: dois acessórios não ocupam o mesmo ponto do corpo.
+- O acessório é um PNG do tamanho do quadro do mapa, desenhado sobre o quadro 0 do `idle`. Fica no tronco (a parte que só se move por `body_dy`), nunca numa parte que bate ou balança, e tem forma e lugar próprios: dois acessórios não ocupam o mesmo ponto do corpo.
 - Escada de valor do Humoth, do mais escuro ao mais claro: `crimson`, `water`, `urban`, base, `green`, `residential`, `sacred`, `lit`. Acessório claro em corpo escuro e escuro em corpo claro.
 - O mesmo `map` vale para o retrato: o retrato só usa as cores do corpo que estão no mapa.
 - O Brilhante não tem arquivo: é o único com brilho animado, feito em código.
@@ -63,11 +141,14 @@ A variante tem de se ler em **escala de cinza**: muda o **valor** do corpo e gan
 
 ## Conferência
 
-A folha `<especie>_folha.png` (4×, vizinho mais próximo, fundo de asfalto com o tom da noite) traz uma fileira por animação, na ordem da tabela, com o corpo no tom da noite e `leds` e `glow` por cima; depois três fileiras de variantes (base, `urban`, `green`, `water`, `residential`, `lit`, `sacred`, `crimson`): em cor, em cinza e com o tom da noite. Antes de entregar: `lint_sprite` na camada `corpo` sem peça solta nem pixel sozinho, e nenhum quadro encostando na borda.
+- Conceitos: cada família desenha em `tools/art/creatures/conceitos/<familia>/build.lua` com o ajudante `_conceito.lua` (o uso está no topo do arquivo), que grava corpo e emissivo e imprime as medidas da régua. `python3 tools/art/creatures/conceitos/folhas.py` monta `docs/art/conceitos/<familia>.png` (mapa em 2× e 4×, de noite e de dia, e o retrato), `ecos.png`, `arquetipos.png` e `escada.png`. O `docs/art/conceitos/<familia>.md` diz o bicho, o pedaço da cidade, o traço e uma frase por etapa.
+- Espécie pronta: a folha `<especie>_folha.png` (4×, vizinho mais próximo, fundo de asfalto com o tom da noite) traz uma fileira por animação, na ordem da tabela, com o corpo no tom da noite e `leds` e `glow` por cima; depois três fileiras de variantes (base, `urban`, `green`, `water`, `residential`, `lit`, `sacred`, `crimson`): em cor, em cinza e com o tom da noite.
+- Arte final: `python3 tools/art/creatures/regua.py` mede o quadro 0 do `idle` e do retrato de toda espécie (e as Fagulhas refeitas) e falha abaixo do piso; as pastas das famílias ainda sem arte final ficam em `PENDENTES` e saem da lista quando a família for integrada.
+- Antes de entregar: `view_sprite` em cada sprite, `lint_sprite` na camada `corpo` sem peça solta nem pixel sozinho, e nenhum quadro encostando na borda.
 
 ## No app (0.25.1)
 
 - `scripts/sync_creature_art.py` copia as pastas completas (json, variantes, retrato e folha) para `app/assets/art/creatures/`, sem as fontes nem a folha, e reescreve o `index.json` (espécie → pasta e gatilho de nascer) e as pastas do `pubspec.yaml`.
 - Gatilho de nascer, por família, só no desenho (o Eco continua no ponto da seed): Hum `lightning_lamp` (o raio na tempestade; à noite, faíscas do poste mais perto até `lamp_m`), Rill `puddle` (a poça ondula, com chuva), Clod `ground` (o chão se revira), Wisp `fog` (a neblina se junta). Os climas de cada gatilho estão no `index.json`.
 - O retrato no Bestiário troca as cores pelo mesmo `map` da variante (sem o acessório, que é do quadro do mapa).
-- `test/ui/creature_art_test.dart` cobre toda espécie do índice: grade, as seis animações nas três camadas, retrato de 96, variantes distintas em cinza (no mínimo 12 pixels por par) e o retrato da variante com a silhueta igual.
+- `test/ui/creature_art_test.dart` cobre toda espécie do índice: grade (28 no Eco, 36 no Espírito), as seis animações nas três camadas, retrato de 96, variantes distintas em cinza (no mínimo 12 pixels por par) e o retrato da variante com a silhueta igual. Os quadros de 48 e 64, o retrato de 128 e os pisos da régua ainda não estão no teste.
