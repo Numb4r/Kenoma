@@ -24,7 +24,7 @@ O jogador é um Conjurador, um jovem entusiasta de ocultismo cujo celular foi to
 
 ## Lore
 
-Este GDD trata só de mecânica. Todo o lore, incluindo cosmologia, linhagem, personagens, os Trinta, Soberanos e o arco narrativo dos quatro atos, está em Kenoma · Bíblia da franquia.
+Este GDD trata só de mecânica. Todo o lore, incluindo cosmologia, linhagem, personagens, os Trinta, Soberanos e o arco narrativo dos quatro atos, está em Doc.
 
 ## Core loop
 
@@ -375,7 +375,33 @@ Família é a linha de fusão de uma criatura, com uma forma por camada. Todas a
 | Entidade Maior | guardião da rede elétrica do bairro |
 | Arquétipo | figura mítica do relâmpago urbano |
 
-Meta de longo prazo é toda família chegar às camadas finais, podendo pular camadas intermediárias. Uma família pode ir de Espírito direto a Arquétipo, por exemplo. Por enquanto todas as famílias planejadas entram no jogo, mas a maioria com linha curta. Só algumas terão linha longa desde o início, o que permite testar a progressão completa cedo sem multiplicar a arte. As linhas curtas ganham camadas superiores em atualizações futuras. Variantes de bioma, Brilhante e Carmesim saem de troca de paleta sem sprite novo.
+Toda família tem as quatro etapas de criatura, Eco, Espírito, Entidade Maior e Arquétipo; a Fagulha é o fragmento solto, não uma etapa. As etapas altas entram no jogo aos poucos, por fase, mas a arte das quatro já existe para toda família. Variantes de bioma, Brilhante e Carmesim saem de troca de paleta sem sprite novo.
+
+### Direção visual das criaturas
+
+Toda família tem as quatro etapas de criatura, Eco, Espírito, Entidade Maior e Arquétipo, e a arte das quatro existe desde já, mesmo que as camadas altas só entrem no jogo depois. A Fagulha não é etapa: é um fragmento solto da criatura, carregando o traço-assinatura dela. As etapas vão do elegante ao horror cósmico: o Eco é a forma mais simpática, elegante e só um pouco errada, e o Arquétipo é a forma original da entidade, da qual todas as outras são pedaços.
+
+- **Fórmula:** um bicho real da fauna urbana ou brasileira, mais um pedaço da cidade fundido nele, mais o tipo como luz ou matéria. O Humoth (mariposa-esfinge com olhos de letreiro e veios elétricos) é a referência.
+- **Traço-assinatura:** cada família tem um traço que atravessa todas as etapas e a Fagulha (no Hum, o olho de LED), para a linha se ler como uma entidade só.
+- **Escada de tom:** Eco, bicho reconhecível em proporção natural, com um detalhe estranho. Espírito, o bicho tomado pelo objeto da cidade, já inquietante. Entidade Maior, a anatomia cede: olhos, membros ou bocas a mais, escala grande, o lugar inteiro parece fazer parte dela. Arquétipo, horror cósmico: o bicho e o objeto viram máscaras de algo que não cabe na forma, com geometria impossível e partes que a vista não fecha.
+- **Cor:** o corpo na cor do material real (fuligem, ferrugem, folha seca, concreto, água de poça), sem saturação de desenho animado; o contraste vem do valor e da luz do tipo. O que brilha fica na camada emissiva. Nada de olhos grandes, contorno preto grosso ou proporções de mascote.
+
+| Família | Bicho base | Pedaço da cidade | Traço-assinatura |
+| --- | --- | --- | --- |
+| Hum | mariposa-esfinge | letreiro de LED, fios | olho de LED |
+| Soot | gambá | bueiro, bituca acesa | brasa no peito |
+| Rill | sapo-cururu | poça, sarjeta | dorso que reflete o céu |
+| Frond | Charnia (fronde fóssil, o bicho mais antigo) | rachadura de calçada, raiz | fronde fractal |
+| Clod | tatu-bola | cascalho, entulho | placas de cascalho |
+| Rust | besouro | grade e portão de ferro | casco de grade |
+| Glare | beija-flor | vitrine, farol | reflexo que pisca |
+| Shade | morcego | marquise | sombra que não acompanha o corpo |
+| Wisp | coruja-buraqueira | névoa, vela | olhos de vela |
+| Bit | pombo | tela, letreiro digital | glitch na plumagem |
+| Sprig | maritaca | folha seca, árvore de calçada | asa de folha |
+| Wyrm | teú | cratera, asfalto rachado | escama em brasa |
+
+Os bichos são a proposta inicial; o criativo pode trocar um deles se achar um melhor, explicando por quê. O Arquétipo só aparece em evento e Incursão, não no mapa comum. A luz do tipo segue a paleta de tipos do jogo; o ciano fica só para o sinal e o Hum.
 
 ### Famílias do MVP
 
@@ -383,9 +409,9 @@ Três famílias com Fagulha e Eco, em triângulo de Fogo, Planta e Água. Todo b
 
 | Família | Bioma | Tipo | Fagulha | Eco | Habilidade de mapa |
 | --- | --- | --- | --- | --- | --- |
-| Soot | Urbano | Fogo | Ember Mote, brasa de bituca e asfalto quente | Sootling, bicho de fuligem com brasa no peito que vive em bueiros | Aura maior, +3, +5 e +8 m por faixa de nível |
-| Frond | Verde | Planta | Seed Mote | Frondling, fronde fractal inspirada na Charnia que anda sobre raízes | coleta Fagulhas de mais longe, +3, +5 e +8 m |
-| Rill | Água | Água | Drip Mote | Rillet, gota que reflete o céu e faz um som de pingo | na chuva, poças extras na camada pessoal, cada uma com chance de Eco de Água, +1, +2 e +3 por célula |
+| Soot | Urbano | Fogo | Ember Mote, brasa de bituca e asfalto quente | Sootling, saruê de bueiro com uma brasa de bituca no peito | Aura maior, +3, +5 e +8 m por faixa de nível |
+| Frond | Verde | Planta | Seed Mote, lobo de fronde solto | Frondling, fronde fractal inspirada na Charnia que anda sobre raízes | coleta Fagulhas de mais longe, +3, +5 e +8 m |
+| Rill | Água | Água | Drip Mote | Rillet, sapo-cururu de poça com o dorso que reflete o céu | na chuva, poças extras na camada pessoal, cada uma com chance de Eco de Água, +1, +2 e +3 por célula |
 
 Na fase 0 o Eco vai até o nível 20. O Poder é derivado da espécie e do nível e só ganha uso com o ritual na fase 1. A destilação segue a tabela da fundação.
 
@@ -395,19 +421,19 @@ Uma família curta para cada tipo que faltava, com Fagulha, Eco e Espírito. Os 
 
 | Família | Tipo | Fagulha | Eco | Espírito | Onde e quando | Habilidade de mapa |
 | --- | --- | --- | --- | --- | --- | --- |
-| Hum | Elétrico | Arc Mote, faísca perto de poste | Humoth, mariposa de faísca que ronda postes e letreiros | Coilkin, feito de fios desencapados | Urbano, à noite; nasce onde o raio cai | à noite e na tempestade, Ecos Elétricos extras na camada pessoal perto de postes, +1, +2 e +3 por hora |
-| Clod | Terra | Grit Mote, cascalho que rola | Pebblet, bicho de cascalho que se fecha em bola | Bouldkin, pedra com musgo que anda devagar | Verde e morros (relevo alto); poeira seca | chance de material extra na coleta +5, +10 e +15% |
-| Rust | Metal | Filing Mote, limalha que se junta | Rustling, ferrugem viva em grades e portões | Gratekin, grade retorcida com olhos de parafuso | Urbano; chuva ácida e smog | chance de não gastar o selo na falha 5, 10 e 15% |
-| Glare | Luz | Glint Mote, reflexo solto | Glimlet, reflexo vivo em vitrines e faróis | Prismkin, prisma que separa a luz em cores | Iluminado, de dia; sol forte e arco-íris | tolerância da sintonia de dia +3, +5 e +8% |
-| Shade | Sombra | Dusk Mote, pedaço de sombra solto | Umbrel, a sombra que fica quando a pessoa vai embora | Shadekin, vulto alto de braços longos | Residencial, becos e marquises, à noite; sombras de nuvem e Sol Negro | à noite, chance de um Eco extra na camada pessoal em becos e sob marquises, 5, 10 e 15% por célula e janela |
-| Wisp | Espectral | Chill Mote, frio que se vê | Wisplet, vulto de névoa | Hollowkin, manto vazio com uma vela dentro | Sagrado; neblina dos vales, Procissão | na neblina e no Sagrado, Ecos Espectrais extras na camada pessoal e rastros que duram mais, +1, +2 e +3 por hora |
-| Bit | Digital | Static Mote, pixel solto | Bitling, glitch que vive em letreiros e telas | Glitchkin, criatura feita de quadros repetidos | Iluminado e comércio; Estática | chance de Oculto na camada pessoal +5, +10 e +15%, e Ocultos rendem Essência extra |
-| Sprig | Feérico | Pollen Mote, pólen que brilha | Sprigglet, fada pequena do crepúsculo | Fairkin, fada de asas de folha seca | Verde no crepúsculo real, lua cheia; arco-íris e vento | chance de variante na camada pessoal +2, +4 e +6% |
-| Wyrm | Dracônico | Scale Mote, escama viva | Wyrmlet, brasa que respira | Wyrmkin, filhote de dragão ainda sem forma inteira | crateras de meteoro, cicatrizes de Fenda e eclipses; raro, a partir do nível 10 | Essência extra na destilação +1, +1 e +2 |
+| Hum | Elétrico | Arc Mote, faísca perto de poste | Humoth, mariposa de faísca que ronda postes e letreiros | Coilkin, a mariposa tomada pela bobina, com um olho de LED no peito aberto | Urbano, à noite; nasce onde o raio cai | à noite e na tempestade, Ecos Elétricos extras na camada pessoal perto de postes, +1, +2 e +3 por hora |
+| Clod | Terra | Grit Mote, cascalho que rola | Pebblet, tatu-bola com placas de cascalho | Bouldkin, tatu tomado por guia de concreto quebrada e vergalhão | Verde e morros (relevo alto); poeira seca | chance de material extra na coleta +5, +10 e +15% |
+| Rust | Metal | Filing Mote, limalha que se junta | Rustling, besouro-rinoceronte com casco de grade enferrujada | Gratekin, besouro carregando um pedaço de portão nas costas | Urbano; chuva ácida e smog | chance de não gastar o selo na falha 5, 10 e 15% |
+| Glare | Luz | Glint Mote, reflexo solto | Glimlet, beija-flor-tesoura de vidro de vitrine | Prismkin, beija-flor que separa a luz em cores pela cauda | Iluminado, de dia; sol forte e arco-íris | tolerância da sintonia de dia +3, +5 e +8% |
+| Shade | Sombra | Dusk Mote, pedaço de sombra solto | Umbrel, morcego-da-cara-branca pendurado na marquise, com a sombra presa num ângulo errado | Shadekin, morcego com um braço de laje | Residencial, becos e marquises, à noite; sombras de nuvem e Sol Negro | à noite, chance de um Eco extra na camada pessoal em becos e sob marquises, 5, 10 e 15% por célula e janela |
+| Wisp | Espectral | Chill Mote, frio que se vê | Wisplet, coruja-buraqueira de olhos de vela | Hollowkin, coruja com uma vela no lugar do peito | Sagrado; neblina dos vales, Procissão | na neblina e no Sagrado, Ecos Espectrais extras na camada pessoal e rastros que duram mais, +1, +2 e +3 por hora |
+| Bit | Digital | Static Mote, pena de pombo se desfazendo em pixels | Bitling, pombo com glitch na plumagem | Glitchkin, pombo com a cabeça em glitch | Iluminado e comércio; Estática | chance de Oculto na camada pessoal +5, +10 e +15%, e Ocultos rendem Essência extra |
+| Sprig | Feérico | Pollen Mote, pólen que brilha | Sprigglet, maritaca de asas de folha seca | Fairkin, maritaca brotando folhas pelo corpo | Verde no crepúsculo real, lua cheia; arco-íris e vento | chance de variante na camada pessoal +2, +4 e +6% |
+| Wyrm | Dracônico | Scale Mote, escama viva | Wyrmlet, teú de escamas em brasa | Wyrmkin, teú com um buraco de rua e um olho no flanco | crateras de meteoro, cicatrizes de Fenda e eclipses; raro, a partir do nível 10 | Essência extra na destilação +1, +1 e +2 |
 
 ### Tipos
 
-Feérico e Dracônico não pertencem a um bioma. Fadas aparecem em áreas verdes no crepúsculo real (nascer e pôr do sol) e com mais frequência na lua cheia. Dragões são as entidades mais antigas e as que mais se fragmentaram ao atravessar o Véu, então seus Ecos quase não parecem dragões (uma escama viva, uma brasa que respira). Aparecem raramente perto de cicatrizes de Fenda e em eclipses. Reconstituir um dragão por fusão é a linha de progressão mais longa do jogo. Panteões externos reforçam os dois tipos (dragões nórdicos e chineses, fadas celtas).
+Feérico e Dracônico não pertencem a um bioma. Fadas aparecem em áreas verdes no crepúsculo real (nascer e pôr do sol) e com mais frequência na lua cheia. Dragões são as entidades mais antigas e as que mais se fragmentaram ao atravessar o Véu, então seus Ecos quase não parecem dragões (um teú de escamas em brasa, que só nas etapas altas revela o que é). Aparecem raramente perto de cicatrizes de Fenda e em eclipses. Reconstituir um dragão por fusão é a linha de progressão mais longa do jogo. Panteões externos reforçam os dois tipos (dragões nórdicos e chineses, fadas celtas).
 
 ### Vantagens e desvantagens
 
@@ -881,7 +907,7 @@ O fórum ocultista traz relatos de usuários fictícios gerados pela seed, com p
 
 ### História
 
-A narrativa chega por mensagens no chat e posts no fórum, disparadas por nível, eventos e Fendas seladas. A história principal vai do nível 1 ao 40 em quatro atos, descritos em Kenoma · Bíblia da franquia.
+A narrativa chega por mensagens no chat e posts no fórum, disparadas por nível, eventos e Fendas seladas. A história principal vai do nível 1 ao 40 em quatro atos, descritos em Doc.
 
 ## Crafting
 
@@ -1503,7 +1529,7 @@ O estilo se chama Véu e tem uma regra central de contraste. A cidade é comum, 
 
 ### Costura do Véu
 
-Toda criatura tem costuras violeta brilhantes onde partes se perderam ao atravessar o Véu. Camadas baixas têm várias costuras e camadas altas têm menos. É a assinatura visual do jogo e mostra a progressão sem precisar de texto.
+Toda criatura tem costuras violeta onde partes se perderam ao atravessar o Véu. Como o Eco é o menor pedaço, ele tem mais costuras, mas finas e discretas, só na camada que brilha, quase invisíveis de dia e acesas à noite, para não tirar o ar de bicho comum. Nas etapas seguintes elas ficam menos numerosas e mais largas, e o Arquétipo, a forma inteira, não tem costura: no lugar dela aparece o vão violeta para o Véu. É a assinatura visual do jogo e mostra a progressão sem precisar de texto.
 
 ### Cores com significado
 
