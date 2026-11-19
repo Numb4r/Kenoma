@@ -19,3 +19,10 @@
 - **Entidade Maior (apoio):** ela pende de um cadeado fechado em nada; a corrente está esticada e não há onde ela se prenda.
 - **Arquétipo (geometria):** as três barras da frente e as três de trás da gaiola trocam de lugar sem dobrar (cada uma passa por cima de uma e por baixo da outra), e nenhuma chega ao canto: todas acabam na borda do vão.
 - **Arquétipo (regra física):** dentro do vão a luz anda reta e dobra em esquadro, como barra de ferro.
+
+## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Entidade Maior | O portão inteiro: duas folhas de grade (élitros), chapa da fechadura no meio com o buraco aceso como rosto e três parafusos de olho, chifre de lança, seis patas de ferrugem. Uma costura larga embaixo da chapa. Luz do Metal da paleta. | a corrente fica de pé e o cadeado cai para cima |
+| Arquétipo | Besouro de frente, élitros abertos como folhas de portão, espelhado; entre elas o vão em arco, com portão dentro de portão. Três chifres, seis patas de aço fora do chão. | física: a luz acende atrás das barras sem haver nada atrás; geometria: portão dentro de portão |

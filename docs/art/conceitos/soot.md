@@ -21,3 +21,9 @@
 ## Arquivos
 
 `tools/art/creatures/conceitos/soot/build.lua` (usa `soot/_forma.lua`, as formas e o sombreado que rill e frond também usam). `soot/_folha.lua` monta uma folha de conferência rápida (`<familia>/_folha.png`), que não é a folha oficial.
+
+## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Arquétipo | Saruê de perfil, sem olho, boca aberta além da queixada; a boca é o vão, com queixada dentro de queixada. Flanco de tampa de bueiro com brasa atrás, filhotes-caveira encolhendo até o rabo em espiral. | física: o fogo tira luz (pelo e ferro escurecem perto da brasa); geometria: boca dentro de boca |

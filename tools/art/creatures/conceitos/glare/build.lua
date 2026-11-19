@@ -379,88 +379,84 @@ local function entidade(k, S, off)
   return g
 end
 
--- ARQUÉTIPO: três cacos de vidro cinza em cata-vento em volta de um vão. Dentro de cada caco está a figura inteira,
--- e dentro dela outra vez; em volta, uma coroa de bicos de agulha, e do beija-flor sobram três caudas de tesoura.
--- A luz dela faz curva.
-local ACX, ACY, SC = 31.5, 32, 0.27
-local KITES = {}
-for i = 0, 2 do
-  local a = -pi / 2 + 0.3 + i * 2 * pi / 3
-  local p, sx, sy = {}, 0, 0
-  for _, q in ipairs({ { 5.6, 0 }, { 14, -0.62 }, { 23.6, 0.12 }, { 17, 0.46 } }) do
-    local px, py = pol(ACX, ACY, q[1], a + q[2]); p[#p + 1] = { px, py }; sx = sx + px / 4; sy = sy + py / 4
-  end
-  local tx, ty = pol(ACX, ACY, 6.4, a - 1.0)
-  local t1x, t1y = pol(ACX, ACY, 19.4, a - 1.12)
-  local t2x, t2y = pol(ACX, ACY, 18.4, a - 0.84)
-  KITES[i] = { pts = p, cx = sx, cy = sy, ca = cos(-a - pi / 2), sa = sin(-a - pi / 2),
-    tail = { { tx, ty, t1x, t1y, 1.3, 0.35, 'f', 'n' }, { tx, ty, t2x, t2y, 1.2, 0.35, 'e', 'n' } } }
-end
-local DEPTH = { [0] = { pal = '789', edge = '6' }, { pal = '890', edge = '7' }, { pal = '900', edge = '8' } }
-local function figure(u, v, k, depth)
-  local zoom = SC ^ depth
-  for i = 0, 2 do
-    local K = KITES[i]
-    local D = DEPTH[depth]
-    local c = glass(u, v, k, K.pts, { pal = D.pal, edge = D.edge, ew = 0.62 / zoom, ph = i, c = K.cx + K.cy + 1, m = K.cx - K.cy, len = 5.5,
-      fn = function(uu, vv)
-        if depth < 2 then
-          local pu, pv = uu - K.cx, vv - K.cy
-          return figure(ACX + (pu * K.ca - pv * K.sa) / SC, ACY + (pu * K.sa + pv * K.ca) / SC, k, depth + 1)
-        end
-      end })
-    if c then
-      -- a borda que dá para o vão fica acesa
-      if c == D.edge and sqrt((u - ACX) ^ 2 + (v - ACY) ^ 2) < 11 then return 'H' end
-      return c
-    end
-  end
-  local r = sqrt((u - ACX) ^ 2 + (v - ACY) ^ 2)
-  -- o aro do farol, sem a lente: é ele que segura os três cacos
-  if r >= 6 and r < 7.7 then
-    local D = DEPTH[depth]
-    if depth == 0 then return ((u - ACX) + (v - ACY) < 0) and '2' or '4' end
-    return ((u - ACX) + (v - ACY) < 0) and D.edge or D.pal:sub(2, 2)
-  end
-  if depth > 0 and r < 6 then return r > 4.2 and 'J' or '0' end
-  for i = 0, 2 do
-    local c = caps(u, v, KITES[i].tail)
-    if c then return c end
-  end
-end
-local function arquetipo(k, S, off)
+-- RODADA 2
+local R = dofile(KENOMA_ART .. 'creatures/conceitos/_r2.lua')(C)
+
+-- ARQUÉTIPO: o beija-flor do Eco, pairando, grande demais e de vidro cinza; só a cabeça e a cauda guardam a cor. A asa
+-- está em quatro lugares ao mesmo tempo, como cacos em leque, e o bico são três agulhas. Não tem olho. No papo, onde
+-- ficava a lente do farol, a figura não fecha: o vão, aberto para a frente, e dentro dele o mesmo beija-flor virado
+-- para o outro lado. A luz em volta dele faz curva.
+local function arquetipo(k, S, ox, oy)
+  ox, oy = ox or 0, oy or 0
   local g = L.grid(S, S)
-  local needles = {}
-  for n = 0, 26 do                                             -- coroa de bicos
-    local a = n * 2 * pi / 27 + 0.1
-    local len = 4.4 + 4.6 * rnd(n, 3, 5)
-    local x0, y0 = pol(ACX, ACY, 15.6, a); local x1, y1 = pol(ACX, ACY, 21 + len, a + 0.1)
-    needles[#needles + 1] = { x0, y0, x1, y1, 0.56, 0.45, 'z', 'Z', 5 }
+  local SC, BX, BY = 2, 6, 6
+  local GREY = { a = '7', b = '8', c = '9', d = '0', ['1'] = '6', ['2'] = '7', ['3'] = '8', ['4'] = 'G', ['5'] = 'g', o = 'n', W = 'n' }
+  local function rot(pts, deg)
+    local ca, sa, out = cos(math.rad(deg)), sin(math.rad(deg)), {}
+    for i, q in ipairs(pts) do
+      local dx, dy = q[1] - 15.4, q[2] - 12.8
+      out[i] = { 15.4 + dx * ca - dy * sa, 12.8 + dx * sa + dy * ca }
+    end
+    return out
   end
-  paint(g, k, off, function(u, v) return figure(u, v, k, 0) end)
+  local FAN = { rot(WN, -34), rot(WN, -66), rot(WN, 30) }
+  local BILLS = { { 20.6, 10.7, 25.2, 12.4, 0.5, 0.4, 'z', 'Z' }, { 20.4, 9.8, 24.6, 6.8, 0.5, 0.4, 'z', 'Z' } }
+  local function fig(bu, bv)
+    local c = bird(bu, bv, k * SC)
+    if c then return GREY[c] or c end
+    for i, pts in ipairs(FAN) do
+      c = glass(bu, bv, k * SC, pts, { pal = i == 1 and '789' or '890', edge = i == 2 and 'H' or '9', ew = 0.4, ph = i, c = 12 + i * 3, m = 2, len = 3,
+        fn = function(uu, vv)                                                       -- cada caco reflete outra hora do céu
+          if abs((uu - vv * 0.6) % 5 - 2.5) < 0.5 then return ({ 'u', 'v', 't' })[i] end
+        end })
+      if c then return c end
+    end
+    return caps(bu, bv, BILLS)
+  end
+  local function UV(x, y) return (x + 0.5 - ox) / k, (y + 0.5 - oy) / k end
+  for y = 0, S - 1 do for x = 0, S - 1 do
+    local u, v = UV(x, y)
+    local c = fig((u - BX) / SC, (v - BY) / SC)
+    if c then
+      local i = ('67890'):find(c, 1, true)                                          -- o vidro cinza é fosco: grão de dois tons
+      if i and i < 5 and R.noise(max(1, floor(k / 2 + 0.5)), 3)(x, y) then c = ('67890'):sub(i + 1, i + 1) end
+      g[y][x] = c
+    end
+  end end
   prune(g)
   L.outline(g, 'A', SOLID)
-  behind(g, k, off, needles)
-  for y = 0, g.h - 1 do
-    for x = 0, g.w - 1 do
-      if g[y][x] == '.' then
-        local u, v = (x + 0.5 - off) / k, (y + 0.5 - off) / k
-        local r, th = sqrt((u - ACX) ^ 2 + (v - ACY) ^ 2), math.atan(v - ACY, u - ACX)
-        if r < 6.2 then
-          if r > 3.4 then g[y][x] = (floor(th * 4 + r) % 3 == 0) and 'x' or 'X' elseif r < 1 then g[y][x] = 's' end
-        elseif r > 24 and r < 31 then
-          -- raios de luz que fazem curva
-          local q = (th - (r - 24) * 0.085) * 12 / (2 * pi)
-          if abs(q - floor(q + 0.5)) < 0.09 * 24 / r and floor(r * 1.2) % 4 ~= 0 then g[y][x] = r < 27 and 's' or 'S' end
-        end
+  -- o vão no papo, e o mesmo beija-flor lá dentro, virado
+  local VX, VY, VR, IS = BX + 17.4 * SC, BY + 13.6 * SC, 6, 0.44
+  local pk = max(1, floor(k / 2 + 0.5))
+  for y = 0, S - 1 do for x = 0, S - 1 do
+    local u, v = UV(x, y)
+    local t = sqrt((u - VX) ^ 2 + (v - VY) ^ 2) / VR
+    if t <= 1 then
+      local was = g[y][x] ~= '.'
+      g[y][x] = '.'
+      local c = bird(17.4 - (u - VX) / (SC * IS), 13.6 + (v - VY) / (SC * IS), k)
+      if t > 0.78 then if was then g[y][x] = 'X' end
+      elseif c then g[y][x] = (('YJH'):find(c, 1, true) or c == 'z' or c == 'Z') and 's' or ((('12345'):find(c, 1, true)) and 'x' or 'X')
+      elseif (x // pk + y // pk) % 2 == 0 and t > 0.3 then g[y][x] = 'x' end
+    end
+  end end
+  -- a luz que faz curva, em volta
+  for y = 0, S - 1 do for x = 0, S - 1 do
+    if g[y][x] == '.' then
+      local u, v = UV(x, y)
+      local r, th = sqrt((u - 31.5) ^ 2 + (v - 32) ^ 2), math.atan(v - 32, u - 31.5)
+      if r > 25 and r < 31.5 then
+        local q = (th - (r - 25) * 0.085) * 12 / (2 * pi)
+        if abs(q - floor(q + 0.5)) < 0.09 * 25 / r and floor(r * 1.2) % 4 ~= 0 then g[y][x] = r < 28 and 's' or 'S' end
       end
     end
-  end
+  end end
   return g
 end
 
 local RES = {}
 local function out(stage, kind, g)
+  if R.skip(stage) then return end
   local edge = ''
   for i = 0, g.w - 1 do
     for _, p in ipairs({ { i, 0 }, { i, 1 }, { i, g.h - 1 }, { 0, i }, { g.w - 1, i } }) do
@@ -479,7 +475,7 @@ out('espirito', 'mapa', espirito(1, 36, 0))
 out('espirito', 'retrato', espirito(2.55, 96, 2.1))
 out('entidade', 'mapa', entidade(1, 48, 0))
 out('entidade', 'retrato', entidade(2, 96, 0))
-out('arquetipo', 'mapa', arquetipo(1, 64, 0))
-out('arquetipo', 'retrato', arquetipo(2, 128, 0))
+out('arquetipo', 'mapa', arquetipo(1, 64))
+out('arquetipo', 'retrato', arquetipo(3, 128, -63, -27))                            -- busto: a cabeça sem olho, as agulhas e o vão do papo
 print('RESUMO ' .. table.concat(RES, ' | '))
 print('ok glare')

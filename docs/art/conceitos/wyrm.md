@@ -18,3 +18,9 @@
 - **Entidade Maior (regra física):** a profundidade. O buraco é mais fundo do que a placa de rua que o carrega: os anéis descem até a brasa e o olho, e a placa tem três pixels de espessura.
 - **Arquétipo (geometria impossível):** as doze escamas do anel estão cada uma por cima da seguinte, em toda a volta; não existe a escama de baixo.
 - **Arquétipo (regra física):** a luz e o calor. A coroa brilha em volta de um disco que não tapa nada (eclipse sem sol nem lua), e as brasas soltas caem de fora para dentro do vão.
+
+## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Entidade Maior | Teú que nada na rua: mergulha e volta três vezes em arcos, a brasa aparece por baixo do asfalto, pernas penduradas, olhos no flanco, cabeça sem olhos com duas línguas. Uma costura larga no arco maior. | o asfalto se comporta como água: ele atravessa sem abrir buraco |

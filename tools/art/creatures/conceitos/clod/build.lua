@@ -350,205 +350,174 @@ local function espirito(k, S, off)
   return g
 end
 
--- ENTIDADE MAIOR: o entulho do bairro de pé como um disco, à maneira do Tribrachidium: três braços de carapaça em
--- cata-vento, cada um terminando numa cabeça de tatu sem olhos; os olhos estão no entulho. O disco inteiro se equilibra
--- na ponta de uma garra só, e a poeira dele sobe.
+-- RODADA 2
+local R = dofile(KENOMA_ART .. 'creatures/conceitos/_r2.lua')(C)
+LEG.Z, LEG.v = '#9B7BFF', '#565064'                          -- costura do Véu e o par apagado
+LIT.Z = 'v'; SOLID = SOLID .. 'Zv'
+local function keratin(d, y0, y1) return R.mat('MlK', R.hor(d:pp()), function(u, v) return 0.9 - (v - y0) / (y1 - y0) end) end
+
+-- ENTIDADE MAIOR: o monte de entulho da obra, de ponta-cabeça em cima do tatu. O bicho ficou pequeno embaixo, com seis
+-- patas; a carapaça sobe e vira o monte, que alarga para cima (cascalho, entulho, guia de concreto, um pedaço de
+-- parede) e passa dos dois lados dele. Um segundo rosto, virado, saiu no alto do monte. O cascalho rola morro acima.
 local function entidade(k, S, off)
-  local g = L.grid(S, S)
-  local cx, cy, R, TW = 23.5, 21.5, 14.5, 1.7
-  local segs = {}
-  for i = 0, 2 do                                              -- vergalhões saindo da borda, no sentido do giro
-    local a = -pi / 2 + i * 2 * pi / 3 + 1.25
-    local x0, y0 = pol(cx, cy, R - 2, a); local x1, y1 = pol(cx, cy, R + 2.6, a + 0.06); local x2, y2 = pol(cx, cy, R + 4.2, a + 0.3)
-    segs[#segs + 1] = { x0, y0, x1, y1, 0.62, 0.62, 'e', 'E', 6 }
-    segs[#segs + 1] = { x1, y1, x2, y2, 0.62, 0.62, 'e', 'E', 4 }
-  end
-  local claws = {}
-  for n, a in ipairs({ 0.25, 0.75, 2.45, 2.95, 3.4, 4.5, 4.95, 5.45, 1.05 }) do  -- garras a mais em volta da borda
-    local len = 2 + 1.6 * rnd(n, 3, 9)
-    local x0, y0 = pol(cx, cy, R - 0.6, a); local x1, y1 = pol(cx, cy, R + len, a + 0.22)
-    claws[#claws + 1] = { x0, y0, x1, y1, 0.85, 0.35, 'C', 'D' }
-  end
-  local leg = { { 23.4, 35, 24.3, 40.6, 1.6, 1.1, 'l', 'M', 7 }, { 24.3, 40.6, 23.9, 45.4, 1.0, 0.3, 'C', 'D' } }
-  local eyes = {}
-  for i = 0, 2 do
-    local ex, ey = pol(cx, cy, 8.6, -pi / 2 + i * 2 * pi / 3 + TW * (8.6 / R) + 1.02)
-    eyes[#eyes + 1] = { ex, ey }
-  end
-  paint(g, k, off, function(u, v, x, y)
-    local dx, dy = u - cx, v - cy
-    local r, th = sqrt(dx * dx + dy * dy), math.atan(dy, dx)
-    local sh = (dx * 0.45 + dy * 0.9) / R
-    if r < 1.3 then return 'Y' elseif r < 2.7 then return 'H' elseif r < 3.5 then return '5' end
-    if r < R + 4 then
-      for i = 0, 2 do
-        local d = angdiff(th, -pi / 2 + i * 2 * pi / 3 + TW * (r / R)) * r
-        if r < R - 2.5 then
-          local w = 1.5 + 1.9 * min(1, r / 7)
-          if abs(d) < w then
-            local fr = (r / 2.5) % 1 * 2.5
-            if fr < 0.95 then return abs(d) < 0.9 and 'Y' or (abs(d) > w - 1 and 'H' or 'J') end
-            if abs(d) > w - 0.7 then return '5' end
-            local i2 = (d / w < 0.1 and 1 or 2) + (sh > 0.45 and 1 or 0)
-            return ('KlM'):sub(i2, i2)
-          end
-        else
-          -- a cabeça na ponta do braço: escudo de placas, focinho de pele, duas orelhas, nenhum olho
-          local q = (r - (R - 2.5)) / 6.3
-          local w = 3.4 * (1 - q) ^ 0.7 + 0.3
-          if q < 1 and abs(d) < w then
-            if q > 0.86 then return 'o' elseif q > 0.55 then return d > 0.5 and 'n' or 'N' end
-            return stone(x, y, 1.6 * k, 11, sh > 0.25 and { 'lM5', '34M' } or { 'KlM', '23M' }, '5', 0.25 * k, k)
-          end
-          if q < 0.3 and abs(d) < w + 1.5 and abs(d) > w - 0.2 then return d > 0 and 'n' or 'N' end
+  local d = R.ctx(S, k)
+  local p = d:pp()
+  local MOUND = { { 13.5, 31.5 }, { 34.5, 31.5 }, { 41, 21 }, { 44, 11 }, { 38, 6 }, { 24, 4.2 }, { 11, 6.4 }, { 4, 13 }, { 7, 23 } }
+  d:layer(function(t)                                                              -- as patas de trás
+    for _, x in ipairs({ 14.5, 23, 31.5 }) do
+      t:cap(x, 37, x + 0.6, 42.4, 1.2, 0.9, 'M'); t:cap(x + 0.6, 42.4, x + 1.6, 44.4, 0.7, 0.4, 'D')
+    end
+  end, SOLID)
+  d:layer(function(t)
+    t:cap(11.5, 35, 5.6, 40.6, 1.3, 0.5, keratin(t, 34, 41))                        -- rabo
+    t:ell(24, 34.6, 13.6, 5.8, function(x, y, u, v)                                 -- a carapaça: só cintas, com a junta acesa
+      local f = ((u - 10.4) / 3.4) % 1
+      if f < 0.24 then return v < 32.6 and 'Y' or (v > 36.6 and 'H' or 'J') end
+      return R.pick('MlK', 0.85 - (v - 30) / 8 - f * 0.3, R.hor(p)(x, y))
+    end)
+    t:rect(11.5, 39.4, 36.5, 40, 'f')
+    t:ell(37.4, 32.8, 1, 1.7, function(x, y, u, v) return u > 37.5 and 'n' or 'N' end)
+    t:cap(36, 36.6, 41.6, 39, 2.5, 1.1, function(x, y, u, v)
+      if u > 41.6 then return 'o' end
+      if v < 36.6 and u < 39.6 then return stone(x, y, 1.5 * k, 11, { 'KlM', '23M' }, 'M', 0.25 * k, k) end
+      return v > 38 and 'n' or 'N'
+    end)
+    t:ell(37.6, 37, 0.7, 0.7, 'o'); if k > 1 then t:ell(37.4, 36.8, 0.25, 0.25, 'W') end
+    for _, x in ipairs({ 17.5, 26, 34.5 }) do                                       -- as patas de cá
+      t:cap(x, 38, x + 0.5, 42.6, 1.25, 0.95, R.mat('MlK', R.hor(p), 0.4)); t:cap(x + 0.5, 42.6, x + 1.8, 44.8, 0.7, 0.4, R.mat('DC', R.ver(p), 0))
+    end
+  end, SOLID)
+  d:layer(function(t)                                                              -- o monte
+    t:poly(MOUND, function(x, y, u, v)
+      local dark = (u - 24) / 40 + (v - 17) / 30 > 0.2
+      if v > 25.5 then return stone(x, y, 2.2 * k, 7, dark and GRAVD or GRAV, '5', 0.3 * k, k) end
+      if v > 13.5 + (u - 24) * 0.1 then return stone(x, y, 3 * k, 21, dark and RUBD or RUB, '5', 0.32 * k, k) end
+      if u > 25 then                                                                -- o pedaço de parede
+        local row = floor(v / 1.7)
+        local bx = (u + (row % 2) * 1.7) % 3.4
+        if bx < 0.5 or v % 1.7 < 0.45 then return '4' end
+        return R.pick('tqp', 0.5 - (u - 34) / 20, R.noise(p, 8)(x, y))
+      end
+      return R.pick('4321', 0.75 - (v - 5) / 14, R.noise(p, 3)(x, y))                -- a guia de concreto
+    end)
+    -- trincas com a junta acesa, e a borda de baixo do monte, que a luz das cintas pega
+    t:wire({ { 20, 5 }, { 21.6, 11 }, { 18.6, 16 }, { 21, 22.6 }, { 19.6, 28 } }, 'J', 'Y', 0.5)
+    t:wire({ { 21.6, 11 }, { 27, 13.4 }, { 33, 12.6 }, { 37.6, 16.4 } }, 'J', 'Y', 0.5)
+    t:wire({ { 33, 12.6 }, { 31.6, 20 }, { 34, 26 } }, 'H', 'J', 0.5)
+    t:wire({ { 18.6, 16 }, { 12, 17.6 }, { 9.6, 22 } }, 'H', 'J', 0.5); t:wire({ { 21, 22.6 }, { 27, 24 }, { 28.6, 29 } }, 'J', 'Y', 0.5)
+    t:wire({ { 12, 17.6 }, { 10.6, 12.6 } }, 'J', 'Y', 0.5); t:wire({ { 37.6, 16.4 }, { 41.6, 14 } }, 'H', 'J', 0.5)
+    t:wire({ { 8, 22.6 }, { 13.6, 30.6 } }, 'H', 'J', 0.6); t:wire({ { 40.6, 21 }, { 34.6, 30.6 } }, 'H', 'J', 0.6)
+    t:suture({ { 14.6, 30.4 }, { 33.4, 30.4 } }, 'Z', 1.4, nil)                      -- a costura: onde o tatu acaba e o monte começa
+    -- o rosto de cima, virado: escudo, focinho para o alto, um olho de junta
+    t:cap(9, 11, 5.4, 5.4, 2.6, 1, function(x, y, u, v)
+      if v < 5.6 then return 'o' end
+      if v > 8.6 then return stone(x, y, 1.5 * k, 11, { 'KlM', '23M' }, 'M', 0.25 * k, k) end
+      return u < 6.8 and 'N' or 'n'
+    end)
+    t:ell(10.6, 13.6, 1, 1.7, function(x, y, u, v) return u > 10.7 and 'n' or 'N' end)
+    t:ell(8.4, 10.4, 1.2, 1.2, 'J'); t:ell(8.4, 10.4, 0.5, 0.5, 'o')
+    -- musgo no alto
+    local g = t.g
+    for y = 1, S - 1 do for x = 0, S - 1 do
+      local u = (x - (k - 1) / 2) / k
+      if g[y][x] ~= '.' and g[y - 1][x] == '.' and u > 14 and u < 37 then
+        for i = 0, floor((0.6 + 2.2 * vn(u * 0.9, 31)) * k) do
+          if ('1234tqp'):find(L.get(g, x, y + i), 1, true) then g[y + i][x] = i < k and 'g' or ((x + y + i) % 3 == 0 and 'm' or 'G') end
         end
       end
-    end
-    if r <= R then
-      for _, e in ipairs(eyes) do
-        local d = sqrt((u - e[1]) ^ 2 + (v - e[2]) ^ 2)
-        if d < 0.75 then return 'o' elseif d < 2.0 then return d < 1.3 and 'Y' or 'J' elseif d < 2.7 then return '5' end
-      end
-      if r > R - 1.1 then return stone(x, y, 1.6 * k, 9, { '455', '345', 't55' }, nil, 0, k) end
-      return stone(x, y, 3 * k, 21, sh > 0.2 and RUBD or RUB, '5', 0.32 * k, k)
-    end
-    return caps(u, v, leg) or caps(u, v, claws) or caps(u, v, segs)
-  end)
-  prune(g)
-  L.outline(g, 'A', SOLID)
-  local d = {}
-  for n = 0, (k > 1 and 21 or 19) do                           -- a poeira sobe, mais rala quanto mais alto
-    local a = rnd(n, 5, 4) * 2 * pi
-    local rr = R + 3 + rnd(n, 7, 4) * 5
-    local px, py = pol(cx, cy - 2 - rnd(n, 9, 4) * 2, rr, a)
-    if py < cy + 6 then d[#d + 1] = { px, max(1.2, py), n % 3 == 0 and 's' or 'S' } end
+    end end
+  end, SOLID)
+  for _, b in ipairs({ { 30, 6, 31.6, 2.8, 34.4, 2.4 }, { 15, 6.4, 14, 3.2, 11.6, 3 } }) do  -- vergalhão
+    d:wire({ { b[1], b[2] }, { b[3], b[4] }, { b[5], b[6] } }, 'e', 'E', 0.6)
   end
-  dust(g, k, off, d)
-  return g
+  local dl = {}
+  for n = 0, 15 do                                                                  -- o cascalho rola morro acima
+    local s = n < 8 and -1 or 1
+    local t = (n % 8) / 8
+    dl[#dl + 1] = { 24 + s * (10.5 + t * 12 + 2.2), 32 - t * 24 + rnd(n, 3, 2) * 2, n % 3 == 0 and 's' or 'S' }
+  end
+  dust(d.g, k, 0, dl)
+  return d.g
 end
 
--- ARQUÉTIPO: a bola que não fecha. Uma espiral de cintas cor de osso cuja ponta de fora passa por baixo do começo; por
--- dentro, um colar de garras em volta de um vão, e no vão a mesma espiral outra vez, menor, sem fundo. Do tatu sobram
--- três feixes de garras e três escudos de cabeça sem rosto. O cascalho cai para dentro dela de todos os lados.
-local function arquetipo(k, S, off)
-  local g = L.grid(S, S)
-  local cx, cy = 31.5, 32
-  local T0, TMAX, N = -pi / 2 - 0.5, 2 * pi + 1.1, 9
-  local function rc(t, th) return 13.6 + 3.4 * t / (2 * pi) + 1.0 * cos(3 * (th + pi / 2)) end
-  local function hwid(t) return 3.7 * max(0, min(1, (t + 0.3) / 0.9, (TMAX - t + 0.1) / 0.8)) end
-  local segs = {}
-  local function ring(th, turn) local t = (th - T0) % (2 * pi) + turn * 2 * pi; return rc(t, th), hwid(t) end
-  for i = 0, 2 do
-    -- feixe de três garras de cavar, por fora
+-- ARQUÉTIPO: o tatu de perfil, partido no meio. Os dois escudos são osso e andam juntos, mas as três cintas que os
+-- uniam não estão: no lugar delas, o vão, e dentro dele as cintas se repetem, cada vez menores, sem chegar ao fundo.
+-- As patas (demais) e as placas encolhem na direção do vão; a cabeça é um escudo pequeno demais, sem rosto, e as
+-- garras são grandes demais. O cascalho em volta cai de lado, para dentro do vão.
+local function arquetipo(k, S, ox, oy)
+  local d = R.ctx(S, k, ox, oy)
+  local p = d:pp()
+  local GX = 30.5
+  local function plates(cx)
+    return function(x, y, u, v)
+      local near = 1 - min(1, abs(u - GX) / 16)                                      -- perto do vão: placa menor, junta acesa
+      local sh = (v - 30) / 16
+      local s = (3.6 - 2 * near) * k
+      local id, e = vor(x, y, s, 13)
+      if v > 41.4 then return R.pick('098', 0.3, R.ver(p)(x, y)) end                  -- a barra de escudos da borda
+      if e < 0.3 * k then return near > 0.3 and (near > 0.62 and 'Y' or 'J') or (sh > 0.3 and '0' or '9') end
+      return stone(x, y, s, 13, sh > 0.45 and BONED or BONE, nil, 0, k)
+    end
+  end
+  local LEGS = { 11.5, 21, 40, 50 }
+  d:layer(function(t)                                                              -- patas do lado de lá
+    for _, x in ipairs(LEGS) do t:cap(x + 3, 43, x + 3.4, 48.6, 1.5, 1.1, R.mat('098', R.hor(p), 0.3)) end
+  end, SOLID)
+  d:layer(function(t)
+    t:cap(7.6, 40.6, 1.6, 48, 1.7, 0.5, R.mat('098', R.hor(p), 0.5))                -- rabo
+    t:ell(30, 44, 25, 23.5, plates(30))                                             -- a carapaça inteira; o vão a parte depois
+    for y = 0, S - 1 do for x = 0, S - 1 do                                         -- corta a barriga reta
+      if (y - t.oy - (k - 1) / 2) / k > 43.6 then t.g[y][x] = '.' end
+    end end
+    t:rect(7, 43.6, 53, 44.4, R.mat('f5', R.ver(p), 0))
+    -- a cabeça: um escudo pequeno demais, sem rosto, duas orelhas
+    t:ell(56.4, 33.8, 1, 2.4, '8'); t:ell(54.2, 33.6, 1, 2.4, '7')
+    t:cap(54.6, 38.6, 60.8, 44.6, 2.9, 0.9, function(x, y, u, v)
+      if u > 60.2 then return '0' end
+      if v > 40.2 + (u - 54.6) * 0.75 then return R.pick('987', 0.4, R.noise(p, 4)(x, y)) end
+      return stone(x, y, 1.5 * k, 11, BONE, '0', 0.25 * k, k)
+    end)
+    for _, x in ipairs(LEGS) do                                                     -- patas de cá, com garras de cavar grandes demais
+      t:cap(x, 44, x + 0.5, 49, 2, 1.5, R.mat('987', R.hor(p), 0.5))
+      for c = -1, 1 do
+        t:cap(x + 0.5 + c * 1.3, 49.4, x + 2.6 + c * 2.2, 55.4, 0.9, 0.3, R.mat('DC', R.ver(p), 0))
+      end
+    end
+  end, SOLID)
+  -- o vão entre os escudos, em ampulheta
+  local function gap(u, v)
+    if v < 19.6 or v > 43.6 then return nil end
+    local w = 3.6 + 4.4 * abs((v - 33) / 13) ^ 1.6
+    local t = abs(u - GX) / w
+    return t <= 1 and t or nil
+  end
+  d:vao(gap, 'X', 'x', 0.66)
+  -- as cintas que faltam: repetidas para dentro, cada vez menores; e três fios de osso, o que sobrou delas
+  for lv, f in ipairs({ 0.62, 0.36, 0.18 }) do
     for n = -1, 1 do
-      local a = -pi / 2 + 0.25 + i * 2 * pi / 3 + n * 0.17
-      local c0, w0 = ring(a, 0)
-      if (a - T0) % (2 * pi) + 2 * pi <= TMAX then c0, w0 = ring(a, 1) end
-      local len = 5.6 - abs(n) * 1.2 + (n == 1 and 0.8 or 0)
-      local x0, y0 = pol(cx, cy, c0 + w0 - 1, a); local x1, y1 = pol(cx, cy, c0 + w0 + len * 0.55, a + 0.07)
-      local x2, y2 = pol(cx, cy, c0 + w0 + len, a + 0.26)
-      segs[#segs + 1] = { x0, y0, x1, y1, 1.35, 1.0, 'C', 'D' }
-      segs[#segs + 1] = { x1, y1, x2, y2, 1.0, 0.3, 'C', 'D' }
-    end
-    -- vergalhão
-    local a = -pi / 2 + 1.3 + i * 2 * pi / 3
-    local c0, w0 = ring(a, 0)
-    local x0, y0 = pol(cx, cy, c0 + w0 - 1, a); local x1, y1 = pol(cx, cy, c0 + w0 + 3, a - 0.05); local x2, y2 = pol(cx, cy, c0 + w0 + 5, a - 0.3)
-    segs[#segs + 1] = { x0, y0, x1, y1, 0.62, 0.62, 'u', 'e', 6 }
-    segs[#segs + 1] = { x1, y1, x2, y2, 0.62, 0.62, 'u', 'e', 4 }
-  end
-  local teeth = {}
-  for n = 0, 2 * N - 1 do                                      -- colar de garras para dentro
-    local a = T0 + (n + 0.5) * pi / N
-    local c0, w0 = ring(a, 0)
-    local len = 1.6 + 2.6 * rnd(n, 2, 6)
-    local x0, y0 = pol(cx, cy, c0 - w0 + 0.6, a); local x1, y1 = pol(cx, cy, c0 - w0 - len, a + 0.2)
-    teeth[#teeth + 1] = { x0, y0, x1, y1, 0.9, 0.3, '6', 'D' }
-  end
-  local function plate(r, th, t, c0, w0, x, y, sh)
-    local tp = t * N / (2 * pi) + 0.22 * (r - c0) / max(w0, 0.5)
-    local p = tp % 1
-    local idx = floor(tp)
-    local pw = 0.09 + 0.05 * rnd(idx, 1, 3)
-    if p < pw then return abs(r - c0) < w0 * 0.35 and 'Y' or (sh > 0.25 and 'H' or 'J') end
-    if abs(r - c0) > w0 - 0.8 then return sh > 0 and '0' or '9' end
-    if p > 0.8 then return sh > 0.1 and '0' or '9' end
-    if p < pw + 0.1 then return '6' end
-    return stone(x, y, 2.1 * k, 13 + idx, sh > 0.15 and BONED or BONE, sh > 0.15 and '0' or '9', 0.28 * k, k)
-  end
-  paint(g, k, off, function(u, v, x, y)
-    local dx, dy = u - cx, v - cy
-    local r, th = sqrt(dx * dx + dy * dy), math.atan(dy, dx)
-    local sh = (dx * 0.45 + dy * 0.9) / 22
-    local t = (th - T0) % (2 * pi)
-    local c0, w0 = rc(t, th), hwid(t)
-    if w0 > 0.4 and abs(r - c0) < w0 then return plate(r, th, t, c0, w0, x, y, sh) end
-    local c = caps(u, v, teeth)
-    if c then return c end
-    local c1, w1 = c0, w0
-    if t + 2 * pi <= TMAX then
-      c1, w1 = rc(t + 2 * pi, th), hwid(t + 2 * pi)
-      if w1 > 0.4 and abs(r - c1) < w1 then return plate(r, th, t + 2 * pi, c1, w1, x, y, sh + 0.3) end
-    end
-    -- escudos de cabeça sem rosto, apontando para fora
-    for i = 0, 2 do
-      local a = -pi / 2 + 0.25 + pi / 3 + i * 2 * pi / 3
-      local d = angdiff(th, a) * r
-      local q = (r - (c1 + w1 - 1)) / 6
-      if q > 0 and q < 1 then
-        local w = 2.9 * (1 - q) ^ 0.8 + 0.2
-        if abs(d) < w then
-          if q > 0.62 then return d > 0.4 and '8' or '7' end
-          return stone(x, y, 1.6 * k, 11, sh > 0.15 and BONED or BONE, '0', 0.25 * k, k)
-        end
-        if q < 0.3 and abs(d) < w + 1.5 then return d > 0 and '9' or '8' end
-      end
-    end
-    return caps(u, v, segs)
-  end)
-  prune(g)
-  L.outline(g, 'A', SOLID)
-  -- o vão: a borda do Véu e a mesma espiral de novo, duas vezes, cada vez menor
-  for y = 0, g.h - 1 do
-    for x = 0, g.w - 1 do
-      if g[y][x] == '.' then
-        local u, v = (x + 0.5 - off) / k, (y + 0.5 - off) / k
-        local dx, dy = u - cx, v - cy
-        local r, th = sqrt(dx * dx + dy * dy), math.atan(dy, dx)
-        local t = (th - T0) % (2 * pi)
-        local inner = rc(t, th) - hwid(t)
-        if r < inner then
-          if r > inner - 1.1 then g[y][x] = 'X'
-          else
-            for lv = 1, 2 do
-              local f = lv == 1 and 0.47 or 0.2
-              local t2 = (th - T0 - lv * 1.3) % (2 * pi)
-              local c2 = rc(t2, th - lv * 1.3) * f
-              if abs(r - c2) < (lv == 1 and 1.3 or 0.7) and hwid(t2) > 1 then
-                local p = (t2 * N / (2 * pi)) % 1
-                if p > 0.16 then g[y][x] = lv == 1 and (p < 0.4 and 'X' or 'x') or 'x' elseif lv == 1 then g[y][x] = 'S' end
-              end
-            end
-            if r < 0.8 then g[y][x] = 's' end
-          end
-        end
-      end
+      local y = 33 + n * 8 * f
+      d:wire({ { GX - 3.4 * f, y - 1.2 * f }, { GX, y + 1.4 * f }, { GX + 3.4 * f, y - 1.2 * f } }, lv == 1 and 'X' or (lv == 2 and 'S' or 's'), nil, 0.5, '.x')
     end
   end
-  local d = {}
-  for n = 0, (k > 1 and 29 or 17) do                           -- cascalho caindo para dentro, de todos os lados
-    local a = rnd(n, 5, 8) * 2 * pi
-    local rr = 25 + rnd(n, 7, 8) * 5.5
-    local px, py = pol(cx, cy, rr, a)
-    d[#d + 1] = { px, py, n % 3 == 0 and 's' or 'S' }
-    if n % 2 == 0 then local qx, qy = pol(cx, cy, rr - 1.6, a + 0.02); d[#d + 1] = { qx, qy, 'S' } end
+  for _, y in ipairs({ 21.6, 32, 42.6 }) do
+    local w = 3.9 + 4.4 * abs((y - 33) / 13) ^ 1.6
+    d:wire({ { GX - w - 1, y }, { GX - w * 0.4, y + 1.6 }, { GX + w * 0.4, y + 1.6 }, { GX + w + 1, y } }, '7', '6', 0.5)
   end
-  dust(g, k, off, d)
-  return g
+  local dl = {}
+  for n = 0, (k > 1 and 33 or 21) do                                                -- o cascalho cai de lado, para dentro do vão
+    local s = n % 2 == 0 and -1 or 1
+    local r = 7 + rnd(n, 5, 8) * 24
+    local y = 3 + rnd(n, 7, 8) * 14 + (r > 20 and 0 or 2)
+    dl[#dl + 1] = { GX + s * r, y + r * 0.12, n % 3 == 0 and 's' or 'S' }
+    if n % 2 == 0 then dl[#dl + 1] = { GX + s * (r + 1.6), y + r * 0.12, 'S' } end
+  end
+  dust(d.g, k, 0, dl)
+  return d.g
 end
 
 local RES = {}
 local function out(stage, kind, g)
+  if R.skip(stage) then return end
   local m = C.save('clod', stage, kind, g, LEG, LIT, LOOSE)
   RES[#RES + 1] = string.format('%s %s: op %d cores %d det %.2f cont %.2f emis %.2f', stage, kind, m.opacos, m.cores, m.detalhe, m.contorno, m.emissivo)
 end
@@ -561,6 +530,6 @@ out('espirito', 'retrato', espirito(2.55, 96, 2.1))
 out('entidade', 'mapa', entidade(1, 48, 0))
 out('entidade', 'retrato', entidade(2, 96, 0))
 out('arquetipo', 'mapa', arquetipo(1, 64, 0))
-out('arquetipo', 'retrato', arquetipo(2, 128, 0))
+out('arquetipo', 'retrato', arquetipo(3, 128, -60, -33))                           -- busto: o vão, o escudo da frente e a cabeça
 print('RESUMO ' .. table.concat(RES, ' | '))
 print('ok clod')

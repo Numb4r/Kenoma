@@ -21,3 +21,9 @@
 ## Arquivos
 
 `tools/art/creatures/conceitos/frond/build.lua` (usa `soot/_forma.lua`).
+
+## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Arquétipo | Fronde de pedra em pé: os lobos se espelham, crescem para a ponta, e o báculo abriu em dois; o talo é o vão, com a fronde repetida dentro. Caco de calçada sobre raízes finas. | física: mais pesada em cima do que as raízes aguentam, e não tomba; geometria: a fronde inteira dentro do próprio talo |

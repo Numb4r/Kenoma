@@ -348,165 +348,159 @@ local function espirito(k, S)
   return g
 end
 
--- ENTIDADE MAIOR: a árvore da calçada pousada na própria gola de concreto. Sem cabeça: no lugar dela, três asas de
--- folha em cata-vento, cada uma numa estação (brotando, seca, só nervura). O rosto foi para o peito (o bico sai de um
--- oco na casca, três olhos em volta), três pés agarram a gola e as raízes pendem por baixo dela.
+-- RODADA 2
+local R = dofile(KENOMA_ART .. 'creatures/conceitos/_r2.lua')(C)
+LEG.Z, LEG.v, LEG.V = '#9B7BFF', '#51465A', '#5A45A8'      -- costura do Véu e o par apagado; V é o fundo do vão (solto)
+LIT.Z = 'v'; LOOSE = LOOSE .. 'V'; SOLID = SOLID .. 'Zv'
+
+-- ENTIDADE MAIOR: a árvore da calçada de cabeça para baixo. A copa é um bando fundido (três cabeças de maritaca, uma
+-- delas virada, sem olhos) e anda sobre as pontas das asas de folha; o tronco sobe e as raízes, que são pés de ave,
+-- seguram no alto o pedaço de calçada de onde ela saiu. As folhas que caem dela caem para cima.
 local function entidade(k, S)
-  local g = L.grid(S, S)
-  local function P(v) return v * k end
+  local d = R.ctx(S, k)
+  local g = d.g
+  local function P(v) return v * k + (k - 1) / 2 end
   local rich = k > 1
   local p = rich and 2 or 1
-  local cx, hy = P(28), P(15.5)
-  -- gola: a tira de trás
-  C.poly(g, { { P(12), P(36.5) }, { P(35), P(35) }, { P(36), P(37) }, { P(13), P(38.5) } }, 'P')
-  -- a cauda virou raiz e atravessa a gola
-  tube(g, seg(P(19.5), P(33), P(16.5), P(42), P(-1.5), 0), function(t) return P(2.6 - 1.2 * t) end, bark(BARK, max(1, k * 0.75)))
-  -- corpo de perfil, sem cabeça: pena no peito, casca daí para baixo
-  local fb = feather(BODY, p)
-  ell(g, P(24), P(27), P(11.5), P(7.8), -68, function(x, y, u, v, l)
-    local edge = u + v * 0.3 + ((hash(x // p, y // p, 4) % 5) - 2) * 0.07
-    if edge < -0.05 then
-      local i = l > 0.3 and 1 or l > -0.3 and 2 or 3
-      return BARK[i + floor((x + y * 0.3) / max(1, k * 0.75)) % 2]
+  -- copa: as asas de trás
+  for n, q in ipairs({ { 196, 11, FAR }, { 160, 15, DARK }, { 125, 15.5, FAR }, { 55, 15.5, FAR }, { 20, 15, DARK }, { -16, 11, FAR } }) do
+    leaf(g, { x = P(24), y = P(29), ang = q[1], len = k * q[2], wid = k * 3.5, pal = q[3], k = k, notch = rich and n or nil, spots = rich and 3 or nil, litv = 0.45 })
+  end
+  -- tronco
+  tube(g, seg(P(24), P(28), P(23), P(10), k * 1.6, 0), function(t) return k * (3.2 - 0.9 * t) end, bark(BARK, max(1, k * 0.75)))
+  d:suture({ { 20.2, 18.6 }, { 28.6, 20 } }, 'Z', 1.5, nil, 'tTxz')
+  d:suture({ { 21.6, 14 }, { 27.6, 13.4 } }, 'Z', 0.9, nil, 'tTxz')
+  -- o bando fundido
+  ell(g, P(24), P(28.5), k * 9, k * 4.6, 0, feather(BODY, p))
+  leaf(g, { x = P(24), y = P(30), ang = 90, len = k * 14.5, wid = k * 3.8, pal = NEAR, k = k, notch = rich and 9 or nil, litv = 0.5, spots = rich and 3 or nil })
+  leaf(g, { x = P(22), y = P(30), ang = 142, len = k * 16, wid = k * 3.8, pal = NEAR, k = k, notch = rich and 4 or nil, litv = 0.5, spots = rich and 3 or nil })
+  leaf(g, { x = P(26), y = P(30), ang = 38, len = k * 16, wid = k * 3.8, pal = FRESH, k = k, litv = 0.5 })
+  -- as três cabeças
+  ell(g, P(14.4), P(26.6), k * 3.6, k * 3.4, 0, feather(HEAD, p))
+  beak(g, P(12), P(26.2), 180, k * 1.5, true)
+  eyeAt(g, P(13.6), P(25.4), max(k, 1.01) * 1.2)
+  ell(g, P(33.6), P(26.6), k * 3.6, k * 3.4, 0, feather(HEAD, p))
+  beak(g, P(36), P(26.2), 0, k * 1.5, true)
+  eyeAt(g, P(34.6), P(25), max(k, 1.01) * 1.2); eyeAt(g, P(32.6), P(27.6), max(k, 1.01) * 1.2); eyeAt(g, P(35), P(28.6), max(k, 1.01))
+  ell(g, P(24), P(31), k * 3.4, k * 3.2, 0, feather(HEAD, p))
+  beak(g, P(24), P(33.4), 90, k * 1.9, true)
+  ell(g, P(24), P(28.4), k * 2.2, k * 1.1, 0, stripes('u', 'U', p))
+  -- a calçada, no alto: pedra portuguesa em cima, concreto de frente
+  C.poly(g, { { P(8.5), P(6.4) }, { P(37), P(3.6) }, { P(39.5), P(6.2) }, { P(11), P(9) } }, 'p')
+  for y = 0, S - 1 do for x = 0, S - 1 do
+    if g[y][x] == 'p' then
+      local h = hash(floor((x + y * 0.5) / max(2, k * 1.2)), floor(y / max(1, k * 0.8)), 9) % 5
+      g[y][x] = h == 0 and 'z' or h < 3 and 'p' or 'P'
     end
-    return fb(x, y, u, v, l)
-  end)
-  -- o rosto desceu para o peito: o bico sai de um oco, três olhos em volta
-  ell(g, P(29.4), P(27), P(3.6), P(2.2), 90, function(x, y, u, v) return (u * u + v * v > 0.55) and 'x' or 'z' end)
-  beak(g, P(30), P(26.2), 12, k * 2.5, true)
-  for _, q in ipairs({ { 28.6, 22.4 }, { 27, 31.4 }, { 24.4, 26 } }) do eyeAt(g, P(q[1]), P(q[2]), max(k, 1.01) * 1.4) end
-  -- gola: frente, com a rachadura
-  C.poly(g, { { P(11), P(39) }, { P(36.5), P(37) }, { P(37.5), P(39) }, { P(12.5), P(41.2) } }, 'p')
-  C.poly(g, { { P(12.5), P(41.3) }, { P(37.5), P(39.1) }, { P(37.5), P(41) }, { P(13), P(43.2) } }, 'Q')
-  C.poly(g, { { P(11), P(39) }, { P(12), P(36.5) }, { P(14), P(36.6) }, { P(13.5), P(39) } }, 'P')
-  C.poly(g, { { P(34), P(35.2) }, { P(36), P(35) }, { P(37.5), P(39) }, { P(35.5), P(37.3) } }, 'p')
-  for x = floor(P(12)), floor(P(37)) do
-    local h = hash(x // max(1, floor(k)), 7, 1) % 4
-    if h == 0 then L.set(g, x, P(42.3) - (x - P(12)) * 0.088, 'P', 'Q') end
-    if h == 1 then L.set(g, x, P(40.2) - (x - P(12)) * 0.088, 'P', 'p') end
+  end end
+  C.poly(g, { { P(11), P(9.2) }, { P(39.5), P(6.4) }, { P(39.5), P(8.6) }, { P(11.4), P(11.4) } }, 'Q')
+  for x = floor(P(11)), floor(P(39.5)) do
+    if hash(x // max(1, floor(k)), 3, 2) % 3 == 0 then L.set(g, x, P(10.2) - (x - P(11)) * 0.098, 'P', 'Q') end
   end
-  wire(g, { { P(28), P(38) }, { P(29), P(40) }, { P(28.2), P(42.2) } }, 'z', 'z', 1, 'pPQ')
-  -- três pés de ave agarrados à gola
-  for _, x0 in ipairs({ 18, 24, 30 }) do
-    for _, dx in ipairs({ -2.2, 0, 2.2 }) do
-      tube(g, seg(P(x0), P(37.2), P(x0 + dx), P(40.8) - (x0 - 12) * 0.088 * k), function() return max(0.6, P(0.75)) end,
-        function(x, y, t, dn, ds, r, l) return t > 0.8 and 'q' or (floor(ds / max(1, k * 0.8)) % 2 == 0 and 't' or 'T') end)
+  -- raízes que são pés de ave, agarradas por baixo; e as que atravessam e sobem
+  for _, x0 in ipairs({ 18.5, 23.5, 28.5 }) do
+    for _, dx in ipairs({ -2.4, 0, 2.4 }) do
+      tube(g, seg(P(x0 + dx * 0.2), P(13.6), P(x0 + dx), P(10.4) - (x0 + dx - 11) * 0.098 * k), function() return max(0.6, k * 0.75) end,
+        function(x, y, t, dn, ds) return t > 0.75 and 'q' or (floor(ds / max(1, k * 0.8)) % 2 == 0 and 't' or 'T') end)
     end
   end
-  -- raízes penduradas
-  for n, q in ipairs({ { 17, 44.5 }, { 21, 45.4 }, { 25, 45 }, { 29, 45.2 }, { 33, 43.6 } }) do
-    wire(g, { { P(q[1]), P(42.4) - (q[1] - 12) * 0.088 * k }, { P(q[1] + (n % 2 == 0 and 0.8 or -0.8)), P(q[2] - 1) }, { P(q[1]), P(q[2]) } },
-      'i', 'l', k * 0.7)
+  for n, q in ipairs({ { 14, 2.6 }, { 21, 2 }, { 29, 2.2 }, { 35, 1.8 } }) do
+    local y0 = 6 - (q[1] - 8.5) * 0.098
+    wire(g, { { P(q[1]), P(y0) }, { P(q[1] + (n % 2 == 0 and 0.9 or -0.9)), P((y0 + q[2]) / 2) }, { P(q[1]), P(q[2]) } }, 'i', 'l', k * 0.7)
   end
-  -- o cata-vento no lugar da cabeça: três estações ao mesmo tempo
-  ell(g, cx, hy + P(1.6), P(3.6), P(2.3), 22, feather(HEAD, p))
-  local pals = { FRESH, NEAR, FAR }
-  for n, ang in ipairs({ -100, 20, 140 }) do
-    local a = rad(ang)
-    leaf(g, { x = cx + cos(a) * P(1.8), y = hy + sin(a) * P(1.8), ang = ang, len = P(({ 11, 15, 14 })[n]), wid = P(3.5), pal = pals[n], k = k,
-      vp = max(3, k * 1.6), notch = n == 2 and 6 or nil, skel = n == 3, litv = 0.85, spots = (rich and n == 2) and 3 or nil })
-  end
-  L.disc(g, cx, hy, P(2.1), 'z'); L.disc(g, cx, hy, P(1.1), 'H'); L.disc(g, cx, hy, P(0.45), 'I')
   L.outline(g, 'A', SOLID)
-  dot(g, P(8), P(8), k * 0.6); dot(g, P(38), P(9), k * 0.6, 's'); dot(g, P(5), P(18), k * 0.6, 'N'); dot(g, P(42), P(20), k * 0.6)
-  dot(g, P(13), P(5), k * 0.6, 's'); dot(g, P(36), P(15), k * 0.6); dot(g, P(40), P(32), k * 0.6, 'N'); dot(g, P(8), P(30), k * 0.6, 's')
-  dot(g, P(33), P(4), k * 0.6, 'N'); dot(g, P(10), P(13), k * 0.6)
+  -- as folhas caem para cima
+  for n, q in ipairs({ { 5, 22 }, { 3.6, 14 }, { 6.6, 9 }, { 42, 20 }, { 44, 12 }, { 41.6, 5 }, { 10, 17 }, { 38, 15 }, { 17, 20 }, { 31.6, 18 } }) do
+    dot(g, P(q[1]), P(q[2]), k * 0.6, n % 3 == 0 and 'N' or n % 3 == 1 and 'S' or 's')
+    if n % 2 == 0 then dot(g, P(q[1]) + 1 * k, P(q[2] + 1), k * 0.6, 'S') end
+  end
+  if rich then plus(g, P(6), P(30), 2); plus(g, P(43), P(28), 2) end
   return g
 end
 
--- ARQUÉTIPO: a copa sem árvore. Três galhos de cinza em roda, cada um nascendo do meio do seguinte (nenhum tem
--- tronco, a roda não tem começo); três asas de folha morta que viram só nervura para a ponta; por dentro, bicos sem
--- cabeça fechando sobre o vão. A casca é clara do lado do vão e escura por fora: a luz dela vem do buraco.
-local function arquetipo(k, S)
-  local g = L.grid(S, S)
-  local function P(v) return v * k end
+-- ARQUÉTIPO: a maritaca de frente, de asas erguidas, igual demais dos dois lados. São dois perfis da mesma cabeça,
+-- de costas um para o outro, e entre eles não há cabeça: o vão, em forma de folha, desce do pescoço ao peito, e dentro
+-- dele os bicos se repetem, cada par menor. As asas são folha morta que para a ponta é só nervura; o galho em que ela
+-- pousa nasce da própria cauda.
+local function arquetipo(k, S, ox, oy)
+  local d = R.ctx(S, k, ox, oy)
+  local g = d.g
+  local function PX(v) return d:X(v) end
+  local function PY(v) return d:Y(v) end
   local p = max(1, k * 0.75)
-  local cx, cy = P(36) - 0.5, P(30.5)
-  local TH = 121
-  local function rad0(t) return P(11.5 + 3 * t) end
-  local function arm(i)
-    local th0 = TH + i * 120
-    return function(t)
-      local a = rad(th0 + t * 150)
-      return cx + cos(a) * rad0(t), cy + sin(a) * rad0(t)
-    end
+  local cx = 31.5
+  local ASHL = { 'D', 'E', 'G', 'E' }
+  local function ashf(x, y, u, v, l)
+    return ASH[(l > 0.3 and 1 or l > -0.2 and 2 or 3) + floor((y + abs((x % (2 * p)) - p) * 0.7) / p) % 2]
   end
-  local function ash(x, y, t, dn, ds, r)
-    local l = (rad0(t) - sqrt((x - cx) ^ 2 + (y - cy) ^ 2)) / max(r, 0.5)
-    if abs(dn) < 0.3 and floor(ds / p) % 3 ~= 0 and t > 0.45 then return 'J' end -- a seiva acesa, no meio do galho
-    local i = l > 0.3 and 1 or l > -0.3 and 2 or 3
-    return ASH[i + floor((dn * r + ds * 0.3 + 50) / p) % 2]
+  -- cauda e o galho que nasce dela
+  for _, a in ipairs({ 97, 110 }) do
+    leaf(g, { x = PX(cx - 1), y = PY(45), ang = a, len = k * 14, wid = k * 2.6, pal = ASHL, k = k, skel = true, skelFrom = 0.55, litv = 0.6, vp = max(3, k * 1.5) })
   end
-  local function w(t) return P(2.6 - 1.8 * t) end
-  -- raízes que pendem da roda, duas com uma Fagulha na ponta
-  for n, q in ipairs({ { -7, 54, -1.5 }, { -3.5, 58.5, 1.2 }, { 0.5, 56, -1 }, { 4, 60, 1.4 }, { 7.5, 52.5, 1 } }) do
-    local x0, y0 = cx + P(q[1]), cy + P(13)
-    tube(g, seg(x0, y0, x0 + P(q[3]), P(q[2]), P(q[3]), 0), function(t) return max(0.5, P(1.1 - 0.9 * t)) end,
-      function(x, y, t, dn, ds) return ({ 'T', 'x', 'E', 'G' })[1 + floor(ds / max(2, k * 1.5)) % 2 + (n % 2) * 2] end)
-    if n == 1 or n == 5 then
-      local ex, ey = x0 + P(q[3]), P(q[2])
-      leaf(g, { x = ex, y = ey, ang = n == 1 and 110 or 70, len = P(4.5), wid = P(1.5), pal = FAR, k = k, vp = 99 })
-    end
+  tube(g, function(t)
+    local a = rad(90 + t * 118)
+    return PX(cx + cos(a) * 19 * (0.25 + 0.75 * t) + 1.5 * (1 - t)), PY(45.5 + sin(a) * 13.5)
+  end, function(t) return k * (1.1 + 0.9 * sin(pi * min(1, t * 1.3))) end, function(x, y, t, dn, ds, r, l)
+    return (t < 0.5 and BARK or ASH)[(l > 0.3 and 1 or l > -0.3 and 2 or 3) + floor((dn * r + ds * 0.3 + 50) / p) % 2]
+  end)
+  -- asa: quatro folhas mortas em leque
+  for n, q in ipairs({ { -178, 18 }, { -158, 23 }, { -138, 24 }, { -119, 19 } }) do
+    leaf(g, { x = PX(25), y = PY(36), ang = q[1], len = k * q[2], wid = k * 4.6, pal = n % 2 == 0 and ASHL or { 'E', 'G', 'G', 'E' }, k = k,
+      skel = true, skelFrom = 0.55, litv = 0.6, vp = max(3, k * 1.5) })
   end
-  -- as três asas: folha morta perto da roda, só nervura para a ponta
-  for i = 0, 2 do
-    local x, y = arm(i)(1)
-    leaf(g, { x = x, y = y, ang = TH + i * 120 + 150 + 60, len = P(18), wid = P(7),
-      pal = { 'D', 'E', 'G', 'E' }, k = k, skel = true, skelFrom = 0.4, litv = 0.6, vp = max(3, k * 1.5) })
+  -- tronco de pena cinza (o verde só sobra embaixo), pés de casca
+  ell(g, PX(cx - 3), PY(39), k * 6.4, k * 9, 8, function(x, y, u, v, l)
+    if (y - d.oy) / k > 43 + ((hash(x // max(1, floor(p)), 3, 6) % 3) - 1) then return feather({ '7', '3', '4', '4' }, max(1, floor(p)))(x, y, u, v, l) end
+    return ashf(x, y, u, v, l)
+  end)
+  for _, dx in ipairs({ -1.8, 0, 1.8 }) do
+    tube(g, seg(PX(26.4), PY(46.4), PX(25.4 + dx), PY(51.6)), function() return max(0.6, k * 0.7) end,
+      function(x, y, t) return t > 0.75 and 'q' or (floor(y / max(1, k * 0.8)) % 2 == 0 and 't' or 'T') end)
   end
-  for i = 0, 2 do tube(g, arm(i), w, ash, 0.4, 1) end
-  for i = 0, 2 do tube(g, arm(i), w, ash, 0, 0.4) end
-  -- o que sobrou do bicho: um colar de pena onde cada galho nasce, e os bicos virados para o vão
-  for i = 0, 2 do
-    local x, y = arm(i)(0.02)
-    ell(g, x, y, P(3.6), P(2.2), TH + i * 120 + 95, function(xx, yy, u, v, l)
-      return ({ '3', '4', '7', '4' })[(l > 0 and 1 or 3) + floor((yy + xx * 0.5) / max(1, floor(p))) % 2]
-    end)
+  -- o perfil: pescoço comprido demais, cabeça sem olho (a órbita acesa, vazia), bico de osso
+  ell(g, PX(27.4), PY(24), k * 2.7, k * 8.6, 6, ashf)
+  ell(g, PX(25.6), PY(14.6), k * 4.6, k * 4.4, 0, ashf)
+  ell(g, PX(26.4), PY(11.6), k * 3.4, k * 1.7, 12, function(x, y) return ({ '6', '7' })[1 + floor((x + y) / max(1, floor(p))) % 2] end)
+  ell(g, PX(27.6), PY(29), k * 2.2, k * 1.6, 0, stripes('u', 'U', max(1, floor(p))))
+  do -- o bico, espelhado para olhar para fora
+    local t = L.grid(S, S)
+    beak(t, 2 * PX(cx) - PX(22.4), PY(14.4), 0, k * 2.2, false, { 'B', 'D', 'q' })
+    for y = 0, S - 1 do for x = 0, S - 1 do
+      local m = floor(2 * PX(cx) - x + 0.5)
+      if t[y][x] ~= '.' and m >= 0 and m < S then g[y][m] = t[y][x] end
+    end end
   end
-  -- a gola de pena escura em volta do vão e as duas fileiras de bicos, como dentes
-  for y = 0, S - 1 do
-    for x = 0, S - 1 do
-      local d = sqrt((x - cx) ^ 2 + (y - cy) ^ 2)
-      local a = math.atan(y - cy, x - cx)
-      if d >= P(7.6) and d <= P(10.2 + 0.8 * sin(a * 7)) then
-        g[y][x] = ({ '7', '4', 'G', '4' })[1 + (floor(a * 9 + d / max(1, floor(p))) % 2) + (d > P(9) and 2 or 0)]
-      end
-    end
-  end
-  for n = 0, 5 do
-    local ang = n * 60 + 8
-    local a = rad(ang)
-    beak(g, cx + cos(a) * P(8), cy + sin(a) * P(8), ang + 180 - 16, k * (n % 2 == 0 and 1.7 or 1.35), true, { 'B', 'D', 'G' })
-  end
+  L.disc(g, PX(25.4), PY(13.6), max(0.8, k * 0.95), 'x')
+  if k > 1 then L.disc(g, PX(25.4), PY(13.6), k * 0.5, 'H') else L.set(g, PX(25.4), PY(13.6), 'H') end
+  d:mirror(cx)
   L.outline(g, 'A', SOLID)
-  -- o vão: contorno por dentro, depois a borda do Véu e o pólen em espiral, só no emissivo
-  for _, pass in ipairs({ { 'A', function(q) return q ~= '.' and q ~= 'A' end }, { 'X', function(q) return q == 'A' end } }) do
-    local add = {}
-    for y = 0, S - 1 do
-      for x = 0, S - 1 do
-        if g[y][x] == '.' and sqrt((x - cx) ^ 2 + (y - cy) ^ 2) < P(9) then
-          for _, dd in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
-            if pass[2](L.get(g, x + dd[1], y + dd[2])) then add[#add + 1] = { x, y }; break end
-          end
-        end
+  -- o vão em forma de folha, e os bicos para dentro
+  d:vao(function(u, v)
+    local q = (v - 30.5) / 15.5
+    if abs(q) >= 1 then return nil end
+    local w = 4.8 * sin(pi * ((q + 1) / 2) ^ 0.8) ^ 0.9
+    local t = abs(u - cx) / max(w, 0.01)
+    return t <= 1 and t or nil
+  end, 'X', 'V', 0.68)
+  for _, q in ipairs({ { 24, 1.05 }, { 31.4, 0.75 }, { 37, 0.5 } }) do
+    local t = L.grid(S, S)
+    beak(t, PX(cx - 0.4), PY(q[1]), 180, k * q[2], false, { 'X', 'X', 'V' })
+    for y = 0, S - 1 do for x = 0, S - 1 do
+      if t[y][x] ~= '.' and (g[y][x] == '.' or g[y][x] == 'V') then
+        local m = floor(2 * PX(cx) - x + 0.5)
+        g[y][x] = t[y][x]
+        if m >= 0 and m < S and (g[y][m] == '.' or g[y][m] == 'V') then g[y][m] = t[y][x] end
       end
-    end
-    for _, q in ipairs(add) do g[q[2]][q[1]] = pass[1] end
+    end end
   end
-  for n = 0, 14 do
-    local a, r = n * 0.9, P(0.3 + n * 0.22)
-    dot(g, cx + cos(a) * r, cy + sin(a) * r, k * 0.6, n % 4 == 0 and 's' or n % 5 == 0 and 'N' or 'S')
+  for n = 0, 21 do
+    local a, r = n * 2.4, 22 + (n * 7) % 9
+    dot(g, PX(cx + cos(a) * r * 1.15), PY(30 + sin(a) * r), k * 0.6, n % 4 == 0 and 's' or n % 5 == 0 and 'N' or 'S')
   end
-  for i = 0, 2 do
-    local a = rad(-90 + i * 120 + 60)
-    dot(g, cx + cos(a) * P(22), cy + sin(a) * P(22), k * 0.6, 's'); dot(g, cx + cos(a + 0.3) * P(18), cy + sin(a + 0.3) * P(18), k * 0.6)
-    dot(g, cx + cos(a - 0.25) * P(25), cy + sin(a - 0.25) * P(25), k * 0.6, 'N')
-  end
-  dot(g, cx + P(-9.5), P(59.5), k * 0.6, 's'); dot(g, cx + P(9.5), P(58), k * 0.6, 's')
   return g
 end
 
-local function out(stage, kind, g) C.save('sprig', stage, kind, g, LEG, LIT, LOOSE) end
+local function out(stage, kind, g) if not R.skip(stage) then C.save('sprig', stage, kind, g, LEG, LIT, LOOSE) end end
 out('fagulha', 'mapa', fagulhaMapa())
 out('fagulha', 'retrato', fagulhaRetrato())
 out('eco', 'mapa', eco(1, 28))
@@ -516,5 +510,5 @@ out('espirito', 'retrato', espirito(96 / 36, 96))
 out('entidade', 'mapa', entidade(1, 48))
 out('entidade', 'retrato', entidade(2, 96))
 out('arquetipo', 'mapa', arquetipo(1, 64))
-out('arquetipo', 'retrato', arquetipo(2, 128))
+out('arquetipo', 'retrato', arquetipo(3, 128, -31, -14))                     -- busto: os dois perfis e o vão
 print('ok sprig')

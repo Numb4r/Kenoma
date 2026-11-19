@@ -19,3 +19,9 @@
 - **Entidade Maior (tempo):** cada vidraça reflete uma hora diferente do mesmo céu: o sol numa, o fim de tarde noutra, a lua na terceira.
 - **Arquétipo (geometria):** dentro de cada caco está a figura inteira, e dentro dela outra vez: a parte contém o todo.
 - **Arquétipo (regra física):** a luz dela faz curva: os raios em volta saem em arco, não em linha reta.
+
+## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Arquétipo | Beija-flor do Eco em vidro cinza (só cabeça e cauda com cor), asa em quatro posições, três bicos de agulha, sem olho; no papo, o vão com o mesmo beija-flor virado. | física: a luz em volta faz curva; geometria: a ave dentro do próprio papo, ao contrário |

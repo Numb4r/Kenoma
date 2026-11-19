@@ -21,3 +21,10 @@
 ## Arquivos
 
 `tools/art/creatures/conceitos/rill/build.lua` (usa `soot/_forma.lua`).
+
+## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Entidade Maior | A sarjeta: corpo de guia e asfalto, boca de lobo como boca, dorso de verruga com dois olhos, seis membros. Uma costura larga no dorso. | a enxurrada sobe da boca de lobo e junta numa poça deitada no ar, com o terceiro olho no reflexo |
+| Arquétipo | Sapo de frente, pequeno e de olhos fechados, sentado no próprio reflexo, que é maior e tem olhos abertos, um terceiro olho e braços a mais; o vão é a linha d'água. | física: ele se apoia num reflexo; geometria: o reflexo é maior e tem mais do que o refletido |

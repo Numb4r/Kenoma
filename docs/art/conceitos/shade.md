@@ -30,3 +30,10 @@
 | Arquétipo | 1610 / 5943 | 18 / 18 | 0,96 / 0,95 | 0,22 / 0,14 | 0,17 / 0,15 |
 
 No mapa, o corpo do Eco e a cabeça do Espírito são desenhados pixel a pixel; o resto sai das formas do `build.lua`. No Arquétipo, osso e os que dormem pendurados ficam sem contorno (contorno seletivo).
+
+## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Eco | Morcego pendurado na lasca de laje; a sombra sai dos pés dele, inclinada atrás do corpo, menor, com uma asa aberta e os olhos, presa por quatro costuras finas (só emissivo). | nenhuma |
+| Arquétipo | Morcego pendurado na própria sombra, que está em cima, de pé e de asa aberta, com os olhos; o casulo de laje e vergalhão não fecha, e na fresta (o vão) o casulo se repete menor. Cabeça de osso, três orelhas, sem rosto. | física: o peso pende de uma sombra, que fica acima da lâmpada; geometria: casulo dentro de casulo |

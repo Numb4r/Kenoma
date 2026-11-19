@@ -279,113 +279,84 @@ local function entidade(k)
   return g
 end
 
--- ARQUÉTIPO: a rachadura. No lugar do corpo, um vão em Y (três braços) num pedaço de calçada partido em três lajes;
--- do vão saem três frondes de pedra, fósseis, com a nervura acesa, e a raiz desce em leque. Geometria impossível:
--- cada fronde passa por cima da laje de um lado e por baixo da mesma laje do outro. Regra quebrada: a parte é maior
--- que o todo: da ponta de cada fronde sai outra maior, e os lobos crescem para a ponta em vez de afinar.
-local function arquetipo(k)
-  local S = 64 * k
-  local g = L.grid(S, S)
-  local P = F.pen(g, k)
-  local cx, cy, R = 31.5, 30, 11.4
-  local X0, Y0 = P:X(cx), P:Y(cy)
-  local function pol(a, r) return { cx + cos(rad(a)) * r, cy + sin(rad(a)) * r } end
-  local ARMS = { -90, 30, 150 }
-  local stems, opts = {}, {}
-  local function stone() return 'z', '4' end
-  for n, a in ipairs(ARMS) do
-    -- a fronde que sai do vão é pequena; da ponta dela sai outra, maior, que se enrola (a parte maior que o todo)
-    local p0 = pol(a + 8, 12.6)
-    stems[n] = { pol(a, 1), pol(a + 4, 7), p0 }
-    opts[n] = { n = 3, t0 = 0.2, t1 = 1.0, ang = 52, r0 = 0.6, r1 = 0.7, w = function(t) return 1.6 + 3 * t end, mat = stone }
-    local function step(p, ang, len) return { p[1] + cos(rad(ang)) * len, p[2] + sin(rad(ang)) * len } end
-    local p1 = step(p0, a + 28, 5.4); local p2 = step(p1, a + 58, 5.4); local p3 = step(p2, a + 96, 4.6)
-    stems[n + 3] = { p0, p1, p2, p3 }
-    opts[n + 3] = { n = 5, t0 = 0.05, t1 = 1.0, ang = 50, r0 = 0.7, r1 = 1.0, fat = 1.9,
-      w = function(t) return 2.6 + 5.6 * t ^ 1.2 end, mat = stone }
+-- RODADA 2
+local R = dofile(KENOMA_ART .. 'creatures/conceitos/_r2.lua')(C)
+LEG.y = '#5A45A8'                                            -- o fundo do vão (solto)
+LOOSE = LOOSE .. 'y'; THIN = THIN .. 'y'
+
+-- ARQUÉTIPO: a fronde de pé, de pedra, grande demais. Está errada de três jeitos: os lobos se espelham (a Charnia
+-- nunca se espelha), crescem para a ponta em vez de afinar, e o báculo abriu em dois, um para cada lado. O talo não
+-- existe: no lugar dele, o vão, de cima a baixo, e dentro dele a mesma fronde se repete, menor, e outra dentro dela.
+-- Embaixo, o disco de fixação é um caco de calçada em cima de raízes finas demais para o peso.
+local function arquetipo(k, S, ox, oy)
+  local abs, sin, cos, rad, floor, pi = math.abs, math.sin, math.cos, math.rad, math.floor, math.pi
+  local d = R.ctx(S or 64 * k, k, ox, oy)
+  local p = d:pp()
+  local SOL = solid()
+  local cx = 31.5
+  d:layer(function(t)                                                              -- as raízes: finas demais
+    for i = -2, 2 do
+      t:wire({ { cx + i * 2.4, 52 }, { cx + i * 4.6, 56 }, { cx + i * 5.2 + (i % 2), 60.4 } }, 'p', 'q', 0.7)
+    end
+  end, SOL)
+  d:layer(function(t)
+    for i = 0, 6 do                                                                 -- os lobos, de baixo para cima, crescendo
+      local y0, len, w = 46.6 - i * 4.5, 6.5 + i * 1.5, 2.4 + i * 0.16
+      local ex, ey = cx - 2 - len * 0.92, y0 - len * 0.42
+      t:cap(cx - 2.4, y0, (cx - 2 + ex) / 2, (y0 + ey) / 2 - 0.4, w * 0.8, w, function(x, y, u, v)
+        local s = ((u - cx) * 0.92 + (v - y0) * -0.42)
+        if floor(s * 1.1) % 3 == 0 then return v > y0 - len * 0.2 and '4' or '3' end   -- os lobinhos
+        return R.pick(i == 5 and 'nnNM' or '4321', 0.75 - (v - (y0 - len * 0.45)) / (w * 2.4), R.noise(p, 3 + i)(x, y))
+      end)
+      t:cap((cx - 2 + ex) / 2, (y0 + ey) / 2 - 0.4, ex, ey, w, 0.5, function(x, y, u, v)
+        local s = ((u - cx) * 0.92 + (v - y0) * -0.42)
+        if floor(s * 1.1) % 3 == 0 then return i == 6 and ((x + y) % 2 == 0 and 'b' or 'c') or (i == 4 and ((x + y) % 2 == 0 and 'J' or 'j') or '3') end
+        return R.pick(i == 5 and 'nnNM' or '4321', 0.8 - (v - ey) / (w * 2.2), R.noise(p, 3 + i)(x, y))
+      end)
+      t:wire({ { cx - 3.4, y0 - 0.4 }, { (cx - 2 + ex) / 2, (y0 + ey) / 2 - 0.6 }, { ex + 1.6, ey + 0.4 } }, 'D', i % 2 == 0 and 'E' or 'B', 0.5)   -- a nervura acesa
+    end
+    -- o báculo, um de cada lado
+    local pts = {}
+    for n = 0, 15 do
+      local a = rad(20 - n * 30)
+      local r = 6.6 - n * 0.36
+      pts[#pts + 1] = { cx - 9.6 + cos(a) * r, 10.6 + sin(a) * r * 0.86 }
+    end
+    table.insert(pts, 1, { cx - 2.6, 17.6 })
+    t:wire(pts, 'p', 'o', 1.5)
+    t:wire(pts, 'D', 'E', 0.5)
+    -- o disco de fixação: um caco de calçada, com a junta acesa
+    t:poly({ { cx - 9, 49.6 }, { cx, 48.6 }, { cx, 53.6 }, { cx - 7.6, 53 } }, R.mat('JjiI', R.noise(p, 5), function(u, v) return 0.9 - (v - 48.6) / 5 end))
+    t:wire({ { cx - 6, 49.6 }, { cx - 4.4, 51.4 }, { cx - 5, 53 } }, 'B', 'D', 0.5)
+    t:mirror(cx)
+  end, SOL)
+  local function slit(u, v, s, cy)
+    local q = (v - cy) / (18 * s)
+    if abs(q) >= 1 then return nil end
+    local t = abs(u - cx) / (3 * s * (1 - q * q) ^ 0.6 + 0.01)
+    return t <= 1 and t or nil
   end
-  -- 1. os lobos de um lado, por baixo da laje
-  local all = {}
-  for n = 1, 6 do
-    opts[n].side = -1; opts[n].stem = false
-    for _, q in ipairs(frond(P, stems[n], opts[n])) do all[#all + 1] = q end
-  end
-  -- 2. as três lajes e o vão em Y
-  for y = 0, S - 1 do for x = 0, S - 1 do
-    local dx, dy = (x - X0) / k, (y - Y0) / k
-    local d = sqrt(dx * dx + dy * dy)
-    local an = math.deg(math.atan(dy, dx))
-    local edge = R + (F.rnd(floor((an + 180) / 15), 1, 4) - 0.5) * 2.4
-    if d <= edge then
-      local inCrack = d < 3.6
-      for _, a in ipairs(ARMS) do
-        local t = dx * cos(rad(a)) + dy * sin(rad(a))
-        local pp = -dx * sin(rad(a)) + dy * cos(rad(a))
-        local jag = (floor(t / 2.5) % 2 == 0 and 0.8 or -0.8)
-        if t > 0 and abs(pp - jag) < 3.0 - t * 0.1 then inCrack = true end
-      end
-      if inCrack then g[y][x] = '?'
-      else
-        local sector = floor(((an + 90) % 360) / 120)
-        local ca, sa = cos(sector * 0.7 + 0.3), sin(sector * 0.7 + 0.3)
-        local tile = (floor((dx * ca + dy * sa) / 3.2) + floor((-dx * sa + dy * ca) / 3.2)) % 2
-        local joint = (floor((dx * ca + dy * sa) * k) % floor(3.2 * k) == 0) or (floor((-dx * sa + dy * ca) * k) % floor(3.2 * k) == 0)
-        local idx = sector + tile                                -- cada laje num tom: cada uma vista de um ângulo
-        if idx > 3 then idx = 3 end
-        g[y][x] = joint and (sector == 2 and 'k' or 'J') or CONC:sub(idx + 1, idx + 1)
-        if not joint and F.rnd(floor(dx), floor(dy), 6) > 0.93 then g[y][x] = tile == 0 and 'N' or 'n' end   -- folha seca
+  d:vao(function(u, v) return slit(u, v, 1, 32.6) end, 'X', 'y', 0.62)
+  for lv, f in ipairs({ 0.5, 0.26 }) do                                              -- a mesma fronde, para dentro
+    local ch = lv == 1 and 'X' or 's'
+    for i = 0, 6 do
+      local y0, len = 32.6 + (46.6 - i * 4.5 - 32.6) * f, (6.5 + i * 1.5) * f * 0.42
+      for _, sg in ipairs({ -1, 1 }) do
+        d:wire({ { cx, y0 }, { cx + sg * len, y0 - len * 0.6 } }, ch, nil, 0.5, '.y')
       end
     end
-  end end
-  for y = S - 2, 0, -1 do for x = 0, S - 1 do
-    if (CONC .. 'k'):find(g[y][x], 1, true) then
-      for s = 1, floor(2 * k) do
-        if y + s < S and g[y + s][x] == '.' then g[y + s][x] = '3' else break end
-      end
-    end
-  end end
-  -- 3. a raiz em leque, por cima da laje de baixo
-  local function root(x, y, a, len, r, depth)
-    local x1, y1 = x + cos(rad(a)) * len, y + sin(rad(a)) * len
-    P:limb({ { x, y }, { (x + x1) / 2 + sin(rad(a)) * 0.8, (y + y1) / 2 - cos(rad(a)) * 0.8 }, { x1, y1 } }, r, r * 0.6, 'h')
-    if depth > 0 then
-      root(x1, y1, a - 32, len * 0.7, r * 0.62, depth - 1)
-      root(x1, y1, a + 32, len * 0.7, r * 0.62, depth - 1)
-    end
   end
-  root(cx, cy + 3, 90, 8.6, 2.4, 4)
-  -- 4. o Véu na borda do vão
-  for y = 0, S - 1 do for x = 0, S - 1 do
-    if g[y][x] == '?' then
-      local near = false
-      for _, dd in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
-        for s = 1, k do
-          local c = L.get(g, x + dd[1] * s, y + dd[2] * s)
-          if c ~= '.' and c ~= '?' and c ~= 'X' then near = true end
-        end
-      end
-      if near or (x // k + y // k) % 3 == 0 then g[y][x] = 'X' end
-    end
-  end end
-  for y = 0, S - 1 do for x = 0, S - 1 do if g[y][x] == '?' then g[y][x] = '.' end end end
-  -- 5. o talo e os lobos do outro lado, por cima
-  for n = 1, 6 do
-    opts[n].side = 1; opts[n].stem = true
-    for _, q in ipairs(frond(P, stems[n], opts[n])) do all[#all + 1] = q end
+  for _, y in ipairs({ 20.6, 30.6, 40.6 }) do                                        -- três lobinhos de pedra ainda atravessam o vão
+    d:wire({ { cx - 3.6, y }, { cx, y + 1.2 }, { cx + 3.6, y } }, '3', '2', 0.5)
   end
-  shadeAll(g, k)
-  veins(g, P, all, STONE)
-  local keep = {}
-  for y = 0, S - 1 do for x = 0, S - 1 do
-    if LOOSE:find(g[y][x], 1, true) then keep[#keep + 1] = { x, y, g[y][x] }; g[y][x] = '.' end
-  end end
-  L.outline(g, 'A', solid())
-  for _, q in ipairs(keep) do if g[q[2]][q[1]] == '.' then g[q[2]][q[1]] = q[3] end end
-  spores(g, P, { { 12, 10 }, { 50, 8 }, { 58, 26 }, { 5, 26 }, { 44, 58 }, { 18, 58 }, { 22, 4 }, { 41, 3 }, { 8, 52 }, { 56, 54 } })
-  return g
+  for n = 0, 21 do
+    d:dot(3 + (n * 31) % 59, 3 + (n * 17) % 58, n % 3 == 0 and 'T' or (n % 3 == 1 and 'S' or 's'))
+  end
+  return d.g
 end
 
 local function out(stage, kind, fn)
+  if R.skip(stage) then return end
   C.save('frond', stage, kind, F.prune(fn(), LOOSE, stage .. ' ' .. kind), LEG, LIT, LOOSE)
 end
 out('fagulha', 'mapa', fagulhaMapa)
@@ -397,5 +368,5 @@ out('espirito', 'retrato', function() return espirito(2.6, 1, 1) end)
 out('entidade', 'mapa', function() return entidade(1) end)
 out('entidade', 'retrato', function() return entidade(2) end)
 out('arquetipo', 'mapa', function() return arquetipo(1) end)
-out('arquetipo', 'retrato', function() return arquetipo(2) end)
+out('arquetipo', 'retrato', function() return arquetipo(3, 128, -31, -8) end)      -- busto: os dois báculos, os lobos de cima e o vão
 print('ok frond')

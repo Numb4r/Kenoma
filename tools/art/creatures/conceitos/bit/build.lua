@@ -391,174 +391,108 @@ local function espirito(k)
   return g
 end
 
--- ENTIDADE MAIOR: o painel de LED da fachada. Três asas em cata-vento saem de dentro da tela (lá dentro são imagem,
--- cá fora são pena); o rosto está na tela, deitado: um olho só. Em cima, três pescoços sem cabeça; embaixo, três
--- pernas que não pisam em nada, e os cabos soltos.
+-- RODADA 2. O verde das peças refeitas é o do tipo Digital em tools/art/ui/types/palette.lua; magenta, azul e branco
+-- ficam como os subpixels do pescoço.
+local R = dofile(KENOMA_ART .. 'creatures/conceitos/_r2.lua')(C)
+LEG.P, LEG.o, LEG.p = '#A8F040', '#2A3320', '#A8F040'        -- Digital: aceso, o par apagado, e o solto
+LEG.Z, LEG.s = '#9B7BFF', '#555A6C'                          -- costura do Véu e o par apagado
+LIT.P = 'o'; LIT.Z = 's'; LOOSE = LOOSE .. 'p'; SOLID = SOLID .. 'PoZs'
+local function regreen(g)
+  for y = 0, g.h - 1 do for x = 0, g.w - 1 do if g[y][x] == 'G' then g[y][x] = 'P' end end end
+end
+
+-- ENTIDADE MAIOR: o painel de LED com o pombo em volta. O peito e a barriga viraram a tela; o pescoço sobe, dá a volta
+-- e entra por cima no próprio painel, como um cabo, e não tem cabeça na ponta: o rosto está na tela, grande e deitado,
+-- um olho só. A cauda se desfaz em blocos, e os blocos ficam parados no ar, em grade, sem cair.
 local function entidade(k)
   local S = 48 * k
-  local g = L.grid(S, S)
-  local p = PP(k)
-  local U, pts = scale(k)
+  local d = R.ctx(S, k)
+  local g = d.g
+  local p = d:pp()
   local ck = chk(p)
-  local cx, cy = 23.5, 23
-  local px0, py0, px1, py1 = floor(U(14.6)), floor(U(17.4)), floor(U(32.4)), floor(U(28.6))
-  local b = TH(k, 1.4)
-  local function inScreen(x, y) return x >= px0 + b and x <= px1 - b and y >= py0 + b and y <= py1 - b end
-  local function inPanel(x, y) return x >= px0 and x <= px1 and y >= py0 and y <= py1 end
-  -- pernas e cabos
+  local function ctx(t) local c2 = R.ctx(S, k); c2.g = t; return c2 end
   layer(g, function(t)
-    for _, q2 in ipairs({ { 16.4, 43.4 }, { 23.5, 45 }, { 30.6, 43.4 } }) do
-      wire(t, { { U(q2[1]), U(30) }, { U(q2[1] + (q2[1] - cx) * 0.08), U(q2[2]) } }, 'j', 'i', TH(k, 0.9))
-      for _, d in ipairs({ { -1.8, 0.8 }, { 0.2, 1.2 }, { 2, 0.7 } }) do
-        wire(t, { { U(q2[1] + (q2[1] - cx) * 0.08), U(q2[2]) }, { U(q2[1] + d[1]), U(q2[2] + d[2]) } }, 'j', nil, TH(k, 0.5))
+    pigeon(t, 1.5 * k, 3 * k, 9 * k, { heads = {}, legs = { 11.6, 14.4, 17 }, tails = { 0, 1.4 } })
+    for gy = 0, 6 do for gx = 0, 3 do                                              -- os blocos da cauda, em grade
+      if (gx + gy) % 2 == 0 and gy >= 3 - gx and gy <= 3 + gx then                   -- um leque que rareia para longe
+        local x0, y0 = floor(d:X(1.5 + gx * 2) - (k - 1) / 2), floor(d:Y(27.5 + gy * 2) - (k - 1) / 2)
+        L.rect(t, x0, y0, x0 + 2 * k - 1, y0 + 2 * k - 1, gx < 2 and (hash(gx, gy, 9) > 0.5 and 'P' or 'M') or (gy % 2 == 0 and 'a' or 'b'), '.')
       end
-    end
-    cap(t, U(cx), U(29), U(cx), U(33), 4 * k, 2.4 * k, function(x, y) return pick('abcd', 0.5 - (x - U(cx)) / (8 * k), ck(x, y)) end)
-    wire(t, { { U(31), U(29) }, { U(35.4), U(34.6) }, { U(34.4), U(38) } }, '2', '3', TH(k, 0.7))
-    L.rect(t, floor(U(33.6)), floor(U(38)), floor(U(35.4)), floor(U(39.6)), '3')
-  end, SOLID:gsub('[ij]', ''))
-  -- as três asas
-  local wg = L.grid(S, S)
-  for _, ang in ipairs({ -90, 30, 150 }) do
-    local a = rad(ang)
-    blade(wg, U(cx + cos(a) * 1.5), U(cy + sin(a) * 1.5), ang, 18.6 * k, 9 * k, 1, wingFn(p, 'cde', 'f', 18.6), 2.4 * k)
-  end
-  layer(g, function(t)
-    for y = 0, S - 1 do for x = 0, S - 1 do if wg[y][x] ~= '.' and not inPanel(x, y) then t[y][x] = wg[y][x] end end end
-  end)
-  -- o painel
-  layer(g, function(t)
-    for y = py0, py1 do for x = px0, px1 do
-      local ch
-      if x < px0 + b or y < py0 + b then ch = '4' elseif x > px1 - b or y > py1 - b then ch = '2'
-      else
-        ch = (floor(y / p) % 2 == 0) and '1' or '2'
-        -- o olho, deitado
-        local d = sqrt(((x - U(cx)) / (2.7 * k)) ^ 2 + ((y - U(cy)) / (4.3 * k)) ^ 2)
-        if d < 1.3 then
-          ch = '1'
-          if d > 0.78 and d < 1.06 then ch = 'W' elseif d > 0.3 and d < 0.6 then ch = 'M' elseif d >= 0.6 and d <= 0.78 and ck(x, y) then ch = 'z' end
-        elseif wg[y][x] ~= '.' and ck(x, y) then
-          ch = ({ f = 'M', c = 'B', d = 'G', e = 'G' })[wg[y][x]] or 'B'
-        elseif hash(x // p, y // p, 31) < 0.1 then ch = 'B' end
-      end
-      t[y][x] = ch
     end end
+    keepMain(t)
   end)
-  -- três pescoços sem cabeça
-  layer(g, function(t)
-    for n2, q2 in ipairs({ { 16.4, 12, 6.4 }, { 19.6, 10.6, 4.6 }, { 30.4, 12, 6.6 } }) do
-      local tx, ty = q2[1] + 1.6, q2[2] - q2[3] * 0.5
-      cap(t, U(q2[1]), U(17.4), U(tx), U(ty), 2 * k, 1.7 * k, function(x, y)
-        if ck(x, y) and floor(x / p) % 3 ~= 0 and y < U(14.6) then return (floor(y / p) % 2 == 0) and 'G' or 'M' end
-        return pick('abc', 0.6 - (x - U(q2[1])) / (4 * k), ck(x, y))
+  layer(g, function(t)                                                             -- o pescoço: sobe, dá a volta e entra no painel
+    local pts = { { 31, 26 }, { 35.6, 19 }, { 34.6, 11.6 }, { 28.6, 7.6 }, { 22.6, 10.6 }, { 21.6, 17.6 }, { 24.6, 24 } }
+    for i = 1, #pts - 1 do
+      cap(t, d:X(pts[i][1]), d:Y(pts[i][2]), d:X(pts[i + 1][1]), d:Y(pts[i + 1][2]), (3.5 - i * 0.2) * k, (3.3 - i * 0.2) * k, function(x, y)
+        if i >= 2 and i <= 5 and ck(x, y) and floor(x / p) % 3 ~= 0 then return (floor(y / p) % 2 == 0) and 'P' or 'M' end
+        return pick('abcd', 0.8 - i * 0.1, ck(x, y))
       end)
-      ell(t, U(tx), U(ty - 0.6), 1.7 * k, 0.9 * k, function(x, y) return ck(x, y) and 'W' or 'z' end)
     end
   end)
-  tear(g, U(26.6), U(27.6), 3 * k)
-  tear(g, U(13), U(13.8), -2 * k)
-  tear(g, U(8.6), U(9.2), k)
-  keepMain(g)
-  for _, q2 in ipairs({ { 4, 10 }, { 42, 12 }, { 6, 36 }, { 41, 38 }, { 9, 5 }, { 38, 4 }, { 44, 22 }, { 3, 24 }, { 28, 2 }, { 20, 43 }, { 27, 41 } }) do
-    dot(g, floor(q2[1] * k), floor(q2[2] * k), k * 0.8, ({ 'g', 'm', 'n', 'x' })[1 + (q2[1] + q2[2]) % 4])
+  layer(g, function(t)                                                             -- a tela, com o rosto dentro
+    local c2 = ctx(t)
+    c2:rect(21.6, 24.6, 35.4, 38.4, function(x, y) return pick('34', 0, ck(x, y)) end)
+    c2:rect(22.6, 25.6, 34.4, 37.4, function(x, y)
+      if hash(x // p, y // p, 3) < 0.22 then return 'P' end
+      return floor(y / p) % 2 == 0 and '1' or '2'
+    end)
+    c2:ell(27.4, 29.6, 3, 3, function(x, y) return ck(x, y) and 'W' or '2' end)
+    c2:ell(27.4, 29.6, 1.5, 1.5, function(x, y) return ck(x, y) and 'B' or '1' end)
+    c2:poly({ { 28.6, 32.6 }, { 33.4, 35 }, { 28.4, 36.6 } }, function(x, y) return ck(x, y) and 'M' or '1' end)
+    c2:suture({ { 22.4, 24.6 }, { 27.6, 24.6 } }, 'Z', 1.4, nil)                    -- a costura: onde o pescoço entra
+  end)
+  tear(g, d:Y(33) - (k - 1) / 2, d:Y(34) + (k - 1) / 2, 2 * k)
+  regreen(g)
+  for n2, e in ipairs({ { 3, 20 }, { 5.6, 44 }, { 40, 8 }, { 43, 22 }, { 12, 6 }, { 38, 42 }, { 44, 34 }, { 9, 14 }, { 36.6, 4 } }) do
+    d:dot(e[1], e[2], n2 % 3 == 0 and 'm' or (n2 % 3 == 1 and 'p' or 'x'))
   end
   return g
 end
 
--- ARQUÉTIPO: o quadro repetido. Nove telas em roda em volta do vão, cada uma na frente da anterior (e a primeira na
--- frente da última); em todas, o mesmo pombo no mesmo instante. Do bicho sobram três asas de cinza, os pés pendurados
--- e as penas que sobem em pixels.
-local GLYPH = { '....M..', '.WWWW..', 'WWWWW..', '.WWW...', '..G.G..' } -- o pombo sem cabeça
-local function arquetipo(k)
-  local S = 64 * k
-  local g = L.grid(S, S)
-  local p = PP(k)
-  local U, pts = scale(k)
-  local ck = chk(p)
-  local cx, cy = 31.5, 29
-  -- pés pendurados
+-- ARQUÉTIPO: o pombo de perfil, grande demais e fora de registro. O corpo está em fatias, cada uma num lugar, e nada
+-- as segura; a cabeça está em três lugares do mesmo balanço ao mesmo tempo (a ave, a varredura, só a matriz); pernas
+-- e caudas a mais. No peito a imagem não fecha: o vão é um recorte aberto para a frente, e dentro dele está o mesmo
+-- pombo inteiro, menor, e outro dentro dele.
+local function arquetipo(k, S, ox, oy)
+  S, ox, oy = S or 64 * k, ox or 0, oy or 0
+  local d = R.ctx(S, k, ox, oy)
+  local g = d.g
+  local s = 1.9 * k
   layer(g, function(t)
-    for n2, q2 in ipairs({ { 17, 42, 9 }, { 21.6, 45, 12 }, { 26.4, 46, 8 }, { 31, 47, 13 }, { 35.6, 46, 9 }, { 40.4, 45, 12 }, { 45, 42, 8 } }) do
-      local y1 = min(59, q2[2] + q2[3])
-      wire(t, { { U(q2[1]), U(q2[2]) }, { U(q2[1] + (n2 % 2) * 0.6), U(y1) } }, '7', '8', TH(k, 0.8))
-      for _, d in ipairs({ { -1.6, 1 }, { 0.2, 1.6 }, { 1.8, 0.9 } }) do
-        wire(t, { { U(q2[1] + (n2 % 2) * 0.6), U(y1) }, { U(q2[1] + d[1]), U(y1 + d[2]) } }, n2 % 2 == 0 and 'j' or 'i', nil, TH(k, 0.5))
-      end
+    pigeon(t, s, 1 * k + ox, 6 * k + oy, { tails = { 0, 1.6, 3 }, legs = { 10.4, 12.8, 15.4, 17.6 },
+      heads = { { 21.4, 12.6, 25.6, 7.6, 'led' }, { 20, 12, 21.6, 3.8, 'scan' }, { 18.4, 12, 17.6, 7.4 } } })
+  end)
+  for _, q in ipairs({ { 9, 13, -4 }, { 15, 19, 4 }, { 23, 27, -4 }, { 42.5, 46.6, 5 }, { 47, 51, -3 } }) do
+    tear(g, d:Y(q[1]), d:Y(q[2]), q[3] * k)
+  end
+  -- o vão: um recorte no peito, aberto para a frente
+  local pk = d:pp()
+  local function inside(x, y)
+    local u, v = (x - ox - (k - 1) / 2) / k, (y - oy - (k - 1) / 2) / k
+    if u < 27 or v < 28.5 or v > 41.5 then return nil end
+    return max(abs(v - 35) / 6.5, 1 - (u - 27) / 4)
+  end
+  for y = 0, S - 1 do for x = 0, S - 1 do
+    local tt = inside(x, y)
+    if tt and g[y][x] ~= '.' then
+      g[y][x] = tt > 0.86 and 'X' or (((x // pk) % 2 == 0 and (y // pk) % 2 == 0) and 'Y' or '.')
     end
-  end, SOLID:gsub('[ij78]', ''))
-  -- as telas
-  local N = 9
-  local fr = {}
-  for n2 = 1, N do
+  end end
+  for lv, q in ipairs({ { 0.56, 28.6, 26.6 }, { 0.26, 36.6, 32 } }) do           -- o mesmo pombo, para dentro
     local t = L.grid(S, S)
-    fr[n2] = t
-    local a = rad(-90 + (n2 - 1) * 360 / N)
-    local r2 = 15.6 + (n2 % 3) * 1.4
-    local w2, h2 = 13 + (n2 * 5) % 4, 10 + (n2 * 3) % 3
-    local fx, fy = cx + cos(a) * r2, cy + sin(a) * r2 * 0.94
-    local x0, y0, x1, y1 = floor(U(fx - w2 / 2)), floor(U(fy - h2 / 2)), floor(U(fx + w2 / 2)), floor(U(fy + h2 / 2))
-    local b = TH(k, 1)
-    for y = y0, y1 do for x = x0, x1 do
-      local ch
-      if x < x0 + b or y < y0 + b then ch = '4' elseif x > x1 - b or y > y1 - b then ch = '3'
-      else
-        ch = pick('12', 0, (floor((x + y) / p) % 2 == 0))
-        if hash(x // p, y // p, n2) < 0.11 then ch = ({ 'B', 'G', 'M' })[1 + floor(hash(x // p, y // p, n2 + 20) * 3)] end
-        if n2 % 4 == 0 and floor((x - x0) / p) % 5 == 2 and floor(y / p) % 2 == 0 then ch = 'B' end
+    pigeon(t, q[1] * k, q[2] * k + ox, q[3] * k + oy)
+    for y = 1, S - 2 do for x = 1, S - 2 do
+      if t[y][x] ~= '.' and inside(x, y) and (g[y][x] == '.' or g[y][x] == 'Y') then
+        local edge = t[y][x - 1] == '.' or t[y][x + 1] == '.' or t[y - 1][x] == '.' or t[y + 1][x] == '.'
+        if edge then g[y][x] = lv == 1 and 'X' or 'x' end
       end
-      L.set(t, x, y, ch)
     end end
-    -- o mesmo pombo, no mesmo lugar de cada tela
-    local gk = TH(k, 1)
-    local gx, gy = floor((x0 + x1) / 2 - 3.5 * gk), floor((y0 + y1) / 2 - 2.5 * gk)
-    for j2, row in ipairs(GLYPH) do
-      for i2 = 1, #row do
-        local c2 = row:sub(i2, i2)
-        if c2 ~= '.' then L.rect(t, gx + (i2 - 1) * gk, gy + (j2 - 1) * gk, gx + i2 * gk - 1, gy + j2 * gk - 1, c2, '12BGM') end
-      end
-    end
-    if n2 % 3 == 1 then wire(t, { { x0 + 2 * b, y0 + 2 * b }, { (x0 + x1) / 2, y0 + (y1 - y0) * 0.4 }, { x0 + (x1 - x0) * 0.4, y1 - b } }, '4', nil, 1, '12') end
-    L.outline(t, 'A', SOLID)
   end
-  for n2 = 1, N do blit(g, fr[n2]) end
-  -- a roda impossível: a primeira tela fica na frente da última
-  for y = 0, S - 1 do for x = 0, S - 1 do
-    if fr[1][y][x] ~= '.' and fr[N][y][x] ~= '.' then
-      local free = true
-      for n2 = 2, N - 1 do if fr[n2][y][x] ~= '.' then free = false; break end end
-      if free then g[y][x] = fr[1][y][x] end
-    end
-  end end
-  -- três asas de cinza saem das telas, por cima delas, e umas penas de pombo ainda presas nas molduras
-  for i2, ang in ipairs({ -84, 36, 156 }) do
-    layer(g, function(t)
-      local a = rad(ang)
-      blade(t, U(cx + cos(a) * 16.5), U(cy + sin(a) * 16.5), ang + 14, (i2 == 1 and 9.6 or 12) * k, 8 * k, 1, wingFn(p, '876', '8', 12), 2.4 * k)
-    end)
-  end
-  for n2 = 0, 5 do
-    local a = rad(n2 * 60 + 25)
-    local fx, fy = cx + cos(a) * 22.4, cy + sin(a) * 21
-    layer(g, function(t)
-      blade(t, U(fx), U(fy), n2 * 60 + 70, 5 * k, 2.6 * k, 1, function(x, y, u, tt) return pick('bcd', 0.9 - tt * 0.8, ck(x, y)) end)
-    end, 'A')
-  end
-  -- o vão
-  for y = 0, S - 1 do for x = 0, S - 1 do
-    local r2 = sqrt((x - U(cx)) ^ 2 + ((y - U(cy)) / 0.94) ^ 2) / k
-    if r2 < 7.4 then
-      g[y][x] = '.'
-      if r2 > 4.4 then g[y][x] = 'X' elseif r2 > 1.5 and (x // TH(k, 1) + y // TH(k, 1)) % 2 == 0 then g[y][x] = 'Y' end
-    elseif r2 < 7.4 + 1 / k and g[y][x] ~= '.' then g[y][x] = 'A' end
-  end end
-  tear(g, U(18), U(19), 3 * k)
-  tear(g, U(37), U(37.8), -3 * k)
-  tear(g, U(26), U(26.8), 2 * k)
-  -- as penas que sobem em pixels
-  for n2 = 1, 34 do
-    local x, y = 4 + (n2 * 37) % 56, 2 + (n2 * 23) % 58
-    if sqrt((x - cx) ^ 2 + (y - cy) ^ 2) > 22 then dot(g, floor(x * k), floor(y * k), k * 0.8, ({ 'g', 'm', 'n', 'x' })[1 + n2 % 4]) end
+  regreen(g)
+  for n2 = 1, 24 do
+    local a = rad(n2 * 67)
+    d:dot(31 + cos(a) * (27 + (n2 * 5) % 4), 33 + sin(a) * (24 + (n2 * 7) % 6), n2 % 3 == 0 and 'm' or (n2 % 3 == 1 and 'p' or 'x'))
   end
   return g
 end
@@ -572,7 +506,7 @@ do -- as medidas saem numa linha só por sprite
   local raw = print
   print = function(sx) if tostring(sx):find('opacos') then raw((tostring(sx):gsub('^%s+', ''))) end end
 end
-local function out(stage, kind, g) C.save('bit', stage, kind, g, LEG, LIT, LOOSE) end
+local function out(stage, kind, g) if not R.skip(stage) then C.save('bit', stage, kind, g, LEG, LIT, LOOSE) end end
 out('fagulha', 'mapa', fagulhaMapa())
 out('fagulha', 'retrato', fagulhaRetrato())
 out('eco', 'mapa', ecoMapa())
@@ -582,5 +516,5 @@ out('espirito', 'retrato', fit(espirito(2.5), 96))
 out('entidade', 'mapa', entidade(1))
 out('entidade', 'retrato', entidade(2))
 out('arquetipo', 'mapa', arquetipo(1))
-out('arquetipo', 'retrato', arquetipo(2))
+out('arquetipo', 'retrato', arquetipo(3, 128, -56, -8))                            -- busto: as três cabeças e o recorte do peito
 print('ok bit')

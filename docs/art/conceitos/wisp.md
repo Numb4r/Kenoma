@@ -30,3 +30,9 @@
 | Arquétipo | 1741 / 6378 | 16 / 16 | 0,84 / 0,65 | 0,22 / 0,14 | 0,16 / 0,18 |
 
 O Eco do mapa é desenhado pixel a pixel (a coruja é estreita: 266 opacos, contra 404 do Humoth). A chama não tem contorno; na Entidade a névoa também não, e no Arquétipo as garras ficam sem (contorno seletivo). A roda de chamas do Arquétipo é emissivo solto.
+
+## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Entidade Maior | Velário de pé: tronco de cera, asas abertas como duas prateleiras de tocos de vela, cara de ponta-cabeça com órbitas ocas, tripé de pernas saindo da toca. Uma costura larga na raiz da asa. | a chama queima para baixo e a cera pinga para cima |

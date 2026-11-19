@@ -372,112 +372,105 @@ local function entidade(k, ox, oy)
   return g
 end
 
--- ARQUÉTIPO: o bueiro sem fundo. A grelha impossível é a armação (em cima são três barras, embaixo os vãos viraram
--- dentes e a barra do meio virou vão), três caveiras sem órbita em cima das barras, três rabos (um pende do vão),
--- o couro vazio pendurado, dedos que seguram as barras por dentro. No lugar do peito, a brasa é um sol negro.
--- Regra quebrada: o fogo dele tira luz em vez de dar (o ferro escurece perto da brasa).
-local function arquetipo(k)
-  local S = 64 * k
-  local g = L.grid(S, S)
-  local P = F.pen(g, k)
-  local cx, cy = 31.5, 31
-  local x0, bw, y0, y1 = 19, 5, 13, 50                      -- a grelha: cinco faixas de 5 px
-  -- rabos: dois pendem dos dentes da grelha, o terceiro pende do vão
-  P:limb({ { 24, 49 }, { 22.4, 53 }, { 24.6, 56.5 }, { 22.6, 59.5 }, { 23.4, 61.2 } }, 1.6, 0.6, 't')
-  P:limb({ { 39, 49 }, { 40.8, 52.5 }, { 38.8, 55.5 }, { 40.6, 58.5 }, { 39.8, 60.4 } }, 1.6, 0.6, 't')
-  P:limb({ { 31.5, 43 }, { 30.6, 47.5 }, { 32.6, 52 }, { 30.8, 56 }, { 32.2, 59.4 }, { 31.4, 61.2 } }, 1.3, 0.6, 't')
-  -- o couro vazio, pendurado do lado, com a manga e a mão
-  P:poly({ { 18, 12 }, { 20, 16 }, { 20, 26 }, { 19.4, 35 }, { 17.6, 42 }, { 16, 37.5 }, { 14.6, 45.5 }, { 13, 38.5 }, { 11.4, 42 },
-    { 10.4, 33 }, { 11.4, 24 }, { 13.4, 16 } }, 'f')
-  P:limb({ { 12, 25 }, { 8.6, 29 }, { 7.2, 34 }, { 7.6, 38.5 } }, 1.5, 0.9, 'f')
-  for f = -1, 1 do P:limb({ { 7.6, 39 }, { 7.6 + f * 1.3, 41.6 } }, 0.5, 0.4, f == 0 and 'W' or 'V') end
-  -- a grelha impossível
-  for y = floor(P:Y(y0 - 3) - k / 2), ceil(P:Y(y1) + k / 2) do for x = 0, S - 1 do
-    local ux, uy = (x + 0.5) / k, (y + 0.5) / k
-    local band = floor((ux - x0) / bw)
-    local top = band == 2 and y0 - 3 or y0
-    if band >= 0 and band <= 4 and uy >= top and uy < y1 + 1 then
-      local ty = (uy - y0) / (y1 + 1 - y0)
-      local py = floor(uy)
-      local u = ux - x0 - band * bw
-      local grow = ty > 0.72 or (ty > 0.5 and py % 2 == 0) or (ty > 0.3 and py % 3 == 0)    -- vão que vira barra
-      local fade = ty < 0.3 or (ty < 0.5 and py % 3 ~= 0) or (ty < 0.72 and py % 2 ~= 0)    -- barra que vira vão
-      local on = band == 0 or band == 4
-      if band == 2 then on = fade elseif band == 1 or band == 3 then on = grow end
-      if on then
-        local d = sqrt((ux - cx - 0.5) ^ 2 + (uy - cy - 0.5) ^ 2)
-        local idx
-        if ty < 0.5 then idx = u < 1 and 1 or u < 3 and 0 or u < 4 and 1 or 2           -- barra redonda
-        else idx = (band == 0 or band == 3) and (u < 4 and 0 or 1) or (u < 1 and 3 or 2) end -- faces do dente
-        if band == 4 and ty >= 0.5 then idx = u < 1 and 3 or 2 end
-        if d < 12 then idx = idx + 1 end                    -- perto da brasa o ferro escurece
-        if d < 8 then idx = idx + 1 end
-        if (py + floor(u)) % 2 == 0 then idx = idx + 1 end
-        idx = math.min(3, idx)
-        local ch = IRON:sub(idx + 1, idx + 1)
-        if d >= 12 and F.rnd(floor(ux), py, 8) > 0.9 then ch = idx < 2 and 'N' or 'n' end
-        if uy >= y1 then ch = 'J' end
-        g[y][x] = ch
-      else
-        g[y][x] = '?'                                        -- vão
+-- RODADA 2
+local R = dofile(KENOMA_ART .. 'creatures/conceitos/_r2.lua')(C)
+LEG.y = '#5A45A8'                                            -- o fundo do vão (solto)
+LOOSE = LOOSE .. 'y'; THIN = THIN .. 'y'
+
+-- ARQUÉTIPO: o saruê de perfil, grande demais, de boca aberta além do que a queixada deixa. Não tem olho; a boca é o
+-- vão, e dentro dela há outra queixada aberta, e outra dentro dessa, cada uma menor. O flanco é a tampa do bueiro, com
+-- a brasa atrás das fendas; os filhotes no lombo são caveiras, cada uma menor, até o rabo, que dá voltas demais.
+-- O fogo dele tira luz: o pelo e o ferro escurecem quanto mais perto da brasa.
+local function arquetipo(k, S, ox, oy)
+  local min, sqrt, abs, cos, sin, rad, floor = math.min, math.sqrt, math.abs, math.cos, math.sin, math.rad, math.floor
+  local d = R.ctx(S or 64 * k, k, ox, oy)
+  local p = d:pp()
+  local SOL = solid()
+  local EX, EY = 33, 41                                                           -- a brasa do peito
+  local function dark(u, v) return min(1, sqrt((u - EX) ^ 2 + (v - EY) ^ 2) / 20) end
+  local fur = R.mat('ab4321', R.noise(p, 3), dark)
+  local HX, HY = 39, 29                                                            -- a dobradiça da queixada
+  d:layer(function(t)                                                              -- o rabo, com voltas demais, e a bituca
+    local pts = {}
+    for i = 0, 40 do
+      local a = rad(200 + i * 26)
+      local r = 1.2 + i * 0.14
+      pts[#pts + 1] = { 9.6 + cos(a) * r, 40 + sin(a) * r }
+    end
+    pts[#pts + 1] = { 12, 36 }
+    t:wire(pts, 'q', 'p', 1.1)
+    t:ell(9.6, 40, 0.9, 0.9, 'E')
+  end, SOL)
+  d:layer(function(t)                                                              -- pernas de lá
+    t:cap(18, 42, 16.6, 52, 2.6, 1.6, R.mat('ab4', R.noise(p, 3), 0.3)); t:cap(34, 44, 36, 53, 2.2, 1.4, R.mat('ab4', R.noise(p, 3), 0.3))
+  end, SOL)
+  d:layer(function(t)
+    t:ell(24, 34, 15.6, 11.6, fur)                                                  -- o lombo
+    t:cap(34, 30, 40, 27, 7, 5.6, fur)                                              -- pescoço e nuca
+    -- a tampa do bueiro no flanco: ferro, fendas com a brasa atrás
+    t:ell(22, 35, 7.6, 7.6, function(x, y, u, v)
+      local r = sqrt((u - 22) ^ 2 + (v - 35) ^ 2)
+      if r > 6.4 then return R.pick('JjiI', dark(u, v) * 0.8, R.noise(p, 5)(x, y)) end
+      if (floor(u * 0.8 + 0.4)) % 2 == 0 and r < 5.6 then return r < 2.4 and 'Y' or (r < 4.2 and 'E' or 'R') end
+      return R.pick('Jji', dark(u, v) * 0.7, R.ver(p)(x, y))
+    end)
+    -- os filhotes no lombo: caveiras, cada uma menor, até o rabo
+    for n, q in ipairs({ { 31, 22.4, 3 }, { 24.4, 21.6, 2.4 }, { 18.6, 22.6, 1.9 }, { 13.6, 25, 1.5 }, { 10, 28.4, 1.1 } }) do
+      t:cap(q[1], q[2], q[1] + q[3] * 1.5, q[2] + q[3] * 0.4, q[3], q[3] * 0.4, R.mat('321', R.noise(p, 7), 0.6))
+      t:ell(q[1] - q[3] * 0.5, q[2] - q[3] * 0.9, q[3] * 0.5, q[3] * 0.6, 'p')
+      if q[3] > 1.4 then t:ell(q[1] + q[3] * 0.3, q[2] - q[3] * 0.1, q[3] * 0.3, q[3] * 0.3, 'k') end
+    end
+    -- a cabeça: maxila em cima, mandíbula escancarada embaixo, sem olho; orelha pelada
+    t:ell(38.6, 17.6, 2.6, 3.4, R.mat('qpP', R.ver(p), 0.5))
+    t:poly({ { 36, 20 }, { 44, 18.6 }, { 59, 21.4 }, { 60.4, 24 }, { 58, 25.6 }, { HX, HY } }, R.mat('4321', R.noise(p, 9), function(u, v) return 0.9 - (v - 18) / 10 end))
+    t:poly({ { 35, 31 }, { HX, HY }, { 53.6, 50.4 }, { 51.6, 53.4 }, { 47.6, 53 }, { 35, 39 } }, R.mat('4321', R.noise(p, 9), function(u, v) return 0.7 - (v - 30) / 30 end))
+    t:ell(59.6, 22.6, 1.3, 1.2, 'q')
+    t:ell(43.6, 21.6, 1.7, 1.3, 'k')                                                -- a órbita, vazia
+    for i = 0, 8 do                                                                 -- dentes: muitos
+      local f = 0.2 + i * 0.09
+      local ux, uy = HX + (58 - HX) * f, HY + (25.6 - HY) * f
+      t:poly({ { ux - 0.7, uy }, { ux + 0.7, uy - 0.1 }, { ux + 0.2, uy + 2.2 - i * 0.08 } }, i % 3 == 0 and 'V' or 'W')
+      local lx, ly = HX + (53.6 - HX) * f, HY + (50.4 - HY) * f
+      t:poly({ { lx - 0.4, ly + 0.6 }, { lx + 0.6, ly - 0.6 }, { lx + 2, ly - 1.4 + i * 0.05 } }, i % 3 == 0 and 'V' or 'W')
+    end
+    -- patas de cá: mão que parece de gente
+    for _, q in ipairs({ { 20, 43, 21, 53.4 }, { 31.6, 44.6, 30.6, 54 } }) do
+      t:cap(q[1], q[2], q[3], q[4], 2.7, 1.6, fur)
+      for i = -2, 2 do t:wire({ { q[3], q[4] }, { q[3] + i * 1.2 + 1, q[4] + 3.2 - abs(i) * 0.5 } }, 'p', 'q', 0.5) end
+    end
+    -- a brasa no peito, em rachaduras
+    for i = 0, 6 do
+      local a = rad(i * 51 + 10)
+      t:wire({ { EX, EY }, { EX + cos(a) * 2.6, EY + sin(a) * 2.6 }, { EX + cos(a + 0.4) * (6 + (i % 3)), EY + sin(a + 0.4) * (6 + (i % 3)) } }, 'E', 'R', 0.5)
+    end
+    t:ell(EX, EY, 1.7, 1.7, 'Y'); t:ell(EX, EY, 0.8, 0.8, 'Z')
+  end, SOL)
+  -- o vão: a boca. Fecha nas duas queixadas e fica aberta para a frente
+  local a0, a1 = math.atan(25.6 - HY, 58 - HX), math.atan(50.4 - HY, 53.6 - HX)
+  local function gape(u, v)
+    local dx, dy = u - HX, v - HY
+    local r, a = sqrt(dx * dx + dy * dy), math.atan(dy, dx)
+    if r < 2 or r > 21 or a < a0 + 0.1 or a > a1 - 0.08 then return nil end
+    return abs(a - (a0 + a1) / 2) / ((a1 - a0) / 2 - 0.09) * (r > 17.6 and 0.6 or 1)
+  end
+  d:vao(gape, 'X', 'y', 0.8)
+  for lv, f in ipairs({ 0.62, 0.36, 0.18 }) do                                       -- queixada dentro de queixada
+    local ch = lv == 1 and 'X' or (lv == 2 and 'S' or 's')
+    local bx, by = HX + 3.4 * lv, HY + 2.6 * lv
+    local m = (a0 + a1) / 2
+    for _, sg in ipairs({ -1, 1 }) do
+      local a = m + sg * (a1 - a0) / 2 * 0.62
+      d:wire({ { bx, by }, { bx + cos(a) * 15 * f, by + sin(a) * 15 * f } }, ch, nil, 0.5, '.y')
+      for i = 1, 3 do
+        local tx, ty = bx + cos(a) * 15 * f * i / 3.4, by + sin(a) * 15 * f * i / 3.4
+        d:wire({ { tx, ty }, { tx + cos(a - sg * 1.3) * 1.6 * f * 2, ty + sin(a - sg * 1.3) * 1.6 * f * 2 } }, ch, nil, 0.5, '.y')
       end
     end
-  end end
-  -- o Véu na borda do vão
-  for y = 0, S - 1 do for x = 0, S - 1 do
-    if g[y][x] == '?' then
-      local near = false
-      for _, dd in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
-        for s = 1, k do
-          local c = L.get(g, x + dd[1] * s, y + dd[2] * s)
-          if c ~= '.' and c ~= '?' and c ~= 'X' then near = true end
-        end
-      end
-      if near or (x // k + y // k) % 3 == 0 then g[y][x] = 'X' end
-    end
-  end end
-  for y = 0, S - 1 do for x = 0, S - 1 do if g[y][x] == '?' then g[y][x] = '.' end end end
-  -- três caveiras sem órbita em cima das barras
-  local sk = {}
-  for n, q in ipairs({ { 21, 10.4 }, { 31, 7.2 }, { 41, 10.4 } }) do
-    sk[n] = head(P, k, q[1], q[2], -8, 1.0, { open = true, bone = true })
   end
-  F.shade(g, 'z', '1234', { p = 2, ax = 1, ay = 0.5, zones = 3, within = 'z' })
-  F.shade(g, 't', 'wvq', { p = k > 1 and 3 or 2, ax = 1, ay = 1, zones = 2, within = 't' })
-  furShade(g, k, 'f', 'dcba', { zones = 2, within = 'f', ax = 2, ay = 1, p = 2, jit = 3, jw = 1 })
-  -- dedos que seguram as barras por dentro do vão
-  for _, hnd in ipairs({ { 37, 20, 1 }, { 31.6, 39, -1 } }) do
-    for f = 0, 3 do
-      P:limb({ { hnd[1], hnd[2] + f * 1.5 }, { hnd[1] + hnd[3] * 4.6, hnd[2] + f * 1.5 + 0.3 } }, 0.5, 0.5, f % 2 == 0 and 'W' or 'V')
-      P:px(hnd[1] + hnd[3] * 4.6, hnd[2] + f * 1.5 + 0.3, 'w')
-    end
+  for n = 0, 17 do
+    d:dot(4 + (n * 23) % 56, 6 + (n * 11) % 9 + (n % 3 == 0 and 50 or 0), n % 3 == 0 and 'T' or (n % 3 == 1 and 'S' or 's'))
   end
-  -- o sol negro na frente da grelha: anel de brasa, coroa em raios desiguais; por dentro, nada
-  for y = 0, S - 1 do for x = 0, S - 1 do
-    local dx, dy = (x + 0.5) / k - cx - 0.5, (y + 0.5) / k - cy - 0.5
-    local d = sqrt(dx * dx + dy * dy)
-    local an = math.atan(dy, dx)
-    local bin = floor((an + 3.1416) / 6.2832 * 21)
-    local ray = 5.2 + 5.5 * F.rnd(bin, 3, 5) ^ 1.6
-    if d < 2.2 then g[y][x] = '.'
-    elseif d < 3.1 then g[y][x] = ((x + y) % 2 == 0) and 'X' or '.'
-    elseif d < 3.9 then g[y][x] = 's'
-    elseif d < 5.2 then g[y][x] = 'S'
-    elseif d < ray then g[y][x] = 'T' end
-  end end
-  -- tira o emissivo solto antes do contorno e devolve depois
-  local keep = {}
-  for y = 0, S - 1 do for x = 0, S - 1 do
-    if LOOSE:find(g[y][x], 1, true) then keep[#keep + 1] = { x, y, g[y][x] }; g[y][x] = '.' end
-  end end
-  L.outline(g, 'A', solid())
-  for _, q in ipairs(keep) do if g[q[2]][q[1]] == '.' then g[q[2]][q[1]] = q[3] end end
-  -- cinza que sobe das bocas
-  for n, T in ipairs(sk) do
-    local q = T(6.5, 2.6)
-    for s = 1, 3 do P:dot(q[1] + 1 + sin(s * 2 + n) * 1.4, q[2] - s * 2.4 + 2, s % 2 == 0 and 'T' or 'S') end
-  end
-  return g
+  return d.g
 end
 
 local only = SOOT_ONLY
@@ -494,5 +487,5 @@ out('espirito', 'retrato', function() return espirito(2.6, 1, 1) end)
 out('entidade', 'mapa', function() return entidade(1) end)
 out('entidade', 'retrato', function() return entidade(2) end)
 out('arquetipo', 'mapa', function() return arquetipo(1) end)
-out('arquetipo', 'retrato', function() return arquetipo(2) end)
+out('arquetipo', 'retrato', function() return arquetipo(3, 128, -64, -30) end)     -- busto: a cabeça sem olho, a boca e a brasa
 print('ok soot')

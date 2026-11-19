@@ -345,74 +345,60 @@ local function espirito(k, S)
   return g
 end
 
--- ENTIDADE MAIOR: a cratera que anda. Um pedaço de rua com o buraco no meio, em seis pernas de teú; do fundo da
--- borda sobe o tronco, que se abre em três pescoços em cata-vento, cada um com uma cabeça sem olhos. O olho ficou
--- no fundo do buraco, e o buraco é mais fundo do que a placa que o carrega.
+-- RODADA 2
+local R = dofile(KENOMA_ART .. 'creatures/conceitos/_r2.lua')(C)
+LEG.Z, LEG.v = '#9B7BFF', '#4B4458'                          -- costura do Véu e o par apagado
+LIT.Z = 'v'; SOLID = SOLID .. 'Zv'
+
+-- ENTIDADE MAIOR: o teú que nada na rua. O trecho de asfalto faz parte dele: o corpo mergulha e volta três vezes, em
+-- arcos, sem abrir buraco, e a rua ondula em volta de cada entrada como água, com a faixa pintada e tudo. Por baixo do
+-- asfalto a brasa dele aparece. As pernas pendem dos arcos sem pisar em nada; os olhos saíram da cabeça e estão no
+-- flanco; a cabeça, sem olhos, tem duas línguas.
 local function entidade(k, S)
   local g = L.grid(S, S)
-  local p = k > 1 and 2 or 1
-  local function P(v) return v * k end
-  local hx, hy = P(24) - 0.5, P(19)
-  local sx, sy = P(24) - 0.5, P(36)
-  -- pernas de trás
-  for _, x in ipairs({ 13, 24, 35 }) do leg(g, { x, 38, x + 1.4, 40.6, x - 0.4, 42.4 }, k, FARLEG, 1) end
-  -- tronco, com placas na espinha
-  local trunk = spline(scaled({ { 24, 35 }, { 26.4, 30 }, { 22.6, 24.6 }, { 24, 18.5 } }, k))
-  for n, t in ipairs({ 0.25, 0.5, 0.75 }) do
-    local x, y = trunk(t)
-    slab(g, x - P(2.6), y, -0.95, -0.3, P(3.6), P(5.4 - abs(n - 2)), n == 2 and 'o' or nil)
-  end
-  tube(g, trunk, prof({ { 0, 3.8 }, { 1, 3 } }, k), skin({ p = p, band = 5 * k,
-    ember = function(t, dn) return t > 0.15 and t < 0.9 and abs(dn) < 0.6 end }))
-  -- três pescoços em cata-vento
-  for i = 0, 2 do
-    local a0 = -90 + i * 120
-    local function neck(t)
-      local a = rad(a0 + 85 * t)
-      local r = P(11) * t ^ 0.9
-      return hx + cos(a) * r, hy + sin(a) * r
-    end
-    tube(g, neck, prof({ { 0, 3 }, { 1, 2.2 } }, k), skin({ p = p, band = 4 * k,
-      ember = function(t, dn) return t > 0.2 and t < 0.9 and dn > -0.1 and dn < 0.9 end }))
-    local x, y = neck(1)
-    local tx, ty = dirAt(neck, 0.97)
-    head(g, x, y, math.deg(math.atan(ty, tx)), k * 1.45, { tongue = 1, open = 1.3 })
-  end
-  ell(g, hx, hy, P(3.4), P(3.4), 0, function(x, y, u, v, l) return DARK[(l > 0.2 and 1 or 2) + (x // p + y // p) % 2] end)
-  -- o pedaço de rua: a face de cima, a borda e o buraco
-  local top = asphalt(true)
-  for y = floor(sy - P(6)), ceil(sy + P(9)) do
-    for x = floor(sx - P(18)), ceil(sx + P(18)) do
-      local u, v = (x - sx) / P(17), (y - sy) / P(4.6)
-      local d = u * u + v * v
-      local vs = (y - sy - P(3)) / P(4.6)
-      if d <= 1 then
-        local ch = top(x, y)
-        local hu, hv = (x - sx) / P(9), (y - sy + P(0.4)) / P(2.9)
-        local hd = sqrt(hu * hu + hv * hv)
-        if hd < 1 then
-          -- o buraco: anéis de terra e asfalto que descem, a brasa lá embaixo e o olho de pupila em fenda
-          local ring = floor(hd * 6)
-          ch = ({ 'E', 'e', 'Q', 'E', 'e', 'Q' })[ring + 1]
-          if ring == 3 or ring == 5 then ch = (x + y) % 2 == 0 and 'R' or ch end
-          if hd < 0.42 then ch = hd < 0.2 and 'I' or 'H' end
-          if abs(x - sx) < max(0.6, P(0.4)) and hd < 0.36 then ch = '4' end
-        elseif hd < 1.14 then ch = (x + y) % 3 == 0 and 'J' or 'Q'
-        elseif abs(v - 0.1 - u * 0.05) < 0.09 and floor(x / P(2.5)) % 2 == 0 then ch = 'o'
-        elseif hash(x // max(1, floor(k * 3)), y // max(1, floor(k * 2)), 3) % 9 == 0 then ch = 'Q' end
-        if g[y][x] == '.' or v > -0.25 or hd < 1.14 then g[y][x] = ch end
-      elseif u * u + vs * vs <= 1 and g[y][x] == '.' then
-        g[y][x] = asphalt(false)(x, y)
-        if hash(x // max(1, floor(k * 2)), 5, 8) % 6 == 0 then g[y][x] = 'J' end
+  local sp = max(1, floor(k * 0.9))
+  local sk = skin({ p = sp, band = 7 * k, ember = function(t, dn) return dn > 0.05 end })
+  local ENT = { 6, 15.6, 18.4, 30, 33.6 }
+  -- a rua, com as ondas
+  fillpoly(g, scaled({ { 2.6, 35.8 }, { 9, 34.6 }, { 20, 35.4 }, { 31, 34.4 }, { 45.4, 35.6 }, { 44.6, 43.4 }, { 36, 44.6 }, { 22, 43.6 }, { 10, 44.8 }, { 3.6, 43.6 } }, k),
+    function(x, y)
+      local u, v = x / k, y / k
+      if v > 42 then return asphalt(false)(x, y) end
+      for _, c in ipairs(ENT) do
+        local dd = sqrt((u - c) ^ 2 + ((v - 35.6) / 0.42) ^ 2)
+        if dd < 1.6 then return 'R' end
+        if (dd > 2.6 and dd < 3.5) or (dd > 5.4 and dd < 6.1) then return v < 37 and ((x + y) % 2 == 0 and 'g' or 'p') or 'Q' end
       end
+      if abs(v - 39.6) < 0.6 and floor(u / 3.4) % 2 == 0 then return (x + y) % 3 == 0 and 'O' or 'o' end
+      return asphalt(true)(x, y)
+    end)
+  -- a brasa por baixo do asfalto, de uma entrada à outra
+  for _, q in ipairs({ { 15.6, 18.4 }, { 30, 33.6 }, { 2.8, 6 } }) do
+    for x = floor(q[1] * k), floor(q[2] * k) do
+      L.set(g, x, (37.6 + sin(x / k * 1.3) * 0.6) * k, (x // sp) % 3 == 0 and 'H' or 'J', 'pPQgoO')
     end
   end
-  -- pernas da frente
-  for _, x in ipairs({ 9.5, 19, 29, 38.5 }) do leg(g, { x, 39.2, x - 1.6, 41.6, x + 0.4, 43.4 }, k, DARK, 1) end
+  -- pernas penduradas (as de lá primeiro)
+  local A1 = spline(scaled({ { 6, 36.6 }, { 5.6, 30 }, { 9.6, 25.6 }, { 14, 29 }, { 15.6, 36.6 } }, k))
+  local A2 = spline(scaled({ { 18.4, 36.6 }, { 17.6, 20 }, { 23.6, 8.6 }, { 29.6, 19 }, { 30, 36.6 } }, k))
+  local NK = spline(scaled({ { 33.6, 36.6 }, { 34.6, 27 }, { 33, 19 }, { 34.6, 13.6 } }, k))
+  local W2 = prof({ { 0, 2 }, { 0.5, 2.7 }, { 1, 2.2 } }, k)
+  tube(g, A1, prof({ { 0, 1.5 }, { 0.5, 1.9 }, { 1, 1.4 } }, k), sk)
+  tube(g, A2, W2, sk)
+  tube(g, A2, W2, function(x, y, t) if abs(t - 0.3) < 0.014 then return 'Z' end end)                                -- a costura
+  tube(g, NK, prof({ { 0, 2.1 }, { 1, 1.7 } }, k), sk)
+  head(g, 34.6 * k, 13.6 * k, 12, 1.8 * k, { open = 0.9, tongue = 2 })
+  leg(g, { 20, 14, 15.6, 17, 14.6, 21.6 }, k, DARK, -1)
+  leg(g, { 27.6, 17, 25, 21.6, 26, 26 }, k, DARK, 1)
+  leg(g, { 35.6, 25, 39.6, 27.6, 40.6, 32 }, k, DARK, 1)
+  -- os olhos, no flanco
+  for _, q in ipairs({ { 20.6, 12.4 }, { 26.6, 12 }, { 9.6, 26 }, { 34.2, 22 } }) do
+    if k > 1 then L.disc(g, q[1] * k, q[2] * k, 0.9 * k, 'H'); L.line(g, q[1] * k, (q[2] - 0.8) * k, q[1] * k, (q[2] + 0.8) * k, '4')
+    else L.set(g, q[1], q[2], 'H'); L.set(g, q[1] + 1, q[2], 'I') end
+  end
   L.outline(g, 'A', SOLID)
-  for _, q in ipairs({ { 6, 12, 'S' }, { 41, 8, 's' }, { 44, 28, 'N' }, { 4, 27, 's' }, { 33, 3, 'S' }, { 15, 4, 'N' }, { 21, 30.5, 's' },
-    { 27, 31.5, 'S' }, { 24, 29, 'N' }, { 8, 20, 'S' } }) do
-    dot(g, q[1] * k, q[2] * k, k * 0.6, q[3])
+  for n, q in ipairs({ { 3, 22 }, { 13, 19 }, { 17, 11 }, { 31, 9 }, { 43, 20 }, { 44, 29 }, { 24, 28 }, { 12, 31.6 }, { 26.6, 31 }, { 37, 32.6 }, { 8, 14 }, { 41.6, 5 } }) do
+    dot(g, q[1] * k, q[2] * k, k * 0.6, n % 3 == 0 and 'N' or n % 3 == 1 and 'S' or 's')
   end
   return g
 end
@@ -502,7 +488,7 @@ local function arquetipo(k, S)
   return g
 end
 
-local function out(stage, kind, g) C.save('wyrm', stage, kind, g, LEG, LIT, LOOSE) end
+local function out(stage, kind, g) if not R.skip(stage) then C.save('wyrm', stage, kind, g, LEG, LIT, LOOSE) end end
 out('fagulha', 'mapa', fagulhaMapa())
 out('fagulha', 'retrato', fagulhaRetrato())
 out('eco', 'mapa', eco(1, 28))

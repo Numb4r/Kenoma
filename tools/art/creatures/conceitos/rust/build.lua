@@ -375,167 +375,145 @@ local function espirito(k, S, off)
   return g
 end
 
--- ENTIDADE MAIOR: a catraca. Três élitros de grade em cata-vento em volta de um cubo de chapa; no lugar do rosto,
--- um buraco de fechadura aceso com sete olhos de parafuso em volta; oito patas finas que não tocam o chão.
--- Ela pende de um cadeado fechado em nada.
+-- RODADA 2. A luz das peças refeitas é a do tipo Metal em tools/art/ui/types/palette.lua (l, m, d), no lugar do azul-aço.
+local R = dofile(KENOMA_ART .. 'creatures/conceitos/_r2.lua')(C)
+LEG.L, LEG.M, LEG.D = '#CCD6E2', '#93A1B3', '#566274'        -- Metal: claro, principal, escuro
+LEG.l, LEG.j, LEG.d = '#2C2D36', '#272830', '#22232B'        -- os pares apagados
+LEG.Z, LEG.v = '#9B7BFF', '#4A4658'                          -- costura do Véu e o par apagado
+LIT.L = 'l'; LIT.M = 'j'; LIT.D = 'd'; LIT.Z = 'v'; SOLID = SOLID .. 'LMDljdZv'
+local function diamond(t, x, y, w, h, fn) t:poly({ { x - w, y }, { x, y - h * 0.62 }, { x + w, y }, { x, y + h * 0.38 } }, fn) end
+
+-- ENTIDADE MAIOR: o portão inteiro. As duas folhas de grade são os élitros, abertos de frente; no meio, onde elas se
+-- encontram, a chapa da fechadura é o que sobrou do besouro: o buraco da fechadura aceso é o rosto, com três parafusos
+-- de olho, e o chifre é a lança do meio. Seis patas de ferrugem saem dos montantes. A corrente do cadeado fica de pé:
+-- o cadeado cai para cima.
 local function entidade(k, S, off)
-  local g = L.grid(S, S)
-  local cx, cy = 23.5, 25
-  local bw = k > 1 and 0.45 or 0.5
-  local A0 = { -pi / 6, pi / 2, 7 * pi / 6 }
-  local thin, chain = {}, { { 23.5, 9.4, 23.5, 20, 0.62, 0.62, '5', '2', 9 } }
-  for n, ox in ipairs({ -5, -3.6, -2.2, -0.8, 0.8, 2.2, 3.6, 5 }) do
-    local j = rnd(n, 4, 6)
-    leg(thin, { { cx + ox, cy + 4 }, { cx + ox * 2.5, cy + 8.5 + j * 3 }, { cx + ox * 2.1 + 1, cy + 14 + j * 4 }, { cx + ox * 2.3, cy + 16.4 + j * 4 } },
-      0.56, 'e', 'E', 3)
+  local d = R.ctx(S, k)
+  local p = d:pp()
+  local cx = 23.5
+  d:layer(function(t)
+    t:poly({ { 5.5, 15 }, { 21, 11.5 }, { 21, 35 }, { 5.5, 33 } }, function(x, y, u, v)
+      local top, bot = 15 - (u - 5.5) * 0.226, 33 + (u - 5.5) * 0.129
+      local sh = (v - 23) / 13
+      if v < top + 1.3 or v > bot - 1.3 or u < 6.9 or u > 19.9 then return iron(0, 1, x, y, sh, k) end
+      if abs(v - 24 + (u - 5.5) * 0.05) < 0.7 then return iron(0, 1, x, y, sh + 0.4, k) end
+      local f = (u - 6.9) % 3.2
+      if f > 1.9 then return iron(f - 2.55, 0.65, x, y, sh, k) end
+      local near = (u - 5.5) / 15.5 - abs(v - 23) / 40                              -- a luz por trás do vão, mais forte perto da chapa
+      return near > 0.62 and 'L' or (near > 0.36 and 'M' or (near > 0.12 and 'D' or 'z'))
+    end)
+    for i = 0, 3 do                                                                 -- pontas de lança
+      local bx = 9.45 + i * 3.2
+      local top = 15 - (bx - 5.5) * 0.226
+      t:wire({ { bx, top }, { bx, top - 2 } }, '3', '4', 0.5)
+      diamond(t, bx, top - 3, 1.1, 3.4, R.mat('234', R.ver(p), 0.5))
+    end
+    t:mirror(cx)
+  end, SOLID)
+  d:layer(function(t)                                                              -- a chapa da fechadura: o besouro
+    t:wire({ { cx, 15 }, { cx, 9 } }, '3', '4', 1.3)
+    diamond(t, cx, 8.4, 2.2, 7, function(x, y, u, v) return iron(u - cx, 2, x, y, (v - 6) / 6, k, IRONP) end)
+    for _, s in ipairs({ -1, 1 }) do t:cap(cx + s * 2.6, 16, cx + s * 4.4, 12.6, 0.8, 0.3, R.mat('qRr', R.hor(p), 0.5)) end
+    t:ell(cx, 23, 4.3, 7.6, function(x, y, u, v) return plate(x, y, (u - cx) / 9 + (v - 23) / 10, k) end)
+    t:ell(cx, 22.4, 1.25, 1.25, 'L'); t:rect(cx - 0.5, 22.4, cx + 0.5, 26, 'L')
+    if k > 1 then t:ell(cx, 22.4, 0.55, 0.55, 'M'); t:rect(cx, 23, cx, 25.4, 'M') end
+    for _, e in ipairs({ { -2.3, 18.6, 0.6 }, { 2.3, 18.6, 2.2 }, { 0, 28.2, 1.2 } }) do
+      t:ell(cx + e[1], e[2], 0.95, 0.95, function(x, y, u, v) return screw(u, v, cx + e[1], e[2], 1.1, k, e[3]) or '4' end)
+    end
+    t:suture({ { cx, 30.8 }, { cx, 35 } }, 'Z', 1.4, nil)
+  end, SOLID)
+  -- a corrente de pé e o cadeado no alto
+  d:layer(function(t)
+    t:wire({ { 42, 14.6 }, { 42, 8.4 } }, '4', '2', 0.6)
+    t:wire({ { 40.8, 8.4 }, { 40.8, 7 }, { 43.2, 7 }, { 43.2, 8.4 } }, '5', '3', 0.5)
+    t:rect(40, 3.4, 44, 6.6, R.mat('bB', R.chk(p), 0.3))
+    t:rect(41.8, 4.4, 42.2, 5.4, 'o')
+  end, SOLID)
+  local legs = {}
+  for _, s in ipairs({ -1, 1 }) do
+    leg(legs, { { cx + s * 17.4, 29 }, { cx + s * 21.4, 33 }, { cx + s * 19.4, 41 }, { cx + s * 21, 45 } }, 0.55, 'e', 'E', 4)
+    leg(legs, { { cx + s * 11.6, 35 }, { cx + s * 13.4, 39 }, { cx + s * 11.4, 43.6 }, { cx + s * 12.8, 45.6 } }, 0.55, 'e', 'E', 4)
+    leg(legs, { { cx + s * 4.6, 35.4 }, { cx + s * 5.6, 39.6 }, { cx + s * 3.6, 43.6 }, { cx + s * 4.8, 45.6 } }, 0.55, 'e', 'E', 4)
   end
-  local eyes = { { -2.6, -2.2, 0.4 }, { 2.4, -2.6, 1.2 }, { -3.2, 0.9, 2 }, { 3.3, 0.6, 0.2 }, { -1.6, 3.1, 1.5 }, { 1.9, 3, 2.6 }, { 0.2, -3.6, 0.9 } }
-  paint(g, k, off, function(u, v, x, y)
-    local dx, dy = u - cx, v - cy
-    local r, th = sqrt(dx * dx + dy * dy), math.atan(dy, dx)
-    local sh = (dx * 0.4 + dy * 0.85) / 18
-    if r < 5.6 then
-      if dx * dx + (dy + 0.6) ^ 2 < 1.1 or (abs(dx) < 0.62 and dy > -0.6 and dy < 1.9) then return (r < 0.9) and 'I' or 'H' end
-      for n, e in ipairs(eyes) do
-        local c = screw(u, v, cx + e[1], cy + e[2], k > 1 and 0.9 or 0.8, k, e[3])
-        if c then return c end
-      end
-      if r > 4.7 then return iron(r - 5.15, 0.45, x, y, sh, k, IRONP) end
-      return plate(x, y, sh * 2.4, k)
-    end
-    for i = 1, 3 do
-      local rr = (r - 5) / 13
-      if rr >= 0 and rr <= 1 then
-        local d = angdiff(th, A0[i] + 0.55 * rr) * r
-        local w = 1.0 + 6.2 * sin(pi * rr ^ 0.8) ^ 0.7
-        if abs(d) < w then
-          if w - abs(d) < 2 * bw then return iron((w - abs(d)) - bw, bw, x, y, sh, k) end
-          local dd = ((d + 1.5) % 3) - 1.5
-          if abs(dd) < bw then return iron(dd, bw, x, y, sh, k) end
-          for _, cr in ipairs({ 9.3, 13.4 }) do
-            if abs(r - cr - d * 0.15) < bw then return iron(r - cr - d * 0.15, bw, x, y, sh, k) end
-          end
-          if r < 13 then return r < 6.6 and 'I' or (r < 9.6 and 'H' or 'K') end
-          return 'z'
-        end
-      end
-      -- lanças na ponta de cada folha
-      for n = -1, 1 do
-        local a = A0[i] + 0.55 * (1 - abs(n) * 0.3) + n * 0.26
-        local px, py = pol(cx, cy, 17.6 - abs(n) * 3.2, a)
-        local c = spear(u, v, px, py, cos(a), sin(a), 1.2, 0.5, '4', '2', 'q')
-        if c then return c end
-      end
-    end
-    -- cadeado no alto, fechado em nada
-    if u > 20.8 and u < 26.2 and v > 5.4 and v < 9.8 then
-      if (u - 23.5) ^ 2 + (v - 7.1) ^ 2 < 0.5 or (abs(u - 23.5) < 0.35 and v > 7.1 and v < 8.7) then return 'I' end
-      return (u > 25.2 or v > 8.9) and 'b' or 'B'
-    end
-    local dd = sqrt((u - 23.5) ^ 2 + (v - 5.4) ^ 2)
-    if v <= 5.4 and dd < 2.3 and dd > 1.3 then return u < 23.5 and '5' or '3' end
-    return caps(u, v, chain)
-  end)
-  prune(g)
-  L.outline(g, 'A', SOLID)
-  behind(g, k, off, thin)
-  dust(g, k, off, { { 9, 40 }, { 12.4, 43.4, 's' }, { 36, 41 }, { 39.4, 37.6, 's' }, { 30.6, 44.6 }, { 16.6, 45 }, { 5, 34 }, { 42.6, 31 },
-    { 17, 3.4 }, { 30, 4.4, 's' }, { 19.4, 12.4 }, { 27.6, 13 } })
-  return g
+  behind(d.g, k, 0, legs)
+  dust(d.g, k, 0, { { 38.6, 9 }, { 45.4, 11, 's' }, { 39, 2.4 }, { 45, 4.6, 's' }, { 3, 9 }, { 12, 4, 's' }, { 30, 3 }, { 2.6, 24 }, { 45, 22, 's' }, { 16, 40 }, { 31.6, 41, 's' } })
+  return d.g
 end
 
--- ARQUÉTIPO: a jaula. Uma gaiola de barras cinzentas vista pelo canto, em que as três barras da frente e as três de
--- trás trocam de lugar sem dobrar; as barras finas se abrem em volta de um vão onde a luz fria faz esquina. Do besouro
--- sobram três chifres de lança e três feixes de patas.
-local function arquetipo(k, S, off)
-  local g = L.grid(S, S)
-  local cx, cy, R = 31.5, 32, 16.5
-  local V = {}
-  for i = 0, 5 do local x, y = pol(cx, cy, R, -pi / 2 + i * pi / 3); V[i] = { x, y } end
-  local F, B = { cx - 5, cy - 4.5 }, { cx + 5, cy + 4.5 }
-  local bars = {}
-  for i = 0, 5 do bars[#bars + 1] = { V[i], V[(i + 1) % 6], i } end
-  bars[#bars + 1] = { F, V[3], 7 }
-  bars[#bars + 1] = { B, V[0], 8 }; bars[#bars + 1] = { B, V[2], 9 }; bars[#bars + 1] = { B, V[4], 10 }
-  bars[#bars + 1] = { F, V[1], 11 }; bars[#bars + 1] = { F, V[5], 12 }
-  local hw = 1.35
-  local thin = {}
-  for i = 0, 2 do
-    local a0 = -pi / 2 + (2 * i + 1) * pi / 3
-    for n = -2, 2 do
-      local a = a0 + n * 0.42
-      local j = rnd(i * 5 + n, 3, 7)
-      local x0, y0 = pol(cx, cy, R - 0.5, a0 + n * 0.05)
-      local x1, y1 = pol(cx, cy, R + 4 + j, a - 0.1)
-      local x2, y2 = pol(cx, cy, R + 7.4 + j * 2, a + 0.16)
-      local x3, y3 = pol(cx, cy, R + 10 + j * 2.4, a + 0.05)
-      leg(thin, { { x0, y0 }, { x1, y1 }, { x2, y2 }, { x3, y3 } }, 0.56, 'm', 'n', 3)
+-- ARQUÉTIPO: o besouro de frente com os élitros abertos como as duas folhas de um portão, igual demais dos dois lados.
+-- Entre as folhas não há corpo: o vão, em arco de portão, e dentro dele outro portão aberto, e outro, cada um menor.
+-- Do besouro sobram três chifres de lança e seis patas finas de aço que não chegam ao chão. A luz acende por trás das
+-- barras sem haver nada atrás delas.
+local function arquetipo(k, S, ox, oy)
+  local d = R.ctx(S, k, ox, oy)
+  local p = d:pp()
+  local cx, HX = 31.5, 25
+  d:layer(function(t)
+    t:ell(HX, 35, 19, 19.5, function(x, y, u, v)                                     -- a folha: um élitro em D
+      if u > HX then return nil end
+      local e = ((u - HX) / 19) ^ 2 + ((v - 35) / 19.5) ^ 2
+      local sh = (v - 35) / 19
+      if e > 0.8 or u > HX - 1.6 then return iron(0, 1, x, y, sh, k, ASH) end
+      if abs(v - 27) < 0.75 or abs(v - 43) < 0.75 then return iron(0, 1, x, y, sh + 0.4, k, ASH) end
+      local f = (HX - 1.6 - u) % 3.3
+      if f > 2 then return iron(f - 2.65, 0.65, x, y, sh, k, ASH) end
+      local near = 1 - (HX - u) / 17 - abs(v - 35) / 50
+      return near > 0.84 and 'L' or (near > 0.66 and 'M' or (near > 0.5 and 'D' or 'z'))
+    end)
+    for i = 0, 3 do                                                                 -- lanças na borda de cima da folha
+      local bx = HX - 4.25 - i * 3.3
+      local top = 35 - 19.5 * sqrt(1 - ((bx - HX) / 19) ^ 2)
+      t:wire({ { bx, top + 1 }, { bx, top - 1.6 } }, '8', '7', 0.5)
+      diamond(t, bx, top - 2.6, 1.1, 3.2, R.mat('987', R.ver(p), 0.5))
+    end
+    -- os três chifres
+    t:wire({ { cx - 0.4, 17 }, { cx - 0.4, 9 } }, '8', '7', 1.2)
+    diamond(t, cx, 7.4, 2.4, 8.4, function(x, y, u, v) return iron(u - cx, 2.2, x, y, (v - 6) / 6, k, ASH) end)
+    t:wire({ { cx - 3.4, 17 }, { cx - 6, 11.6 } }, '8', '7', 0.8)
+    diamond(t, cx - 6.4, 10.4, 1.3, 4.6, R.mat('987', R.ver(p), 0.5))
+    t:rect(HX, 15.6, cx, 17.6, function(x, y, u, v) return iron(v - 16.6, 1, x, y, 0, k, ASH) end)   -- a verga
+    t:mirror(cx)
+  end, SOLID)
+  local function arch(u, v, s, cy)
+    local w, top, bot = 6.2 * s, cy - 15 * s, cy + 17 * s
+    local a = abs(u - cx)
+    if v > bot or a > w then return nil end
+    if v >= top + w then return max(a / w, 1 - (bot - v) / (1.6 * s) * 0.3) end
+    local r = sqrt(a * a + (v - top - w) ^ 2) / w
+    return r <= 1 and r or nil
+  end
+  d:vao(function(u, v) return arch(u, v, 1, 34) end, 'X', 'x', 0.82)
+  for lv, s in ipairs({ 0.66, 0.4, 0.2 }) do                                         -- portão dentro de portão
+    local cy = 34 - lv * 1.2
+    local w, top, bot = 6.2 * s, cy - 15 * s, cy + 17 * s
+    local ch = lv == 1 and 'X' or (lv == 2 and 'S' or 's')
+    local pts = { { cx - w, bot } }
+    for a = 180, 360, 30 do pts[#pts + 1] = { cx + cos(math.rad(a)) * w, top + w + sin(math.rad(a)) * w } end
+    pts[#pts + 1] = { cx + w, bot }
+    d:wire(pts, ch, nil, 0.5, '.x')
+    for _, sg in ipairs({ -1, 1 }) do                                               -- as folhas dele, abertas
+      d:wire({ { cx + sg * w, top + w }, { cx + sg * w * 0.45, top + w + 2 * s }, { cx + sg * w * 0.45, bot - 2 * s }, { cx + sg * w, bot } }, ch, nil, 0.5, '.x')
     end
   end
-  paint(g, k, off, function(u, v, x, y)
-    local dx, dy = u - cx, v - cy
-    local r = sqrt(dx * dx + dy * dy)
-    local sh = (dx * 0.4 + dy * 0.85) / 20
-    if r > 5.6 then
-      for n = #bars, 1, -1 do
-        local b = bars[n]
-        local ex, ey = b[2][1] - b[1][1], b[2][2] - b[1][2]
-        local len = sqrt(ex * ex + ey * ey)
-        local t = ((u - b[1][1]) * ex + (v - b[1][2]) * ey) / (len * len)
-        if t > -0.03 and t < 1.03 then
-          local d = ((u - b[1][1]) * ey - (v - b[1][2]) * ex) / len + 0.45 * sin(t * 8 + b[3] * 1.7)
-          if abs(d) < hw then
-            if (t * len + 1) % 4.4 < 1 and abs(d) < 0.55 then return 'I' end
-            return iron(d, hw, x, y, sh + (n > 6 and n < 11 and 0.3 or 0), k, ASH)
-          end
-        end
-      end
-    end
-    for i = 0, 2 do
-      local a = -pi / 2 + 2 * i * pi / 3
-      local c = spear(u, v, V[2 * i][1], V[2 * i][2], cos(a), sin(a), 5.4, 0.72, '6', '8', '7')
-      if c then return c end
-    end
-    if inpoly(u, v, V) and r > 5.6 then
-      -- barras finas de portão, abertas em volta do vão
-      local push = 3.2 * math.exp(-((r - 5.6) / 3.4) ^ 2) * (dx < 0 and -1 or 1)
-      local d = ((u - push + 1.5) % 3) - 1.5
-      if abs(d) < 0.5 then return iron(d, 0.5, x, y, sh, k, ASH) end
-      if r < 8 then return 'H' elseif r < 10.6 then return 'K' end
-      return
-    end
-  end)
-  prune(g)
-  L.outline(g, 'A', SOLID)
-  behind(g, k, off, thin)
-  -- o vão: a borda do Véu e a luz que faz esquina
-  for y = 0, g.h - 1 do
-    for x = 0, g.w - 1 do
-      if g[y][x] == '.' then
-        local u, v = (x + 0.5 - off) / k, (y + 0.5 - off) / k
-        local r = sqrt((u - cx) ^ 2 + (v - cy) ^ 2)
-        if r < 5.6 and r > 4.5 then g[y][x] = (floor(math.atan(v - cy, u - cx) * 5) % 3 == 0) and 'x' or 'X' end
-      end
-    end
+  local legs = {}
+  for _, s in ipairs({ -1, 1 }) do
+    leg(legs, { { cx + s * 9, 50 }, { cx + s * 13, 53.6 }, { cx + s * 11.6, 58.4 }, { cx + s * 13, 61 } }, 0.55, 'm', 'n', 4)
+    leg(legs, { { cx + s * 16, 50 }, { cx + s * 21, 52.6 }, { cx + s * 20, 57.6 }, { cx + s * 22, 60 } }, 0.55, 'm', 'n', 4)
+    leg(legs, { { cx + s * 22, 44 }, { cx + s * 27.4, 46 }, { cx + s * 27, 52 }, { cx + s * 29, 55 } }, 0.55, 'm', 'n', 4)
   end
-  local px, py, dir = cx, cy, 0
-  for n = 1, 9 do                                              -- espiral quadrada: a luz anda reta e dobra em esquadro
-    local len = 0.6 + n * 0.75
-    local ddx, ddy = ({ 1, 0, -1, 0 })[dir + 1], ({ 0, 1, 0, -1 })[dir + 1]
-    for st = 0, floor(len * k) do
-      local qx, qy = px + ddx * st / k, py + ddy * st / k
-      if (qx - cx) ^ 2 + (qy - cy) ^ 2 < 4.3 ^ 2 then
-        L.set(g, floor(qx * k + off), floor(qy * k + off), st == 0 and 's' or 'S', '.')
-      end
-    end
-    px, py, dir = px + ddx * len, py + ddy * len, (dir + 1) % 4
+  behind(d.g, k, d.ox, legs)
+  local dl = {}
+  for n = 0, 19 do
+    local a = n * 2.4
+    dl[#dl + 1] = { cx + cos(a) * (23 + (n * 7) % 8), 33 + sin(a) * (24 + (n * 5) % 7), n % 3 == 0 and 's' or 'S' }
   end
-  dust(g, k, off, { { 8, 9 }, { 54, 10, 's' }, { 5, 40 }, { 58, 44 }, { 20, 59, 's' }, { 43, 60 }, { 31, 3 }, { 12, 52 }, { 50, 54, 's' } })
-  return g
+  dust(d.g, k, d.ox, dl)
+  return d.g
 end
 
 local RES = {}
 local function out(stage, kind, g)
+  if R.skip(stage) then return end
   local edge = ''
   for i = 0, g.w - 1 do
     for _, p in ipairs({ { i, 0 }, { i, 1 }, { i, g.h - 1 }, { 0, i }, { g.w - 1, i } }) do
@@ -555,6 +533,6 @@ out('espirito', 'retrato', espirito(2.55, 96, 2.1))
 out('entidade', 'mapa', entidade(1, 48, 0))
 out('entidade', 'retrato', entidade(2, 96, 0))
 out('arquetipo', 'mapa', arquetipo(1, 64, 0))
-out('arquetipo', 'retrato', arquetipo(2, 128, 0))
+out('arquetipo', 'retrato', arquetipo(3, 128, -31, -31))                           -- busto: os chifres, o arco do vão e o alto das folhas
 print('RESUMO ' .. table.concat(RES, ' | '))
 print('ok rust')

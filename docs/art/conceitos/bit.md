@@ -30,3 +30,10 @@
 | Arquétipo | 1752 / 6345 | 17 / 17 | 0,94 / 0,84 | 0,22 / 0,12 | 0,19 / 0,22 |
 
 O Eco do mapa é desenhado pixel a pixel. O glitch (`tear`) só passa por partes largas do corpo, para nenhuma peça se soltar. Pés e pernas da Entidade e do Arquétipo ficam sem contorno (contorno seletivo).
+
+## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Entidade Maior | Pombo cujo peito é o painel de LED; o pescoço sobe, dá a volta e entra no painel como cabo, sem cabeça; o rosto está na tela, um olho só. Uma costura larga onde o pescoço entra. Verde do Digital da paleta. | os blocos da cauda ficam parados no ar em grade |
+| Arquétipo | Pombo de perfil fora de registro: corpo em fatias deslocadas, cabeça em três lugares (ave, varredura, matriz), pernas e caudas a mais; no peito, o vão é um recorte aberto para a frente com o mesmo pombo dentro. | física: as fatias ficam fora do lugar sem nada que as segure; geometria: o pombo inteiro dentro do próprio peito |

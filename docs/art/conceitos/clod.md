@@ -18,3 +18,10 @@
 - **Entidade Maior (peso):** doze metros de entulho se equilibram na ponta de uma garra só, e a poeira dela sobe em vez de cair.
 - **Arquétipo (geometria):** a ponta de fora da espiral passa por baixo do próprio começo, e dentro do vão está a mesma espiral outra vez, e outra dentro dela: o dentro é maior que o fora e não tem fundo.
 - **Arquétipo (regra física):** não tem chão nem peso próprio; o cascalho em volta cai para dentro dela de todos os lados.
+
+## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
+
+| Etapa | O que é | Regra quebrada |
+|---|---|---|
+| Entidade Maior | Tatu pequeno, seis patas, cintas acesas; a carapaça vira um monte de entulho que alarga para cima (cascalho, entulho, guia, parede), com um segundo rosto virado no alto. Uma costura larga entre o tatu e o monte. | o monte é mais largo em cima e não cai; o cascalho rola morro acima |
+| Arquétipo | Tatu de perfil partido no meio: dois escudos de osso, no lugar das cintas o vão em ampulheta com as cintas repetidas menores; cabeça pequena demais e sem rosto, garras grandes demais. | física: as metades andam sem estar ligadas, e o cascalho cai de lado para dentro do vão; geometria: as cintas não chegam ao fundo |

@@ -385,82 +385,71 @@ local function espirito(k)
   return g
 end
 
--- ENTIDADE MAIOR: a toca e o velário. Três asas em cata-vento em volta do disco da cara, que está de ponta-cabeça;
--- das órbitas as chamas queimam para baixo; três pernas apoiadas num monte de cera derretida com a toca no meio, e a
--- cera pinga para cima.
+-- RODADA 2
+local R = dofile(KENOMA_ART .. 'creatures/conceitos/_r2.lua')(C)
+LEG.Z, LEG.v = '#9B7BFF', '#6F6A7E'                          -- costura do Véu e o par apagado
+LIT.Z = 'v'; SOLID = SOLID .. 'Zv'
+
+-- ENTIDADE MAIOR: o velário de pé. O tronco é um feixe de velas derretidas umas nas outras, com as asas fechadas como
+-- manto; em cima, a cara da coruja está de ponta-cabeça (bico para o alto, sobrancelha embaixo) e sem olhos: as órbitas
+-- são ocas e delas descem as chamas. Três pernas compridas de coruja, em tripé, saem da toca, num monte de cera e névoa.
+-- A chama queima para baixo e a cera pinga para cima.
 local function entidade(k)
-  local S = 48 * k
-  local g = L.grid(S, S)
-  local p = PP(k)
-  local U, pts = scale(k)
-  local ck = chk(p)
-  local cx, cy = 23.5, 20
-  -- monte de cera, a toca e a cera que sobe
-  layer(g, function(t)
-    mist(t, U(8.4), U(43.6), 5 * k, 1.9 * k, 6, p); mist(t, U(38.6), U(43.6), 5 * k, 1.9 * k, 7, p)
-    polyf(t, pts({ { 9.4, 45 }, { 10.6, 41.6 }, { 14, 39.6 }, { 18, 38.2 }, { 23.5, 37.6 }, { 29, 38.2 }, { 33, 39.6 }, { 36.4, 41.6 }, { 37.6, 45 } }), function(x, y)
-      return pick('123', 0.95 - (y - U(37.6)) / (7.4 * k) * 0.9 - (x - U(23.5)) / (14 * k) * 0.2, floor(x / p) % 2 == 0)
-    end)
-    for _, q in ipairs({ { 13.4, 39.6, 33.4 }, { 18.4, 38.2, 30 }, { 28.8, 38.2, 31.2 }, { 33.6, 39.6, 34.6 } }) do
-      cap(t, U(q[1]), U(q[2]), U(q[1]), U(q[3] + 1), 1.5 * k, 0.8 * k, wax(p, U(q[1] - 1.5), 3 * k))
-      ell(t, U(q[1]), U(q[3]), 1.2 * k, 1.3 * k, '3')
-      flame(t, U(q[1]), U(q[3] + 0.6), 90, 3 * k, 1.5 * k)
+  local d = R.ctx(48 * k, k)
+  local p = d:pp()
+  local cx = 23.5
+  local function fl(u, v, ang, len, w, loose) flame(d.g, d:X(u), d:Y(v), ang, len * k, w * k, loose) end
+  -- névoa e o monte de cera com a toca
+  d:layer(function(t)
+    t:poly({ { 12, 44.6 }, { 15, 40.6 }, { 21, 39.4 }, { 28, 39.6 }, { 33, 41 }, { 35.6, 44.6 } }, R.mat('123', R.ver(p), function(u, v) return 0.9 - (u - 12) / 26 end))
+    t:ell(cx + 0.4, 42.6, 3.4, 1.7, 'k')
+  end, SOLID)
+  -- as três pernas
+  local FLAMES = {}
+  d:layer(function(t)
+    for _, q in ipairs({ { -1, 14.6, 35, 12.4, 41.4 }, { 0, 24.6, 36, 23.6, 41.6 }, { 1, 33, 35, 35, 41.6 } }) do
+      t:wire({ { cx + q[1] * 1.6, 29 }, { q[2], q[3] }, { q[4], q[5] } }, 'f', 'l', 1)
+      for _, dx in ipairs({ -1.6, 0, 1.6 }) do t:wire({ { q[4], q[5] }, { q[4] + dx, q[5] + 1.8 } }, 'l', nil, 0.5) end
     end
-    ell(t, U(23.5), U(42), 4.4 * k, 2.3 * k, 'k')
-    flame(t, U(21.4), U(41.2), 90, 1.9 * k, 1.2 * k); flame(t, U(23.6), U(41.6), 90, 1.9 * k, 1.2 * k); flame(t, U(25.7), U(41.2), 90, 1.9 * k, 1.2 * k)
-  end, SOLID:gsub('[mnop]', ''))
-  -- três pernas
-  layer(g, function(t)
-    for _, q in ipairs({ { -2, 16.4, 37.6 }, { 0, 23.5, 36.8 }, { 2, 30.6, 37.6 } }) do
-      local mx, my = (cx + q[1] + q[2]) / 2 + q[1] * 0.8, 31.6
-      cap(t, U(cx + q[1]), U(25), U(mx), U(my), 1.2 * k, 0.8 * k, function(x, y) return pick('lf', 0, ck(x, y)) end)
-      cap(t, U(mx), U(my), U(q[2]), U(q[3]), 0.8 * k, 0.7 * k, function(x, y) return pick('lf', 0, ck(x, y)) end)
-      for _, d in ipairs({ { -1.6, 0.7 }, { 0, 1.1 }, { 1.6, 0.7 } }) do
-        wire(t, { { U(q[2]), U(q[3]) }, { U(q[2] + d[1]), U(q[3] + d[2]) } }, 'l', nil, TH(k, 0.5))
+  end, (SOLID:gsub('[fl]', '')))
+  -- o tronco de cera e as asas abertas: duas prateleiras de velas
+  d:layer(function(t)
+    t:cap(cx, 18, cx, 29.4, 3.6, 2.4, R.mat('123', R.ver(p), function(u, v) return 0.85 - (u - (cx - 3.6)) / 7.2 end))
+    for _, s in ipairs({ -1, 1 }) do
+      t:poly({ { cx + s * 2.6, 17.4 }, { cx + s * 21.4, 14.2 }, { cx + s * 22, 16.6 }, { cx + s * 18.4, 20.6 }, { cx + s * 14.6, 19.4 }, { cx + s * 11, 22.6 },
+        { cx + s * 7.4, 21 }, { cx + s * 3.6, 25 } }, function(x, y, u, v)
+        return feather('abcd', p, 7, 0.1)(x, y, 0.85 - (v - 14) / 10 - (s > 0 and 0.15 or 0))
+      end)
+      for i = 1, 4 do                                                               -- tocos de vela em cima da asa
+        local x = cx + s * (4.4 + i * 3.7)
+        local top = 17.4 - (abs(x - cx) - 2.6) * 0.17
+        t:rect(x - 0.9, top - 3.6 + (i % 2), x + 0.9, top, R.mat('123', R.ver(p), s > 0 and 0.3 or 0.7))
+        t:wire({ { x, top - 4.2 + (i % 2) }, { x, top - 3.8 + (i % 2) } }, 'k', nil, 0.5)
+        FLAMES[#FLAMES + 1] = { x, top + 2 }
       end
     end
-    ell(t, U(cx), U(26), 4 * k, 2.6 * k, function(x, y) return pick('bcd', 0.6, ck(x, y)) end)
-  end)
-  -- asas
-  for _, ang in ipairs({ -90, 30, 150 }) do
-    layer(g, function(t)
-      local a = rad(ang)
-      blade(t, U(cx + cos(a) * 3), U(cy + sin(a) * 3), ang, 14 * k, 10.5 * k, 1, function(x, y, u, v)
-        if v < 0.3 then
-          if hash(x // p, y // p, 5) < 0.2 then return 'e' end
-          return pick('bcd', 0.8, ck(x, y))
-        end
-        if u > 0.9 then return pick('ab', 0, ck(x, y)) end
-        local band = floor(u * 14 / 1.5) % 2 == 0
-        return band and pick('ab', 0.2, ck(x, y)) or pick('cde', v < 0.7 and 0.3 or 0.8, ck(x, y))
-      end, 2.2 * k)
-      for _, r2 in ipairs({ 7, 11.4 }) do
-        local ex, ey = U(cx + cos(a) * r2 - sin(a) * 2.6), U(cy + sin(a) * r2 + cos(a) * 2.6)
-        ell(t, ex, ey, 1 * k, 1 * k, 'a')
-        flame(t, ex, ey + 0.2 * k, 90, 4.2 * k, 2 * k)
-      end
-    end)
+    t:suture({ { cx - 7, 16.6 }, { cx - 5.4, 22.4 } }, 'Z', 1.5, nil)               -- a costura: a raiz da asa
+  end, SOLID)
+  -- a cara, de ponta-cabeça
+  d:layer(function(t)
+    t:ell(cx, 12, 6.2, 5.2, function(x, y, u, v) return feather('abcd', p, 3, 0.14)(x, y, 0.5 + (v - 12) / 12) end)
+    t:wire({ { cx - 5, 13.6 }, { cx - 1.6, 15.6 }, { cx, 14.6 }, { cx + 1.6, 15.6 }, { cx + 5, 13.6 } }, 'e', nil, 0.6)   -- a sobrancelha, embaixo
+    t:poly({ { cx - 1.1, 10.6 }, { cx, 7.4 }, { cx + 1.1, 10.6 } }, R.mat('fl', R.ver(p), 0))                              -- o bico, para o alto
+    t:ell(cx - 3, 12.4, 1.5, 1.4, 'k'); t:ell(cx + 3, 12.4, 1.5, 1.4, 'k')
+  end, SOLID)
+  -- a cera pinga para cima
+  for _, q in ipairs({ { cx - 4, 7.6, 3.4 }, { cx + 2.6, 7, 4.2 }, { cx - 15.6, 11, 6.4 }, { cx + 12, 11.6, 5.6 }, { cx - 19.4, 10.6, 7.6 }, { cx + 19.4, 10.6, 8.4 },
+    { 15, 40.6, 36.4 }, { 33, 41, 37.4 } }) do
+    d:wire({ { q[1], q[2] + 1.6 }, { q[1], q[3] } }, '2', '1', 0.5)
   end
-  -- o disco da cara, de ponta-cabeça
-  layer(g, function(t)
-    ell(t, U(cx), U(cy), 5.8 * k, 5.6 * k, function(x, y)
-      local an = math.atan(y - U(cy), x - U(cx))
-      return pick('bcd', 0.3 + 0.5 * lum(x, y, U(cx), U(cy), 5.8 * k, 5.6 * k), floor(an / (math.pi / 14)) % 2 == 0)
-    end)
-    ell(t, U(cx), U(cy), 4.3 * k, 4.1 * k, function(x, y) return pick('cde', lum(x, y, U(cx), U(cy), 4.3 * k, 4.1 * k) + 0.2, ck(x, y)) end)
-    -- sobrancelhas embaixo, bico para cima
-    wire(t, { { U(cx - 3.8), U(cy + 1.6) }, { U(cx - 2), U(cy + 3) }, { U(cx - 0.4), U(cy + 1.6) } }, 'e', nil, TH(k, 0.6))
-    wire(t, { { U(cx + 0.4), U(cy + 1.6) }, { U(cx + 2), U(cy + 3) }, { U(cx + 3.8), U(cy + 1.6) } }, 'e', nil, TH(k, 0.6))
-    polyf(t, pts({ { cx - 0.8, cy + 0.2 }, { cx + 0.8, cy + 0.2 }, { cx, cy - 2.6 } }), function(x, y) return x < U(cx) and 'l' or 'f' end)
-    ell(t, U(cx - 2.1), U(cy + 0.6), 1.3 * k, 1.2 * k, 'a'); ell(t, U(cx + 2.1), U(cy + 0.6), 1.3 * k, 1.2 * k, 'a')
-    flame(t, U(cx - 2.1), U(cy + 0.4), 92, 8 * k, 2.8 * k); flame(t, U(cx + 2.1), U(cy + 0.4), 88, 7 * k, 2.8 * k)
-  end)
-  -- gotas de cera soltas no ar não existem no corpo: viram brilho frio em volta
-  for _, q in ipairs({ { 13.4, 30.6 }, { 18.4, 27 }, { 28.8, 28.2 }, { 33.6, 31.6 }, { 5, 20 }, { 42, 22 }, { 8, 8 }, { 39, 7 }, { 4, 34 }, { 43, 35 },
-    { 10, 14 }, { 37, 15 }, { 6, 28 }, { 41, 29 }, { 15, 5 }, { 32, 4 }, { 3, 40 }, { 44, 40 } }) do
-    dot(g, U(q[1]), U(q[2]), k, q[1] % 2 == 0 and 'M' or 'N')
+  -- as chamas descem: das órbitas, por baixo das asas (a vela queima através dela), e três dentro da toca
+  fl(cx - 3, 12.6, 90, 10, 3); fl(cx + 3, 12.6, 90, 13, 3)
+  for n2, q in ipairs(FLAMES) do fl(q[1], q[2], 90, 5.6 + (n2 % 2) * 1.4, 1.8) end
+  for _, dx in ipairs({ -1.8, 0.2, 2 }) do fl(cx + dx, 42, 90, 2.6, 1.4) end
+  for _, e in ipairs({ { 6, 30 }, { 4, 36 }, { 41, 28 }, { 43.6, 35 }, { 9, 12 }, { 39, 9 }, { 12.6, 4 }, { 33, 4.6 }, { 6.6, 22 }, { 42, 19 } }) do
+    d:dot(e[1], e[2], (e[1] * 10) % 3 < 1 and 'N' or 'M')
   end
-  return g
+  return d.g
 end
 
 -- ARQUÉTIPO: a procissão. Três mantos vazios em roda, cada um entrando pelo capuz do seguinte (um pano só, sem lado
@@ -576,7 +565,7 @@ do -- as medidas saem numa linha só por sprite
   local raw = print
   print = function(sx) if tostring(sx):find('opacos') then raw((tostring(sx):gsub('^%s+', ''))) end end
 end
-local function out(stage, kind, g) C.save('wisp', stage, kind, g, LEG, LIT, LOOSE) end
+local function out(stage, kind, g) if not R.skip(stage) then C.save('wisp', stage, kind, g, LEG, LIT, LOOSE) end end
 out('fagulha', 'mapa', fagulhaMapa())
 out('fagulha', 'retrato', fagulhaRetrato())
 out('eco', 'mapa', ecoMapa())

@@ -5,6 +5,7 @@
 -- Cada etapa é uma função de k (1 no mapa); no retrato a textura é mais fina e entram os detalhes de k > 1.
 local C = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/conceitos/_conceito.lua')
 local L = C.L
+local R = dofile(KENOMA_ART .. 'creatures/conceitos/_r2.lua')(C)
 local floor, ceil, sqrt, abs, min, max, sin, cos, rad = math.floor, math.ceil, math.sqrt, math.abs, math.min, math.max, math.sin, math.cos, math.rad
 
 local LEG = {
@@ -22,7 +23,8 @@ local LEG = {
   T = '#FFE9D6', V = '#F2B79A',                               -- lâmpada tubular da marquise
   K = '#C4667C', k = '#F4B6A2', X = '#9B7BFF', Y = '#5A45A8', -- soltos (só emissivo); X e Y são o Véu no vão
 }
-local LIT = { R = 'x', P = 'y', W = 'z', T = 'g', V = 'h' }
+LEG.Z, LEG.v = '#9B7BFF', '#352C48'                           -- costura do Véu (acesa só no emissivo) e o par apagado
+local LIT = { R = 'x', P = 'y', W = 'z', T = 'g', V = 'h', Z = 'v' }
 local LOOSE = 'KkXY'
 local SOLID = ''
 for ch in pairs(LEG) do if not ('AKkXY'):find(ch, 1, true) then SOLID = SOLID .. ch end end
@@ -211,27 +213,24 @@ local function eco(k)
   local dg = diag(p)
   local function sf(x, y) return pick('stu', y < U(11) and 0.7 or 0.2, dg(x, y)) end
   layer(g, function(t)
-    local cx = 9.5
-    local half = { { 0, 10.6 }, { 4, 8.6 }, { 7.5, 9.6 }, { 7, 14.6 }, { 5.6, 12.6 }, { 4.8, 18 }, { 3.6, 15.6 }, { 2.6, 20.8 }, { 0, 24 } }
-    local poly = {}
-    for i2 = 1, #half do poly[#poly + 1] = { cx + half[i2][1], half[i2][2] } end
-    for i2 = #half, 1, -1 do poly[#poly + 1] = { cx - half[i2][1], half[i2][2] } end
-    polyf(t, pts(poly), sf)
-    ell(t, U(cx), U(9), 3.2 * k, 2.9 * k, sf)
-    ell(t, U(cx), U(17), 3 * k, 6.4 * k, sf)
-    for _, sg in ipairs({ -1, 1 }) do
-      polyf(t, pts({ { cx + sg * 2.4, 8 }, { cx + sg * 2.6, 4 }, { cx + sg * 0.3, 6.8 } }), sf)
-      for _, e in ipairs({ { 6.8, 13.6 }, { 4.6, 16.6 }, { 1.8, 19 } }) do
-        wire(t, { { U(cx + sg * 4), U(9.6) }, { U(cx + sg * e[1]), U(e[2]) } }, 'u', nil, TH(k, 0.4), 'st')
+    -- a sombra sai dos pés dele e cai para o lado errado, deitada, com uma asa aberta e a cabeça de lado; é menor
+    -- que ele, está costurada nele (três pontos do Véu) e é ela que olha
+    cap(t, U(20), U(7.4), U(11.8), U(20.6), 2.6 * k, 3.3 * k, sf)
+    polyf(t, pts({ { 18, 8.6 }, { 11, 9.4 }, { 6.6, 14.6 }, { 7.6, 19.4 }, { 12, 19.6 } }), sf)
+    wire(t, { { U(15.6), U(9.6) }, { U(11), U(10) }, { U(8), U(14) } }, 'u', nil, TH(k, 0.4), 'st')
+    wire(t, { { U(11), U(10) }, { U(9.4), U(18) } }, 'u', nil, TH(k, 0.4), 'st')
+    ell(t, U(10.8), U(22.4), 2.7 * k, 2.4 * k, sf)
+    polyf(t, pts({ { 8.4, 23 }, { 7, 25.4 }, { 10, 24.8 }, { 11.4, 25.6 }, { 13.2, 24 } }), sf)
+    rim(t, 'stu', 'R', false, TH(k, 0.7), k > 1 and 4 or nil)
+    for _, e in ipairs({ { 9.6, 22 }, { 12, 23 } }) do
+      if k > 1 then
+        ell(t, U(e[1]), U(e[2]), 0.7 * k, 0.6 * k, 'R'); ell(t, U(e[1]), U(e[2]), 0.45 * k, 0.35 * k, 'W')
+      else
+        L.set(t, e[1], e[2], 'W')
       end
     end
-    rim(t, 'stu', 'R', false, TH(k, 0.6), k > 1 and 3 or nil)
-    for _, sg in ipairs({ -1, 1 }) do
-      if k > 1 then
-        ell(t, U(cx + sg * 1.1), U(9), 0.8 * k, 0.6 * k, 'R'); ell(t, U(cx + sg * 1.1), U(9), 0.5 * k, 0.35 * k, 'W')
-      else
-        L.set(t, cx + sg, 9, 'W')
-      end
+    for _, e in ipairs({ { 15.4, 10.4 }, { 13.4, 14 }, { 11.6, 17.4 }, { 14.6, 19.6 } }) do
+      wire(t, { { U(e[1] - 1), U(e[2] - 0.5) }, { U(e[1] + 1), U(e[2] + 0.5) } }, 'Z', nil, TH(k, 0.34), 'stuR')
     end
   end)
   layer(g, function(t)
@@ -308,6 +307,10 @@ local function eco(k)
       'AnA....AnA.',
       '.A......A..',
     })
+    -- onde o corpo encosta na sombra, é ela que faz o contorno
+    for y = 8, 24 do for x = 15, 17 do
+      if g[y][x] == 'A' and ('stuRZ'):find(g[y][x - 1], 1, true) and g[y][x + 1] ~= '.' and g[y][x + 1] ~= 'A' then g[y][x] = 's' end
+    end end
   end
   dot(g, U(3), U(22), k); dot(g, U(6.4), U(24.4), k, 'k'); dot(g, U(14), U(24.6), k)
   return g
@@ -510,128 +513,79 @@ local function entidade(k)
   return g
 end
 
--- ARQUÉTIPO: o vão. Três lajes em roda, cada uma apoiada em cima da seguinte (nenhuma fica embaixo), as lâmpadas viradas
--- para dentro; no meio não há corpo, só o vão, e dele saem três sombras em cata-vento, sem ninguém que as faça, que
--- passam por cima das lajes e acabam em mãos de osso. Do morcego sobram as mãos, três orelhas e os que dormem pendurados.
-local function arquetipo(k)
-  local S = 64 * k
-  local g = L.grid(S, S)
-  local p = PP(k)
-  local U, pts = scale(k)
-  local dg = diag(p)
-  local cx, cy = 29.5, 30
-  local function sf(x, y) return pick('stu', 0.5 + 0.5 * sin((x + y) / (9 * k)), dg(x, y)) end
-  -- sombras: braço em espiral e mão
-  local arms = {}
-  local LEN = { 25, 22, 21 }
-  for i2 = 0, 2 do
-    arms[i2] = L.grid(S, S)
-    local t = arms[i2]
-    local a0 = -90 + i2 * 120 + 20
-    local px, py, pa
-    local spine = {}
-    for r2 = 4, LEN[i2 + 1], 0.5 do
-      local a = rad(a0 + (r2 - 4) * 3.1)
-      local x, y = cx + cos(a) * r2, cy + sin(a) * r2 * 0.94
-      ell(t, U(x), U(y), (4.2 - 2.2 * (r2 - 4) / 22) * k, (4.2 - 2.2 * (r2 - 4) / 22) * k, sf)
-      spine[#spine + 1] = { U(x), U(y) }
-      px, py, pa = x, y, a0 + (r2 - 4) * 3.1 + 55
-    end
-    local hx, hy = U(px), U(py)
-    local tp = hand(t, hx, hy, pa, 10.5 * k, 104, 5, { '6', '7' }, sf, TH(k, 0.6), 0.35)
-    rim(t, 'stu', 'R', true, TH(k, 0.6), k > 1 and 5 or 2)
-    for _, q in ipairs(tp) do
-      ell(t, q[1], q[2], 0.6 * k, 0.6 * k, 'P')
-      ell(t, hx + (q[1] - hx) * 0.55, hy + (q[2] - hy) * 0.55, 0.6 * k, 0.6 * k, 'P')
-    end
-    L.outline(t, 'A', SOLIDB)
-  end
-  -- lajes
-  local slabs = {}
-  for i2 = 0, 2 do
-    slabs[i2] = L.grid(S, S)
-    local t = slabs[i2]
-    local a = rad(-90 + i2 * 120 + 8)
-    local nx, ny = cos(a), sin(a)
-    local tx, ty = -ny, nx
-    local nz = noise(p, 20 + i2)
-    local mx, my = cx + nx * 13.5 + tx * 3, cy + ny * 13.5 + ty * 3
-    local function q(s2, d) return { mx + tx * s2 + nx * d, my + ty * s2 + ny * d } end
-    polyf(t, pts({ q(-16, -3.2), q(15, -3.2), q(16.4, -0.6), q(15.4, 3.6), q(-15, 3.6), q(-16.6, 0.4) }), function(x, y)
-      local d = ((x - U(mx)) * nx + (y - U(my)) * ny) / k
-      local v = d > 1.8 and 0.95 or (d > -1.6 and 0.5 or 0.05)
-      return pick('1234', v, nz(x, y))
-    end)
-    for _, e in ipairs({ { -12, -4 }, { -1, 7 }, { 9, 13 } }) do
-      for _, d in ipairs({ -3, -2.2 }) do
-        wire(t, { { U(q(e[1], d)[1]), U(q(e[1], d)[2]) }, { U(q(e[2], d)[1]), U(q(e[2], d)[2]) } }, d < -2.6 and 'T' or 'V', nil, TH(k, 1))
+-- ARQUÉTIPO (rodada 2): o morcego pendurado na própria sombra. Em cima, onde ficaria a marquise, está a sombra, de pé e
+-- de asa aberta, com os olhos todos; embaixo, o casulo das asas fechadas é de laje e vergalhão, igual dos dois lados, e
+-- não fecha: a fresta é o vão, e dentro dele o mesmo casulo se repete, menor, e outro dentro. A cabeça, embaixo, é osso
+-- com três orelhas e nenhum rosto.
+local function arquetipo(k, S, ox, oy)
+  local d = R.ctx(S or 64 * k, k, ox, oy)
+  local p = d:pp()
+  local cx = 31.5
+  local sf = R.mat('stu', R.diag(p), function(u, v) return 0.9 - (v - 3) / 22 end)
+  local HALF = { { cx, 19.5 }, { 27, 20 }, { 22.5, 25 }, { 20.3, 34 }, { 21.5, 44 }, { 25, 51 }, { cx, 53 } }
+  d:layer(function(t)
+    t:poly({ { cx, 7 }, { 24, 8 }, { 14, 5 }, { 4, 9 }, { 3, 16 }, { 6, 13.5 }, { 8, 21 }, { 11, 15.5 }, { 14.5, 23 }, { 17.5, 16.5 },
+      { 21.5, 22 }, { 24, 17 }, { cx, 19 } }, sf)
+    t:ell(cx, 9, 4, 4.2, sf)
+    t:poly({ { cx - 3.4, 7 }, { cx - 4.6, 3.2 }, { cx - 1.4, 5.4 } }, sf)
+    t:poly({ { cx - 1.3, 5.8 }, { cx, 2.8 }, { cx + 1.3, 5.8 } }, sf)
+    for _, e in ipairs({ { 3.4, 15.6 }, { 8, 20.4 }, { 14.5, 22.4 } }) do t:wire({ { 14, 6 }, e }, '7', '6', 0.5) end
+    t:wire({ { 24, 8.6 }, { 21.5, 21.4 } }, '7', '6', 0.5)
+    t:mirror(cx)
+    t:rim('stu', 'R', true, 0.5, k > 1 and 5 or 2)
+    for _, e in ipairs({ { 8.6, 11 }, { 15.6, 12 }, { 19.6, 15.4 }, { 12, 16.4 }, { 23, 11.4 }, { cx - 1.7, 8.4 }, { cx, 11 } }) do
+      for _, sg in ipairs({ 0, 1 }) do
+        local ex = sg == 0 and e[1] or 2 * cx - e[1]
+        if k > 1 then t:ell(ex, e[2], 0.75, 0.55, 'P'); t:ell(ex, e[2], 0.4, 0.3, 'W') else L.set(t.g, ex, e[2], 'W') end
       end
     end
-    for _, e in ipairs({ -9, -3, 4, 11 }) do
-      wire(t, { { U(q(e, -0.6)[1]), U(q(e, -0.6)[2]) }, { U(q(e + 0.6, 2.2)[1]), U(q(e + 0.6, 2.2)[2]) } }, '5', nil, TH(k, 0.4))
+  end, SOLIDB)
+  d:layer(function(t)
+    local nz = R.noise(p, 21)
+    t:poly(HALF, R.mat('5123', nz, function(u, v) return 0.15 + 0.8 * (cx - u) / 11 - (v - 20) / 90 end))
+    for _, e in ipairs({ { 23.4, 27, 31 }, { 25.6, 33, 39 }, { 22.6, 40, 44 }, { 27.6, 24, 27 } }) do
+      t:wire({ { e[1], e[2] }, { e[1] + 0.3, e[3] } }, '5', nil, 0.4, '123')
     end
-    wire(t, { { U(q(16, 0.6)[1]), U(q(16, 0.6)[2]) }, { U(q(18.6, 1.4)[1]), U(q(18.6, 1.4)[2]) } }, 'r', 'q', TH(k, 0.6))
-    wire(t, { { U(q(-16, 1)[1]), U(q(-16, 1)[2]) }, { U(q(-18.4, 0.2)[1]), U(q(-18.4, 0.2)[2]) } }, 'r', 'q', TH(k, 0.6))
-    -- os que dormem pendurados
-    for n2, e in ipairs({ -10, -2, 6, 12 }) do
-      local b = q(e, 3.6)
-      if ny > -0.2 or n2 % 2 == 0 then
-        local len = 3.4 + ((n2 * 7 + i2 * 3) % 4) * 0.9
-        cap(t, U(b[1]), U(b[2] + 0.6), U(b[1]), U(b[2] + len), 0.8 * k, 1.5 * k, function(x, y) return pick('87', 0, ver(p)(x, y)) end)
-        wire(t, { { U(b[1] - 0.8), U(b[2] + len + 1.4) }, { U(b[1] - 1), U(b[2] + len + 2.6) } }, '8', nil, TH(k, 0.5))
-        wire(t, { { U(b[1] + 0.8), U(b[2] + len + 1.4) }, { U(b[1] + 1), U(b[2] + len + 2.6) } }, '8', nil, TH(k, 0.5))
-      end
+    t:wire({ { 27.4, 20.6 }, { 23, 27 }, { 21.6, 38 }, { 25.6, 50 } }, 'r', 'q', 0.6)
+    t:wire({ { 29.4, 21 }, { 27, 32 }, { 27.6, 47 } }, 'r', 'q', 0.6)
+    t:wire({ { cx - 6.4, 27 }, { cx - 6.4, 43 } }, 'T', nil, 0.9)                  -- a lâmpada, virada para a fresta
+    t:wire({ { cx - 6.4, 26 }, { cx - 6.4, 26.4 } }, 'V', nil, 0.9)
+    t:wire({ { cx - 6.4, 43.6 }, { cx - 6.4, 44 } }, 'V', nil, 0.9)
+    t:wire({ { cx - 1.6, 17 }, { cx - 1.6, 20.4 } }, '7', nil, 0.6)                  -- o pé agarrado na sombra
+    for n2, e in ipairs({ { 22.6, 26 }, { 20.8, 36 }, { 22.4, 45 } }) do              -- os que dormem pendurados no casulo
+      local len = 3 + (n2 % 2) * 1.2
+      t:cap(e[1] - 1, e[2], e[1] - 1.6, e[2] + len, 0.8, 1.4, R.mat('87', R.ver(p), 0))
+      t:wire({ { e[1] - 2.2, e[2] + len + 1.4 }, { e[1] - 2.6, e[2] + len + 2.6 } }, '8', nil, 0.5)
     end
-    L.outline(t, 'A', SOLIDB)
-  end
-  -- anel de sombra em volta do vão, três orelhas
-  local ring = layer(g, function(t)
-    ell(t, U(cx), U(cy), 8 * k, 9.4 * k, sf)
-    for i2 = 0, 2 do
-      local a = rad(-90 + i2 * 120 - 38)
-      local ex, ey = cx + cos(a) * 7.4, cy + sin(a) * 8.6
-      local ox, oy = -sin(a) * 2.4, cos(a) * 2.4
-      polyf(t, pts({ { ex + ox, ey + oy }, { ex + cos(a) * 7.6, ey + sin(a) * 7.6 }, { ex - ox, ey - oy } }), function(x, y) return pick('876', 0.3, dg(x, y)) end)
+    t:mirror(cx)
+  end, SOLIDB)
+  d:layer(function(t)                                                                  -- a cabeça: osso, três orelhas, nenhum rosto
+    for _, e in ipairs({ { cx - 3.6, 56.6, cx - 5.6, 60.6, cx - 1.6, 58 }, { cx - 1.3, 58, cx, 61.4, cx + 1.3, 58 } }) do
+      t:poly({ { e[1], e[2] }, { e[3], e[4] }, { e[5], e[6] } }, R.mat('n87', R.diag(p), 0.5))
     end
+    t:ell(cx, 54.8, 4.6, 3.8, R.mat('876', R.chev(t:X(cx), p), R.lum(cx, 54.8, 4.6, 3.8)))
+    t:wire({ { cx - 2.8, 53.4 }, { cx, 56 } }, 'w', nil, 0.5)
+    t:mirror(cx)
   end)
-  for i2 = 0, 2 do blit(g, arms[i2]) end
-  blit(g, slabs[0]); blit(g, slabs[1]); blit(g, slabs[2])
-  -- a roda impossível: a laje 0 volta por cima da 2 na ponta em que se encontram
-  do
-    local a = rad(-90 + 8)
-    local nx, ny = cos(a), sin(a)
-    for y = 0, S - 1 do for x = 0, S - 1 do
-      local s2 = ((x - U(cx + nx * 13.5)) * -ny + (y - U(cy + ny * 13.5)) * nx) / k
-      if slabs[0][y][x] ~= '.' and s2 < -6 then g[y][x] = slabs[0][y][x] end
-    end end
+  local function lens(u, v, s, cy)
+    local q = (v - cy) / (13 * s)
+    if abs(q) >= 1 then return nil end
+    local t = abs(u - cx) / (4.4 * s * (1 - q * q) ^ 0.8)
+    return t <= 1 and t or nil
   end
-  -- cada sombra passa por cima da laje de onde sai
-  for i2 = 0, 2 do
-    for y = 0, S - 1 do for x = 0, S - 1 do
-      if arms[i2][y][x] ~= '.' and slabs[i2][y][x] ~= '.' then g[y][x] = arms[i2][y][x] end
-    end end
+  d:vao(function(u, v) return lens(u, v, 1, 35.5) end, 'X', 'Y', 0.7)
+  for _, s in ipairs({ 0.5, 0.22 }) do                                                -- o mesmo casulo, para dentro
+    local pts = {}
+    for i2 = 1, #HALF do pts[#pts + 1] = { cx + (HALF[i2][1] - cx) * s * 0.62, 36 + (HALF[i2][2] - 36) * s } end
+    for i2 = #HALF, 1, -1 do pts[#pts + 1] = { cx - (HALF[i2][1] - cx) * s * 0.62, 36 + (HALF[i2][2] - 36) * s } end
+    pts[#pts + 1] = pts[1]
+    d:wire(pts, s > 0.3 and 'X' or 'K', nil, 0.5, '.Y')
   end
-  -- o vão
-  local void = {}
-  for y = 0, S - 1 do for x = 0, S - 1 do
-    local d = ((x - U(cx)) / (4.6 * k)) ^ 2 + ((y - U(cy)) / (7.4 * k)) ^ 2
-    if d <= 1 then g[y][x] = '.'; void[#void + 1] = { x, y, d } end
-  end end
-  for y = 0, S - 1 do for x = 0, S - 1 do
-    local d = ((x - U(cx)) / (4.6 * k)) ^ 2 + ((y - U(cy)) / (7.4 * k)) ^ 2
-    if d > 1 and d <= ((4.6 * k + 1) / (4.6 * k)) ^ 2 * 1.08 and g[y][x] ~= '.' then g[y][x] = 'A' end
-  end end
-  local pk = TH(k, 1)
-  for _, v in ipairs(void) do
-    if v[3] > 0.4 then g[v[2]][v[1]] = 'X'
-    elseif (v[1] // pk + v[2] // pk) % 2 == 0 and v[3] > 0.12 then g[v[2]][v[1]] = 'Y' end
-  end
-  for n2 = 1, 30 do
+  for n2 = 1, 26 do
     local a = rad(n2 * 67)
-    local r2 = 20 + (n2 * 13) % 9
-    dot(g, U(cx + cos(a) * r2), U(cy + sin(a) * r2), k, n2 % 2 == 0 and 'K' or 'k')
+    d:dot(cx + cos(a) * (15 + (n2 * 13) % 9) * 1.5, 34 + sin(a) * (17 + (n2 * 7) % 9), n2 % 2 == 0 and 'K' or 'k')
   end
-  return g
+  return d.g
 end
 
 local function fit(src, size)
@@ -639,7 +593,7 @@ local function fit(src, size)
   blit(g, src, (size - src.w) // 2, (size - src.h) // 2)
   return g
 end
-local function out(stage, kind, g) C.save('shade', stage, kind, g, LEG, LIT, LOOSE) end
+local function out(stage, kind, g) if not R.skip(stage) then C.save('shade', stage, kind, g, LEG, LIT, LOOSE) end end
 do -- as medidas saem numa linha só por sprite
   local raw = print
   print = function(sx) if tostring(sx):find('opacos') then raw((tostring(sx):gsub('^%s+', ''))) end end
@@ -653,5 +607,5 @@ out('espirito', 'retrato', fit(espirito(2.5), 96))
 out('entidade', 'mapa', entidade(1))
 out('entidade', 'retrato', entidade(2))
 out('arquetipo', 'mapa', arquetipo(1))
-out('arquetipo', 'retrato', arquetipo(2))
+out('arquetipo', 'retrato', arquetipo(3, 128, -32, -8))                              -- busto: a sombra, os pés e a fresta
 print('ok shade')
