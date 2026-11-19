@@ -13,6 +13,7 @@ import 'package:kenoma/player/conjurer_balance.dart';
 import 'package:kenoma/ui/game/compass_button.dart';
 import 'package:kenoma/world/spawn_field.dart';
 import 'package:kenoma/dev/dev_tools.dart';
+import 'package:kenoma/dev/game_clock.dart';
 import 'package:kenoma/dev/gps_simulator.dart';
 import 'package:kenoma/ui/game/game_map_game.dart';
 import 'package:kenoma/core/behavior.dart';
@@ -129,7 +130,13 @@ Future<Env> pumpGame(
   addTearDown(tester.view.reset);
   final gps = FakeGps();
   final gw = gateway ?? FakeGateway(state: LocationPermissionState.granted);
-  final tools = DevTools(realSource: gps);
+  // O simulador e o relógio do jogo seguem o tempo falso do teste: com o tempo real da máquina, a suíte carregada fazia o
+  // Conjurador andar mais e o Eco escolhido sumir no fim da janela antes do toque.
+  final tools = DevTools(
+    realSource: gps,
+    simulator: SimulatedPositionSource(lat: kUnicamp.$1, lon: kUnicamp.$2, realTime: false),
+    clock: realClock ? null : GameClock(realNowMs: () => tester.binding.clock.now().millisecondsSinceEpoch),
+  );
   // Por padrão o relógio fica na época 1 (sem o fluxo v2): comportamentos aleatórios abririam a folha de preparo no meio
   // dos testes de toque. Os testes da época 2 passam o horário que querem.
   if (!realClock || clockUtc != null) tools.clock.setUtc(clockUtc ?? 1792080000);
@@ -732,7 +739,8 @@ void main() {
       final field = env.game.worldView!.field;
       final eco = field
           .around(lat: kUnicamp.$1, lon: kUnicamp.$2, tUtc: env.tools.clock.nowUtc, radiusM: 300, playerLevel: 1)
-          .firstWhere((s) => s.isEco);
+          // O oculto só aparece revelado pelo Radar; os spawns pessoais mudam com o player_id de cada rodada.
+          .firstWhere((s) => s.isEco && s.behavior != EcoBehavior.hidden);
       final (la, lo) = tileFractionToLatLon(eco.x + 0.2, eco.y + 0.2, biomeZoom);
       env.sim.teleport(la, lo);
       await env.simulate(const Duration(seconds: 3), frames: 40);
@@ -977,7 +985,8 @@ void main() {
     Future<void> goToSomeEco(Env env) async {
       final eco = env.game.worldView!.field
           .around(lat: kUnicamp.$1, lon: kUnicamp.$2, tUtc: env.tools.clock.nowUtc, radiusM: 300, playerLevel: 1)
-          .firstWhere((s) => s.isEco);
+          // O oculto só aparece revelado pelo Radar; os spawns pessoais mudam com o player_id de cada rodada.
+          .firstWhere((s) => s.isEco && s.behavior != EcoBehavior.hidden);
       final (la, lo) = tileFractionToLatLon(eco.x + 0.2, eco.y + 0.2, biomeZoom);
       env.sim.teleport(la, lo);
       await env.simulate(const Duration(seconds: 6), frames: 120);

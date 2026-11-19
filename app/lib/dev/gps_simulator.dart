@@ -32,11 +32,16 @@ class SimulatedPositionSource implements PositionSource {
     this.accuracyM = 5,
     this.noiseM = 0,
     int noiseSeed = 1,
+    this.realTime = true,
   })  : _timeMs = startTimeMs,
         _rng = Pcg32(noiseSeed, 0x73696d);
 
   double lat;
   double lon;
+
+  /// Se o tempo anda sozinho (um timer de 100 ms soma o tempo real). Desligado, só [advance] o move: os testes de tela
+  /// controlam o relógio, e o tempo real da máquina deixava o Conjurador andar mais com a suíte carregada.
+  final bool realTime;
 
   /// Velocidade com o joystick no máximo, em m/s.
   double speedMps = SimSpeed.walking.mps;
@@ -133,6 +138,11 @@ class SimulatedPositionSource implements PositionSource {
   Future<void> start() async {
     if (_started) return;
     _started = true;
+    if (realTime) _startTimer();
+    _emit(); // a primeira leitura sai logo, como um GPS que já tem posição
+  }
+
+  void _startTimer() {
     _watch = Stopwatch()..start();
     _lastTickMs = 0;
     _timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
@@ -140,7 +150,6 @@ class SimulatedPositionSource implements PositionSource {
       advance(Duration(milliseconds: now - _lastTickMs));
       _lastTickMs = now;
     });
-    _emit(); // a primeira leitura sai logo, como um GPS que já tem posição
   }
 
   @override

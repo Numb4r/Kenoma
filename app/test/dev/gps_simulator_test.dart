@@ -154,6 +154,19 @@ void main() {
       expect(out, hasLength(1));
     });
 
+    test('sem tempo real, só o advance anda: o tempo da máquina não move nada', () async {
+      final s = SimulatedPositionSource(lat: 1, lon: 2, realTime: false)..setJoystick(1, 0);
+      final out = <GeoFix>[];
+      s.fixes.listen(out.add);
+      await s.start();
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      expect(out, hasLength(1), reason: 'só a leitura do início');
+      s.advance(const Duration(seconds: 2));
+      await pumpEventQueue();
+      expect(out, hasLength(3));
+      await s.stop();
+    });
+
     test('sem ruído a posição da leitura é a exata; com ruído de 5 m ela se espalha e é reproduzível', () async {
       sim.noiseM = 5;
       sim.advance(const Duration(seconds: 50));
