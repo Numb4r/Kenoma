@@ -23,13 +23,9 @@ PISO = {
     'entidade': dict(cores=14, detalhe=0.70, contorno=0.26, emissivo=(0.12, 0.24), ecores=3, rcores=16, rdetalhe=0.50, remissivo=0.09),
     'arquetipo': dict(cores=14, detalhe=0.65, contorno=0.24, emissivo=(0.16, 0.40), ecores=4, rcores=16, rdetalhe=0.50, remissivo=0.14),
 }
-REFEITAS_FAGULHA = {'electric', 'fire', 'plant', 'shadow', 'spectral'}
+REFEITAS_FAGULHA = {'electric', 'fire', 'plant', 'shadow', 'spectral', 'draconic'}
 PENDENTES = {
-    'bitling', 'bouldkin', 'brookkin', 'fairkin', 'glimlet', 'glitchkin', 'gratekin',
-    'kilnshade', 'pebblet', 'prismkin', 'rillet', 'rootseer', 'rustling', 
-    'sprigglet', 'wellmirror', 'wyrmkin', 'wyrmlet',
-    # etapas altas em produção: entram na régua quando a família for integrada
-    'wyrm_entidade', 'wyrm_arquetipo',
+    'bitling', 'bouldkin', 'brookkin', 'fairkin', 'glimlet', 'glitchkin', 'gratekin', 'kilnshade', 'pebblet', 'prismkin', 'rillet', 'rootseer', 'rustling', 'sprigglet', 'wellmirror',
 }
 
 

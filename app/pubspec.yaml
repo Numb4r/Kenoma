@@ -81,6 +81,8 @@ flutter:
     - assets/art/creatures/wisp_arquetipo/
     - assets/art/creatures/wisp_entidade/
     - assets/art/creatures/wisplet/
+    - assets/art/creatures/wyrm_arquetipo/
+    - assets/art/creatures/wyrm_entidade/
     - assets/art/creatures/wyrmkin/
     - assets/art/creatures/wyrmlet/
     - assets/lab/

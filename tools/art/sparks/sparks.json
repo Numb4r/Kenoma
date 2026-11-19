@@ -17,6 +17,6 @@
     "spectral": { "shape": "Chill Mote: um toco de vela com a chama fria, solto de um olho de vela (pairando: repouso, desce, pico, volta)", "color": "#D3E2F4", "dark": "#8A9DBA", "light": "#F2F7FF", "core": "#F2F7FF", "glow": "a chama e o frio solto (o frio só existe no glow; a cera não troca de cor)" },
     "digital": { "shape": "pixel", "color": "#A8F040", "dark": "#62A01E", "light": "#DCFA9E", "core": "#FFFFFF", "glow": "tudo menos o contorno" },
     "fae": { "shape": "pó de fada", "color": "#FFA8E0", "dark": "#C0669E", "light": "#FFD6F1", "core": "#FFFFFF", "glow": "tudo menos o contorno" },
-    "draconic": { "shape": "escama", "color": "#DE4F84", "dark": "#8E2852", "light": "#F797B6", "core": "#FFD8C8", "glow": "só o brilho" }
+    "draconic": { "shape": "Scale Mote: uma escama solta de teú, escura, com a junta acesa em volta e uma trinca no meio (pairando: repouso, desce, pico, volta)", "color": "#DE4F84", "dark": "#8E2852", "light": "#F797B6", "core": "#FFD8C8", "glow": "a junta, a trinca e a fagulha solta (a fagulha só existe no glow; a escama não troca de cor)" }
   }
 }

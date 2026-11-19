@@ -60,7 +60,9 @@
     { "id": "wyrm.eco", "name": "Wyrmlet", "family": "wyrm", "type": "draconic", "tier": "eco", "god": "Vovina", "since_epoch": 11,
       "ability": { "kind": "distill_bonus", "bands": [1, 1, 2] } },
     { "id": "wyrm.spirit", "name": "Wyrmkin", "family": "wyrm", "type": "draconic", "tier": "spirit", "god": "Vovina", "since_epoch": 11,
-      "ability": { "kind": "distill_bonus", "bands": [1, 2, 2] } }
+      "ability": { "kind": "distill_bonus", "bands": [1, 2, 2] } },
+    { "id": "wyrm.major", "name": "Entidade Maior de Wyrmlet", "family": "wyrm", "type": "draconic", "tier": "major", "god": "Vovina", "since_epoch": 11 },
+    { "id": "wyrm.archetype", "name": "Arquétipo de Wyrmlet", "family": "wyrm", "type": "draconic", "tier": "archetype", "god": "Vovina", "since_epoch": 11 }
   ],
   "variants": {
     "urban": { "name": "Urbana", "trait": "Cinzenta: o ruído da rua não a incomoda", "tint": "#8a8fa3" },

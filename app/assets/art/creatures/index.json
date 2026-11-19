@@ -143,8 +143,14 @@
       "folder": "hollowkin",
       "spawn": "fog"
     },
+    "wyrm.archetype": {
+      "folder": "wyrm_arquetipo"
+    },
     "wyrm.eco": {
       "folder": "wyrmlet"
+    },
+    "wyrm.major": {
+      "folder": "wyrm_entidade"
     },
     "wyrm.spirit": {
       "folder": "wyrmkin"
