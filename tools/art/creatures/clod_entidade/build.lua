@@ -6,6 +6,9 @@
 -- AJUSTE DO DONO: uma cabeça de tatu legível em 48 px saindo de um ponto errado. A da direita é a cabeça inteira, de
 -- perfil (escudo, orelhas, olho, focinho); a da esquerda sai do lado oposto, de cabeça para baixo (orelhas para o
 -- chão), com o olho aceso; a terceira sai pelo alto, com o focinho para cima.
+-- SEGUNDO AJUSTE DO DONO: as cabeças liam como rato e a bola tinha listras amarelas. A cabeça é a do tatu-bola (o
+-- escudo de placas cobre o alto, com aba; orelhas em toco; focinho curto; sem pele rosada) e as três cintas são de
+-- concreto e entulho, com a junta escura. A luz do tipo fica só nas trincas, perto de cada saída.
 -- Costura do Véu: uma, larga, fechando a bola embaixo (onde ela devia abrir), só no glow.
 -- Camadas: corpo; leds = o olho aceso da cabeça virada (pisca); glow = as juntas, as trincas, a costura e a poeira.
 -- Animação (6 quadros, lenta): a bola balança sem abrir (as cintas giram um pouco e voltam), a luz corre pelas juntas,
@@ -22,19 +25,22 @@ local CX, CY, RR = 23, 28, 15.5
 local HEADS = { { 35.5, 32.6, 45, 34.6 }, { 11.6, 19.4, 2.6, 18.6, flip = true, eye = 'I' }, { 29.6, 13.4, 29.8, 4.4 } }
 local LEGS = { { 18, 14, 15.6, 7.6 }, { 9.6, 33.4, 4.6, 36 }, { 37, 22.6, 41.6, 20.4 } }
 -- no mapa a cabeça é desenhada pixel a pixel (focinho para a direita): escudo de placas, duas orelhas, olho, focinho
+-- Tatu-bola: o escudo de placas cobre o alto da cabeça da nuca à ponta do focinho (é ele que diz tatu); as orelhas
+-- são tocos redondos atrás do escudo; o focinho é curto e o rosto fica na sombra da aba.
 local HEAD = {
-  '...N...N.......',
-  '..Nn..Nn.......',
-  '..Nn..Nn.......',
-  '.KKlKKlKK......',
-  'KlMKKlMKKlK....',
-  'KKlKoWlKKlMKK..',
-  'lMKKooKlMKKlKKn',
-  '.nNNNNNNNNNNNno',
-  '..nnNNNNNNNnnoo',
-  '....nnnnnnn....',
+  '...n..n........',
+  '..nN.nN........',
+  '..nN1nN1l1.....',
+  '..1l12l12l1l...',
+  '.l12l12l12l12..',
+  '.12l12l12l12l1.',
+  '.KMMMMMMMMMM12.',
+  '.KKoWKKKlKKKMMo',
+  '..lKooKKKKKllo.',
+  '...lllllll.....',
 }
-local DUST = { { 3, 13 }, { 6, 41, 's' }, { 40, 42 }, { 44.6, 9, 's' }, { 13, 5 }, { 2.4, 34 }, { 37, 44.6, 's' }, { 45, 39 }, { 24, 3.6 } }
+local DUST = { { 3, 13 }, { 6, 41, 's' }, { 40, 42 }, { 44.6, 9, 's' }, { 13, 5 }, { 2.4, 34 }, { 37, 44.6, 's' }, { 45, 39 }, { 24, 3.6 },
+  { 8, 9 }, { 41, 14, 's' }, { 3.6, 27 }, { 44, 30 }, { 10, 43 }, { 30, 45, 's' }, { 36, 8 }, { 19, 4.6 }, { 45.6, 22 } }
 
 local function draw(g, sg, k, o, ox, oy)
   ox, oy = ox or 0, oy or 0
@@ -64,20 +70,30 @@ local function draw(g, sg, k, o, ox, oy)
     x0, y0 = x0 + ux * e, y0 + uy * e
     local nx, ny = -uy, ux
     if (ny > 0) ~= (q.flip == true) then nx, ny = -nx, -ny end
-    for i = 0, 1 do                                               -- duas orelhas
-      local bx, by = x0 + ux * (0.2 + i * 2.2) + nx * 2.6, y0 + uy * (0.2 + i * 2.2) + ny * 2.6
-      local sp = i == 0 and -1.6 or 0.8
-      t:cap(bx, by, bx + nx * 4.6 + ux * sp, by + ny * 4.6 + uy * sp, 1.15, 0.5, i == 0 and 'R' or 'r')
+    for i = 0, 1 do                                               -- duas orelhas: tocos redondos atrás do escudo
+      local bx, by = x0 + ux * (-0.6 + i * 2) + nx * 3, y0 + uy * (-0.6 + i * 2) + ny * 3
+      t:cap(bx, by, bx + nx * 2.8 - ux * 0.6, by + ny * 2.8 - uy * 0.6, 1.2, 0.9, function(x, y, u, v)
+        return ((u - bx) * ux + (v - by) * uy > -0.1) and 'N' or 'n'
+      end)
     end
-    t:cap(x0, y0, x1, y1, 3.4, 1.2, function(x, y, u, v)
-      local a = ((u - x0) * ux + (v - y0) * uy) / len
+    x1, y1 = x1 - ux * 1.2, y1 - uy * 1.2                         -- focinho curto
+    t:cap(x0, y0, x1, y1, 3.6, 1.8, function(x, y, u, v)
+      local s = (u - x0) * ux + (v - y0) * uy
+      local a = s / (len - 1.2)
       local b = (u - x0) * nx + (v - y0) * ny
-      if a > 0.9 then return 'o' end
-      if b > 0.3 and a < 0.7 then return stone(x, y, 1.5 * k, 11, { '12K', '1Kl' }, 'l', 0.25 * k, k) end
-      return b < -1.2 and 'R' or (a > 0.55 and b > -0.2 and 'C' or 'r')
+      if a > 0.97 and b < 0.5 then return 'o' end                 -- o nariz
+      local lip = 0.1 + a * 0.3
+      if b > lip then                                             -- o escudo: placas em fileiras, da nuca ao focinho
+        local row = floor((b - lip) / 1.5)
+        local c = (s + (row % 2) * 0.75) / 1.5
+        if (b - lip) % 1.5 < 1.1 / k or (c % 1) * 1.5 < 1.1 / k then return 'M' end   -- a junta: 1 px
+        return ((c % 1) > 0.66 or C.rnd(floor(c), row, 4) > 0.75) and '2' or '1'
+      end
+      if b > lip - 0.7 then return 'M' end                        -- a sombra da aba do escudo
+      return b < -2.2 and 'l' or 'K'                              -- o rosto, na sombra
     end)
-    local ex, ey = x0 + dx * 0.45 + nx * 0.6, y0 + dy * 0.45 + ny * 0.6
-    t:ell(ex, ey, 1, 1, q.eye or 'o')
+    local ex, ey = x0 + dx * 0.36 - nx * 1.5, y0 + dy * 0.36 - ny * 1.5
+    t:ell(ex, ey, 0.85, 0.85, q.eye or 'o')
     if not q.eye then t:ell(ex - 0.2, ey - 0.2, 0.25, 0.25, 'W') end
   end
   local function leg(t, q, w)
@@ -109,37 +125,53 @@ local function draw(g, sg, k, o, ox, oy)
       local hw = RR * sqrt(max(0.02, 1 - (b / RR) ^ 2))
       local lon = a / hw
       local sh = (u - CX) / RR * 0.45 + (v - CY) / RR * 0.9
+      local near = 99                                             -- distância até a saída mais próxima
       for _, q in ipairs(HEADS) do                                -- a trinca em volta de cada saída
         local r = sqrt((u - q[1]) ^ 2 + (v - q[2]) ^ 2)
         if r < 3.7 then return r > 3 and 'H' or 'J' end
+        near = math.min(near, r)
       end
       for _, q in ipairs(LEGS) do
         local r = sqrt((u - q[1]) ^ 2 + (v - q[2]) ^ 2)
         if r < 2.5 then return r > 1.9 and 'H' or 'J' end
+        near = math.min(near, r + 2.5)
       end
-      for _, sx in ipairs({ -0.12, 0.12, -0.36, 0.36 }) do
+      -- a trinca acesa se espalha da saída pelo rejunte do cascalho
+      local pulse = still and 0 or sin(t6 - near * 0.7)             -- a luz corre da saída para fora
+      local function crack(c)
+        if c ~= '5' or near > 13 + glow * 6 then return c end
+        return near < 5.2 and 'Y' or ((near < 8 or pulse > 0.6) and 'J' or 'H')
+      end
+      -- as três cintas do tatu, em concreto e entulho, com a junta escura entre elas
+      for n, sx in ipairs({ -0.36, -0.12, 0.12, 0.36 }) do
         local dd = abs(lon - sx) * hw
         if dd < (k > 1 and 0.5 or 0.62) then
-          if sh > 0.35 - glow then return 'H' end
-          return (sh < -0.35 + glow and dd < 0.3) and 'Y' or 'J'
+          return '5'                                              -- sem listra acesa: a luz fica nas trincas do cascalho
         end
       end
       if abs(lon) < 0.36 then
+        local band = floor((lon + 0.36) / 0.24)
         local pp = ((lon + 0.36) / 0.24) % 1
-        if k > 1 and (b * 0.62) % 1 < 0.18 then return 'M' end
-        local i = (pp < 0.4 and 1 or 2) + (sh > 0.4 and 1 or 0)
-        return ('KlM'):sub(i, i)
+        if ((b + band * 1.1) / 2.7) % 1 < (k > 1 and 0.13 or 0.26) then                  -- as placas de cada cinta
+          return near < 11.5 + glow * 6 and (near < 6 and 'J' or 'H') or '4'              -- a trinca atravessa a cinta, curta
+        end
+        if k > 1 and C.rnd(x, y, 9) > 0.9 then return '3' end                           -- poros
+        if band == 1 and C.rnd(floor(b / 2.7 + 0.4), 3, 9) > 0.6 then                   -- um caco de tijolo preso na cinta do meio
+          return sh > 0.3 and 't' or (pp < 0.4 and 'p' or 'q')
+        end
+        local i = (pp < 0.35 and 1 or 2) + (sh > 0.25 and 1 or 0) + (sh > 0.65 and 1 or 0)
+        return ('1234'):sub(i, i)
       end
       if lon > 0 then                                             -- o escudo da frente: parede e entulho
         if b < -1 then
           local row = floor(v / 1.7)
           local bx = (u + (row % 2) * 1.7) % 3.4
-          if bx < 0.5 or v % 1.7 < 0.45 then return '4' end
+          if bx < 0.5 or v % 1.7 < 0.45 then return near < 9 + glow * 6 and (near < 5.6 and 'J' or 'H') or '4' end
           return R.pick('tqp', 0.6 - sh * 0.5, R.noise(p, 8)(x, y))
         end
-        return stone(x, y, 3 * k, 21, sh > 0.3 and C.RUBD or C.RUB, '5', 0.32 * k, k)
+        return crack(stone(x, y, 3 * k, 21, sh > 0.3 and C.RUBD or C.RUB, '5', 0.32 * k, k))
       end
-      return stone(x, y, 2.3 * k, 7, sh > 0.4 and C.GRAVD or C.GRAV, '5', 0.3 * k, k)
+      return crack(stone(x, y, 2.3 * k, 7, sh > 0.4 and C.GRAVD or C.GRAV, '5', 0.3 * k, k))
     end)
     t:suture({ { 14.6, 37 }, { 19, 41.4 }, { 26, 42.4 } }, 'Z', 1.3, k > 1 and 3 or nil)
   end, o.dark and '' or C.SOLID)

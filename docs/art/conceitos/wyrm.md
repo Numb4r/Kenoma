@@ -39,3 +39,5 @@ Kit da família: `tools/art/creatures/_wyrm.lua` (a legenda, os emissivos e as f
 
 O Wyrmlet e o Wyrmkin antigos e a Fagulha dracônica foram substituídos por estes.
 
+**Arquétipo, cor nos dois tamanhos (conferido):** o mapa de 64 e o retrato de 128 usam as mesmas três cores do tipo Dracônico (`#8E2852`, `#DE4F84`, `#F797B6`) e os mesmos violetas do vão; nenhuma cor emissiva existe só num dos tamanhos. O retrato hoje é a forma inteira em escala 2 (não mais o busto da tabela). De dia o vão segue a regra de `docs/art/estilo-criaturas.md` ("vão de dia"): violeta escuro em degraus, com a coroa ainda se lendo.
+

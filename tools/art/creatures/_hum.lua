@@ -275,15 +275,17 @@ function K.run(spec)
       end
     end end
   end
+  local vaoDay                                                -- o vão de dia (definido adiante, com o vão)
   local function split(g, sg)
     local b, l, w = L.grid(g.w, g.h), L.grid(g.w, g.h), L.grid(g.w, g.h)
+    local day = vaoDay and vaoDay(g)
     for y = 0, g.h - 1 do for x = 0, g.w - 1 do
       local c = g[y][x]
       local e = EM[c]
       if e then
-        b[y][x] = e[1]
+        b[y][x] = day and day(x, y, c, e[1]) or e[1]
         if e[2] == 'l' then l[y][x] = c else w[y][x] = c end
-      else b[y][x] = c end
+      else b[y][x] = day and day(x, y, c) or c end
       local s = sg and sg[y][x]
       if s and s ~= '.' then w[y][x] = s end
     end end
@@ -341,6 +343,35 @@ function K.run(spec)
       rx(x, y, x + 1, y, 1); rx(x, y, x, y + 1, 1); rx(x, y, x + 1, y + 1, 1.4); rx(x, y, x - 1, y + 1, 1.4)
     end end
     return d
+  end
+  -- O vão de dia: sem o glow ele continua violeta, mais fraco, pela camada corpo. O par apagado dos emissivos do vão
+  -- desce em degraus (borda, meio, fundo), o que vive lá dentro fica um degrau acima do fundo (ainda se lê) e o
+  -- fundo liso ganha dois degraus junto da borda. Estas cores não entram no map das variantes.
+  if VAO then
+    for c, hex in pairs({ ['^'] = '#5B4AA6', ['&'] = '#45378A', ['~'] = '#32286A', ['?'] = '#241B4C', [';'] = '#1B1230' }) do
+      assert(not LEG[c] or LEG[c] == hex, name .. ': caractere do vão de dia em uso: ' .. c)
+      LEG[c] = hex
+    end
+    vaoDay = function(g)
+      local reg = vaoRegion(g)
+      local dd = chamfer(g, function(x, y) return not reg[y * g.w + x] end)
+      return function(x, y, c, off)
+        if not reg[y * g.w + x] then return off or c end
+        if not off then
+          if c ~= VAO.fill then return c end
+          return dd[y][x] <= 2.5 and '?' or (dd[y][x] <= 5 and ';' or c)
+        end
+        if c == VAO.edge or c == '!' then return '&' end
+        if c == VAO.mid or c == '@' then return '~' end
+        if c == '$' then return '?' end
+        if c == '%' then return ';' end
+        if off == VAO.fill or off == '=' or off == '*' then
+          local v = lum(LEG[c])
+          return v > 150 and '^' or (v > 100 and '&' or '~')
+        end
+        return off
+      end
+    end
   end
   local function vaoSwallow(g, n)
     local reg = vaoRegion(g)
