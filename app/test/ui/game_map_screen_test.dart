@@ -835,17 +835,35 @@ void main() {
       expect(env.game.rotation.angle, isNot(0));
     });
 
-    testWidgets('toque longo em Eco fora da Aura não marca', (tester) async {
-      final env = await pumpGame(tester);
-      final eco = await goToEco(env);
-      env.sim.teleport(kUnicamp.$1 + 0.0006, kUnicamp.$2); // ~65 m ao norte dali
-      await env.simulate(const Duration(seconds: 3), frames: 40);
-      final far = env.game.worldView!.spawns.where((s) => s.isEco && !env.game.worldView!.inAura(s));
-      if (far.isEmpty) return; // sem Eco à vista fora da Aura nesse trecho
-      await tester.longPressAt(screenOf(tester, env, far.first));
+    /// Save com o `player_id` fixo: os spawns pessoais mudam com ele, e o sorteado a cada rodada mudava o mundo do teste.
+    MemorySaveStore fixedPlayer() => MemorySaveStore()
+      ..json = {
+        'schema_version': 2,
+        'founder': {'player_id': '0123456789abcdef0123456789abcdef', 'first_install_version': 'dev', 'first_seen_utc': 1792080000},
+      };
+
+    testWidgets('toque longo em Eco fora do alcance de toque não marca e diz a distância', (tester) async {
+      // O toque longo marca até o alcance de toque (30 m), não só na Aura (10 m). O teste escolhia um Eco fora da Aura com
+      // um player_id sorteado a cada rodada: às vezes o escolhido caía entre 10 e 30 m e era marcado.
+      final env = await pumpGame(tester, store: fixedPlayer());
+      final target = await goToEco(env);
+      // O Conjurador vai para 38 m ao norte do Eco: fora do alcance de toque (30 m), e o Eco ainda na tela, embaixo. O filtro
+      // de posição só aceita o salto depois de uns 6 s; 12 s de tempo falso bastam com folga.
+      final (la, lo) = tileFractionToLatLon(target.x, target.y, biomeZoom);
+      env.sim.teleport(la + 38 / 111320, lo);
+      for (var i = 0; i < 4; i++) {
+        await env.simulate(const Duration(seconds: 3), frames: 40);
+      }
+      final w = env.game.worldView!;
+      expect(w.spawns.any((s) => s.uid == target.uid), isTrue, reason: 'o Eco continua no mundo');
+      expect(w.inTouchRange(target), isFalse, reason: 'a ${w.distanceM(target).round()} m');
+      final at = screenOf(tester, env, target) - tester.getTopLeft(gameWidget);
+      expect(at.dx > 0 && at.dy > 0 && at.dx < env.game.size.x && at.dy < env.game.size.y, isTrue, reason: 'na tela: $at');
+      expect(env.game.spawnAt(at)?.uid, target.uid, reason: 'o toque cai nele, não num vizinho');
+      await tester.longPressAt(screenOf(tester, env, target));
       await env.settle(4);
-      expect(env.game.worldView!.state.markOf(far.first.uid), isNull);
-      expect(eco.uid, isNotNull);
+      expect(w.state.markOf(target.uid), isNull);
+      expect(find.textContaining('LONGE DEMAIS PARA PRENDER O SINAL'), findsOneWidget, reason: 'o aviso diz a distância');
     });
   });
 
