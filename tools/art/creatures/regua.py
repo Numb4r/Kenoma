@@ -26,10 +26,8 @@ PISO = {
     'arquetipo': dict(cores=14, detalhe=0.65, contorno=0.24, emissivo=(0.16, 0.40), ecores=4, rcores=16, rdetalhe=0.50, remissivo=0.14),
 }
 AMPLIACAO_MAX = 0.62  # o retrato nativo mais alto mediu 0,55 (frond_arquetipo); ampliado 2× mede 1,0
-REFEITAS_FAGULHA = {'electric', 'fire', 'plant', 'shadow', 'spectral', 'draconic', 'light', 'digital', 'earth', 'water', 'metal'}
-PENDENTES = {
-    'fairkin', 'sprigglet',
-}
+REFEITAS_FAGULHA = {'electric', 'fire', 'plant', 'shadow', 'spectral', 'draconic', 'light', 'digital', 'earth', 'water', 'metal', 'fae'}
+PENDENTES = set()
 
 
 def frame0(path: Path, side: int) -> list:

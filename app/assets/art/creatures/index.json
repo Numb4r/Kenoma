@@ -168,8 +168,14 @@
       "folder": "cinderkin",
       "spawn": "manhole"
     },
+    "sprig.archetype": {
+      "folder": "sprig_arquetipo"
+    },
     "sprig.eco": {
       "folder": "sprigglet"
+    },
+    "sprig.major": {
+      "folder": "sprig_entidade"
     },
     "sprig.spirit": {
       "folder": "fairkin"

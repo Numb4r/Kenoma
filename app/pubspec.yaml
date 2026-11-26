@@ -84,6 +84,8 @@ flutter:
     - assets/art/creatures/soot_arquetipo/
     - assets/art/creatures/soot_entidade/
     - assets/art/creatures/sootling/
+    - assets/art/creatures/sprig_arquetipo/
+    - assets/art/creatures/sprig_entidade/
     - assets/art/creatures/sprigglet/
     - assets/art/creatures/thicketkin/
     - assets/art/creatures/umbrel/

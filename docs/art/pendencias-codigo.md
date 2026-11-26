@@ -31,3 +31,9 @@ O que a arte das criaturas (branch `arte-criaturas`, `docs/art/estilo-criaturas.
 13. **`leds` vazio:** o `wyrm_arquetipo_*_leds.png` sai sem pixel de propósito (o Arquétipo do Wyrm não tem olho).
 14. **Mapa sem as camadas altas:** **feito (0.26.0):** `appearsOnMap` (`core/species_ids.dart`, com teste) faz o mapa montar sprite e variante só de Eco e Espírito; antes ele gerava os provisórios das 14 espécies de 48 e 64 px a cada abertura do mapa.
 
+## Famílias Glare, Bit, Clod, Rill, Rust e Sprig
+
+15. **Etapas altas das seis:** **feito**, como no item 1 (`<familia>.major` e `<familia>.archetype` no `creatures.json`, com o tipo, o deus e a época do Espírito). Os nomes continuam provisórios ("Entidade Maior de Glimlet").
+16. **Fagulhas refeitas:** `spark_light`, `spark_digital`, `spark_earth`, `spark_water`, `spark_metal` e `spark_fae` copiadas para `app/assets/art/sparks/`; o `sparks.json` não mudou.
+17. **`spawn` de 7 quadros nos Arquétipos** e `idle`/`drift` de 8 no Sprigglet e no Fairkin: **conferido, nada a fazer:** o leitor usa `frames` e `fps` do json, e o `creature_art_test` passa.
+18. **Gatilho de nascer de Glare, Bit, Rust e Sprig:** segue sem gatilho (nascem onde o Eco aparece), até decisão do dono. Clod (`ground`) e Rill (`puddle`) já valem para as etapas altas.

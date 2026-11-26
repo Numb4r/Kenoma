@@ -20,3 +20,6 @@ app/assets/regions/*.bin
 # Editor e worktrees dos agentes do Claude Code: locais, fora do git
 .vscode/
 .claude/worktrees/
+
+# Cache do Python (tools/art/creatures/resumo.py importa a régua)
+__pycache__/

@@ -67,6 +67,8 @@
       "ability": { "kind": "variant_chance_pct", "bands": [2, 4, 6] } },
     { "id": "sprig.spirit", "name": "Fairkin", "family": "sprig", "type": "fae", "tier": "spirit", "since_epoch": 11,
       "ability": { "kind": "variant_chance_pct", "bands": [4, 6, 8] } },
+    { "id": "sprig.major", "name": "Entidade Maior de Sprigglet", "family": "sprig", "type": "fae", "tier": "major", "since_epoch": 11 },
+    { "id": "sprig.archetype", "name": "Arquétipo de Sprigglet", "family": "sprig", "type": "fae", "tier": "archetype", "since_epoch": 11 },
     { "id": "wyrm.eco", "name": "Wyrmlet", "family": "wyrm", "type": "draconic", "tier": "eco", "god": "Vovina", "since_epoch": 11,
       "ability": { "kind": "distill_bonus", "bands": [1, 1, 2] } },
     { "id": "wyrm.spirit", "name": "Wyrmkin", "family": "wyrm", "type": "draconic", "tier": "spirit", "god": "Vovina", "since_epoch": 11,
