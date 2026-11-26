@@ -204,6 +204,33 @@ void main() {
       expect([rain.holds(evening.copyWith(weather: Weather.rain)), rain.holds(evening)], [true, false]);
     });
 
+    test('clima e evento da célula, crepúsculo real, e as combinações todas e qualquer uma', () {
+      const storm = RitualCondition(kind: ConditionKind.climate, value: 'storm');
+      expect([storm.holds(evening.copyWith(climates: {'storm', 'vigil'})), storm.holds(evening.copyWith(climates: {'rain'}))], [true, false]);
+      const eclipse = RitualCondition(kind: ConditionKind.climate, value: 'black_sun');
+      expect(eclipse.holds(evening.copyWith(climates: {'clear', 'black_sun'})), isTrue, reason: 'o evento da pilha vale');
+      const dusk = RitualCondition(kind: ConditionKind.twilight);
+      expect([for (final a in [-7.0, -5.9, 0.0, 5.9, 7.0]) dusk.holds(evening.copyWith(sunAltDeg: a))], [false, true, true, true, false]);
+      const stormNight = RitualCondition(kind: ConditionKind.all, of: [storm, RitualCondition(kind: ConditionKind.hour, from: 19, to: 5)]);
+      expect([
+        stormNight.holds(evening.copyWith(climates: {'storm'}, hour: 22)),
+        stormNight.holds(evening.copyWith(climates: {'storm'}, hour: 14)),
+        stormNight.holds(evening.copyWith(climates: {'clear'}, hour: 22)),
+      ], [true, false, false]);
+      const either = RitualCondition(kind: ConditionKind.any, of: [stormNight, eclipse]);
+      expect([either.holds(evening.copyWith(climates: {'black_sun'}, hour: 13)), either.holds(evening.copyWith(climates: {'clear'}, hour: 13))], [true, false]);
+      final parsed = RitualCondition.fromJson({
+        'kind': 'any',
+        'of': [
+          {'kind': 'all', 'of': [{'kind': 'climate', 'value': 'cloudy'}, {'kind': 'hour', 'from': 20, 'to': 5}]},
+          {'kind': 'climate', 'value': 'black_sun'},
+        ],
+      });
+      expect(parsed.holds(evening.copyWith(climates: {'cloudy'}, hour: 21)), isTrue);
+      expect(parsed.holds(parsed.satisfying(evening)), isTrue);
+      expect(() => RitualCondition.fromJson({'kind': 'all'}), throwsFormatException);
+    });
+
     test('satisfying() monta um mundo que satisfaz a condição', () {
       for (final r in data.ritual.recipes.values) {
         expect(r.condition.holds(r.condition.satisfying(evening)), isTrue, reason: r.speciesId);
@@ -329,23 +356,37 @@ void main() {
       expect(ritualOnly, isNotEmpty);
     });
 
+    final climateBlock = (jsonDecode(File('assets/data/epochs.json').readAsStringSync())['epochs'] as List<dynamic>).last['climate'] as Map<String, dynamic>;
+    final worldClimates = {...(climateBlock['climates'] as Map<String, dynamic>).keys, ...(climateBlock['events'] as Map<String, dynamic>).keys};
+
     test('todos os ids de itens, biomas, fases e climas existem', () {
       for (final r in data.ritual.recipes.values) {
         for (final m in r.materials) {
           expect(items, contains(m.item), reason: r.speciesId);
           expect(m.qty, inInclusiveRange(1, data.ritual.balance.materialMaxQty));
         }
-        switch (r.condition.kind) {
-          case ConditionKind.biome:
-            expect(biomeKeys, contains(r.condition.value));
-          case ConditionKind.moon:
-            expect(MoonPhase.values.map((p) => p.name), contains(r.condition.value));
-          case ConditionKind.weather:
-            expect(Weather.values.map((w) => w.id), contains(r.condition.value));
-          case ConditionKind.hour:
-            expect(r.condition.from, inInclusiveRange(0, 23));
-            expect(r.condition.to, inInclusiveRange(0, 24));
+        void check(RitualCondition c) {
+          switch (c.kind) {
+            case ConditionKind.biome:
+              expect(biomeKeys, contains(c.value));
+            case ConditionKind.moon:
+              expect(MoonPhase.values.map((p) => p.name), contains(c.value));
+            case ConditionKind.weather:
+              expect(Weather.values.map((w) => w.id), contains(c.value));
+            case ConditionKind.hour:
+              expect(c.from, inInclusiveRange(0, 23));
+              expect(c.to, inInclusiveRange(0, 24));
+            case ConditionKind.climate:
+              expect(worldClimates, contains(c.value), reason: '${r.speciesId}: clima ou evento da época');
+            case ConditionKind.twilight:
+              break;
+            case ConditionKind.all || ConditionKind.any:
+              expect(c.of, isNotEmpty);
+              c.of.forEach(check);
+          }
         }
+
+        check(r.condition);
         expect(r.circleMinLevel, inInclusiveRange(1, 20));
       }
     });

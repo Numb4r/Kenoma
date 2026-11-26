@@ -183,7 +183,7 @@ class _RitualScreenState extends State<RitualScreen> with SingleTickerProviderSt
         child: SizedBox(height: 360, child: _stage(revealed)),
       ),
       if (_phase == _Phase.build) ...[
-        Text('Agora: ${worldText(widget.world())}', key: const Key('ritual-world'), style: KTexto.corpoPequeno),
+        Text('Agora: ${worldText(widget.world(), climateName: (id) => widget.data.climates.of(id).name)}', key: const Key('ritual-world'), style: KTexto.corpoPequeno),
         const SizedBox(height: KEspaco.s2),
         if (_note.isNotEmpty) Padding(padding: const EdgeInsets.only(bottom: KEspaco.s1), child: Text(_note, key: const Key('ritual-note'), style: KTexto.corpo.copyWith(color: KCores.brasaLaranja))),
         _Button(key: const Key('ritual-go'), label: 'Realizar ritual', color: KCores.veuVioleta, onTap: _perform),
@@ -241,7 +241,7 @@ class _RitualScreenState extends State<RitualScreen> with SingleTickerProviderSt
     } else if (i > 0 && _placed[i - 1] != null) {
       mine = '${_placed[i - 1]!.qty}× ${widget.data.itemName(_placed[i - 1]!.item)}';
     }
-    final hint = ritualSlotText(r, i, revealed, _species.type, widget.data.itemName);
+    final hint = ritualSlotText(r, i, revealed, _species.type, widget.data.itemName, climateName: (id) => widget.data.climates.of(id).name);
     final isMine = mine != null;
     return _Slot(
       key: Key('ritual-slot-$i'),

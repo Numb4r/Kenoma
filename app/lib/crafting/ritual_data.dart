@@ -13,15 +13,23 @@ class RitualSlot {
   final int qty;
 }
 
-enum ConditionKind { hour, biome, moon, weather }
+/// `climate`: o clima da célula ou um evento ativo nela (`storm`, `smog`, `black_sun`, `meteor_shower`). `twilight`: o
+/// crepúsculo real, o sol a menos de [twilightDeg] graus do horizonte. `all` e `any` juntam as condições de [RitualCondition.of]
+/// (todas, ou ao menos uma): a coluna "Onde e quando" do GDD pede combinações (tempestade e noite; nublado à noite ou Sol Negro).
+enum ConditionKind { hour, biome, moon, weather, climate, twilight, all, any }
+
+/// O crepúsculo real (GDD, Feérico): o mesmo limite das condições de nascer (`eco_v2.conditions.twilight_deg`).
+const double twilightDeg = 6;
 
 /// A condição do mundo que a receita pede.
 class RitualCondition {
-  const RitualCondition({required this.kind, this.from = 0, this.to = 0, this.value = ''});
+  const RitualCondition({required this.kind, this.from = 0, this.to = 0, this.value = '', this.of = const []});
 
   factory RitualCondition.fromJson(Map<String, dynamic> j) {
     final kind = ConditionKind.values.firstWhere((k) => k.name == j['kind'], orElse: () => throw FormatException('Condição de ritual desconhecida: ${j['kind']}'));
-    return RitualCondition(kind: kind, from: (j['from'] as int?) ?? 0, to: (j['to'] as int?) ?? 0, value: (j['value'] as String?) ?? '');
+    final of = [for (final c in (j['of'] as List<dynamic>?) ?? const []) RitualCondition.fromJson(c as Map<String, dynamic>)];
+    if ((kind == ConditionKind.all || kind == ConditionKind.any) && of.isEmpty) throw FormatException('Condição ${kind.name} sem "of"');
+    return RitualCondition(kind: kind, from: (j['from'] as int?) ?? 0, to: (j['to'] as int?) ?? 0, value: (j['value'] as String?) ?? '', of: of);
   }
 
   final ConditionKind kind;
@@ -30,14 +38,22 @@ class RitualCondition {
   final int from;
   final int to;
 
-  /// Chave do bioma (`green`), nome da fase (`fullMoon`) ou id do clima (`rain`).
+  /// Chave do bioma (`green`), nome da fase (`fullMoon`), id do clima de quatro estados (`rain`) ou id do clima ou evento
+  /// do mundo (`storm`, `black_sun`).
   final String value;
+
+  /// As partes de `all` e `any`.
+  final List<RitualCondition> of;
 
   bool holds(WorldCondition w) => switch (kind) {
         ConditionKind.hour => from <= to ? (w.hour >= from && w.hour < to) : (w.hour >= from || w.hour < to),
         ConditionKind.biome => w.biome == value,
         ConditionKind.moon => w.moon.name == value,
         ConditionKind.weather => w.weather.id == value,
+        ConditionKind.climate => w.climates.contains(value),
+        ConditionKind.twilight => w.sunAltDeg.abs() < twilightDeg,
+        ConditionKind.all => of.every((c) => c.holds(w)),
+        ConditionKind.any => of.any((c) => c.holds(w)),
       };
 
   /// Uma condição do mundo que satisfaz esta (para o debug).
@@ -46,20 +62,32 @@ class RitualCondition {
         ConditionKind.biome => base.copyWith(biome: value),
         ConditionKind.moon => base.copyWith(moon: MoonPhase.values.firstWhere((p) => p.name == value)),
         ConditionKind.weather => base.copyWith(weather: Weather.parse(value)),
+        ConditionKind.climate => base.copyWith(climates: {...base.climates, value}),
+        ConditionKind.twilight => base.copyWith(sunAltDeg: 0),
+        ConditionKind.all => of.fold(base, (w, c) => c.satisfying(w)),
+        ConditionKind.any => of.first.satisfying(base),
       };
 }
 
-/// O mundo no lugar e no instante do ritual: hora local (0 a 23), chave do bioma da célula, fase da lua e clima.
+/// O mundo no lugar e no instante do ritual: hora local (0 a 23), chave do bioma da célula, fase da lua, clima de quatro
+/// estados, o clima e os eventos da célula ([climates], a pilha `storm+vigil` aberta) e a altura do sol.
 class WorldCondition {
-  const WorldCondition({required this.hour, required this.biome, required this.moon, required this.weather});
+  const WorldCondition({required this.hour, required this.biome, required this.moon, required this.weather, this.climates = const {}, this.sunAltDeg = 45});
 
   final int hour;
   final String biome;
   final MoonPhase moon;
   final Weather weather;
+  final Set<String> climates;
+  final double sunAltDeg;
 
-  WorldCondition copyWith({int? hour, String? biome, MoonPhase? moon, Weather? weather}) =>
-      WorldCondition(hour: hour ?? this.hour, biome: biome ?? this.biome, moon: moon ?? this.moon, weather: weather ?? this.weather);
+  WorldCondition copyWith({int? hour, String? biome, MoonPhase? moon, Weather? weather, Set<String>? climates, double? sunAltDeg}) => WorldCondition(
+      hour: hour ?? this.hour,
+      biome: biome ?? this.biome,
+      moon: moon ?? this.moon,
+      weather: weather ?? this.weather,
+      climates: climates ?? this.climates,
+      sunAltDeg: sunAltDeg ?? this.sunAltDeg);
 }
 
 /// A hora local (0 a 23) do instante UTC. [offset] só existe para testar sem depender do fuso da máquina.

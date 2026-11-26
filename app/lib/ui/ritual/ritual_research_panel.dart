@@ -45,7 +45,7 @@ class _RitualResearchPanelState extends State<RitualResearchPanel> {
         Text('RITUAL · $revealed/${r.slotCount}', style: KTexto.rotulo.copyWith(color: KCores.veuClaro, fontSize: 10)),
         for (var i = 0; i < r.slotCount; i++)
           Text(
-            '${labels[i == 0 ? 0 : (i == r.circleIndex ? 2 : 1)]}: ${ritualSlotText(r, i, revealed, widget.species.type, widget.data.itemName)}',
+            '${labels[i == 0 ? 0 : (i == r.circleIndex ? 2 : 1)]}: ${ritualSlotText(r, i, revealed, widget.species.type, widget.data.itemName, climateName: (id) => widget.data.climates.of(id).name)}',
             key: Key('ritual-research-${widget.species.id}-$i'),
             style: KTexto.corpoPequeno.copyWith(fontSize: 12, color: i < revealed ? KCores.texto : KCores.textoMudo),
           ),

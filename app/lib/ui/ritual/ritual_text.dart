@@ -12,21 +12,29 @@ const String ritualUnknown = '???';
 
 const Map<String, String> _biomeNames = {'urban': 'Urbano', 'green': 'Verde', 'water': 'Água', 'residential': 'Residencial', 'void': 'Vazio', 'lit': 'Iluminado', 'sacred': 'Sagrado'};
 
-String conditionText(RitualCondition c) => switch (c.kind) {
+/// [climateName]: o nome de um clima ou evento do mundo pelo id (o catálogo do `clima.json`); sem ele, o id.
+String conditionText(RitualCondition c, {String Function(String id)? climateName}) => switch (c.kind) {
       ConditionKind.hour => 'Entre ${c.from}h e ${c.to}h',
       ConditionKind.biome => 'Bioma ${_biomeNames[c.value] ?? c.value}',
       ConditionKind.moon => moonPhaseNames[MoonPhase.values.firstWhere((p) => p.name == c.value)]!,
       ConditionKind.weather => 'Clima: ${Weather.parse(c.value).label}',
+      ConditionKind.climate => climateName?.call(c.value) ?? c.value,
+      ConditionKind.twilight => 'No crepúsculo',
+      ConditionKind.all => c.of.map((p) => conditionText(p, climateName: climateName)).join(', '),
+      ConditionKind.any => c.of.map((p) => conditionText(p, climateName: climateName)).join(' ou '),
     };
 
-/// O texto do mundo agora, para o jogador comparar com o que já sabe.
-String worldText(WorldCondition w) =>
-    '${w.hour}h · ${_biomeNames[w.biome] ?? w.biome} · ${moonPhaseNames[w.moon]} · ${w.weather.label}';
+/// O texto do mundo agora, para o jogador comparar com o que já sabe. Com [climateName], o clima e os eventos da célula
+/// no lugar do clima de quatro estados, e o crepúsculo quando for.
+String worldText(WorldCondition w, {String Function(String id)? climateName}) {
+  final sky = climateName != null && w.climates.isNotEmpty ? w.climates.map(climateName).join(' + ') : w.weather.label;
+  return '${w.hour}h · ${_biomeNames[w.biome] ?? w.biome} · ${moonPhaseNames[w.moon]} · $sky${w.sunAltDeg.abs() < twilightDeg ? ' · crepúsculo' : ''}';
+}
 
 /// O que o espaço [index] da receita pede, ou ??? se a pesquisa ainda não chegou nele ([revealed] espaços revelados).
-String ritualSlotText(RitualRecipe r, int index, int revealed, EcoType target, String Function(String item) itemName) {
+String ritualSlotText(RitualRecipe r, int index, int revealed, EcoType target, String Function(String item) itemName, {String Function(String id)? climateName}) {
   if (index >= revealed) return ritualUnknown;
-  if (index == 0) return conditionText(r.condition);
+  if (index == 0) return conditionText(r.condition, climateName: climateName);
   if (index == r.circleIndex) {
     final strong = EcoType.values.firstWhere((t) => t.beats(target));
     return 'Criatura de ${typeLabel(strong)}, nível ${r.circleMinLevel}+';

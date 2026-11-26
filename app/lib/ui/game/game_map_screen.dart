@@ -24,7 +24,7 @@ import '../../core/windows.dart' show windowIndex;
 import '../../world/style_advisor.dart';
 import '../../world/climate_world.dart' show nearestPuddle;
 import '../../core/weather.dart';
-import '../../core/astro.dart' show moonPhase;
+import '../../core/astro.dart' show moonPhase, sunAltitudeDeg;
 import '../../core/species_ids.dart' show appearsOnMap, isRitualOnlyId;
 import '../../crafting/bag.dart' show acceptable;
 import '../../crafting/collector_tick.dart';
@@ -92,7 +92,7 @@ import '../../travel/ride.dart' show RideState;
 import '../../world/sky_outlook.dart';
 import '../../world/climate_outlook.dart' show nextCalendarItems, stackLine;
 import '../../world/dew_prism.dart';
-import '../../core/climate.dart' show RainbowArc;
+import '../../core/climate.dart' show RainbowArc, climateOfStack, eventsOfStack;
 import '../../story/local_notifier.dart';
 import '../../story/notification_plan.dart';
 import '../settings/regions_section.dart' show regionSizeLabel;
@@ -618,11 +618,15 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   /// O mundo na célula do Eco: hora local do relógio do jogo, bioma da célula, lua e o clima determinístico.
   WorldCondition _ritualWorld(_Ready r, WorldSpawn eco) {
     final t = tools.clock.nowUtc;
+    final stack = _climate!.world.idAt(eco.cellX, eco.cellY, t);
+    final (lat, lon) = tileFractionToLatLon(eco.x, eco.y, biomeZoom);
     return WorldCondition(
       hour: localHourOf(t),
       biome: r.assets.map.biomes.spawnKey(r.assets.map.spawnBiomeAtCell(eco.cellX, eco.cellY)),
       moon: moonPhase(t),
-      weather: r.data.climates.of(_climate!.world.idAt(eco.cellX, eco.cellY, t)).base,
+      weather: r.data.climates.of(stack).base,
+      climates: {climateOfStack(stack), ...eventsOfStack(stack)},
+      sunAltDeg: sunAltitudeDeg(lat, lon, t),
     );
   }
 
