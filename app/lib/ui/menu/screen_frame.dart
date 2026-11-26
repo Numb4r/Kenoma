@@ -4,6 +4,7 @@ library;
 
 import '../game/creature_art.dart';
 import '../game/creature_portrait.dart';
+import '../game/spark_portrait.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/game_data.dart';
@@ -46,9 +47,22 @@ class SectionTitle extends StatelessWidget {
       Padding(padding: const EdgeInsets.only(top: 8, bottom: 8), child: Text(text.toUpperCase(), style: const TextStyle(fontSize: 16, color: kSignal)));
 }
 
+/// A luz fraca atrás da criatura nas células do Bestiário: um degrau mais claro que a célula no meio, e ainda acima dela na
+/// borda, para o contorno escuro (`#1a1424`) das criaturas de sombra se ler. Não toca na criatura. O teste de contraste
+/// (`test/ui/bestiary_contrast_test.dart`) usa as mesmas duas cores.
+const Color kBacklightCenter = Color(0xFF4F4570), kBacklightRim = Color(0xFF34294E);
+const Decoration kBacklight = BoxDecoration(gradient: RadialGradient(colors: [kBacklightCenter, kBacklightRim], radius: 0.5));
+
 /// O sprite de uma espécie; [silhouette] pinta só a forma, para o que o jogador ainda não viu.
 class SpeciesImage extends StatelessWidget {
-  const SpeciesImage({required this.sprite, this.silhouette = false, this.size = 64, this.tint, this.aura = false, this.speciesId, this.variant, super.key});
+  const SpeciesImage(
+      {required this.sprite, this.silhouette = false, this.size = 64, this.tint, this.aura = false, this.speciesId, this.variant, this.sparkType, this.backlit = false, super.key});
+
+  /// A Fagulha do tipo dado (`fire`...): a tira animada do mapa no lugar do sprite. `null`: uma criatura.
+  final String? sparkType;
+
+  /// A luz fraca atrás ([kBacklight]), nas células do Bestiário.
+  final bool backlit;
 
   /// 0.25.1: a chave da variante (`urban`...), para o retrato animado trocar as cores como no mapa em vez do [tint].
   final String? variant;
@@ -68,6 +82,12 @@ class SpeciesImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final art = _art();
+    return backlit ? DecoratedBox(decoration: kBacklight, child: art) : art;
+  }
+
+  Widget _art() {
+    if (sparkType case final t?) return SparkPortrait(type: t, size: size, silhouette: silhouette);
     final animated = speciesId == null || silhouette ? null : CreatureArt.of(speciesId!);
     if (animated?.portrait != null) return CreaturePortrait(art: animated!, size: size, variant: variant);
     final img = sprite == null ? null : RawImage(image: sprite!.normal, filterQuality: FilterQuality.none, fit: BoxFit.contain);

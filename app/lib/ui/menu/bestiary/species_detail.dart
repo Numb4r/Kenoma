@@ -94,6 +94,8 @@ class _SpeciesDetailScreenState extends State<SpeciesDetailScreen> {
                     tint: _variant.isEmpty ? null : data.variants[_variant]?.tint,
                     variant: _variant.isEmpty ? null : _variant,
                     speciesId: form.spriteKey,
+                    sparkType: form.isSpark ? form.family.type : null,
+                    backlit: true,
                   ),
                 ),
                 if (!form.isSpark)

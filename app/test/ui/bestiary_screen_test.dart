@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/player/bestiary.dart';
 import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/ui/menu/bestiary/bestiary_widgets.dart';
+import 'package:kenoma/ui/game/spark_portrait.dart';
 import 'package:kenoma/ui/menu/bestiary_screen.dart';
+import 'package:kenoma/ui/menu/screen_frame.dart';
 
 import '../support/fixtures.dart';
 
@@ -51,6 +53,18 @@ void main() {
     expect(find.descendant(of: hum, matching: find.text('27%')), findsOneWidget, reason: '1 (Fagulha) + 2 (Eco) de 11 níveis');
     expect(find.byKey(const Key('bestiary-percent')), findsOneWidget);
     expect(find.byKey(const Key('form-soot.ritual')), findsOneWidget, reason: 'o Espírito de ritual das três do MVP');
+  });
+
+  testWidgets('a coluna da Fagulha usa a tira animada do mapa de cada tipo, e toda célula tem a luz atrás da criatura', (tester) async {
+    await open(tester, size: const Size(1080, 12000));
+    final sparks = tester.widgetList<SparkPortrait>(find.byType(SparkPortrait)).toList();
+    expect(sparks.map((s) => s.type).toSet(), {for (final f in data.families) f.type}, reason: 'as doze Fagulhas, uma por tipo');
+    expect(sparks, hasLength(12));
+    final hum = tester.widget<SparkPortrait>(find.descendant(of: find.byKey(const Key('family-hum')), matching: find.byType(SparkPortrait)));
+    expect((hum.type, hum.silhouette), ('electric', false), reason: 'a Arc Mote foi capturada');
+    final clod = tester.widget<SparkPortrait>(find.descendant(of: find.byKey(const Key('family-clod')), matching: find.byType(SparkPortrait)));
+    expect(clod.silhouette, isTrue, reason: 'a Grit Mote nunca apareceu: só a forma');
+    expect(tester.widgetList<SpeciesImage>(find.byType(SpeciesImage)).every((s) => s.backlit), isTrue);
   });
 
   testWidgets('a ficha de tipo filtra as famílias, e a busca acha por nome, tipo e lugar', (tester) async {
