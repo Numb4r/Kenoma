@@ -25,6 +25,9 @@ Não muda o save. Antes de qualquer toque pelo adb: o dono libera o aparelho na 
 - [ ] `0260-gatilhos` **De onde nascem.** O Sootling sai do bueiro (a tampa desliza, fagulhas e fumaça), o Frondling da rachadura da calçada (a luz verde corre por dentro), o Wyrmlet do asfalto rachado com brasa e, na chuva de meteoros, da cratera rosa; legíveis embaixo do corpo, de noite e de dia.
 - [ ] `0260-rituais` **Espécies de ritual.** Kilnshade (saruê sentado com a boca de fornalha), Rootseer (a fronde enrolada em olho sobre a placa de calçada) e Wellmirror (o sapo na manilha com a lua no papo) a 36 px; o Wellmirror é o que mais corre risco de não ler.
 - [ ] `0260-textos-shade` **Bestiário do Shade.** O Umbrel e o Shadekin com o texto do morcego (sem "vulto").
+- [ ] `0260-criaturas-28b` **Ecos e Espíritos das seis famílias restantes, de noite e de dia.** A 28 px: Glimlet (beija-flor-tesoura de vidro), Bitling (pombo com a faixa fora do lugar), Pebblet (tatu-bola), Rillet (cururu com o dorso de espelho), Rustling (besouro de élitros de grade; a luz do Metal é um cinza-azulado, conferir se lê) e Sprigglet (maritaca com asa batendo). A 36 px: Prismkin, Glitchkin (três cabeças), Bouldkin (guia de concreto), Brookkin (boca de lobo), Gratekin (portão) e Fairkin (pousada na pedra). As costuras do Véu não podem roubar o emissivo.
+- [ ] `0260-fagulhas-b` **Fagulhas das seis famílias.** Luz (caco de vidro com a estrela), digital (pena em pixels), terra (placa de cascalho), água (gota pendente), metal (caco de grade) e feérico (sâmara), pairando e legíveis no mapa.
+- [ ] `0260-retratos-b` **Retratos no Bestiário.** Os retratos de 96 dos Ecos e Espíritos das seis famílias, com as variantes trocando a cor sem perder a forma.
 
 ## 0.25.2
 
