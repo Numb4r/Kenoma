@@ -55,6 +55,8 @@
       "ability": { "kind": "hidden_chance_pct", "bands": [5, 10, 15] } },
     { "id": "bit.spirit", "name": "Glitchkin", "family": "bit", "type": "digital", "tier": "spirit", "since_epoch": 11,
       "ability": { "kind": "hidden_chance_pct", "bands": [10, 15, 20] } },
+    { "id": "bit.major", "name": "Entidade Maior de Bitling", "family": "bit", "type": "digital", "tier": "major", "since_epoch": 11 },
+    { "id": "bit.archetype", "name": "Arquétipo de Bitling", "family": "bit", "type": "digital", "tier": "archetype", "since_epoch": 11 },
     { "id": "sprig.eco", "name": "Sprigglet", "family": "sprig", "type": "fae", "tier": "eco", "since_epoch": 11,
       "ability": { "kind": "variant_chance_pct", "bands": [2, 4, 6] } },
     { "id": "sprig.spirit", "name": "Fairkin", "family": "sprig", "type": "fae", "tier": "spirit", "since_epoch": 11,

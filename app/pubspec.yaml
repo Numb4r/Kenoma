@@ -46,6 +46,8 @@ flutter:
     - assets/art/traffic/
     - assets/art/sparks/
     - assets/art/creatures/
+    - assets/art/creatures/bit_arquetipo/
+    - assets/art/creatures/bit_entidade/
     - assets/art/creatures/bitling/
     - assets/art/creatures/bouldkin/
     - assets/art/creatures/brookkin/
@@ -55,6 +57,8 @@ flutter:
     - assets/art/creatures/frond_arquetipo/
     - assets/art/creatures/frond_entidade/
     - assets/art/creatures/frondling/
+    - assets/art/creatures/glare_arquetipo/
+    - assets/art/creatures/glare_entidade/
     - assets/art/creatures/glimlet/
     - assets/art/creatures/glitchkin/
     - assets/art/creatures/gratekin/

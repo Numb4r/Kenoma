@@ -28,8 +28,14 @@
   },
   "lamp_m": 30,
   "species": {
+    "bit.archetype": {
+      "folder": "bit_arquetipo"
+    },
     "bit.eco": {
       "folder": "bitling"
+    },
+    "bit.major": {
+      "folder": "bit_entidade"
     },
     "bit.spirit": {
       "folder": "glitchkin"

@@ -31,6 +31,15 @@
 
 O Eco do mapa é desenhado pixel a pixel. O glitch (`tear`) só passa por partes largas do corpo, para nenhuma peça se soltar. Pés e pernas da Entidade e do Arquétipo ficam sem contorno (contorno seletivo).
 
+## Arte final (família inteira)
+
+Kit em `tools/art/creatures/_bit.lua`; espécies em `bitling/`, `glitchkin/`, `bit_entidade/` e `bit_arquetipo/` (nomes e pastas das duas últimas são provisórios), Fagulha em `tools/art/sparks/spark_digital.lua`. Folha: `docs/art/final/bit.png`. A Entidade é a da rodada 3 (as cópias atrasadas); o Arquétipo é o pombo fora de registro com o recorte no peito (a tabela da rodada 2, que é o que está em `arquetipos.png`).
+
+- **Luz:** só a do tipo Digital da paleta (`#62A01E`, `#A8F040`, `#DCFA9E`), em toda etapa. A linha "Luz do tipo" do começo deste arquivo (verde, magenta, azul e branco) não vale mais: o magenta do pescoço do pombo ficou como cor de pena (`#A45C92`, corpo), e a faixa fora do lugar tem a ponta de trás nesse magenta e a da frente acesa. `leds` são os subpixels do pescoço; o resto é `glow`.
+- **Costuras do Véu:** Bitling três, curtas e de 1 px, longe do pescoço aceso; Glitchkin duas mais largas (dorso e raiz da cauda), longe da tela; Entidade uma larga, onde o quadro de agora rasga do anterior; Arquétipo nenhuma (o vão); a Fagulha ficou sem, como as outras refeitas.
+- **Animação:** Bitling balança a cabeça e a faixa muda de linha e de lado a cada quadro; no Glitchkin as três cabeças balançam uma depois da outra, a varredura e a matriz rolam, a tela corre e as fatias trocam de lado; na Entidade cada cópia repete o balanço um quadro depois da anterior e o que escorre cresce e encolhe; no Arquétipo as fatias respiram, as cabeças balançam em fila e os pombos de dentro do vão afundam (mais as regras do vão do `K.run`). Em todas o tronco sobe e os pés ficam.
+- **Retratos:** 96 nas três etapas de baixo (pena em escamas, matriz de LED em passo de 3, blocos de 3 e 5 px na Entidade); o do Arquétipo é o pombo inteiro em 128 (escala 1,8, margem de 6 px), com o `_retrato.lua`.
+
 ## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
 
 | Etapa | O que é | Regra quebrada |

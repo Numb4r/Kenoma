@@ -1,100 +1,111 @@
--- Bitling (bit.eco), glitch que vive em letreiros e telas. Rodar pelo Aseprite: aseprite -b --script build.lua
--- Mapa 28 x 28, olhando para a direita: uma pilha de seis faixas de tela fora de sincronia, com dois olhos de
--- pixel e duas pernas. No alerta as faixas se alinham (o glitch para).
--- leds: os olhos. glow: a scanline que desce em cada faixa, a franja magenta das faixas deslocadas e os pixels soltos.
-local F = dofile('/home/yuri/Documentos/kenoma/tools/art/creatures/wisplet/_fase1.lua')
-local L = F.L
+-- Bitling (bit.eco), arte final: o Eco da família Bit, a partir do conceito aprovado. O pombo de perfil, em proporção
+-- de pombo. O errado é pouco: uma faixa do corpo está dois pixels fora do lugar (a ponta de trás magenta de pena, a
+-- da frente acesa), as barras da asa acendem onde a faixa passa e o brilho do pescoço é feito de subpixels.
+-- Costuras do Véu: três, curtas e de 1 px (dorso, barriga, alto da cabeça), só no glow, longe do pescoço aceso.
+-- Camadas: corpo; leds = os subpixels do pescoço (piscam); glow = a franja do glitch, as barras acesas, as costuras
+-- e o pixel solto.
+-- Animação: a cabeça balança (o passo do pombo), a faixa fora do lugar muda de linha e de lado a cada quadro, o
+-- tronco sobe e desce e os pés ficam. Na deriva ele anda; na fuga, salta. No alerta o glitch dobra.
+-- O mapa é desenhado pixel a pixel (sem o contorno); o retrato é o mesmo pombo desenhado em 96 (escala 3).
+-- Rodar: KENOMA_ART='<repo>/tools/art/'; dofile(KENOMA_ART .. 'creatures/bitling/build.lua')
+local B = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_bit.lua')
+local L = B.L
+local floor = math.floor
 
-local SL = { { 4, 8, 12, 3 }, { 7, 10, 12, 3 }, { 10, 7, 12, 3 }, { 13, 9, 12, 3 }, { 16, 5, 13, 3 }, { 19, 9, 10, 2 } } -- y, x, largura, altura
-local SH = { [0] = { 0, 0, 0, 0, 0, 0 }, [1] = { 0, 0, 1, 0, 2, 0 }, [2] = { -1, 0, -1, 1, 0, 0 }, alert = { 0, -2, 1, -1, 3, 0 } }
-local BITS = { [0] = { { 23, 11 }, { 3, 18 } }, [1] = { { 24, 17 }, { 4, 9, 's' } }, [2] = { { 22, 5 }, { 3, 13 }, { 24, 20, 's' } }, alert = {} }
+local ROWS = {
+  '............................', '............................', '............................',
+  '............................',
+  '.................cddc.......',
+  '................bcdedc......',
+  '................bcdcrdh.....',
+  '................abcdccqq....',
+  '................aGbNc.......',
+  '...............aNbGbc.......',
+  '..............abGbNQcd......',
+  '............abcbGbNccde.....',
+  '.........abccdcdccbccdee....',
+  '.......abcdcdcfdcfccdede....',
+  '......abcdcdcffdcffcdcde....',
+  '.....abcbcdcdffcdffcdcd.....',
+  '....fabcbcdcdcffdcffdcc.....',
+  '...ffabcbcbcdcdffcfcbb......',
+  '...fafabcbcbcbcdcdcba.......',
+  '...faf.ababcbcbcbcba........',
+  '...f........b...b...........',
+  '............j...j...........',
+  '............i...i...........',
+  '...........jijjjijj.........',
+  '............................', '............................', '............................', '............................',
+}
+local TEAR = { [0] = { 15, 16, 2 }, { 15, 16, 2 }, { 12, 13, -1 }, { 16, 17, 1 } }
+local SEAMS = { { 7, 17 }, { 8, 18 }, { 18, 18 }, { 19, 17 }, { 17, 5 }, { 18, 4 } }
+local DUST = { { 1, 14 }, { 26, 18 }, { 2, 22 }, { 5, 24 }, { 24, 10 }, { 3, 12 }, { 25, 22 } }
 
-local function pose(p)
-  local g = L.grid(28, 28)
-  local n = p == 'alert' and 0 or p
-  for i, s in ipairs(SL) do
-    local x, y = s[2] + SH[p][i], s[1]
-    for r = 0, s[4] - 1 do
-      local c = r == 0 and 'W' or (r == s[4] - 1 and 'N' or 'M')
-      if i % 2 == 1 and r == (n + (i - 1) // 2) % 3 then c = 'J' end
-      L.rect(g, x, y + r, x + s[3] - 1, y + r, c)
-      if c ~= 'J' and c ~= 'W' then L.set(g, x + s[3] - 1, y + r, 'N') end
-      if (i == 3 or i == 5) and p ~= 'alert' and c ~= 'J' then L.set(g, x, y + r, 'P') end
-    end
-    if i == 2 then
-      for r = 1, 2 do
-        L.set(g, x + 3, y + r, 'h'); L.set(g, x + 4, y + r, 'H'); L.set(g, x + 8, y + r, 'h'); L.set(g, x + 9, y + r, 'H')
-      end
-      if p == 'alert' then L.set(g, x + 3, y + 1, 'H'); L.set(g, x + 8, y + 1, 'H') end
-    end
-  end
-  L.put(g, 10, 21, { 'MM...MM', n == 1 and 'MMN....' or 'MMN..MMN' })
-  return g, BITS[p]
+-- as linhas 0..y1 sobem ou descem dy; a perna (a linha y1 + 1) estica para cobrir
+local function vshift(g, y1, dy)
+  if dy == 0 then return g end
+  local o = L.grid(g.w, g.h)
+  for y = y1 + 1, g.h - 1 do for x = 0, g.w - 1 do o[y][x] = g[y][x] end end
+  if dy < 0 then for y = y1 + dy + 1, y1 do for x = 0, g.w - 1 do o[y][x] = L.get(g, x, y1 + 1) end end end
+  for y = 0, y1 do for x = 0, g.w - 1 do
+    if g[y][x] ~= '.' then L.set(o, x, y + dy, g[y][x]) end
+  end end
+  return o
 end
 
-local JIT = { { 0, 0, 0, 0, 0, 0 }, { 0, 0, 3, 0, -2, 0 }, { 2, 0, 0, -1, 4, 0 }, { 0, 0, -3, 0, 0, 1 } }
-local PS = { { 12, 26, 40, 10 }, { 22, 32, 40, 12 }, { 34, 22, 40, 10 }, { 44, 28, 40, 10 }, { 54, 16, 43, 10 }, { 64, 28, 33, 8 } }
-local function portrait(f)
-  local g, sg = L.grid(96, 96), L.grid(96, 96)
-  local by = ({ 0, -1, -1, 0 })[f]
-  -- pernas
-  for _, lx in ipairs({ 33, 49 }) do
-    L.rect(g, lx, 70 + by, lx + 5, 80, 'M'); L.rect(g, lx + 4, 70 + by, lx + 5, 80, 'N')
-    L.rect(g, lx, 79, lx + 10, 82, 'M'); L.rect(g, lx, 79, lx + 10, 79, 'W'); L.rect(g, lx, 82, lx + 10, 82, 'N')
+local function drawMap(g, sg, o)
+  local ph = (o.ph or 0) % 4
+  local alert, crouch = o.pose == 'alert', o.pose == 'crouch'
+  local t = L.frame(ROWS, 28, 28, 'bitling')
+  local bob = (alert or crouch) and 0 or ({ [0] = 0, 1, 1, 0 })[ph]
+  B.tear(t, 4, 9, bob, false)                                   -- o balanço da cabeça
+  if o.lean and ph % 2 == 1 then B.tear(t, 21, 23, 1, false) end   -- o passo
+  for _, q in ipairs(SEAMS) do
+    if ('abcde'):find(t[q[2]][q[1]], 1, true) then t[q[2]][q[1]] = 'Z' end
   end
-  for i, s in ipairs(PS) do
-    local x, y, w, h = s[2] + JIT[f][i], s[1] + by, s[3], s[4]
-    L.rect(g, x, y, x + w - 1, y + h - 1, 'M')
-    L.rect(g, x, y, x + w - 1, y + 1, 'W')
-    L.rect(g, x + w - 3, y + 2, x + w - 1, y + h - 1, 'N')
-    L.rect(g, x, y + h - 2, x + w - 1, y + h - 1, 'N')
-    if i ~= 2 then
-      for yy = y + 3, y + h - 4, 3 do L.rect(g, x + 3, yy, x + w - 5, yy, 'j') end
-      local sy = y + 3 + 3 * ((f + i) % 2)
-      for xx = x + 3, x + w - 5 do L.set(g, xx, sy, F.hash(xx, i, f) % 5 == 0 and 'Y' or 'J') end
-    end
-    if i == 3 or i == 5 then L.rect(g, x, y, x + 1, y + h - 1, 'P') end
-    if i == 2 then -- olhos de pixel, olhando para a direita
-      for _, ex in ipairs({ x + 8, x + 25 }) do
-        L.rect(g, ex, y + 2, ex + 7, y + 9, 'h')
-        local up = f == 4 and 2 or 0
-        L.rect(g, ex + 3, y + 3 + up, ex + 6, y + 8, 'H')
-      end
-    end
-  end
-  -- pixels soltos: as copias com defeito
-  for k, p in ipairs({ { 80, 30 }, { 8, 44 }, { 84, 60 }, { 10, 20 }, { 76, 12 }, { 6, 70 } }) do
-    if (k + f) % 3 ~= 0 then
-      local x, y = p[1] + ((k + f) % 2) * 2, p[2]
-      L.rect(sg, x, y, x + 2, y + 2, (k + f) % 4 == 1 and 's' or 'S')
-    end
-  end
-  return g, sg
+  local te = alert and { 15, 16, 2 } or (crouch and { 15, 16, 1 } or TEAR[ph])
+  B.tear(t, te[1], te[2], te[3])
+  if alert then B.tear(t, 12, 13, -2) end
+  for y = te[1], te[2] do for x = 0, 27 do if t[y][x] == 'f' then t[y][x] = 'Q' end end end
+  local dy = o.dy or 0
+  if crouch then t = vshift(t, 20, 1) end
+  t = o.jump and vshift(t, 27, dy) or vshift(t, 20, dy)
+  B.blit(g, t)
+  B.dust(g, sg, 1, 0, 0, { DUST[1], DUST[2], DUST[4], DUST[5] }, ph, 4)
 end
 
-F.build {
-  name = 'bitling', W = 28,
-  LEG = {
-    A = '#1A1424',
-    W = '#4E9A86', M = '#2F6A62', N = '#1F4648',                -- tela
-    h = '#122E36', j = '#245E50', p = '#4A2A4E',                -- olho, scanline e franja apagados
-    H = '#D9FFF0',                                              -- olho (leds)
-    J = '#3DFFB0', Y = '#D9FFF0', P = '#FF5FB0',                -- scanline e franja (glow)
-    S = '#3DFFB0', s = '#D9FFF0',                               -- pixel solto (glow)
-  },
-  BODY_KEYS = { 'W', 'M', 'N' },
-  EMIT = { H = { 'h', 'leds' }, J = { 'j', 'glow' }, Y = { 'j', 'glow' }, P = { 'p', 'glow' } },
-  BRIGHT = { J = 'Y' },
-  DARK = 'N',
-  pose = pose,
+local function draw(g, sg, k, o)
+  if k == 1 then return drawMap(g, sg, o) end
+  local ph = (o.ph or 0) % 4
+  local ox, oy = 6, 8
+  local dy = o.dy or 0
+  local bob = ({ [0] = 0, 0.5, 0.5, 0 })[ph]
+  local function X(v) return v * k + (k - 1) / 2 + ox end
+  local function Y(v) return v * k + (k - 1) / 2 + oy + dy end
+  B.layer(g, function(t)
+    B.pigeon(t, k, ox, oy, { by = dy, roll = ph, heads = { { 18.6, 12, 18.8, 6.4, nil, bob } } })
+    for _, q in ipairs({ { 6.6, 16.4, 9, 18.4 }, { 17.6, 18.6, 20, 16.6 }, { 16.6, 5.2, 18.6, 4.2 } }) do
+      B.seam(t, { { X(q[1]), Y(q[2]) }, { X(q[3]), Y(q[4]) } }, 1, 4)
+    end
+  end)
+  local te = TEAR[ph]
+  B.tear(g, Y(te[1]), Y(te[2] + 0.4), te[3] * 3)
+  B.tear(g, Y(9.4), Y(9.9), ph % 2 == 0 and -3 or 2)
+  for y = floor(Y(te[1])), floor(Y(te[2] + 0.4)) do for x = 0, g.w - 1 do
+    if g[y][x] == 'f' and (x + y) % 3 ~= 0 then g[y][x] = 'Q' end
+  end end
+  B.dust(g, sg, k, ox, oy, DUST, ph, 4)
+end
+
+B.run {
+  name = 'bitling', stage = 'eco', W = 28, PW = 96, draw = draw,
+  portrait = function(o)
+    local g, sg = L.grid(96, 96), L.grid(96, 96)
+    draw(g, sg, 3, o)
+    return g, sg, 0, 0
+  end,
   acc = {
-    urban = { { 9, 14, { 'wWWWWWWWWWWw' } }, { 9, 20, { 'wWWWWWWWWw' } } },        -- duas bracadeiras, no meio e na base
-    green = { { 11, 4, { 'L..L', 'lLLl', '.dd.' } } },                             -- broto no alto
-    water = { { 9, 13, { 'u.u.u.U.u.u.' } }, { 15, 14, { 'U', 'v' } } },            -- colar de contas com gota
-    residential = { { 7, 10, { 'OOOOOOOOOOOo' } }, { 7, 11, { 'Oo', 'Oo', 'oo' } } }, -- cachecol sob os olhos
-    lit = { { 11, 13, { 'NN....NN', 'NNNMMNNN', 'NN....NN' } } },                  -- gravata-borboleta
-    sacred = { { 10, 3, { '.GGGGGG.', 'G......G', 'G......G', '.gggggg.' } } },    -- aureola
-    crimson = { { 10, 15, { '.RR', 'Rr.', 'R..', 'Rr.', '.RR' } } },               -- crescente embaixo
+    urban = { 9, 13 }, green = { 6, 15 }, water = { 8, 12 }, residential = { 8, 13 }, lit = { 8, 14 },
+    sacred = { 15, 1 }, crimson = { 12, 13 },
   },
-  portrait = portrait,
 }
