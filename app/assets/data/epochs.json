@@ -2681,6 +2681,10 @@
                 [
                   "hum.ritual",
                   6
+                ],
+                [
+                  "glare.ritual",
+                  1
                 ]
               ],
               "green": [
@@ -2698,6 +2702,10 @@
                 ],
                 [
                   "hum.ritual",
+                  1
+                ],
+                [
+                  "glare.ritual",
                   1
                 ]
               ],
@@ -2717,6 +2725,10 @@
                 [
                   "hum.ritual",
                   1
+                ],
+                [
+                  "glare.ritual",
+                  1
                 ]
               ],
               "residential": [
@@ -2734,6 +2746,10 @@
                 ],
                 [
                   "hum.ritual",
+                  1
+                ],
+                [
+                  "glare.ritual",
                   1
                 ]
               ],
@@ -2753,6 +2769,10 @@
                 [
                   "hum.ritual",
                   1
+                ],
+                [
+                  "glare.ritual",
+                  6
                 ]
               ],
               "sacred": [
@@ -2770,6 +2790,10 @@
                 ],
                 [
                   "hum.ritual",
+                  1
+                ],
+                [
+                  "glare.ritual",
                   1
                 ]
               ]

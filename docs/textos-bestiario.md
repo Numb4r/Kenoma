@@ -147,6 +147,12 @@ Onde aparece: Iluminado; hora: Dia; clima: + Sol forte; lua: —.
 - Lore II: Dá para ler as horas pelas cores que ele joga no chão.
 - Lore III: Iaida, o altíssimo, não desce. O Prismkin é o que chega aqui embaixo quando ele olha.
 
+**Noonglass** (Ritual). Beija-flor-tesoura pousado, de olho fechado, com uma lente de farol no peito e o sol do meio-dia dentro.
+
+- Lore I: O único beija-flor que alguém viu parado. Pousa num vergalhão, fecha o olho e a asa de caco, e não larga mais: quando vai embora, leva o poleiro nos pés. No peito, uma lente de farol guarda o sol do meio-dia.
+- Lore II: A sombra dele é a mesma a qualquer hora: curta, bem debaixo dos pés. As três cores na ponta da cauda são o que sobra da luz depois que ela passa por ele.
+- Lore III: Iaida, o altíssimo, não desce. Ao meio-dia a distância é a menor que há, e é por essa lente que ele olha.
+
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de dia; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
 
 ## Shade (Sombra)

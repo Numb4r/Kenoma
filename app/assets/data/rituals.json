@@ -40,6 +40,16 @@
         { "item": "item.rain_water", "qty": 1 }
       ],
       "circle": { "min_level": 5 }
+    },
+    {
+      "species": "glare.ritual",
+      "condition": {"kind": "all", "of": [{"kind": "any", "of": [{"kind": "climate", "value": "strong_sun"}, {"kind": "climate", "value": "rainbow"}]}, {"kind": "hour", "from": 11, "to": 14}]},
+      "materials": [
+        { "item": "item.glass_shard", "qty": 2 },
+        { "item": "item.essence.light", "qty": 1 },
+        { "item": "item.prism_shard", "qty": 1 }
+      ],
+      "circle": { "min_level": 5 }
     }
   ]
 }

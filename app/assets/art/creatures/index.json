@@ -92,6 +92,10 @@
       "folder": "glare_entidade",
       "spawn": "glint_rainbow"
     },
+    "glare.ritual": {
+      "folder": "noonglass",
+      "spawn": "glint_rainbow"
+    },
     "glare.spirit": {
       "folder": "prismkin",
       "spawn": "glint_rainbow"
