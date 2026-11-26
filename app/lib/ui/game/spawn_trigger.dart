@@ -1,7 +1,9 @@
 /// De onde a criatura nasce no desenho (0.25.1, GDD: o Humoth "nasce onde o raio cai"). Só desenho: o Eco continua no
 /// ponto que a seed deu, igual para os amigos; o gatilho escolhe o efeito que acompanha a animação `spawn` (o raio que
 /// cai nele, as faíscas que saem do poste mais perto, a poça que ondula, o chão que se revira, a neblina que se junta;
-/// 0.26.0: o bueiro do Soot, a rachadura da calçada do Frond, a cratera de meteoro e o asfalto rachado do Wyrm).
+/// 0.26.0: o bueiro do Soot, a rachadura da calçada do Frond, a cratera de meteoro e o asfalto rachado do Wyrm; depois,
+/// decisão do dono pela coluna "Onde e quando" do GDD: o clarão na vitrine ou a faixa do arco-íris da Glare, o letreiro em
+/// estática da Bit, a grade que range da Rust e o redemoinho de folhas secas da Sprig).
 /// A escolha é Dart puro e testável; o desenho fica em [paintSpawnTrigger].
 library;
 
@@ -10,14 +12,15 @@ import 'dart:ui' as ui;
 
 import '../../core/fnv.dart';
 
-enum SpawnTriggerKind { lightning, lamp, puddle, ground, fog, manhole, crack, crater, emberCrack }
+enum SpawnTriggerKind { lightning, lamp, puddle, ground, fog, manhole, crack, crater, emberCrack, glint, rainbow, staticSign, grate, whirl, whirlPollen }
 
 class SpawnTrigger {
   const SpawnTrigger(this.kind, [this.origin]);
 
   final SpawnTriggerKind kind;
 
-  /// O poste de onde saem as faíscas (células z21). Só no [SpawnTriggerKind.lamp].
+  /// O poste de onde saem as faíscas, ou o letreiro que entra em estática (células z21). Só no [SpawnTriggerKind.lamp] e no
+  /// [SpawnTriggerKind.staticSign] (sem letreiro perto, a estática acende em cima da criatura).
   final (double, double)? origin;
 
   @override
@@ -29,8 +32,10 @@ class SpawnTrigger {
 
 /// O gatilho de uma criatura cujo `spawn` no `index.json` é [spec], com o clima mostrado [climateId]. [climates] diz quais
 /// climas contam como raio, poça e neblina (`index.json`, `climates`). [lamp]: o poste mais perto dentro do alcance, se
-/// houver. Sem gatilho que valha agora: `null` (nasce onde o Eco aparece, como sempre).
-SpawnTrigger? resolveSpawnTrigger(String? spec, {required String climateId, required bool night, required Map<String, Set<String>> climates, (double, double)? lamp}) {
+/// houver. [sign]: o letreiro, a placa ou o painel mais perto. [rainbow]: um arco-íris à vista. [twilight]: o sol a menos
+/// de 6° do horizonte (o crepúsculo real do GDD). Sem gatilho que valha agora: `null` (nasce onde o Eco aparece, como sempre).
+SpawnTrigger? resolveSpawnTrigger(String? spec,
+    {required String climateId, required bool night, required Map<String, Set<String>> climates, (double, double)? lamp, (double, double)? sign, bool rainbow = false, bool twilight = false}) {
   bool on(String k) => climates[k]?.contains(climateId) ?? false;
   return switch (spec) {
     'lightning_lamp' when on('lightning') => const SpawnTrigger(SpawnTriggerKind.lightning),
@@ -42,6 +47,12 @@ SpawnTrigger? resolveSpawnTrigger(String? spec, {required String climateId, requ
     'crack' => const SpawnTrigger(SpawnTriggerKind.crack),
     'crater_crack' when on('crater') => const SpawnTrigger(SpawnTriggerKind.crater),
     'crater_crack' => const SpawnTrigger(SpawnTriggerKind.emberCrack),
+    'glint_rainbow' when rainbow => const SpawnTrigger(SpawnTriggerKind.rainbow),
+    'glint_rainbow' when !night => const SpawnTrigger(SpawnTriggerKind.glint),
+    'static_sign' => SpawnTrigger(SpawnTriggerKind.staticSign, sign),
+    'grate' => const SpawnTrigger(SpawnTriggerKind.grate),
+    'whirl' when twilight => const SpawnTrigger(SpawnTriggerKind.whirlPollen),
+    'whirl' => const SpawnTrigger(SpawnTriggerKind.whirl),
     _ => null,
   };
 }
@@ -68,6 +79,13 @@ const _emberDim = ui.Color(0xFFA82E1C), _ember = ui.Color(0xFFF0502E), _emberHea
 const _concrete = ui.Color(0xFF8A8790), _concreteDark = ui.Color(0xFF5E5B66), _leafDark = ui.Color(0xFF2B7A40), _leaf = ui.Color(0xFF4DBD62), _leafPale = ui.Color(0xFFA2E8A0);
 const _asphalt = ui.Color(0xFF3F3B4C), _clay = ui.Color(0xFF7A3B2E), _craterFloor = ui.Color(0xFF3A1A2C), _stripe = ui.Color(0xFFB8B2A0);
 const _dracDark = ui.Color(0xFF8E2852), _drac = ui.Color(0xFFDE4F84), _dracPale = ui.Color(0xFFF797B6), _dracCold = ui.Color(0xFF643046);
+// Luz, Digital, Metal e Feérico: a luz de cada tipo (tools/art/ui/types/palette.lua); a folha seca é a das asas da Sprig.
+const _lightDim = ui.Color(0xFFCDB468), _lightTone = ui.Color(0xFFFFF0B8), _lightPale = ui.Color(0xFFFFFBE6);
+const _digiDim = ui.Color(0xFF62A01E), _digi = ui.Color(0xFFA8F040), _digiPale = ui.Color(0xFFDCFA9E), _panel = ui.Color(0xFF2A2833);
+const _metalDim = ui.Color(0xFF566274), _metal = ui.Color(0xFF93A1B3), _metalPale = ui.Color(0xFFCCD6E2), _rust = ui.Color(0xFF7A4A2E);
+const _faeDim = ui.Color(0xFFC0669E), _fae = ui.Color(0xFFFFA8E0), _leafDry = ui.Color(0xFF8A6A3A), _leafDryPale = ui.Color(0xFFB08A4E);
+// As faixas do arco-íris do mapa (clima.json, `rainbow_arc`), sem o violeta do Véu.
+const _bands = [ui.Color(0xFFFF5A36), ui.Color(0xFFFFE9A8), ui.Color(0xFF6BD36A), ui.Color(0xFF4AA8FF)];
 
 /// A fração de [t] entre [a] e [b], presa em 0 a 1.
 double _span(double t, double a, double b) => ((t - a) / (b - a)).clamp(0.0, 1.0);
@@ -313,6 +331,92 @@ void paintSpawnTrigger(ui.Canvas canvas, SpawnTrigger t, ui.Offset c, double app
         for (var i = 0; i < 2; i++) {
           block(feet.translate((i * 2 - 1) * 2 * px, -(1 + k * 4) * px), _dracPale.withValues(alpha: 1 - k));
         }
+      }
+    case (SpawnTriggerKind.glint, false):
+      // O sol bate numa vitrine: uma estrela de quatro pontas abre acima dela, um risco de reflexo passa e tudo apaga.
+      if (appear >= 0.6) return;
+      final k = _span(appear, 0, 0.3), fade = 1 - _span(appear, 0.3, 0.6);
+      final o = c.translate(0, -size * 0.35);
+      final arm = (1 + k * 5).round();
+      for (var i = 1; i <= arm; i++) {
+        final col = (i <= 2 ? _lightPale : (i <= 4 ? _lightTone : _lightDim)).withValues(alpha: fade);
+        for (final (dx, dy) in const [(1, 0), (-1, 0), (0, 1), (0, -1)]) {
+          block(o.translate(dx * i * px, dy * i * px), col);
+        }
+      }
+      block(o, _white.withValues(alpha: fade), 2);
+      for (var i = -3; i <= 3; i++) {
+        block(c.translate((i + (k * 8 - 4)) * px, (-i - 2) * px), _lightTone.withValues(alpha: fade * 0.6));
+      }
+    case (SpawnTriggerKind.rainbow, false):
+      // Ela sai da faixa do arco-íris: quatro faixas descem do alto até ela e se desfazem em pontos de luz.
+      final k = _span(appear, 0, 0.5), fade = 1 - _span(appear, 0.5, 0.9);
+      final top = c.dy - size * (2.5 - 2 * k);
+      for (var b = 0; b < _bands.length; b++) {
+        for (var y = top; y < c.dy - size * 0.3; y += px) {
+          block(ui.Offset(c.dx + (b - 1.5) * px, y), _bands[b].withValues(alpha: fade * 0.8));
+        }
+      }
+      for (var i = 0; i < 6; i++) {
+        final kk = _span(appear, 0.3 + i * 0.03, 0.8);
+        if (kk <= 0 || kk >= 1) continue;
+        block(c + ui.Offset(math.cos(i * 1.05) * size * 0.5 * kk, -size * 0.3 + math.sin(i * 1.05) * size * 0.3 * kk), _bands[i % _bands.length].withValues(alpha: 1 - kk));
+      }
+    case (SpawnTriggerKind.staticSign, false):
+      // O letreiro mais perto pisca em estática; os pixels saem dele e chegam juntos no centro, onde o pombo aparece.
+      final o = origin ?? c.translate(0, -size * 0.6);
+      if (appear < 0.45) {
+        final on = (appear * 20).floor().isEven;
+        final panel = ui.Rect.fromCenter(center: o, width: 8 * px, height: 5 * px);
+        canvas.drawRect(panel.inflate(px), p..color = _outline);
+        canvas.drawRect(panel, p..color = _panel);
+        for (var i = 0; i < 10; i++) {
+          if (r(70 + i + (appear * 20).floor() * 10) < 0.5 != on) continue;
+          block(o.translate(((r(90 + i) * 8).floor() - 3.5) * px, ((r(100 + i) * 5).floor() - 2) * px), i.isEven ? _digi : _digiPale);
+        }
+      }
+      for (var i = 0; i < 6; i++) {
+        final k = _span(appear, 0.2 + i * 0.03, 0.6);
+        if (k <= 0 || k >= 1) continue;
+        block(ui.Offset.lerp(o, c, k)!.translate(((i % 3) - 1) * px * (1 - k) * 3, 0), i.isEven ? _digi : _digiDim);
+      }
+    case (SpawnTriggerKind.grate, true):
+      // Uma folha de grade enferrujada atrás dela range (balança 1 px), abre e some quando o corpo fecha.
+      final fade = 1 - _span(appear, 0.55, 0.85);
+      if (fade <= 0) return;
+      final swing = appear < 0.3 ? ((appear * 24).floor().isEven ? 1.0 : 0.0) : 0.0;
+      final open = _span(appear, 0.3, 0.55);
+      final w = (10 - open * 6).roundToDouble();
+      final left = c.dx - 5 * px + swing * px;
+      final topY = feet.dy - 14 * px;
+      canvas.drawRect(ui.Rect.fromLTWH(left - px, topY - px, (w + 2) * px, 16 * px), p..color = _outline.withValues(alpha: fade));
+      for (var x = 0; x < w; x++) {
+        for (var y = 0; y < 14; y++) {
+          final bar = x.isEven || y % 5 == 0;
+          if (!bar) continue;
+          canvas.drawRect(ui.Rect.fromLTWH(left + x * px, topY + y * px, px, px), p..color = (r(110 + x * 14 + y) < 0.25 ? _rust : (y % 5 == 0 ? _metal : _metalDim)).withValues(alpha: fade));
+        }
+      }
+    case (SpawnTriggerKind.grate, false):
+      // A limalha solta da grade se junta no besouro.
+      for (var i = 0; i < 8; i++) {
+        final k = _span(appear, 0.15 + i * 0.02, 0.55);
+        if (k <= 0 || k >= 1) continue;
+        final dir = i / 8 * 2 * math.pi + r(120 + i);
+        final dist = size * 0.6 * (1 - k);
+        block(c + ui.Offset(math.cos(dir) * dist, math.sin(dir) * dist * 0.7), i.isEven ? _metalPale : _metal);
+      }
+    case (SpawnTriggerKind.whirl, false) || (SpawnTriggerKind.whirlPollen, false):
+      // Folhas secas giram num redemoinho que fecha nela; no crepúsculo, com pólen aceso no meio.
+      final pollen = t.kind == SpawnTriggerKind.whirlPollen;
+      for (var i = 0; i < 8; i++) {
+        final k = _span(appear, i * 0.03, 0.6);
+        if (k >= 1) continue;
+        final ang = i / 8 * 2 * math.pi + k * 2.5 * math.pi;
+        final rad = size * (0.75 - 0.6 * k);
+        final pt = c + ui.Offset(math.cos(ang) * rad, math.sin(ang) * rad * 0.5 - k * size * 0.2);
+        block(pt, (i.isEven ? _leafDry : _leafDryPale).withValues(alpha: 1 - k * 0.6), 2);
+        if (pollen && i.isOdd) block(pt.translate(px * 1.5, -px * 1.5), (k < 0.5 ? _fae : _faeDim).withValues(alpha: 1 - k));
       }
     default:
   }

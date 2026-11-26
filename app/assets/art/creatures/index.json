@@ -29,16 +29,20 @@
   "lamp_m": 30,
   "species": {
     "bit.archetype": {
-      "folder": "bit_arquetipo"
+      "folder": "bit_arquetipo",
+      "spawn": "static_sign"
     },
     "bit.eco": {
-      "folder": "bitling"
+      "folder": "bitling",
+      "spawn": "static_sign"
     },
     "bit.major": {
-      "folder": "bit_entidade"
+      "folder": "bit_entidade",
+      "spawn": "static_sign"
     },
     "bit.spirit": {
-      "folder": "glitchkin"
+      "folder": "glitchkin",
+      "spawn": "static_sign"
     },
     "clod.archetype": {
       "folder": "clod_arquetipo",
@@ -77,16 +81,20 @@
       "spawn": "crack"
     },
     "glare.archetype": {
-      "folder": "glare_arquetipo"
+      "folder": "glare_arquetipo",
+      "spawn": "glint_rainbow"
     },
     "glare.eco": {
-      "folder": "glimlet"
+      "folder": "glimlet",
+      "spawn": "glint_rainbow"
     },
     "glare.major": {
-      "folder": "glare_entidade"
+      "folder": "glare_entidade",
+      "spawn": "glint_rainbow"
     },
     "glare.spirit": {
-      "folder": "prismkin"
+      "folder": "prismkin",
+      "spawn": "glint_rainbow"
     },
     "hum.archetype": {
       "folder": "hum_arquetipo",
@@ -125,16 +133,20 @@
       "spawn": "puddle"
     },
     "rust.archetype": {
-      "folder": "rust_arquetipo"
+      "folder": "rust_arquetipo",
+      "spawn": "grate"
     },
     "rust.eco": {
-      "folder": "rustling"
+      "folder": "rustling",
+      "spawn": "grate"
     },
     "rust.major": {
-      "folder": "rust_entidade"
+      "folder": "rust_entidade",
+      "spawn": "grate"
     },
     "rust.spirit": {
-      "folder": "gratekin"
+      "folder": "gratekin",
+      "spawn": "grate"
     },
     "shade.archetype": {
       "folder": "shade_arquetipo"
@@ -169,16 +181,20 @@
       "spawn": "manhole"
     },
     "sprig.archetype": {
-      "folder": "sprig_arquetipo"
+      "folder": "sprig_arquetipo",
+      "spawn": "whirl"
     },
     "sprig.eco": {
-      "folder": "sprigglet"
+      "folder": "sprigglet",
+      "spawn": "whirl"
     },
     "sprig.major": {
-      "folder": "sprig_entidade"
+      "folder": "sprig_entidade",
+      "spawn": "whirl"
     },
     "sprig.spirit": {
-      "folder": "fairkin"
+      "folder": "fairkin",
+      "spawn": "whirl"
     },
     "wisp.archetype": {
       "folder": "wisp_arquetipo",

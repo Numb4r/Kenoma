@@ -1209,7 +1209,13 @@ class GameMapGame extends FlameGame {
     final t = _triggers.putIfAbsent(
       s.uid,
       () => resolveSpawnTrigger(spec,
-          climateId: climateShown().id, night: light.night > 0.5, climates: CreatureArt.triggerClimates, lamp: spec == 'lightning_lamp' ? _nearestLamp(s.x, s.y) : null),
+          climateId: climateShown().id,
+          night: light.night > 0.5,
+          climates: CreatureArt.triggerClimates,
+          lamp: spec == 'lightning_lamp' ? _nearestProp(s.x, s.y, const {'lamp'}) : null,
+          sign: spec == 'static_sign' ? _nearestProp(s.x, s.y, const {'street_sign', 'newsstand', 'bus_stop'}) : null,
+          rainbow: rainbow.arcs.isNotEmpty,
+          twilight: sunAltDeg.abs() < 6),
     );
     if (t == null) return null;
     final o = t.origin;
@@ -1218,14 +1224,14 @@ class GameMapGame extends FlameGame {
     return (t, Offset(x, y - 4 * ecoSizePx / mapEcoPx)); // a cabeça do poste
   }
 
-  /// O poste do mapa mais perto de ([x], [y]) (células z21) até `lamp_m` do `index.json` das criaturas.
-  (double, double)? _nearestLamp(double x, double y) {
+  /// O poste (ou o letreiro, a placa, a banca: [kinds]) mais perto de ([x], [y]) (células z21) até `lamp_m` do `index.json`.
+  (double, double)? _nearestProp(double x, double y, Set<String> kinds) {
     final n = city.cellsPerTile, tx = (x / n).floor(), ty = (y / n).floor();
     return nearestPoint([
       for (var j = ty - 1; j <= ty + 1; j++)
         for (var i = tx - 1; i <= tx + 1; i++)
           for (final p in city.tileAt(i, j).props)
-            if (p.kind == 'lamp') (p.x, p.y),
+            if (kinds.contains(p.kind)) (p.x, p.y),
     ], x, y, CreatureArt.lampM / metersPerCell(_lat));
   }
 
