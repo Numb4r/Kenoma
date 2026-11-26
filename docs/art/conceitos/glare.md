@@ -36,4 +36,13 @@ A luz de todas as peças desta rodada é só a da paleta do tipo.
 |---|---|---|
 | Arquétipo | Silhueta do beija-flor do Eco, do tamanho do quadro, feita de cacos grandes de vitrine cinza; só a cabeça (sem olho) e a cauda guardam a cor. O vão fica no lugar do coração. Luz só da paleta (sem o multicolor). | física: os cacos não se tocam e guardam a forma; geometria: o reflexo atravessa os cacos em linha reta, e a ponta do bico aparece dentro do vão |
 
+## Arte final (família inteira)
+
+Kit em `tools/art/creatures/_glare.lua` (cada peça é uma função do ponto, por isso o retrato é desenhado no próprio tamanho); espécies em `glimlet/`, `prismkin/`, `glare_entidade/` e `glare_arquetipo/` (nomes e pastas das duas últimas são provisórios), Fagulha em `tools/art/sparks/spark_light.lua`. Folha: `docs/art/final/glare.png`.
+
+- **Luz:** a base é a do tipo (`H`, `J`, `Y`); o espectro (rosa, verde, azul; o amarelo é o `J`) aparece na cauda e no raio do Prismkin, no brilho solto da Fagulha, do Prismkin e da Entidade, e no fio de cada caco do Arquétipo. `leds` é sempre a estrela de quatro pontas (o reflexo que pisca); o resto é `glow`.
+- **Costuras do Véu:** Glimlet três de 1 px (asa, dorso, cabeça); Prismkin duas mais largas (face de baixo do prisma, asa de baixo); Entidade uma larga (a vidraça do fim de tarde); Arquétipo nenhuma (o vão); a Fagulha ficou sem, como as outras refeitas.
+- **Animação:** Glimlet bate as asas em quatro posições e o reflexo anda pela asa; Prismkin bate as três asas fora de passo, o raio corre no prisma e o leque da cauda abre e fecha; a Entidade balança o cata-vento sem dar a volta, os anéis da lente correm e o sol e a lua andam cada um no seu vidro; no Arquétipo a asa sobe e desce devagar, as frestas respiram, o reflexo corre pelos cacos e a ponta do bico entra e sai do vão duas vezes por laço (mais as regras do vão do `K.run`).
+- **Retratos:** 96 nas três etapas de baixo; o do Arquétipo é a ave inteira em 128 (escala 1,95, centrada, com margem), com o `_retrato.lua`.
+
 **Decisão do dono, depois da rodada 3: o multicolor volta na arte final.** O Glare é a única exceção à regra "luz do tipo sempre da paleta" (`docs/art/estilo-criaturas.md`, "Cores emissivas"). A base é a luz do tipo Luz de `tools/art/ui/types/palette.lua` (`#FFF0B8`, `#FFFBE6`, `#CDB468`), no lugar do amarelo-pálido do conceito, e o espectro do prisma vai por cima dela, em cores claras, longe dos três tons da magia. Vale para a frase "A luz de todas as peças desta rodada é só a da paleta do tipo" e para o "sem o multicolor" do Arquétipo acima: a arte final não os segue.

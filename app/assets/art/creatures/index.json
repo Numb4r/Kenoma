@@ -62,8 +62,14 @@
       "folder": "thicketkin",
       "spawn": "crack"
     },
+    "glare.archetype": {
+      "folder": "glare_arquetipo"
+    },
     "glare.eco": {
       "folder": "glimlet"
+    },
+    "glare.major": {
+      "folder": "glare_entidade"
     },
     "glare.spirit": {
       "folder": "prismkin"

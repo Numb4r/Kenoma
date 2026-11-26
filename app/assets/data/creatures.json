@@ -37,6 +37,8 @@
       "ability": { "kind": "day_tolerance_pct", "bands": [3, 5, 8] } },
     { "id": "glare.spirit", "name": "Prismkin", "family": "glare", "type": "light", "tier": "spirit", "god": "Iaida", "since_epoch": 11,
       "ability": { "kind": "day_tolerance_pct", "bands": [5, 8, 11] } },
+    { "id": "glare.major", "name": "Entidade Maior de Glimlet", "family": "glare", "type": "light", "tier": "major", "god": "Iaida", "since_epoch": 11 },
+    { "id": "glare.archetype", "name": "Arquétipo de Glimlet", "family": "glare", "type": "light", "tier": "archetype", "god": "Iaida", "since_epoch": 11 },
     { "id": "shade.eco", "name": "Umbrel", "family": "shade", "type": "shadow", "tier": "eco", "since_epoch": 11,
       "ability": { "kind": "night_eco_pct", "bands": [5, 10, 15] } },
     { "id": "shade.spirit", "name": "Shadekin", "family": "shade", "type": "shadow", "tier": "spirit", "since_epoch": 11,
