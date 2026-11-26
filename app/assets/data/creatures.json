@@ -21,7 +21,7 @@
     { "id": "frond.major", "name": "Entidade Maior de Frondling", "family": "frond", "type": "plant", "tier": "major", "god": "Peab" },
     { "id": "frond.archetype", "name": "Arquétipo de Frondling", "family": "frond", "type": "plant", "tier": "archetype", "god": "Peab" },
     { "id": "rill.ritual", "name": "Wellmirror", "family": "rill", "type": "water", "tier": "spirit", "ritual_only": true, "god": "Zumvi" },
-    { "id": "hum.ritual", "name": "Stormlamp", "family": "hum", "type": "electric", "tier": "spirit", "ritual_only": true, "god": "Ozongon" },
+    { "id": "hum.ritual", "name": "Stormlamp", "family": "hum", "type": "electric", "tier": "spirit", "ritual_only": true, "god": "Ozongon", "since_epoch": 11 },
     { "id": "hum.eco", "name": "Humoth", "family": "hum", "type": "electric", "tier": "eco", "god": "Ozongon", "since_epoch": 11,
       "ability": { "kind": "storm_night_ecos_per_hour", "bands": [1, 2, 3] } },
     { "id": "hum.spirit", "name": "Coilkin", "family": "hum", "type": "electric", "tier": "spirit", "god": "Ozongon", "since_epoch": 11,

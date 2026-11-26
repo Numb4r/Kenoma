@@ -21,6 +21,19 @@ void main() {
     }
   });
 
+  test('toda espécie de creatures.json tem placeholder, inclusive os Espíritos de ritual das famílias da fase 1', () {
+    // Faltar o placeholder derruba a carga do mapa inteiro (26/nov: o Stormlamp entrou só com a arte do Aseprite).
+    for (final s in loadGameData().tuning.species) {
+      expect(() => ecoSpriteRows(s.id), returnsNormally, reason: s.id);
+    }
+    expect(ecoSpriteRows('hum.ritual'), ecoSpriteRows('hum.spirit'), reason: 'o de ritual usa o do Espírito da família');
+    expect(spritePaletteOf('hum.ritual'), spritePaletteOf('hum.spirit'), reason: 'e a paleta dele: as linhas sem a paleta não montam');
+    for (final s in loadGameData().tuning.species) {
+      final palette = spritePaletteOf(s.id);
+      expect(ecoSpriteRows(s.id).every((r) => r.split('').every((c) => c == '.' || palette.containsKey(c))), isTrue, reason: s.id);
+    }
+  });
+
   test('os Espíritos usam o sprite do Eco da família (visual provisório)', () {
     for (final s in loadJson('assets/data/creatures.json')['species'] as List<dynamic>) {
       final id = (s as Map<String, dynamic>)['id'] as String;

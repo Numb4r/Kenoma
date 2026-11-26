@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/player/bestiary.dart';
+import 'package:kenoma/player/bestiary_view.dart';
 import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/ui/menu/bestiary/bestiary_widgets.dart';
 import 'package:kenoma/ui/game/spark_portrait.dart';
@@ -42,15 +43,18 @@ void main() {
     expect(find.text('CLOD'), findsOneWidget, reason: 'o Pebblet foi visto');
     expect(find.text('FAMÍLIA ???'), findsNWidgets(9));
     final hum = find.byKey(const Key('family-hum'));
-    for (final name in ['Arc Mote', 'Humoth', '???']) {
+    for (final name in ['Arc Mote', 'Humoth']) {
       expect(find.descendant(of: hum, matching: find.text(name)), findsOneWidget, reason: name);
     }
+    final humForms = familyForms(data.families.firstWhere((f) => f.id == 'hum'), data, 1).length;
+    expect(find.descendant(of: hum, matching: find.text('???')), findsNWidgets(humForms - 2), reason: 'o Espírito e o de ritual, nunca vistos');
     for (final layer in ['FAGULHA', 'ECO', 'ESPÍRITO']) {
       expect(find.descendant(of: hum, matching: find.text(layer)), findsOneWidget);
     }
     expect(find.descendant(of: hum, matching: find.byType(KTick)), findsNWidgets(2), reason: 'Fagulha e Eco capturados');
     expect(find.descendant(of: find.byKey(const Key('family-clod')), matching: find.byType(KTick)), findsNothing, reason: 'vista, não capturada');
-    expect(find.descendant(of: hum, matching: find.text('27%')), findsOneWidget, reason: '1 (Fagulha) + 2 (Eco) de 11 níveis');
+    final levels = 1 + 5 * (humForms - 1); // a Fagulha conta 1; cada criatura, 5
+    expect(find.descendant(of: hum, matching: find.text('${(100 * 3 / levels).floor()}%')), findsOneWidget, reason: '1 (Fagulha) + 2 (Eco) de $levels níveis');
     expect(find.byKey(const Key('bestiary-percent')), findsOneWidget);
     expect(find.byKey(const Key('form-soot.ritual')), findsOneWidget, reason: 'o Espírito de ritual das três do MVP');
   });
@@ -97,14 +101,15 @@ void main() {
     expect(find.text('ECOS · 12'), findsOneWidget);
     expect(find.text('FAGULHAS · 12'), findsOneWidget);
     expect(find.text('ESPÍRITOS · 12'), findsOneWidget);
-    expect(find.byType(SpeciesCell), findsNWidgets(39));
+    final forms = bestiaryForms(data).length; // 36 e um Espírito de ritual por família que tem
+    expect(find.byType(SpeciesCell), findsNWidgets(forms));
     await tester.tap(find.byKey(const Key('bestiary-filter')));
     await settle(tester);
     expect(find.byKey(const Key('filter-sheet')), findsOneWidget);
-    expect(find.text('VER 39 FORMAS'), findsOneWidget);
+    expect(find.text('VER $forms FORMAS'), findsOneWidget);
     await tester.tap(find.byKey(const Key('filter-type-electric')));
     await tester.pump();
-    expect(find.text('VER 3 FORMAS'), findsOneWidget);
+    expect(find.text('VER ${bestiaryForms(data).where((f) => f.family.type == 'electric').length} FORMAS'), findsOneWidget);
     await tester.tap(find.byKey(const Key('filter-state-captured')));
     await tester.pump();
     expect(find.text('VER 2 FORMAS'), findsOneWidget);

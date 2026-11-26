@@ -83,6 +83,7 @@ List<String> ecoSpriteRows(String speciesId) {
   // Espírito da família.
   final tier = tierOfId(speciesId);
   if (tier == SpeciesTier.major || tier == SpeciesTier.archetype) return ecoSpriteRows('${familyOfId(speciesId)}.spirit');
+  if (_ritualStandIn(speciesId) case final spirit?) return ecoSpriteRows(spirit);
   if (hasPhase1Sprite(speciesId)) return phase1Rows(speciesId);
   final rows = ecoSprites[speciesId] ?? ecoSprites['${speciesId.split('.').first}.eco'] ?? (throw StateError('Sem sprite para $speciesId'));
   return tierOfId(speciesId) == SpeciesTier.spirit && !ecoSprites.containsKey(speciesId) ? spiritRows(rows) : rows;
@@ -105,7 +106,15 @@ List<String> spiritRows(List<String> eco) {
 }
 
 /// A paleta do sprite de [key]: a do tipo nos provisórios da fase 1, a fixa nos três do MVP.
-Map<String, int> spritePaletteOf(String key) => hasPhase1Sprite(key) ? phase1Palette(spriteTypeOf(key)) : spritePalette;
+Map<String, int> spritePaletteOf(String key) {
+  if (_ritualStandIn(key) case final spirit?) return spritePaletteOf(spirit);
+  return hasPhase1Sprite(key) ? phase1Palette(spriteTypeOf(key)) : spritePalette;
+}
+
+/// O Espírito de ritual das famílias da fase 1 (Stormlamp...) só tem a arte do Aseprite: o placeholder (as linhas e a
+/// paleta) é o do Espírito da família. Os três do MVP têm o próprio na tabela: `null`.
+String? _ritualStandIn(String speciesId) =>
+    speciesId.endsWith('.ritual') && !ecoSprites.containsKey(speciesId) ? '${familyOfId(speciesId)}.spirit' : null;
 
 /// Sprite de um Eco em duas versões: normal e com as costuras acesas.
 class EcoSprite {

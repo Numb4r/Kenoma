@@ -50,7 +50,11 @@ void main() {
       ('rill.ritual', 'rill', true),
     ]);
     expect(data.species.firstWhere((s) => s.id == 'soot.spirit').ability!.bands, [5, 8, 11], reason: 'um degrau acima do Eco (3, 5, 8)');
-    expect([for (final s in data.species) if (s.isSpirit && s.sinceEpoch != 0) (s.id, s.name)], [
+    // Os Espíritos de ritual das famílias da fase 1 vêm com a época da família (o do Hum, o Stormlamp, na 11).
+    for (final r in data.species.where((s) => s.ritualOnly && s.sinceEpoch != 0)) {
+      expect(r.sinceEpoch, data.species.firstWhere((s) => s.id == '${r.family}.spirit').sinceEpoch, reason: r.id);
+    }
+    expect([for (final s in data.species) if (s.isSpirit && s.sinceEpoch != 0 && !s.ritualOnly) (s.id, s.name)], [
       ('hum.spirit', 'Coilkin'), ('clod.spirit', 'Bouldkin'), ('rust.spirit', 'Gratekin'), ('glare.spirit', 'Prismkin'), ('shade.spirit', 'Shadekin'),
       ('wisp.spirit', 'Hollowkin'), ('bit.spirit', 'Glitchkin'), ('sprig.spirit', 'Fairkin'), ('wyrm.spirit', 'Wyrmkin'),
     ]);
