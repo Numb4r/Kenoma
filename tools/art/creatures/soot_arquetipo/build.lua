@@ -8,8 +8,7 @@
 -- física, o fogo dele tira luz em vez de dar: o pelo e o ferro escurecem quanto mais perto da brasa do peito.
 -- Sem costura do Véu: o vão. No corpo ele é a boca escura; o violeta vai só no glow (a borda junto das queixadas e o
 -- xadrez que rareia para o fundo), e as queixadas de dentro acendem em violeta, depois na luz do tipo.
--- Retrato: composição própria, um busto de 128 (escala 3): a cabeça sem olho, a boca e a brasa do peito, cortado num
--- rasgo à esquerda e embaixo.
+-- Retrato: o saruê inteiro do 64 desenhado em 128 (escala 1,85), dentro da moldura com margem.
 -- Rodar: KENOMA_ART='<repo>/tools/art/'; dofile(KENOMA_ART .. 'creatures/soot_arquetipo/build.lua')
 local S = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_soot.lua')
 local L, R = S.L, S.R
@@ -19,9 +18,10 @@ RT.install(S.LEG, S.LIT)
 -- o retrato nativo: o vão com fundo, pelo em fios, ferro com poros; a brasa tira luz (sign -1) e a borda é recortada
 -- pela luz que vem da boca
 local RETRATO = {
-  vao = { seed = 'QD', set = 'kQD', keep = 'UZ', depth = 13, star = { 'U', 'Z' }, sky = 60 },
-  light = { ramps = { { 'ab4321', RT.tex.fur(1, 0.35, 0.26, 5) }, { 'JjiI', RT.tex.pit(0.35) }, { 'qpP' } },
-    lights = 'REY', sign = -1, lw = 0.18, R = 16, rim = { 'E', 'R' }, rimLights = '!@UZ', rimR = 26 },
+  margin = false,                                             -- sem rasgo: o bicho cabe inteiro na moldura
+  vao = { seed = 'QD', set = 'kQD', keep = 'UZ', depth = 6, star = { 'U', 'Z' }, sky = 60 },
+  light = { ramps = { { 'ab4321', RT.tex.fur(1, 0.35, 0.26, 4) }, { 'JjiI', RT.tex.pit(0.35) }, { 'qpP' } },
+    lights = 'REY', sign = -1, lw = 0.18, R = 10, rim = { 'E', 'R' }, rimLights = '!@UZ', rimR = 16 },
 }
 
 local function draw(g, sg, k, o)
@@ -161,11 +161,11 @@ S.run {
   nloop = 6, fps = { idle = 5, drift = 5 }, fleeDy = { 1, 0, 0, -1, -1, -1 },
   vao = { lit = 'QDUZ', fill = 'k', mid = 'D', edge = 'Q' },
   over = { flee = function(_, os) for i = 2, #os do os[i].jump = true end return os end },
-  -- busto: a cabeça sem olho, a boca e a brasa, em escala 3
+  -- retrato: o saruê inteiro do 64 (do rabo à boca), em escala 1,85, com margem
   portrait = function(o)
     local g, sg = L.grid(128, 128), L.grid(128, 128)
-    o.bust, o.ox, o.oy = true, -64, -30
-    draw(g, sg, 3, o)
+    o.bust, o.ox, o.oy = true, 4.8, -2.5
+    draw(g, sg, 1.85, o)
     return g, sg, 0, 0
   end,
   acc = {

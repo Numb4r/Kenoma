@@ -10,8 +10,7 @@
 -- Sem costura do Véu: o vão. No corpo ele é a fenda escura; o violeta vai só no glow (a borda e o xadrez que rareia
 -- para o eixo), e as frondes de dentro acendem em violeta, depois na luz do tipo.
 -- Camadas: corpo; leds = o broto na ponta de cada nervura (pisca); glow = as nervuras, os báculos, o vão e os esporos.
--- Retrato: composição própria, um busto de 128 (escala 3): os dois báculos, os lobos de cima e o vão, cortado num
--- rasgo embaixo.
+-- Retrato: a fronde inteira do 64 desenhada em 128 (escala 1,95), dentro da moldura com margem.
 -- Rodar: KENOMA_ART='<repo>/tools/art/'; dofile(KENOMA_ART .. 'creatures/frond_arquetipo/build.lua')
 local Fr = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_frond.lua')
 local L, R = Fr.L, Fr.R
@@ -20,10 +19,11 @@ local RT = dofile(KENOMA_ART .. 'creatures/_retrato.lua')(Fr)
 RT.install(Fr.LEG, Fr.LIT)
 -- o retrato nativo: o vão com fundo, pedra com poros e trincas, folha seca em fios; a borda recortada pela nervura
 local RETRATO = {
-  vao = { seed = 'QW', set = 'kQW', keep = 'UZ', depth = 5, star = { 'U', 'Z' }, sky = 75 },
+  margin = false,                                             -- sem rasgo: a fronde cabe inteira na moldura
+  vao = { seed = 'QW', set = 'kQW', keep = 'UZ', depth = 2, star = { 'U', 'Z' }, sky = 75 },
   light = { ramps = { { '4321', RT.tex.stone(0.3) }, { 'nNM', RT.tex.fur(1, -0.45, 0.3, 5) }, { 'abcde', RT.tex.fur(1, -0.45, 0.25, 4) },
       { 'JjiI', RT.tex.pit(0.35) }, { 'qpo' } },
-    lights = 'BDEHG', lw = 0.28, R = 7, rim = { 'D', 'B' } },
+    lights = 'BDEHG', lw = 0.28, R = 5, rim = { 'D', 'B' } },
 }
 
 local function draw(g, sg, k, o)
@@ -151,11 +151,11 @@ Fr.run {
   nloop = 6, fps = { idle = 5, drift = 5 }, fleeDy = { 1, 0, 0, -1, -1, -1 },
   vao = { lit = 'QWUZ', fill = 'k', mid = 'W', edge = 'Q' },
   over = { flee = function(_, os) for i = 2, #os do os[i].jump = true end return os end },
-  -- busto: os dois báculos, os lobos de cima e o vão, em escala 3
+  -- retrato: a fronde inteira do 64 (dos báculos às raízes), em escala 1,95, com margem
   portrait = function(o)
     local g, sg = L.grid(128, 128), L.grid(128, 128)
-    o.bust, o.ox, o.oy = true, -31, -8
-    draw(g, sg, 3, o)
+    o.bust, o.ox, o.oy = true, 1.6, -0.5
+    draw(g, sg, 1.95, o)
     return g, sg, 0, 0
   end,
   acc = {

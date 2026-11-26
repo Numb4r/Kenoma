@@ -9,8 +9,7 @@
 -- junto do anel e das mãos e o xadrez), com a coroa na luz do tipo em volta do disco do meio, que fica apagado.
 -- Movimento: o anel gira uma escama por laço (o laço fecha), as mãos abrem e fecham fora de fase, a coroa tremula, as
 -- caudas respiram e as brasas caem para dentro. No alerta as mãos abrem e as caudas esticam; encolhem na antecipação.
--- Retrato: composição própria, um busto de 128 (escala 3): o vão com a coroa, as mãos e o lado direito do anel,
--- cortado num rasgo em volta.
+-- Retrato: a forma inteira do 64 desenhada em 128 (escala 2), dentro da moldura com margem.
 -- Camadas: corpo; leds = nada (não tem olho); glow = o vão, a coroa, as juntas das escamas e as brasas.
 -- Rodar: KENOMA_ART='<repo>/tools/art/'; dofile(KENOMA_ART .. 'creatures/wyrm_arquetipo/build.lua')
 local W = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_wyrm.lua')
@@ -20,9 +19,10 @@ local RT = dofile(KENOMA_ART .. 'creatures/_retrato.lua')(W)
 RT.install(W.LEG, W.LIT)
 -- o retrato nativo: o vão com fundo, asfalto com brita, cinza em escamas; a borda recortada pela brasa das juntas
 local RETRATO = {
-  vao = { seed = 'UY', set = 'zUY', keep = 'Vmd', depth = 12, star = { 'm', 'V' }, sky = 40 },
-  light = { ramps = { { 'QPpg', RT.tex.pit(0.35, 6) }, { 'GFDB', RT.tex.scale(6, 0.3) }, { '4321' }, { 'Ee', RT.tex.pit(0.4) } },
-    lights = 'JHRVmd', lw = 0.3, R = 8, rim = { 'J', 'R' } },
+  margin = false,                                             -- sem rasgo: o anel e as caudas cabem inteiros na moldura
+  vao = { seed = 'UY', set = 'zUY', keep = 'Vmd', depth = 8, star = { 'm', 'V' }, sky = 40 },
+  light = { ramps = { { 'QPpg', RT.tex.pit(0.35, 6) }, { 'GFDB', RT.tex.scale(4, 0.3) }, { '4321' }, { 'Ee', RT.tex.pit(0.4) } },
+    lights = 'JHRVmd', lw = 0.3, R = 5, rim = { 'J', 'R' } },
 }
 
 local function draw(g, sg, k, o)
@@ -131,11 +131,11 @@ W.run {
   name = 'wyrm_arquetipo', stage = 'arquetipo', W = 64, PW = 128, draw = draw,
   nloop = 6, fps = { idle = 5, drift = 5 }, fleeDy = { 1, 0, 0, -1, -1, -1 },
   vao = { lit = 'UY', fill = 'z', mid = 'Y', edge = 'U', extra = 'Vmd' },
-  -- busto: o vão com a coroa, as mãos e o lado direito do anel, em escala 3
+  -- retrato: a forma inteira do 64 (o anel, as mãos, a coroa e as três caudas), em escala 2, com margem
   portrait = function(o)
     local g, sg = L.grid(128, 128), L.grid(128, 128)
-    o.bust, o.ox, o.oy = true, -50, -20
-    draw(g, sg, 3, o)
+    o.bust, o.ox, o.oy = true, 0, 2
+    draw(g, sg, 2, o)
     return g, sg, 0, 0
   end,
   acc = {

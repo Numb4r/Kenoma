@@ -9,8 +9,8 @@
 -- túnel) e o violeta do Véu vai só no glow: um aro tracejado depois das pontas dos dentes e o miolo do que escorre.
 -- Animação: os dentes giram um dente por laço, o letreiro da armação corre, os olhos descem a espiral para o fundo,
 -- as asas respiram fora de fase, o raio muda de caminho a cada quadro.
--- Retrato: composição própria, um busto de 128. A boca ocupa o quadro (escala 2,5), com a quarta armação do túnel; as
--- asas e as antenas entram cortadas num rasgo em volta, e o raio sai pelo pé do quadro.
+-- Retrato: a forma inteira do 64 desenhada em 128 (escala 2), dentro da moldura com margem: as três asas, as
+-- antenas, a boca com o túnel e o raio.
 -- Rodar: KENOMA_ART='<worktree>/tools/art/'; dofile(KENOMA_ART .. 'creatures/hum_arquetipo/build.lua')
 local K = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_hum.lua')
 local L = K.L
@@ -20,23 +20,18 @@ local RT = dofile(KENOMA_ART .. 'creatures/_retrato.lua')(K)
 RT.install(K.LEG, K.LIT)
 -- o retrato nativo: o túnel afunda do violeta ao quase preto (t: a distância ao fim do túnel, posta no draw), com
 -- LEDs perdidos lá no fundo; asa de cinza com poros, pelo em fios, aço riscado; a borda recortada pelos veios.
--- Sem rasgo: as asas já entram cortadas num círculo por dentro da moldura.
+-- Sem rasgo: a forma cabe inteira na moldura.
 local RETRATO = {
   margin = false,
   vao = { seed = 'Z0', set = 'z0', keep = 'Z', star = { 'H', 'I' }, sky = 50 },
   light = { ramps = { { '4321', RT.tex.pit(0.22) }, { 'CDR', RT.tex.fur(1, 0.5, 0.25, 4) }, { 'uUVW', RT.tex.pit(0.2, 9) } },
-    lights = 'JY', lw = 0.3, R = 8, blur = 1, rim = { 'Y', 'J' }, rimR = 4, rimVao = false },
+    lights = 'JY', lw = 0.3, R = 6, blur = 1, rim = { 'Y', 'J' }, rimR = 3, rimVao = false },
 }
 
 local WINGS = { -- { ângulo, comprimento, olhos { u, raio, t } }
   { -78, 18, { { 0.42, 2.4, 0.5 }, { 0.66, 1.5, 0.5 }, { 0.85, 1.5, 0.5 } } },
   { 42, 18, { { 0.55, 3.0, 0.5 } } },
   { 162, 17, { { 0.48, 1.5, 0.5 }, { 0.74, 2.4, 0.5 } } },
-}
-local BUST = { -- no busto as asas entram cortadas: os olhos ficam perto da raiz
-  { -78, 18, { { 0.27, 2.4, 0.5 }, { 0.48, 1.5, 0.5 }, { 0.63, 1.5, 0.5 } } },
-  { 42, 18, { { 0.42, 3.0, 0.5 } } },
-  { 162, 17, { { 0.36, 1.5, 0.5 }, { 0.56, 2.4, 0.5 } } },
 }
 
 local function draw(g, sg, k, o)
@@ -52,18 +47,12 @@ local function draw(g, sg, k, o)
   local WA = { '1', '2', '3', '4' }
   local drag = o.lean and 7 or 0            -- deriva: as asas ficam para trás e o túnel aponta para a frente
   local seed = 0
-  for n, d in ipairs(bust and BUST or WINGS) do
+  for n, d in ipairs(WINGS) do
     local wob = still and 0 or sin(t + n * 2.1)
     local a = rad(d[1])
     local w = { x = cx + cos(a) * 10 * k, y = cy + sin(a) * 10 * k, ang = d[1] + 2 * wob - drag,
       len = d[2] * k * (alert and 1.06 or (crouch and 0.84 or 1)) * (1 + 0.03 * wob), wid = 11 * k, side = 1,
       pal = WA, band = 2, rich = k > 1, torn = n == 2 and 3 * k or nil }
-    if bust then
-      w.clip = function(_, _, x, y)
-        local tat = floor((math.deg(math.atan(y - cy, x - cx)) % 360) / 6) % 2
-        return sqrt((x - cx) ^ 2 + (y - cy) ^ 2) < 58 - tat * 3
-      end
-    end
     K.wing(g, w)
     for _, e in ipairs(d[3]) do
       K.veins(g, w, { { e[1], 0.5, 0.05, 0.5 }, { e[1], 0.6, e[1] + 0.1, 0.98 } }, k > 1 and 2 or 1)
@@ -80,7 +69,6 @@ local function draw(g, sg, k, o)
     local a = rad(d[1] - drag * 0.5)
     local curl = (n % 2 == 0 and 0.35 or -0.3) + (still and 0 or 0.08 * sin(t + n))
     local r0, r1 = 13 * k, (14 + d[2]) * k * (crouch and 0.85 or 1)
-    if bust then r1 = math.min(r1, 22 * k) end
     K.feather(g, { { cx + cos(a) * r0, cy + sin(a) * r0 }, { cx + cos(a) * (r0 + r1) / 2, cy + sin(a) * (r0 + r1) / 2 },
       { cx + cos(a + curl) * r1, cy + sin(a + curl) * r1 } }, k, '.BTb')
   end
@@ -189,12 +177,12 @@ K.run {
   BODY_KEYS = { '1', '2', '3', '4', 'B', 'T', 'C', 'D', 'R', 'u', 'U', 'V', 'W' },
   nloop = 6, fps = { idle = 5, drift = 5 }, fleeDy = { 1, 0, 0, -1, -1, -1 }, ownLean = true,
   vao = { lit = 'Z0', fill = 'z', mid = '0', edge = 'Z' },
-  -- busto: a boca em escala 2,5, centrada um pouco acima do meio; o que passa do quadro (o raio) é cortado
+  -- retrato: a forma inteira do 64 (as três asas, as antenas, a boca e o raio), em escala 2, com margem
   portrait = function(o)
-    local g, sg = L.grid(160, 160), L.grid(160, 160)
+    local g, sg = L.grid(128, 128), L.grid(128, 128)
     o.bust = true
-    draw(g, sg, 2.5, o)
-    return g, sg, -16, -15
+    draw(g, sg, 2, o)
+    return g, sg, 4, 5
   end,
   acc = {
     urban = { 29, 16 }, green = { 26, 14 }, water = { 28, 16 }, residential = { 28, 15 }, lit = { 28, 16 },

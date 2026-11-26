@@ -13,8 +13,7 @@
 -- Animação: a procissão anda (os três capuzes dão um terço de volta por laço, e o laço fecha); o disco e os tocos
 -- giram devagar, a roda de chamas gira ao contrário, o aro do vão respira, as tiras e as pernas balançam fora de fase.
 -- Ela não toca o chão: o body_dy é o corpo inteiro, e só desce (em cima não há folga com os capuzes girando).
--- Retrato: composição própria, um busto de 128 (escala 3): o olho de vela ocupa o quadro, com os capuzes, as pernas e
--- as tiras entrando cortados num rasgo em volta.
+-- Retrato: a procissão inteira do 64 desenhada em 128 (escala 1,85), dentro da moldura com margem.
 -- Rodar: KENOMA_ART='<repo>/tools/art/'; dofile(KENOMA_ART .. 'creatures/wisp_arquetipo/build.lua')
 local Wi = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_wisp.lua')
 local L = Wi.L
@@ -28,9 +27,10 @@ local RT = dofile(KENOMA_ART .. 'creatures/_retrato.lua')(Wi)
 RT.install(Wi.LEG, Wi.LIT)
 -- o retrato nativo: o vão com fundo, pano em trama, pena de cinza em fios, cera lisa; a borda recortada pelas chamas
 local RETRATO = {
-  vao = { seed = 'QW', set = 'vQW', keep = 'FGH', depth = 13, star = { 'D', 'E' }, sky = 20 },
-  light = { ramps = { { 'rtu', RT.tex.weave(0.2) }, { '876', RT.tex.fur(1, 0.6, 0.28, 5) }, { '123' }, { 'fl' } },
-    lights = 'BDEFGH', lw = 0.32, R = 9, blur = 1, rim = { 'D', 'B' } },
+  margin = false,                                             -- sem rasgo: a procissão cabe inteira na moldura
+  vao = { seed = 'QW', set = 'vQW', keep = 'FGH', depth = 7, star = { 'D', 'E' }, sky = 20 },
+  light = { ramps = { { 'rtu', RT.tex.weave(0.2) }, { '876', RT.tex.fur(1, 0.6, 0.28, 4) }, { '123' }, { 'fl' } },
+    lights = 'BDEFGH', lw = 0.32, R = 6, blur = 1, rim = { 'D', 'B' } },
 }
 
 local function draw(g, sg, k, o)
@@ -159,11 +159,11 @@ Wi.run {
   name = 'wisp_arquetipo', stage = 'arquetipo', W = 64, PW = 128, draw = draw, DARK = 'r', NOPULL = Wi.NOPULL .. '67',
   nloop = 8, dy = { 0, 0, 1, 1, 1, 1, 0, 0 }, fps = { idle = 5, drift = 5 }, fleeDy = { 1, 0, 0, 0, 0, 0 },
   vao = { lit = 'QW', fill = 'v', mid = 'W', edge = 'Q', extra = 'FGH' },
-  -- busto: o olho de vela em escala 3, um pouco acima do meio
+  -- retrato: a procissão inteira do 64 (os três capuzes, o olho de vela, as tiras e as pernas), em escala 1,85
   portrait = function(o)
     local g, sg = L.grid(128, 128), L.grid(128, 128)
-    o.bust, o.ox, o.oy = true, -31.5, -22
-    draw(g, sg, 3, o)
+    o.bust, o.ox, o.oy = true, 1.3, 5.8
+    draw(g, sg, 1.85, o)
     return g, sg, 0, 0
   end,
   acc = {

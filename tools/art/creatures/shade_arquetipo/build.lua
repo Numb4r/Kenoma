@@ -12,7 +12,7 @@
 -- TRAÇO: a sombra não acompanha o corpo. O body_dy e o pêndulo movem só o casulo; as asas batem devagar, no ritmo
 -- delas. No alerta as asas sobem e o vão abre; na antecipação elas descem em volta do casulo, que se recolhe.
 -- Camadas: corpo; leds = os olhos da sombra; glow = a borda da sombra, as lâmpadas, o vão e a poeira solta.
--- Retrato: composição própria, um busto de 128 (escala 3): a sombra, os pés e a fresta, cortado num rasgo.
+-- Retrato: a forma inteira do 64 desenhada em 128 (escala 1,85), dentro da moldura com margem.
 -- Rodar: KENOMA_ART='<repo>/tools/art/'; dofile(KENOMA_ART .. 'creatures/shade_arquetipo/build.lua')
 local Sh = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_shade.lua')
 local L, R = Sh.L, Sh.R
@@ -26,9 +26,10 @@ RT.install(Sh.LEG, Sh.LIT)
 -- o retrato nativo: o vão com fundo, laje com poros, osso com trincas, a sombra em trama; a borda recortada pelas
 -- lâmpadas viradas para dentro
 local RETRATO = {
-  vao = { seed = 'UY', set = 'kUY', keep = 'MN', depth = 9, star = { 'M', 'N' }, sky = 70 },
+  margin = false,                                             -- sem rasgo: a forma cabe inteira na moldura
+  vao = { seed = 'UY', set = 'kUY', keep = 'MN', depth = 4, star = { 'M', 'N' }, sky = 70 },
   light = { ramps = { { '51234', RT.tex.pit(0.3) }, { '876', RT.tex.stone(0.3) }, { 'efg', RT.tex.weave(0.22) }, { 'mno' } },
-    lights = 'TV', lw = 0.3, R = 9, rim = { 'P', 'R' } },
+    lights = 'TV', lw = 0.3, R = 6, rim = { 'P', 'R' } },
 }
 local cx = 31.5
 local HALF = { { cx, 19.5 }, { 27, 20 }, { 22.5, 25 }, { 20.3, 34 }, { 21.5, 44 }, { 25, 51 }, { cx, 53 } }
@@ -156,11 +157,11 @@ Sh.run {
   nloop = 6, fps = { idle = 5, drift = 5 }, fleeDy = { 1, 0, 0, -1, -1, -1 },
   vao = { lit = 'UYMN', fill = 'k', mid = 'Y', edge = 'U' },
   over = { flee = function(_, os) for i = 2, #os do os[i].jump = true end return os end },
-  -- busto: a sombra, os pés e a fresta, em escala 3
+  -- retrato: a forma inteira do 64 (a sombra, o casulo e a cabeça de osso), em escala 1,85, com margem
   portrait = function(o)
     local g, sg = L.grid(128, 128), L.grid(128, 128)
-    o.bust, o.ox, o.oy = true, -32, -8
-    draw(g, sg, 3, o)
+    o.bust, o.ox, o.oy = true, 4.8, 4.8
+    draw(g, sg, 1.85, o)
     return g, sg, 0, 0
   end,
   acc = {
