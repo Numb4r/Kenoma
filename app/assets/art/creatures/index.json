@@ -165,6 +165,9 @@
     "shade.major": {
       "folder": "shade_entidade"
     },
+    "shade.ritual": {
+      "folder": "eaveshroud"
+    },
     "shade.spirit": {
       "folder": "shadekin"
     },

@@ -173,6 +173,12 @@ Onde aparece: Residencial; hora: Noite; clima: + Nublado; lua: —.
 - Lore II: A lâmpada do braço falha por um segundo, e a do poste mais perto falha junto. A sombra dele, de três olhos e braços para cima, é a única que não pisca.
 - Lore III: Ors é o nome que os cadernos dão à escuridão de onde a sombra vem. Não é um lugar: é o que sobra quando a luz desiste. O morcego só a carrega.
 
+**Eaveshroud** (Ritual). Morcego-da-cara-branca embrulhado nas asas debaixo da marquise, com um Sol Negro onde elas se cruzam.
+
+- Lore I: Dorme embrulhado em duas asas, e só uma é dele. A outra é a sombra, que não fica mais ao lado: entrou no embrulho. Onde as duas se cruzam abriu um disco escuro com uma coroa de luz em volta.
+- Lore II: De dia não deixa sombra nenhuma no chão. Debaixo da marquise dele a noite chega alguns minutos antes.
+- Lore III: Os outros morcegos carregam Ors. Este é a fresta por onde ela olha para cá, e por isso mantém os olhos fechados: quem olha é o disco.
+
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de noite; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
 
 ## Wisp (Espectral)

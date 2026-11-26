@@ -50,6 +50,16 @@
         { "item": "item.prism_shard", "qty": 1 }
       ],
       "circle": { "min_level": 5 }
+    },
+    {
+      "species": "shade.ritual",
+      "condition": {"kind": "any", "of": [{"kind": "all", "of": [{"kind": "climate", "value": "cloudy"}, {"kind": "hour", "from": 20, "to": 5}]}, {"kind": "climate", "value": "black_sun"}]},
+      "materials": [
+        { "item": "item.moonlight.new", "qty": 2 },
+        { "item": "item.essence.shadow", "qty": 1 },
+        { "item": "item.vessel.dark", "qty": 1 }
+      ],
+      "circle": { "min_level": 5 }
     }
   ]
 }
