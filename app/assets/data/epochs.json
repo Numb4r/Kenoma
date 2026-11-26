@@ -2677,6 +2677,10 @@
                 [
                   "rill.ritual",
                   1
+                ],
+                [
+                  "hum.ritual",
+                  6
                 ]
               ],
               "green": [
@@ -2690,6 +2694,10 @@
                 ],
                 [
                   "rill.ritual",
+                  1
+                ],
+                [
+                  "hum.ritual",
                   1
                 ]
               ],
@@ -2705,6 +2713,10 @@
                 [
                   "rill.ritual",
                   6
+                ],
+                [
+                  "hum.ritual",
+                  1
                 ]
               ],
               "residential": [
@@ -2718,6 +2730,10 @@
                 ],
                 [
                   "rill.ritual",
+                  1
+                ],
+                [
+                  "hum.ritual",
                   1
                 ]
               ],
@@ -2733,6 +2749,10 @@
                 [
                   "rill.ritual",
                   1
+                ],
+                [
+                  "hum.ritual",
+                  1
                 ]
               ],
               "sacred": [
@@ -2746,6 +2766,10 @@
                 ],
                 [
                   "rill.ritual",
+                  1
+                ],
+                [
+                  "hum.ritual",
                   1
                 ]
               ]

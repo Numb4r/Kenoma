@@ -108,6 +108,10 @@
       "folder": "hum_entidade",
       "spawn": "lightning_lamp"
     },
+    "hum.ritual": {
+      "folder": "stormlamp",
+      "spawn": "lightning_lamp"
+    },
     "hum.spirit": {
       "folder": "coilkin",
       "spawn": "lightning_lamp"

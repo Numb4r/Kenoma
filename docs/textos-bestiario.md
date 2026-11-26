@@ -81,6 +81,12 @@ Onde aparece: Urbano; hora: Noite; clima: + Tempestade; lua: —.
 - Lore II: Anda aos trancos, como lâmpada com mau contato. Cada tranco é um salto de frequência.
 - Lore III: Os ventos de Ozongon passam por dentro dele. Quem encosta sente o cabelo levantar e ouve o próprio nome.
 
+**Stormlamp** (Ritual). Mariposa pousada de asas fechadas, com um globo de lâmpada de rua no lugar do tórax e um raio preso dentro.
+
+- Lore I: Pousa de asas fechadas e não levanta mais. O tórax virou um globo de lâmpada de rua, com aro de cobre e isoladores de porcelana, e lá dentro um raio cai sem parar no mesmo lugar.
+- Lore II: Os dois ocelos das asas estão de pálpebra baixa. Ela não procura a luz que pisca: é ela que faz o poste piscar.
+- Lore III: Os ventos de Ozongon precisam de onde pousar. Na noite de tempestade, quem conta os trovões da rua e os clarões do globo acha sempre um clarão a mais.
+
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de noite; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
 
 ## Clod (Terra)

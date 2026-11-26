@@ -30,6 +30,16 @@
         { "item": "item.ectoplasm", "qty": 1 }
       ],
       "circle": { "min_level": 5 }
+    },
+    {
+      "species": "hum.ritual",
+      "condition": {"kind": "all", "of": [{"kind": "climate", "value": "storm"}, {"kind": "hour", "from": 19, "to": 5}]},
+      "materials": [
+        { "item": "item.glass_shard", "qty": 2 },
+        { "item": "item.essence.electric", "qty": 1 },
+        { "item": "item.rain_water", "qty": 1 }
+      ],
+      "circle": { "min_level": 5 }
     }
   ]
 }

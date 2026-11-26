@@ -31,8 +31,10 @@ void main() {
         }
       }
       expect(data.families.firstWhere((f) => f.id == 'wyrm').minLevel, 10);
-      expect(bestiaryForms(data), hasLength(12 * 3 + 3), reason: '36 formas e os três Espíritos de ritual do MVP');
-      expect(bestiaryForms(data).map((f) => f.number), [for (var i = 1; i <= 39; i++) i]);
+      final rituals = data.tuning.species.where((s) => s.id.endsWith('.ritual')).length;
+      expect(rituals, greaterThanOrEqualTo(3), reason: 'os três Espíritos de ritual do MVP, mais os da fase 1');
+      expect(bestiaryForms(data), hasLength(12 * 3 + rituals), reason: '36 formas e um Espírito de ritual por família que tem');
+      expect(bestiaryForms(data).map((f) => f.number), [for (var i = 1; i <= 12 * 3 + rituals; i++) i]);
     });
 
     test('toda habilidade de mapa das espécies tem texto', () {
