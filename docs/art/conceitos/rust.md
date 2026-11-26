@@ -27,7 +27,9 @@
 | Entidade Maior | O portão inteiro: duas folhas de grade (élitros), chapa da fechadura no meio com o buraco aceso como rosto e três parafusos de olho, chifre de lança, seis patas de ferrugem. Uma costura larga embaixo da chapa. Luz do Metal da paleta. | a corrente fica de pé e o cadeado cai para cima |
 | Arquétipo | Besouro de frente, élitros abertos como folhas de portão, espelhado; entre elas o vão em arco, com portão dentro de portão. Três chifres, seis patas de aço fora do chão. | física: a luz acende atrás das barras sem haver nada atrás; geometria: portão dentro de portão |
 
-## Rodada 3 (substitui a rodada 2 nestas etapas; aguarda aprovação)
+## Rodada 3 (substitui a rodada 2 nestas etapas; aprovada)
+
+**Aprovada pelo dono** (`docs/art/conceitos/rodada3/rodada3.png` e `arquetipos.png`): a Entidade Maior e o Arquétipo em 64. A família está aprovada por inteiro e segue para a arte final sem nova rodada de conceito.
 
 A luz de todas as peças desta rodada é só a da paleta do tipo.
 

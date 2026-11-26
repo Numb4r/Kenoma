@@ -16,6 +16,14 @@
 local W = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_wyrm.lua')
 local L = W.L
 local floor, sqrt, abs, sin, cos, rad, max, pi = math.floor, math.sqrt, math.abs, math.sin, math.cos, math.rad, math.max, math.pi
+local RT = dofile(KENOMA_ART .. 'creatures/_retrato.lua')(W)
+RT.install(W.LEG, W.LIT)
+-- o retrato nativo: o vão com fundo, asfalto com brita, cinza em escamas; a borda recortada pela brasa das juntas
+local RETRATO = {
+  vao = { seed = 'UY', set = 'zUY', keep = 'Vmd', depth = 12, star = { 'm', 'V' }, sky = 40 },
+  light = { ramps = { { 'QPpg', RT.tex.pit(0.35, 6) }, { 'GFDB', RT.tex.scale(6, 0.3) }, { '4321' }, { 'Ee', RT.tex.pit(0.4) } },
+    lights = 'JHRVmd', lw = 0.3, R = 8, rim = { 'J', 'R' } },
+}
 
 local function draw(g, sg, k, o)
   local S = g.w
@@ -25,7 +33,7 @@ local function draw(g, sg, k, o)
   local tt = fr * 2 * pi
   local alert, crouch = o.pose == 'alert', o.pose == 'crouch'
   local still = alert or crouch
-  local p = k > 1 and 2 or 1
+  local p = (k > 1 and not o.bust) and 2 or 1
   local function P(v) return v * k end
   local cx, cy = P(32) - 0.5 + (o.ox or 0), P(33) + (o.oy or 0) + (o.dy or 0)
   local rot = (still and 0 or fr) * 30                       -- uma escama por laço
@@ -108,7 +116,7 @@ local function draw(g, sg, k, o)
       for j = 0, n2 - 1 do for i = 0, n2 - 1 do L.set(g, cx + cos(a) * r + i, cy + sin(a) * r + j, ch, 'zY') end end
     end
   end
-  if o.bust then W.tear(g, 3); W.keepMain(g) end
+  if o.bust then RT.finish(g, o, RETRATO) end
   -- brasas que caem de fora para dentro
   for n = 0, 11 do
     local a = rad(n * 30 + 17)
@@ -122,6 +130,7 @@ end
 W.run {
   name = 'wyrm_arquetipo', stage = 'arquetipo', W = 64, PW = 128, draw = draw,
   nloop = 6, fps = { idle = 5, drift = 5 }, fleeDy = { 1, 0, 0, -1, -1, -1 },
+  vao = { lit = 'UY', fill = 'z', mid = 'Y', edge = 'U', extra = 'Vmd' },
   -- busto: o vão com a coroa, as mãos e o lado direito do anel, em escala 3
   portrait = function(o)
     local g, sg = L.grid(128, 128), L.grid(128, 128)

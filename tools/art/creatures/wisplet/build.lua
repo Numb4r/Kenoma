@@ -60,7 +60,7 @@ local function draw(g, sg, k, o)
   if k == 1 then return drawMap(g, sg, o) end
   local X, Y, pts = Wi.scale(k, o.ox, 0)
   local P = F.pen(g, k, o.ox or 0, 0)
-  local p = Wi.pp(k)
+  local p = 1                                                 -- textura no pixel do retrato (a régua mede a ampliação)
   local ck = Wi.chk(p)
   Wi.flat = o.dark
   local ph = (o.ph or 0) % 4

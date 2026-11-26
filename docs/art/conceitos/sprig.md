@@ -26,7 +26,11 @@
 | Entidade Maior | Árvore de calçada de cabeça para baixo: a copa é um bando fundido (três cabeças, uma virada e sem olhos) sobre pontas de asa-folha; as raízes, pés de ave, seguram a calçada no alto. Duas costuras largas no tronco. | a calçada fica no ar e as folhas caem para cima |
 | Arquétipo | Maritaca de frente, asas erguidas, espelhada: dois perfis sem olho de costas um para o outro; entre eles o vão em forma de folha, com bicos repetidos para dentro. | física: pousa num galho que nasce da própria cauda, sem nada embaixo; geometria: os dois perfis da mesma cabeça ao mesmo tempo |
 
-## Rodada 3 (substitui a rodada 2 nestas etapas; aguarda aprovação)
+## Rodada 3 (substitui a rodada 2 nestas etapas; aprovada)
+
+**Aprovada pelo dono** (`docs/art/conceitos/rodada3/rodada3.png` e `arquetipos.png`): a Entidade Maior e o Arquétipo em 64. A família está aprovada por inteiro e segue para a arte final sem nova rodada de conceito.
+
+**Ajuste que entra direto na arte final, Entidade Maior:** o conceito lê como moita, perto demais do Frond. Pelo menos três cabeças de maritaca com bico e olho nítidos, saindo em direções diferentes. A folha seca fica só nas asas.
 
 A luz de todas as peças desta rodada é só a da paleta do tipo.
 

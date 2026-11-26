@@ -4,6 +4,8 @@
 Criatura: tools/art/creatures/<especie>/, etapa pelo quadro do mapa (28 Eco, 36 Espírito, 48 Entidade, 64 Arquétipo).
 Mede o quadro 0 do idle (corpo + leds + glow) e o quadro 0 do retrato. Fagulha: tools/art/sparks/spark_<tipo>.png, quadro 0,
 só as de tipo listado em REFEITAS_FAGULHA. Pastas em PENDENTES (famílias ainda sem a arte final) só são listadas.
+No retrato confere também a ampliação: fração das trocas de cor que caem na fronteira da grade de blocos 2×2 (a
+melhor das duas fases, na pior direção). Desenho nativo fica perto de 0,5; um sprite menor ampliado 2× dá 1,0.
 Sai com código 1 se algo ficar abaixo do piso. Rodar: python3 tools/art/creatures/regua.py
 """
 import json
@@ -23,6 +25,7 @@ PISO = {
     'entidade': dict(cores=14, detalhe=0.70, contorno=0.26, emissivo=(0.12, 0.24), ecores=3, rcores=16, rdetalhe=0.50, remissivo=0.09),
     'arquetipo': dict(cores=14, detalhe=0.65, contorno=0.24, emissivo=(0.16, 0.40), ecores=4, rcores=16, rdetalhe=0.50, remissivo=0.14),
 }
+AMPLIACAO_MAX = 0.62  # o retrato nativo mais alto mediu 0,55 (frond_arquetipo); ampliado 2× mede 1,0
 REFEITAS_FAGULHA = {'electric', 'fire', 'plant', 'shadow', 'spectral', 'draconic'}
 PENDENTES = {
     'bitling', 'bouldkin', 'brookkin', 'fairkin', 'glimlet', 'glitchkin', 'gratekin', 'pebblet', 'prismkin', 'rillet', 'rustling', 'sprigglet',
@@ -62,7 +65,23 @@ def measure(body: list, ems: list) -> dict:
                     det += 1
                     break
     n = max(op, 1)
-    return dict(opacos=op, cores=len(cols), detalhe=det / max(inner, 1), contorno=out / n, emissivo=lit / n, ecores=len(ecols))
+    return dict(opacos=op, cores=len(cols), detalhe=det / max(inner, 1), contorno=out / n, emissivo=lit / n, ecores=len(ecols),
+                ampliacao=ampliacao(body))
+
+
+def ampliacao(body: list) -> float:
+    """Quanto as trocas de cor (alfa incluído) caem na fronteira dos blocos 2×2: 1,0 é um sprite ampliado 2×."""
+    side = len(body)
+    h, v = [0, 0], [0, 0]
+    for y in range(side):
+        for x in range(side - 1):
+            if body[y][x] != body[y][x + 1]:
+                h[x % 2] += 1
+    for y in range(side - 1):
+        for x in range(side):
+            if body[y][x] != body[y + 1][x]:
+                v[y % 2] += 1
+    return min(max(h) / max(sum(h), 1), max(v) / max(sum(v), 1))
 
 
 def check(m: dict, p: dict, retrato: bool) -> list:
@@ -77,13 +96,15 @@ def check(m: dict, p: dict, retrato: bool) -> list:
         bad.append(f'contorno {m["contorno"]:.2f} > {contorno}')
     if not emin <= m['emissivo'] <= p['emissivo'][1]:
         bad.append(f'emissivo {m["emissivo"]:.2f} fora de {emin}..{p["emissivo"][1]}')
+    if retrato and m['ampliacao'] > AMPLIACAO_MAX:
+        bad.append(f'ampliação {m["ampliacao"]:.2f} > {AMPLIACAO_MAX} (retrato ampliado de um sprite menor)')
     if not retrato and m['ecores'] < p['ecores']:
         bad.append(f'cores emissivas {m["ecores"]} < {p["ecores"]}')
     return bad
 
 
 def line(name: str, m: dict, bad: list) -> str:
-    s = f'{name}: opacos {m["opacos"]}, cores {m["cores"]}, detalhe {m["detalhe"]:.2f}, contorno {m["contorno"]:.2f}, emissivo {m["emissivo"]:.2f}, cores emissivas {m["ecores"]}'
+    s = f'{name}: opacos {m["opacos"]}, cores {m["cores"]}, detalhe {m["detalhe"]:.2f}, contorno {m["contorno"]:.2f}, emissivo {m["emissivo"]:.2f}, cores emissivas {m["ecores"]}, ampliação {m["ampliacao"]:.2f}'
     return s + ('  ABAIXO DO PISO: ' + '; '.join(bad) if bad else '')
 
 

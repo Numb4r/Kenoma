@@ -52,6 +52,8 @@ Pisos no retrato: contorno no máximo 0,22 em toda etapa; o teto de emissivo é 
 | Entidade Maior | 16 | 0,50 | 0,09 |
 | Arquétipo | 16 | 0,50 | 0,14 |
 
+**Ampliação** (só o `regua.py` confere, em toda etapa): fração das trocas de cor do corpo que caem na fronteira da grade de blocos 2×2 (a melhor das duas fases, na pior direção). Desenho nativo mede perto de 0,50; um sprite menor ampliado 2×, ou textura em bloco de 2, mede até 1,0. Teto: 0,62. Reprovou: desenhe a textura no pixel do quadro (no retrato, `p = 1`), não mexa no teto.
+
 Além dos números, em toda etapa: `lint_sprite` na camada corpo sem peça solta nem pixel sozinho; nenhuma cor do corpo com saturação de desenho animado (as cores vêm do material: pó de asa, cobre, aço, porcelana, fuligem); o traço-assinatura da família visível no tamanho do mapa, inclusive na Fagulha.
 
 Contorno: 1 px em `#1a1424` por fora da forma, nunca preto. Faísca solta não tem contorno. Do Espírito para cima o contorno é seletivo: peça fina (fio, pelo solto, filamento) pode ficar sem ele, desde que se leia no asfalto de noite e no concreto de dia.
@@ -80,7 +82,11 @@ Em toda etapa: proporção natural do bicho, sem olho grande de mascote; contras
 - **Arquétipo:** só em evento e Incursão. O vão violeta é o elemento comum; o bicho e o objeto da cidade são máscaras que não dão conta do que está atrás: a silhueta ainda lembra o bicho, mas errada (escala, simetria demais ou de menos, partes que se repetem para dentro do vão), e o vão é onde a máscara não fecha. Disco radial só no Hum, no Wisp e no Wyrm; os outros nove têm silhueta própria. Nada de mandala nem de objeto (armário, mesa, painel, ave).
 - **Espírito:** um elemento claramente errado que o Eco não tem (o objeto tomando o corpo por dentro, uma parte no lugar errado, um olho a mais), não só o bicho maior com mais objeto.
 - **Entidade Maior:** a anatomia cede de verdade (o poste do Hum, o saruê enrolado na brasa do Soot, a marquise com morcegos do Shade são a medida).
-- **Retratos:** o desenho do mapa ampliado com detalhe; composição própria (busto ou pose) só no Arquétipo.
+- **Retratos:** o desenho do mapa refeito no tamanho do retrato, com detalhe e textura no pixel do retrato (nunca em bloco de 2: a régua mede a ampliação); composição própria (busto ou pose) só no Arquétipo.
+- **Retrato do Arquétipo (128, nativo):** a mesma silhueta e o mesmo vão do 64 aprovado, em busto ou pose, inteiro dentro da moldura (o busto acaba num rasgo a pelo menos 5 px da borda; só o emissivo solto passa). O acabamento é o de `tools/art/creatures/_retrato.lua`, chamado no `draw` de cada espécie:
+  - corpo: todos os degraus do material, com volume (luz de cima à esquerda), textura do material real no pixel (pelo em fios, ferro e concreto com poros, pedra e osso com trincas, pano em sarja, escama em fileiras) e a borda recortada pela luz do tipo, na camada `glow`, por fora e em volta do vão. No Soot a brasa escurece o que está perto (a regra dele) e a luz da borda vem da boca;
+  - vão: do violeta `#9b7bff` da borda ao quase preto `#0d0914` em seis degraus (`! @ $ %` no `glow`, `= *` no corpo, que não entram no `map` das variantes), com o que há lá dentro: a repetição do bicho que a espécie já desenha, uma faixa de poeira que desliza e estrelas na luz do tipo, cada uma piscando no seu passo;
+  - cores do corpo só as do `map` das variantes, mais as apagadas.
 - **Ângulo:** bicho que voa pode ser visto de cima; bicho que anda fica de perfil. **Exceção aceita pelo dono:** a Entidade Maior e o Arquétipo do Rill ficam de frente (rodada 3, `docs/art/conceitos/rill.md`); o Rillet e o Brookkin seguem a regra.
 - **Cores emissivas:** a luz do tipo é sempre a de `tools/art/ui/types/palette.lua`. O ciano `#5fd3c6` fica só para o sinal e o Hum. **A única exceção é o Glare multicolor (decisão do dono):** a base é a luz do tipo Luz (`#FFF0B8`, `#FFFBE6`, `#CDB468`) e o espectro do prisma vai por cima dela, em cores claras, longe do violeta do Véu, do ciano do sinal e do laranja da Essência. A rodada 3 dos conceitos tinha tirado o multicolor; a arte final o devolve. O vão quase preto do Hum (`#0d0914`) continua, e não é luz. O Rust troca o azul-aço por outra luz do tipo Metal.
 - **Exceções de tamanho e forma:** aceitas, desde que os Ecos continuem legíveis a 28 px, de noite e de dia.
@@ -115,6 +121,13 @@ Seis no mapa, mais o retrato. Os quadros abaixo são os do Humoth e são o **mí
 
 Quanto mais alta a etapa, mais lento o laço: Entidade Maior e Arquétipo usam `idle` e `drift` de 6 quadros ou mais, a 6 fps ou menos.
 
+**Arquétipo: o vão é o corpo, o bicho e o objeto são a máscara.** A espécie declara o vão no `run` (`vao = { lit, fill, mid, edge, extra }`) e o `K.run` do `_hum.lua` faz, em toda espécie:
+
+- `idle` e `drift`: o que está dentro do vão se mexe no passo próprio da espécie (queixadas que afundam, coroa que tremula, olhos que descem); o vão sobe e desce um quadro antes da máscara (ela atrasa) e respira duas vezes por laço, avançando 1 px sobre a máscara;
+- `flee`: depois da antecipação a máscara se abre e o vão engole o resto (1, 2, 4, 6 e 9 px);
+- `spawn`, 7 quadros: 3 de faíscas, 1 só do vão na forma da silhueta (`body_visible` 0), e a máscara se fecha sobre ele em 2 quadros até a pose do `idle`;
+- retrato: o vão vai um quadro à frente do corpo, a borda dele respira e o céu de dentro anda no seu passo.
+
 O `<especie>.json` lista `frame`, `anims` (quadros e fps) e `body_dy` (quanto o corpo sobe em cada quadro, em pixels, negativo para cima). O do Humoth traz ainda `body_visible` (0 nos quadros que são só faísca, onde o acessório da variante não deve aparecer) e `portrait`.
 
 ## Variantes
@@ -143,7 +156,7 @@ A variante tem de se ler em **escala de cinza**: muda o **valor** do corpo e gan
 
 - Conceitos: cada família desenha em `tools/art/creatures/conceitos/<familia>/build.lua` com o ajudante `_conceito.lua` (o uso está no topo do arquivo), que grava corpo e emissivo e imprime as medidas da régua. `python3 tools/art/creatures/conceitos/folhas.py` monta `docs/art/conceitos/<familia>.png` (mapa em 2× e 4×, de noite e de dia, e o retrato), `ecos.png`, `arquetipos.png` e `escada.png`. O `docs/art/conceitos/<familia>.md` diz o bicho, o pedaço da cidade, o traço e uma frase por etapa.
 - Espécie pronta: a folha `<especie>_folha.png` (4×, vizinho mais próximo, fundo de asfalto com o tom da noite) traz uma fileira por animação, na ordem da tabela, com o corpo no tom da noite e `leds` e `glow` por cima; depois três fileiras de variantes (base, `urban`, `green`, `water`, `residential`, `lit`, `sacred`, `crimson`): em cor, em cinza e com o tom da noite.
-- Arte final: `python3 tools/art/creatures/regua.py` mede o quadro 0 do `idle` e do retrato de toda espécie (e as Fagulhas refeitas) e falha abaixo do piso; as pastas das famílias ainda sem arte final ficam em `PENDENTES` e saem da lista quando a família for integrada.
+- Arte final: `python3 tools/art/creatures/regua.py` mede o quadro 0 do `idle` e do retrato de toda espécie (e as Fagulhas refeitas), confere a ampliação e falha abaixo do piso; as pastas das famílias ainda sem arte final ficam em `PENDENTES` e saem da lista quando a família for integrada.
 - Família pronta: `python3 tools/art/creatures/familia.py <familia> fagulha:<tipo> eco:humoth eco:<pasta> espirito:<pasta> entidade:<pasta> arquetipo:<pasta>` monta `docs/art/final/<familia>.png` (o quadro 0 do `idle` a 4×, de noite e de dia, e os retratos), com o Humoth ao lado.
 - Antes de entregar: `view_sprite` em cada sprite, `lint_sprite` na camada `corpo` sem peça solta nem pixel sozinho, e nenhum quadro encostando na borda.
 

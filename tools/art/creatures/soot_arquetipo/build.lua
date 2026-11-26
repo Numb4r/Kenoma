@@ -14,6 +14,15 @@
 local S = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_soot.lua')
 local L, R = S.L, S.R
 local min, sqrt, abs, cos, sin, rad, floor = math.min, math.sqrt, math.abs, math.cos, math.sin, math.rad, math.floor
+local RT = dofile(KENOMA_ART .. 'creatures/_retrato.lua')(S)
+RT.install(S.LEG, S.LIT)
+-- o retrato nativo: o vão com fundo, pelo em fios, ferro com poros; a brasa tira luz (sign -1) e a borda é recortada
+-- pela luz que vem da boca
+local RETRATO = {
+  vao = { seed = 'QD', set = 'kQD', keep = 'UZ', depth = 13, star = { 'U', 'Z' }, sky = 60 },
+  light = { ramps = { { 'ab4321', RT.tex.fur(1, 0.35, 0.26, 5) }, { 'JjiI', RT.tex.pit(0.35) }, { 'qpP' } },
+    lights = 'REY', sign = -1, lw = 0.18, R = 16, rim = { 'E', 'R' }, rimLights = '!@UZ', rimR = 26 },
+}
 
 local function draw(g, sg, k, o)
   local NL = o.portrait and 4 or 6
@@ -26,7 +35,7 @@ local function draw(g, sg, k, o)
   local fo = (o.jump and 0 or -dyp) / k                       -- o pé, no referencial do tronco
   local st = o.lean and ({ [0] = 1.2, 0.6, -0.6, -1.2, -0.6, 0.6 })[ph] or 0
   local d = R.ctx(g.w, k, o.ox or 0, (o.oy or 0) + dyp); d.g = g
-  local p = d:pp()
+  local p = o.bust and 1 or d:pp()
   local SOL = S.SOLID
   local grow = still and (alert and 1 or 0) or (0.5 - 0.5 * cos(t))
   local EX, EY = 33, 41                                       -- a brasa do peito
@@ -122,7 +131,7 @@ local function draw(g, sg, k, o)
     if q > -0.99 then
       local f = 0.62 * 0.55 ^ q
       local bx, by = HX + 3.4 * (q + 1), HY + 2.6 * (q + 1)
-      local ch = q < 0.5 and 'Q' or (q < 1.5 and 'U' or 'Z')
+      local ch = q < 0.5 and (o.bust and '!' or 'Q') or (q < 1.5 and 'U' or 'Z')
       for _, sd in ipairs({ -1, 1 }) do
         local a = mid + sd * half * 0.62
         d:wire({ { bx, by }, { bx + cos(a) * 15 * f, by + sin(a) * 15 * f } }, ch, nil, 0.5, 'kDQ')
@@ -133,7 +142,7 @@ local function draw(g, sg, k, o)
       end
     end
   end
-  if o.bust then S.tear(g, 3) end
+  if o.bust then RT.finish(g, o, RETRATO) end
   -- faíscas soltas: sobem e somem
   local sz = d:th(0.6)
   for n = 0, 17 do
@@ -150,6 +159,7 @@ end
 S.run {
   name = 'soot_arquetipo', stage = 'arquetipo', W = 64, PW = 128, draw = draw, ownDy = true, ownLean = true,
   nloop = 6, fps = { idle = 5, drift = 5 }, fleeDy = { 1, 0, 0, -1, -1, -1 },
+  vao = { lit = 'QDUZ', fill = 'k', mid = 'D', edge = 'Q' },
   over = { flee = function(_, os) for i = 2, #os do os[i].jump = true end return os end },
   -- busto: a cabeça sem olho, a boca e a brasa, em escala 3
   portrait = function(o)

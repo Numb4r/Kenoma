@@ -26,7 +26,11 @@
 | Entidade Maior | Tatu pequeno, seis patas, cintas acesas; a carapaça vira um monte de entulho que alarga para cima (cascalho, entulho, guia, parede), com um segundo rosto virado no alto. Uma costura larga entre o tatu e o monte. | o monte é mais largo em cima e não cai; o cascalho rola morro acima |
 | Arquétipo | Tatu de perfil partido no meio: dois escudos de osso, no lugar das cintas o vão em ampulheta com as cintas repetidas menores; cabeça pequena demais e sem rosto, garras grandes demais. | física: as metades andam sem estar ligadas, e o cascalho cai de lado para dentro do vão; geometria: as cintas não chegam ao fundo |
 
-## Rodada 3 (substitui a rodada 2 nestas etapas; aguarda aprovação)
+## Rodada 3 (substitui a rodada 2 nestas etapas; aprovada)
+
+**Aprovada pelo dono** (`docs/art/conceitos/rodada3/rodada3.png` e `arquetipos.png`): a Entidade Maior e o Arquétipo em 64. A família está aprovada por inteiro e segue para a arte final sem nova rodada de conceito.
+
+**Ajuste que entra direto na arte final, Entidade Maior:** pelo menos uma cabeça de tatu legível em 48 px, saindo de um ponto errado da bola (de cabeça para baixo ou do lado oposto às patas).
 
 A luz de todas as peças desta rodada é só a da paleta do tipo.
 

@@ -16,6 +16,17 @@ local K = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_hum.lua'
 local L = K.L
 local floor, ceil, abs, sqrt, sin, cos, rad = math.floor, math.ceil, math.abs, math.sqrt, math.sin, math.cos, math.rad
 local hash = K.hash
+local RT = dofile(KENOMA_ART .. 'creatures/_retrato.lua')(K)
+RT.install(K.LEG, K.LIT)
+-- o retrato nativo: o túnel afunda do violeta ao quase preto (t: a distância ao fim do túnel, posta no draw), com
+-- LEDs perdidos lá no fundo; asa de cinza com poros, pelo em fios, aço riscado; a borda recortada pelos veios.
+-- Sem rasgo: as asas já entram cortadas num círculo por dentro da moldura.
+local RETRATO = {
+  margin = false,
+  vao = { seed = 'Z0', set = 'z0', keep = 'Z', star = { 'H', 'I' }, sky = 50 },
+  light = { ramps = { { '4321', RT.tex.pit(0.22) }, { 'CDR', RT.tex.fur(1, 0.5, 0.25, 4) }, { 'uUVW', RT.tex.pit(0.2, 9) } },
+    lights = 'JY', lw = 0.3, R = 8, blur = 1, rim = { 'Y', 'J' }, rimR = 4, rimVao = false },
+}
 
 local WINGS = { -- { ângulo, comprimento, olhos { u, raio, t } }
   { -78, 18, { { 0.42, 2.4, 0.5 }, { 0.66, 1.5, 0.5 }, { 0.85, 1.5, 0.5 } } },
@@ -149,6 +160,10 @@ local function draw(g, sg, k, o)
     if k > 1 and q > 1.2 then K.eye(g, ex, ey, 1.5)
     else L.rect(g, floor(ex + 0.5), floor(ey + 0.5), floor(ex + 0.5) + th - 1, floor(ey + 0.5) + th - 1, q > 4 and 'I' or 'H', 'z0Z') end
   end
+  if bust then
+    RETRATO.vao.t = function(x, y) return math.max(0.5, math.min(1, 1.5 - sqrt((x - c3x) ^ 2 + (y - c3y) ^ 2) / (11 * k))) end
+    RT.finish(g, o, RETRATO)
+  end
   -- o raio sai do vão que escorre e não acaba no quadro; muda de caminho a cada quadro
   local by = gy + sl
   local segs = (not alert and ph % 3 == 2) and 2 or 4
@@ -173,6 +188,7 @@ K.run {
   name = 'hum_arquetipo', stage = 'arquetipo', W = 64, PW = 128, LEG = K.LEG, draw = draw, DARK = 'C',
   BODY_KEYS = { '1', '2', '3', '4', 'B', 'T', 'C', 'D', 'R', 'u', 'U', 'V', 'W' },
   nloop = 6, fps = { idle = 5, drift = 5 }, fleeDy = { 1, 0, 0, -1, -1, -1 }, ownLean = true,
+  vao = { lit = 'Z0', fill = 'z', mid = '0', edge = 'Z' },
   -- busto: a boca em escala 2,5, centrada um pouco acima do meio; o que passa do quadro (o raio) é cortado
   portrait = function(o)
     local g, sg = L.grid(160, 160), L.grid(160, 160)

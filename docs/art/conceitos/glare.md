@@ -26,7 +26,9 @@
 |---|---|---|
 | Arquétipo | Beija-flor do Eco em vidro cinza (só cabeça e cauda com cor), asa em quatro posições, três bicos de agulha, sem olho; no papo, o vão com o mesmo beija-flor virado. | física: a luz em volta faz curva; geometria: a ave dentro do próprio papo, ao contrário |
 
-## Rodada 3 (substitui a rodada 2 nestas etapas; aguarda aprovação)
+## Rodada 3 (substitui a rodada 2 nestas etapas; aprovada)
+
+**Aprovada pelo dono** (`docs/art/conceitos/rodada3/rodada3.png` e `arquetipos.png`): o Arquétipo em 64 (a Entidade Maior já estava aprovada na rodada 2). A família está aprovada por inteiro e segue para a arte final sem nova rodada de conceito.
 
 A luz de todas as peças desta rodada é só a da paleta do tipo.
 

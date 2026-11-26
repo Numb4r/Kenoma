@@ -29,7 +29,11 @@
 | Entidade Maior | A sarjeta: corpo de guia e asfalto, boca de lobo como boca, dorso de verruga com dois olhos, seis membros. Uma costura larga no dorso. | a enxurrada sobe da boca de lobo e junta numa poça deitada no ar, com o terceiro olho no reflexo |
 | Arquétipo | Sapo de frente, pequeno e de olhos fechados, sentado no próprio reflexo, que é maior e tem olhos abertos, um terceiro olho e braços a mais; o vão é a linha d'água. | física: ele se apoia num reflexo; geometria: o reflexo é maior e tem mais do que o refletido |
 
-## Rodada 3 (substitui a rodada 2 nestas etapas; aguarda aprovação)
+## Rodada 3 (substitui a rodada 2 nestas etapas; aprovada)
+
+**Aprovada pelo dono** (`docs/art/conceitos/rodada3/rodada3.png` e `arquetipos.png`): a Entidade Maior e o Arquétipo em 64. A família está aprovada por inteiro e segue para a arte final sem nova rodada de conceito.
+
+**Ajuste que entra direto na arte final, Entidade Maior:** o conceito ainda lê como o Espírito maior. O corpo vira o próprio meio-fio com a boca de lobo (um bloco de concreto), os olhos ficam sobre a grade, com água escura escorrendo. O sapo se lê só pelos olhos e pelas patas.
 
 A luz de todas as peças desta rodada é só a da paleta do tipo.
 
@@ -38,4 +42,4 @@ A luz de todas as peças desta rodada é só a da paleta do tipo.
 | Entidade Maior | Cururu de frente, agachado; a boca de um lado ao outro é a boca de lobo (verga com tinta amarela, soleira, grade). Os calombos dos olhos estão cegos; os três olhos estão atrás da grade. Costura larga na verga. | a poça do dorso reflete os três olhos, que estão do outro lado do corpo |
 | Arquétipo | Sapo de frente, cinza, sem olho (dois buracos), pele em fibra com covas e veias acesas por fora. A boca aberta é a poça, e nela está o vão com duas luas e uma cidade de ponta-cabeça. Braços a mais de um lado só. | física: a poça está em pé e não escorre, e a água cai para cima; geometria: a poça é mais larga que a cabeça que a segura |
 
-**Decisão do dono: a Entidade Maior e o Arquétipo de frente estão aceitos** como exceção à regra "bicho que anda fica de perfil" (`docs/art/estilo-criaturas.md`, "Ângulo"). O Rillet e o Brookkin seguem a regra. O resto da rodada continua aguardando aprovação.
+**Decisão do dono: a Entidade Maior e o Arquétipo de frente estão aceitos** como exceção à regra "bicho que anda fica de perfil" (`docs/art/estilo-criaturas.md`, "Ângulo"). O Rillet e o Brookkin seguem a regra.

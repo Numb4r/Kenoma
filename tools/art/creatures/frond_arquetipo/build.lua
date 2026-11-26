@@ -16,6 +16,15 @@
 local Fr = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_frond.lua')
 local L, R = Fr.L, Fr.R
 local abs, sin, cos, rad, floor = math.abs, math.sin, math.cos, math.rad, math.floor
+local RT = dofile(KENOMA_ART .. 'creatures/_retrato.lua')(Fr)
+RT.install(Fr.LEG, Fr.LIT)
+-- o retrato nativo: o vão com fundo, pedra com poros e trincas, folha seca em fios; a borda recortada pela nervura
+local RETRATO = {
+  vao = { seed = 'QW', set = 'kQW', keep = 'UZ', depth = 5, star = { 'U', 'Z' }, sky = 75 },
+  light = { ramps = { { '4321', RT.tex.stone(0.3) }, { 'nNM', RT.tex.fur(1, -0.45, 0.3, 5) }, { 'abcde', RT.tex.fur(1, -0.45, 0.25, 4) },
+      { 'JjiI', RT.tex.pit(0.35) }, { 'qpo' } },
+    lights = 'BDEHG', lw = 0.28, R = 7, rim = { 'D', 'B' } },
+}
 
 local function draw(g, sg, k, o)
   local NL = o.portrait and 4 or 6
@@ -29,7 +38,7 @@ local function draw(g, sg, k, o)
   local SOL = Fr.SOLID
   local cx = 31.5
   local d = R.ctx(g.w, k, ox, oy + dyp)                       -- o corpo, numa grade própria (depois ele pende)
-  local p = d:pp()
+  local p = o.bust and 1 or d:pp()
   local lift = alert and -1.4 or (crouch and 1.6 or 0)        -- os lobos erguem no alerta e caem encolhidos
   local curl = alert and 26 or (crouch and 33 or 30 + 1.5 * sin(t))   -- os báculos enrolam e soltam
   local buds = {}
@@ -89,7 +98,7 @@ local function draw(g, sg, k, o)
   for lv = 0, 3 do
     local q = lv - 1 + (still and 0 or fr)
     local f = 0.5 * 0.52 ^ q
-    local ch = q < 0.5 and 'Q' or (q < 1.5 and 'U' or 'Z')
+    local ch = q < 0.5 and (o.bust and '!' or 'Q') or (q < 1.5 and 'U' or 'Z')
     for i = 0, 6 do
       local y0, len = 32.6 + (46.6 - i * 4.5 - 32.6) * f, (6.5 + i * 1.5) * f * 0.42
       for _, sd in ipairs({ -1, 1 }) do
@@ -121,7 +130,7 @@ local function draw(g, sg, k, o)
       if c ~= '.' then L.set(g, x + dx, y, c) end
     end
   end
-  if o.bust then Fr.tear(g, 3) end
+  if o.bust then RT.finish(g, o, RETRATO) end
   -- esporos soltos: sobem e somem
   local sz = d:th(0.6)
   for n = 0, 21 do
@@ -140,6 +149,7 @@ end
 Fr.run {
   name = 'frond_arquetipo', stage = 'arquetipo', W = 64, PW = 128, draw = draw, DARK = '4', ownLean = true,
   nloop = 6, fps = { idle = 5, drift = 5 }, fleeDy = { 1, 0, 0, -1, -1, -1 },
+  vao = { lit = 'QWUZ', fill = 'k', mid = 'W', edge = 'Q' },
   over = { flee = function(_, os) for i = 2, #os do os[i].jump = true end return os end },
   -- busto: os dois báculos, os lobos de cima e o vão, em escala 3
   portrait = function(o)

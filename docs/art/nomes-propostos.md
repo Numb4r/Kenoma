@@ -31,9 +31,9 @@ Baseados na seção "Arte final" de `docs/art/conceitos/<familia>.md`.
 | Wyrm | Entidade Maior | **Roadbreach** | O teú que nada no asfalto e rompe a rua em arcos, como bicho que vem à tona. | Tarswimmer |
 | Wyrm | Arquétipo | **Scalecorona** | O eclipse sem sol nem lua: a coroa acesa em volta do anel de doze escamas. | Ringscale |
 
-## Rodada 3 ainda não aprovada
+## Rodada 3 aprovada, arte final por fazer
 
-As peças altas de Bit, Clod, Glare, Rill, Rust e Sprig ainda aguardam aprovação. Cada nome sai do conceito mais recente de cada peça em `docs/art/conceitos/<familia>.md` (a coluna "Conceito" diz qual) e deve ser revisto se a peça mudar.
+Os conceitos das peças altas de Bit, Clod, Glare, Rill, Rust e Sprig foram aprovados pelo dono; os nomes abaixo continuam propostas. Cada nome sai do conceito mais recente de cada peça em `docs/art/conceitos/<familia>.md` (a coluna "Conceito" diz qual) e deve ser revisto se a peça mudar: as Entidades Maiores de Clod, Rill e Sprig entram na arte final com ajuste (está no `.md` de cada família).
 
 | Família | Peça | Conceito | Nome | Por quê | Alternativa |
 |---|---|---|---|---|---|

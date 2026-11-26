@@ -294,11 +294,78 @@ function K.run(spec)
     spec.draw(g, sg, 1, o)
     return g, sg
   end
+  -- O vão do Arquétipo é o corpo; o bicho e o objeto são a máscara. spec.vao = { lit = violetas que só o vão tem,
+  -- fill = o apagado, mid = o violeta fraco, edge = o violeta da borda, extra = o que vive lá dentro }.
+  -- vaoShift: o vão anda dy px sem a máscara (ela atrasa um quadro). vaoSwallow: o vão avança n px sobre a máscara
+  -- (respira com 1; na fuga engole o resto; 99 = tudo, o nascer começa assim e a máscara se fecha sobre ele).
+  local VAO = spec.vao
+  local VCH = '!@$%=*'                                        -- os do retrato (_retrato.lua)
+  local function vaoRegion(g)
+    local reg, st, all = {}, {}, VAO.lit .. VAO.fill .. (VAO.extra or '') .. VCH
+    for y = 0, g.h - 1 do for x = 0, g.w - 1 do
+      local c = g[y][x]
+      if c ~= '.' and (VAO.lit:find(c, 1, true) or ('!@$%'):find(c, 1, true)) then reg[y * g.w + x] = true; st[#st + 1] = { x, y } end
+    end end
+    while #st > 0 do
+      local q = table.remove(st)
+      for _, d in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
+        local nx, ny = q[1] + d[1], q[2] + d[2]
+        local c = L.get(g, nx, ny)
+        if c ~= '.' and not reg[ny * g.w + nx] and all:find(c, 1, true) then reg[ny * g.w + nx] = true; st[#st + 1] = { nx, ny } end
+      end
+    end
+    return reg
+  end
+  local function vaoShift(g, dy)
+    local reg, o = vaoRegion(g), L.grid(g.w, g.h)
+    for y = 0, g.h - 1 do for x = 0, g.w - 1 do o[y][x] = reg[y * g.w + x] and VAO.fill or g[y][x] end end
+    for y = 0, g.h - 1 do for x = 0, g.w - 1 do
+      local ty = y + dy
+      if reg[y * g.w + x] and ty >= 0 and ty < g.h and reg[ty * g.w + x] then o[ty][x] = g[y][x] end
+    end end
+    return o
+  end
+  local function chamfer(g, seed)                             -- distância por dentro do corpo até seed
+    local d = {}
+    for y = 0, g.h - 1 do
+      d[y] = {}
+      for x = 0, g.w - 1 do d[y][x] = seed(x, y) and 0 or 1e9 end
+    end
+    local function rx(x, y, nx, ny, w)
+      if nx >= 0 and ny >= 0 and nx < g.w and ny < g.h and d[ny][nx] + w < d[y][x] then d[y][x] = d[ny][nx] + w end
+    end
+    for y = 0, g.h - 1 do for x = 0, g.w - 1 do
+      rx(x, y, x - 1, y, 1); rx(x, y, x, y - 1, 1); rx(x, y, x - 1, y - 1, 1.4); rx(x, y, x + 1, y - 1, 1.4)
+    end end
+    for y = g.h - 1, 0, -1 do for x = g.w - 1, 0, -1 do
+      rx(x, y, x + 1, y, 1); rx(x, y, x, y + 1, 1); rx(x, y, x + 1, y + 1, 1.4); rx(x, y, x - 1, y + 1, 1.4)
+    end end
+    return d
+  end
+  local function vaoSwallow(g, n)
+    local reg = vaoRegion(g)
+    local dv = chamfer(g, function(x, y) return reg[y * g.w + x] == true end)
+    local de = n >= 50 and chamfer(g, function(x, y) return g[y][x] == '.' end)
+    for y = 0, g.h - 1 do for x = 0, g.w - 1 do
+      if g[y][x] ~= '.' and not reg[y * g.w + x] and dv[y][x] <= n then
+        local ch = VAO.fill
+        if de then
+          if de[y][x] <= 1.45 then ch = VAO.edge elseif de[y][x] < 4 and (x + y) % 2 == 0 then ch = VAO.mid end
+        elseif dv[y][x] > n - 1.2 then ch = VAO.edge
+        elseif dv[y][x] > n * 0.45 and (x + y) % 2 == 0 then ch = VAO.mid end
+        g[y][x] = ch
+      end
+    end end
+  end
   local function frame(o)
     local sg, g = L.grid(W, H), L.grid(W, H)
     if not o.nobody then
       g, sg = pose(o)
       heat(g, o.hot or 0)
+      if VAO then
+        if (o.vdy or 0) ~= 0 then g = vaoShift(g, o.vdy) end
+        if o.swallow then vaoSwallow(g, o.swallow) end
+      end
       if o.dark then
         for y = 0, H - 1 do for x = 0, W - 1 do
           if g[y][x] ~= '.' and not EM[g[y][x]] then g[y][x] = spec.DARK end
@@ -315,7 +382,7 @@ function K.run(spec)
       if L.get(g, x, y) == '.' then L.set(sg, x, y, p[3] or 'S') end
     end
     local b, l, w = split(g, sg)
-    return { b = b, l = l, w = w, dy = o.dy or 0, body = not o.nobody, plain = not o.nobody and not o.erode }
+    return { b = b, l = l, w = w, dy = o.dy or 0, body = not o.nobody and not o.novis, plain = not o.nobody and not o.erode }
   end
 
   -- Ajudas de faísca (coordenadas do Humoth, ampliadas para W).
@@ -399,6 +466,22 @@ function K.run(spec)
       { nobody = true, sparks = cat(cloud(10, 0.5), plus(c0, c0)) },
     },
   }
+  if VAO then
+    -- parado e na deriva: o vão sobe e desce um quadro antes da máscara e respira duas vezes por laço
+    for i = 1, NL do
+      local lead = DY[i % NL + 1] - DY[i]
+      local br = (i % 3 == 0) and 1 or nil
+      idle[i].vdy, drift[i].vdy, idle[i].swallow, drift[i].swallow = lead, lead, br, br
+    end
+    -- fuga: a máscara se abre e o vão engole o resto
+    for i, n in ipairs({ 0, 1, 2, 4, 6, 9 }) do if n > 0 then OS.flee[i].swallow = n end end
+    -- nascer: depois das faíscas vem o vão sozinho, e a máscara se fecha sobre ele
+    OS.spawn = { OS.spawn[1], OS.spawn[2], OS.spawn[3],
+      { pose = 'crouch', dark = true, hot = 2, swallow = 99, novis = true, sparks = ring(6, 12.5, 40) },
+      { pose = 'crouch', dark = true, hot = 2, swallow = 4 },
+      { ph = 1, hot = 1, swallow = 2, sparks = ring(4, 12.5, 10) },
+      OS.spawn[6] }
+  end
   local FPS = { idle = 8, drift = 8, alert = 6, flee = 12, spawn = 10, tuned = 10 }
   local ANIMS = {}
   for _, n in ipairs({ 'idle', 'drift', 'alert', 'flee', 'spawn', 'tuned' }) do
@@ -562,6 +645,7 @@ function K.run(spec)
       K.sweep = f - 1
       local big, bsg, ox, oy = spec.portrait(o)
       heat(big, o.hot)
+      if VAO then big = vaoShift(big, ({ -1, -1, 1, 1 })[f]) end   -- o vão vai um quadro à frente da máscara
       L.outline(big, 'A', SOLID)
       local g, sg = L.grid(PW, PW), L.grid(PW, PW)
       local pdy = spec.ownDy and 0 or o.dy

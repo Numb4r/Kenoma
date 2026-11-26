@@ -21,6 +21,15 @@ local floor, ceil, abs, sin, cos, rad, max = math.floor, math.ceil, math.abs, ma
 local NOPULL = 'AKSs678'                                      -- contorno seletivo: osso e os que dormem ficam sem
 local SOL = ''
 for ch in pairs(Sh.LEG) do if not NOPULL:find(ch, 1, true) then SOL = SOL .. ch end end
+local RT = dofile(KENOMA_ART .. 'creatures/_retrato.lua')(Sh)
+RT.install(Sh.LEG, Sh.LIT)
+-- o retrato nativo: o vão com fundo, laje com poros, osso com trincas, a sombra em trama; a borda recortada pelas
+-- lâmpadas viradas para dentro
+local RETRATO = {
+  vao = { seed = 'UY', set = 'kUY', keep = 'MN', depth = 9, star = { 'M', 'N' }, sky = 70 },
+  light = { ramps = { { '51234', RT.tex.pit(0.3) }, { '876', RT.tex.stone(0.3) }, { 'efg', RT.tex.weave(0.22) }, { 'mno' } },
+    lights = 'TV', lw = 0.3, R = 9, rim = { 'P', 'R' } },
+}
 local cx = 31.5
 local HALF = { { cx, 19.5 }, { 27, 20 }, { 22.5, 25 }, { 20.3, 34 }, { 21.5, 44 }, { 25, 51 }, { cx, 53 } }
 
@@ -63,7 +72,7 @@ local function draw(g, sg, k, o)
   end, SOL)
   -- o casulo, numa grade própria (depois ele pende); na antecipação se recolhe para dentro das asas
   local d = R.ctx(g.w, k, ox, oy + dy - (crouch and 2 * k or 0))
-  local p = d:pp()
+  local p = o.bust and 1 or d:pp()
   d:layer(function(t)
     t:poly(HALF, R.mat('5123', R.noise(p, 21), function(u, v) return 0.15 + 0.8 * (cx - u) / 11 - (v - 20) / 90 end))
     for _, e in ipairs({ { 23.4, 27, 31 }, { 25.6, 33, 39 }, { 22.6, 40, 44 }, { 27.6, 24, 27 } }) do
@@ -113,7 +122,7 @@ local function draw(g, sg, k, o)
   for lv = 0, 3 do
     local q = lv - 1 + (still and 0 or fr)
     local s = 0.62 * 0.45 ^ q
-    local ch = q < 0.5 and 'U' or (q < 1.5 and 'M' or 'N')
+    local ch = q < 0.5 and (o.bust and '!' or 'U') or (q < 1.5 and 'M' or 'N')
     local pts = {}
     for i = 1, #HALF do pts[#pts + 1] = { cx + (HALF[i][1] - cx) * s * 0.62, 36 + (HALF[i][2] - 36) * s } end
     for i = #HALF, 1, -1 do pts[#pts + 1] = { cx - (HALF[i][1] - cx) * s * 0.62, 36 + (HALF[i][2] - 36) * s } end
@@ -131,7 +140,7 @@ local function draw(g, sg, k, o)
       if c ~= '.' then L.set(g, x + dx, y, c) end
     end
   end
-  if o.bust then Sh.tear(g, 3) end
+  if o.bust then RT.finish(g, o, RETRATO) end
   -- poeira de crepúsculo em volta: sobe e some
   for n = 1, 26 do
     local a = rad(n * 67)
@@ -145,6 +154,7 @@ end
 Sh.run {
   name = 'shade_arquetipo', stage = 'arquetipo', W = 64, PW = 128, draw = draw, NOPULL = NOPULL,
   nloop = 6, fps = { idle = 5, drift = 5 }, fleeDy = { 1, 0, 0, -1, -1, -1 },
+  vao = { lit = 'UYMN', fill = 'k', mid = 'Y', edge = 'U' },
   over = { flee = function(_, os) for i = 2, #os do os[i].jump = true end return os end },
   -- busto: a sombra, os pés e a fresta, em escala 3
   portrait = function(o)

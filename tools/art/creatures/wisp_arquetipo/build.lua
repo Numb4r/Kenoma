@@ -24,10 +24,18 @@ local pick = Wi.pick
 local STRIPS = { { 152, 17 }, { 134, 24 }, { 116, 14 }, { 98, 27 }, { 82, 19 }, { 64, 25 }, { 46, 15 }, { 28, 21 } }
 local LEGS = { { -5.4, 10.6, 21 }, { 0, 12, 28 }, { 5.4, 10.6, 23 } }
 local NOCLAW = Wi.SOLID:gsub('[67]', '')
+local RT = dofile(KENOMA_ART .. 'creatures/_retrato.lua')(Wi)
+RT.install(Wi.LEG, Wi.LIT)
+-- o retrato nativo: o vão com fundo, pano em trama, pena de cinza em fios, cera lisa; a borda recortada pelas chamas
+local RETRATO = {
+  vao = { seed = 'QW', set = 'vQW', keep = 'FGH', depth = 13, star = { 'D', 'E' }, sky = 20 },
+  light = { ramps = { { 'rtu', RT.tex.weave(0.2) }, { '876', RT.tex.fur(1, 0.6, 0.28, 5) }, { '123' }, { 'fl' } },
+    lights = 'BDEFGH', lw = 0.32, R = 9, blur = 1, rim = { 'D', 'B' } },
+}
 
 local function draw(g, sg, k, o)
   local X, Y = Wi.scale(k, o.ox, o.oy)
-  local p = Wi.pp(k)
+  local p = o.bust and 1 or Wi.pp(k)
   local ck = Wi.chk(p)
   Wi.flat = o.dark
   local NL = o.portrait and 4 or 8
@@ -132,7 +140,7 @@ local function draw(g, sg, k, o)
       elseif r2 < 6.4 + 1 / k and c ~= '.' and not ('123FGH'):find(c, 1, true) and not o.dark then g[y][x] = 'A' end
     end
   end
-  if o.bust then Wi.tearBox(g, 0, 0, g.w, 3) end
+  if o.bust then RT.finish(g, o, RETRATO) end
   -- a roda de chamas soltas (só no glow), todas viradas para o vão; gira ao contrário da procissão
   for n = 0, 20 do
     local a = rad(n * 360 / 21 + 8 - turn * 360 / 7)
@@ -150,6 +158,7 @@ end
 Wi.run {
   name = 'wisp_arquetipo', stage = 'arquetipo', W = 64, PW = 128, draw = draw, DARK = 'r', NOPULL = Wi.NOPULL .. '67',
   nloop = 8, dy = { 0, 0, 1, 1, 1, 1, 0, 0 }, fps = { idle = 5, drift = 5 }, fleeDy = { 1, 0, 0, 0, 0, 0 },
+  vao = { lit = 'QW', fill = 'v', mid = 'W', edge = 'Q', extra = 'FGH' },
   -- busto: o olho de vela em escala 3, um pouco acima do meio
   portrait = function(o)
     local g, sg = L.grid(128, 128), L.grid(128, 128)
