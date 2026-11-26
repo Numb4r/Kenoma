@@ -16,3 +16,7 @@ tools/art/teste/
 # Pacotes de região (0.26.0): gerados pela pipeline, ficam na GitHub Release `regioes-dev`
 # (scripts/baixar_regioes.sh baixa e confere pela lista scripts/regioes.sha256)
 app/assets/regions/*.bin
+
+# Editor e worktrees dos agentes do Claude Code: locais, fora do git
+.vscode/
+.claude/worktrees/

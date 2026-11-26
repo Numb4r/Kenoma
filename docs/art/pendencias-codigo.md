@@ -22,7 +22,7 @@ O que a arte das criaturas (branch `arte-criaturas`, `docs/art/estilo-criaturas.
 ## Família Shade
 
 4. **Sombra no chão desligada no Shade.** **Feito (0.26.0):** `castsGroundShadow` em `ui/game/spawn_painter.dart` (testado em `test/ui/ground_shadow_test.dart`) tira a sombra oval das espécies do Shade, no Eco gerado e no animado.
-10. **Textos do Bestiário do Shade:** **feito:** o criativo reescreveu em `docs/textos-bestiario.md` (o morcego pendurado e o morcego de pé com o braço de laje) e o texto foi copiado para o `creatures.json` (`shade.eco`, `shade.spirit` e o `spark.about` da família). Ainda descrevem a forma antiga: Sootling, Wisplet e Wyrmlet.
+10. **Textos do Bestiário do Shade:** **feito:** o criativo reescreveu em `docs/textos-bestiario.md` (o morcego pendurado e o morcego de pé com o braço de laje) e o texto foi copiado para o `creatures.json` (`shade.eco`, `shade.spirit` e o `spark.about` da família). Sootling, Wisplet e Wyrmlet: **feito** em `bca70ca`, textos pela forma nova (saruê, coruja-buraqueira, teú) em `docs/textos-bestiario.md` e no `creatures.json`.
 
 ## Famílias Wisp e Wyrm
 

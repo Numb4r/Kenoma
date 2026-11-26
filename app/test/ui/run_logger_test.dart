@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/capture/eco_type.dart';
 import 'package:kenoma/capture/session.dart';
@@ -121,6 +122,12 @@ void main() {
     final broken = SessionLogStore(File('${dir.path}/sessions.csv/x/y.csv'));
     File('${dir.path}/sessions.csv').writeAsStringSync('arquivo no lugar da pasta');
     final l = RunLogger(store: broken, balance: b, balanceVersion: 'c0ffee00', appBuild: '0.2.0+2', hidden: false, clock: () => now);
+    // A falha é de propósito: o aviso vai para a lista, não para a saída da suíte.
+    final printed = <String?>[];
+    final original = debugPrint;
+    debugPrint = (String? m, {int? wrapWidth}) => printed.add(m);
+    addTearDown(() => debugPrint = original);
     await l.finished(makeRun());
+    expect(printed.single, startsWith('Registro falhou:'));
   });
 }
