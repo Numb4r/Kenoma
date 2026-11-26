@@ -19,6 +19,16 @@
 - **Arquétipo (geometria):** a ponta de fora da espiral passa por baixo do próprio começo, e dentro do vão está a mesma espiral outra vez, e outra dentro dela: o dentro é maior que o fora e não tem fundo.
 - **Arquétipo (regra física):** não tem chão nem peso próprio; o cascalho em volta cai para dentro dela de todos os lados.
 
+## Arte final (família inteira)
+
+Kit em `tools/art/creatures/_clod.lua`; espécies em `pebblet/`, `bouldkin/`, `clod_entidade/` e `clod_arquetipo/` (nomes e pastas das duas últimas são provisórios), Fagulha em `tools/art/sparks/spark_earth.lua`. Folha: `docs/art/final/clod.png`. A Entidade é a bola de entulho da rodada 3; o Arquétipo é o tatu partido no meio com o vão em ampulheta (o que está em `rodada3/arquetipos.png`). O `pebblet/kit.lua` antigo continua na pasta porque `gratekin` e `rustling` ainda o usam.
+
+- **Luz:** só a do tipo Terra da paleta (`#7E5A32`, `#C0915A`, `#E6C594`), no lugar do âmbar da linha "Cor" acima. `leds` são o buraco de luz do Pebblet, os três olhos do Bouldkin e o olho aceso da cabeça virada da Entidade; o resto é `glow`.
+- **Ajuste do dono na Entidade:** as cabeças do mapa são desenhadas pixel a pixel (escudo de placas, duas orelhas, olho, focinho escuro). A da direita é a cabeça inteira de perfil; a da esquerda sai do lado oposto, de cabeça para baixo, com o olho aceso; a terceira sai pelo alto.
+- **Costuras do Véu:** Pebblet três, curtas e de 1 px (os dois escudos e o escudo da cabeça), longe das juntas; Bouldkin duas mais largas (escudo de trás e face do bloco); Entidade uma larga, fechando a bola embaixo; Arquétipo nenhuma (o vão); a Fagulha ficou sem, como as outras refeitas.
+- **Animação:** no Pebblet a luz corre pelas juntas, a cabeça fareja e o rabo balança; com medo fecha em bola e foge rolando (o `flee` é a bola girando). O Bouldkin anda devagar, as cinco patas fora de passo e os dois rabos um contra o outro. A Entidade balança sem abrir e cada cabeça entra e sai da trinca no seu passo. No Arquétipo a metade de trás sobe com o `body_dy` e a da frente um quadro depois, as cintas de dentro do vão afundam e o cascalho cai de lado para ele (mais as regras do vão do `K.run`).
+- **Retratos:** 96 nas três etapas de baixo; o do Arquétipo é o tatu inteiro em 128 (escala 1,85, margem de 5 px), com o `_retrato.lua`.
+
 ## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
 
 | Etapa | O que é | Regra quebrada |

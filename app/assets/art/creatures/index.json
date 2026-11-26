@@ -40,8 +40,16 @@
     "bit.spirit": {
       "folder": "glitchkin"
     },
+    "clod.archetype": {
+      "folder": "clod_arquetipo",
+      "spawn": "ground"
+    },
     "clod.eco": {
       "folder": "pebblet",
+      "spawn": "ground"
+    },
+    "clod.major": {
+      "folder": "clod_entidade",
       "spawn": "ground"
     },
     "clod.spirit": {

@@ -29,6 +29,8 @@
       "ability": { "kind": "extra_material_pct", "bands": [5, 10, 15] } },
     { "id": "clod.spirit", "name": "Bouldkin", "family": "clod", "type": "earth", "tier": "spirit", "since_epoch": 11,
       "ability": { "kind": "extra_material_pct", "bands": [10, 15, 20] } },
+    { "id": "clod.major", "name": "Entidade Maior de Pebblet", "family": "clod", "type": "earth", "tier": "major", "since_epoch": 11 },
+    { "id": "clod.archetype", "name": "Arquétipo de Pebblet", "family": "clod", "type": "earth", "tier": "archetype", "since_epoch": 11 },
     { "id": "rust.eco", "name": "Rustling", "family": "rust", "type": "metal", "tier": "eco", "god": "Oxiayal", "since_epoch": 11,
       "ability": { "kind": "seal_save_pct", "bands": [5, 10, 15] } },
     { "id": "rust.spirit", "name": "Gratekin", "family": "rust", "type": "metal", "tier": "spirit", "god": "Oxiayal", "since_epoch": 11,
