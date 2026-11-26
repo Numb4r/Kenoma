@@ -2689,6 +2689,10 @@
                 [
                   "shade.ritual",
                   1
+                ],
+                [
+                  "bit.ritual",
+                  1
                 ]
               ],
               "green": [
@@ -2714,6 +2718,10 @@
                 ],
                 [
                   "shade.ritual",
+                  1
+                ],
+                [
+                  "bit.ritual",
                   1
                 ]
               ],
@@ -2741,6 +2749,10 @@
                 [
                   "shade.ritual",
                   1
+                ],
+                [
+                  "bit.ritual",
+                  1
                 ]
               ],
               "residential": [
@@ -2767,6 +2779,10 @@
                 [
                   "shade.ritual",
                   6
+                ],
+                [
+                  "bit.ritual",
+                  1
                 ]
               ],
               "lit": [
@@ -2793,6 +2809,10 @@
                 [
                   "shade.ritual",
                   1
+                ],
+                [
+                  "bit.ritual",
+                  6
                 ]
               ],
               "sacred": [
@@ -2818,6 +2838,10 @@
                 ],
                 [
                   "shade.ritual",
+                  1
+                ],
+                [
+                  "bit.ritual",
                   1
                 ]
               ]

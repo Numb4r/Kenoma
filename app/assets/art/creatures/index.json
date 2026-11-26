@@ -40,6 +40,10 @@
       "folder": "bit_entidade",
       "spawn": "static_sign"
     },
+    "bit.ritual": {
+      "folder": "staticroost",
+      "spawn": "static_sign"
+    },
     "bit.spirit": {
       "folder": "glitchkin",
       "spawn": "static_sign"

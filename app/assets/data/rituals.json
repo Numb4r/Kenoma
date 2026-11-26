@@ -60,6 +60,16 @@
         { "item": "item.vessel.dark", "qty": 1 }
       ],
       "circle": { "min_level": 5 }
+    },
+    {
+      "species": "bit.ritual",
+      "condition": {"kind": "climate", "value": "static"},
+      "materials": [
+        { "item": "item.feather", "qty": 2 },
+        { "item": "item.essence.digital", "qty": 1 },
+        { "item": "item.scrap", "qty": 1 }
+      ],
+      "circle": { "min_level": 5 }
     }
   ]
 }

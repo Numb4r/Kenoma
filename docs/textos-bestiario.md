@@ -219,6 +219,12 @@ Onde aparece: Iluminado; hora: Qualquer; clima: + Estática; lua: —.
 - Lore II: Ele não anda: some de um ponto e aparece no outro, e o meio do caminho nunca existiu.
 - Lore III: Há um Glitchkin em cada cidade que tem telas. Talvez seja o mesmo, visto de lugares diferentes.
 
+**Staticroost** (Ritual). Pombo estufado no alto de uma placa, de cabeça encolhida e olho fechado, com as penas do peito se desfazendo em Estática.
+
+- Lore I: Dorme empoleirado no alto de uma placa, estufado, a cabeça encolhida. As penas do peito e do pescoço viram chuvisco e saem para a frente sem cair. A faixa do dorso continua dois dedos fora do lugar, sempre na mesma linha.
+- Lore II: Enquanto ele dorme, os painéis da quadra mostram todos a mesma imagem, cada um com um instante de atraso. Ninguém achou ainda o primeiro.
+- Lore III: Os Tecnomantes dizem que o Bitling é transmitido. Este é o que fica quando a transmissão acaba: o canal vazio, ligado, esperando.
+
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de noite; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
 
 ## Sprig (Feérico)
