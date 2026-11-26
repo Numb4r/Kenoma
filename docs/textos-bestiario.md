@@ -199,6 +199,12 @@ Onde aparece: Sagrado; hora: Qualquer; clima: + Neblina; lua: —; lugar: Vales.
 - Lore II: A vela é o que se sintoniza. O manto só serve para confundir.
 - Lore III: Teloch não leva ninguém. O Hollowkin é quem acompanha, e só até a metade do caminho.
 
+**Vigilwick** (Ritual). Coruja-buraqueira de pé na toca, sem olhos, com um nicho de oratório no rosto e um toco de vela aceso dentro.
+
+- Lore I: As duas chamas dos olhos viraram uma só. No rosto abriu um nicho de oratório, em arco pontudo, com um toco de vela dentro; a cera escorre pelo peito e o toco não diminui.
+- Lore II: Fica de pé na neblina, em cima da própria toca, e não vira a cabeça. Quem passa na frente sente que foi contado.
+- Lore III: O Hollowkin acompanha até a metade do caminho e volta. Esta é a vela que fica acesa para quem ainda não chegou, e Teloch sabe quantos faltam.
+
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver na neblina; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
 
 ## Bit (Digital)

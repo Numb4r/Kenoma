@@ -70,6 +70,16 @@
         { "item": "item.scrap", "qty": 1 }
       ],
       "circle": { "min_level": 5 }
+    },
+    {
+      "species": "wisp.ritual",
+      "condition": {"kind": "any", "of": [{"kind": "climate", "value": "fog"}, {"kind": "climate", "value": "fog_procession"}]},
+      "materials": [
+        { "item": "item.ectoplasm", "qty": 2 },
+        { "item": "item.essence.spectral", "qty": 1 },
+        { "item": "item.vessel.candle", "qty": 1 }
+      ],
+      "circle": { "min_level": 5 }
     }
   ]
 }

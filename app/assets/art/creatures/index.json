@@ -223,6 +223,10 @@
       "folder": "wisp_entidade",
       "spawn": "fog"
     },
+    "wisp.ritual": {
+      "folder": "vigilwick",
+      "spawn": "fog"
+    },
     "wisp.spirit": {
       "folder": "hollowkin",
       "spawn": "fog"

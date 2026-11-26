@@ -2693,6 +2693,10 @@
                 [
                   "bit.ritual",
                   1
+                ],
+                [
+                  "wisp.ritual",
+                  1
                 ]
               ],
               "green": [
@@ -2722,6 +2726,10 @@
                 ],
                 [
                   "bit.ritual",
+                  1
+                ],
+                [
+                  "wisp.ritual",
                   1
                 ]
               ],
@@ -2753,6 +2761,10 @@
                 [
                   "bit.ritual",
                   1
+                ],
+                [
+                  "wisp.ritual",
+                  1
                 ]
               ],
               "residential": [
@@ -2782,6 +2794,10 @@
                 ],
                 [
                   "bit.ritual",
+                  1
+                ],
+                [
+                  "wisp.ritual",
                   1
                 ]
               ],
@@ -2813,6 +2829,10 @@
                 [
                   "bit.ritual",
                   6
+                ],
+                [
+                  "wisp.ritual",
+                  1
                 ]
               ],
               "sacred": [
@@ -2843,6 +2863,10 @@
                 [
                   "bit.ritual",
                   1
+                ],
+                [
+                  "wisp.ritual",
+                  6
                 ]
               ]
             },
