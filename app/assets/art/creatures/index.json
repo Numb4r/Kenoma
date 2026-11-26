@@ -124,8 +124,14 @@
       "folder": "brookkin",
       "spawn": "puddle"
     },
+    "rust.archetype": {
+      "folder": "rust_arquetipo"
+    },
     "rust.eco": {
       "folder": "rustling"
+    },
+    "rust.major": {
+      "folder": "rust_entidade"
     },
     "rust.spirit": {
       "folder": "gratekin"

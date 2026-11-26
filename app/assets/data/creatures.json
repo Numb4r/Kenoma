@@ -37,6 +37,8 @@
       "ability": { "kind": "seal_save_pct", "bands": [5, 10, 15] } },
     { "id": "rust.spirit", "name": "Gratekin", "family": "rust", "type": "metal", "tier": "spirit", "god": "Oxiayal", "since_epoch": 11,
       "ability": { "kind": "seal_save_pct", "bands": [10, 15, 20] } },
+    { "id": "rust.major", "name": "Entidade Maior de Rustling", "family": "rust", "type": "metal", "tier": "major", "god": "Oxiayal", "since_epoch": 11 },
+    { "id": "rust.archetype", "name": "Arquétipo de Rustling", "family": "rust", "type": "metal", "tier": "archetype", "god": "Oxiayal", "since_epoch": 11 },
     { "id": "glare.eco", "name": "Glimlet", "family": "glare", "type": "light", "tier": "eco", "god": "Iaida", "since_epoch": 11,
       "ability": { "kind": "day_tolerance_pct", "bands": [3, 5, 8] } },
     { "id": "glare.spirit", "name": "Prismkin", "family": "glare", "type": "light", "tier": "spirit", "god": "Iaida", "since_epoch": 11,

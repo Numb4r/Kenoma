@@ -20,6 +20,15 @@
 - **Arquétipo (geometria):** as três barras da frente e as três de trás da gaiola trocam de lugar sem dobrar (cada uma passa por cima de uma e por baixo da outra), e nenhuma chega ao canto: todas acabam na borda do vão.
 - **Arquétipo (regra física):** dentro do vão a luz anda reta e dobra em esquadro, como barra de ferro.
 
+## Arte final (família inteira)
+
+Kit em `tools/art/creatures/_rust.lua`; espécies em `rustling/`, `gratekin/`, `rust_entidade/` e `rust_arquetipo/` (nomes e pastas das duas últimas são provisórios), Fagulha em `tools/art/sparks/spark_metal.lua`. Folha: `docs/art/final/rust.png`. A Entidade e o Arquétipo são os da rodada 3. O `pebblet/kit.lua` antigo não é mais usado por nenhum build.
+
+- **Luz:** só a do tipo Metal da paleta (`#566274`, `#93A1B3`, `#CCD6E2`), no lugar do azul-aço da linha "Cor" acima, em toda etapa. `leds` é o miolo da luz atrás da grade (no abdome, na Entidade); o resto é `glow`. O Arquétipo não tem `leds`.
+- **Costuras do Véu:** Rustling três, curtas e de 1 px (duas no pronoto, uma na cabeça), longe da luz da grade; Gratekin duas mais largas (no pronoto, em cima e embaixo dos parafusos); Entidade uma larga, na dobradiça; Arquétipo nenhuma (o vão); a Fagulha ficou sem, como as outras refeitas.
+- **Animação:** no Rustling a luz de dentro respira, a barra arrombada treme e o chifre acena; no Gratekin a folha erguida range, o cadeado balança e os parafusos giram; na Entidade as duas folhas rangem uma depois da outra, a luz do abdome respira e os vergalhões, presos no chão, dobram para acompanhar o corpo; no Arquétipo as faixas do vão descem atrás das barras, a folha aberta range e as nove patas mexem cada uma no seu passo (mais as regras do vão do `K.run`).
+- **Retratos:** 96 nas três etapas de baixo; o do Arquétipo é o besouro inteiro em 128 (escala 1,85, margem de 5 px), com o `_retrato.lua`: o fundo do vão é um só atrás de todas as barras, violeta junto da moldura do casco e quase preto no meio, com estrelas.
+
 ## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
 
 | Etapa | O que é | Regra quebrada |
