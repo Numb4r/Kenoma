@@ -12,6 +12,8 @@
       "ability": { "kind": "spark_pickup_bonus_m", "bands": [5, 8, 11] } },
     { "id": "rill.spirit", "name": "Brookkin", "family": "rill", "type": "water", "tier": "spirit", "god": "Zumvi",
       "ability": { "kind": "rain_puddles", "bands": [2, 3, 4] } },
+    { "id": "rill.major", "name": "Entidade Maior de Rillet", "family": "rill", "type": "water", "tier": "major", "god": "Zumvi" },
+    { "id": "rill.archetype", "name": "Arquétipo de Rillet", "family": "rill", "type": "water", "tier": "archetype", "god": "Zumvi" },
     { "id": "soot.ritual", "name": "Kilnshade", "family": "soot", "type": "fire", "tier": "spirit", "ritual_only": true, "god": "Ialprg" },
     { "id": "soot.major", "name": "Entidade Maior de Sootling", "family": "soot", "type": "fire", "tier": "major", "god": "Ialprg" },
     { "id": "soot.archetype", "name": "Arquétipo de Sootling", "family": "soot", "type": "fire", "tier": "archetype", "god": "Ialprg" },

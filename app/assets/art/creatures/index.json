@@ -104,8 +104,16 @@
       "folder": "coilkin",
       "spawn": "lightning_lamp"
     },
+    "rill.archetype": {
+      "folder": "rill_arquetipo",
+      "spawn": "puddle"
+    },
     "rill.eco": {
       "folder": "rillet",
+      "spawn": "puddle"
+    },
+    "rill.major": {
+      "folder": "rill_entidade",
       "spawn": "puddle"
     },
     "rill.ritual": {

@@ -22,6 +22,17 @@
 
 `tools/art/creatures/conceitos/rill/build.lua` (usa `soot/_forma.lua`).
 
+## Arte final (família inteira)
+
+Kit em `tools/art/creatures/_rill.lua` (o do Wellmirror, que ganhou o espelho, o olho, a pele das formas grandes e os caracteres do vão; o Wellmirror não foi regerado e segue igual na régua); espécies em `rillet/`, `brookkin/`, `rill_entidade/` e `rill_arquetipo/` (nomes e pastas das duas últimas são provisórios), Fagulha em `tools/art/sparks/spark_water.lua`. Folha: `docs/art/final/rill.png`. O Arquétipo é o de `rodada3/arquetipos.png` (o sapo de frente com a poça em pé na boca).
+
+- **Entidade, com o ajuste do dono:** não é mais o cururu com boca de lobo. É o bloco do meio-fio, de frente: a face de cima com a poça, a quina com a tinta amarela gasta, a verga com uma trinca, a grade, a soleira molhada. Os três olhos de cururu ficam sobre a grade (cada um no seu calombo de pele), a água escura escorre da boca pela frente do bloco e empoça embaixo. Do sapo sobram os olhos, as duas pernas de trás dobradas (uma de cada lado do bloco) e as duas mãos que saem da boca e agarram a soleira. A poça de cima reflete os três olhos (a regra da rodada 3) e a chuva sobe.
+- **Entidade, luz:** a água que escorre e a poça de baixo são escuras de verdade (asfalto molhado, quase preto, com um brilho de 1 px que não é emissivo). A luz está nos três olhos sobre a grade (acesos, em `leds`, para o sapo se ler de noite), na poça de cima e nas gotas que sobem.
+- **Luz:** só a do tipo Água da paleta (`#2A62B8`, `#4A9CFF`, `#A4D0FF`). `leds` são as nuvens do espelho (e os olhos da Entidade); o resto é `glow`. No Arquétipo não há `leds` (não tem olho).
+- **Costuras do Véu:** Rillet três, curtas e de 1 px (coxa, flanco, alto da cabeça), longe do espelho; Brookkin duas mais largas (coxa e flanco); Entidade uma larga, na face do bloco; Arquétipo nenhuma (o vão); a Fagulha ficou sem, como as outras refeitas.
+- **Animação:** o Rillet respira pelo papo, o céu corre no espelho e a gota do queixo cai; no Brookkin a água corre, os três olhos piscam em onda e o céu anda nas poças; na Entidade os olhos piscam um de cada vez, o do meio gira a pupila, a água escorre e os joelhos mexem; no Arquétipo o corpo respira, as duas luas atravessam a poça cada uma no seu passo, a cidade corre de lado e as gotas sobem (mais as regras do vão do `K.run`).
+- **Retratos:** 96 nas três etapas de baixo; o do Arquétipo é o sapo inteiro em 128 (escala 1,85, margem de 5 px), com o `_retrato.lua`: a poça ocupa uns 72×27 px e vai do violeta ao preto, com as luas, a cidade e estrelas.
+
 ## Rodada 2 (substitui a rodada 1 nestas etapas; aguarda aprovação)
 
 | Etapa | O que é | Regra quebrada |

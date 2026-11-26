@@ -1,144 +1,71 @@
--- Rillet (rill.eco), 0.25.1: gota que reflete o ceu. Rodar: aseprite -b --script build.lua
--- corpo: agua, olhos, o ceu refletido. leds: os reflexos que cintilam (brilho da pele e a estrela no ceu refletido).
--- glow: a caustica no fundo da gota e os pingos soltos.
-local K = dofile('/home/yuri/Documentos/kenoma/tools/art/creatures/sootling/_kit.lua')
-local L = K.L
-local S = K.S(28)
+-- Rillet (rill.eco), arte final: o Eco da família Rill, a partir do conceito aprovado. O sapo-cururu sentado, de
+-- perfil, em proporção natural: pele de verruga cor de barro, glândula atrás do olho, íris ocre com a pupila deitada,
+-- barriga creme. O errado é pouco: o dorso é um espelho d'água que reflete um céu com nuvem, e do queixo pinga.
+-- Costuras do Véu: três, curtas e de 1 px (coxa, flanco, alto da cabeça), só no glow, longe do espelho.
+-- Camadas: corpo; leds = as nuvens do espelho (piscam); glow = o céu do espelho, as costuras e as gotas soltas.
+-- Animação: o papo enche e esvazia (respira), o céu corre no espelho, a gota do queixo cai. O tronco sobe e os
+-- dedos ficam; na fuga ele salta. No alerta o papo enche e o espelho acende; na antecipação agacha.
+-- Rodar: KENOMA_ART='<repo>/tools/art/'; dofile(KENOMA_ART .. 'creatures/rillet/build.lua')
+local Rl = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_rill.lua')
+local L, F = Rl.L, Rl.F
+local SKIN, BELLY = Rl.SKIN, Rl.BELLY
 
-local LEG = {
-  A = '#1A1424',
-  h = '#2D5AA0', i = '#4A86D6', j = '#9FD0F5',   -- agua
-  k = '#1F2A5C', z = '#D98A6C', y = '#F2C48D',   -- ceu refletido
-  x = '#F0EEF8',                                 -- olho
-  g = '#7FB4E0', W = '#FFFFFF',                  -- reflexo apagado (corpo) e aceso (leds)
-  c = '#2F6E9A', C = '#7FE0F0', D = '#D8FFFF',   -- caustica apagada (corpo) e acesa (glow)
-  S = '#9FD0F5', s = '#E8F8FF',                  -- pingo
-}
-local EMIT = { W = { 'g', 'l' }, C = { 'c', 'w' }, D = { 'c', 'w' } }
-
-local BASE = L.frame({
-  '............................',
-  '............................',
-  '............................',
-  '............................',
-  '.............j..............',
-  '.............j..............',
-  '............jj..............',
-  '............jji.............',
-  '...........jjii.............',
-  '...........jjiih............',
-  '..........jjiiiih...........',
-  '.........jjjiiiiih..........',
-  '........jjjiiiiiiihh........',
-  '.......jjjiiiiiiiiiihh......',
-  '......jjxxxxiiiiixxxxhhh....',
-  '......jxxxxxxiiixxxxxxhh....',
-  '.....jjxxxxAAiiixxxxAAihh...',
-  '.....jjxxxxAAiiixxxxAAihh...',
-  '.....jjixxxxiiiiixxxxiihh...',
-  '.....jiiiiiiiiiiiiiikkihh...',
-  '.....jiiiiiiiiiiiikkkzzhh...',
-  '.....jjiiiiiiiiiikkkzzyhh...',
-  '......jiiiiiiiiiikkzzyyh....',
-  '.......hiiiiiiiiiizyyhh.....',
-  '........hhhhhhhhhhhhhh......',
-  '............................',
-  '............................',
-  '............................',
-}, 28, 28, 'rillet')
-
--- p: 0 ponta em pe, 1 e 2 a ponta cai para a frente. glow: 1 a 3 (a caustica cresce).
-local function pose(o)
-  local g = K.copy(BASE)
-  local p = o.p or 0
-  if p >= 1 then K.shiftRow(g, 4, 1); K.shiftRow(g, 5, 1) end
-  if p >= 2 then K.shiftRow(g, 6, 1) end
-  if o.wide then L.put(g, 8, 13, { 'xxxx.....xxxx' }) end
-  g[12][9] = 'W'; g[13][8] = 'W'; g[20][19] = 'W'
-  local glow = o.glow or 1
-  L.put(g, 8, 23, { glow == 1 and 'CCCC' or 'CCCCCCC' })
-  if glow >= 2 then L.put(g, 6, 21, { 'C', '.C' }) end
-  if glow == 3 then K.swap(g, { C = 'D' }); L.put(g, 8, 22, { 'CCCCC' }) end
-  return g
+local function draw(g, sg, k, o, ox, oy)
+  ox, oy = ox or 0, oy or 0
+  local ph = (o.ph or 0) % 4
+  local alert, crouch = o.pose == 'alert', o.pose == 'crouch'
+  local all = o.jump and (o.dy or 0) or 0
+  local P = F.pen(g, k, ox, oy + all)
+  local b = math.min(1, ((o.dy or 0) - all) / k + (crouch and 0.8 or 0))   -- o tronco
+  local puff = alert and 1 or (crouch and -0.3 or ({ [0] = 0, 0.4, 0.7, 0.3 })[ph])
+  P:limb({ { 21.6, 19 + b }, { 23.4, 22.4 }, { 23, 24.6 } }, 1.1, 0.8, 'h')        -- braço de trás
+  P:ell(11.4, 18.4 + b, 8.3, 5.3, 'f', nil, -20)
+  P:ell(8.6, 20.2 + b, 5.2, 4.2, 'f')
+  P:ell(19.2, 13.4 + b, 5.2, 3.7, 'f', nil, -10)
+  P:ell(22.8, 14.2 + b, 2.9, 2.4, 'f')
+  P:ell(20.2, 10.6 + b, 2.0, 1.7, 'f')                                            -- calombo do olho
+  P:ell(19.4 + puff * 0.3, 17.2 + b, 3.4 + puff * 0.7, 2.2 + puff * 0.5, 'x')     -- o papo
+  P:ell(15.2, 21.6 + b * 0.5, 4.6, 2.4, 'x')
+  P:limb({ { 17.6, 19.4 + b }, { 19.8, 22.6 }, { 19.4, 24.6 } }, 1.75, 1.3, 'a')
+  P:limb({ { 18.2, 19.6 + b }, { 20.2, 22.6 }, { 19.6, 24.6 } }, 1.4, 0.95, 'h')
+  P:ell(7.4, 20.6 + b * 0.5, 5.2, 3.8, 'a', nil, 24)
+  P:ell(7.4, 21 + b * 0.5, 4.7, 3.3, 'h', nil, 24)
+  P:limb({ { 4.2, 23 }, { 9.6, 24.5 } }, 1.3, 1.0, 'h')
+  P:limb({ { 8.6, 25 }, { 14.2, 25 } }, 0.55, 0.5, 'h')
+  Rl.toes(P, 19.4, 24.6, 3, 2.6, 'h')
+  if k > 1 then Rl.toes(P, 22.8, 24.6, 3, 2.2, 'h'); Rl.toes(P, 12.6, 24.6, 3, 3.6, 'h') end
+  Rl.skin(g, k, 'f', SKIN, { within = 'fxh' })
+  Rl.skin(g, k, 'h', 'edcb', { within = 'h', seed = 5, zones = 2 })
+  F.shade(g, 'x', BELLY, { p = k > 1 and 3 or 2, ax = 1, ay = 0.3, zones = 3, within = 'x', jit = k > 1 and 2 or 0 })
+  -- glândula atrás do olho
+  P:ell(15.4, 11.9 + b, 2.7, 1.3, 'e', SKIN, -14)
+  P:ell(15.4, 12.3 + b, 2.5, 0.8, 'd', 'e', -14)
+  -- costuras, antes do espelho (ele passa por cima)
+  for _, q in ipairs({ { 5.6, 20.6, 7.4, 22.4 }, { 14.6, 19.2, 16.4, 20.4 }, { 21.4, 12.4, 22.8, 13.4 } }) do
+    Rl.seam(P, { { q[1], q[2] + b * 0.5 }, { q[3], q[4] + b * 0.5 } }, 1, 'X', SKIN .. 'h', k > 1 and 1.4 or nil)
+  end
+  -- espelho no dorso: o céu corre
+  Rl.mirror(g, P, 9.4, 15.6 + b, 4.9, 2.1, SKIN .. 'X', { rot = -20, clouds = 4, sh = ph * 0.8 })
+  -- boca, narina, olho
+  P:limb({ { 17.6, 15.6 + b }, { 22, 15.5 + b }, { 25.2, 14.6 + b } }, 0.3, 0.3, 'a', SKIN .. BELLY)
+  P:px(24.8, 12.8 + b, 'a')
+  Rl.eye(g, P, 20.4, 10.8 + b, 1)
+  F.prune(g, '', 'rillet')
+  Rl.drops(P, sg, k > 1 and { { 24.4, 19.4 }, { 23.6, 21 }, { 24.8, 17.4 } } or { { 24.4, 19.4 } }, ph, 4, false)
+  if k > 1 then Rl.drops(P, sg, { { 5, 13 }, { 3.6, 11 } }, ph, 4, true) else Rl.drops(P, sg, { { 3.6, 12 } }, ph, 4, true) end
 end
 
-local function portrait(f)
-  local g, sg = L.grid(96, 96), L.grid(96, 96)
-  local by = ({ 0, -1, -1, 0 })[f]
-  local sq = ({ 0, 1, 0, -1 })[f]      -- a gota estica e achata
-  local tx = ({ 0, 1, 3, 1 })[f]
-  local cx, cy, rx, ry = 47, 60 + by, 28 - sq, 26 + sq
-  K.stroke(g, { { 45, 42 + by }, { 43, 28 + by - sq }, { 44 + tx, 15 + by - sq * 2 }, { 48 + tx, 7 + by - sq * 2 } }, 11, 1, 'i')
-  K.ell(g, cx, cy, rx, ry, 'i')
-  K.relight(g, { 'hij' }, 7, 10)
-  -- o ceu de agora, refletido embaixo e a direita: noite, entardecer, claro
-  for y = 0, 95 do for x = 0, 95 do
-    local d = ((x - 61) / 14) ^ 2 + ((y - (71 + by)) / 11) ^ 2
-    if d <= 1 and (g[y][x] == 'i' or g[y][x] == 'h') then
-      local t = (y - (71 + by)) + (x - 61) * 0.7
-      g[y][x] = t < -3 and 'k' or (t < 4 and 'z' or 'y')
-    end
-  end end
-  for _, ex in ipairs({ 36, 60 }) do
-    K.ell(g, ex, 52 + by, 9.5, 10.5, 'h')
-    K.ell(g, ex, 52 + by, 8, 9, 'x')
-    L.disc(g, ex + 3, 53 + by, 4, 'A')
-    L.rect(g, ex + 1, 50 + by, ex + 2, 51 + by, 'x')
-  end
-  -- reflexos que cintilam: o brilho da pele, o da ponta e a estrela no ceu refletido
-  local on = function(k) return (k + f) % 4 ~= 0 end
-  if on(1) then K.stroke(g, { { 27, 50 + by }, { 30, 42 + by } }, 1.6, 0.6, 'W') else K.stroke(g, { { 27, 50 + by }, { 30, 42 + by } }, 1, 0.5, 'W') end
-  L.rect(g, 25, 56 + by, 26, 57 + by, 'W')
-  if on(2) then L.rect(g, 41 + tx // 2, 24 + by, 42 + tx // 2, 27 + by, 'W') end
-  local sx, sy = 58, 66 + by
-  L.set(g, sx, sy, 'W')
-  if on(3) then L.put(g, sx - 1, sy - 1, { '.W.', 'WWW', '.W.' }) end
-  if on(0) then L.set(g, 66, 69 + by, 'W') end
-  -- caustica: o arco de luz no fundo da gota
-  for a = 100, 165, 1 do
-    local r = math.rad(a)
-    local c = ((a + f * 12) % 48 < 10) and 'D' or 'C'
-    local x, y = cx + (rx - 5) * math.cos(r), cy + (ry - 4) * math.sin(r)
-    L.set(g, x, y, c); L.set(g, x, y - 1, c)
-  end
-  -- pingos soltos caindo
-  local loose = { { 12, 30 }, { 84, 24 }, { 10, 62 }, { 86, 56 }, { 70, 10 } }
-  for k, pt in ipairs(loose) do
-    local y = pt[2] + ((f + k) % 4) * 4
-    if (f + k) % 4 ~= 3 then L.put(sg, pt[1], y, { 's.', 'SS', 'SS' }) else L.put(sg, pt[1] - 1, y, { 'S..S' }) end
-  end
-  return g, sg
-end
-
-K.build {
-  name = 'rillet', size = 28, leg = LEG, emit = EMIT, keys = { 'h', 'i', 'j', 'k', 'z', 'y' }, dark = 'h',
-  pose = pose, portrait = portrait,
-  idle = { { p = 0 }, { p = 1, stretch = 19 }, { p = 2, stretch = 19 }, { p = 1 } },
-  alert = { p = 0, stretch = 19, wide = true },
-  alert2 = { { 3, 10 }, { 24, 11, 's' }, { 20, 5 } },
-  alert3 = S.cat(S.plus(3, 8), S.plus(24, 9), { { 20, 3, 's' }, { 6, 4 }, { 2, 16 }, { 25, 17 } }),
-  sq = 21,
-  variants = {
-    { key = 'urban', -- agua de sarjeta, cinza; faixa rebitada na testa
-      legend = { W = '#B6BAC4', w = '#8E92A0' },
-      put = { { 9, 12, { 'WwWWwWWwWW' } } } },
-    { key = 'green', -- agua de lago, verde; broto no ombro direito
-      legend = { L = '#B4E08A', l = '#5FB26A', d = '#2F7446' }, outline = true,
-      put = { { 16, 7, { '.LL', 'lL.', 'd..', 'd..' } } } },
-    { key = 'water', -- fundo de rio, a mais escura das azuis; contas claras na bochecha esquerda
-      legend = { U = '#E8F8FF', u = '#9FD4F0' },
-      put = { { 6, 19, { 'U.', 'Uu', '.u' } } } },
-    { key = 'residential', -- agua de barro, clara; cachecol telha
-      legend = { O = '#A03C2C', o = '#6E261E' },
-      put = { { 9, 19, { 'OOOOOOOOo', '......Oo.', '......oo.' } } } },
-    { key = 'lit', -- leitosa, a mais clara; gravata-borboleta escura embaixo
-      legend = { N = '#2B2F3D', M = '#40465A' },
-      put = { { 8, 21, { 'NN.NN', 'NNMNN', 'NN.NN' } } } },
-    { key = 'sacred', -- lilas; aureola dourada em volta da ponta
-      legend = { G = '#F2E6B0', g = '#C8B878' }, outline = true,
-      put = { { 8, 6, { '.GGGGGGGG.', 'G........G', '.gggggggg.' } } } },
-    { key = 'crimson', -- vinho; crescente da Lua Carmim entre os olhos
-      legend = { R = '#FF5A6A', r = '#C03048' },
-      put = { { 13, 14, { '.RR', 'Rr.', 'R..', 'Rr.', '.RR' } } } },
+Rl.run {
+  name = 'rillet', stage = 'eco', W = 28, PW = 96, draw = draw, ownLean = true,
+  over = { flee = function(_, os) for i = 2, #os do os[i].jump = true end return os end },
+  -- o retrato é o mesmo desenho feito em 96 (escala 3,3)
+  portrait = function(o)
+    local g, sg = L.grid(96, 96), L.grid(96, 96)
+    draw(g, sg, 3.3, o, 2, 2)
+    return g, sg, 0, 0
+  end,
+  acc = {
+    urban = { 11, 19 }, green = { 8, 21 }, water = { 12, 18 }, residential = { 11, 20 }, lit = { 10, 21 },
+    sacred = { 15, 6 }, crimson = { 13, 19 },
   },
 }

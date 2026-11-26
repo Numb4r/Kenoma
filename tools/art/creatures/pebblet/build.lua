@@ -119,7 +119,8 @@ C.run {
   name = 'pebblet', stage = 'eco', W = 28, PW = 96, draw = draw,
   -- foge rolando: depois de fechar em bola, ela gira um pouco a cada quadro
   over = { flee = function(_, os)
-    for i = 2, #os do os[i].jump, os[i].ball, os[i].roll = true, true, (i - 1) * 50 end
+    -- novis: body_visible 0 (o acessório não acompanha a bola girando)
+    for i = 2, #os do os[i].jump, os[i].ball, os[i].roll, os[i].novis = true, true, (i - 1) * 50, true end
     return os
   end },
   -- o retrato é o mesmo desenho feito em 96 (escala 3,3): seixo, rejunte e trinca no pixel do retrato
