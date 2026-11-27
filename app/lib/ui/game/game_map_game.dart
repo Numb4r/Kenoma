@@ -1335,17 +1335,20 @@ class GameMapGame extends FlameGame {
     return null;
   }
 
+  /// Onde o spawn [s] está desenhado na tela, com o empurrão do vento nos leves (só no desenho).
+  Offset spawnScreen(WorldSpawn s) {
+    final (sx, sy) = follow.camera.cellToScreen(s.x, s.y, size.x, size.y);
+    return Offset(sx, sy) + _localWindOf(s) * (creatureWind.pushM(s, _time) * follow.pixelsPerCell / metersPerCell(_lat));
+  }
+
   WorldSpawn? spawnAt(Offset screen) {
     final w = worldView;
     if (w == null || size.x <= 0) return null;
-    final cam = follow.camera;
     WorldSpawn? best;
     var bestD = double.infinity;
     for (final s in w.spawns) {
-      final (sx, sy) = cam.cellToScreen(s.x, s.y, size.x, size.y);
-      // O toque vale onde o spawn está desenhado (o vento empurra os leves só no desenho).
-      final push = _localWindOf(s) * (creatureWind.pushM(s, _time) * follow.pixelsPerCell / metersPerCell(_lat));
-      final d = (Offset(sx, sy) + push - screen).distance;
+      // O toque vale onde o spawn está desenhado.
+      final d = (spawnScreen(s) - screen).distance;
       if (d <= hitRadius(s, ecoSizePx, sparkSizePx, spiritSize: spiritSizePx) && d < bestD) {
         best = s;
         bestD = d;

@@ -748,10 +748,8 @@ void main() {
     }
 
     // Na tela: o ponto do jogo mais o canto do mapa (0.23.1: o mapa começa embaixo da barra do HUD).
-    Offset screenOf(WidgetTester tester, Env env, WorldSpawn s) {
-      final (sx, sy) = env.game.follow.camera.cellToScreen(s.x, s.y, env.game.size.x, env.game.size.y);
-      return tester.getTopLeft(gameWidget) + Offset(sx, sy);
-    }
+    // Onde o Eco está desenhado, com o vento: o relógio do teste parte da hora real, e com vento o Eco leve sai do lugar.
+    Offset screenOf(WidgetTester tester, Env env, WorldSpawn s) => tester.getTopLeft(gameWidget) + env.game.spawnScreen(s);
 
     testWidgets('o botão do celular abre o menu: apps do nível 1 abertos, o resto bloqueado', (tester) async {
       final env = await pumpGame(tester);
