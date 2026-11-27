@@ -29,6 +29,8 @@ Não muda o save. Antes de qualquer toque pelo adb: o dono libera o aparelho na 
 - [ ] `0260-fagulhas-b` **Fagulhas das seis famílias.** Luz (caco de vidro com a estrela), digital (pena em pixels), terra (placa de cascalho), água (gota pendente), metal (caco de grade) e feérico (sâmara), pairando e legíveis no mapa.
 - [ ] `0260-retratos-b` **Retratos no Bestiário.** Os retratos de 96 dos Ecos e Espíritos das seis famílias, com as variantes trocando a cor sem perder a forma.
 - [ ] `0260-gatilhos-b` **De onde nascem Glare, Bit, Rust e Sprig.** Glimlet de dia com o clarão de sol (estrela e risco de reflexo) e, com arco-íris à vista, descendo da faixa dele; de noite sem efeito. Bitling: a placa, banca ou ponto mais perto pisca em estática verde e os pixels chegam nele. Rustling: a grade range atrás dele e a limalha se junta. Sprigglet: redemoinho de folhas secas, com pólen rosa no crepúsculo.
+- [ ] `0260-bestiario-fagulhas` **Fagulhas e células no Bestiário.** A coluna da Fagulha com o sprite do mapa pairando nas doze famílias (no lugar dos ícones de chama, glifo, fantasminha e folha); Umbrel e Shadekin legíveis na célula com a luz fraca atrás, de dia e de noite.
+- [ ] `0260-rituais-fase1` **Criaturas de ritual da fase 1.** Stormlamp (Hum, tempestade à noite), Noonglass (Glare, sol forte ou arco-íris das 11h às 14h), Eaveshroud (Shade, nublado à noite ou Sol Negro), Staticroost (Bit, Estática), Vigilwick (Wisp, neblina ou Procissão), Cairnhollow (Clod, poeira seca), Duskwreath (Sprig, crepúsculo de lua cheia) e Cratercoil (Wyrm, eclipse ou chuva de meteoros). O Eco de ritual aparece no bioma de casa, a pesquisa revela os espaços, a condição do mundo confere com o clima da célula e o verbete abre no Bestiário.
 
 ## 0.25.2
 
