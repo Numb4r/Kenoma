@@ -1389,3 +1389,42 @@ mais 0,65 a 1,5 s do toque até ele (`Displayed`).
   Android antes do Dart (0,65 a 1,5 s, varia a cada abertura) e os pacotes de Campinas (1,0 s, com o SHA conferido a cada
   abertura). Nos ~3 s depois de abrir, o aquecimento do próprio mapa (prédios, clima, faixas) ainda derruba quadros (14 a
   57 por segundo, pior quadro de 140 a 190 ms); já era assim e fica para depois.
+
+## Fase 1 · fatia 18 · O SHA-256 guardado e os primeiros segundos do mapa (0.26.3)
+
+Versão 0.26.3+56, mesma chave, save no schema 14 (sem mudança). A 0.26.2 ficou no celular (27/11), com uma medição de
+abertura a frio da versão final.
+
+**Medição** no moto g54, build de profile com a chave de release, abertura a frio pelo ícone (`am force-stop` e
+`scripts/celular.sh start`), GPS real; os tempos são desde o `main` do Dart, mais o `Displayed` do Android. Marcas
+temporárias fora do git: o tempo de cada seção do quadro do mapa (update e cada camada do render), todo quadro acima de
+50 ms e o custo somado do SHA, dos tiles da cidade e dos blocos de chão.
+
+| | 0.26.2 (três aberturas) | 0.26.3 (1ª depois de instalar · 2ª · 3ª) |
+|---|---|---|
+| `Displayed` | 1,33 a 1,88 s | 1,13 · 0,94 · 0,92 s |
+| Mapa jogável desde o `main` | 1,49 a 1,75 s | 2,03 · 1,66 · 1,67 s |
+| Quadros acima de 50 ms nos primeiros ~20 s | 12, 7 e 7 | 16 · 2 · 4 |
+| Pior quadro | 200 a 219 ms | 246 · 206 · 215 ms |
+| SHA-256 dos pacotes de Campinas | ~134 ms em toda abertura | conferido na 1ª; 0 ms nas outras |
+
+- **SHA-256 guardado** (`data/sha_memo.dart`): o que bateu fica num JSON nos dados do app, pela instalação (versão e data
+  da última instalação ou atualização do APK), o nome, o tamanho e o SHA que a época espera; os arquivos baixados do
+  catálogo também pela data. Depois de instalar ou atualizar, tudo se confere de novo. Os pacotes esperam a memória abrir
+  (~280 ms com o `PackageInfo` frio), em paralelo com a arte: o mapa aparece na mesma hora.
+- **O que derrubava os quadros**, pelas marcas: o chão (blocos que faltavam saíam todos no mesmo quadro, 110 a 210 ms, e a
+  primeira montagem da arte da cidade); os carimbos do Aseprite chegando com o mapa aberto (o renderizador era refeito
+  inteiro); São Paulo entrando no mundo (a revisão nova refazia o chão, as células e o tráfego de Campinas, 60 a 120 ms);
+  e o primeiro GPS longe de onde o mapa abriu (células 36 ms, Outros Veilbreakers 67 ms, tráfego 58 ms).
+- **Feito:** os blocos que faltam entram no orçamento do quadro (12 ms, um no mínimo, do centro para fora) e uma revisão
+  nova não apaga os blocos, só os marca para refazer; os carimbos e o renderizador do Completo saem na tela de
+  carregamento; São Paulo entra sem subir a revisão quando o jogador e a câmera estão longe dela. Com a última posição
+  conhecida, a tela de carregamento também prepara os tiles, as células, os Outros Veilbreakers e o tráfego dali.
+- **Meta de nenhum quadro acima de 50 ms: não cumprida** (duas rodadas de correção; parei como manda a regra). Sobram três:
+  1. o primeiro quadro do mapa (~250 ms entre o update do jogo e o desenho: a primeira montagem dos widgets do mapa ou uma
+     coleta de lixo; precisa de um trace da DevTools para saber);
+  2. o primeiro GPS quando ele cai longe de onde o mapa abriu (~200 ms): a última posição do Android
+     (`getLastKnownPosition`) não responde em 500 ms com o app frio, então o mapa abre no centro de sempre. Saída
+     proposta: o jogo lembrar a última posição do mapa no aparelho (guarda localização no disco: precisa do dono);
+  3. São Paulo carregando de 5 a 12 s (quadros de 52 a 90 ms): os ~70 MB dos pacotes passam pela thread da interface até
+     o isolate. Saída proposta: carregar São Paulo só quando o jogador ou a câmera se aproximam dela.

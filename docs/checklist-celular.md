@@ -1,13 +1,23 @@
 # Checklist do celular
 
 O que precisa ser conferido no moto g54 quando a versão for instalada nele. É cumulativo: cobre tudo desde a última versão
-que está no celular (hoje a **0.26.1, instalado em 27/11/2026**, release por cima da 0.26.0 da mesma noite, que tinha entrado por cima da 0.25.0, com o save mantido; antes, a 0.25.0 tinha sido instalada em 2026-11-18 por cima da 0.24.3, com o save mantido, e depois uma build de profile da medição da 0.25.1; a 0.25.1 não chegou a ser instalada; a 0.24.3 tinha entrado em 2026-11-17 por cima da 0.24.1, com o save mantido; a 0.24.2 nunca foi para o celular, então os itens dela continuam; a 0.24.1 tinha entrado por cima da 0.24.0 (e esta da 0.23.2, e esta da 0.23.1, e esta da 0.23.0, que entrou por cima da 0.22.1), com o save mantido; a 0.22.2 nunca foi para o celular, então os itens dela continuam; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
+que está no celular (hoje a **0.26.3, instalado em 27/11/2026**, release por cima da 0.26.2 do mesmo dia (que entrou por cima da 0.26.1, e esta da 0.26.0 da mesma noite), que tinha entrado por cima da 0.25.0, com o save mantido; antes, a 0.25.0 tinha sido instalada em 2026-11-18 por cima da 0.24.3, com o save mantido, e depois uma build de profile da medição da 0.25.1; a 0.25.1 não chegou a ser instalada; a 0.24.3 tinha entrado em 2026-11-17 por cima da 0.24.1, com o save mantido; a 0.24.2 nunca foi para o celular, então os itens dela continuam; a 0.24.1 tinha entrado por cima da 0.24.0 (e esta da 0.23.2, e esta da 0.23.1, e esta da 0.23.0, que entrou por cima da 0.22.1), com o save mantido; a 0.22.2 nunca foi para o celular, então os itens dela continuam; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
 dela. **Um item só sai daqui quando o relatório confirmar que passou.** A ordem vai da versão mais nova para a mais antiga;
 as pendências antigas ficam no fim. O código entre crases é o id do item (o workbench guarda as notas por ele: não mude).
 
 Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`) e o Kenoma em primeiro plano.
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
+
+## 0.26.3
+
+Não muda o save. Mede e conserta os primeiros segundos do mapa; os itens da 0.26.2 continuam.
+
+- [ ] `0263-segunda-abertura` **Segunda abertura.** Depois de instalar, abrir uma vez, fechar (tirar da lista de recentes) e abrir de novo: a segunda abertura não é mais lenta que a primeira (o SHA-256 dos pacotes só é conferido na primeira).
+- [ ] `0263-chao` **O chão nos primeiros segundos.** Logo que o mapa aparece, e quando o GPS acha a posição: o chão pode se completar em alguns quadros, do centro para fora, mas nenhum buraco fica; os prédios aparecem como antes.
+- [ ] `0263-engasgos` **Engasgos que sobraram.** Andar nos primeiros ~5 s e de 5 a 12 s depois de abrir: ainda há um engasgo curto no primeiro quadro do mapa, outro quando o GPS acha a posição longe de onde o mapa abriu, e alguns leves enquanto São Paulo carrega. Dizer se algum incomoda.
+- [ ] `0263-sao-paulo` **São Paulo depois de 5 s.** Teleporte ou Modo Viagem até São Paulo: o mapa de lá aparece como antes.
+- [ ] `0263-regioes-baixadas` **Regiões baixadas.** Se houver região baixada pelo catálogo: abre como antes (a partir da segunda abertura, sem refazer a conferência).
 
 ## 0.26.2
 
