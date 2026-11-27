@@ -110,6 +110,16 @@
         { "item": "item.rift_smoke", "qty": 1 }
       ],
       "circle": { "min_level": 5 }
+    },
+    {
+      "species": "rust.ritual",
+      "condition": {"kind": "climate", "value": "smog"},
+      "materials": [
+        { "item": "item.scrap", "qty": 3 },
+        { "item": "item.essence.metal", "qty": 1 },
+        { "item": "item.ref.living_rust", "qty": 1 }
+      ],
+      "circle": { "min_level": 5 }
     }
   ]
 }

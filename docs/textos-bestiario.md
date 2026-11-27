@@ -21,6 +21,12 @@ Onde aparece: Urbano; hora: Qualquer; clima: + Sol forte; lua: —.
 - Lore II: Onde ele dorme o chão fica morno até de manhã.
 - Lore III: Quem fundiu um jura que ouviu, na hora, um nome dito em língua que não é de gente.
 
+**Kilnshade** (Ritual). Saruê sentado sobre as ancas, de olho fechado, com uma boca de fornalha no tronco e as duas mãos juntas na frente do fogo.
+
+- Lore I: Sentou e não levantou mais. O tronco virou boca de fornalha, com arco de ferro fundido, e por dentro ele é só fogo em cima de um leito de carvão com três brasas. As mãos, que parecem de gente, ficam juntas na frente, como quem se aquece em si mesmo.
+- Lore II: O rabo deita no chão, sobe em S e a ponta segura uma bituca que não acaba: é por ali que a fumaça sai. Só se deixa chamar depois que o dia esfria. Com sol, o ferro está frio e ele passa por um forno largado no terreno.
+- Lore III: Os outros guardam uma faísca das chamas de Ialprg. Este é o forno para onde as faíscas voltam: quem o assusta vê a boca abrir e, no fundo da garganta, uma brasa mais velha que a cidade.
+
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de dia; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
 
 ## Frond (Planta)
@@ -41,6 +47,12 @@ Onde aparece: Verde; hora: Qualquer; clima: + Chuva; lua: —.
 - Lore II: Uma das frondes não é fronde: é uma raiz que cresceu para cima e abre como mão. Debaixo dela a temperatura é sempre a da sombra.
 - Lore III: Dizem que Peab plantou a primeira e que todas as outras são a mesma, espalhada.
 
+**Rootseer** (Ritual). Fronde única que nunca abriu, plantada numa placa de calçada sobre seis raízes, com a ponta enrolada num olho em espiral.
+
+- Lore I: Uma fronde só, e ela nunca abriu. O báculo continuou enrolando até virar um olho: a nervura acesa é a íris em espiral e o broto, no meio, a pupila. Não tem rosto; tem isso.
+- Lore II: Fica alta sobre seis raízes compridas, com a placa de calçada que levantou ainda presa no talo. É pelas raízes que escuta, e só responde onde o chão em volta ainda é verde. Quando alguém chega perto, a espiral desenrola uma volta.
+- Lore III: Dizem que Peab plantou a primeira e que todas as outras são a mesma, espalhada. Esta é a parte que ficou olhando o que foi feito do resto, e alguns lobos dela já viraram concreto.
+
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de dia; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
 
 ## Rill (Água)
@@ -60,6 +72,12 @@ Onde aparece: Água; hora: Qualquer; clima: + Chuva; lua: —.
 - Lore I: A boca virou boca de lobo, de concreto e tinta amarela gasta, e despeja água sem parar. A água corre para cima se ele quiser: o que parece leito é só o caminho que ele escolheu.
 - Lore II: Carrega coisas pequenas e as devolve longe: chaves, moedas, uma vez um anel.
 - Lore III: Os antigos seguiam um Brookkin para achar água boa. Ele sempre soube onde ela está.
+
+**Wellmirror** (Ritual). Cururu sentado numa manilha de concreto que transborda, de olhos fechados, com a noite de lua cheia num disco d'água no papo.
+
+- Lore I: É o sapo do fundo do poço. Senta dentro de uma manilha de concreto com a tinta amarela gasta, um braço pendurado na borda, e a manilha transborda sem que ninguém ache de onde vem a água.
+- Lore II: O espelho saiu do dorso e foi para o papo: um disco d'água em pé, que enche e esvazia, com a lua cheia e o rastro dela dentro. De dia a lua continua lá, pálida. É o céu inteiro que ele vê lá de baixo, e por isso só atende na noite em que o de cima fica igual.
+- Lore III: As marés de Zumvi sobem para a lua. Quem olha no papo dele não se vê: vê a lua e, em volta dela, estrelas que não estão no céu daquela noite.
 
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de dia; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
 
@@ -107,9 +125,9 @@ Onde aparece: Verde; hora: Qualquer; clima: + Poeira seca; lua: —; lugar: Morr
 - Lore II: O musgo da guia cresce do lado de onde vem a chuva. Serve de bússola a quem sabe ler.
 - Lore III: Sintonizar um é ouvir camadas: a de cima é de ontem, a de baixo é de antes das cidades.
 
-**Cairnhollow** (Ritual). Tatu-bola fechado em bola e partido como geodo, com uma coroa de cristal aceso na abertura e a cabeça e as garras saindo por ela.
+**Cairnhollow** (Ritual). Tatu-bola fechado em bola e partido como geodo, com cachos de cristal aceso na borda da abertura e a cabeça e as garras saindo por ela.
 
-- Lore I: Fechou em bola e a bola partiu. Um terço dela abriu como geodo: uma coroa de cristal em volta e, no meio, um fundo escuro de onde saem a cabeça, de olho fechado, e as duas mãos de garras. A luz que vazava pelas juntas agora mora ali.
+- Lore I: Fechou em bola e a bola partiu. Um terço dela abriu como geodo: cachos tortos de cristal pela borda e, no meio, um fundo escuro de onde saem a cabeça, de olho fechado, e as duas mãos de garras. A luz que vazava pelas juntas agora mora ali.
 - Lore II: Não rola mais: quando precisa sair do lugar, puxa a bola pelas garras. Na poeira seca a abertura fecha um dedo e abre de novo, como quem respira.
 - Lore III: Quem põe o ouvido na abertura não ouve o mar: ouve pedra assentando, muito devagar, como um morro que ainda está se decidindo.
 
@@ -132,6 +150,12 @@ Onde aparece: Urbano; hora: Qualquer; clima: + Smog; lua: —.
 - Lore I: Um pedaço de portão que se soltou do muro e não achou outro lugar: ficou de pé nas costas dele, com as lanças para cima.
 - Lore II: Os olhos são parafusos que giram devagar. Quando param, ele levantou a blindagem.
 - Lore III: Vaoan e Oxiayal disputam quem o fez. Ele não responde a nenhum dos dois.
+
+**Gatewarden** (Ritual). Besouro-rinoceronte de casco alto em cúpula de grade enferrujada, de olho fechado, com um cadeado aberto pendurado e uma fresta de luz entre duas barras afastadas.
+
+- Lore I: O casco subiu em cúpula, alto e redondo, todo de grade de portão; a cabeça baixa e o chifre curvo têm a mesma ferrugem. No flanco, duas barras se afastaram, e pela fresta sai uma luz cinzenta, de ferro limado. O cadeado continua pendurado, aberto.
+- Lore II: No smog, a ferrugem dele escorre até o chão e o portão mais perto amanhece sem tranca. Ninguém achou a chave do cadeado, e ele não procura.
+- Lore III: Oxiayal é o trono poderoso; todo trono tem uma porta, e toda porta tem alguém que não sai da frente dela. Ele não abre nem fecha: decide o que é dentro.
 
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de dia; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
 

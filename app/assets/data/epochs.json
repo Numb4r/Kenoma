@@ -2709,6 +2709,10 @@
                 [
                   "wyrm.ritual",
                   1
+                ],
+                [
+                  "rust.ritual",
+                  6
                 ]
               ],
               "green": [
@@ -2754,6 +2758,10 @@
                 ],
                 [
                   "wyrm.ritual",
+                  1
+                ],
+                [
+                  "rust.ritual",
                   1
                 ]
               ],
@@ -2801,6 +2809,10 @@
                 [
                   "wyrm.ritual",
                   1
+                ],
+                [
+                  "rust.ritual",
+                  1
                 ]
               ],
               "residential": [
@@ -2846,6 +2858,10 @@
                 ],
                 [
                   "wyrm.ritual",
+                  1
+                ],
+                [
+                  "rust.ritual",
                   1
                 ]
               ],
@@ -2893,6 +2909,10 @@
                 [
                   "wyrm.ritual",
                   1
+                ],
+                [
+                  "rust.ritual",
+                  1
                 ]
               ],
               "sacred": [
@@ -2938,6 +2958,10 @@
                 ],
                 [
                   "wyrm.ritual",
+                  1
+                ],
+                [
+                  "rust.ritual",
                   1
                 ]
               ]

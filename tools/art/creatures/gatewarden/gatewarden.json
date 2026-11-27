@@ -1,0 +1,28 @@
+{
+  "frame": 36,
+  "anims": {
+    "idle": { "frames": 4, "fps": 6 },
+    "drift": { "frames": 4, "fps": 6 },
+    "alert": { "frames": 3, "fps": 6 },
+    "flee": { "frames": 6, "fps": 12 },
+    "spawn": { "frames": 6, "fps": 10 },
+    "tuned": { "frames": 6, "fps": 10 }
+  },
+  "body_dy": {
+    "idle": [0, -1, -1, 0],
+    "drift": [0, -1, -1, 0],
+    "alert": [0, 0, 0],
+    "flee": [1, 0, 0, -1, -1, -1],
+    "spawn": [0, 0, 0, 0, 0, 0],
+    "tuned": [0, 0, 0, 0, 0, 0]
+  },
+  "body_visible": {
+    "idle": [1, 1, 1, 1],
+    "drift": [1, 1, 1, 1],
+    "alert": [1, 1, 1],
+    "flee": [1, 1, 1, 1, 1, 1],
+    "spawn": [0, 0, 0, 1, 1, 1],
+    "tuned": [1, 1, 1, 1, 0, 0]
+  },
+  "portrait": { "frame": 96, "frames": 4, "fps": 6 }
+}

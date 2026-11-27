@@ -331,7 +331,10 @@ void main() {
 
     test('os textos batem com o docs/textos-mentor.md (rode scripts/mentor_md.py)', () {
       final md = File('../docs/textos-mentor.md').readAsStringSync();
-      expect(script.events, hasLength(17)); // as do ritual, a entrega do Radar, as 4 páginas de grimório (0.24.0), a quest do crafting (0.24.1) e as 2 páginas dos veículos (0.24.5)
+      // As do ritual (uma dica por família com Espírito de ritual), a entrega do Radar, as 4 páginas de grimório (0.24.0), a
+      // quest do crafting (0.24.1) e as 2 páginas dos veículos (0.24.5).
+      final hints = data.ritual.recipes.length;
+      expect(script.events, hasLength(14 + hints));
       for (final m in script.events) {
         expect(md, contains(m.text), reason: m.id);
         expect(m.text.length, lessThan(320), reason: m.id);
@@ -339,8 +342,8 @@ void main() {
     });
 
     test('uma dica por família, cada uma no evento da própria família', () {
-      for (final f in ['soot', 'frond', 'rill']) {
-        expect(script.byId('ritual_hint_$f')?.requires?.event, 'ritual_seen_$f');
+      for (final f in {for (final id in data.ritual.recipes.keys) id.split('.').first}) {
+        expect(script.byId('ritual_hint_$f')?.requires?.event, 'ritual_seen_$f', reason: f);
       }
     });
   });

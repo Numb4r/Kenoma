@@ -160,6 +160,10 @@
       "folder": "rust_entidade",
       "spawn": "grate"
     },
+    "rust.ritual": {
+      "folder": "gatewarden",
+      "spawn": "grate"
+    },
     "rust.spirit": {
       "folder": "gratekin",
       "spawn": "grate"

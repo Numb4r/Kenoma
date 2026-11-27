@@ -297,6 +297,8 @@ class _SpeciesDetailScreenState extends State<SpeciesDetailScreen> {
       const KSection('Onde aparece'),
       _where(form.family, unlocks.contains('where')),
       if (unlocks.contains('lore1')) ...[const SizedBox(height: 8), _loreBox(lore.lore[0], 'Lore I')],
+      // O Espírito de ritual com verbete continua mostrando a receita que a pesquisa do ritual já revelou.
+      if (species != null && species.ritualOnly && known) ...[const KSection('Ritual'), RitualResearchPanel(state: widget.state, data: widget.data, species: species)],
     ];
   }
 
