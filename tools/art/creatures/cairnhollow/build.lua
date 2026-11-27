@@ -1,11 +1,11 @@
 -- Cairnhollow (clod.ritual), arte final: o tatu-bola fechado em bola no chão, de perfil, com o terço direito aberto como
--- geodo partido: lábio claro de casca, fundo escuro, coroa de 14 dentes de cristal apontando para o miolo, e pela abertura
+-- geodo partido: lábio claro de casca, fundo escuro, coroa de cinco cachos de cristal (11 prismas, cada um com eixo próprio), e pela abertura
 -- a cabeça pequena (olho fechado em todo quadro) e as duas mãos de duas garras agarradas ao lábio.
 -- Silhueta e coordenadas do conceito (conceitos/rituais/cairnhollow/build.lua), refeita no kit Clod (_clod.lua).
 -- A luz que vazava pelas juntas mora na coroa; sobra uma junta acesa (a do meio), e a de lon -0,275 acende no alerta.
--- Camadas: corpo; leds = a ponta de cada dente (I, T); glow = base e meio dos dentes, a junta, as duas costuras e a poeira.
+-- Camadas: corpo; leds = a ponta de cada prisma (I, T); glow = facetas dos prismas, a junta, as duas costuras e a poeira.
 -- Animação: a casca respira 1 px e a base fica no chão; a luz corre na coroa; cabeça e mãos paradas (recuam no alerta,
--- somem na abertura na fuga e no spawn). O TOOTH é o botão do emissivo (mapa, retrato).
+-- somem na abertura na fuga e no spawn). O TOOTH (comprimento) e depois ROOT são os botões do emissivo (mapa, retrato).
 -- Rodar: tools/art/rodar.sh tools/art/creatures/cairnhollow/build.lua
 local C = dofile(assert(KENOMA_ART, 'defina KENOMA_ART') .. 'creatures/_clod.lua')
 local L = C.L
@@ -14,15 +14,20 @@ local dseg, inpoly = C.dseg, C.inpoly
 
 local OPEN = { { 19, 9.2 }, { 22, 12.5 }, { 19.5, 15.5 }, { 16.5, 20.5 }, { 19.5, 25.5 }, { 22, 28.5 }, { 19, 31.8 }, { 24, 30.2 },
   { 27.2, 25 }, { 28, 20.5 }, { 27.2, 16 }, { 24, 10.8 } }
-local TEETH = { { 19.6, 10.4, 3 }, { 21.4, 12.2, 2.6 }, { 20.6, 14.4, 2.8 }, { 18.2, 17.4, 3 }, { 17.4, 20.2, 3 }, { 18.2, 23.8, 2.8 },
-  { 20.6, 26.6, 2.4 }, { 21.2, 29.4, 2 }, { 22.6, 30.4, 2 }, { 25.4, 28, 2.4 }, { 27.2, 24, 2.8 }, { 27.6, 18.6, 2.8 },
-  { 26.2, 14.4, 2.8 }, { 24.4, 11.4, 2.6 } }
-local TOOTH = { 0.9, 1.25 }   -- o botão do emissivo: mapa, retrato
-local CORE = { 23.6, 20.4 }
+-- cinco cachos de 11 prismas, cada um com eixo próprio: { bx, by, ang (graus de tela, 0 = direita, 90 = baixo), len, meia largura, cacho }
+local CRYSTALS = {
+  { 19.0, 16.6, 8, 5.2, 1.2, 1 }, { 19.8, 15.2, -22, 3.4, 0.9, 1 }, { 18.2, 18.2, 58, 2.6, 0.9, 1 },
+  { 27.4, 17.2, 222, 2.6, 0.9, 2 }, { 27.7, 18.6, 180, 1.6, 0.8, 2 },
+  { 19.2, 24.6, -12, 4.0, 1.1, 3 }, { 20.2, 26.2, 8, 2.2, 0.9, 3 },
+  { 27.3, 24.6, 160, 2.2, 0.8, 4 },
+  { 20.4, 10.0, 35, 2.4, 0.8, 5 }, { 21.8, 10.2, 120, 1.2, 0.8, 5 }, { 22.4, 30.7, 190, 1.8, 0.8, 5 },
+}
+local TOOTH = { 1.0, 1.1 }   -- o botão do emissivo (só o comprimento): mapa, retrato
+local ROOT = 0.32            -- segundo botão: fração da raiz no corpo (0,25 a 0,35)
+local YEDGE = { [1] = true, [6] = true, [2] = true }   -- os três maiores levam a aresta Y no retrato
 local CX, CY, R = 16, 20.5, 12
-local FACETS = { { 18.6, 17.6 }, { 19, 23.6 }, { 26.6, 17.8 } }
--- 3 ou 4 dentes diferentes ganham 1 px de ponta em cada fase do idle
-local GROW = { [0] = { 1, 5, 9, 13 }, { 2, 6, 10 }, { 3, 7, 11, 14 }, { 4, 8, 12 } }
+-- em cada fase do idle um cacho acende (não dá a volta na abertura, de propósito)
+local GROW = { [0] = { 1 }, { 4, 5 }, { 3 }, { 2 } }
 local DUST = { { 3, 12, 'S' }, { 31, 6, 's' }, { 33, 16, 'S' }, { 2.6, 29, 's' }, { 13, 4, 'S' }, { 31, 33, 's' } }
 local DUSTB = { DUST[1], DUST[4] }   -- na deriva só atrás (x < 10)
 
@@ -74,23 +79,28 @@ local function draw(g, sg, k, o, ox, oy)
     return C.caps(u, v, hands)
   end
 
-  -- dentes: pré-passo por pixel (a ponta tem no mínimo 1 px; só sobre o fundo, fora da cabeça e das mãos)
+  -- prismas: pré-passo por pixel (a ponta tem no mínimo 1 px; só sobre o fundo, fora da cabeça e das mãos)
   local tm = {}
   local grow = {}
   if not still and not o.lean then for _, i in ipairs(GROW[ph]) do grow[i] = true end end
-  for i, b in ipairs(TEETH) do
-    local dx, dy = CORE[1] - b[1], CORE[2] - b[2]
-    local d = sqrt(dx * dx + dy * dy); dx, dy = dx / d, dy / d
-    local Ln = b[3] * TOOTH[k > 1 and 2 or 1] + 0.5
-    local tl = 0.78 - (grow[i] and 1 / (k * Ln) or 0)
+  for i, b in ipairs(CRYSTALS) do
+    local ca, sa = math.cos(math.rad(b[3])), math.sin(math.rad(b[3]))
+    local ux, uy = sa, -ca   -- perpendicular do lado de cima
+    if uy > 0 or (uy == 0 and ux > 0) then ux, uy = -ux, -uy end
+    local Ln = b[4] * TOOTH[k > 1 and 2 or 1]
+    if k == 1 then Ln = max(Ln, 2.2) end
+    local w0 = k == 1 and max(b[5], 0.8) or b[5]
+    local lit = grow[b[6]]
+    local tl = 0.78 - (lit and 1 / (k * Ln) or 0)
     local px, best, bt = {}, nil, -9
     for y = 0, g.h - 1 do for x = 0, g.w - 1 do
       if not tm[y * g.w + x] then
         local u, v = (x + 0.5 - ox) / k, (y + 0.5 - oy) / k
-        local t = ((u - b[1]) * dx + (v - b[2]) * dy) / Ln
-        local w = abs(-(u - b[1]) * dy + (v - b[2]) * dx)
-        if t >= -0.2 and t <= 1 and w <= 1.0 * (1 - t) + 0.25 and inpoly(u, v, OPEN) and not head(u, v) and not hand(u, v) then
-          px[#px + 1] = { x, y, t }
+        local t = ((u - b[1]) * ca + (v - b[2]) * sa) / Ln
+        local sd = (u - b[1]) * ux + (v - b[2]) * uy   -- > 0: lado de cima
+        local wl = sd >= 0 and w0 * (1 - max(0, t - 0.7) / 0.3) or w0 * max(0, 1 - max(0, t - 0.7) / 0.17)
+        if t >= -0.1 and t <= 1 and abs(sd) <= wl + 0.15 and inpoly(u, v, OPEN) and not head(u, v) and not hand(u, v) then
+          px[#px + 1] = { x, y, t, sd }
           if t > bt then best, bt = #px, t end
         end
       end
@@ -99,17 +109,12 @@ local function draw(g, sg, k, o, ox, oy)
     for _, p in ipairs(px) do if p[3] >= tl then ntip = ntip + 1 end end
     for n, p in ipairs(px) do
       local ch
-      if p[3] < 0.4 - glow then ch = 'H'
-      elseif p[3] < tl and not (ntip == 0 and n == best) then ch = 'J'
+      if p[3] < ROOT then ch = 'c'
+      elseif p[3] < tl and not (ntip == 0 and n == best) then
+        ch = (p[4] >= 0 or alert or lit) and 'J' or 'H'
+        if k > 1 and YEDGE[i] and p[4] >= w0 - 1 / k and p[3] < 0.85 then ch = 'Y' end
       else ch = (n == best) and 'I' or 'T' end
       tm[p[2] * g.w + p[1]] = ch
-    end
-  end
-  if k > 1 then   -- facetas Y de 1 px nos dentes
-    for _, q in ipairs(FACETS) do
-      local x, y = floor(q[1] * k + ox), floor(q[2] * k + oy)
-      local c = tm[y * g.w + x]
-      if c == 'H' or c == 'J' then tm[y * g.w + x] = 'Y' end
     end
   end
 
