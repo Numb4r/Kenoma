@@ -15,6 +15,8 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../core/biomes.dart';
 import '../../core/epochs.dart';
+import '../../core/tiles.dart' show tileFractionToLatLon;
+import '../../world/region_reach.dart';
 import '../../core/climate.dart' show ClimateEvent;
 import '../../world/climate_world.dart';
 import '../../data/game_data.dart';
@@ -247,6 +249,8 @@ Future<MapLayers> openMapLayers({
   }
   final regions = RegionManager(
     world: world,
+    loadM: balance.regionLoadM,
+    unloadM: balance.regionUnloadM,
     schedule: schedule,
     dir: Directory('${support.path}/regions'),
     confirmBytes: balance.regionConfirmBytes,
@@ -284,7 +288,7 @@ Future<MapLayers> openMapLayers({
 /// com a época vigente (ou falta algo), a mensagem de erro em português: nunca lança.
 ///
 /// 0.26.2: sem [withOtherRegions], só a região da casa; as outras embutidas (São Paulo, 2,4 s no g54) entram depois, com
-/// [addOtherRegions], com o mapa já aberto.
+/// [loadOtherRegion], quando o jogador chega perto delas (0.26.4).
 Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool withVisual = false, bool withAtlas = true, bool withOtherRegions = true}) async {
   final assets = bundle ?? rootBundle;
   final region = await loadRegion(region: kRegion, nowUtc: nowUtc, bundle: assets);
@@ -358,19 +362,28 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
   }
 }
 
-/// 0.26.2: as regiões embutidas além da casa que ainda não estão em [assets] (São Paulo), uma de cada vez, depois que o
-/// mapa abriu. Cada uma entra no mundo inteira, quando termina de carregar.
-///
-/// [far]: a região não toca o que o mapa já leu (o jogador e a câmera longe dela); aí ela entra sem subir a revisão.
-Future<void> addOtherRegions(MapAssets assets, {AssetBundle? bundle, bool Function()? alive, bool Function(LoadedRegion region)? far}) async {
-  final world = assets.world, epoch = assets.epoch;
-  if (world == null || epoch == null) return;
-  for (final id in epoch.regionPacks.keys.where((id) => id != kRegion && !world.hasRegion(id))) {
-    final region = await _embeddedInIsolate(id, epoch, bundle ?? rootBundle) ?? await loadEmbeddedRegion(region: id, epoch: epoch, bundle: bundle);
-    if (region == null || !(alive?.call() ?? true)) continue;
-    world.addRegion(region, bump: !(far?.call(region) ?? false));
+/// 0.26.4: o retângulo da região embutida [region] em graus, pelo cabeçalho do pacote lógico (sem descompactar as células
+/// nem conferir o SHA). `null` sem o pacote.
+Future<GeoBox?> embeddedRegionBox(String region, Epoch epoch, {AssetBundle? bundle}) async {
+  final ref = epoch.regionPacks[region];
+  if (ref == null) return null;
+  try {
+    final data = await (bundle ?? rootBundle).load('assets/regions/${ref.file}');
+    if (data.lengthInBytes < 23) return null;
+    final zoom = data.getUint8(6), x0 = data.getUint32(7, Endian.little), y0 = data.getUint32(11, Endian.little);
+    final w = data.getUint32(15, Endian.little), h = data.getUint32(19, Endian.little);
+    final (north, west) = tileFractionToLatLon(x0.toDouble(), y0.toDouble(), zoom);
+    final (south, east) = tileFractionToLatLon((x0 + w).toDouble(), (y0 + h).toDouble(), zoom);
+    return GeoBox(south: south, west: west, north: north, east: east);
+  } catch (_) {
+    return null;
   }
 }
+
+/// 0.26.4: a região embutida [id] montada noutro isolate (ou aqui, se não der), para entrar no mundo quando o jogador chega a
+/// menos de `region_load_km` dela.
+Future<LoadedRegion?> loadOtherRegion(String id, Epoch epoch, {AssetBundle? bundle}) async =>
+    await _embeddedInIsolate(id, epoch, bundle ?? rootBundle) ?? await loadEmbeddedRegion(region: id, epoch: epoch, bundle: bundle);
 
 /// A região [id] montada noutro isolate: os bytes dos pacotes `assets/regions/<id>_*` saem do APK aqui (leitura
 /// assíncrona), a conferência dos SHA e a leitura dos pacotes correm lá (2,8 s de thread da interface no g54 com São

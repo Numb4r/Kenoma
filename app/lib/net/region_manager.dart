@@ -2,6 +2,7 @@
 /// no disco ao abrir o app. Qualquer falha deixa o jogador no fallback ou no piso, com um aviso curto. Nunca lança.
 library;
 
+import '../world/region_reach.dart';
 import '../data/sha_memo.dart';
 import '../data/building_pack.dart';
 import '../data/traffic_pack.dart';
@@ -60,7 +61,16 @@ class RegionManager extends ChangeNotifier {
     this.publicKeyHex = kFeedPublicKeyHex,
     this.onNotice,
     this.confirm,
+    this.loadM = 40000,
+    this.unloadM = 60000,
   });
+
+  /// 0.26.4: uma região baixada entra no mundo a menos disto (metros, até a borda) e sai a mais disto.
+  final double loadM, unloadM;
+
+  /// Instaladas no disco mas fora do mundo (longe do jogador): os trabalhos para abrir de novo.
+  final _parked = <String, List<RegionFileJob>>{};
+  final _opening = <String>{};
 
   final LayeredWorld world;
   final EpochSchedule schedule;
@@ -105,7 +115,7 @@ class RegionManager extends ChangeNotifier {
   File _part(RegionFileRef f) => File('${dir.path}/${f.file}.part');
 
   RegionStatus statusOf(RegionEntry r) {
-    if (world.hasRegion(r.id)) return RegionStatus.ready;
+    if (world.hasRegion(r.id) || _parked.containsKey(r.id)) return RegionStatus.ready;
     if (_busy.contains(r.id)) return RegionStatus.downloading;
     if (!catalogMatchesEpoch(r, _epoch)) return RegionStatus.blocked;
     return _failed.contains(r.id) ? RegionStatus.failed : RegionStatus.available;
@@ -147,14 +157,40 @@ class RegionManager extends ChangeNotifier {
           _job(kKindRelief, '${dir.path}/${ref.file}', ref.sha256),
       ];
       if (!jobs.every((j) => File(j.path).existsSync())) continue;
-      final open = await _openInIsolate(id, jobs, publicKeyHex);
-      if (open.region != null) _remember(jobs);
-      await _install(id, open);
-    }
-    for (final r in catalog?.regions ?? const <RegionEntry>[]) {
-      await _routeFiles(r);
+      _parked[id] = jobs; // 0.26.4: entra no mundo pelo [reach], quando o jogador chega perto
     }
     notifyListeners();
+  }
+
+  /// 0.26.4: as regiões instaladas a menos de [loadM] de ([lat], [lon]) entram no mundo e as a mais de [unloadM] saem (ficam no
+  /// disco); no Modo Viagem ([travel]) todas entram e nenhuma sai. Sem o `bbox` no catálogo, a região entra como antes.
+  Future<void> reach(double lat, double lon, {bool travel = false}) async {
+    final boxes = {for (final r in catalog?.regions ?? const <RegionEntry>[]) r.id: GeoBox.fromBbox(r.bbox)};
+    for (final id in [..._parked.keys, ...world.regionIds.where(boxes.containsKey)]) {
+      final box = boxes[id];
+      final loaded = world.hasRegion(id);
+      final move = box == null ? (loaded ? RegionMove.keep : RegionMove.load) : regionMove(distM: distanceToBoxM(lat, lon, box), loaded: loaded, loadM: loadM, unloadM: unloadM, travel: travel);
+      if (move == RegionMove.load && _parked.containsKey(id) && _opening.add(id)) {
+        try {
+          final jobs = [for (final j in _parked[id]!) _job(j.kind, j.path, j.sha256)];
+          final open = await _openInIsolate(id, jobs, publicKeyHex);
+          if (open.region != null) {
+            _remember(jobs);
+            _parked.remove(id);
+          }
+          await _install(id, open);
+          for (final r in catalog?.regions ?? const <RegionEntry>[]) {
+            if (r.id == id) await _routeFiles(r); // os arquivos de rota entram junto, como ao abrir o app antes
+          }
+        } finally {
+          _opening.remove(id);
+        }
+      } else if (move == RegionMove.unload) {
+        _parked[id] = [for (final kind in [kKindLogic, kKindVisual, kKindNoWalk, kKindRelief]) if (epochRefOf(_epoch, id, kind) case final ref? when File('${dir.path}/${ref.file}').existsSync()) _job(kind, '${dir.path}/${ref.file}', ref.sha256)];
+        world.removeRegion(id);
+        _routeTried.removeWhere((k) => k.startsWith('$id/')); // os arquivos de rota voltam com a região
+      }
+    }
   }
 
   /// Os arquivos de `route_files` de uma região já instalada (rota e, da época 12 em diante, pontos do OSM): do disco ou
@@ -231,7 +267,8 @@ class RegionManager extends ChangeNotifier {
   }
 
   /// Um passo do caminho automático: dentro da bbox de uma região, com internet, baixa sozinho.
-  Future<void> tick(double lat, double lon) async {
+  Future<void> tick(double lat, double lon, {bool travel = false}) async {
+    await reach(lat, lon, travel: travel);
     for (final r in catalog?.regions ?? const <RegionEntry>[]) {
       await _routeFiles(r);
     }

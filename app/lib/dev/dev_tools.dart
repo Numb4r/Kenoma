@@ -47,6 +47,10 @@ class DevTools extends ChangeNotifier {
   /// Desenha o raio lógico da Aura e o alcance de 30 m por cima do mapa.
   bool get showRadii => _showRadii;
 
+  /// 0.26.4, debug (`scripts/celular.sh cmd "lastcell lat,lon"`): a última posição guardada não acompanha o mapa nesta
+  /// sessão.
+  bool holdLastCell = false;
+
   bool _manyBuses = false;
 
   /// 0.24.5: quase todo carro novo de avenida vira ônibus (só cena, para ver a parada no ponto).

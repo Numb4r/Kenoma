@@ -23,6 +23,7 @@ import 'package:kenoma/ui/menu/profile_screen.dart';
 import 'package:kenoma/ui/menu/sky_screen.dart';
 import 'package:kenoma/ui/game/game_map_screen.dart';
 import 'package:kenoma/ui/game/joystick.dart';
+import 'package:kenoma/ui/game/loading_screen.dart';
 import 'package:kenoma/world/location_access.dart';
 import 'package:kenoma/save/save_store.dart';
 import 'package:kenoma/world/places.dart';
@@ -141,7 +142,7 @@ Future<Env> pumpGame(
   await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: gw, bundle: _Bundle(realAssets()), headingSource: heading, store: store ?? fixedSave())));
   for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50)); // 0.26.4: o esmaecer da tela de carregamento anda
   }
   final env = Env(tester, tools, gps, gw);
   addTearDown(() async {
@@ -304,7 +305,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: FakeGateway(state: LocationPermissionState.granted), bundle: _Bundle(realAssets()), store: fixedSave())));
       for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
         await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50)); // 0.26.4: o esmaecer da tela de carregamento anda
       }
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 50));
@@ -671,6 +672,20 @@ void main() {
       expect(st.groupCode, kTestGroup);
     });
 
+    testWidgets('0.26.4: a tela de carregamento só sai depois de o mapa desenhar dois quadros', (tester) async {
+      final env = await pumpGame(tester);
+      expect(find.byType(KenomaLoading), findsNothing);
+      expect(env.game.framesRendered, greaterThanOrEqualTo(2));
+    });
+
+    testWidgets('0.26.4: o mapa guarda a célula em que está no save deste aparelho', (tester) async {
+      final env = await pumpGame(tester);
+      await env.live(3);
+      final st = env.game.worldView!.state;
+      final (x, y) = latLonToTile(env.game.playerLat, env.game.playerLon, biomeZoom);
+      expect(st.lastMapCell, (x, y));
+    });
+
     testWidgets('sem override o painel não fala do relógio', (tester) async {
       await pumpGame(tester, realClock: true);
       expect(find.textContaining('RELÓGIO UTC'), findsNothing);
@@ -692,7 +707,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: FakeGateway(), bundle: _Bundle(files), store: fixedSave())));
       for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
         await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50)); // 0.26.4: o esmaecer da tela de carregamento anda
       }
       await tester.pump(const Duration(milliseconds: 200));
       expect(find.text('MAPA INDISPONÍVEL'), findsOneWidget);
@@ -1071,7 +1086,7 @@ void main() {
       expect(state.chooseSchool(School.shaman), isTrue);
       for (var i = 0; i < 20 && identical(env.game.familiarImage, before); i++) {
         await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50)); // 0.26.4: o esmaecer da tela de carregamento anda
       }
       expect(identical(env.game.familiarImage, before), isFalse, reason: 'a imagem foi recarregada com a paleta da escola');
     });

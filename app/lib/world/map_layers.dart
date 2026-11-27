@@ -40,11 +40,11 @@ class MapLayers {
   }
 
   /// Um passo por segundo, com a posição do jogador.
-  Future<void> tick(double lat, double lon) async {
+  Future<void> tick(double lat, double lon, {bool travel = false}) async {
     source.value = world.sourceAt(lat, lon);
     final read = readUnmetered;
     if (read != null && fallback != null && _ticks++ % networkCheckS == 0) _unmetered = await read();
-    await Future.wait([if (fallback != null) fallback!.tick(lat, lon), if (regions != null) regions!.tick(lat, lon)]);
+    await Future.wait([if (fallback != null) fallback!.tick(lat, lon), if (regions != null) regions!.tick(lat, lon, travel: travel)]);
   }
 
   void dispose() {

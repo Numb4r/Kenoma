@@ -126,6 +126,9 @@ class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccess
 
   bool hasRegion(String id) => _regions.any((r) => r.id == id);
 
+  /// As regiões no mundo agora.
+  Iterable<String> get regionIds => _regions.map((r) => r.id);
+
   /// A região [id] já tem o arquivo de rota.
   bool hasAccess(String id) => _regions.any((r) => r.id == id && r.access != null);
 
@@ -153,6 +156,10 @@ class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccess
     _regions.add(region);
     if (bump) _revision++;
   }
+
+  /// 0.26.4: tira a região [id] do mundo (o jogador se afastou mais de `region_unload_km`). Sem subir a revisão: o que os
+  /// caches guardaram dela está longe da tela, e se o jogador voltar ela entra igual.
+  void removeRegion(String id) => _regions.removeWhere((r) => r.id == id && r.id != _regions.first.id);
 
   /// O bloco do tile z15, se está em memória.
   FallbackBlock? block(int tx, int ty) => _blocks[(tx, ty)];

@@ -15,6 +15,7 @@ import '../save/ksv_save_store.dart';
 import '../save/save_store.dart';
 import '../ui/game/game_map_screen.dart' show liveGameState;
 import 'debug_items_save.dart' show writeSetting;
+import '../core/tiles.dart' show biomeZoom, latLonToTile;
 import 'dev_tools.dart';
 
 /// O canal por onde a atividade entrega o texto da intent.
@@ -55,6 +56,18 @@ Future<List<String>> runDebugCommands(String text, {required DevTools tools, Fut
         }
         tools.simulator.teleport(ll[0]!, ll[1]!);
         out.add('tp $arg');
+      case 'lastcell':
+        // 0.26.4: a última posição guardada vira ([lat], [lon]) e fica assim nesta sessão (medir a abertura com o GPS longe).
+        final ll = arg.split(',').map((x) => double.tryParse(x.trim())).toList();
+        final st = liveGameState();
+        if (ll.length != 2 || ll.contains(null) || st == null) {
+          out.add('lastcell? $arg');
+          continue;
+        }
+        tools.holdLastCell = true;
+        st.lastMapCell = latLonToTile(ll[0]!, ll[1]!, biomeZoom);
+        st.changed();
+        out.add('lastcell $arg');
       case 'width':
         tools.setWidthM(arg == 'auto' ? null : double.tryParse(arg));
         out.add('width $arg');

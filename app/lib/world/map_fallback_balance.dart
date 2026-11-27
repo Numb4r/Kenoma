@@ -19,7 +19,9 @@ class MapFallbackBalance {
         regionConfirmBytes = (m['region_confirm_mb'] as int) * _mb,
         floorGridCells = m['floor_grid_cells'] as int,
         prefetchBlocks = m['prefetch_blocks'] as int,
-        networkCheckS = m['network_check_s'] as int;
+        networkCheckS = m['network_check_s'] as int,
+        regionLoadM = ((m['region_load_km'] as num?) ?? 40) * 1000.0,
+        regionUnloadM = ((m['region_unload_km'] as num?) ?? 60) * 1000.0;
 
   /// Servidores Overpass, na ordem: troca no erro, no timeout, no 429 e no 504.
   final List<Uri> servers;
@@ -41,6 +43,10 @@ class MapFallbackBalance {
 
   /// Acima disto, baixar uma região pede confirmação.
   final int regionConfirmBytes;
+
+  /// 0.26.4: uma região além da do jogador (a embutida de São Paulo, as baixadas) entra no mundo a menos disto dela e sai a
+  /// mais disto (em metros, até a borda da região).
+  final double regionLoadM, regionUnloadM;
 
   /// Lado da grade fraca do piso, em células z21.
   final int floorGridCells;

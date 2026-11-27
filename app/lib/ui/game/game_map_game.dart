@@ -561,8 +561,12 @@ class GameMapGame extends FlameGame {
     if (state != compass.value) compass.value = state;
   }
 
+  /// 0.26.4: quantos quadros o mapa já desenhou (a tela de carregamento só sai depois de dois).
+  int framesRendered = 0;
+
   @override
   void render(Canvas canvas) {
+    framesRendered++;
     super.render(canvas);
     if (size.x <= 0 || size.y <= 0) return;
     final view = Size(size.x, size.y);

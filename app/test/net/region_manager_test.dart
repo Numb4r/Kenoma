@@ -249,6 +249,24 @@ void main() {
     expect(r.world.sourceAt(lat, lon), MapSourceKind.pack);
   });
 
+  test('0.26.4: longe mais de 60 km a região sai do mundo e fica no disco (pronta); perto de novo, volta sem rede', () async {
+    final r = _Rig();
+    final m = r.open();
+    final entry = await _entryOf(m);
+    expect(await m.download(entry), isTrue);
+    r.server.down = true;
+    await m.reach(-22.8174, -47.0697); // a Unicamp, ~80 km
+    expect(r.world.hasRegion('test_city'), isFalse);
+    expect(m.statusOf(entry), RegionStatus.ready, reason: 'continua instalada: não pede para baixar de novo');
+    await m.reach(-23.0, -46.8, travel: true);
+    expect(r.world.hasRegion('test_city'), isTrue, reason: 'Modo Viagem: tudo entra');
+    await m.reach(-22.8174, -47.0697);
+    expect(r.world.hasRegion('test_city'), isFalse);
+    await m.reach(lat, lon);
+    expect(r.world.hasRegion('test_city'), isTrue);
+    expect(r.world.sourceAt(lat, lon), MapSourceKind.pack);
+  });
+
   test('ao abrir o app recarrega do disco sem rede; arquivo adulterado não entra e sai do disco', () async {
     final r = _Rig();
     final first = r.open();
@@ -257,6 +275,7 @@ void main() {
     r.server.gets.clear();
     final again = r.open();
     await again.loadInstalled();
+    await again.reach(lat, lon); // 0.26.4: entra no mundo perto dela
     expect(r.world.sourceAt(lat, lon), MapSourceKind.pack);
     expect(again.catalog, isNotNull);
     expect(r.server.gets, isEmpty);
@@ -265,6 +284,7 @@ void main() {
     f.writeAsBytesSync([...f.readAsBytesSync(), 0]);
     final third = r.open();
     await third.loadInstalled();
+    await third.reach(lat, lon); // 0.26.4: entra no mundo perto dela
     expect(r.world.sourceAt(lat, lon), MapSourceKind.floor);
     expect(f.existsSync(), isFalse);
   });
@@ -316,6 +336,7 @@ void main() {
       r.server.down = true;
       final again = r.open();
       await again.loadInstalled();
+      await again.reach(lat, lon); // 0.26.4: entra no mundo perto dela
       expect(r.world.hasTraffic('test_city'), isTrue);
     });
 
@@ -352,12 +373,14 @@ void main() {
       r.server.down = true;
       final again = r.open();
       await again.loadInstalled();
+      await again.reach(lat, lon); // 0.26.4: entra no mundo perto dela
       expect(r.world.hasRegion('test_city'), isTrue);
       expect(r.world.hasAccess('test_city'), isTrue);
 
       File('${r.dir.path}/test_e5_noaccess.bin').writeAsBytesSync([1, 2, 3]);
       final bad = r.open();
       await bad.loadInstalled();
+      await bad.reach(lat, lon); // 0.26.4: entra no mundo perto dela
       expect(r.world.hasRegion('test_city'), isTrue);
       expect(r.world.hasAccess('test_city'), isFalse);
       expect(r.names, isNot(contains('test_e5_noaccess.bin')));

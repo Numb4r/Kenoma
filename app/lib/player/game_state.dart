@@ -25,7 +25,11 @@ import 'progression.dart';
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 14;
+const int saveSchemaVersion = 15;
+
+/// 0.26.4: a célula z21 em que o mapa estava da última vez. Só no save deste aparelho: o backup e a exportação tiram a chave
+/// (`exportBackup`), o QR do grupo só leva o código do grupo, e nada a envia. Na abertura, o mapa prepara aquela área.
+const String kLastMapCellKey = 'map_last_cell';
 
 /// A chave das células z17 visitadas no save (schema 6).
 const String kVisitedCellsKey = 'celulas_visitadas';
@@ -155,6 +159,7 @@ class GameState extends ChangeNotifier {
     const known = {
       'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'bestiary_pins', 'personal_builds', 'marks', 'saved_utc',
       'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', kVisitedCellsKey, 'radar', 'conjurer', 'crafting', 'touches', 'npcs',
+      kLastMapCellKey,
     };
     final progress = PlayerProgress.fromJson(j['player'] as Map<String, dynamic>?, balance)..settleBanked();
     final state = GameState(
@@ -195,6 +200,7 @@ class GameState extends ChangeNotifier {
     for (var l = 2; l <= progress.level; l++) {
       state.story.events.putIfAbsent('level_$l', () => 1); // saves antigos: os níveis já subidos contam para o mentor
     }
+    if (j[kLastMapCellKey] case [final int x, final int y]) state.lastMapCell = (x, y);
     return state;
   }
 
@@ -264,6 +270,9 @@ class GameState extends ChangeNotifier {
 
   /// Registro de fundador (`player_id`, primeira versão e log de versões). `null` num jogo ainda sem registro.
   Founder? founder;
+
+  /// 0.26.4: a célula z21 do mapa da última vez ([kLastMapCellKey]). Muda sem avisar ninguém: vai junto na próxima gravação.
+  (int, int)? lastMapCell;
 
   /// Quando o jogo nasceu e o último instante em que o app esteve aberto (relógio que volta não passa dele).
   int? createdUtc;
@@ -688,6 +697,7 @@ class GameState extends ChangeNotifier {
         'app_version': appVersion,
         'epoch': epochId,
         if (founder != null) 'founder': founder!.toJson(),
+        if (lastMapCell case (final x, final y)) kLastMapCellKey: [x, y],
         'settings': settings,
         'story': story.toJson(),
         kVisitedCellsKey: [for (final c in _visited) [c.$1, c.$2]],

@@ -81,6 +81,7 @@ import '../../data/geolocator_source.dart';
 import '../colors.dart';
 import '../map/map_assets.dart';
 import 'loading_screen.dart';
+import '../../world/region_reach.dart';
 import '../../data/sha_memo.dart';
 import '../../world/places.dart' show kUnicamp;
 import '../../core/epochs.dart' show EpochSchedule;
@@ -194,6 +195,54 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     }
   }
 
+  bool _revealing = false, _veilGone = false;
+
+  /// 0.26.4: começa o esmaecer da tela de carregamento quando o mapa já desenhou dois quadros.
+  void _revealAfterFrames(GameMapGame game) {
+    void check(Duration _) {
+      if (!mounted || _revealing) return;
+      if (game.framesRendered >= 2) {
+        setState(() => _revealing = true);
+        return;
+      }
+      SchedulerBinding.instance.addPostFrameCallback(check);
+      SchedulerBinding.instance.scheduleFrame();
+    }
+
+    SchedulerBinding.instance.addPostFrameCallback(check);
+  }
+
+  /// 0.26.4: a célula z21 do mapa agora, guardada no save deste aparelho (nunca sai dele: `exportBackup` a tira). Muda sem
+  /// avisar; grava no máximo a cada 30 s andando, e ao ir para segundo plano.
+  void _noteCell(_Ready r, GameState st) {
+    if (tools.holdLastCell) return;
+    final (x, y) = latLonToTile(r.game.playerLat, r.game.playerLon, biomeZoom);
+    if (st.lastMapCell != (x, y)) {
+      st.lastMapCell = (x, y);
+      _cellPending = true;
+    }
+    final now = tools.clock.realNowUtc;
+    if (!_cellPending || now - _cellSavedAt < 30) return; // parado depois de mudar: grava quando der os 30 s
+    _cellPending = false;
+    _cellSavedAt = now;
+    unawaited(r.session.save());
+  }
+
+  /// 0.26.4: as regiões embutidas além da casa (São Paulo) entram no mundo a menos de `region_load_km` do jogador e saem a
+  /// mais de `region_unload_km`; no Modo Viagem todas entram. Montadas noutro isolate, com o mapa aberto.
+  void _reachOthers(_Ready r, {required bool travel}) {
+    final w = r.assets.world, epoch = r.assets.epoch, fb = r.assets.fallback;
+    if (w == null || epoch == null || fb == null) return;
+    for (final MapEntry(key: id, value: box) in _otherBoxes.entries) {
+      final move = regionMove(distM: distanceToBoxM(r.game.playerLat, r.game.playerLon, box), loaded: w.hasRegion(id), loadM: fb.regionLoadM, unloadM: fb.regionUnloadM, travel: travel);
+      if (move == RegionMove.unload) w.removeRegion(id);
+      if (move != RegionMove.load || !_othersLoading.add(id)) continue;
+      unawaited(loadOtherRegion(id, epoch, bundle: widget.bundle).then((region) {
+        if (region != null && mounted) w.addRegion(region, bump: _near(region, r.world, r.game));
+      }).whenComplete(() => _othersLoading.remove(id)));
+    }
+  }
+
   /// 0.26.3: o jogador ou a câmera a menos de ~2 km da região [r] (em células z21): o mapa pode ter lido tiles dela.
   static bool _near(LoadedRegion r, WorldView world, GameMapGame game) {
     const m = 120.0; // ~2 km
@@ -204,8 +253,13 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   /// 0.26.2: o progresso da abertura (0 a 1), para a tela de carregamento.
   final _progress = ValueNotifier<double>(0);
 
-  /// A espera até montar as outras regiões embutidas (cancelada se o mapa fecha antes).
-  Timer? _otherRegions;
+  /// 0.26.4: o retângulo de cada região embutida além da casa (São Paulo) e as que estão sendo montadas agora.
+  var _otherBoxes = const <String, GeoBox>{};
+  final _othersLoading = <String>{};
+
+  /// Quando a última posição do mapa foi gravada (segundos do relógio real), e se há uma mudança ainda não gravada.
+  int _cellSavedAt = 0;
+  bool _cellPending = false;
   _Ready? _ready;
 
   // O teste de viaduto da simulação do tráfego: montado no primeiro uso, já com a latitude do jogador.
@@ -405,7 +459,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   /// Um passo das camadas do mapa. Na primeira vez no piso, o Familiar comenta (o `setting` não deixa repetir).
   void _tickLayers(_Ready r, GameState st) {
     if (!r.game.avatar.hasPosition) return;
-    unawaited(r.layers.tick(r.game.playerLat, r.game.playerLon));
+    final travel = r.travel.stage != TravelStage.idle;
+    unawaited(r.layers.tick(r.game.playerLat, r.game.playerLon, travel: travel));
+    _reachOthers(r, travel: travel);
+    _noteCell(r, st);
     if (r.layers.source.value == MapSourceKind.floor && !st.setting(kFloorSeenSetting)) {
       st.setSetting(kFloorSeenSetting, true);
       st.recordEvent(kFloorSeenEvent, '', 1);
@@ -848,7 +905,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       final p = nearestPuddle(climate.puddlesNear(world.playerX, world.playerY, 1000 / world.metersPerCell21, tools.clock.nowUtc), world.playerX, world.playerY);
       return p == null ? null : tileFractionToLatLon(p.x, p.y, biomeZoom);
     };
-    final known = await startF;
+    // 0.26.4: onde o mapa estava da última vez (a célula guardada só neste aparelho); sem ela, o cache do Android.
+    final saved = session.state.lastMapCell;
+    final known = saved != null ? tileFractionToLatLon(saved.$1 + 0.5, saved.$2 + 0.5, biomeZoom) : await startF;
     final start = known ?? kUnicamp;
     final game = GameMapGame(
       fallbackCenter: start,
@@ -1112,6 +1171,19 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       game.rotation.toggleFollowHeading(); // volta ao modo que o jogador deixou ligado
       WidgetsBinding.instance.addPostFrameCallback((_) => _setFollowHeading(true));
     }
+    // 0.26.4: o retângulo de cada região embutida além da casa (São Paulo); a que já está perto de onde o mapa abre entra
+    // ainda na tela de carregamento, as outras quando o jogador chegar perto (`_reachOthers`).
+    final epoch = assets.epoch, fb = assets.fallback;
+    if (epoch != null) {
+      _otherBoxes = {
+        for (final id in epoch.regionPacks.keys.where((id) => id != kRegion))
+          id: ?await embeddedRegionBox(id, epoch, bundle: bundle),
+      };
+      for (final MapEntry(key: id, value: box) in _otherBoxes.entries) {
+        if (known == null || fb == null || distanceToBoxM(known.$1, known.$2, box) >= fb.regionLoadM) continue;
+        if (await loadOtherRegion(id, epoch, bundle: bundle) case final region?) assets.world?.addRegion(region);
+      }
+    }
     // 0.26.3: os tiles da cidade, o tráfego e as células em volta de onde o mapa abre, ainda na tela de carregamento (eram
     // quadros de 60 a 200 ms logo depois de o mapa aparecer, no g54).
     // Sem a última posição (o cache do Android não respondeu a tempo), só o que não depende do lugar: aquecer o centro de
@@ -1121,6 +1193,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     await artF;
     if (!mounted) return 'fechado';
     _ready = _Ready(assets, game, tracker, sub, data, session, world, layers, travel);
+    _progress.value = 1;
+    _revealAfterFrames(game);
     travel.addListener(() => _onTravel(_ready!));
     PatrolController.instance.addListener(_rebuild); // o atalho da Patrulha entra e sai da faixa
     _familiarSchool = session.state.conjurer.school;
@@ -1128,11 +1202,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     session.state.addListener(_onStateForFamiliar);
     // O acesso é pedido depois do primeiro quadro: o diálogo precisa de uma tela montada.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // 0.26.2: as outras regiões embutidas (São Paulo) entram com o mapa já aberto.
       unawaited(ShaMemo.current?.save());
-      // ponytail: espera fixa de 5 s (o aquecimento do mapa — prédios, clima, faixas — derruba quadros nos primeiros ~3 s
-      // no g54); trocar por um sinal de quadros estáveis se o aquecimento mudar de tamanho.
-      _otherRegions = Timer(const Duration(seconds: 5), () => unawaited(addOtherRegions(assets, bundle: bundle, alive: () => mounted, far: (r) => !_near(r, world, game))));
       final note = session.loadNote;
       if (note != null) _toast(note, seconds: 8);
       unawaited(_patrol?.sync());
@@ -1220,6 +1290,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _inBackground = state != AppLifecycleState.resumed;
     if (state == AppLifecycleState.paused) _scheduleNotifications();
     if (state == AppLifecycleState.paused) {
+      unawaited(ready.session.save()); // 0.26.4: a última posição do mapa vai junto
       _headingSub?.cancel(); // a bússola também só com o app aberto
       _headingSub = null;
       ready.tracker.stop(); // só com o app aberto
@@ -1267,7 +1338,6 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     PatrolController.instance.removeListener(_rebuild);
     _pocket.dispose();
     _progress.dispose();
-    _otherRegions?.cancel();
     super.dispose();
   }
 
@@ -1282,7 +1352,21 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
           final data = snap.data;
           if (data == null) return KenomaLoading(progress: _progress);
           if (data is String) return _ErrorPanel(message: data);
-          return _view(data as _Ready);
+          // 0.26.4: a tela de carregamento fica por cima até o mapa desenhar dois quadros inteiros (o primeiro, com a montagem
+          // dos widgets, era o mais lento) e sai num esmaecer; os toques passam assim que o esmaecer começa.
+          return Stack(fit: StackFit.expand, children: [
+            _view(data as _Ready),
+            if (!_veilGone)
+              AbsorbPointer(
+                absorbing: !_revealing,
+                child: AnimatedOpacity(
+                  opacity: _revealing ? 0 : 1,
+                  duration: const Duration(milliseconds: 300),
+                  onEnd: () => setState(() => _veilGone = true),
+                  child: KenomaLoading(progress: _progress),
+                ),
+              ),
+          ]);
         },
       ),
     );
