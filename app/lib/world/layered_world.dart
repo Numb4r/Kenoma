@@ -145,10 +145,13 @@ class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccess
     if (i >= 0) _regions[i] = _regions[i].copyWith(traffic: traffic);
   }
 
-  void addRegion(LoadedRegion region) {
+  /// Entra a região [region]. Com [bump] (o padrão) a revisão sobe e quem guardou tiles refaz tudo; sem ela (0.26.3), para
+  /// uma região longe de tudo que já foi lido (São Paulo com o jogador em Campinas), nenhum cache tem nada dela e refazer o
+  /// chão, o tráfego e as células era um quadro de 60 a 120 ms à toa.
+  void addRegion(LoadedRegion region, {bool bump = true}) {
     if (hasRegion(region.id)) return;
     _regions.add(region);
-    _revision++;
+    if (bump) _revision++;
   }
 
   /// O bloco do tile z15, se está em memória.

@@ -20,9 +20,15 @@ abstract class PositionSource {
   Future<void> stop();
 }
 
+/// 0.26.3: uma fonte que sabe a última posição conhecida sem esperar leitura nova (o cache do Android, a do simulador). O
+/// mapa abre nela e a tela de carregamento prepara aquela área; `null` se não há (sem permissão, primeira abertura).
+abstract interface class LastKnownSource {
+  Future<(double, double)?> lastKnown();
+}
+
 /// Uma fonte que encaminha a que estiver escolhida e deixa trocar a qualquer momento, inclusive com
 /// o jogo rodando. Quem ouve [fixes] não percebe a troca.
-class SwitchablePositionSource implements PositionSource {
+class SwitchablePositionSource implements PositionSource, LastKnownSource {
   SwitchablePositionSource(PositionSource initial) : _current = initial;
 
   PositionSource _current;
@@ -31,6 +37,9 @@ class SwitchablePositionSource implements PositionSource {
   final StreamController<GeoFix> _out = StreamController<GeoFix>.broadcast();
 
   PositionSource get current => _current;
+
+  @override
+  Future<(double, double)?> lastKnown() async => switch (_current) { final LastKnownSource s => s.lastKnown(), _ => null };
 
   @override
   String get name => _current.name;

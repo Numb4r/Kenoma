@@ -131,11 +131,12 @@ class PatrolTaskHandler extends TaskHandler {
       _write([engine.startLine(extra: {..._steps(await _sensors.readSteps()), if (config.sim != null) 'sim': true, if (sandbox) 'sandbox': true})]);
       await _notes.initialize(settings: const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')));
       final sim = config.sim;
-      final source = _source = sim == null
+      final PositionSource source = sim == null
           ? GeolocatorPositionSource(accuracy: LocationAccuracy.medium, distanceFilterM: b.gpsDistanceM, interval: Duration(seconds: b.gpsIntervalS))
           : (SimulatedPositionSource(lat: sim.lat, lon: sim.lon, startTimeMs: DateTime.now().millisecondsSinceEpoch, fixInterval: Duration(seconds: b.gpsIntervalS))
             ..speedMps = sim.mps
             ..setJoystick(sim.dx, sim.dy));
+      _source = source;
       _sub = source.fixes.listen(_onFix);
       await source.start();
       _notify();

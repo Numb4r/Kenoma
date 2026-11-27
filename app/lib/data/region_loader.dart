@@ -15,6 +15,7 @@ import 'building_pack.dart';
 import 'cycle_pack.dart';
 import 'traffic_pack.dart';
 import 'nowalk_pack.dart';
+import 'sha_memo.dart';
 import 'region_pack.dart';
 import 'relief_pack.dart';
 import 'visual_pack.dart';
@@ -77,8 +78,8 @@ RegionLoad verifyRegionPack({
   if (ref == null) {
     return RegionLoadError(RegionLoadErrorKind.noPackForRegion, 'A época ${epoch.id} não tem pacote para a região "$region".');
   }
-  final actual = sha256Hex(bytes);
-  if (actual != ref.sha256.toLowerCase()) {
+  if (!shaMatches(bytes, ref.sha256, name: ref.file)) {
+    final actual = sha256Hex(bytes);
     return RegionLoadError(
       RegionLoadErrorKind.shaMismatch,
       'O mapa ${ref.file} não é o da época ${epoch.id}.\n'
@@ -88,7 +89,7 @@ RegionLoad verifyRegionPack({
     );
   }
   try {
-    return RegionLoaded(pack: RegionPack.parse(bytes), epoch: epoch, stale: stale, sha256: actual);
+    return RegionLoaded(pack: RegionPack.parse(bytes), epoch: epoch, stale: stale, sha256: ref.sha256.toLowerCase());
   } on FormatException catch (e) {
     return RegionLoadError(RegionLoadErrorKind.badFormat, 'O mapa ${ref.file} está corrompido: ${e.message}.');
   } catch (e) {
@@ -135,8 +136,8 @@ Future<Object> loadVisualPack({required String region, required Epoch epoch, Ass
   } catch (e) {
     return 'O mapa visual ${ref.file} não está no app: $e';
   }
-  final actual = sha256Hex(bytes);
-  if (actual != ref.sha256.toLowerCase()) {
+  if (!shaMatches(bytes, ref.sha256, name: ref.file)) {
+    final actual = sha256Hex(bytes);
     return 'O mapa visual ${ref.file} não é o da época ${epoch.id}.\n'
         'SHA-256 esperado: ${_short(ref.sha256)}\n'
         'SHA-256 lido: ${_short(actual)}';
@@ -162,8 +163,8 @@ Future<Object?> loadNoWalkPack({required Epoch epoch, AssetBundle? bundle, Strin
   } catch (e) {
     return 'O mapa de vias ${ref.file} não está no app: $e';
   }
-  final actual = sha256Hex(bytes);
-  if (actual != ref.sha256.toLowerCase()) {
+  if (!shaMatches(bytes, ref.sha256, name: ref.file)) {
+    final actual = sha256Hex(bytes);
     return 'O mapa de vias ${ref.file} não é o da época ${epoch.id}.\nSHA-256 esperado: ${_short(ref.sha256)}\nSHA-256 lido: ${_short(actual)}';
   }
   try {
@@ -197,7 +198,7 @@ Future<TrafficPack?> loadTrafficPack({required String region, Epoch? epoch, Asse
   try {
     final data = await (bundle ?? rootBundle).load('assets/regions/${ref?.file ?? '${region}_e0_traffic.bin'}');
     final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-    if (ref != null && sha256Hex(bytes) != ref.sha256.toLowerCase()) return null;
+    if (ref != null && !shaMatches(bytes, ref.sha256, name: ref.file)) return null;
     return TrafficPack.parse(bytes);
   } catch (_) {
     return null;
@@ -216,8 +217,8 @@ Future<Object?> loadReliefPack({required Epoch epoch, required String region, As
   } catch (e) {
     return 'O relevo ${ref.file} não está no app: $e';
   }
-  final actual = sha256Hex(bytes);
-  if (actual != ref.sha256.toLowerCase()) {
+  if (!shaMatches(bytes, ref.sha256, name: ref.file)) {
+    final actual = sha256Hex(bytes);
     return 'O relevo ${ref.file} não é o da época ${epoch.id}.\nSHA-256 esperado: ${_short(ref.sha256)}\nSHA-256 lido: ${_short(actual)}';
   }
   try {

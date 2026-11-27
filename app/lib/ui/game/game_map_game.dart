@@ -770,10 +770,31 @@ class GameMapGame extends FlameGame {
   /// O clima de base que se vê agora (o primeiro da pilha), ou `clear` com o clima desligado nos Ajustes.
   String get _baseClimate => rainFx() ? climateShown().id.split('+').first : 'clear';
 
+  /// 0.26.3: o que os primeiros quadros em ([lat], [lon]) montariam, feito na tela de carregamento: os tiles da cidade em
+  /// volta da tela no zoom padrão e o grafo e a primeira leva do tráfego. No g54 eram quadros de 60 a 200 ms logo depois
+  /// de o mapa aparecer. Entre um tile e outro devolve a vez, para a tela de carregamento continuar andando. Sem [area] (não
+  /// se sabe onde o jogador está), só o renderizador do Completo, que não depende do lugar.
+  Future<void> warmUp(double lat, double lon, {required int tUtc, required int seed, bool area = true}) async {
+    final (x, y) = latLonToTileFraction(lat, lon, biomeZoom);
+    final mpc = metersPerCell(lat);
+    cityTiles.mpc = mpc;
+    if (!simpleStyle()) city; // o renderizador do Completo e a arte dele (LabArt), montados aqui e não no primeiro quadro
+    if (!area) return;
+    const r = 12; // células: meia tela no zoom padrão, um bloco de folga e as 3 células da sombra de um prédio
+    final n = visual.cellsPerTile;
+    for (var ty = ((y - r) / n).floor(); ty <= ((y + r) / n).floor(); ty++) {
+      for (var tx = ((x - r) / n).floor(); tx <= ((x + r) / n).floor(); tx++) {
+        cityTiles.tileAt(tx, ty);
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+    _traffic.warm(seed: seed, tUtc: tUtc, lonDeg: lon, metersPerCell: mpc, px: x, py: y, forcedDensity: trafficDensity());
+  }
+
   void _paintCityGround(Canvas canvas, Size view, MapCamera cam, double mpc) {
     if (cityTiles.revision != _cityRevision) {
-      _cityRevision = cityTiles.revision; // chegou bloco ou região: os blocos de chão saem de novo
-      city.clear();
+      _cityRevision = cityTiles.revision; // chegou bloco ou região: os blocos de chão saem de novo, aos poucos
+      city.invalidateAll();
     }
     cityTiles.mpc = mpc;
     final cpt = visual.cellsPerTile;

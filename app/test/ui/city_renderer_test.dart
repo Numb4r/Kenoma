@@ -320,4 +320,23 @@ void main() {
     }
     expect(shared, greaterThan(0), reason: 'quando duas camadas pedem partículas, as duas recebem');
   });
+
+  test('0.26.3: os blocos que faltam saem no orçamento, um por quadro no mínimo, do centro para fora; refazer não apaga a tela', () {
+    final c = make()..missingBudgetMs = 0;
+    final cam = camAt(0, 0);
+    ground(c, cam);
+    expect(c.rebuiltLastFrame, 1, reason: 'sem orçamento, só o bloco do centro no primeiro quadro');
+    var frames = 1;
+    while (c.rebuiltLastFrame > 0 && frames < 200) {
+      ground(c, cam);
+      frames++;
+    }
+    final all = c.drawnChunks;
+    expect(frames, greaterThan(2), reason: 'a tela se completa em vários quadros');
+    expect(all, greaterThan(1));
+    c.invalidateAll();
+    ground(c, cam);
+    expect(c.drawnChunks, all, reason: 'os velhos continuam desenhados enquanto saem os novos');
+    expect(c.rebuiltLastFrame, greaterThan(0), reason: 'e são refeitos aos poucos');
+  });
 }

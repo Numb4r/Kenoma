@@ -23,7 +23,7 @@ enum SimSpeed {
   final double mps;
 }
 
-class SimulatedPositionSource implements PositionSource {
+class SimulatedPositionSource implements PositionSource, LastKnownSource {
   SimulatedPositionSource({
     required this.lat,
     required this.lon,
@@ -68,6 +68,10 @@ class SimulatedPositionSource implements PositionSource {
 
   static const double _mPerDegLat = 111132.92;
   static const double _mPerDegLon = 111319.49;
+
+  /// 0.26.3: o simulador sabe onde está: o mapa abre ali.
+  @override
+  Future<(double, double)?> lastKnown() async => (lat, lon);
 
   @override
   String get name => 'Simulador';

@@ -115,6 +115,16 @@ class TrafficPainter {
   /// quadro. O desenho vem depois, em duas camadas da ordem fixa (`draw_order.dart`): [paintWalkers] e, por cima,
   /// [paintCars]. Com [paused] (o Silêncio), ninguém se mexe e depois todos continuam de onde pararam. [speedMult] e
   /// [walkMult] são o clima: mais devagar e com menos gente na rua.
+  /// 0.26.3: o grafo de faixas e a primeira leva do tráfego em volta de ([px], [py]), feitos antes do primeiro quadro (na
+  /// tela de carregamento): o [prepare] seguinte, perto dali, só anda a simulação. Era um quadro de ~50 ms no g54.
+  void warm({required int seed, required int tUtc, required double lonDeg, required double metersPerCell, required double px, required double py, double? forcedDensity}) {
+    if (visual.pack.version < 2) return;
+    final sim = _simFor(seed)
+      ..footpathCyclists = cycleways == null
+      ..forcedDensity = forcedDensity;
+    sim.center(px, py, metersPerCell, hour: localHour(tUtc, lonDeg), density: sim.config.carDensityIn(1));
+  }
+
   void prepare(
     ui.Size view,
     MapCamera cam, {

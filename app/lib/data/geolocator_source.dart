@@ -49,7 +49,7 @@ class GeolocatorGateway implements LocationGateway {
   Future<void> openLocationSettings() => Geolocator.openLocationSettings();
 }
 
-class GeolocatorPositionSource implements PositionSource {
+class GeolocatorPositionSource implements PositionSource, LastKnownSource {
   GeolocatorPositionSource({this.distanceFilterM = 2, this.interval = const Duration(seconds: 1), this.accuracy = LocationAccuracy.best});
 
   /// A Patrulha usa a precisão equilibrada (`medium`), para gastar menos bateria.
@@ -90,5 +90,17 @@ class GeolocatorPositionSource implements PositionSource {
   Future<void> stop() async {
     await _sub?.cancel();
     _sub = null;
+  }
+
+  /// O cache do Android (sem ligar o GPS nem pedir permissão): o mapa abre onde o aparelho estava. Sem permissão, sem
+  /// posição guardada ou demorando mais de meio segundo: `null`.
+  @override
+  Future<(double, double)?> lastKnown() async {
+    try {
+      final p = await Geolocator.getLastKnownPosition().timeout(const Duration(milliseconds: 500));
+      return p == null ? null : (p.latitude, p.longitude);
+    } catch (_) {
+      return null;
+    }
   }
 }

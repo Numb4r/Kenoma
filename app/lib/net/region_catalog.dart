@@ -118,12 +118,24 @@ bool catalogMatchesEpoch(RegionEntry r, Epoch epoch) {
 
 /// Um arquivo a abrir. Com [sigHex] a assinatura é conferida também (recém-baixado); na reabertura basta o SHA-256 da época.
 class RegionFileJob {
-  const RegionFileJob({required this.kind, required this.path, required this.sha256, this.sigHex});
+  const RegionFileJob({required this.kind, required this.path, required this.sha256, this.sigHex, this.trusted = false});
 
   final String kind;
   final String path;
   final String sha256;
   final String? sigHex;
+
+  /// 0.26.3: o arquivo já foi conferido nesta instalação com o mesmo tamanho e data (`ShaMemo`): o SHA-256 e a assinatura
+  /// não são refeitos.
+  final bool trusted;
+
+  /// O conteúdo é o que a época espera (e, com [sigHex], assinado).
+  bool accepts(Uint8List bytes, String publicKeyHex) {
+    if (trusted) return true;
+    if (sha256Hex(bytes) != sha256.toLowerCase()) return false;
+    final sig = sigHex;
+    return sig == null || verifySigned(bytes, sig, publicKeyHex: publicKeyHex);
+  }
 }
 
 class RegionOpen {
@@ -152,9 +164,9 @@ RegionOpen openRegionFiles(String id, List<RegionFileJob> jobs, {String publicKe
     } on FileSystemException catch (e) {
       return fail('não abriu: ${e.message}');
     }
-    if (sha256Hex(bytes) != job.sha256.toLowerCase()) return fail('SHA-256 diferente do de epochs.json');
+    if (!job.trusted && sha256Hex(bytes) != job.sha256.toLowerCase()) return fail('SHA-256 diferente do de epochs.json');
     final sig = job.sigHex;
-    if (sig != null && !verifySigned(bytes, sig, publicKeyHex: publicKeyHex)) return fail('assinatura inválida');
+    if (!job.trusted && sig != null && !verifySigned(bytes, sig, publicKeyHex: publicKeyHex)) return fail('assinatura inválida');
     try {
       switch (job.kind) {
         case kKindLogic:
@@ -178,9 +190,7 @@ RegionOpen openRegionFiles(String id, List<RegionFileJob> jobs, {String publicKe
 TrafficPack? openTrafficFile(RegionFileJob job, {String publicKeyHex = kFeedPublicKeyHex}) {
   try {
     final bytes = File(job.path).readAsBytesSync();
-    if (sha256Hex(bytes) != job.sha256.toLowerCase()) return null;
-    final sig = job.sigHex;
-    if (sig != null && !verifySigned(bytes, sig, publicKeyHex: publicKeyHex)) return null;
+    if (!job.accepts(bytes, publicKeyHex)) return null;
     return TrafficPack.parse(bytes);
   } catch (_) {
     return null;
@@ -192,9 +202,7 @@ TrafficPack? openTrafficFile(RegionFileJob job, {String publicKeyHex = kFeedPubl
 bool verifyBuildingFile(RegionFileJob job, {String publicKeyHex = kFeedPublicKeyHex}) {
   try {
     final bytes = File(job.path).readAsBytesSync();
-    if (sha256Hex(bytes) != job.sha256.toLowerCase()) return false;
-    final sig = job.sigHex;
-    return sig == null || verifySigned(bytes, sig, publicKeyHex: publicKeyHex);
+    return job.accepts(bytes, publicKeyHex);
   } catch (_) {
     return false;
   }
@@ -227,9 +235,7 @@ Future<BuildingPack?> openBuildingPackFile(String path) async {
 AccessPack? openAccessFile(RegionFileJob job, {String publicKeyHex = kFeedPublicKeyHex}) {
   try {
     final bytes = File(job.path).readAsBytesSync();
-    if (sha256Hex(bytes) != job.sha256.toLowerCase()) return null;
-    final sig = job.sigHex;
-    if (sig != null && !verifySigned(bytes, sig, publicKeyHex: publicKeyHex)) return null;
+    if (!job.accepts(bytes, publicKeyHex)) return null;
     return AccessPack.parse(bytes);
   } catch (_) {
     return null;

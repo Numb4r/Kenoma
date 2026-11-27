@@ -2,8 +2,10 @@
 /// no disco ao abrir o app. Qualquer falha deixa o jogador no fallback ou no piso, com um aviso curto. Nunca lança.
 library;
 
+import '../data/sha_memo.dart';
 import '../data/building_pack.dart';
 import '../data/traffic_pack.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
@@ -109,6 +111,22 @@ class RegionManager extends ChangeNotifier {
     return _failed.contains(r.id) ? RegionStatus.failed : RegionStatus.available;
   }
 
+  /// 0.26.3: o trabalho de abrir [path], confiável se já bateu nesta instalação com o mesmo tamanho e data (`ShaMemo`).
+  RegionFileJob _job(String kind, String path, String sha) {
+    final key = ShaMemo.fileKey(path, sha);
+    return RegionFileJob(kind: kind, path: path, sha256: sha, trusted: key != null && (ShaMemo.current?.has(key) ?? false));
+  }
+
+  /// Os arquivos de [jobs] abriram: na próxima abertura, com o mesmo tamanho e data, não se confere de novo.
+  void _remember(List<RegionFileJob> jobs) {
+    final memo = ShaMemo.current;
+    if (memo == null) return;
+    for (final j in jobs) {
+      if (ShaMemo.fileKey(j.path, j.sha256) case final key?) memo.add(key);
+    }
+    unawaited(memo.save());
+  }
+
   /// Ao abrir o app: lê o catálogo do cache e recarrega o que está no disco, conferindo o SHA-256 da época vigente.
   Future<void> loadInstalled() async {
     try {
@@ -123,13 +141,15 @@ class RegionManager extends ChangeNotifier {
       if (id == kBundledRegion || world.hasRegion(id)) continue;
       final jobs = <RegionFileJob>[
         for (final kind in [kKindLogic, kKindVisual, kKindNoWalk])
-          if (epochRefOf(epoch, id, kind) case final ref?) RegionFileJob(kind: kind, path: '${dir.path}/${ref.file}', sha256: ref.sha256),
+          if (epochRefOf(epoch, id, kind) case final ref?) _job(kind, '${dir.path}/${ref.file}', ref.sha256),
         // O relevo é opcional: sem o arquivo no disco a região abre com o terreno plano.
         if (epochRefOf(epoch, id, kKindRelief) case final ref? when File('${dir.path}/${ref.file}').existsSync())
-          RegionFileJob(kind: kKindRelief, path: '${dir.path}/${ref.file}', sha256: ref.sha256),
+          _job(kKindRelief, '${dir.path}/${ref.file}', ref.sha256),
       ];
       if (!jobs.every((j) => File(j.path).existsSync())) continue;
-      await _install(id, await _openInIsolate(id, jobs, publicKeyHex));
+      final open = await _openInIsolate(id, jobs, publicKeyHex);
+      if (open.region != null) _remember(jobs);
+      await _install(id, open);
     }
     for (final r in catalog?.regions ?? const <RegionEntry>[]) {
       await _routeFiles(r);
@@ -158,12 +178,14 @@ class RegionManager extends ChangeNotifier {
       final fresh = !await dest.exists();
       if (fresh) await _fetchPart(f, Uri.parse(baseUrl()).resolve(f.url));
       final path = fresh ? _part(f).path : dest.path;
-      final pack = await open(RegionFileJob(kind: kind, path: path, sha256: f.sha256, sigHex: fresh ? f.sig : null));
+      final job = fresh ? RegionFileJob(kind: kind, path: path, sha256: f.sha256, sigHex: f.sig) : _job(kind, path, f.sha256);
+      final pack = await open(job);
       if (pack == null) {
         await File(path).delete();
         return;
       }
       if (fresh) await _part(f).rename(dest.path);
+      _remember([_job(kind, dest.path, f.sha256)]);
       set(pack);
     } catch (_) {
       // sem rede: na próxima sessão

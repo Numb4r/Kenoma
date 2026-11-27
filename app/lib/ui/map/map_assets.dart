@@ -360,13 +360,15 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
 
 /// 0.26.2: as regiões embutidas além da casa que ainda não estão em [assets] (São Paulo), uma de cada vez, depois que o
 /// mapa abriu. Cada uma entra no mundo inteira, quando termina de carregar.
-Future<void> addOtherRegions(MapAssets assets, {AssetBundle? bundle, bool Function()? alive}) async {
+///
+/// [far]: a região não toca o que o mapa já leu (o jogador e a câmera longe dela); aí ela entra sem subir a revisão.
+Future<void> addOtherRegions(MapAssets assets, {AssetBundle? bundle, bool Function()? alive, bool Function(LoadedRegion region)? far}) async {
   final world = assets.world, epoch = assets.epoch;
   if (world == null || epoch == null) return;
   for (final id in epoch.regionPacks.keys.where((id) => id != kRegion && !world.hasRegion(id))) {
     final region = await _embeddedInIsolate(id, epoch, bundle ?? rootBundle) ?? await loadEmbeddedRegion(region: id, epoch: epoch, bundle: bundle);
     if (region == null || !(alive?.call() ?? true)) continue;
-    world.addRegion(region);
+    world.addRegion(region, bump: !(far?.call(region) ?? false));
   }
 }
 

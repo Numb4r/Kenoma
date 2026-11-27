@@ -323,6 +323,17 @@ class WorldView {
 
   /// Recalcula os spawns em volta de ([lat], [lon]) em [tUtc], coleta as Fagulhas dentro do alcance e dispara o que a
   /// entrada na Aura faz. Devolve as Fagulhas coletadas agora.
+  /// 0.26.3: as células em volta de ([lat], [lon]) geradas e guardadas antes do primeiro [refresh] (na tela de
+  /// carregamento), sem tocar no estado: o primeiro refresh perto dali só lê o cache.
+  void warm({required double lat, required double lon, required int tUtc}) {
+    final base = field.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel);
+    personal?.around(lat: lat, lon: lon, tUtc: tUtc, radiusM: reachM, playerLevel: state.playerLevel);
+    // Os Outros Veilbreakers de cada Eco (a primeira consulta monta os caminhos das células em volta; eram ~70 ms no g54).
+    for (final s in base) {
+      veil?.goneAt(s, tUtc, playerDistM: double.infinity);
+    }
+  }
+
   List<WorldSpawn> refresh({required double lat, required double lon, required int tUtc}) {
     final (px, py) = latLonToTileFraction(lat, lon, biomeZoom);
     _px = px;

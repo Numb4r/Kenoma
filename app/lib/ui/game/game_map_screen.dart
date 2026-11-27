@@ -1,6 +1,7 @@
 import '../../dev/tap_latency.dart';
 import '../../core/features.dart';
 import 'dart:async';
+import 'dart:io' show File;
 import 'dart:math' as math;
 
 import 'package:flutter/scheduler.dart' show SchedulerBinding, SchedulerPhase;
@@ -13,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback, rootBundle;
 import '../lab/lab_art.dart' show loadAsepriteArt;
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart' show getApplicationSupportDirectory;
 import 'package:vibration/vibration.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -79,6 +81,8 @@ import '../../data/geolocator_source.dart';
 import '../colors.dart';
 import '../map/map_assets.dart';
 import 'loading_screen.dart';
+import '../../data/sha_memo.dart';
+import '../../world/places.dart' show kUnicamp;
 import '../../core/epochs.dart' show EpochSchedule;
 import '../../net/signed_feed.dart' show loadEpochsJson;
 import '../../player/circle.dart' show abilitiesOf, circleAbilities;
@@ -175,6 +179,27 @@ class _Ready {
 
 class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserver {
   late final Future<Object> _loading = _load();
+
+  /// 0.26.3: os SHA-256 que já bateram nesta instalação (`ShaMemo`), pela data da última instalação ou atualização do APK.
+  /// Sem os plugins (testes) ou sem disco: nada guardado, tudo se confere.
+  static Future<void> _openShaMemo() async {
+    if (ShaMemo.current != null) return;
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final stamp = '${info.version}+${info.buildNumber}@${info.updateTime?.millisecondsSinceEpoch ?? 0}';
+      final dir = await getApplicationSupportDirectory();
+      await ShaMemo.open(File('${dir.path}/sha_conferidos.json'), stamp);
+    } catch (_) {
+      // sem os plugins: confere sempre
+    }
+  }
+
+  /// 0.26.3: o jogador ou a câmera a menos de ~2 km da região [r] (em células z21): o mapa pode ter lido tiles dela.
+  static bool _near(LoadedRegion r, WorldView world, GameMapGame game) {
+    const m = 120.0; // ~2 km
+    bool at(double x, double y) => x + m >= r.grid.x0 && x - m < r.grid.x0 + r.grid.width && y + m >= r.grid.y0 && y - m < r.grid.y0 + r.grid.height;
+    return (world.hasPlayer && at(world.playerX, world.playerY)) || at(game.follow.camera.centerX, game.follow.camera.centerY);
+  }
 
   /// 0.26.2: o progresso da abertura (0 a 1), para a tela de carregamento.
   final _progress = ValueNotifier<double>(0);
@@ -703,16 +728,21 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     // fora da thread da interface): o kit do HUD, as Fagulhas e a folha de cada família que nasce na época. A tela de
     // carregamento acompanha cada passo; o resto (as outras regiões, o tráfego) vem com o mapa aberto.
     final bundle = widget.bundle;
+    // 0.26.3: a memória dos SHA-256 abre junto com a arte; só os pacotes de região esperam por ela (no g54 o mapa aparece
+    // na mesma hora: não são eles que seguram a abertura).
+    final shaF = _openShaMemo();
     final List<String> families;
     try {
       families = CreatureArt.familiesOf(EpochSchedule.fromJson(await loadEpochsJson(bundle: bundle)).select(tools.clock.nowUtc).epoch);
     } catch (e) {
       return 'Não consegui ler as épocas: $e';
     }
+    // 0.26.3: o mapa abre na última posição conhecida (o cache do Android, ou a do simulador), e a tela de carregamento
+    // prepara aquela área; sem ela, o centro de sempre.
+    final startF = tools.source.lastKnown();
     var done = 0;
-    final total = 4 + families.length + 1; // pacotes, dados, kit, Fagulhas, famílias; o último passo é montar o mapa
+    final total = 5 + families.length + 2; // pacotes, dados, kit, Fagulhas, carimbos, famílias, a área de partida; o último é montar o mapa
     Future<T> step<T>(Future<T> f) => f.whenComplete(() => _progress.value = ++done / total);
-    final mapF = step(loadMapAssets(nowUtc: tools.clock.nowUtc, bundle: bundle, withVisual: true, withOtherRegions: false));
     final dataF = step(GameData.load(bundle));
     final artF = Future.wait([
       step(UiArt.load(bundle).then<void>((_) {}, onError: (Object _) {})),
@@ -721,6 +751,18 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     ]);
     // O tráfego do Aseprite (0.25.1) começa junto, sem segurar a abertura: em geral fica pronto antes do mapa.
     unawaited(TrafficArt.load(bundle));
+    // 0.26.3: os carimbos do Aseprite da cidade antes do mapa: chegando depois, o renderizador do Completo era refeito
+    // inteiro com o mapa já aberto.
+    final stampsF = step(loadAsepriteArt((p) async {
+      try {
+        final d = await (bundle ?? rootBundle).load(p);
+        return d.buffer.asUint8List(d.offsetInBytes, d.lengthInBytes);
+      } catch (_) {
+        return null;
+      }
+    }));
+    await shaF;
+    final mapF = step(loadMapAssets(nowUtc: tools.clock.nowUtc, bundle: bundle, withVisual: true, withOtherRegions: false));
     final result = await mapF;
     if (result is String) return result;
     final assets = result as MapAssets;
@@ -806,7 +848,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       final p = nearestPuddle(climate.puddlesNear(world.playerX, world.playerY, 1000 / world.metersPerCell21, tools.clock.nowUtc), world.playerX, world.playerY);
       return p == null ? null : tileFractionToLatLon(p.x, p.y, biomeZoom);
     };
+    final known = await startF;
+    final start = known ?? kUnicamp;
     final game = GameMapGame(
+      fallbackCenter: start,
       renderer: assets.makeRenderer(),
       visual: assets.visual!,
       style: ArtStyle(assets.biomes),
@@ -857,14 +902,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     game.wideZoom = () => session.state.setting(kWideZoomSetting);
     game.forcedWidthM = () => tools.forcedWidthM;
     game.asepriteArt = () => tools.asepriteArt;
-    unawaited(loadAsepriteArt((p) async {
-      try {
-        final d = await (widget.bundle ?? rootBundle).load(p);
-        return d.buffer.asUint8List(d.offsetInBytes, d.lengthInBytes);
-      } catch (_) {
-        return null;
-      }
-    }).then((m) => game.asepriteStamps = m));
+    game.asepriteStamps = await stampsF;
     game.styleAdvisor.alreadySuggested = session.state.setting(kSimpleSuggestedSetting);
     game.onSuggestSimple = () {
       session.state.setSetting(kSimpleSuggestedSetting, true);
@@ -1074,6 +1112,12 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       game.rotation.toggleFollowHeading(); // volta ao modo que o jogador deixou ligado
       WidgetsBinding.instance.addPostFrameCallback((_) => _setFollowHeading(true));
     }
+    // 0.26.3: os tiles da cidade, o tráfego e as células em volta de onde o mapa abre, ainda na tela de carregamento (eram
+    // quadros de 60 a 200 ms logo depois de o mapa aparecer, no g54).
+    // Sem a última posição (o cache do Android não respondeu a tempo), só o que não depende do lugar: aquecer o centro de
+    // sempre custava ~300 ms de carregamento à toa para quem não está lá.
+    await step(game.warmUp(start.$1, start.$2, tUtc: tools.clock.nowUtc, seed: world.field.seed, area: known != null));
+    if (known != null) world.warm(lat: start.$1, lon: start.$2, tUtc: tools.clock.nowUtc);
     await artF;
     if (!mounted) return 'fechado';
     _ready = _Ready(assets, game, tracker, sub, data, session, world, layers, travel);
@@ -1085,9 +1129,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     // O acesso é pedido depois do primeiro quadro: o diálogo precisa de uma tela montada.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // 0.26.2: as outras regiões embutidas (São Paulo) entram com o mapa já aberto.
+      unawaited(ShaMemo.current?.save());
       // ponytail: espera fixa de 5 s (o aquecimento do mapa — prédios, clima, faixas — derruba quadros nos primeiros ~3 s
       // no g54); trocar por um sinal de quadros estáveis se o aquecimento mudar de tamanho.
-      _otherRegions = Timer(const Duration(seconds: 5), () => unawaited(addOtherRegions(assets, bundle: bundle, alive: () => mounted)));
+      _otherRegions = Timer(const Duration(seconds: 5), () => unawaited(addOtherRegions(assets, bundle: bundle, alive: () => mounted, far: (r) => !_near(r, world, game))));
       final note = session.loadNote;
       if (note != null) _toast(note, seconds: 8);
       unawaited(_patrol?.sync());

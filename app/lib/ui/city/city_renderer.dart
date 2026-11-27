@@ -56,6 +56,10 @@ class CityRenderer {
   final int cellsPerTile;
   final int chunkCells;
   final double budgetMs;
+
+  /// 0.26.3: o orçamento por quadro dos blocos que ainda não existem (buraco na tela até sair): 12 ms, ou o [budgetMs] se
+  /// ele for maior.
+  late double missingBudgetMs = budgetMs > 12 ? budgetMs : 12;
   final int maxChunks;
   final CityUpright upright;
 
@@ -145,9 +149,11 @@ class CityRenderer {
     final stale = [for (final id in ids) if (_chunks[id] case final c? when c.frame != goal || c.key != key || _dirty.contains(id)) id]..sort((a, b) => dist(a).compareTo(dist(b)));
     rebuiltLastFrame = 0;
     final rs = Stopwatch()..start();
+    // 0.26.3: os que faltam também no orçamento (antes saíam todos no mesmo quadro: 110 a 210 ms na abertura e a cada salto
+    // da câmera no g54), do centro para fora e pelo menos um por quadro; o resto do anel sai nos quadros seguintes.
     for (final id in [...missing, ...stale]) {
       final isMissing = !_chunks.containsKey(id);
-      if (!isMissing && rebuiltLastFrame > 0 && rs.elapsedMicroseconds > budgetMs * 1000) break;
+      if (rebuiltLastFrame > 0 && rs.elapsedMicroseconds > (isMissing ? missingBudgetMs : budgetMs) * 1000) break;
       _build(id, goal, key, sunAltDeg, sunAzDeg, mpc);
       rebuiltLastFrame++;
     }
@@ -314,7 +320,11 @@ class CityRenderer {
     }
   }
 
-  /// Esquece todos os blocos (chegou bloco ou região nova, ou trocou o estilo).
+  /// 0.26.3: todos os blocos ficam para refazer, mas continuam desenhados até sair o novo (no orçamento do quadro ou em
+  /// segundo plano). Para quando chega bloco ou região nova: [clear] deixava a tela vazia e refazia tudo num quadro só.
+  void invalidateAll() => _dirty.addAll(_chunks.keys);
+
+  /// Esquece todos os blocos (trocou o estilo).
   void clear() {
     for (final c in _chunks.values) {
       c.image.dispose();
