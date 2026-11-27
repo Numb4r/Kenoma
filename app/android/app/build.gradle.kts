@@ -83,3 +83,11 @@ val baixarRegioes = tasks.register<Exec>("baixarRegioes") {
     commandLine("bash", "scripts/baixar_regioes.sh")
 }
 tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(baixarRegioes) }
+
+// 0.26.2: as folhas de arte das criaturas (uma por família) saem das pastas de assets/art/creatures/ antes de empacotar;
+// com a fonte igual (o SHA-256 no JSON da folha), o script só confere.
+val folhasCriaturas = tasks.register<Exec>("folhasCriaturas") {
+    workingDir = rootProject.file("../..")
+    commandLine("python3", "scripts/pack_creature_atlas.py")
+}
+tasks.matching { it.name == "preBuild" }.configureEach { dependsOn(folhasCriaturas) }

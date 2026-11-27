@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 0.26.2: o contorno #1a1424 (CLAUDE.md), o fundo do splash do Android e da janela até o primeiro quadro do Flutter. -->
+    <color name="kenoma_dark">#FF1A1424</color>
+</resources>

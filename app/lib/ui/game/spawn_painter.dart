@@ -14,6 +14,7 @@ import '../../world/creature_wind.dart';
 import '../../world/map_camera.dart';
 import '../../world/spawn_field.dart';
 import '../colors.dart';
+import '../sprites/sprite_image.dart' show provisionalArt;
 import '../sprites/variant_art.dart' show shinyPulse;
 import '../sprites/material_sprites.dart';
 import 'creature_anim.dart';
@@ -123,6 +124,8 @@ void paintSpawns(
         if (near) _touchRingOf(canvas, center, s, size, avoid, spawnColor(s, typeOf));
         continue;
       }
+      // 0.26.2: na release o sprite provisório nunca aparece; sem a arte do Aseprite (ainda carregando) o Eco não se desenha.
+      if (!provisionalArt) continue;
       if (appear < 1) {
         // A costura abre do centro para fora e o Eco aparece dentro dela.
         canvas.save();
@@ -438,19 +441,21 @@ void _animatedEco(ui.Canvas canvas, ui.Offset c, WorldSpawn s, CreatureArt art, 
   // 0.25.1: o gatilho de nascer (só durante a abertura): a poça e o chão por baixo do corpo; o raio, as faíscas do poste e
   // a neblina por cima, acesos depois do tom.
   if (trigger != null) paintSpawnTrigger(canvas, trigger.$1, c, appear, size, s.uid, origin: trigger.$2, behind: true);
-  if (castsGroundShadow(s.entryId)) {
-    canvas.drawOval(
-      ui.Rect.fromCenter(center: c.translate(0, size * 0.42), width: size * 0.55, height: size * 0.14),
-      ui.Paint()..color = kOutline.withValues(alpha: 0.45)..isAntiAlias = false,
-    );
-  }
   final kind = animOf(appear: appear, alert: near, moving: moving);
   final strip = art.anims[kind] ?? art.anims[CreatureAnim.idle]!;
   final frame = kind == CreatureAnim.spawn ? onceFrame(appear, strip.frames) : loopFrame(time, strip.frames, strip.fps, uid: s.uid);
   final f = art.frame.toDouble();
   final src = ui.Rect.fromLTWH(frame * f, 0, f, f);
   final dst = ui.Rect.fromCenter(center: c, width: size, height: size);
+  // A variante ainda sendo montada (0.26.2, sob demanda): a criatura aparece no próximo quadro, nunca com as cores erradas.
   final body = art.bodyOf(kind, s.shiny ? null : s.variant);
+  if (body == null) return;
+  if (castsGroundShadow(s.entryId)) {
+    canvas.drawOval(
+      ui.Rect.fromCenter(center: c.translate(0, size * 0.42), width: size * 0.55, height: size * 0.14),
+      ui.Paint()..color = kOutline.withValues(alpha: 0.45)..isAntiAlias = false,
+    );
+  }
   final alpha = near ? 1.0 : 0.8;
   void flipped(ui.Canvas cv, void Function() draw) {
     final leaning = lean.abs() >= 1e-3;

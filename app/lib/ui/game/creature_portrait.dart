@@ -9,15 +9,19 @@ import 'package:flutter/scheduler.dart';
 
 import 'creature_anim.dart';
 import 'creature_art.dart';
+import '../sprites/sprite_image.dart' show kSilhouetteArgb;
 
 class CreaturePortrait extends StatefulWidget {
-  const CreaturePortrait({required this.art, required this.size, this.variant, super.key});
+  const CreaturePortrait({required this.art, required this.size, this.variant, this.silhouette = false, super.key});
 
   final CreatureArt art;
   final double size;
 
   /// 0.25.1: a variante escolhida no detalhe (`urban`, `crimson`...), pela mesma troca de cores do mapa. `null`: a comum.
   final String? variant;
+
+  /// 0.26.2: a silhueta escura da espécie (a das não vistas): só o corpo, numa cor, sem LEDs nem brilho.
+  final bool silhouette;
 
   @override
   State<CreaturePortrait> createState() => _CreaturePortraitState();
@@ -40,14 +44,17 @@ class _CreaturePortraitState extends State<CreaturePortrait> with SingleTickerPr
   }
 
   @override
-  Widget build(BuildContext context) => SizedBox(width: widget.size, height: widget.size, child: CustomPaint(painter: _PortraitPainter(widget.art.portrait!, widget.art.portraitOf(widget.variant)!, _t, widget.variant)));
+  Widget build(BuildContext context) => SizedBox(width: widget.size, height: widget.size, child: CustomPaint(painter: _PortraitPainter(widget.art.portrait!, widget.silhouette ? widget.art.portrait!.body : widget.art.portraitOf(widget.variant), _t, widget.variant, widget.silhouette)));
 }
 
 class _PortraitPainter extends CustomPainter {
-  _PortraitPainter(this.strip, this.body, this.t, this.variant);
+  _PortraitPainter(this.strip, this.body, this.t, this.variant, this.silhouette);
+
+  final bool silhouette;
 
   final CreatureStrip strip;
-  final ui.Image body;
+  /// O corpo na variante; `null` enquanto ela é montada (0.26.2): nada neste quadro.
+  final ui.Image? body;
   final double t;
   final String? variant;
 
@@ -60,11 +67,17 @@ class _PortraitPainter extends CustomPainter {
     final dst = Rect.fromCenter(center: size.center(Offset.zero), width: side, height: side);
     final src = Rect.fromLTWH(frame * f, 0, f, f);
     final px = Paint()..filterQuality = FilterQuality.none;
+    final body = this.body;
+    if (body == null) return;
+    if (silhouette) {
+      canvas.drawImageRect(body, src, dst, px..colorFilter = const ColorFilter.mode(Color(kSilhouetteArgb), BlendMode.srcIn));
+      return;
+    }
     canvas.drawImageRect(body, src, dst, px);
     if (strip.glow case final g?) canvas.drawImageRect(g, src, dst, px);
     if (ledLit(0, t) && strip.leds != null) canvas.drawImageRect(strip.leds!, src, dst, px);
   }
 
   @override
-  bool shouldRepaint(_PortraitPainter old) => old.t != t || old.variant != variant;
+  bool shouldRepaint(_PortraitPainter old) => old.t != t || old.variant != variant || old.silhouette != silhouette;
 }

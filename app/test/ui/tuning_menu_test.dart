@@ -323,7 +323,10 @@ void main() {
   group('simulador de GPS, relógio e mapa do jogo no menu de debug', () {
     DevTools newTools() => DevTools(realSource: FakeGps());
     // Os que abrem o mapa do jogo: relógio e clima fixos (`support/fixed_map_world.dart`); os do relógio do menu usam o real.
-    DevTools mapTools(WidgetTester tester) => fixedDevTools(tester, realSource: FakeGps());
+    DevTools mapTools(WidgetTester tester) {
+      resetArtLoading();
+      return fixedDevTools(tester, realSource: FakeGps());
+    }
 
     testWidgets('o menu tem o mapa do jogo, o simulador com as três velocidades e o relógio UTC', (tester) async {
       await pumpMenu(tester, tools: newTools());

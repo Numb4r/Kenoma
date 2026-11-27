@@ -129,6 +129,7 @@ Future<Env> pumpGame(
   tester.view.physicalSize = screen;
   tester.view.devicePixelRatio = 2.625;
   addTearDown(tester.view.reset);
+  resetArtLoading();
   final gps = FakeGps();
   final gw = gateway ?? FakeGateway(state: LocationPermissionState.granted);
   // Relógio, clima e identidade fixos (`support/fixed_map_world.dart`): o mundo do teste não depende da hora nem da carga.
@@ -296,10 +297,11 @@ void main() {
       tester.view.devicePixelRatio = 2.625;
       addTearDown(tester.view.reset);
       final gps = FakeGps();
-      final tools = DevTools(realSource: gps);
+      resetArtLoading();
+      final tools = fixedDevTools(tester, realSource: gps);
       tools.simulator.accuracyM = 80;
       await tools.setUseSimulator(true);
-      await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: FakeGateway(state: LocationPermissionState.granted), bundle: _Bundle(realAssets()))));
+      await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: FakeGateway(state: LocationPermissionState.granted), bundle: _Bundle(realAssets()), store: fixedSave())));
       for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
         await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
         await tester.pump();
@@ -681,12 +683,13 @@ void main() {
       tester.view.devicePixelRatio = 2.625;
       addTearDown(tester.view.reset);
       final files = realAssets();
-      // O relógio aqui é o real: adultera o pacote de todas as épocas, para valer antes e depois do começo da 11 e da 12.
+      // Adultera o pacote de todas as épocas: vale com qualquer relógio, antes e depois do começo da 11 e da 12.
       for (final k in [for (final f in campinasPackFiles) 'assets/regions/$f']) {
         files[k] = Uint8List.fromList(files[k]!)..[3000] ^= 0xff;
       }
-      final tools = DevTools(realSource: FakeGps());
-      await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: FakeGateway(), bundle: _Bundle(files))));
+      resetArtLoading();
+      final tools = fixedDevTools(tester, realSource: FakeGps());
+      await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: FakeGateway(), bundle: _Bundle(files), store: fixedSave())));
       for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
         await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
         await tester.pump();
@@ -701,13 +704,14 @@ void main() {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.625;
       addTearDown(tester.view.reset);
-      final tools = DevTools(realSource: FakeGps());
+      resetArtLoading();
+      final tools = fixedDevTools(tester, realSource: FakeGps());
       await tools.setUseSimulator(true);
       await tester.pumpWidget(MaterialApp(
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                builder: (_) => GameMapScreen(tools: tools, gateway: FakeGateway(state: LocationPermissionState.granted), bundle: _Bundle(realAssets())))),
+                builder: (_) => GameMapScreen(tools: tools, gateway: FakeGateway(state: LocationPermissionState.granted), bundle: _Bundle(realAssets()), store: fixedSave()))),
             child: const Text('abrir'),
           ),
         ),

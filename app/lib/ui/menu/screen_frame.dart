@@ -88,8 +88,9 @@ class SpeciesImage extends StatelessWidget {
 
   Widget _art() {
     if (sparkType case final t?) return SparkPortrait(type: t, size: size, silhouette: silhouette);
-    final animated = speciesId == null || silhouette ? null : CreatureArt.of(speciesId!);
-    if (animated?.portrait != null) return CreaturePortrait(art: animated!, size: size, variant: variant);
+    // A arte do Aseprite, também na silhueta das não vistas (0.26.2: a forma da espécie, não a do sprite provisório).
+    final animated = speciesId == null ? null : CreatureArt.of(speciesId!);
+    if (animated?.portrait != null) return CreaturePortrait(art: animated!, size: size, variant: variant, silhouette: silhouette);
     final img = sprite == null ? null : RawImage(image: sprite!.normal, filterQuality: FilterQuality.none, fit: BoxFit.contain);
     return Container(
       width: size,

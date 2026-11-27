@@ -279,7 +279,8 @@ void _paintExit(ui.Canvas canvas, ui.Offset c0, _Exit e, double size, ui.Offset 
   final animS = strip.frames / strip.fps, u = (e.t / animS).clamp(0.0, 1.0);
   // A fuga sobe e sai de lado; a sintonia fica no lugar.
   final c = e.tuned ? c0 : c0.translate((e.left ? -1 : 1) * size * 1.6 * u * u, -size * 1.2 * u);
-  if (e.t < animS) {
+  final body = art.bodyOf(kind, e.variant);
+  if (e.t < animS && body != null) {
     final frame = onceFrame(u, strip.frames), f = art.frame.toDouble();
     final src = ui.Rect.fromLTWH(frame * f, 0, f, f), dst = ui.Rect.fromCenter(center: c, width: size, height: size);
     void draw(ui.Image img, {ui.Color? tone}) {
@@ -295,7 +296,7 @@ void _paintExit(ui.Canvas canvas, ui.Offset c0, _Exit e, double size, ui.Offset 
       canvas.restore();
     }
 
-    draw(art.bodyOf(kind, e.variant), tone: tone); // o corpo no tom da noite, como no mapa
+    draw(body, tone: tone); // o corpo no tom da noite, como no mapa
     void light() {
       if (strip.glow case final g?) draw(g);
       if (strip.leds case final l?) draw(l);

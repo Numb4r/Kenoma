@@ -25,15 +25,31 @@ class UiArt {
   /// Carrega uma vez tudo o que existir em `assets/art/ui/` (as bordas das nove partes vêm de `slices.json`).
   static Future<UiArt> load([AssetBundle? bundle]) async {
     if (instance != null) return instance!;
-    final b = bundle ?? rootBundle;
+    return _loading ??= _load(bundle ?? rootBundle).whenComplete(() => _loading = null);
+  }
+
+  /// A carga em andamento (0.26.2: o `main` e a tela de carregamento do mapa pedem juntos; uma leitura só).
+  static Future<UiArt>? _loading;
+
+  /// Só para testes: esquece a carga em andamento (a de um teste anterior morre com a zona dele e nunca termina).
+  @visibleForTesting
+  static void resetLoading() => _loading = null;
+
+  static Future<UiArt> _load(AssetBundle b) async {
     final images = <String, ui.Image>{};
     var insets = <String, List<int>>{};
     try {
       final manifest = await AssetManifest.loadFromAssetBundle(b);
-      for (final path in manifest.listAssets().where((p) => p.startsWith('assets/art/ui/') && p.endsWith('.png'))) {
+      // 0.26.2: todas em paralelo (uma por vez eram 0,7 a 1,7 s no g54; a decodificação corre fora da thread da interface).
+      Future<ui.Image> decode(String path) async {
         final bytes = await b.load(path);
-        final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
-        images[path.substring('assets/art/ui/'.length, path.length - 4)] = (await codec.getNextFrame()).image;
+        return (await (await ui.instantiateImageCodec(bytes.buffer.asUint8List())).getNextFrame()).image;
+      }
+
+      final paths = manifest.listAssets().where((p) => p.startsWith('assets/art/ui/') && p.endsWith('.png')).toList();
+      final decoded = await Future.wait(paths.map(decode));
+      for (var i = 0; i < paths.length; i++) {
+        images[paths[i].substring('assets/art/ui/'.length, paths[i].length - 4)] = decoded[i];
       }
       final raw = jsonDecode(await b.loadString('assets/art/ui/slices.json')) as Map<String, dynamic>;
       insets = {for (final e in raw.entries) e.key: [for (final v in e.value as List<dynamic>) v as int]};

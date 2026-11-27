@@ -5,6 +5,8 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show kDebugMode;
+
 import '../../core/species_ids.dart';
 import 'phase1_sprites.dart';
 import 'sprite_data.dart';
@@ -12,6 +14,18 @@ import 'sprite_downscale.dart';
 import 'variant_art.dart';
 
 const int spriteSize = 48;
+
+/// 0.26.2: o sprite provisório (o gerado por código, a bolha com olhos) só na build de debug (emulador, testes). Na
+/// release (e na profile, que mede como ela) toda criatura tem a arte do Aseprite; enquanto ela não carregou, o
+/// [EcoSprite] é a silhueta escura (a das não vistas no Bestiário) e o mapa não desenha a criatura. Os testes trocam para
+/// conferir a release.
+bool provisionalArt = kDebugMode;
+
+/// A cor da silhueta (a `kPanelLine` das células não vistas).
+const int kSilhouetteArgb = 0xFF3D3357;
+
+/// A paleta da silhueta de [rows]: todo pixel com cor vira [kSilhouetteArgb].
+Map<String, int> _silhouetteOf(List<String> rows) => {for (final r in rows) for (final c in r.split('')) if (c != '.') c: kSilhouetteArgb};
 
 /// Cores das costuras na versão "acesa", para pulsar sobre a versão normal.
 const int _seamBright = 0xFFD8CCFF;
@@ -27,8 +41,8 @@ Uint8List spritePixels(List<String> rows, {bool brightSeams = false, Map<String,
       final ch = rows[y][x];
       if (ch == '.') continue;
       var argb = palette[ch] ?? (throw StateError('Caractere sem cor no sprite: "$ch"'));
-      if (brightSeams && ch == 'v') argb = _seamBright;
-      if (brightSeams && ch == 'u') argb = _glowBright;
+      if (brightSeams && ch == 'v' && argb != kSilhouetteArgb) argb = _seamBright;
+      if (brightSeams && ch == 'u' && argb != kSilhouetteArgb) argb = _glowBright;
       final i = (y * side + x) * 4;
       bytes[i] = (argb >> 16) & 0xff;
       bytes[i + 1] = (argb >> 8) & 0xff;
@@ -123,7 +137,10 @@ class EcoSprite {
   final ui.Image normal;
   final ui.Image bright;
 
-  static Future<EcoSprite> load(String speciesId) => _from(ecoSpriteRows(speciesId), spritePaletteOf(speciesId));
+  static Future<EcoSprite> load(String speciesId) {
+    final rows = ecoSpriteRows(speciesId);
+    return _from(rows, provisionalArt ? spritePaletteOf(speciesId) : _silhouetteOf(rows));
+  }
 
   /// Silhueta neutra, para o modo de tipo oculto.
   static Future<EcoSprite> loadNeutral() => _from(neutralSprite);

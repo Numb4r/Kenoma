@@ -1,7 +1,7 @@
 name: kenoma
 description: "Kenoma: Veilbreakers, RPG mobile de exploração via GPS."
 publish_to: 'none'
-version: 0.26.1+54
+version: 0.26.2+55
 
 environment:
   sdk: ^3.13.4
@@ -46,66 +46,7 @@ flutter:
     - assets/art/traffic/
     - assets/art/sparks/
     - assets/art/creatures/
-    - assets/art/creatures/bit_arquetipo/
-    - assets/art/creatures/bit_entidade/
-    - assets/art/creatures/bitling/
-    - assets/art/creatures/bouldkin/
-    - assets/art/creatures/brookkin/
-    - assets/art/creatures/cairnhollow/
-    - assets/art/creatures/cinderkin/
-    - assets/art/creatures/clod_arquetipo/
-    - assets/art/creatures/clod_entidade/
-    - assets/art/creatures/coilkin/
-    - assets/art/creatures/cratercoil/
-    - assets/art/creatures/duskwreath/
-    - assets/art/creatures/eaveshroud/
-    - assets/art/creatures/fairkin/
-    - assets/art/creatures/frond_arquetipo/
-    - assets/art/creatures/frond_entidade/
-    - assets/art/creatures/frondling/
-    - assets/art/creatures/gatewarden/
-    - assets/art/creatures/glare_arquetipo/
-    - assets/art/creatures/glare_entidade/
-    - assets/art/creatures/glimlet/
-    - assets/art/creatures/glitchkin/
-    - assets/art/creatures/gratekin/
-    - assets/art/creatures/hollowkin/
-    - assets/art/creatures/hum_arquetipo/
-    - assets/art/creatures/hum_entidade/
-    - assets/art/creatures/humoth/
-    - assets/art/creatures/kilnshade/
-    - assets/art/creatures/noonglass/
-    - assets/art/creatures/pebblet/
-    - assets/art/creatures/prismkin/
-    - assets/art/creatures/rill_arquetipo/
-    - assets/art/creatures/rill_entidade/
-    - assets/art/creatures/rillet/
-    - assets/art/creatures/rootseer/
-    - assets/art/creatures/rust_arquetipo/
-    - assets/art/creatures/rust_entidade/
-    - assets/art/creatures/rustling/
-    - assets/art/creatures/shade_arquetipo/
-    - assets/art/creatures/shade_entidade/
-    - assets/art/creatures/shadekin/
-    - assets/art/creatures/soot_arquetipo/
-    - assets/art/creatures/soot_entidade/
-    - assets/art/creatures/sootling/
-    - assets/art/creatures/sprig_arquetipo/
-    - assets/art/creatures/sprig_entidade/
-    - assets/art/creatures/sprigglet/
-    - assets/art/creatures/staticroost/
-    - assets/art/creatures/stormlamp/
-    - assets/art/creatures/thicketkin/
-    - assets/art/creatures/umbrel/
-    - assets/art/creatures/vigilwick/
-    - assets/art/creatures/wellmirror/
-    - assets/art/creatures/wisp_arquetipo/
-    - assets/art/creatures/wisp_entidade/
-    - assets/art/creatures/wisplet/
-    - assets/art/creatures/wyrm_arquetipo/
-    - assets/art/creatures/wyrm_entidade/
-    - assets/art/creatures/wyrmkin/
-    - assets/art/creatures/wyrmlet/
+    - assets/art/creatures/atlas/
     - assets/lab/
     - assets/regions/
     - assets/fonts/OFL-Silkscreen.txt

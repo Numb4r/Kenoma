@@ -9,6 +9,9 @@ import 'package:kenoma/dev/gps_simulator.dart';
 import 'package:kenoma/player/game_state.dart' show saveSchemaVersion;
 import 'package:kenoma/save/fresh_start.dart' show kFreshStartGroupKey;
 import 'package:kenoma/save/save_store.dart';
+import 'package:kenoma/ui/craft/ui_art.dart';
+import 'package:kenoma/ui/game/creature_art.dart';
+import 'package:kenoma/ui/game/traffic_art.dart';
 import 'package:kenoma/world/debug_force.dart';
 import 'package:kenoma/world/places.dart';
 import 'package:kenoma/world/position_source.dart';
@@ -44,3 +47,11 @@ MemorySaveStore fixedSave() => MemorySaveStore()
     'founder': {'player_id': kTestPlayerId, 'first_install_version': 'dev', 'first_seen_utc': kTestUtc},
     kFreshStartGroupKey: kTestGroup,
   };
+
+/// As cargas de arte que o mapa espera na tela de carregamento (0.26.2) guardam o Future em andamento; o de um teste
+/// anterior morre com a zona dele e o mapa do teste seguinte esperaria para sempre. Antes de abrir cada mapa: do zero.
+void resetArtLoading() {
+  UiArt.resetLoading();
+  SparkArt.resetLoading();
+  CreatureArt.resetLoading();
+}

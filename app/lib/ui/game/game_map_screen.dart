@@ -78,6 +78,9 @@ import '../../world/player_tracker.dart';
 import '../../data/geolocator_source.dart';
 import '../colors.dart';
 import '../map/map_assets.dart';
+import 'loading_screen.dart';
+import '../../core/epochs.dart' show EpochSchedule;
+import '../../net/signed_feed.dart' show loadEpochsJson;
 import '../../player/circle.dart' show abilitiesOf, circleAbilities;
 import '../tuning/tuning_screen.dart' show PixelButton;
 import '../menu/phone_menu.dart';
@@ -172,6 +175,12 @@ class _Ready {
 
 class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserver {
   late final Future<Object> _loading = _load();
+
+  /// 0.26.2: o progresso da abertura (0 a 1), para a tela de carregamento.
+  final _progress = ValueNotifier<double>(0);
+
+  /// A espera até montar as outras regiões embutidas (cancelada se o mapa fecha antes).
+  Timer? _otherRegions;
   _Ready? _ready;
 
   // O teste de viaduto da simulação do tráfego: montado no primeiro uso, já com a latitude do jogador.
@@ -690,7 +699,29 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
 
   Future<Object> _load() async {
     final dpr = View.of(context).devicePixelRatio;
-    final result = await loadMapAssets(nowUtc: tools.clock.nowUtc, bundle: widget.bundle, withVisual: true);
+    // 0.26.2: o que o mapa e o Bestiário usam primeiro carrega junto com os pacotes de região (as imagens se decodificam
+    // fora da thread da interface): o kit do HUD, as Fagulhas e a folha de cada família que nasce na época. A tela de
+    // carregamento acompanha cada passo; o resto (as outras regiões, o tráfego) vem com o mapa aberto.
+    final bundle = widget.bundle;
+    final List<String> families;
+    try {
+      families = CreatureArt.familiesOf(EpochSchedule.fromJson(await loadEpochsJson(bundle: bundle)).select(tools.clock.nowUtc).epoch);
+    } catch (e) {
+      return 'Não consegui ler as épocas: $e';
+    }
+    var done = 0;
+    final total = 4 + families.length + 1; // pacotes, dados, kit, Fagulhas, famílias; o último passo é montar o mapa
+    Future<T> step<T>(Future<T> f) => f.whenComplete(() => _progress.value = ++done / total);
+    final mapF = step(loadMapAssets(nowUtc: tools.clock.nowUtc, bundle: bundle, withVisual: true, withOtherRegions: false));
+    final dataF = step(GameData.load(bundle));
+    final artF = Future.wait([
+      step(UiArt.load(bundle).then<void>((_) {}, onError: (Object _) {})),
+      step(SparkArt.load(bundle)),
+      for (final f in families) step(CreatureArt.loadFamilies([f], bundle)),
+    ]);
+    // O tráfego do Aseprite (0.25.1) começa junto, sem segurar a abertura: em geral fica pronto antes do mapa.
+    unawaited(TrafficArt.load(bundle));
+    final result = await mapF;
     if (result is String) return result;
     final assets = result as MapAssets;
     final GameData data;
@@ -699,10 +730,11 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     final List<ui.Image> playerFrames;
     final ui.Image familiar;
     try {
-      data = await GameData.load(widget.bundle);
+      data = await dataF;
       playerFrames = await loadPlayerFramesMap();
       familiar = await loadFamiliarImage();
-      final onMap = [for (final s in data.tuning.species) if (appearsOnMap(s.id)) s];
+      // O sprite provisório do mapa (0.26.2): só fora da release, que nunca o desenha (1 s a menos na abertura do g54).
+      final onMap = [if (provisionalArt) for (final s in data.tuning.species) if (appearsOnMap(s.id)) s];
       for (final s in onMap) {
         sprites[s.id] = (await EcoSprite.loadMap(s.id)).normal;
       }
@@ -1026,10 +1058,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     world.onRitualTarget = _startRitual;
     world.onCollected = game.onCollected;
     world.onBagFull = _onBagFull;
-    unawaited(UiArt.load()); // os ícones dos coletores plantados no mapa
-    unawaited(CreatureArt.loadAll(widget.bundle)); // 0.25.0: as criaturas com arte animada
-    unawaited(TrafficArt.load(widget.bundle)); // 0.25.1: o tráfego e as Fagulhas do Aseprite
-    unawaited(SparkArt.load(widget.bundle));
+    unawaited(CreatureArt.loadAll(widget.bundle)); // as famílias fora da época, depois do mapa: as criaturas com arte animada
     world.onShiny = _onShiny;
     world.onEnteredRange = _onEnteredRange;
     _climate = ClimateDriver(data: data, world: climate, online: () => session.state.setting('weather_online'));
@@ -1045,6 +1074,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       game.rotation.toggleFollowHeading(); // volta ao modo que o jogador deixou ligado
       WidgetsBinding.instance.addPostFrameCallback((_) => _setFollowHeading(true));
     }
+    await artF;
+    if (!mounted) return 'fechado';
     _ready = _Ready(assets, game, tracker, sub, data, session, world, layers, travel);
     travel.addListener(() => _onTravel(_ready!));
     PatrolController.instance.addListener(_rebuild); // o atalho da Patrulha entra e sai da faixa
@@ -1053,6 +1084,10 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     session.state.addListener(_onStateForFamiliar);
     // O acesso é pedido depois do primeiro quadro: o diálogo precisa de uma tela montada.
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 0.26.2: as outras regiões embutidas (São Paulo) entram com o mapa já aberto.
+      // ponytail: espera fixa de 5 s (o aquecimento do mapa — prédios, clima, faixas — derruba quadros nos primeiros ~3 s
+      // no g54); trocar por um sinal de quadros estáveis se o aquecimento mudar de tamanho.
+      _otherRegions = Timer(const Duration(seconds: 5), () => unawaited(addOtherRegions(assets, bundle: bundle, alive: () => mounted)));
       final note = session.loadNote;
       if (note != null) _toast(note, seconds: 8);
       unawaited(_patrol?.sync());
@@ -1186,6 +1221,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     PatrolController.instance.removeListener(_pocketFps);
     PatrolController.instance.removeListener(_rebuild);
     _pocket.dispose();
+    _progress.dispose();
+    _otherRegions?.cancel();
     super.dispose();
   }
 
@@ -1198,7 +1235,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         builder: (context, snap) {
           if (snap.hasError) return _ErrorPanel(message: 'Erro ao abrir o mapa: ${snap.error}');
           final data = snap.data;
-          if (data == null) return const Center(child: Text('Carregando mapa...', style: TextStyle(fontSize: 16, color: kDim)));
+          if (data == null) return KenomaLoading(progress: _progress);
           if (data is String) return _ErrorPanel(message: data);
           return _view(data as _Ready);
         },

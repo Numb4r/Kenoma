@@ -2,12 +2,13 @@
 """Copia a arte pronta das criaturas (tools/art/creatures/<nome>/) para app/assets/art/creatures/ (0.25.1).
 
 Só entra a pasta completa (json, variantes, retrato e folha de conferência). Copia os PNG e os JSON, sem as fontes
-(.aseprite, .lua) nem a folha. Reescreve o índice (espécie -> pasta e gatilho de nascer da família) e as pastas de
-assets no pubspec.yaml. Rodar de novo é seguro.
+(.aseprite, .lua) nem a folha. Reescreve o índice (espécie -> pasta e gatilho de nascer da família) e refaz as folhas de
+cada família (pack_creature_atlas.py, 0.26.2), que é o que vai no APK. Rodar de novo é seguro.
 """
 import json
-import re
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -46,12 +47,9 @@ def main() -> None:
         out[sid] = entry
     index['species'] = dict(sorted(out.items()))
     index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2) + '\n')
-    pub = ROOT / 'app/pubspec.yaml'
-    text = re.sub(r'(    - assets/art/creatures/[a-z_]+/\n)+', '', pub.read_text())
-    folders = ''.join(f'    - assets/art/creatures/{e["folder"]}/\n' for e in sorted(out.values(), key=lambda e: e['folder']))
-    text = text.replace('    - assets/art/creatures/\n', '    - assets/art/creatures/\n' + folders, 1)
-    pub.write_text(text)
     print(f'{len(out)} espécies com arte: {", ".join(sorted(out))}')
+    # 0.26.2: o APK leva só as folhas de cada família (as pastas ficam de fonte, fora do pubspec).
+    subprocess.run([sys.executable, str(ROOT / 'scripts/pack_creature_atlas.py')], check=True)
 
 
 if __name__ == '__main__':

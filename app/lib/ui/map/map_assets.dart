@@ -5,11 +5,12 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:io' show Directory;
 import 'dart:ui' as ui;
 
-import 'package:flutter/services.dart' show AssetBundle, rootBundle;
+import 'package:flutter/services.dart' show AssetBundle, AssetManifest, rootBundle;
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/biomes.dart';
@@ -281,7 +282,10 @@ Future<MapLayers> openMapLayers({
 
 /// Carrega os assets do mapa em [nowUtc] (segundos UTC). Devolve [MapAssets] ou, se o pacote não bate
 /// com a época vigente (ou falta algo), a mensagem de erro em português: nunca lança.
-Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool withVisual = false, bool withAtlas = true}) async {
+///
+/// 0.26.2: sem [withOtherRegions], só a região da casa; as outras embutidas (São Paulo, 2,4 s no g54) entram depois, com
+/// [addOtherRegions], com o mapa já aberto.
+Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool withVisual = false, bool withAtlas = true, bool withOtherRegions = true}) async {
   final assets = bundle ?? rootBundle;
   final region = await loadRegion(region: kRegion, nowUtc: nowUtc, bundle: assets);
   if (region is RegionLoadError) return region.message;
@@ -326,7 +330,8 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
       world = LayeredWorld(regions: [
         LoadedRegion(id: kRegion, grid: loaded.pack, visual: pack, noWalk: noWalk, access: access, relief: relief, traffic: trafficPoints, buildings: buildings),
         // 0.25.2 (modo de desenvolvimento): as outras regiões da época que vêm no APK (São Paulo), sem baixar nada.
-        for (final id in loaded.epoch.regionPacks.keys.where((id) => id != kRegion)) ?await loadEmbeddedRegion(region: id, epoch: loaded.epoch, bundle: assets),
+        if (withOtherRegions)
+          for (final id in loaded.epoch.regionPacks.keys.where((id) => id != kRegion)) ?await loadEmbeddedRegion(region: id, epoch: loaded.epoch, bundle: assets),
       ], maxBlocks: MapFallbackBalance(balanceJson).memoryBlocks);
       visual = VisualMap(world);
     }
@@ -353,6 +358,49 @@ Future<Object> loadMapAssets({required int nowUtc, AssetBundle? bundle, bool wit
   }
 }
 
+/// 0.26.2: as regiões embutidas além da casa que ainda não estão em [assets] (São Paulo), uma de cada vez, depois que o
+/// mapa abriu. Cada uma entra no mundo inteira, quando termina de carregar.
+Future<void> addOtherRegions(MapAssets assets, {AssetBundle? bundle, bool Function()? alive}) async {
+  final world = assets.world, epoch = assets.epoch;
+  if (world == null || epoch == null) return;
+  for (final id in epoch.regionPacks.keys.where((id) => id != kRegion && !world.hasRegion(id))) {
+    final region = await _embeddedInIsolate(id, epoch, bundle ?? rootBundle) ?? await loadEmbeddedRegion(region: id, epoch: epoch, bundle: bundle);
+    if (region == null || !(alive?.call() ?? true)) continue;
+    world.addRegion(region);
+  }
+}
+
+/// A região [id] montada noutro isolate: os bytes dos pacotes `assets/regions/<id>_*` saem do APK aqui (leitura
+/// assíncrona), a conferência dos SHA e a leitura dos pacotes correm lá (2,8 s de thread da interface no g54 com São
+/// Paulo) e a região volta sem cópia. `null` se não deu (sem os pacotes, ou algo que não atravessa isolates): quem chama
+/// monta aqui mesmo.
+Future<LoadedRegion?> _embeddedInIsolate(String id, Epoch epoch, AssetBundle bundle) async {
+  try {
+    final manifest = await AssetManifest.loadFromAssetBundle(bundle);
+    final files = <String, Uint8List>{
+      for (final k in manifest.listAssets().where((k) => k.startsWith('assets/regions/${id}_')))
+        k: (await bundle.load(k)).buffer.asUint8List(),
+    };
+    if (files.isEmpty) return null;
+    return await Isolate.run(() => loadEmbeddedRegion(region: id, epoch: epoch, bundle: _MemoryBundle(files)));
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Os assets de [files], em memória (para montar uma região noutro isolate, onde não há o bundle do app).
+class _MemoryBundle extends AssetBundle {
+  _MemoryBundle(this.files);
+
+  final Map<String, Uint8List> files;
+
+  @override
+  Future<ByteData> load(String key) async => ByteData.sublistView(files[key] ?? (throw StateError('Sem o asset $key')));
+
+  @override
+  Future<T> loadStructuredData<T>(String key, Future<T> Function(String value) parser) async => parser(await loadString(key));
+}
+
 /// 0.25.2 (modo de desenvolvimento): uma região além de Campinas embutida no APK (São Paulo), montada como a embutida e
 /// conferida pelos SHA-256 da época. `null` se o pacote lógico ou o visual não estão nos assets ou não conferem: a região
 /// continua baixável pelo catálogo, como antes. O relevo, as vias, a rota, os pontos e os prédios são opcionais.
@@ -373,14 +421,17 @@ Future<LoadedRegion?> loadEmbeddedRegion({required String region, required Epoch
   if (visual is! VisualPack) return null;
   final noWalk = await loadNoWalkPack(epoch: epoch, bundle: assets, region: region);
   final relief = await loadReliefPack(epoch: epoch, region: region, bundle: assets);
+  final access = await loadAccessPack(region: region, bundle: assets);
+  final traffic = await loadTrafficPack(region: region, epoch: epoch, bundle: assets);
+  final buildings = await loadBuildingPack(region: region, bundle: assets);
   return LoadedRegion(
     id: region,
     grid: grid.pack,
     visual: visual,
     noWalk: noWalk is NoWalkPack ? noWalk : null,
-    access: await loadAccessPack(region: region, bundle: assets),
+    access: access,
     relief: relief is ReliefPack ? relief : null,
-    traffic: await loadTrafficPack(region: region, epoch: epoch, bundle: assets),
-    buildings: await loadBuildingPack(region: region, bundle: assets),
+    traffic: traffic,
+    buildings: buildings,
   );
 }

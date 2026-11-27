@@ -74,22 +74,28 @@ class TrafficArt {
               if (r.value is Map<String, dynamic>) r.key: r.value as Map<String, dynamic>,
           },
     };
-    final sprites = <String, TrafficSprite>{};
-    final outfits = <String, RgbaStrip>{};
+    // 0.26.2: as tiras se decodificam todas juntas (uma por vez seguravam a thread da interface ~1 s no g54 com o mapa
+    // abrindo); cada uma é pedida uma vez e esperada no fim.
+    final strips = <String, Future<RgbaStrip>>{};
+    Future<RgbaStrip> strip(String file, int frames) => strips[file] ??= decode(b, '$dir$file', frames);
+    final pending = <String, Future<TrafficSprite>>{};
+    final pendingOutfits = <String, Future<RgbaStrip>>{};
+    void sprite(String key, Map<String, dynamic> m) {
+      final frames = m['frames'] as int, anchor = (m['anchor'] as List<dynamic>).cast<num>();
+      final body = strip(m['file'] as String, frames);
+      final glow = m['glow'] == null ? null : strip(m['glow'] as String, frames);
+      Future<TrafficSprite> join() async => TrafficSprite(await body, glow == null ? null : await glow, anchor[0].toDouble(), anchor[1].toDouble());
+      pending[key] = join();
+    }
+
     for (final group in ['top', 'upright']) {
       for (final e in (meta[group] as Map<String, dynamic>).entries) {
         if (e.value is! Map<String, dynamic>) continue;
-        final m = e.value as Map<String, dynamic>, frames = m['frames'] as int, anchor = (m['anchor'] as List<dynamic>).cast<num>();
-        final glow = m['glow'] as String?;
-        sprites[e.key] = TrafficSprite(
-          await decode(b, '$dir${m['file']}', frames),
-          glow == null ? null : await decode(b, '$dir$glow', frames),
-          anchor[0].toDouble(),
-          anchor[1].toDouble(),
-        );
+        final m = e.value as Map<String, dynamic>;
+        sprite(e.key, m);
         if (group == 'upright') {
           for (final piece in ((meta['outfits'] as Map<String, dynamic>)['pieces'] as List<dynamic>).cast<String>()) {
-            outfits['${e.key}_$piece'] = await decode(b, '$dir${e.key}_$piece.png', frames);
+            pendingOutfits['${e.key}_$piece'] = strip('${e.key}_$piece.png', m['frames'] as int);
           }
         }
       }
@@ -100,10 +106,9 @@ class TrafficArt {
       for (final group in ['top', 'upright']) {
         for (final e in ((extra[group] as Map<String, dynamic>?) ?? const {}).entries) {
           if (e.value is! Map<String, dynamic>) continue;
-          final m = e.value as Map<String, dynamic>, frames = m['frames'] as int, anchor = (m['anchor'] as List<dynamic>).cast<num>();
-          final glow = m['glow'] as String?, leash = m['leash'] as String?;
-          sprites[e.key] = TrafficSprite(await decode(b, '$dir${m['file']}', frames), glow == null ? null : await decode(b, '$dir$glow', frames), anchor[0].toDouble(), anchor[1].toDouble());
-          if (leash != null) outfits['${e.key}_leash'] = await decode(b, '$dir$leash', frames);
+          final m = e.value as Map<String, dynamic>;
+          sprite(e.key, m);
+          if (m['leash'] case final String leash) pendingOutfits['${e.key}_leash'] = strip(leash, m['frames'] as int);
         }
       }
       final rawExtra = jsonDecode(await b.loadString('${dir}traffic_keys_extra.json')) as Map<String, dynamic>;
@@ -117,6 +122,8 @@ class TrafficArt {
     } catch (_) {
       // sem os extras: barco, cachorro e carro da corrida continuam em código
     }
+    final sprites = Map.fromIterables(pending.keys, await Future.wait(pending.values));
+    final outfits = Map.fromIterables(pendingOutfits.keys, await Future.wait(pendingOutfits.values));
     final ref = meta['ref_px'] as Map<String, dynamic>;
     return TrafficArt(sprites: sprites, outfits: outfits, keys: keys, carRefPx: ref['car'] as int, pedRefPx: ref['pedestrian'] as int);
   }
@@ -180,6 +187,10 @@ class SparkArt {
 
   static SparkArt? current;
   static Future<void>? _loading;
+
+  /// Só para testes: esquece a carga em andamento (a de um teste anterior morre com a zona dele e nunca termina).
+  @visibleForTesting
+  static void resetLoading() => _loading = null;
 
   final int frame, frames;
   final double fps;

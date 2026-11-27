@@ -70,10 +70,14 @@ void main() {
       testWidgets('cada variante é distinta das outras e da comum em escala de cinza; o retrato troca as cores igual', (tester) async {
         await tester.runAsync(() => CreatureArt.loadAll(_DiskBundle()));
         final art = CreatureArt.of(id)!;
-        expect(art.variants.keys.toSet(), variantKeys);
+        expect(art.variantKeys.toSet(), variantKeys);
+        // 0.26.2: as variantes se montam na primeira vez que aparecem.
+        for (final k in variantKeys) {
+          await tester.runAsync(() => art.buildVariant(k));
+        }
         final looks = {
           'comum': await gray(tester, art.anims[CreatureAnim.idle]!.body, 0, art.frame),
-          for (final k in variantKeys) k: await gray(tester, art.bodyOf(CreatureAnim.idle, k), 0, art.frame),
+          for (final k in variantKeys) k: await gray(tester, art.bodyOf(CreatureAnim.idle, k)!, 0, art.frame),
         };
         final names = looks.keys.toList();
         for (var i = 0; i < names.length; i++) {
