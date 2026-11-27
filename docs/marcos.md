@@ -1348,3 +1348,44 @@ Versão 0.26.1+54, mesma chave, save no schema 14 (sem mudança). A versão sobe
 - **Agentes:** `criativo` (só decide e entrega a spec) e `executor` (arte por script em lote, `tools/art/rodar.sh`), no lugar do `conteudista`.
 - **Correção:** o Stormlamp entrou sem placeholder de sprite e derrubava a carga do mapa (`069f16d`, corrigido em `f3c19d3`).
 - **Ficou de fora:** relevo e cicatriz de Fenda como condição; o conceito antigo do Gatewarden (duas folhas de portão) ficou como registro, substituído.
+
+## Fase 1 · fatia 17 · Abertura rápida e o sprite provisório fora da release (0.26.2)
+
+Versão 0.26.2+55, mesma chave, save no schema 14 (sem mudança). Pedido a partir do print do Bestiário no celular (27/11,
+00:22): ao abrir o jogo as criaturas demoravam, e o Bestiário mostrava o sprite provisório no lugar de Sootling, Cinderkin e
+Kilnshade.
+
+**Medição** no moto g54, build de profile com a chave de release e marcas de tempo temporárias (fora do git), abertura a
+frio (`am force-stop` e o ícone pelo `scripts/celular.sh start`); os tempos são desde o `main` do Dart, e o Android leva
+mais 0,65 a 1,5 s do toque até ele (`Displayed`).
+
+| | antes (0.26.1) | depois (0.26.2) |
+|---|---|---|
+| Ícone até o mapa | menu de debug e um toque em "Abrir mapa do jogo" | direto: splash, tela de carregamento, mapa |
+| Pedido do mapa até o mapa jogável | 3,9 a 4,4 s | 1,36 s (desde o `main`) |
+| Pacotes de região antes do mapa | 3,3 s (São Paulo 2,4 s) | 1,0 s (só Campinas) |
+| Sprites provisórios gerados para o mapa | 360, 1,0 s | nenhum (release e profile) |
+| Arte das criaturas pronta | 50 s depois do mapa abrir | antes do mapa abrir |
+| Arquivos de arte de criatura lidos | 1680 PNGs (0,8 s de leitura, 11,2 s de decodificação, um por vez) | 12 folhas, em paralelo |
+| Variantes montadas na abertura | 2940 tiras, 38 s | nenhuma: cada uma na primeira vez que aparece |
+| Kit do HUD (258 PNGs) | 0,7 a 1,7 s, um por vez | em paralelo, pronto em ~0,7 s |
+
+- **Folhas por família** (`scripts/pack_creature_atlas.py`): `app/assets/art/creatures/atlas/<família>.png` e `.json`
+  (retângulo de cada PNG, o JSON da criatura e o das variantes, e o SHA-256 das fontes). O build do Android roda o script
+  antes de empacotar (tarefa `folhasCriaturas`, como `baixarRegioes`), o `sync_creature_art.py` também, e
+  `test/ui/creature_atlas_test.dart` falha com uma folha velha. As pastas soltas ficam como fonte, fora do APK. A leitura
+  dos arquivos pesava pouco (0,8 s); o que pesava era decodificar 1680 imagens uma a uma. Cada camada se recorta da folha
+  na primeira vez que é desenhada: recortar as 1680 na abertura segurava o raster ~1 s.
+- **Tela de carregamento** (`ui/game/loading_screen.dart`): o splash do Android no fundo `#1a1424` (também no 12+), depois
+  KENOMA e a costura violeta que fecha com o progresso. Durante ela, junto com os pacotes de Campinas: o kit do HUD, as
+  Fagulhas e a folha de cada família que nasce na época (hoje as doze). Depois que o mapa abre: o tráfego do Aseprite (que
+  começa junto e em geral já chegou) e, 5 s depois, São Paulo, montado noutro isolate.
+- **O ícone abre o mapa**: a pilha começa com o menu de debug embaixo e o mapa em cima; o "Menu de debug" do selo de modo
+  volta ao menu, como antes.
+- **Provisório nunca na release** (`provisionalArt`, `kDebugMode`): sem a arte, o `EcoSprite` é a silhueta escura e o mapa
+  não desenha a criatura; as não vistas do Bestiário usam a silhueta da arte de verdade. `test/ui/release_art_test.dart`
+  falha se o provisório for desenhado na release.
+- **Meta de 3 s**: cumprida na medição (1,36 s do `main` ao mapa jogável, mais o `Displayed`). O que resta de gargalo: o
+  Android antes do Dart (0,65 a 1,5 s, varia a cada abertura) e os pacotes de Campinas (1,0 s, com o SHA conferido a cada
+  abertura). Nos ~3 s depois de abrir, o aquecimento do próprio mapa (prédios, clima, faixas) ainda derruba quadros (14 a
+  57 por segundo, pior quadro de 140 a 190 ms); já era assim e fica para depois.

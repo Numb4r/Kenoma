@@ -9,6 +9,17 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.26.2
+
+Não muda o save. O ícone agora abre direto no mapa (o menu de debug fica atrás do selo de modo, em "Menu de debug").
+
+- [ ] `0262-abertura-fria` **Abertura a frio.** Com o Kenoma fechado (tirado da lista de recentes), tocar no ícone e cronometrar até o mapa responder ao joystick, três vezes: em até 3 s. No caminho: o splash do Android no fundo escuro (nada branco piscando), a tela KENOMA com a costura violeta fechando e o mapa.
+- [ ] `0262-bestiario-arte` **Bestiário logo depois de abrir.** Abrir o Bestiário assim que o mapa aparece: Sootling, Cinderkin, Kilnshade e as outras com a arte de verdade, nunca a bolha cinza com olhos. As não vistas como silhueta escura com a forma da criatura.
+- [ ] `0262-variantes` **Variantes.** Uma variante no mapa e no detalhe do Bestiário com as cores dela (pode aparecer um quadro depois das outras, nunca com as cores da comum).
+- [ ] `0262-menu-debug` **Menu de debug.** Selo de modo > "Menu de debug" volta ao menu; "Abrir mapa do jogo" volta ao mesmo mapa; os comandos do `scripts/celular.sh cmd` continuam chegando.
+- [ ] `0262-sao-paulo` **São Paulo.** Uns 5 s depois de abrir, teleporte ou Modo Viagem até São Paulo: o mapa de lá aparece como antes, e o de Campinas não engasga enquanto ele entra.
+- [ ] `0262-primeiros-segundos` **Os primeiros segundos de mapa.** Andar logo que o mapa abre: sem travada longa. Engasgos curtos nos ~3 s iniciais são o aquecimento do mapa (prédios, clima), que já existia.
+
 ## 0.26.0
 
 Não muda o save. Antes de qualquer toque pelo adb: o dono libera o aparelho na sessão, e tudo passa por `scripts/celular.sh`.
