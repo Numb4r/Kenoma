@@ -54,3 +54,10 @@ notebook é perder as duas.
    (`apksigner verify --print-certs`, digest de `docs/assinatura.md`).
 2. Save com migração testada a partir do save do aparelho do dono.
 3. Daqui em diante, mudança de mundo vai para uma época nova (13), com início em 2099 até publicar.
+
+## 6. O que o jogo guarda no aparelho
+
+Para contar a quem recebe o APK: além do jogo (nível, criaturas, bolsa, Bestiário), o save guarda só neste aparelho a
+**última posição do mapa**, arredondada para a célula do mapa (z21, uns 17 m de lado), para a próxima abertura já preparar
+aquela área (0.26.4, chave `map_last_cell`). Ela nunca sai do celular: o backup e a exportação do save tiram a chave, o QR
+do grupo só leva o código do grupo, e nada a envia pela rede. Recomeçar do zero também a apaga.

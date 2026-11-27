@@ -9,6 +9,17 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.26.4
+
+Muda o save (schema 15): entra a última posição do mapa, só neste aparelho. Os itens da 0.26.3 e da 0.26.2 continuam.
+
+- [ ] `0264-save` **Save mantido.** Depois de instalar por cima: nível, criaturas, bolsa e Bestiário iguais.
+- [ ] `0264-abre-onde-estava` **Abre onde estava.** Fechar o app num lugar e abrir de novo ali: a tela de carregamento some e o mapa já está no lugar, sem o chão se montando nem engasgo quando o GPS acha a posição.
+- [ ] `0264-esmaecer` **O esmaecer.** A tela KENOMA fica até o mapa aparecer inteiro e sai esmaecendo; dá para tocar no mapa assim que o esmaecer começa.
+- [ ] `0264-longe` **Abrir longe de onde fechou.** Fechar num bairro e abrir em outro (uns 5 km ou mais): o mapa abre no lugar antigo e pula para o novo quando o GPS acha; anotar se há engasgo nesse pulo.
+- [ ] `0264-sao-paulo` **São Paulo por perto.** Em Campinas, São Paulo não carrega (nada de engasgo de 5 a 12 s depois de abrir). Teleporte ou Modo Viagem até lá: o mapa de São Paulo aparece em alguns segundos.
+- [ ] `0264-backup` **Backup sem a posição.** Exportar um backup (Ajustes) e importar: o jogo volta igual; a posição não vai junto (a próxima abertura usa a de agora).
+
 ## 0.26.3
 
 Não muda o save. Mede e conserta os primeiros segundos do mapa; os itens da 0.26.2 continuam.

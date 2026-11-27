@@ -1428,3 +1428,38 @@ temporárias fora do git: o tempo de cada seção do quadro do mapa (update e ca
      proposta: o jogo lembrar a última posição do mapa no aparelho (guarda localização no disco: precisa do dono);
   3. São Paulo carregando de 5 a 12 s (quadros de 52 a 90 ms): os ~70 MB dos pacotes passam pela thread da interface até
      o isolate. Saída proposta: carregar São Paulo só quando o jogador ou a câmera se aproximam dela.
+
+## Fase 1 · fatia 19 · A última posição, as regiões por distância e o esmaecer (0.26.4)
+
+Versão 0.26.4+57, mesma chave, save no schema 15 (migração pura, testada a partir de um save real levado ao v14). As
+decisões do dono depois da 0.26.3:
+
+- **A última posição do mapa** (`map_last_cell`, a célula z21) fica no save deste aparelho e nunca sai dele: o backup e a
+  exportação tiram a chave (`exportBackup`), o QR do grupo só leva o código, nada a envia (`docs/distribuicao.md`, seção 6).
+  O mapa grava ao mudar de célula (no máximo a cada 30 s, e ao ir para segundo plano). Na abertura, o mapa parte dela e a
+  tela de carregamento prepara aquela área (tiles da cidade, células, Outros Veilbreakers, tráfego); sem ela, o cache do
+  Android, e sem os dois o centro de sempre. No debug, `scripts/celular.sh cmd "lastcell lat,lon"` fixa a posição guardada
+  na sessão (para medir a abertura com o GPS longe).
+- **Regiões por distância** (`world/region_reach.dart`, `balance.json` `region_load_km` 40 e `region_unload_km` 60): São
+  Paulo e as regiões baixadas entram no mundo a menos de 40 km da borda delas e saem a mais de 60 km (as baixadas ficam no
+  disco e continuam "prontas" no catálogo); no Modo Viagem todas entram e nenhuma sai. Teleporte entra pela mesma regra,
+  porque muda a posição. Se a abertura já é perto de uma delas, ela entra ainda na tela de carregamento.
+- **O primeiro quadro**: a tela de carregamento fica por cima até o mapa desenhar dois quadros e sai num esmaecer de
+  300 ms; os toques passam assim que ele começa.
+
+**Medição** no moto g54 (profile, abertura a frio, GPS real; desde o `main`, mais o `Displayed` do Android):
+
+| | partida | esmaecer começa | some | quadros acima de 50 ms depois do esmaecer (20 s) |
+|---|---|---|---|---|
+| 1ª depois de atualizar (sem posição guardada) | centro padrão | 2,13 s | 2,45 s | 2 (166 e 87 ms) |
+| 2ª | célula guardada | 2,06 s | 2,39 s | 0 |
+| 3ª | célula guardada | 1,94 s | 2,26 s | 0 |
+| com os toques soltos no esmaecer (1ª, 2ª) | célula guardada | 2,61 · 2,11 s | 2,97 · 2,45 s | 6 · 2 (54 a 86 ms) |
+
+- O pico do primeiro quadro (255 a 353 ms, entre o update do jogo e o desenho) acontece antes do esmaecer, escondido: sem
+  trace.
+- Os que sobram depois do esmaecer são menores: o raster durante o esmaecer (58 a 84 ms: a tela translúcida inteira sobre o
+  mapa) e o primeiro segundo do mapa (prédios, mundo e clima, 50 a 86 ms). Entre as aberturas com a mesma versão o número
+  variou de 0 a 6, com o celular esquentando depois de muitas medições.
+- **Não medido**: a abertura com o GPS longe da posição guardada. O teleporte do simulador pelo `celular.sh` não moveu o
+  Conjurador (a célula guardada não mudou), daí o comando `lastcell`; o celular desconectou antes da medição.
