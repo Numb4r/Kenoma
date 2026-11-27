@@ -1323,3 +1323,28 @@ Novos: `test/ui/contrast_test.dart`, `test/ui/tap_target_test.dart`, `test/ui/ui
 ### Capturas
 
 Em `/tmp/kenoma-shots/0260_*`: antes e depois do HUD, do celular e de dez apps (`antes_depois_<tela>.png`; o depois do Céu foi tirado antes dos ícones de lua e clima entrarem nele), `folha_icones.png` (apps, lua, climas e eventos), `folha_tipos.png`, `folha_kit.png` e `folha_extras_trafego.png`.
+
+## Fase 1 · criaturas de ritual das nove famílias (depois da 0.26.0)
+
+Sem versão nova: o app continua 0.26.0+53, save no schema 14. Aprovadas pelo dono em 2026-11-26, as doze (`docs/art/conceitos/rituais/rituais.md`, "Estado final"; folha `docs/art/final/rituais_doze.png`).
+
+- **Condições** (`0530362`): a receita lê o clima e o evento da célula (`climate`), o crepúsculo real (`twilight`) e as combinações `all` e `any`, para seguir a coluna "Onde e quando" do GDD.
+- **Nove espécies novas**, uma por commit, com arte final (Espírito, 36 e 96 px, seis animações, três camadas, sete variantes), receita (Círculo nível 5), verbete e Eco de ritual na época de desenvolvimento (**muda o mundo**):
+
+| Espécie | Família | Condição |
+|---|---|---|
+| Stormlamp | Hum | tempestade, 19h às 5h |
+| Noonglass | Glare | sol forte ou arco-íris, 11h às 14h |
+| Eaveshroud | Shade | nublado das 20h às 5h, ou Sol Negro |
+| Staticroost | Bit | Estática |
+| Vigilwick | Wisp | neblina ou Procissão |
+| Cairnhollow | Clod | poeira seca |
+| Duskwreath | Sprig | crepúsculo real na lua cheia |
+| Cratercoil | Wyrm | Sol Negro ou chuva de meteoros |
+| Gatewarden | Rust | smog |
+
+- **Mentor:** uma dica por família ao ver o primeiro Eco de ritual dela (`ritual_hint_<familia>`), no formato das três do MVP.
+- **Bestiário:** Kilnshade, Rootseer e Wellmirror ganharam verbete com as cinco pesquisas; o detalhe de todo Espírito de ritual mostra as pesquisas e a receita revelada.
+- **Agentes:** `criativo` (só decide e entrega a spec) e `executor` (arte por script em lote, `tools/art/rodar.sh`), no lugar do `conteudista`.
+- **Correção:** o Stormlamp entrou sem placeholder de sprite e derrubava a carga do mapa (`069f16d`, corrigido em `f3c19d3`).
+- **Ficou de fora:** relevo e cicatriz de Fenda como condição; o conceito antigo do Gatewarden (duas folhas de portão) ficou como registro, substituído.

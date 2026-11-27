@@ -1,10 +1,39 @@
-# Espécies de ritual das nove famílias (conceito, à espera de aprovação)
+# Espécies de ritual das nove famílias
 
 Uma espécie de ritual para cada família que ainda não tinha: Hum, Clod, Rust, Glare, Shade, Wisp, Bit, Sprig e Wyrm. Seguem a regra das três atuais (`docs/art/conceitos/rituais.md`): etapa Espírito (quadro de 36, retrato de 96), parada como um ídolo, sem olho aberto, partes em número certo e uma parte do corpo que virou o altar com o elemento dentro, duas costuras do Véu de 2 px só no emissivo.
 
-**Nada disto está no jogo.** Não há entrada em `creatures.json`, `rituals.json` nem `epochs.json`; nomes, receitas e textos são propostas.
+**Estado: aprovadas pelo dono em 2026-11-26, as doze** (estas nove e Kilnshade, Rootseer e Wellmirror). Todas têm arte final, receita, verbete do Bestiário, Eco de ritual na época de desenvolvimento e dica do mentor. A folha das doze é `docs/art/final/rituais_doze.png`.
 
-## Revisão 4
+## Estado final
+
+Arte final em `tools/art/creatures/<nome>/build.lua` (kit da família, `tools/art/rodar.sh`), copiada para `app/assets/art/creatures/<nome>/` por `scripts/sync_creature_art.py`. Etapa Espírito, quadro de 36 e retrato de 96, seis animações nas três camadas (corpo, `_leds`, `_glow`) e sete variantes. As receitas estão em `app/assets/data/rituals.json`, com Círculo `min_level` 5. Os verbetes finais estão em `docs/textos-bestiario.md` e as dicas do mentor em `docs/textos-mentor.md`.
+
+| Espécie | Como ficou | Luz (emissivo) | Condição | Materiais |
+|---|---|---|---|---|
+| Stormlamp (`hum.ritual`) | Mariposa pousada, de asas fechadas em delta, com o tórax de globo de lâmpada de rua e o raio dentro. | o globo e o raio, os veios das asas, as costuras, as faíscas | tempestade, das 19h às 5h | `item.glass_shard` ×2, `item.essence.electric`, `item.rain_water` |
+| Noonglass (`glare.ritual`) | Beija-flor-tesoura pousado no vergalhão, de olho fechado, com a lente de farol e o sol do meio-dia no peito; o vergalhão vai junto na fuga. | a lente, as três cores da cauda, as costuras, os reflexos | sol forte ou arco-íris, das 11h às 14h | `item.glass_shard` ×2, `item.essence.light`, `item.prism_shard` |
+| Eaveshroud (`shade.ritual`) | Morcego embrulhado nas asas debaixo da marquise, com o Sol Negro onde elas se cruzam; no alerta abre um olho de sombra no disco. | a coroa e os raios do Sol Negro (o disco é corpo), as costuras | nublado, das 20h às 5h, ou Sol Negro | `item.moonlight.new` ×2, `item.essence.shadow`, `item.vessel.dark` |
+| Staticroost (`bit.ritual`) | Pombo estufado no alto da placa, com as penas do peito se desfazendo em Estática; a placa vai junto no salto da fuga. | a Estática no peito e solta à frente, os LEDs da placa, a emenda do glitch, as costuras | Estática | `item.feather` ×2, `item.essence.digital`, `item.scrap` |
+| Vigilwick (`wisp.ritual`) | Coruja-buraqueira de pé na toca, com o nicho ogival escuro no rosto e só a chama da vela acesa; a chama fica fixa na mesma coluna. | a chama, o frio na boca da toca, as costuras, o frio solto | neblina ou Procissão | `item.ectoplasm` ×2, `item.essence.spectral`, `item.vessel.candle` |
+| Cairnhollow (`clod.ritual`) | Tatu-bola partido como geodo: cinco cachos irregulares de cristal (onze prismas de tamanhos e ângulos diferentes) pela borda da abertura, o fundo escuro torto e a parede esquerda nua no meio; a cabeça e as garras saem pela abertura. | os cachos (um acende por fase do idle, todos no alerta), duas juntas das cintas, as costuras, a poeira | poeira seca | `item.chalk` ×2, `item.essence.earth`, `item.ref.white_clay` |
+| Duskwreath (`sprig.ritual`) | Maritaca com as asas em dois ramos de folha seca serrilhada abertos em leque em volta do corpo, sem fechar, e o crepúsculo nos vãos; azul na garganta. | a nervura de cada folha, o ponto claro entre as folhas, as costuras, o pólen | crepúsculo real e lua cheia | `item.dry_leaf` ×3, `item.essence.fae`, `item.ipe_flower` |
+| Cratercoil (`wyrm.ritual`) | Teiú saindo até o peito de um buraco no asfalto, garras na borda, faixas pretas e brancas com divisas rosa; o buraco é fixo e a fuga é mergulhar nele. | a língua e a frincha da boca, as divisas, as rachaduras da borda, as costuras | Sol Negro ou chuva de meteoros | `item.meteorite` ×2, `item.essence.draconic`, `item.rift_smoke` |
+| Gatewarden (`rust.ritual`) | Besouro-rinoceronte de perfil, de olho fechado: cúpula alta de grade de portão enferrujada, cabeça baixa e chifre curvo na mesma ferrugem, seis patas curtas; duas barras do flanco se afastaram em amêndoa e a luz sai só por essa fresta; um cadeado de latão aberto pendurado. | a fresta e o vazamento nos vãos vizinhos, as costuras, a limalha solta | smog | `item.scrap` ×3, `item.essence.metal`, `item.ref.living_rust` |
+
+Desvios do criativo aprovados com a arte: o poleiro que vai junto na fuga (Noonglass e Staticroost), o olho no Sol Negro no alerta (Eaveshroud), a chama fixa (Vigilwick), o azul na garganta (Duskwreath) e o mergulho no buraco (Cratercoil).
+
+As condições usam os tipos de `app/lib/crafting/ritual_data.dart`: `climate` (clima e evento da célula), `twilight` (crepúsculo real) e as combinações `all` e `any`, além de `hour`, `biome`, `moon` e `weather`. A coluna "Gravável hoje" das receitas propostas, abaixo, ficou para trás.
+
+### Gatewarden: conceito substituído
+
+O conceito das revisões 2 a 4 (o besouro com os élitros em duas folhas de portão e a limalha ou a cunha de luz no vão) **foi substituído** pela cúpula de grade acima, por decisão do dono, depois de reprovar duas vezes a 36 px. Os arquivos ficam como registro, sem uso: `tools/art/creatures/conceitos/rituais/gatewarden/` (o `build.lua` traz o aviso no cabeçalho) e a coluna do Gatewarden em `rituais.png` e `rituais_revisao.png`. Tudo o que fala de folhas de portão no histórico abaixo vale só para esse conceito.
+
+## Histórico das propostas
+
+O que segue é o registro das revisões, mais novo primeiro, e a proposta original. Não descreve o jogo; o estado final está acima.
+
+
+### Revisão 4
 
 Gatewarden, Cratercoil e Duskwreath refeitos; o Cairnhollow foi corrigido à parte. Nomes e regra não mudam.
 
@@ -16,7 +45,7 @@ Gatewarden, Cratercoil e Duskwreath refeitos; o Cairnhollow foi corrigido à par
 
 `confere.lua`: 18 de 18 quadros passam. Dois pontos que o criativo deve olhar na folha: no Cratercoil o fundo entre braço e tronco é a parede de asfalto escura (o cotovelo lê pouco a 36 px) e as faixas brancas têm pouco contraste na cabeça; no Duskwreath a folha foi alargada 12% (s máx 2,0) e o raminho engrossado para o contorno caber no piso (0,28).
 
-## Revisão 3
+### Revisão 3
 
 Cinco conceitos redesenhados; os nomes e a regra do ser de ritual não mudam. Os textos de Lore (verbetes) ficam como estão.
 
@@ -32,7 +61,7 @@ Cinco conceitos redesenhados; os nomes e a regra do ser de ritual não mudam. Os
 - Conferência (`confere.lua`): 18 de 18 quadros passam.
 - A 36 px, ainda não lidos como pedido: Gatewarden (a limalha forma uma faixa de chuvisco, não a cunha clara aberta para a esquerda) e Cairnhollow (o C de cristal é fraco de noite, emissivo 0,12, e a cabeça ocupa boa parte da abertura de dia).
 
-## Revisão 2 (decisão do dono sobre a primeira folha)
+### Revisão 2 (decisão do dono sobre a primeira folha)
 
 - **Aprovadas, sem mudança:** Stormlamp, Noonglass e Eaveshroud. O disco no centro do corpo fica só nessas três.
 - **Refeitas, sem disco e sem pedestal** (a criatura fica no chão ou presa no próprio objeto):
@@ -51,7 +80,7 @@ Cinco conceitos redesenhados; os nomes e a regra do ser de ritual não mudam. Os
 - Fontes: `tools/art/creatures/conceitos/rituais/<nome>/build.lua` (um por criatura), o ajudante `_ritual.lua`, `folha.lua` (monta a folha) e `confere.lua` (régua, margens e peças soltas dos 18 quadros).
 - Rodar (MCP do Aseprite): `KENOMA_ART='<repo>/tools/art/'; dofile(KENOMA_ART .. 'creatures/conceitos/rituais/confere.lua')` e depois `.../folha.lua`.
 
-## As nove
+### As nove
 
 | Família | Nome proposto | O que ela é | O altar e o que tem dentro | Condição do mundo (GDD, "Onde e quando") |
 |---|---|---|---|---|
@@ -67,7 +96,7 @@ Cinco conceitos redesenhados; os nomes e a regra do ser de ritual não mudam. Os
 
 Nomes alternativos, se o dono preferir: Hum `Thunderbulb`, Clod `Dustgeode`, Rust `Rosegrate`, Glare `Sunlens`, Shade `Eclipsecowl`, Wisp `Nichelight`, Bit `Noisenest`, Sprig `Gloamwreath`, Wyrm `Scarcoil`.
 
-## Receitas propostas
+### Receitas propostas
 
 No formato do `rituals.json`: uma condição, três espaços de material (o material da família, a Essência do tipo, um terceiro item) e o Círculo com `min_level` 5, como as três atuais. Todos os ids existem em `items.json`.
 
@@ -85,7 +114,7 @@ O `rituals.json` de hoje só aceita **uma** condição, dos tipos `hour`, `biome
 | `sprig.ritual` Duskwreath | crepúsculo real (`twilight_deg`) e lua cheia | `{ "kind": "moon", "value": "fullMoon" }` | `item.dry_leaf` ×3, `item.essence.fae` ×1, `item.ipe_flower` ×1 | `min_level` 5 |
 | `wyrm.ritual` Cratercoil | evento `black_sun` ou `meteor_shower` (ou `crimson_moon`, `rift_wind`, os que já fazem o Wyrm nascer) | nenhuma serve | `item.meteorite` ×2, `item.essence.draconic` ×1, `item.rift_smoke` ×1 | `min_level` 5 (o Wyrm pede nível 10 do Conjurador) |
 
-### O que falta no jogo para as condições pedidas
+#### O que falta no jogo para as condições pedidas
 
 - **Duas condições na mesma receita** (Hum: tempestade e noite; Sprig: crepúsculo e lua cheia; Glare e Shade): a receita tem um campo `condition` só.
 - **Clima além dos quatro do `Weather`**: `dry_dust`, `smog`, `strong_sun`, `fog` existem em `climate.climates`, mas a condição `weather` do ritual não os enxerga.
@@ -95,7 +124,7 @@ O `rituals.json` de hoje só aceita **uma** condição, dos tipos `hour`, `biome
 - **Cicatriz de Fenda**: não existe no jogo (nenhuma Fenda ainda); do que o GDD pede para o Wyrm, o que há são os eventos `black_sun`, `meteor_shower`, `crimson_moon` e `rift_wind`.
 - Os ids de bioma (`urban`, `sacred`, `lit`) seguem as chaves de variante; só `green` aparece hoje numa receita, os outros precisam ser conferidos com `spawnKey` antes de gravar.
 
-## Rascunho dos verbetes do Bestiário
+### Rascunho dos verbetes do Bestiário (substituído pelo texto final em `docs/textos-bestiario.md`)
 
 Clod, Bit e Sprig não têm deus nos dados; os textos deles não citam nenhum.
 
@@ -153,7 +182,7 @@ Clod, Bit e Sprig não têm deus nos dados; os textos deles não citam nenhum.
 - Lore II: As escamas das costelas acendem e apagam no passo da cratera, não no da respiração. Não é ele que a esquenta: é ela que o mantém.
 - Lore III: Vovina é um só, e caiu em pedaços. O Cratercoil é o pedaço que não saiu do lugar onde caiu; os cadernos dizem que ele guarda o ponto, para quando os outros voltarem.
 
-## Peças e luz
+### Peças e luz
 
 | Espécie | Pasta | Kit de cores | Luz (tipo) | Emissivo |
 |---|---|---|---|---|
@@ -169,7 +198,7 @@ Clod, Bit e Sprig não têm deus nos dados; os textos deles não citam nenhum.
 
 Conferência (`confere.lua`), depois da revisão 2: os 18 quadros passam nos pisos do Espírito (cores, detalhe, contorno, emissivo, três cores emissivas), ficam dentro das margens e saem numa peça só.
 
-## Exceções e pontos fracos, para a decisão do dono
+### Exceções e pontos fracos, para a decisão do dono
 
 - **Stormlamp de cima e simétrica**, como o Humoth e o Coilkin; o "parado" dela é só as asas fechadas.
 - **Cairnhollow:** a 36 px a rachadura quase some atrás da cabeça e das garras; lê como "bola com um tatu saindo", não como "bola rachada com cristal".

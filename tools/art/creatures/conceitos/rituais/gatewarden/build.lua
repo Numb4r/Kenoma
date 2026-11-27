@@ -1,3 +1,5 @@
+-- SUBSTITUÍDO (2026-11-26): conceito das duas folhas de portão, fora de uso. A arte final é a cúpula de grade em
+-- tools/art/creatures/gatewarden/build.lua (docs/art/conceitos/rituais/rituais.md, "Gatewarden: conceito substituído").
 -- Gatewarden (rust.ritual, proposta, revisão 4): o besouro-rinoceronte de pé como um mourão, visto pelas costas, no
 -- chão (as patas de trás e a ponta do abdômen pisam; sem capitel). Os dois élitros são duas folhas de portão de ferro,
 -- com lanças no alto, entreabertas (a da direita mais); no vão escuro entre elas a limalha gira, na luz do tipo Metal.
