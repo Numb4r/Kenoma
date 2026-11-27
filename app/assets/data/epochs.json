@@ -2701,6 +2701,10 @@
                 [
                   "clod.ritual",
                   1
+                ],
+                [
+                  "sprig.ritual",
+                  1
                 ]
               ],
               "green": [
@@ -2738,6 +2742,10 @@
                 ],
                 [
                   "clod.ritual",
+                  6
+                ],
+                [
+                  "sprig.ritual",
                   6
                 ]
               ],
@@ -2777,6 +2785,10 @@
                 [
                   "clod.ritual",
                   1
+                ],
+                [
+                  "sprig.ritual",
+                  1
                 ]
               ],
               "residential": [
@@ -2814,6 +2826,10 @@
                 ],
                 [
                   "clod.ritual",
+                  1
+                ],
+                [
+                  "sprig.ritual",
                   1
                 ]
               ],
@@ -2853,6 +2869,10 @@
                 [
                   "clod.ritual",
                   1
+                ],
+                [
+                  "sprig.ritual",
+                  1
                 ]
               ],
               "sacred": [
@@ -2890,6 +2910,10 @@
                 ],
                 [
                   "clod.ritual",
+                  1
+                ],
+                [
+                  "sprig.ritual",
                   1
                 ]
               ]

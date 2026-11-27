@@ -90,6 +90,16 @@
         { "item": "item.ref.white_clay", "qty": 1 }
       ],
       "circle": { "min_level": 5 }
+    },
+    {
+      "species": "sprig.ritual",
+      "condition": {"kind": "all", "of": [{"kind": "twilight"}, {"kind": "moon", "value": "fullMoon"}]},
+      "materials": [
+        { "item": "item.dry_leaf", "qty": 3 },
+        { "item": "item.essence.fae", "qty": 1 },
+        { "item": "item.ipe_flower", "qty": 1 }
+      ],
+      "circle": { "min_level": 5 }
     }
   ]
 }

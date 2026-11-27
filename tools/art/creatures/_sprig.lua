@@ -613,4 +613,8 @@ function Sp.run(spec)
   return K.run(spec)
 end
 
+Sp.H = { ell = ell, feather = feather, stripes = stripes, tube = tube, bark = bark, seg = seg, leaf = leaf, wire = wire, dot = dot,
+  plus = plus, beak = beak, fae = fae, spin = spin, seamLine = seamLine, NEAR = NEAR, FAR = FAR, DARK = DARK, BODY = BODY,
+  HEAD = HEAD, BARK = BARK, SOLID = SOLID }
+
 return Sp

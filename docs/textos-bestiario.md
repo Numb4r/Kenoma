@@ -257,6 +257,12 @@ Onde aparece: Verde; hora: Crepúsculo; clima: + Arco-íris; lua: + Cheia.
 - Lore II: Troca de jogo no meio: quando você aprende o passo, ela muda a música.
 - Lore III: As fadas antigas não eram pequenas. A Fairkin é o que uma delas consegue ser deste lado do Véu.
 
+**Duskwreath** (Ritual). Maritaca de pé, de olho fechado, com as asas feitas dois ramos de folha seca abertos em leque atrás do corpo, que não se fecham, e o crepúsculo nos vãos.
+
+- Lore I: As duas asas viraram ramos de folha seca, serrilhada, abertos em leque atrás do corpo, e não chegam a se fechar. Pelos vãos entre uma folha e outra passa a luz da hora em que o sol encosta no horizonte, mesmo de madrugada.
+- Lore II: Não fala Aklo: fica calada, de olho fechado, e as outras maritacas se calam em volta. O pólen que se solta dos ramos sobe em vez de cair.
+- Lore III: As fadas antigas entravam por rodas de folha. A dela não fecha: falta um pedaço em cima, e é por ele que o crepúsculo continua entrando. Ninguém sabe se ela guarda a porta ou se é o pedaço que falta.
+
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver no crepúsculo; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
 
 ## Wyrm (Dracônico)

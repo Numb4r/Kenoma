@@ -211,6 +211,10 @@
       "folder": "sprig_entidade",
       "spawn": "whirl"
     },
+    "sprig.ritual": {
+      "folder": "duskwreath",
+      "spawn": "whirl"
+    },
     "sprig.spirit": {
       "folder": "fairkin",
       "spawn": "whirl"
