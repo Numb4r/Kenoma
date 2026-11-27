@@ -21,6 +21,7 @@ import 'package:kenoma/ui/tuning/log_exporter.dart';
 import 'package:kenoma/ui/tuning/tuning_screen.dart';
 
 import '../support/fake_position_source.dart';
+import '../support/fixed_map_world.dart';
 
 class FakeExporter implements LogExporter {
   final files = <File>[];
@@ -321,6 +322,8 @@ void main() {
 
   group('simulador de GPS, relógio e mapa do jogo no menu de debug', () {
     DevTools newTools() => DevTools(realSource: FakeGps());
+    // Os que abrem o mapa do jogo: relógio e clima fixos (`support/fixed_map_world.dart`); os do relógio do menu usam o real.
+    DevTools mapTools(WidgetTester tester) => fixedDevTools(tester, realSource: FakeGps());
 
     testWidgets('o menu tem o mapa do jogo, o simulador com as três velocidades e o relógio UTC', (tester) async {
       await pumpMenu(tester, tools: newTools());
@@ -408,7 +411,7 @@ void main() {
     });
 
     testWidgets('abrir o mapa do jogo com o simulador leva ao mapa, com o Conjurador na Unicamp', (tester) async {
-      final tools = newTools();
+      final tools = mapTools(tester);
       await pumpMenu(tester, tools: tools);
       await tools.setUseSimulator(true);
       await tester.pump();
@@ -435,7 +438,7 @@ void main() {
     });
 
     testWidgets('0.21.0, o bug do debug: reabrir o mapa enquanto o outro ainda sai não empilha dois nem dá setState no build', (tester) async {
-      final tools = newTools();
+      final tools = mapTools(tester);
       await pumpMenu(tester, tools: tools);
       await tools.setUseSimulator(true);
       await tester.pump();

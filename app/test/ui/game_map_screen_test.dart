@@ -13,7 +13,6 @@ import 'package:kenoma/player/conjurer_balance.dart';
 import 'package:kenoma/ui/game/compass_button.dart';
 import 'package:kenoma/world/spawn_field.dart';
 import 'package:kenoma/dev/dev_tools.dart';
-import 'package:kenoma/dev/game_clock.dart';
 import 'package:kenoma/dev/gps_simulator.dart';
 import 'package:kenoma/ui/game/game_map_game.dart';
 import 'package:kenoma/core/behavior.dart';
@@ -29,6 +28,7 @@ import 'package:kenoma/save/save_store.dart';
 import 'package:kenoma/world/places.dart';
 
 import '../support/fake_position_source.dart';
+import '../support/fixed_map_world.dart';
 import '../support/fixtures.dart';
 
 class _Bundle extends CachingAssetBundle {
@@ -123,6 +123,7 @@ Future<Env> pumpGame(
   HeadingSource? heading,
   MemorySaveStore? store,
   bool realClock = false,
+  String? weather = 'clear',
   void Function(DevTools tools)? beforeOpen,
 }) async {
   tester.view.physicalSize = screen;
@@ -130,21 +131,13 @@ Future<Env> pumpGame(
   addTearDown(tester.view.reset);
   final gps = FakeGps();
   final gw = gateway ?? FakeGateway(state: LocationPermissionState.granted);
-  // O simulador e o relógio do jogo seguem o tempo falso do teste: com o tempo real da máquina, a suíte carregada fazia o
-  // Conjurador andar mais e o Eco escolhido sumir no fim da janela antes do toque.
-  final tools = DevTools(
-    realSource: gps,
-    simulator: SimulatedPositionSource(lat: kUnicamp.$1, lon: kUnicamp.$2, realTime: false),
-    clock: realClock ? null : GameClock(realNowMs: () => tester.binding.clock.now().millisecondsSinceEpoch),
-  );
-  // Por padrão o relógio fica na época 1 (sem o fluxo v2): comportamentos aleatórios abririam a folha de preparo no meio
-  // dos testes de toque. Os testes da época 2 passam o horário que querem.
-  if (!realClock || clockUtc != null) tools.clock.setUtc(clockUtc ?? 1792080000);
+  // Relógio, clima e identidade fixos (`support/fixed_map_world.dart`): o mundo do teste não depende da hora nem da carga.
+  final tools = fixedDevTools(tester, realSource: gps, clockUtc: clockUtc, realClock: realClock, weather: weather);
   if (simulator) await tools.setUseSimulator(true);
   // Os testes de jogo andam com o simulador e conferem progresso: com a recompensa ligada. O padrão do app é desligada.
   tools.setSimRewards(simRewards);
   beforeOpen?.call(tools);
-  await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: gw, bundle: _Bundle(realAssets()), headingSource: heading, store: store)));
+  await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: gw, bundle: _Bundle(realAssets()), headingSource: heading, store: store ?? fixedSave())));
   for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pump();
@@ -666,6 +659,16 @@ void main() {
       expect(find.byType(Joystick), findsOneWidget, reason: 'o mapa funciona mesmo assim');
     });
 
+    testWidgets('o mundo do teste é fixo: relógio, clima, player_id e grupo', (tester) async {
+      final env = await pumpGame(tester);
+      final st = env.game.worldView!.state;
+      expect(env.tools.clock.nowUtc, inInclusiveRange(kTestUtc, kTestUtc + 60));
+      expect(env.game.climateShown().id, 'clear');
+      expect(env.game.climateShown().windForce, 0);
+      expect(st.founder!.playerId, kTestPlayerId);
+      expect(st.groupCode, kTestGroup);
+    });
+
     testWidgets('sem override o painel não fala do relógio', (tester) async {
       await pumpGame(tester, realClock: true);
       expect(find.textContaining('RELÓGIO UTC'), findsNothing);
@@ -739,7 +742,7 @@ void main() {
       final field = env.game.worldView!.field;
       final eco = field
           .around(lat: kUnicamp.$1, lon: kUnicamp.$2, tUtc: env.tools.clock.nowUtc, radiusM: 300, playerLevel: 1)
-          // O oculto só aparece revelado pelo Radar; os spawns pessoais mudam com o player_id de cada rodada.
+          // O oculto só aparece revelado pelo Radar.
           .firstWhere((s) => s.isEco && s.behavior != EcoBehavior.hidden);
       final (la, lo) = tileFractionToLatLon(eco.x + 0.2, eco.y + 0.2, biomeZoom);
       env.sim.teleport(la, lo);
@@ -748,7 +751,7 @@ void main() {
     }
 
     // Na tela: o ponto do jogo mais o canto do mapa (0.23.1: o mapa começa embaixo da barra do HUD).
-    // Onde o Eco está desenhado, com o vento: o relógio do teste parte da hora real, e com vento o Eco leve sai do lugar.
+    // Onde o Eco está desenhado (com vento, o Eco leve sai do lugar): o mesmo ponto que o toque do jogo usa.
     Offset screenOf(WidgetTester tester, Env env, WorldSpawn s) => tester.getTopLeft(gameWidget) + env.game.spawnScreen(s);
 
     testWidgets('o botão do celular abre o menu: apps do nível 1 abertos, o resto bloqueado', (tester) async {
@@ -833,17 +836,10 @@ void main() {
       expect(env.game.rotation.angle, isNot(0));
     });
 
-    /// Save com o `player_id` fixo: os spawns pessoais mudam com ele, e o sorteado a cada rodada mudava o mundo do teste.
-    MemorySaveStore fixedPlayer() => MemorySaveStore()
-      ..json = {
-        'schema_version': 2,
-        'founder': {'player_id': '0123456789abcdef0123456789abcdef', 'first_install_version': 'dev', 'first_seen_utc': 1792080000},
-      };
-
     testWidgets('toque longo em Eco fora do alcance de toque não marca e diz a distância', (tester) async {
-      // O toque longo marca até o alcance de toque (30 m), não só na Aura (10 m). O teste escolhia um Eco fora da Aura com
-      // um player_id sorteado a cada rodada: às vezes o escolhido caía entre 10 e 30 m e era marcado.
-      final env = await pumpGame(tester, store: fixedPlayer());
+      // O toque longo marca até o alcance de toque (30 m), não só na Aura (10 m). Com o player_id fixo do pumpGame o Eco
+      // escolhido é sempre o mesmo; o Conjurador vai para fora do alcance dele.
+      final env = await pumpGame(tester);
       final target = await goToEco(env);
       // O Conjurador vai para 38 m ao norte do Eco: fora do alcance de toque (30 m), e o Eco ainda na tela, embaixo. O filtro
       // de posição só aceita o salto depois de uns 6 s; 12 s de tempo falso bastam com folga.
@@ -869,7 +865,7 @@ void main() {
     // 2026-10-15 em Campinas: 08:00 local (11:00 UTC) é rush; 03:00 local (06:00 UTC) é madrugada, de noite.
     int utcOf(String iso) => DateTime.parse(iso).millisecondsSinceEpoch ~/ 1000;
 
-    /// O máximo de fantasmas desenhados em [frames] quadros (a seed do jogo muda a cada execução: um quadro só pode ser vazio).
+    /// O máximo de fantasmas desenhados em [frames] quadros (um quadro só pode ser vazio).
     Future<int> peak(Env env, {int frames = 40}) async {
       var best = 0;
       for (var i = 0; i < frames; i++) {
@@ -879,10 +875,8 @@ void main() {
       return best;
     }
 
-    MemorySaveStore fixedGroup() => MemorySaveStore()..json = {'schema_version': 2, 'group_code': 'KENOMA-TESTE'};
-
     testWidgets('no rush aparecem fantasmas, respeitando o teto, e o interruptor os apaga', (tester) async {
-      final env = await pumpGame(tester, clockUtc: utcOf('2026-10-16T11:10:00Z'), store: fixedGroup());
+      final env = await pumpGame(tester, clockUtc: utcOf('2026-10-16T11:10:00Z'));
       final best = await peak(env);
       expect(best, greaterThan(0));
       expect(best, lessThanOrEqualTo(160));
@@ -892,10 +886,10 @@ void main() {
     });
 
     testWidgets('de madrugada há bem menos fantasmas que no rush', (tester) async {
-      final rush = await pumpGame(tester, clockUtc: utcOf('2026-10-16T11:10:00Z'), store: fixedGroup());
+      final rush = await pumpGame(tester, clockUtc: utcOf('2026-10-16T11:10:00Z'));
       final busy = await peak(rush);
       await tester.pumpWidget(const SizedBox.shrink());
-      final dead = await pumpGame(tester, clockUtc: utcOf('2026-10-16T06:10:00Z'), store: fixedGroup());
+      final dead = await pumpGame(tester, clockUtc: utcOf('2026-10-16T06:10:00Z'));
       final quiet = await peak(dead);
       expect(busy, greaterThan(0));
       expect(quiet, lessThan(busy));
@@ -1001,7 +995,7 @@ void main() {
     Future<void> goToSomeEco(Env env) async {
       final eco = env.game.worldView!.field
           .around(lat: kUnicamp.$1, lon: kUnicamp.$2, tUtc: env.tools.clock.nowUtc, radiusM: 300, playerLevel: 1)
-          // O oculto só aparece revelado pelo Radar; os spawns pessoais mudam com o player_id de cada rodada.
+          // O oculto só aparece revelado pelo Radar.
           .firstWhere((s) => s.isEco && s.behavior != EcoBehavior.hidden);
       final (la, lo) = tileFractionToLatLon(eco.x + 0.2, eco.y + 0.2, biomeZoom);
       env.sim.teleport(la, lo);

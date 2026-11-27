@@ -13,9 +13,10 @@ import 'game_clock.dart';
 import 'gps_simulator.dart';
 
 class DevTools extends ChangeNotifier {
-  DevTools({required PositionSource realSource, SimulatedPositionSource? simulator, GameClock? clock})
+  DevTools({required PositionSource realSource, SimulatedPositionSource? simulator, GameClock? clock, DebugForce? force})
       : simulator = simulator ?? SimulatedPositionSource(lat: kUnicamp.$1, lon: kUnicamp.$2),
         clock = clock ?? GameClock(),
+        force = force ?? DebugForce(),
         _real = realSource {
     source = SwitchablePositionSource(realSource);
   }
@@ -26,8 +27,9 @@ class DevTools extends ChangeNotifier {
   final SimulatedPositionSource simulator;
   final GameClock clock;
 
-  /// O que o menu de debug força no próximo spawn (comportamento, variante, Brilhante) e o clima forçado.
-  final DebugForce force = DebugForce();
+  /// O que o menu de debug força no próximo spawn (comportamento, variante, Brilhante) e o clima forçado. Os testes passam
+  /// um com o relógio de parede falso.
+  final DebugForce force;
 
   /// A fonte que o jogo ouve. Troca entre o GPS real e o simulador sem o jogo perceber.
   late final SwitchablePositionSource source;
