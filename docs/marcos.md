@@ -1324,9 +1324,9 @@ Novos: `test/ui/contrast_test.dart`, `test/ui/tap_target_test.dart`, `test/ui/ui
 
 Em `/tmp/kenoma-shots/0260_*`: antes e depois do HUD, do celular e de dez apps (`antes_depois_<tela>.png`; o depois do Céu foi tirado antes dos ícones de lua e clima entrarem nele), `folha_icones.png` (apps, lua, climas e eventos), `folha_tipos.png`, `folha_kit.png` e `folha_extras_trafego.png`.
 
-## Fase 1 · criaturas de ritual das nove famílias (depois da 0.26.0)
+## Fase 1 · fatia 16 · Criaturas de ritual das nove famílias (0.26.1)
 
-Sem versão nova: o app continua 0.26.0+53, save no schema 14. Aprovadas pelo dono em 2026-11-26, as doze (`docs/art/conceitos/rituais/rituais.md`, "Estado final"; folha `docs/art/final/rituais_doze.png`).
+Versão 0.26.1+54, mesma chave, save no schema 14 (sem mudança). A versão sobe porque os rituais da fase 1 mudam o mundo (o Eco de ritual de cada uma entra na época de desenvolvimento). Instalada no moto g54 em 27/11/2026 por cima da 0.26.0, com `adb install -r`, sem abrir o app. Aprovadas pelo dono em 2026-11-26, as doze (`docs/art/conceitos/rituais/rituais.md`, "Estado final"; folha `docs/art/final/rituais_doze.png`).
 
 - **Condições** (`0530362`): a receita lê o clima e o evento da célula (`climate`), o crepúsculo real (`twilight`) e as combinações `all` e `any`, para seguir a coluna "Onde e quando" do GDD.
 - **Nove espécies novas**, uma por commit, com arte final (Espírito, 36 e 96 px, seis animações, três camadas, sete variantes), receita (Círculo nível 5), verbete e Eco de ritual na época de desenvolvimento (**muda o mundo**):
