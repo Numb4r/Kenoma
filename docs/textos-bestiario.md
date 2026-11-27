@@ -283,4 +283,10 @@ Onde aparece: Qualquer; hora: Qualquer; clima: Eclipses; lua: —; lugar: Crater
 - Lore II: Começa manso. A cada terço da sintonia lembra de mais uma coisa que sabia fazer.
 - Lore III: Vovina, o dragão, é um só. Tudo o que tem escama deste lado é ele tentando se lembrar da forma.
 
+**Cratercoil** (Ritual). Teú saindo até o peito de um buraco no asfalto, de olho fechado, com as garras fincadas na borda e divisas rosa sobre as faixas do couro.
+
+- Lore I: Sai até o peito de um buraco no asfalto, as patas da frente fincadas na borda, o couro em faixas pretas e brancas. O olho está fechado; a língua bifurcada prova o ar, da cor da brasa que vaza pelas rachaduras.
+- Lore II: As divisas do peito acendem uma depois da outra, de baixo para cima, no passo do buraco e não no da respiração. Não é ele que esquenta a cratera: é ela que o mantém aceso. Quando se assusta, desce de volta e deixa só os riscos das garras no asfalto.
+- Lore III: Os outros pedaços de Vovina andam por aí, tentando se lembrar da forma. Este não saiu de onde caiu: ficou até o peito no buraco, de olho fechado, guardando o ponto para quando os outros voltarem.
+
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver num eclipse ou numa cratera; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.

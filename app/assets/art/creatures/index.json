@@ -251,6 +251,10 @@
       "folder": "wyrm_entidade",
       "spawn": "crater_crack"
     },
+    "wyrm.ritual": {
+      "folder": "cratercoil",
+      "spawn": "crater_crack"
+    },
     "wyrm.spirit": {
       "folder": "wyrmkin",
       "spawn": "crater_crack"

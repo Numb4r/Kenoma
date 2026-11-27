@@ -100,6 +100,16 @@
         { "item": "item.ipe_flower", "qty": 1 }
       ],
       "circle": { "min_level": 5 }
+    },
+    {
+      "species": "wyrm.ritual",
+      "condition": {"kind": "any", "of": [{"kind": "climate", "value": "black_sun"}, {"kind": "climate", "value": "meteor_shower"}]},
+      "materials": [
+        { "item": "item.meteorite", "qty": 2 },
+        { "item": "item.essence.draconic", "qty": 1 },
+        { "item": "item.rift_smoke", "qty": 1 }
+      ],
+      "circle": { "min_level": 5 }
     }
   ]
 }

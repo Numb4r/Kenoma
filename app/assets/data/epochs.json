@@ -2705,6 +2705,10 @@
                 [
                   "sprig.ritual",
                   1
+                ],
+                [
+                  "wyrm.ritual",
+                  1
                 ]
               ],
               "green": [
@@ -2747,6 +2751,10 @@
                 [
                   "sprig.ritual",
                   6
+                ],
+                [
+                  "wyrm.ritual",
+                  1
                 ]
               ],
               "water": [
@@ -2788,6 +2796,10 @@
                 ],
                 [
                   "sprig.ritual",
+                  1
+                ],
+                [
+                  "wyrm.ritual",
                   1
                 ]
               ],
@@ -2831,6 +2843,10 @@
                 [
                   "sprig.ritual",
                   1
+                ],
+                [
+                  "wyrm.ritual",
+                  1
                 ]
               ],
               "lit": [
@@ -2873,6 +2889,10 @@
                 [
                   "sprig.ritual",
                   1
+                ],
+                [
+                  "wyrm.ritual",
+                  1
                 ]
               ],
               "sacred": [
@@ -2914,6 +2934,10 @@
                 ],
                 [
                   "sprig.ritual",
+                  1
+                ],
+                [
+                  "wyrm.ritual",
                   1
                 ]
               ]
