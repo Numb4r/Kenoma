@@ -1,6 +1,6 @@
 # Textos do crafting (fase 1)
 
-Para revisão do dono. O `conteudista` copia daqui para `app/assets/data/` (`items.json`, `recipes.json`, `mentor.json` e os textos de interface). Base: GDD, "Crafting", em especial "Regras da fase 1".
+Para revisão do dono. O `executor` copia daqui para `app/assets/data/` (`items.json`, `recipes.json`, `mentor.json` e os textos de interface). Base: GDD, "Crafting", em especial "Regras da fase 1".
 
 Como ler:
 
