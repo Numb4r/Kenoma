@@ -107,6 +107,12 @@ Onde aparece: Verde; hora: Qualquer; clima: + Poeira seca; lua: —; lugar: Morr
 - Lore II: O musgo da guia cresce do lado de onde vem a chuva. Serve de bússola a quem sabe ler.
 - Lore III: Sintonizar um é ouvir camadas: a de cima é de ontem, a de baixo é de antes das cidades.
 
+**Cairnhollow** (Ritual). Tatu-bola fechado em bola e partido como geodo, com uma coroa de cristal aceso na abertura e a cabeça e as garras saindo por ela.
+
+- Lore I: Fechou em bola e a bola partiu. Um terço dela abriu como geodo: uma coroa de cristal em volta e, no meio, um fundo escuro de onde saem a cabeça, de olho fechado, e as duas mãos de garras. A luz que vazava pelas juntas agora mora ali.
+- Lore II: Não rola mais: quando precisa sair do lugar, puxa a bola pelas garras. Na poeira seca a abertura fecha um dedo e abre de novo, como quem respira.
+- Lore III: Quem põe o ouvido na abertura não ouve o mar: ouve pedra assentando, muito devagar, como um morro que ainda está se decidindo.
+
 Pesquisa (Eco e Espírito): 1. Capturar uma vez; 2. Ver de dia e de noite; 3. Sintonizar em 2 biomas; 4. Achar uma variante; 5. Capturar 5 vezes.
 
 ## Rust (Metal)

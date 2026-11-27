@@ -80,6 +80,16 @@
         { "item": "item.vessel.candle", "qty": 1 }
       ],
       "circle": { "min_level": 5 }
+    },
+    {
+      "species": "clod.ritual",
+      "condition": {"kind": "climate", "value": "dry_dust"},
+      "materials": [
+        { "item": "item.chalk", "qty": 2 },
+        { "item": "item.essence.earth", "qty": 1 },
+        { "item": "item.ref.white_clay", "qty": 1 }
+      ],
+      "circle": { "min_level": 5 }
     }
   ]
 }

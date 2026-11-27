@@ -60,6 +60,10 @@
       "folder": "clod_entidade",
       "spawn": "ground"
     },
+    "clod.ritual": {
+      "folder": "cairnhollow",
+      "spawn": "ground"
+    },
     "clod.spirit": {
       "folder": "bouldkin",
       "spawn": "ground"

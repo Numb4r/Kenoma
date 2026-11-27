@@ -2697,6 +2697,10 @@
                 [
                   "wisp.ritual",
                   1
+                ],
+                [
+                  "clod.ritual",
+                  1
                 ]
               ],
               "green": [
@@ -2731,6 +2735,10 @@
                 [
                   "wisp.ritual",
                   1
+                ],
+                [
+                  "clod.ritual",
+                  6
                 ]
               ],
               "water": [
@@ -2764,6 +2772,10 @@
                 ],
                 [
                   "wisp.ritual",
+                  1
+                ],
+                [
+                  "clod.ritual",
                   1
                 ]
               ],
@@ -2799,6 +2811,10 @@
                 [
                   "wisp.ritual",
                   1
+                ],
+                [
+                  "clod.ritual",
+                  1
                 ]
               ],
               "lit": [
@@ -2832,6 +2848,10 @@
                 ],
                 [
                   "wisp.ritual",
+                  1
+                ],
+                [
+                  "clod.ritual",
                   1
                 ]
               ],
@@ -2867,6 +2887,10 @@
                 [
                   "wisp.ritual",
                   6
+                ],
+                [
+                  "clod.ritual",
+                  1
                 ]
               ]
             },
