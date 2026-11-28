@@ -1088,9 +1088,19 @@ As produções entram com a casa, na fase 2. Até lá, o trabalho aparece no Bes
 - O depósito de cada estação guarda cerca de 24 h de produção; cheio, ela para.
 - A produção é calculada ao abrir o app, pelo tempo decorrido; relógio voltando para trás não produz.
 
+**O lote no Véu (decidido em 28/nov/2026).** A casa é um lote grande dentro de uma dobra do Véu presa à célula da casa, no espírito do castelo de V Rising.
+
+- No mapa, a célula da casa mostra só uma porta do Véu. A menos de 40 m dela, tocar na porta leva o Conjurador para dentro do lote.
+- O lote usa a mesma vista de cima e a mesma grade de pixel do mapa. Lá dentro o Conjurador anda tocando no chão, porque o GPS não move nada ali.
+- O lote começa com 16 × 16 casas e cresce para 24 × 24 no nível 20 e 32 × 32 no nível 30.
+- A construção é livre em grade: piso, parede, porta, janela, luz e decoração, fabricados na Bancada com materiais comuns. Peças podem ser giradas, movidas e retiradas, e voltam para o Armazém.
+- Estações, baús e estantes do Armazém e o santuário de selos são objetos colocados no lote. As criaturas designadas aparecem trabalhando na estação delas.
+- A luz do lote segue a hora real; o clima não entra no Véu.
+- Fora do raio, o app Casa continua só como resumo do que as estações produziram.
+
 ### Bancada e decoração
 
-A bancada básica fica em casa a partir do nível 5, quando a casa é definida, e no lategame as estações cravadas também. Antes disso ela funciona dentro do app, em qualquer lugar. A decoração influencia o que os lures atraem. Itens aquáticos puxam Ecos de água, sucata puxa urbanos, e o jogador monta a casa como um ecossistema. Decorações também servem de defesa nas invasões.
+A bancada básica fica em casa a partir do nível 10, quando a casa é definida, como objeto do lote, e no lategame as estações cravadas também. Antes disso ela funciona dentro do app, em qualquer lugar. A decoração influencia o que os lures atraem. Itens aquáticos puxam Ecos de água, sucata puxa urbanos, e o jogador monta a casa como um ecossistema. Decorações também servem de defesa nas invasões.
 
 ### Lures
 
