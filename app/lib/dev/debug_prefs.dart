@@ -1,4 +1,4 @@
-/// Preferências do menu de debug: favoritos, seções abertas ou fechadas e o último "Criar criatura". Um JSON pequeno (`debug_menu.json`) nos
+/// Preferências do menu de debug: favoritos, a última aba e o último "Criar criatura". Um JSON pequeno (`debug_menu.json`) nos
 /// documentos do app. Toda leitura e escrita tem try/catch: sem disco, o menu funciona e só não lembra.
 library;
 
@@ -11,8 +11,8 @@ import 'package:path_provider/path_provider.dart';
 import 'debug_registry.dart';
 
 class DebugPrefs extends ChangeNotifier {
-  /// [file] `null`: só em memória. [defaultOpen]: se as seções (menos Favoritos, que abre sempre) começam abertas.
-  DebugPrefs({this.file, this.defaultOpen = false});
+  /// [file] `null`: só em memória.
+  DebugPrefs({this.file});
 
   /// Os documentos do app, ou só memória se a pasta não existir (testes).
   static Future<DebugPrefs> inDocuments() async {
@@ -25,9 +25,8 @@ class DebugPrefs extends ChangeNotifier {
   }
 
   final File? file;
-  final bool defaultOpen;
   final List<String> _favorites = [];
-  final Map<String, bool> _open = {};
+  String? _tab;
   Map<String, dynamic>? _creatureForm;
 
   /// O último formulário do "Criar criatura" (`DebugCreatureSpec.toJson`), para o botão "repetir". `null`: nenhum ainda.
@@ -42,7 +41,24 @@ class DebugPrefs extends ChangeNotifier {
   List<String> get favorites => List.unmodifiable(_favorites);
   bool isFavorite(String id) => _favorites.contains(id);
 
-  bool isOpen(DebugSection s) => _open[s.id] ?? (s == DebugSection.favorites || defaultOpen);
+  /// A última aba aberta (o id da [DebugTab]); `null`: a primeira.
+  DebugTab get tab => DebugTab.values.where((t) => t.id == _tab).firstOrNull ?? DebugTab.values.first;
+
+  Future<void> setTab(DebugTab t) {
+    _tab = t.id;
+    notifyListeners();
+    return _save();
+  }
+
+  /// 0.26.6: os favoritos guardados com um id antigo passam para o id novo (o registro resolve o alias).
+  void migrateFavorites(String? Function(String id) idOf) {
+    final now = [for (final f in _favorites) idOf(f)].nonNulls.toSet().toList();
+    if (now.length == _favorites.length && now.indexed.every((p) => _favorites[p.$1] == p.$2)) return;
+    _favorites
+      ..clear()
+      ..addAll(now);
+    _save();
+  }
 
   Future<void> load() async {
     try {
@@ -52,9 +68,7 @@ class DebugPrefs extends ChangeNotifier {
       _favorites
         ..clear()
         ..addAll((j['favorites'] as List? ?? const []).whereType<String>());
-      _open
-        ..clear()
-        ..addAll({for (final e in (j['open'] as Map? ?? const {}).entries) if (e.value is bool) e.key as String: e.value as bool});
+      _tab = j['tab'] as String?;
       _creatureForm = j['creature_form'] is Map<String, dynamic> ? j['creature_form'] as Map<String, dynamic> : null;
       notifyListeners();
     } catch (_) {
@@ -68,18 +82,12 @@ class DebugPrefs extends ChangeNotifier {
     return _save();
   }
 
-  Future<void> setOpen(DebugSection s, bool open) {
-    _open[s.id] = open;
-    notifyListeners();
-    return _save();
-  }
-
   Future<void> _queue = Future.value();
 
   /// Grava em fila: duas gravações juntas no mesmo arquivo poderiam terminar fora de ordem.
   Future<void> _save() => _queue = _queue.then((_) async {
         try {
-          await file?.writeAsString(jsonEncode({'favorites': _favorites, 'open': _open, if (_creatureForm != null) 'creature_form': _creatureForm}), flush: true);
+          await file?.writeAsString(jsonEncode({'favorites': _favorites, if (_tab != null) 'tab': _tab, if (_creatureForm != null) 'creature_form': _creatureForm}), flush: true);
         } catch (_) {
           // sem disco: vale só nesta sessão
         }

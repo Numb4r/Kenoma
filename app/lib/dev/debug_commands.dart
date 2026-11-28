@@ -1,191 +1,105 @@
-/// Comandos de debug vindos do adb por intent (0.24.2), para dirigir o celular sem teclado: o script nunca digita no
-/// aparelho (no 0.24.1 ele digitou num chat de outro app). `scripts/celular.sh cmd "sim on; clock 2027-01-08T02:00;
-/// weather rain; tp -22.9041,-47.06; width 80; map"` vira `am start ... --es kenoma_cmd "..."`, que só chega a este app.
-/// Comandos separados por `;`. Desconhecido é ignorado e dito no retorno. (0.25.2: saíram `devopts` e `testepoch`, com a
-/// época em teste.)
+/// A linha de comando do debug (0.24.2; 0.26.6: uma vista do [DebugRegistry], como a tela). `scripts/celular.sh cmd
+/// "pos.simulator on; pos.teleport valinhos"` vira `am start ... --es kenoma_cmd "..."`, que só chega a este app, e a
+/// resposta sai no logcat (`kenoma_cmd ...`). O script nunca digita no aparelho (no 0.24.1 ele digitou num chat de outro
+/// app).
+///
+/// - `list`: uma linha por entrada (id, tipo, valores, se mexe no save, se é destrutiva, aliases).
+/// - `state`: em JSON, tudo que está fora do real, a fonte de posição e o relógio.
+/// - `<id> <args>`: roda e responde `ok <id>: ...` ou `erro <id>: ...`. `<id> real` desfaz; `<id> ?` descreve e lê.
+///
+/// Os nomes de antes (`sim on`, `tp lat,lon`, `lastcell`, `clock`, `weather`, `creature hum.eco shiny 3`...) são aliases.
+/// Comandos separados por `;`.
 library;
 
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/services.dart';
 
-import '../world/debug_creatures.dart' show DebugCreatureSpec, DebugVariant;
-import '../world/style_advisor.dart' show kSimpleGraphicsSetting;
-import '../crafting/crafting_state.dart' show LoadoutSlot;
-import '../save/ksv_save_store.dart';
-import '../save/save_store.dart';
 import '../ui/game/game_map_screen.dart' show liveGameState;
-import 'debug_items_save.dart' show writeSetting;
-import '../core/tiles.dart' show biomeZoom, latLonToTile;
+import 'debug_registry.dart';
 import 'dev_tools.dart';
 
 /// O canal por onde a atividade entrega o texto da intent.
 const debugCommandChannel = MethodChannel('kenoma/debug_cmd');
 
-/// Aplica [text] em [tools]. [openMap] abre o mapa do jogo (o comando `map`). Devolve uma linha por comando.
-Future<List<String>> runDebugCommands(String text, {required DevTools tools, Future<void> Function()? openMap, Future<SaveStore> Function()? openSave}) async {
+/// O `state` além do que está fora do real: a fonte de posição, onde está o simulador, o relógio e se o mapa está aberto.
+Map<String, Object?> debugStateBase(DevTools tools) => {
+      'fonte': tools.useSimulator ? 'simulador' : 'gps',
+      if (tools.useSimulator) 'simulador': [tools.simulator.lat, tools.simulator.lon],
+      'relogio_utc': tools.clock.now.toIso8601String(),
+      'relogio_forcado': tools.clock.overridden,
+      'mapa_aberto': liveGameState() != null,
+    };
+
+/// Roda [text] no [registry]. Devolve uma linha por comando (`list` devolve uma por entrada).
+Future<List<String>> runDebugCommands(String text, DebugRegistry registry, {Map<String, Object?> Function()? base}) async {
   final out = <String>[];
-  final save = openSave ?? KsvSaveStore.inDocuments;
   for (final raw in text.split(';')) {
-    final parts = raw.trim().split(RegExp(r'\s+'));
-    if (parts.first.isEmpty) continue;
-    final arg = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-    switch (parts.first) {
-      case 'sim':
-        await tools.setUseSimulator(arg != 'off');
-        out.add('sim ${tools.useSimulator ? 'on' : 'off'}');
-      case 'clock':
-        if (arg == 'real') {
-          tools.clock.clear();
-        } else {
-          final t = DateTime.tryParse(arg.endsWith('Z') ? arg : '${arg}Z');
-          if (t == null) {
-            out.add('clock? $arg');
-            continue;
-          }
-          tools.clock.setUtc(t.millisecondsSinceEpoch ~/ 1000);
-        }
-        out.add('clock $arg');
-      case 'weather':
-        arg == 'real' ? tools.force.set(clearWeather: true) : tools.force.set(weather: arg);
-        out.add('weather $arg');
-      case 'tp':
-        final ll = arg.split(',').map((x) => double.tryParse(x.trim())).toList();
-        if (ll.length != 2 || ll.contains(null)) {
-          out.add('tp? $arg');
-          continue;
-        }
-        tools.simulator.teleport(ll[0]!, ll[1]!);
-        out.add('tp $arg');
-      case 'lastcell':
-        // 0.26.4: a última posição guardada vira ([lat], [lon]) e fica assim nesta sessão (medir a abertura com o GPS longe).
-        final ll = arg.split(',').map((x) => double.tryParse(x.trim())).toList();
-        final st = liveGameState();
-        if (ll.length != 2 || ll.contains(null) || st == null) {
-          out.add('lastcell? $arg');
-          continue;
-        }
-        tools.holdLastCell = true;
-        st.lastMapCell = latLonToTile(ll[0]!, ll[1]!, biomeZoom);
-        st.changed();
-        out.add('lastcell $arg');
-      case 'width':
-        tools.setWidthM(arg == 'auto' ? null : double.tryParse(arg));
-        out.add('width $arg');
-      case 'labels':
-        tools.setTurnLabels(arg != 'off');
-        out.add('labels $arg');
-      case 'npcs':
-        tools.setForceNpcs(arg != 'off');
-        out.add('npcs ${tools.forceNpcs ? 'on' : 'off'}');
-      case 'speed':
-        final v = double.tryParse(arg);
-        if (v == null) {
-          out.add('speed? $arg');
-          continue;
-        }
-        tools.simulator.speedMps = v;
-        out.add('speed $v');
-      case 'npctune':
-        // Leva o GPS simulado para 45 m ao sul do Eco (longe da proteção de 30 m, ainda na tela) e o relógio para pouco antes.
-        final tu = tools.nextNpcTune?.call();
-        if (tu == null) {
-          out.add('npctune? nenhuma sintonia perto');
-          continue;
-        }
-        tools.simulator.teleport(tu.lat - 45 / 111320, tu.lon);
-        tools.clock.setUtc(tu.at - (int.tryParse(arg) ?? 4));
-        out.add('npctune ${tu.at}');
-      case 'vehicle':
-        // Debug: equipa direto no save aberto, sem passar pela bolsa (`vehicle cart@perfect`).
-        final live = liveGameState();
-        final id = 'item.vehicle.$arg';
-        if (live == null || arg.isEmpty) {
-          out.add('vehicle? $arg');
-          continue;
-        }
-        live.crafting.equipped[arg.startsWith('cart') ? LoadoutSlot.vehicleCar : LoadoutSlot.vehicleBike] = id;
-        live.changed();
-        out.add('vehicle $id');
-      case 'spectral':
-        final sp = tools.nextSpectral?.call();
-        if (sp == null) {
-          out.add('spectral? nenhum ponto perto');
-          continue;
-        }
-        tools.simulator.teleport(sp.lat - 25 / 111320, sp.lon);
-        tools.clock.setUtc(sp.at - (int.tryParse(arg) ?? 12));
-        out.add('spectral ${sp.at}');
-      case 'buses':
-        tools.setManyBuses(arg != 'off');
-        out.add('buses ${tools.manyBuses ? 'on' : 'off'}');
-      case 'npc':
-        out.add('npc ${tools.openNearestNpc?.call() ?? '? nenhum à vista'}');
-      case 'event':
-        // 0.25.0: os eventos do clima por cima (até dois, como no debug): `event vigil`, `event off`.
-        arg == 'off' ? tools.force.clearEvents() : tools.force.toggleEvent(arg);
-        out.add('event ${tools.force.events.join('+')}');
-      case 'creature':
-        // 0.25.0: `creature hum.eco [biome|crimson|shiny] [walk] [n]`, como o "Criar criatura" do debug (fora do mundo).
-        // 0.25.1: `walk` anda em laço (a deriva).
-        final a = arg.split(' ');
-        final shiny = a.contains('shiny'), walk = a.contains('walk'), n = a.length > 1 ? int.tryParse(a.last) ?? 1 : 1;
-        tools.force.creatures.request(
-            DebugCreatureSpec(speciesId: a.first, shiny: shiny, variant: DebugVariant.parse(a.length > 1 ? a[1] : null), count: n, walk: walk), [a.first]);
-        out.add('creature ${a.first}');
-      case 'seen':
-        // 0.25.0: marca a espécie como vista no save aberto (o retrato no Bestiário), só para conferir.
-        final live = liveGameState();
-        if (live == null || arg.isEmpty) {
-          out.add('seen? $arg');
-          continue;
-        }
-        live.markSeen(arg);
-        live.changed();
-        out.add('seen $arg');
-      case 'exit':
-        // 0.25.0: a saída animada do Eco mais perto (`exit tuned` ou `exit flee`), só no desenho.
-        out.add('exit ${tools.exitNearestEco?.call(arg != 'flee') ?? '? sem Eco à vista'}');
-      case 'level':
-        // 0.26.0: `level 20` força o nível (como o debug "Nível"), para abrir todos os apps; `level 0` desliga.
-        final lv = int.tryParse(arg);
-        if (lv == null) {
-          out.add('level? $arg');
-          continue;
-        }
-        tools.setLevelOverride(lv);
-        out.add('level $lv');
-      case 'turn':
-        // 0.25.2: `turn 30` gira o mapa a 30° (para o "Giro dos objetos" sem pinça de dois dedos).
-        final deg = double.tryParse(arg);
-        if (deg == null || tools.turnMapTo == null) {
-          out.add('turn? $arg');
-          continue;
-        }
-        tools.turnMapTo!(deg);
-        out.add('turn $deg');
-      case 'style':
-        // 0.25.1: `style full|simple`, os gráficos do mapa dos Ajustes (para medir os dois estilos sem tocar na tela).
-        final simple = arg == 'simple', live = liveGameState();
-        live != null ? live.setSetting(kSimpleGraphicsSetting, simple) : await writeSetting(save, kSimpleGraphicsSetting, simple);
-        out.add('style ${simple ? 'simple' : 'full'}');
-      case 'map':
-        await openMap?.call();
-        out.add('map');
-      default:
-        out.add('? ${parts.first}');
+    final line = raw.trim();
+    if (line.isEmpty) continue;
+    final space = line.indexOf(RegExp(r'\s'));
+    final name = space < 0 ? line : line.substring(0, space);
+    var args = space < 0 ? '' : line.substring(space + 1).trim();
+    if (name == 'list') {
+      out.addAll([for (final e in registry.entries) e.describe()]);
+      continue;
+    }
+    if (name == 'state') {
+      out.add(registry.state(always: base?.call() ?? const {}));
+      continue;
+    }
+    args = _legacy(name, args);
+    final e = registry.byName(name);
+    if (e == null) {
+      out.add('erro $name: não existe (cmd list)');
+      continue;
+    }
+    try {
+      out.add('ok ${e.id}: ${await registry.execute(e, args)}');
+    } on DebugError catch (err) {
+      out.add('erro ${e.id}: ${err.message}');
+    } catch (err) {
+      out.add('erro ${e.id}: $err');
     }
   }
   return out;
 }
 
-/// Liga o canal: pega o comando que abriu o app e os que chegarem depois (`onNewIntent`).
-Future<void> listenDebugCommands({required DevTools tools, required Future<void> Function() openMap}) async {
+/// Os argumentos dos comandos de antes que mudaram de forma.
+String _legacy(String name, String args) => switch (name) {
+      'event' when args == 'off' => 'real',
+      'clock' when args == 'real' => 'real',
+      // `creature hum.eco [biome|crimson|shiny] [walk] [n]`, ou `creature fire ...` (só o tipo).
+      'creature' when args.isNotEmpty && !args.contains('=') => () {
+          final a = args.split(RegExp(r'\s+'));
+          final n = a.length > 1 ? int.tryParse(a.last) : null;
+          final first = a.first;
+          return [
+            first.contains('.') ? 'species=$first' : 'species=tipo type=$first',
+            if (a.contains('shiny')) 'shiny=on',
+            if (a.contains('walk')) 'walk=on',
+            if (a.contains('biome')) 'variant=biome',
+            if (a.contains('crimson')) 'variant=crimson',
+            if (n != null) 'count=$n',
+          ].join(' ');
+        }(),
+      _ => args,
+    };
+
+/// Liga o canal: pega o comando que abriu o app e os que chegarem depois (`onNewIntent`). Cada resposta sai numa linha
+/// `kenoma_cmd ...` do logcat (o `celular.sh cmd` as lê de volta).
+Future<void> listenDebugCommands(DebugRegistry registry, DevTools tools) async {
+  Future<void> run(String text) async {
+    for (final l in await runDebugCommands(text, registry, base: () => debugStateBase(tools))) {
+      debugPrint('kenoma_cmd $l');
+    }
+  }
+
   debugCommandChannel.setMethodCallHandler((call) async {
-    if (call.method == 'cmd' && call.arguments is String) debugPrint('kenoma_cmd ${await runDebugCommands(call.arguments as String, tools: tools, openMap: openMap)}');
+    if (call.method == 'cmd' && call.arguments is String) await run(call.arguments as String);
   });
   try {
     final pending = await debugCommandChannel.invokeMethod<String>('pending');
-    if (pending != null && pending.isNotEmpty) debugPrint('kenoma_cmd ${await runDebugCommands(pending, tools: tools, openMap: openMap)}');
+    if (pending != null && pending.isNotEmpty) await run(pending);
   } on MissingPluginException {
     // testes e plataformas sem o canal
   } on PlatformException {

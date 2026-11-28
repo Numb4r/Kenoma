@@ -1,10 +1,9 @@
-/// Seção do menu de debug com a identidade e o save: player_id, registro de fundador, log de versões (com a
-/// conferência da cadeia de hashes), época e cabeçalho do save. Lê o que está em disco, então funciona antes de
-/// abrir o mapa. O menu de debug fica em toda build de teste (CLAUDE.md).
+/// A identidade e o save para a aba Sistema do debug: player_id, registro de fundador, log de versões (com a conferência
+/// da cadeia de hashes), época e cabeçalho do save. Lê o que está em disco, então funciona antes de abrir o mapa.
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData, rootBundle;
+import 'package:flutter/services.dart' show rootBundle;
 import 'dart:convert';
 
 import '../core/epochs.dart';
@@ -12,8 +11,7 @@ import '../save/founder.dart';
 import '../save/ksv_save_store.dart';
 import '../save/migrations.dart';
 import '../save/save_store.dart';
-import '../ui/colors.dart';
-import '../ui/tuning/tuning_screen.dart' show PixelButton;
+import '../ui/tema.dart';
 import 'game_clock.dart';
 
 /// O que a seção mostra, tirado do JSON do save. Separado da tela para poder testar.
@@ -54,93 +52,88 @@ class IdentityReport {
   final String? note;
 }
 
-class IdentitySection extends StatefulWidget {
-  const IdentitySection({required this.clock, this.store, super.key});
+/// O que a entrada `system.identity` mostra: o relatório do save, a época de agora e se o mundo está desatualizado.
+class IdentityInfo {
+  const IdentityInfo({required this.report, required this.epoch, required this.stale, required this.clockForced});
 
-  final GameClock clock;
+  final IdentityReport report;
+  final Epoch? epoch;
+  final bool stale;
+  final bool clockForced;
 
-  /// O save. Por padrão, o `save.ksv` nos documentos do app.
-  final SaveStore? store;
+  /// O resumo de uma linha (o `cmd` e a tela).
+  String get line {
+    final f = report.founder;
+    return [
+      'época ${epoch?.id ?? '?'}${stale ? ' (mundo desatualizado)' : ''}${clockForced ? ' · relógio forçado' : ''}',
+      if (f == null) 'sem fundador (abra o mapa)' else 'player_id ${f.playerId.substring(0, 8)}…',
+      'schema ${report.schemaVersion ?? '?'}',
+      if (f != null) '${f.versionsSeen.length} versões · cadeia ${report.chainValid ? 'íntegra' : 'QUEBRADA'}',
+      if (report.note != null) report.note!,
+    ].join(' · ');
+  }
 
-  @override
-  State<IdentitySection> createState() => _IdentitySectionState();
+  /// O que o botão de copiar leva: o resumo com o player_id inteiro, o grupo e o log de versões.
+  String get full {
+    final f = report.founder;
+    return [
+      line,
+      if (f != null) 'player_id ${f.playerId}',
+      if (f != null) 'primeira versão ${f.firstInstallVersion} · ${utcDate(f.firstSeenUtc)}',
+      'grupo ${report.groupCode ?? '?'} · última abertura ${report.lastSeenUtc == null ? '?' : utcDate(report.lastSeenUtc!)}',
+      if (epoch != null) 'época vale ${utcDate(epoch!.startsUtc)} → ${utcDate(epoch!.validUntilUtc)}',
+      for (final e in f?.versionsSeen ?? const <VersionEntry>[]) '${e.version} · ${utcDate(e.utc)} · ${e.hash.substring(0, 12)}',
+    ].join('\n');
+  }
 }
 
-class _IdentitySectionState extends State<IdentitySection> {
-  IdentityReport? _report;
-  Epoch? _epoch;
-  bool _stale = false;
-  String? _error;
+String utcDate(int utc) {
+  final t = DateTime.fromMillisecondsSinceEpoch(utc * 1000, isUtc: true);
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)} UTC';
+}
+
+/// Lê o save de [store] (ou o do app) e as épocas, no relógio de [clock].
+Future<IdentityInfo> readIdentity(GameClock clock, {SaveStore? store}) async {
+  final s = store ?? await KsvSaveStore.inDocuments();
+  final raw = await s.read();
+  final epochs = EpochSchedule.fromJson(jsonDecode(await rootBundle.loadString('assets/data/epochs.json')) as Map<String, dynamic>);
+  final sel = epochs.select(clock.nowUtc);
+  return IdentityInfo(report: IdentityReport.fromSave(raw, note: s.loadNote), epoch: sel.epoch, stale: sel.stale, clockForced: clock.overridden);
+}
+
+/// O log de versões e o resto do registro, recolhido até tocar (só leitura).
+class IdentityDetails extends StatefulWidget {
+  const IdentityDetails({required this.info, super.key});
+
+  final IdentityInfo? info;
 
   @override
-  void initState() {
-    super.initState();
-    _load();
-  }
+  State<IdentityDetails> createState() => _IdentityDetailsState();
+}
 
-  Future<void> _load() async {
-    try {
-      final store = widget.store ?? await KsvSaveStore.inDocuments();
-      final raw = await store.read();
-      final epochs = EpochSchedule.fromJson(jsonDecode(await rootBundle.loadString('assets/data/epochs.json')) as Map<String, dynamic>);
-      final sel = epochs.select(widget.clock.nowUtc);
-      if (!mounted) return;
-      setState(() {
-        _report = IdentityReport.fromSave(raw, note: store.loadNote);
-        _epoch = sel.epoch;
-        _stale = sel.stale;
-        _error = null;
-      });
-    } catch (e) {
-      if (mounted) setState(() => _error = '$e');
-    }
-  }
-
-  static String _date(int utc) {
-    final t = DateTime.fromMillisecondsSinceEpoch(utc * 1000, isUtc: true);
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)} UTC';
-  }
+class _IdentityDetailsState extends State<IdentityDetails> {
+  bool _open = false;
 
   @override
   Widget build(BuildContext context) {
-    const small = TextStyle(fontSize: 8, color: kText, height: 1.8);
-    final r = _report;
-    final f = r?.founder;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (_error != null) Text('ERRO: $_error', style: const TextStyle(fontSize: 8, color: kEssence)),
-        if (r == null && _error == null) const Text('LENDO O SAVE...', style: TextStyle(fontSize: 8, color: kDim)),
-        if (r != null) ...[
-          Text('ÉPOCA ${_epoch?.id ?? '?'}${_stale ? ' · MUNDO DESATUALIZADO' : ''} (RELÓGIO ${widget.clock.overridden ? 'SOBREPOSTO' : 'REAL'})', style: TextStyle(fontSize: 8, color: _stale ? kEssence : kSignal, height: 1.8)),
-          if (_epoch != null) Text('VALE ${_date(_epoch!.startsUtc)} → ${_date(_epoch!.validUntilUtc)}', style: const TextStyle(fontSize: 8, color: kDim, height: 1.8)),
-          if (r.note != null) Text(r.note!.toUpperCase(), style: const TextStyle(fontSize: 8, color: kEssence, height: 1.8)),
-          if (f == null)
-            const Text('SEM REGISTRO DE FUNDADOR: ABRA O MAPA UMA VEZ.', style: TextStyle(fontSize: 8, color: kDim, height: 1.8))
-          else ...[
-            const SizedBox(height: 8),
-            const Text('PLAYER_ID', style: TextStyle(fontSize: 8, color: kDim)),
-            Text(f.playerId, key: const Key('debug-player-id'), style: small),
-            Text('PRIMEIRA VERSÃO ${f.firstInstallVersion} · ${_date(f.firstSeenUtc)}', style: small),
-            Text('GRUPO ${r.groupCode ?? '?'} · SCHEMA ${r.schemaVersion ?? '?'} · ÚLTIMA ABERTURA ${r.lastSeenUtc == null ? '?' : _date(r.lastSeenUtc!)}', style: small),
-            const SizedBox(height: 8),
-            Text('VERSIONS_SEEN · ${f.versionsSeen.length} · CADEIA ${r.chainValid ? 'ÍNTEGRA' : 'QUEBRADA'}', style: TextStyle(fontSize: 8, color: r.chainValid ? kSignal : kEssence, height: 1.8)),
-            for (final e in f.versionsSeen) Text('${e.version} · ${_date(e.utc)} · ${e.hash.substring(0, 12)}', style: small),
-            const SizedBox(height: 8),
-            PixelButton(
-              label: 'Copiar player_id',
-              color: kVeil,
-              onTap: () async {
-                await Clipboard.setData(ClipboardData(text: f.playerId));
-                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('player_id copiado')));
-              },
-            ),
-          ],
-          const SizedBox(height: 8),
-          PixelButton(label: 'Reler o save', color: kDim, onTap: _load),
-        ],
-      ],
-    );
+    final info = widget.info;
+    if (info == null) return const SizedBox.shrink();
+    final n = info.report.founder?.versionsSeen.length ?? 0;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      GestureDetector(
+        key: const Key('identity-details'),
+        behavior: HitTestBehavior.opaque,
+        onTap: () => setState(() => _open = !_open),
+        child: SizedBox(
+          height: kToqueMinDp,
+          child: Row(children: [
+            Icon(_open ? Icons.expand_less : Icons.expand_more, color: KCores.textoMudo),
+            Text('VERSIONS_SEEN · $n', style: KTexto.rotulo.copyWith(color: KCores.textoMudo)),
+          ]),
+        ),
+      ),
+      if (_open) SelectableText(info.full, style: KTexto.corpoPequeno),
+    ]);
   }
 }

@@ -2,12 +2,8 @@
 /// vale na próxima vez que o mapa abrir. Para forçar um Espírito no próximo spawn, ver `spawn.spirit`.
 library;
 
-import 'package:flutter/material.dart';
-
-import '../ui/tema.dart';
 import 'debug_env.dart';
 import 'debug_registry.dart';
-import 'debug_widgets.dart';
 
 /// Família -> tipo da Essência dela (só para o debug; o jogo lê isso de `creatures.json`).
 const Map<String, String> _essenceOf = {'soot': 'fire', 'frond': 'plant', 'rill': 'water'};
@@ -29,29 +25,21 @@ Future<void> grantFusionKit(DebugEnv env, {required String family, int ecos = 5,
   await store.write(json);
 }
 
-List<DebugItem> fusionItems(DebugEnv env) => [
-      DebugItem(
-        id: 'player.fusion_grant',
-        title: 'Conceder Ecos e Essência (fusão)',
-        section: DebugSection.player,
+List<DebugEntry> fusionEntries(DebugEnv env) => [
+      DebugEntry(
+        id: 'creature.fusion_grant',
+        name: 'Conceder Ecos e Essência (fusão)',
+        tab: DebugTab.creatures,
+        kind: DebugKind.action,
+        aliases: const ['player.fusion_grant'],
+        touchesSave: true,
         keywords: const ['fusão', 'espírito', 'eco', 'essência', 'conceder', 'dar'],
-        builder: (context) => DebugColumn([
-          const DebugNote('ATENÇÃO: entra no seu save como se fosse de verdade. Vale na próxima vez que o mapa abrir.', color: KCores.brasaLaranja),
-          DebugWrap([
-            for (final f in _essenceOf.keys)
-              DebugButton(
-                label: '+5 Ecos $f + 5 Essência',
-                onTap: () async {
-                  final messenger = ScaffoldMessenger.maybeOf(context);
-                  try {
-                    await grantFusionKit(env, family: f);
-                    messenger?.showSnackBar(SnackBar(content: Text('5 Ecos $f NV 8 e 5 Essência no save')));
-                  } catch (_) {
-                    messenger?.showSnackBar(const SnackBar(content: Text('Sem save para escrever')));
-                  }
-                },
-              ),
-          ]),
-        ]),
+        info: '5 Ecos da família no nível 8 e 5 unidades da Essência dela. Entra no seu save como se fosse de verdade. Vale na próxima vez que o mapa abrir.',
+        params: [DebugParam('family', 'família', options: [for (final f in _essenceOf.keys) DebugOption(f, f)], fallback: 'soot')],
+        run: (c) async {
+          env.requireMapClosed();
+          await grantFusionKit(env, family: c['family']);
+          return '5 Ecos ${c['family']} NV 8 e 5 Essência no save';
+        },
       ),
     ];

@@ -1,15 +1,15 @@
-/// O que os itens do menu de debug compartilham: as ferramentas de dev, o estado da sintonia, onde mora o save e o
-/// centro do mapa livre. Quem monta o menu cria um [DebugEnv] e passa a `buildDefaultRegistry`.
+/// O que as entradas do menu de debug compartilham: as ferramentas de dev, o estado da sintonia e onde mora o save. Quem
+/// monta o menu cria um [DebugEnv] e passa a `buildDefaultRegistry`.
 library;
 
-import 'package:flutter/widgets.dart';
 
 import '../save/backup_io.dart';
 import '../save/ksv_save_store.dart';
 import '../save/save_store.dart';
-import '../world/places.dart';
+import '../ui/game/game_map_screen.dart' show liveGameState;
 import 'debug_capture.dart';
 import 'debug_prefs.dart';
+import 'debug_registry.dart';
 import 'dev_tools.dart';
 
 class DebugEnv {
@@ -23,12 +23,22 @@ class DebugEnv {
   /// As preferências do menu (o último "Criar criatura"). O menu põe aqui quando termina de carregar; `null` antes disso.
   DebugPrefs? prefs;
 
-  /// Centro do mapa livre e da névoa revelada. O padrão é a Unicamp.
-  final lat = TextEditingController(text: kUnicamp.$1.toString());
-  final lon = TextEditingController(text: kUnicamp.$2.toString());
-
   /// O save: o injetado (testes) ou o do app nos documentos.
   Future<SaveStore> openSave() async => saveStore ?? await KsvSaveStore.inDocuments();
+
+  /// O save em disco só se edita com o mapa fechado: o mapa aberto grava o dele por cima.
+  void requireMapClosed() {
+    if (liveGameState() != null) throw const DebugError('feche o mapa antes (Menu de debug): ele grava o save por cima');
+  }
+
+  /// Lê o save, aplica [change] e grava. Sem jogo salvo, ou com o mapa aberto (ele gravaria por cima), é erro de uso.
+  Future<void> editSave(Map<String, dynamic> Function(Map<String, dynamic> save) change) async {
+    requireMapClosed();
+    final store = await openSave();
+    final raw = await store.read();
+    if (raw == null) throw const DebugError('Ainda não há jogo salvo: abra o mapa uma vez.');
+    await store.write(change(raw));
+  }
 
   /// Lê o nível forçado do save para o [DevTools] (a etiqueta DEBUG e o item do nível usam). Sem disco, fica 0.
   Future<void> loadLevelOverride() async {
@@ -42,19 +52,7 @@ class DebugEnv {
     }
   }
 
-  (double, double) center() => (double.tryParse(lat.text.trim().replaceAll(',', '.')) ?? kUnicamp.$1, double.tryParse(lon.text.trim().replaceAll(',', '.')) ?? kUnicamp.$2);
-
   void dispose() {
-    lat.dispose();
-    lon.dispose();
     capture.dispose();
   }
-}
-
-/// Lê uma coordenada digitada (vírgula decimal vale). `null` se não for número ou estiver fora do alcance.
-(double, double)? parseCoord(String lat, String lon) {
-  final a = double.tryParse(lat.trim().replaceAll(',', '.'));
-  final b = double.tryParse(lon.trim().replaceAll(',', '.'));
-  if (a == null || b == null || a.abs() > 85 || b.abs() > 180) return null;
-  return (a, b);
 }

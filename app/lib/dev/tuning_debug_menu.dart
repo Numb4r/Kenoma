@@ -1,6 +1,6 @@
-/// Menu de debug: dono do [DevTools], do estado da sintonia e das preferências, e da tela [DebugMenuView]. Os itens
-/// (mapa do jogo, simulador de GPS, relógio UTC, spawns, sintonia, save...) estão no [DebugRegistry]
-/// (`debug_registry.dart`, `debug_items.dart`). Fica em todas as builds de teste, inclusive as de release (CLAUDE.md).
+/// Menu de debug: dono do [DevTools], do estado da sintonia, das preferências e do [DebugRegistry] (`debug_registry.dart`,
+/// `debug_items.dart`), que a tela [DebugMenuView] e o `cmd` (`debug_commands.dart`) usam. Fica em todas as builds de
+/// teste, inclusive as de release dos amigos, até a distribuição (`docs/distribuicao.md`).
 library;
 
 import 'dart:async';
@@ -17,6 +17,7 @@ import '../ui/tuning/log_exporter.dart';
 import 'debug_capture.dart';
 import 'debug_env.dart';
 import 'debug_items.dart';
+import 'debug_items_creature.dart' show restoreCreatureForm;
 import 'debug_menu_view.dart';
 import 'debug_prefs.dart';
 import 'debug_registry.dart';
@@ -52,7 +53,8 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
     saveStore: widget.saveStore,
     io: widget.backupIo ?? const DeviceBackupIo(),
   );
-  late final DebugRegistry _registry = buildDefaultRegistry(_env);
+  late final DebugRegistry _registry = buildDefaultRegistry(_env)..screen = () => mounted ? context : null;
+  late final Listenable _changes = debugListenables(_env);
   DebugPrefs? _prefs;
 
   @override
@@ -62,23 +64,24 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   }
 
   Future<void> _init() async {
+    // Comandos do adb por intent (scripts/celular.sh cmd ...): o celular se dirige sem teclado (0.24.2). 0.26.6: pelo
+    // mesmo registro da tela.
+    unawaited(listenDebugCommands(_registry, _tools));
     final prefs = widget.prefs ?? await DebugPrefs.inDocuments();
     await prefs.load();
+    prefs.migrateFavorites((id) => _registry.byName(id)?.id);
+    restoreCreatureForm(_registry, prefs.creatureForm);
     _env.prefs = prefs;
     if (mounted) setState(() => _prefs = prefs);
     _env.loadLevelOverride();
-    // Comandos do adb por intent (scripts/celular.sh cmd ...): o celular se dirige sem teclado (0.24.2).
-    unawaited(listenDebugCommands(tools: _tools, openMap: () async {
-      if (mounted) await openGameMap(context, _tools);
-    }));
     // Aberto pelo aviso de um Eco raro da Patrulha: vai direto ao mapa, que abre o Eco.
     if (await initPatrolLaunch() && mounted) {
       unawaited(openGameMap(context, _tools));
     }
     try {
-      await _env.capture.load();
+      await _env.capture.ensure();
     } catch (_) {
-      // sem assets ou sem disco: os itens da sintonia ficam em "Carregando..."
+      // sem assets ou sem disco: as entradas da sintonia ficam em "carregando"
     }
   }
 
@@ -86,7 +89,7 @@ class _TuningDebugMenuState extends State<TuningDebugMenu> {
   Widget build(BuildContext context) {
     final prefs = _prefs;
     if (prefs == null) return const Scaffold(body: Center(child: Text('Carregando...')));
-    return DebugMenuView(registry: _registry, prefs: prefs, onTop: () => openGameMap(context, _tools));
+    return DebugMenuView(registry: _registry, prefs: prefs, listenable: _changes, onTop: () => openGameMap(context, _tools));
   }
 
   @override

@@ -642,7 +642,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   /// Toque longo num Eco dentro da Aura: prende o sinal por alguns minutos. Num Eco já marcado, solta a marcação.
   void _onLongPress(Offset at) {
     final r = _ready;
-    if (r == null || _busy || r.travel.quiet) return;
+    if (r == null) return;
+    if (tools.pickTeleport) return _pickTeleportAt(r, at);
+    if (_busy || r.travel.quiet) return;
     final eco = r.game.spawnAt(at);
     if (eco == null || !eco.isEco) return;
     final state = r.session.state;
@@ -658,6 +660,15 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     } else {
       _toast('Limite de ${countText(state.balance.markMax, 'marcação')}. Solte uma com toque longo');
     }
+  }
+
+  /// 0.26.6, debug: o teleporte "escolher no mapa" armado leva o simulador até o ponto do toque longo.
+  void _pickTeleportAt(_Ready r, Offset at) {
+    final (x, y) = r.game.cellAt(at);
+    final (lat, lon) = tileFractionToLatLon(x, y, biomeZoom);
+    tools.setPickTeleport(false);
+    unawaited(tools.setUseSimulator(true).then((_) => tools.simulator.teleport(lat, lon)));
+    _toast('Simulador em ${lat.toStringAsFixed(5)}, ${lon.toStringAsFixed(5)}');
   }
 
   /// Toque no mapa: o spawn sob o dedo. Material dentro da Aura é coletado; Eco dentro da Aura abre o
@@ -1194,6 +1205,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     await artF;
     if (!mounted) return 'fechado';
     _ready = _Ready(assets, game, tracker, sub, data, session, world, layers, travel);
+    if (tools.pickTeleport) _toast('Toque longo no mapa: o simulador vai até lá', seconds: 5);
     _progress.value = 1;
     _revealAfterFrames(game);
     travel.addListener(() => _onTravel(_ready!));

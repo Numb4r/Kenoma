@@ -1,331 +1,171 @@
-/// Itens das seções Posição e Tempo e mundo: simulador de GPS, velocidade, ruído, joystick, teleporte, relógio UTC e
-/// clima forçado.
+/// Aba Posição: o mapa do jogo, o simulador de GPS (velocidade, ruído, recompensa), o teleporte (lugares, coordenada colada
+/// ou toque longo no mapa: o antigo Mapa livre virou isto), a última posição guardada, a poça mais perto e os passos. A
+/// Patrulha simulada e o diário ficam em `debug_items_patrol.dart`.
 library;
 
-import 'dart:convert';
+import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
-
-import '../core/weather.dart';
-import '../data/climate_catalog.dart';
-import '../ui/tema.dart';
+import '../core/tiles.dart' show biomeZoom, latLonToTile;
+import '../ui/game/game_map_screen.dart' show liveGameState, openGameMap;
+import '../world/device_sensors.dart';
 import '../world/places.dart';
-import 'clock_input.dart';
 import 'debug_env.dart';
+import 'debug_items_patrol.dart';
 import 'debug_registry.dart';
-import 'debug_widgets.dart';
-import 'dev_tools.dart';
 import 'gps_simulator.dart';
 
-List<DebugItem> positionItems(DebugEnv env) {
-  final tools = env.tools;
+String _ll((double, double) p) => '${p.$1},${p.$2}';
+
+/// Os lugares do teleporte (o valor é a coordenada; o `cmd` aceita o nome); `mapa` arma o toque longo no mapa do jogo.
+final kTeleportPlaces = [
+  for (final (label, p) in const [('Unicamp', kUnicamp), ('Centro', kCentroCampinas), ('Taquaral', kTaquaral), ('Valinhos', kValinhos), ('São Paulo', kPaulista)])
+    DebugOption(_ll(p), label),
+  const DebugOption('mapa', 'Escolher no mapa'),
+];
+
+List<DebugEntry> positionEntries(DebugEnv env) {
+  final tools = env.tools, sim = tools.simulator;
+  // O mapa do jogo, sem esperar ele fechar (a rota só termina quando ele sai).
+  void openMap(DebugCall c) {
+    final screen = c.context;
+    if (liveGameState() == null && screen != null && screen.mounted) unawaited(openGameMap(screen, tools));
+  }
+
   return [
-    DebugItem(
+    DebugEntry(
+      id: 'pos.open_map',
+      name: 'Abrir o mapa do jogo',
+      tab: DebugTab.position,
+      kind: DebugKind.action,
+      aliases: const ['map.open_game', 'map'],
+      keywords: const ['abrir', 'jogar', 'mapa', 'gps'],
+      run: (c) {
+        unawaited(openGameMap(c.screen, tools));
+        return 'mapa';
+      },
+    ),
+    DebugEntry(
       id: 'pos.simulator',
-      title: 'Simulador de GPS',
-      section: DebugSection.position,
-      keywords: const ['gps', 'posição', 'fonte', 'simulador'],
-      builder: (_) => ListenableBuilder(
-        listenable: tools,
-        builder: (context, _) => Column(children: [
-          Align(alignment: Alignment.centerLeft, child: DebugNote('Fonte de posição: ${tools.useSimulator ? 'simulador' : 'GPS real'}')),
-          if (tools.emulator)
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: DebugNote('Emulador: a localização dele conta como GPS simulado (sem recompensa com o interruptor abaixo desligado).', key: Key('debug-emulator'), color: KCores.brasaLaranja),
-            ),
-          DebugSwitch(
-            title: 'Simulador de GPS',
-            subtitle: 'No lugar do GPS real. Joystick, velocidade e teleporte no mapa do jogo.',
-            value: tools.useSimulator,
-            color: KCores.sinalCiano,
-            onChanged: (v) => tools.setUseSimulator(v),
-          ),
-          DebugSwitch(
-            title: 'GPS simulado dá recompensa',
-            subtitle: 'Desligado: com o simulador ou no emulador (no mapa e na Patrulha simulada) nada conta para XP, estatísticas ou bestiário, e as capturas entram marcadas como debug.',
-            value: tools.simRewards,
-            color: KCores.brasaLaranja,
-            onChanged: tools.setSimRewards,
-          ),
-        ]),
-      ),
+      name: 'Simulador de GPS',
+      tab: DebugTab.position,
+      kind: DebugKind.toggle,
+      aliases: const ['sim'],
+      keywords: const ['gps', 'posição', 'fonte', 'joystick'],
+      info: 'No lugar do GPS real. O joystick, a velocidade e o teleporte aparecem no mapa do jogo.',
+      warn: tools.emulator ? 'Emulador: a localização dele já conta como GPS simulado.' : null,
+      read: () => tools.useSimulator ? 'on' : 'off',
+      run: (c) => tools.setUseSimulator(c.value == 'on'),
+      offReal: () => tools.useSimulator ? 'simulador' : null,
+      toReal: () => tools.setUseSimulator(false),
     ),
-    DebugItem(
+    DebugEntry(
+      id: 'pos.rewards',
+      name: 'GPS simulado dá recompensa',
+      tab: DebugTab.position,
+      kind: DebugKind.toggle,
+      keywords: const ['recompensa', 'xp', 'bestiário', 'emulador'],
+      info: 'Desligado (o padrão): com o simulador ou no emulador (no mapa e na Patrulha simulada) nada conta para XP, estatísticas ou bestiário, e as capturas entram marcadas como debug.',
+      read: () => tools.simRewards ? 'on' : 'off',
+      run: (c) => tools.setSimRewards(c.value == 'on'),
+      offReal: () => tools.simRewards ? 'simulador com recompensa' : null,
+      toReal: () => tools.setSimRewards(false),
+    ),
+    DebugEntry(
       id: 'pos.speed',
-      title: 'Velocidade do simulador',
-      section: DebugSection.position,
-      keywords: const ['andando', 'correndo', 'bicicleta', 'm/s'],
-      builder: (_) => StatefulBuilder(
-        builder: (context, setState) => DebugWrap([
-          for (final s in SimSpeed.values)
-            DebugChip('${s.label} ${s.mps.toStringAsFixed(1)} m/s', on: tools.simulator.speedMps == s.mps, onTap: () => setState(() => tools.simulator.speedMps = s.mps)),
-        ]),
-      ),
+      name: 'Velocidade do simulador',
+      tab: DebugTab.position,
+      kind: DebugKind.choice,
+      aliases: const ['speed'],
+      keywords: const ['andando', 'correndo', 'bicicleta', 'carro', 'm/s'],
+      options: [for (final s in SimSpeed.values) DebugOption(s.mps.toStringAsFixed(1), '${s.label} ${s.mps.toStringAsFixed(1)}'), const DebugOption('15.0', 'Carro 15')],
+      read: () => sim.speedMps.toStringAsFixed(1),
+      run: (c) => sim.speedMps = c.numberOf(''),
     ),
-    DebugItem(
+    DebugEntry(
       id: 'pos.noise',
-      title: 'Ruído de GPS',
-      section: DebugSection.position,
+      name: 'Ruído de GPS (5 m)',
+      tab: DebugTab.position,
+      kind: DebugKind.toggle,
       keywords: const ['erro', 'jitter', 'precisão'],
-      builder: (_) => StatefulBuilder(
-        builder: (context, setState) => DebugSwitch(
-          title: 'Ruído de GPS (5 m)',
-          value: tools.simulator.noiseM > 0,
-          onChanged: (v) => setState(() => tools.simulator.noiseM = v ? 5 : 0),
-        ),
-      ),
+      read: () => sim.noiseM > 0 ? 'on' : 'off',
+      run: (c) => sim.noiseM = c.value == 'on' ? 5 : 0,
+      offReal: () => sim.noiseM > 0 ? 'ruído ${sim.noiseM.round()} m' : null,
+      toReal: () => sim.noiseM = 0,
     ),
-    DebugItem(
-      id: 'pos.joystick',
-      title: 'Joystick',
-      section: DebugSection.position,
-      keywords: const ['mover', 'andar', 'controle'],
-      builder: (_) => ListenableBuilder(
-        listenable: tools,
-        builder: (context, _) => DebugNote(tools.useSimulator
-            ? 'O joystick aparece por cima do mapa do jogo, no canto de baixo à esquerda.'
-            : 'Ligue o simulador de GPS: o joystick aparece por cima do mapa do jogo.'),
-      ),
-    ),
-    DebugItem(
+    DebugEntry(
       id: 'pos.teleport',
-      title: 'Teleporte',
-      section: DebugSection.position,
-      keywords: const ['coordenada', 'latitude', 'longitude', 'unicamp', 'centro', 'taquaral'],
-      builder: (_) => _Teleport(tools: env.tools),
+      name: 'Teleporte',
+      tab: DebugTab.position,
+      kind: DebugKind.coord,
+      aliases: const ['tp', 'map.free'],
+      keywords: const ['coordenada', 'latitude', 'longitude', 'mapa livre', 'lugar', 'valinhos', 'são paulo', 'taquaral'],
+      info: 'Liga o simulador e o leva até o lugar, a coordenada colada ("lat, lon") ou o ponto de um toque longo no mapa do jogo. Abre o mapa se ele estiver fechado.',
+      options: kTeleportPlaces,
+      read: () => _ll((sim.lat, sim.lon)),
+      run: (c) async {
+        if (c.value == 'mapa') {
+          tools.setPickTeleport(true);
+          openMap(c);
+          return 'Toque longo no mapa: o simulador vai até lá';
+        }
+        final p = parseLatLon(c.value)!;
+        await tools.setUseSimulator(true);
+        sim.teleport(p.$1, p.$2);
+        openMap(c);
+        return 'Simulador em ${c.value}';
+      },
+      offReal: () => tools.pickTeleport ? 'escolher no mapa' : null,
+      toReal: () => tools.setPickTeleport(false),
     ),
+    DebugEntry(
+      id: 'pos.lastcell',
+      name: 'Última posição guardada',
+      tab: DebugTab.position,
+      kind: DebugKind.coord,
+      aliases: const ['lastcell'],
+      keywords: const ['célula', 'abertura', 'save', 'longe'],
+      info: 'Fixa a célula que o mapa guarda para a próxima abertura (medir a abertura com o GPS longe). Fica assim até fechar o app. Com o mapa aberto.',
+      options: [for (final o in kTeleportPlaces) if (o.value != 'mapa') o],
+      read: () => liveGameState()?.lastMapCell?.toString(),
+      run: (c) {
+        final st = liveGameState();
+        if (st == null) throw const DebugError('abra o mapa antes');
+        final p = parseLatLon(c.value)!;
+        tools.holdLastCell = true;
+        st.lastMapCell = latLonToTile(p.$1, p.$2, biomeZoom);
+        st.changed();
+        return 'Posição guardada em ${c.value}';
+      },
+      offReal: () => tools.holdLastCell ? 'posição guardada presa' : null,
+      toReal: () => tools.holdLastCell = false,
+    ),
+    DebugEntry(
+      id: 'pos.puddle',
+      name: 'Ir até a poça mais perto',
+      tab: DebugTab.position,
+      kind: DebugKind.action,
+      aliases: const ['spawn.puddles'],
+      keywords: const ['poça', 'rill', 'água'],
+      info: 'Liga o GPS simulado sem recompensa e vai até a poça mais perto a até 1 km. Com o mapa aberto.',
+      run: (c) => tools.goToNearestPuddle(),
+    ),
+    DebugEntry(
+      id: 'pos.steps',
+      name: 'Injetar passos',
+      tab: DebugTab.position,
+      kind: DebugKind.action,
+      aliases: const ['pos.steps_inject'],
+      keywords: const ['passos', 'contador', 'pedômetro', 'fagulha'],
+      info: 'Somados à leitura do contador, só até fechar o app. Com o contador ligado nos Ajustes, o mapa converte na próxima leitura (a cada 30 s).',
+      params: const [DebugParam('n', 'passos', options: [DebugOption('500', '+500'), DebugOption('1000', '+1000'), DebugOption('5000', '+5000')], fallback: '1000')],
+      read: () => '${DeviceSensors.debugExtraSteps}',
+      run: (c) {
+        DeviceSensors.debugExtraSteps += c.intOf('n');
+        return '+${DeviceSensors.debugExtraSteps} passos no contador';
+      },
+      offReal: () => DeviceSensors.debugExtraSteps == 0 ? null : '+${DeviceSensors.debugExtraSteps} passos',
+      toReal: () => DeviceSensors.debugExtraSteps = 0,
+    ),
+    ...patrolEntries(env),
   ];
-}
-
-class _Teleport extends StatefulWidget {
-  const _Teleport({required this.tools});
-
-  final DevTools tools;
-
-  @override
-  State<_Teleport> createState() => _TeleportState();
-}
-
-class _TeleportState extends State<_Teleport> {
-  final _lat = TextEditingController(text: kUnicamp.$1.toString());
-  final _lon = TextEditingController(text: kUnicamp.$2.toString());
-
-  @override
-  void dispose() {
-    _lat.dispose();
-    _lon.dispose();
-    super.dispose();
-  }
-
-  void _preset((double, double) p) => setState(() {
-        _lat.text = p.$1.toString();
-        _lon.text = p.$2.toString();
-      });
-
-  void _go() {
-    final c = parseCoord(_lat.text, _lon.text);
-    if (c == null) return debugSnack(context, 'Coordenada inválida');
-    widget.tools.simulator.teleport(c.$1, c.$2);
-    debugSnack(context, 'Teleportado');
-  }
-
-  @override
-  Widget build(BuildContext context) => DebugColumn([
-        Row(children: [Expanded(child: DebugField('Latitude', _lat, numeric: true)), const SizedBox(width: KEspaco.s1), Expanded(child: DebugField('Longitude', _lon, numeric: true))]),
-        DebugWrap([
-          DebugButton(label: 'Unicamp', color: KCores.textoMudo, onTap: () => _preset(kUnicamp)),
-          DebugButton(label: 'Centro', color: KCores.textoMudo, onTap: () => _preset(kCentroCampinas)),
-          DebugButton(label: 'Taquaral', color: KCores.textoMudo, onTap: () => _preset(kTaquaral)),
-          DebugButton(label: 'Teleportar', onTap: _go),
-        ]),
-      ]);
-}
-
-List<DebugItem> timeItems(DebugEnv env) {
-  final tools = env.tools;
-  return [
-    DebugItem(
-      id: 'time.clock',
-      title: 'Relógio UTC',
-      section: DebugSection.time,
-      keywords: const ['hora', 'data', 'época', 'override', 'tempo'],
-      builder: (_) => _ClockItem(tools: tools),
-    ),
-    DebugItem(
-      id: 'time.weather',
-      title: 'Clima forçado',
-      section: DebugSection.time,
-      keywords: const ['chuva', 'sol', 'nublado', 'tempo', 'hud', 'spawns', 'clima', 'evento', 'místico'],
-      builder: (_) => _WeatherItem(tools: tools),
-    ),
-    DebugItem(
-      id: 'time.events',
-      title: 'Eventos forçados',
-      section: DebugSection.time,
-      keywords: const ['evento', 'vigília', 'lua carmim', 'aurora', 'arco-íris', 'tornado', 'procissão', 'silêncio', 'camada', 'pilha', 'sexta-feira 13'],
-      builder: (_) => _WeatherItem(tools: tools, events: true),
-    ),
-    DebugItem(
-      id: 'time.lightning_here',
-      title: 'Raio aqui',
-      section: DebugSection.time,
-      keywords: const ['raio', 'trovão', 'clarão', 'tempestade', 'toque', 'eco carregado'],
-      builder: (_) => ListenableBuilder(
-        listenable: tools.force,
-        builder: (context, _) => DebugColumn([
-          DebugNote(tools.force.tapEffect == 'lightning'
-              ? 'Toque no mapa: o raio cai ali, com traço, clarão, trovão, poeira, marca queimada e o Eco carregado. Só neste aparelho.'
-              : 'Arme e toque no mapa: o raio cai no ponto tocado, mesmo do seu lado.'),
-          DebugButton(label: 'Raio aqui', color: KCores.sinalCiano, onTap: () => tools.force.set(tapEffect: 'lightning')),
-        ]),
-      ),
-    ),
-    DebugItem(
-      id: 'time.rainbow_foot',
-      title: 'Ir até o pé do arco-íris',
-      section: DebugSection.time,
-      keywords: const ['arco-íris', 'arco', 'pé', 'prisma', 'teleporte', 'feérico'],
-      builder: (context) => DebugColumn([
-        const DebugNote('Teleporta o GPS simulado até o pé do arco-íris ativo mais perto. Sem arco: force o evento Arco-íris (época 12; antes, o clima) ou solte um no toque.'),
-        DebugButton(
-          label: 'Ir até o pé do arco-íris',
-          onTap: () {
-            if (!tools.useSimulator) tools.setUseSimulator(true);
-            final jump = tools.force.rainbowFoot;
-            if (jump == null) {
-              // O menu de debug fecha o mapa: o teleporte fica pedido e acontece quando ele abrir.
-              tools.force.rainbowJumpPending = true;
-              return debugSnack(context, 'Abra o mapa do jogo: o GPS simulado vai até o pé do arco-íris mais perto');
-            }
-            final p = jump();
-            if (p == null) return debugSnack(context, 'Nenhum arco-íris ativo por perto');
-            tools.simulator.teleport(p.$1, p.$2);
-            debugSnack(context, 'No pé do arco-íris');
-          },
-        ),
-      ]),
-    ),
-    DebugItem(
-      id: 'time.weather_tap',
-      title: 'Efeito do clima no toque',
-      section: DebugSection.time,
-      keywords: const ['raio', 'granizo', 'redemoinho', 'meteoro', 'toque', 'clima', 'efeito'],
-      builder: (_) => ListenableBuilder(
-        listenable: tools.force,
-        builder: (context, _) => DebugColumn([
-          DebugNote(tools.force.tapEffect == null ? 'Escolha um efeito e toque no mapa: ele acontece ali, só neste aparelho.' : 'Toque no mapa para soltar: ${_tapNames[tools.force.tapEffect] ?? tools.force.tapEffect}'),
-          DebugWrap([
-            for (final e in _tapNames.entries)
-              DebugChip(e.value, on: tools.force.tapEffect == e.key, color: KCores.sinalCiano, onTap: () => tools.force.set(tapEffect: e.key)),
-          ]),
-        ]),
-      ),
-    ),
-  ];
-}
-
-const _tapNames = {'lightning': 'Raio', 'hail': 'Granizo', 'dust_devil': 'Redemoinho', 'meteor': 'Meteoro', 'violet_bolt': 'Raio violeta', 'spark_fall': 'Fagulha do céu', 'puddle': 'Poça', 'rainbow': 'Arco-íris', 'dry_bolt': 'Raio seco', 'branch': 'Galho', 'rune': 'Runa', 'gaze': 'Olhar', 'hurricane_eye': 'Olho do furacão', 'procession': 'Procissão', 'funnel': 'Funil do tornado', 'ghost_building': 'Prédio antigo (Maré)'};
-
-/// Os quatro climas antigos sempre à mão; os outros (nativos, de outras regiões e místicos) chegam do `clima.json`.
-class _WeatherItem extends StatefulWidget {
-  const _WeatherItem({required this.tools, this.events = false});
-
-  final DevTools tools;
-
-  /// Os eventos da época 12 (até dois, por cima de qualquer clima), em vez dos climas.
-  final bool events;
-
-  @override
-  State<_WeatherItem> createState() => _WeatherItemState();
-}
-
-class _WeatherItemState extends State<_WeatherItem> {
-  ClimateCatalog? _catalog = ClimateCatalog.lastLoaded;
-
-  /// Só lê o arquivo quando pedem (o mapa já deixa o catálogo carregado): ler ao montar o item travava a leitura dos
-  /// assets nos testes de widget.
-  void _load() {
-    Future.wait([rootBundle.loadString('assets/data/clima.json', cache: false), rootBundle.loadString('assets/data/eventos.json', cache: false)]).then((s) {
-      if (mounted) setState(() => _catalog = ClimateCatalog.fromJson(jsonDecode(s[0]) as Map<String, dynamic>, jsonDecode(s[1]) as Map<String, dynamic>));
-    }).catchError((_) {});
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final force = widget.tools.force;
-    final legacy = {for (final w in Weather.values) w.id};
-    Widget chip(String id, String label) => DebugChip(label, on: force.weather == id, color: KCores.veuVioleta, onTap: () => force.set(weather: id));
-    if (widget.events) {
-      return ListenableBuilder(
-        listenable: force,
-        builder: (context, _) => DebugColumn([
-          const DebugNote('Até dois eventos por cima do clima (o forçado ou o do mundo), com as combinações. Antes da época 12, vale o modelo dela. Só neste aparelho.'),
-          DebugWrap([
-            DebugChip('Do mundo', on: force.events.isEmpty, color: KCores.veuVioleta, onTap: force.clearEvents),
-            for (final e in _catalog?.eventInfos.values ?? const <EventInfo>[])
-              DebugChip(e.name, on: force.events.contains(e.id), color: KCores.brasaLaranja, onTap: () => force.toggleEvent(e.id)),
-            if (_catalog == null || _catalog!.eventInfos.isEmpty) DebugButton(label: 'Todos os eventos', color: KCores.textoMudo, onTap: _load),
-          ]),
-        ]),
-      );
-    }
-    return ListenableBuilder(
-      listenable: force,
-      builder: (context, _) => DebugColumn([
-        const DebugNote('Vale para o HUD, o desenho, as peças do clima e os pesos de spawn. Antes da época 6, as peças usam o modelo dela. Os eventos ficam em "Eventos forçados".'),
-        DebugWrap([
-          DebugChip('Real', on: force.weather == null, color: KCores.veuVioleta, onTap: () => force.set(clearWeather: true)),
-          for (final w in Weather.values) chip(w.id, w.label),
-          for (final c in _catalog?.climates.values ?? const <ClimateInfo>[])
-            if (!legacy.contains(c.id)) chip(c.id, c.name),
-          // Os climas que viraram evento na época 12 (Chuva Carmim, Garoa Prismática): só para as épocas antigas.
-          if (_catalog != null && _catalog!.eventInfos.isEmpty) DebugButton(label: 'Carregar eventos', color: KCores.textoMudo, onTap: _load),
-          if (_catalog == null) DebugButton(label: 'Todos os climas', color: KCores.textoMudo, onTap: _load),
-        ]),
-      ]),
-    );
-  }
-}
-
-class _ClockItem extends StatefulWidget {
-  const _ClockItem({required this.tools});
-
-  final DevTools tools;
-
-  @override
-  State<_ClockItem> createState() => _ClockItemState();
-}
-
-class _ClockItemState extends State<_ClockItem> {
-  final _text = TextEditingController();
-
-  @override
-  void dispose() {
-    _text.dispose();
-    super.dispose();
-  }
-
-  void _apply() {
-    final t = parseUtcInput(_text.text);
-    if (t == null) return debugSnack(context, 'Use aaaa-mm-dd hh:mm em UTC');
-    widget.tools.clock.setUtc(t);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final clock = widget.tools.clock;
-    return ListenableBuilder(
-      listenable: clock,
-      builder: (context, _) => DebugColumn([
-        Text('${formatUtc(clock.now)}${clock.overridden ? '  (OVERRIDE)' : ''}', style: KTexto.rotulo.copyWith(color: clock.overridden ? KCores.brasaLaranja : KCores.texto)),
-        DebugField('aaaa-mm-dd hh:mm (UTC)', _text),
-        DebugWrap([
-          DebugButton(label: 'Aplicar', color: KCores.brasaLaranja, onTap: _apply),
-          DebugButton(label: 'Relógio real', color: KCores.textoMudo, onTap: clock.clear),
-        ]),
-      ]),
-    );
-  }
 }

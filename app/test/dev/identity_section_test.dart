@@ -30,18 +30,21 @@ void main() {
     expect(IdentityReport.fromSave(null).groupCode, isNull);
   });
 
-  testWidgets('a seção do menu de debug mostra player_id, log de versões e época', (tester) async {
+  testWidgets('a entrada do debug resume em uma linha e o detalhe recolhido traz player_id, log de versões e época', (tester) async {
     final store = MemorySaveStore();
     final s = await GameSession.open(store: store, startInventory: {}, balance: loadProgressBalance(), nowUtc: () => 1790040000, nextInt: (n) => 0, appVersion: '0.12.0+18', epochOf: (_) => 0);
     await s.flush();
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: IdentitySection(clock: GameClock(), store: store)))));
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 300))); // a seção lê o save e as épocas do disco
+    final info = (await tester.runAsync(() => readIdentity(GameClock(), store: store)))!;
+    final id = s.state.founder!.playerId;
+    expect(info.line, allOf(startsWith('época '), contains('player_id ${id.substring(0, 8)}…'), contains('1 versões · cadeia íntegra')));
+    expect(info.line, isNot(contains(id)), reason: 'a linha não mostra o player_id inteiro');
+    expect(info.full, allOf(contains('player_id $id'), contains('0.12.0+18')));
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: IdentityDetails(info: info)))));
+    expect(find.textContaining(id), findsNothing, reason: 'recolhido');
+    expect(find.text('VERSIONS_SEEN · 1'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('identity-details')));
     await tester.pump();
-    await tester.pump();
-    expect(find.text(s.state.founder!.playerId), findsOneWidget);
-    expect(find.textContaining('VERSIONS_SEEN · 1 · CADEIA ÍNTEGRA'), findsOneWidget);
-    expect(find.textContaining('0.12.0+18'), findsWidgets);
-    expect(find.textContaining('ÉPOCA'), findsOneWidget);
+    expect(find.textContaining('player_id $id'), findsOneWidget);
     expect(Founder.fromJson(store.json!['founder'] as Map<String, dynamic>).chainValid, isTrue);
   });
 }

@@ -1,20 +1,29 @@
-/// A tela do menu de debug: busca no topo, seção Favoritos e as seções recolhíveis. Só desenha o [DebugRegistry];
-/// o que cada item faz mora nos `debug_items_*.dart`. Sempre acessível, em toda build (CLAUDE.md).
+/// A tela do menu de debug (0.26.6): uma vista do [DebugRegistry], como o `cmd`. No topo, fixos: a faixa "fora do real"
+/// (um chip por override; tocar desfaz só ele; "Voltar tudo ao real" desfaz o que não mexe no save), a busca, os favoritos
+/// numa linha de atalhos e as abas. Embaixo rolam os cartões da aba (`debug_entry_card.dart`). Sempre acessível, em toda
+/// build de teste (CLAUDE.md); sai da build dos amigos antes de distribuir (`docs/distribuicao.md`).
 library;
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../ui/craft/ui_art.dart' show UiFrame;
 import '../ui/pressable.dart';
 import '../ui/tema.dart';
+import 'debug_entry_card.dart';
 import 'debug_prefs.dart';
 import 'debug_registry.dart';
 import 'debug_widgets.dart';
 
 class DebugMenuView extends StatefulWidget {
-  const DebugMenuView({required this.registry, required this.prefs, this.onTop, super.key});
+  const DebugMenuView({required this.registry, required this.prefs, this.listenable, this.onTop, super.key});
 
   final DebugRegistry registry;
   final DebugPrefs prefs;
+
+  /// O que avisa quando o estado das entradas muda (`debugListenables`).
+  final Listenable? listenable;
 
   /// 0.24.4: o Voltar no topo do menu (sem busca). O menu é a primeira rota: sem isto o Voltar fechava o app. O menu do
   /// jogo passa "abrir o mapa".
@@ -26,16 +35,77 @@ class DebugMenuView extends StatefulWidget {
 
 class _DebugMenuViewState extends State<DebugMenuView> {
   final _search = TextEditingController();
+  final _scroll = ScrollController();
+  final _cards = <String, GlobalKey>{};
+  String? _flash;
+  Timer? _flashTimer;
+
+  DebugRegistry get reg => widget.registry;
+
+  @override
+  void initState() {
+    super.initState();
+    reg.screen = () => mounted ? context : null;
+  }
 
   @override
   void dispose() {
+    _flashTimer?.cancel();
     _search.dispose();
+    _scroll.dispose();
     super.dispose();
+  }
+
+  /// Roda pela tela: o destrutivo pergunta antes (com a palavra, se houver); o aviso sai num snackbar.
+  Future<void> _run(DebugEntry e, String raw) async {
+    final say = debugSayer(context);
+    if (e.destructive && !e.selfConfirm) {
+      final ok = await debugConfirm(context,
+          title: '${e.name}?', body: e.info ?? 'Não tem volta.', confirm: e.name, word: e.confirmWord == 'sim' ? null : e.confirmWord);
+      if (!ok || !mounted) return;
+    }
+    try {
+      final msg = await reg.execute(e, e.destructive ? '$raw confirma=${e.confirmWord}' : raw, context: context);
+      if (e.kind == DebugKind.action || e.kind == DebugKind.coord) say(msg);
+    } on DebugError catch (err) {
+      say(err.message);
+    } catch (err) {
+      say('Erro: $err');
+    }
+  }
+
+  Future<void> _undo(DebugEntry e) async {
+    final say = debugSayer(context);
+    try {
+      await reg.undo(e);
+    } catch (err) {
+      say('Erro: $err');
+    }
+  }
+
+  Future<void> _undoAll() async {
+    final say = debugSayer(context);
+    final kept = await reg.undoAll();
+    say(kept.isEmpty ? 'Tudo no real' : 'Tudo no real, menos o que mexe no save: ${kept.join(', ')}');
+  }
+
+  /// Favorito tocado: vai para a aba dele e rola até o cartão, que acende por 600 ms.
+  void _goTo(DebugEntry e) {
+    _search.clear();
+    widget.prefs.setTab(e.tab);
+    setState(() => _flash = e.id);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final c = _cards[e.id]?.currentContext;
+      if (c != null) Scrollable.ensureVisible(c, duration: const Duration(milliseconds: 200));
+    });
+    _flashTimer?.cancel();
+    _flashTimer = Timer(const Duration(milliseconds: 600), () {
+      if (mounted) setState(() => _flash = null);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final query = _search.text.trim();
     // Voltar sobe um nível: com busca, limpa a busca; no topo, [onTop] (o mapa). Nunca fecha o app.
     return PopScope(
       canPop: false,
@@ -49,138 +119,140 @@ class _DebugMenuViewState extends State<DebugMenuView> {
         }
       },
       child: Scaffold(
-      backgroundColor: KCores.fundo,
-      body: SafeArea(
-        child: ListenableBuilder(
-          listenable: widget.prefs,
-          builder: (context, _) => SingleChildScrollView(
-            padding: const EdgeInsets.all(KEspaco.s2),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text('DEBUG', style: KTexto.titulo),
-                const SizedBox(height: KEspaco.s2),
-                DebugField('Buscar por nome ou palavra-chave', _search, key: const Key('debug-search'), onChanged: (_) => setState(() {})),
-                const SizedBox(height: KEspaco.s2),
-                if (query.isEmpty) ..._sections() else ..._results(query),
-                const SizedBox(height: KEspaco.s4),
-              ],
-            ),
+        backgroundColor: KCores.fundo,
+        body: SafeArea(
+          child: ListenableBuilder(
+            listenable: Listenable.merge([widget.prefs, reg.ran, ?widget.listenable]),
+            builder: (context, _) {
+              final query = _search.text.trim();
+              return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(KEspaco.s2, KEspaco.s2, KEspaco.s2, 0),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    const Text('DEBUG', style: KTexto.titulo),
+                    const SizedBox(height: KEspaco.s1),
+                    _offReal(),
+                    const SizedBox(height: KEspaco.s1),
+                    DebugField('Buscar por nome, id ou palavra-chave', _search, key: const Key('debug-search'), onChanged: (_) => setState(() {})),
+                    if (query.isEmpty) ...[const SizedBox(height: KEspaco.s1), _favorites(), _tabs()],
+                  ]),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    key: const Key('debug-cards'),
+                    controller: _scroll,
+                    padding: const EdgeInsets.all(KEspaco.s2),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: query.isEmpty ? _tabCards() : _results(query)),
+                  ),
+                ),
+              ]);
+            },
           ),
         ),
       ),
-    ),
     );
   }
+
+  Widget _card(DebugEntry e, {bool search = false}) => KeyedSubtree(
+        key: _cards.putIfAbsent(e.id, GlobalKey.new),
+        child: EntryCard(
+          entry: e,
+          onRun: _run,
+          favorite: widget.prefs.isFavorite(e.id),
+          onStar: () => widget.prefs.toggleFavorite(e.id),
+          prefix: search ? e.tab.title : null,
+          flash: _flash == e.id,
+        ),
+      );
+
+  List<Widget> _tabCards() => [for (final e in reg.inTab(widget.prefs.tab)) _card(e)];
 
   List<Widget> _results(String query) {
-    final hits = widget.registry.search(query);
-    if (hits.isEmpty) return [const DebugNote('Nenhum item com essa busca.')];
-    return [for (final i in hits) _card(i, showSection: true)];
+    final hits = reg.search(query);
+    if (hits.isEmpty) return [const DebugNote('Nenhuma entrada com essa busca.')];
+    return [for (final e in hits) _card(e, search: true)];
   }
 
-  List<Widget> _sections() {
-    final prefs = widget.prefs;
-    final favs = [for (final id in prefs.favorites) if (widget.registry.byId(id) != null) widget.registry.byId(id)!];
-    return [
-      for (final s in DebugSection.values)
-        _Section(
-          section: s,
-          open: prefs.isOpen(s),
-          count: s == DebugSection.favorites ? favs.length : widget.registry.inSection(s).length,
-          onToggle: () => prefs.setOpen(s, !prefs.isOpen(s)),
-          empty: s == DebugSection.favorites ? 'Nenhum favorito. Toque na estrela de um item para fixar aqui.' : 'sem itens ainda',
-          hasMovedToFavorites: s != DebugSection.favorites && widget.registry.inSection(s).any((i) => prefs.isFavorite(i.id)),
-          children: s == DebugSection.favorites
-              ? [for (final i in favs) _card(i)]
-              : [for (final i in widget.registry.inSection(s)) if (!prefs.isFavorite(i.id)) _card(i)],
-        ),
-    ];
+  Widget _offReal() {
+    final off = reg.offReal();
+    if (off.isEmpty) {
+      return SizedBox(height: 24, child: Align(alignment: Alignment.centerLeft, child: Text('TUDO REAL', key: const Key('debug-all-real-state'), style: KTexto.rotulo.copyWith(color: KCores.textoMudo))));
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Row(children: [
+        Expanded(child: Text('FORA DO REAL · ${off.length}', style: KTexto.rotulo.copyWith(color: KCores.sinalCiano))),
+        DebugButton(key: const Key('debug-all-real'), label: 'Voltar tudo ao real', onTap: _undoAll),
+      ]),
+      Wrap(spacing: KEspaco.s1, children: [
+        for (final (e, label) in off) DebugOverrideChip(label, key: Key('real-${e.id}'), onTap: () => _undo(e)),
+      ]),
+    ]);
   }
 
-  Widget _card(DebugItem item, {bool showSection = false}) {
-    final fav = widget.prefs.isFavorite(item.id);
-    return Container(
-      key: Key('item-${item.id}'),
-      margin: const EdgeInsets.only(bottom: KEspaco.s2),
-      decoration: BoxDecoration(border: Border.all(color: KCores.contorno, width: kContornoDp), boxShadow: KSombra.pixel),
-      // Material próprio: o SwitchListTile pinta o fundo e o respingo no Material mais próximo.
-      child: Material(
-        color: KCores.superficie1,
-        child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(left: KEspaco.s2),
-                child: Text(showSection ? '${item.section.title} · ${item.title}'.toUpperCase() : item.title.toUpperCase(), style: KTexto.rotulo.copyWith(color: KCores.veuClaro)),
-              ),
-            ),
-            Pressable(
-              onTap: () => widget.prefs.toggleFavorite(item.id),
-              child: SizedBox(
-                key: Key('star-${item.id}'),
-                width: kToqueMinDp,
-                height: kToqueMinDp,
-                child: Icon(fav ? Icons.star : Icons.star_border, color: fav ? KCores.veuVioleta : KCores.textoMudo),
-              ),
-            ),
-          ]),
-          Padding(padding: const EdgeInsets.fromLTRB(KEspaco.s2, 0, KEspaco.s2, KEspaco.s2), child: Builder(builder: item.builder)),
-        ],
+  Widget _favorites() {
+    final favs = [for (final id in widget.prefs.favorites) ?reg.byName(id)];
+    return SizedBox(
+      height: kToqueMinDp,
+      child: Row(children: [
+        const Icon(Icons.star, size: 18, color: KCores.textoMudo),
+        const SizedBox(width: KEspaco.s1),
+        Expanded(
+          child: favs.isEmpty
+              ? const DebugNote('Sem favoritos: toque na estrela de um item.', maxLines: 1)
+              : SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
+                  for (final e in favs)
+                    Padding(
+                      padding: const EdgeInsets.only(right: KEspaco.s1),
+                      child: Pressable(
+                        key: Key('fav-${e.id}'),
+                        onTap: () => _goTo(e),
+                        child: Container(
+                          constraints: const BoxConstraints(maxWidth: 120, minHeight: kToqueMinDp),
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(horizontal: KEspaco.s1),
+                          decoration: BoxDecoration(color: KCores.superficie2, border: Border.all(color: KCores.contorno, width: kContornoDp)),
+                          child: Stack(clipBehavior: Clip.none, children: [
+                            Text(e.name.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: KTexto.rotulo),
+                            if (e.offReal?.call() != null) const Positioned(right: -3, top: -6, child: DebugDot()),
+                          ]),
+                        ),
+                      ),
+                    ),
+                ])),
         ),
-      ),
+      ]),
     );
   }
-}
 
-class _Section extends StatelessWidget {
-  const _Section({
-    required this.section,
-    required this.open,
-    required this.count,
-    required this.onToggle,
-    required this.children,
-    required this.empty,
-    required this.hasMovedToFavorites,
-  });
-
-  final DebugSection section;
-  final bool open;
-  final int count;
-  final VoidCallback onToggle;
-  final List<Widget> children;
-  final String empty;
-  final bool hasMovedToFavorites;
-
-  @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Pressable(
-            onTap: onToggle,
-            child: Container(
-              key: Key('section-${section.id}'),
-              constraints: const BoxConstraints(minHeight: kToqueMinDp),
-              margin: const EdgeInsets.only(bottom: KEspaco.s1),
-              padding: const EdgeInsets.symmetric(horizontal: KEspaco.s2),
-              decoration: BoxDecoration(color: KCores.superficie2, border: Border.all(color: KCores.contorno, width: kContornoDp), boxShadow: KSombra.pixel),
-              child: Row(children: [
-                Expanded(child: Text(section.title.toUpperCase(), style: KTexto.rotulo.copyWith(color: section == DebugSection.favorites ? KCores.veuVioleta : KCores.sinalCiano))),
-                Text('$count', style: KTexto.rotulo.copyWith(color: KCores.textoMudo)),
-                const SizedBox(width: KEspaco.s1),
-                Icon(open ? Icons.expand_less : Icons.expand_more, color: KCores.texto),
+  Widget _tabs() {
+    final now = widget.prefs.tab;
+    return Container(
+      height: kToqueMinDp,
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: KCores.contorno, width: kContornoDp))),
+      child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        for (final t in DebugTab.values)
+          GestureDetector(
+            key: Key('tab-${t.id}'),
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              widget.prefs.setTab(t);
+              if (_scroll.hasClients) _scroll.jumpTo(0);
+            },
+            child: UiFrame(
+              name: t == now ? 'tab_on' : 'tab_off',
+              padding: const EdgeInsets.symmetric(horizontal: KEspaco.s2, vertical: 9),
+              fallbackFill: t == now ? KCores.superficie1 : Colors.transparent,
+              fallbackLine: t == now ? KCores.veuVioleta : Colors.transparent,
+              child: Stack(clipBehavior: Clip.none, children: [
+                Center(
+                  widthFactor: 1,
+                  child: Text(t.title.toUpperCase(), maxLines: 1, style: KTexto.rotulo.copyWith(color: t == now ? KCores.texto : KCores.textoMudo)),
+                ),
+                if (reg.inTab(t).any((e) => e.offReal?.call() != null)) const Positioned(right: -9, top: -6, child: DebugDot()),
               ]),
             ),
           ),
-          if (open) ...[
-            if (children.isEmpty && !hasMovedToFavorites)
-              Padding(padding: const EdgeInsets.only(bottom: KEspaco.s2), child: DebugNote(empty))
-            else
-              ...children,
-          ],
-          const SizedBox(height: KEspaco.s1),
-        ],
-      );
+      ])),
+    );
+  }
 }

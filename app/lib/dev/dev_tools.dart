@@ -51,6 +51,17 @@ class DevTools extends ChangeNotifier {
   /// sessão.
   bool holdLastCell = false;
 
+  bool _pickTeleport = false;
+
+  /// 0.26.6: o teleporte "escolher no mapa": armado, o próximo toque longo no mapa do jogo leva o simulador até ali.
+  bool get pickTeleport => _pickTeleport;
+
+  void setPickTeleport(bool v) {
+    if (v == _pickTeleport) return;
+    _pickTeleport = v;
+    notifyListeners();
+  }
+
   bool _manyBuses = false;
 
   /// 0.24.5: quase todo carro novo de avenida vira ônibus (só cena, para ver a parada no ponto).

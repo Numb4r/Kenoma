@@ -11,6 +11,9 @@ abstract final class KCores {
   static const Color superficie1 = Color(0xFF1E1830);
   static const Color superficie2 = Color(0xFF2A2240);
   static const Color contorno = Color(0xFF1A1424);
+
+  /// A "Linha" do guia (`kPanelLine`): o contorno fraco do que não está escolhido.
+  static const Color linha = Color(0xFF3D3357);
   static const Color veuVioleta = Color(0xFF9B7BFF);
   static const Color veuClaro = Color(0xFFC9B8FF);
   static const Color sinalCiano = Color(0xFF5FD3C6);

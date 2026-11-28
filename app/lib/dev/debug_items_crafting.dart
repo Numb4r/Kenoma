@@ -4,14 +4,10 @@
 library;
 
 import '../core/plural.dart';
-import 'package:flutter/material.dart';
-
 import '../crafting/bag.dart' show acceptableCount, slotsUsedBy;
 import '../data/game_data.dart';
-import '../ui/tema.dart';
 import 'debug_env.dart';
 import 'debug_registry.dart';
-import 'debug_widgets.dart';
 
 /// Soma ao save o kit, sem passar do limite da bolsa (0.24.1): equipa a maior bolsa (se o espaço estiver livre) e põe, em
 /// ordem, recipientes, equipáveis, um recipiente cheio de cada condição, componentes, brutos nas três qualidades, Pós e
@@ -77,26 +73,19 @@ Future<int> grantCraftingKit(DebugEnv env) async {
   return refused;
 }
 
-List<DebugItem> craftingItems(DebugEnv env) => [
-      DebugItem(
+List<DebugEntry> craftingEntries(DebugEnv env) => [
+      DebugEntry(
         id: 'player.crafting_kit',
-        title: 'Kit de crafting (fase 1)',
-        section: DebugSection.player,
+        name: 'Kit de crafting (fase 1)',
+        tab: DebugTab.player,
+        kind: DebugKind.action,
+        touchesSave: true,
         keywords: const ['crafting', 'bolsa', 'bancada', 'coletor', 'garrafa', 'receita', 'página', 'grimório', 'qualidade', 'kit', 'dar'],
-        builder: (context) => DebugColumn([
-          const DebugNote('ATENÇÃO: entra no seu save como se fosse de verdade. Vale na próxima vez que o mapa abrir.', color: KCores.brasaLaranja),
-          DebugButton(
-            label: 'Bolsa grande, recipientes, materiais, páginas e receitas (até encher)',
-            onTap: () async {
-              final messenger = ScaffoldMessenger.maybeOf(context);
-              try {
-                final out = await grantCraftingKit(env);
-                messenger?.showSnackBar(SnackBar(content: Text(out == 0 ? 'Kit de crafting no save' : 'Kit de crafting no save. Bolsa cheia: ${countText(out, 'item', plural: 'itens')} ficaram de fora')));
-              } catch (_) {
-                messenger?.showSnackBar(const SnackBar(content: Text('Sem save para escrever')));
-              }
-            },
-          ),
-        ]),
+        info: 'Bolsa grande, recipientes, materiais nas três qualidades, páginas e receitas, até encher. Entra no seu save como se fosse de verdade. Vale na próxima vez que o mapa abrir.',
+        run: (_) async {
+          env.requireMapClosed();
+          final out = await grantCraftingKit(env);
+          return out == 0 ? 'Kit de crafting no save' : 'Kit de crafting no save. Bolsa cheia: ${countText(out, 'item', plural: 'itens')} ficaram de fora';
+        },
       ),
     ];

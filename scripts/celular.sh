@@ -6,7 +6,8 @@
 #   - nunca digita texto: o debug vai por `cmd`, uma intent que só o Kenoma lê (lib/dev/debug_commands.dart);
 #   - `start` (abrir o app) só com KENOMA_CELULAR_LIBERADO=1, depois que o dono disse na sessão que o aparelho está livre.
 #
-# uso: celular.sh check | start | cmd "sim on; tp -22.9,-47.06; map" | tap X Y | swipe X1 Y1 X2 Y2 [ms] | back | shot NOME | reset
+# uso: celular.sh check | start | cmd "list" | cmd "state" | cmd "pos.simulator on; pos.teleport valinhos" | tap X Y | swipe X1 Y1 X2 Y2 [ms] | back | shot NOME | reset
+#   (KENOMA_CELULAR=emulator-5554 dirige o emulador; CMD_ESPERA=s espera a resposta, padrão 3 s)
 set -u
 export PATH="$HOME/Android/Sdk/platform-tools:$PATH"
 SERIAL="${KENOMA_CELULAR:-ZF524FMMGF}"
@@ -37,7 +38,13 @@ case "${1:-}" in
     [ -f "$TRAVA" ] && { echo "recusado: $(cat "$TRAVA")" >&2; exit 2; }
     $A shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
     sleep 6; confere; echo "ok: aberto" ;;
-  cmd) confere; $A shell am start -n $PKG/.MainActivity --es kenoma_cmd "'${2:?comando}'" >/dev/null; echo "ok: cmd $2" ;;
+  cmd)
+    # 0.26.6: a resposta do app volta pelo logcat (linhas `kenoma_cmd ...`): `cmd list`, `cmd state`, `cmd <id> <args>`.
+    confere
+    T="$($A shell date +%s | tr -d '\r').000"
+    $A shell am start -n $PKG/.MainActivity --es kenoma_cmd "'${2:?comando}'" >/dev/null
+    sleep "${CMD_ESPERA:-3}"
+    $A logcat -d -v raw -T "$T" -s flutter:I | sed -n 's/^kenoma_cmd //p' ;;
   tap) confere; $A shell input tap "$2" "$3" ;;
   swipe) confere; $A shell input swipe "$2" "$3" "$4" "$5" "${6:-300}" ;;
   back) confere; $A shell input keyevent 4 ;;

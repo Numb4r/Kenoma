@@ -1,7 +1,9 @@
-/// Itens da seção Captura do menu de debug: abrir a sintonia de qualquer espécie, com nível do Eco e do Conjurador,
-/// selo, tônico, alvo no dial e tipo oculto; o registro das sessões; e sentir a vibração. O estado vive no
-/// [CaptureDebug], então os itens podem ser fixados nos Favoritos sem perder a escolha.
+/// Aba Criaturas, a sintonia: abrir a sintonia de qualquer espécie, com nível do Eco e do Conjurador, selo, tônico, alvo no
+/// dial e tipo oculto; o registro das sessões; e sentir a vibração. O estado vive no [CaptureDebug], então as entradas
+/// podem ir para os favoritos sem perder a escolha.
 library;
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -12,14 +14,11 @@ import '../capture/tuning_setup.dart';
 import '../capture/vibe.dart';
 import '../data/session_log_store.dart';
 import '../data/tuning_data.dart';
-import '../ui/sprites/sprite_image.dart';
-import '../ui/tema.dart';
 import '../ui/tuning/log_exporter.dart';
 import '../ui/tuning/tuning_screen.dart';
 import '../ui/tuning/vibration_driver.dart';
 import '../ui/type_label.dart';
 import 'debug_registry.dart';
-import 'debug_widgets.dart';
 
 class CaptureDebug extends ChangeNotifier {
   CaptureDebug({this.store, LogExporter? exporter}) : exporter = exporter ?? ShareLogExporter();
@@ -27,7 +26,6 @@ class CaptureDebug extends ChangeNotifier {
   SessionLogStore? store;
   final LogExporter exporter;
   final vibration = DeviceVibration();
-  final sprites = <String, EcoSprite>{};
 
   String appBuild = '';
   int sessions = 0;
@@ -41,12 +39,17 @@ class CaptureDebug extends ChangeNotifier {
   bool hidden = false;
   bool _disposed = false;
 
+  Future<void>? _loading;
+
+  /// Carrega uma vez só (o menu ao abrir e o `cmd` antes de conferir valores).
+  Future<void> ensure() => _loading ??= load().catchError((Object e) {
+        _loading = null;
+        throw e;
+      });
+
   Future<void> load() async {
     final d = await TuningData.load();
     final info = await PackageInfo.fromPlatform();
-    for (final s in d.species) {
-      sprites[s.id] = await EcoSprite.load(s.id);
-    }
     final st = store ?? await SessionLogStore.inDocuments();
     await st.migrate(); // quem exporta logo depois já leva o formato atual
     final n = await st.count();
@@ -86,14 +89,6 @@ class CaptureDebug extends ChangeNotifier {
     if (!_disposed) update(() => sessions = n);
   }
 
-  Future<void> export(BuildContext context) async {
-    if (sessions == 0) {
-      debugSnack(context, 'Nenhuma sessão gravada ainda');
-      return;
-    }
-    await exporter.export(store!.file);
-  }
-
   @override
   void dispose() {
     _disposed = true;
@@ -102,146 +97,129 @@ class CaptureDebug extends ChangeNotifier {
   }
 }
 
-List<DebugItem> captureItems(CaptureDebug c) {
-  Widget when(Widget Function(TuningData d) build) => ListenableBuilder(
-        listenable: c,
-        builder: (context, _) => c.data == null ? const DebugNote('Carregando...') : build(c.data!),
+List<DebugEntry> captureEntries(CaptureDebug c) {
+  TuningData data() => c.data ?? (throw const DebugError('carregando os dados da sintonia'));
+  DebugEntry opt(String id, String name, String alias, bool Function() get, void Function(bool v) set, {String? info, bool Function()? enabled}) => DebugEntry(
+        id: 'creature.tuning_$id',
+        name: name,
+        tab: DebugTab.creatures,
+        kind: DebugKind.toggle,
+        aliases: [alias],
+        keywords: const ['sintonia', 'dial'],
+        info: info,
+        enabled: enabled,
+        read: () => get() ? 'on' : 'off',
+        run: (call) => c.update(() => set(call.value == 'on')),
+      );
+  DebugEntry level(String id, String name, int Function() get, void Function(int v) set) => DebugEntry(
+        id: 'creature.tuning_$id',
+        name: name,
+        tab: DebugTab.creatures,
+        kind: DebugKind.number,
+        aliases: [if (id == 'eco_level') 'cap.levels'],
+        keywords: const ['sintonia', 'nível', 'level'],
+        min: 1,
+        max: 20,
+        read: () => '${get()}',
+        run: (call) => c.update(() => set(call.intOf(''))),
       );
   return [
-    DebugItem(
-      id: 'cap.species',
-      title: 'Espécie',
-      section: DebugSection.capture,
+    DebugEntry(
+      id: 'creature.tuning_species',
+      name: 'Sintonia: espécie',
+      tab: DebugTab.creatures,
+      kind: DebugKind.choice,
+      aliases: const ['cap.species'],
       keywords: const ['eco', 'criatura', 'sintonia', 'tipo', 'sootling', 'rillet', 'frondling', 'humoth', 'pebblet', 'rustling', 'glimlet', 'umbrel', 'wisplet', 'bitling', 'sprigglet', 'wyrmlet'],
-      builder: (_) => when((d) => Wrap(spacing: 6, runSpacing: 6, children: [for (final s in d.species) _speciesTile(c, s)])),
+      load: c.ensure,
+      enabled: () => !c.hidden,
+      optionsOf: () => [for (final s in c.data?.species ?? const <EcoSpecies>[]) DebugOption(s.id, s.name)],
+      read: () => c.species?.id,
+      run: (call) => c.update(() => c.species = data().species.firstWhere((s) => s.id == call.value)),
     ),
-    DebugItem(
-      id: 'cap.levels',
-      title: 'Níveis',
-      section: DebugSection.capture,
-      keywords: const ['eco', 'conjurador', 'nível', 'level'],
-      builder: (_) => when((d) => DebugColumn([
-            _slider('Nível do Eco', c.ecoLevel, 1, 20, (v) => c.update(() => c.ecoLevel = v)),
-            _slider('Conjurador', c.playerLevel, 1, 20, (v) => c.update(() => c.playerLevel = v)),
-          ])),
-    ),
-    DebugItem(
-      id: 'cap.seal',
-      title: 'Selo',
-      section: DebugSection.capture,
+    level('eco_level', 'Sintonia: nível do Eco', () => c.ecoLevel, (v) => c.ecoLevel = v),
+    level('player_level', 'Sintonia: nível do Conjurador', () => c.playerLevel, (v) => c.playerLevel = v),
+    DebugEntry(
+      id: 'creature.tuning_seal',
+      name: 'Sintonia: selo',
+      tab: DebugTab.creatures,
+      kind: DebugKind.choice,
+      aliases: const ['cap.seal'],
       keywords: const ['seal', 'sintonia'],
-      builder: (_) => when((d) => DropdownButton<Seal>(
-            value: c.seal,
-            isExpanded: true,
-            dropdownColor: KCores.superficie2,
-            style: KTexto.rotulo.copyWith(fontSize: 16),
-            items: [for (final s in d.seals) DropdownMenuItem(value: s, child: Text(s.name))],
-            onChanged: (s) => c.update(() => c.seal = s),
-          )),
+      load: c.ensure,
+      optionsOf: () => [for (final s in c.data?.seals ?? const <Seal>[]) DebugOption(s.id, s.name)],
+      read: () => c.seal?.id,
+      run: (call) => c.update(() => c.seal = data().seals.firstWhere((s) => s.id == call.value)),
     ),
-    DebugItem(
-      id: 'cap.options',
-      title: 'Opções da sintonia',
-      section: DebugSection.capture,
-      keywords: const ['tônico', 'tonico', 'alvo', 'dial', 'tipo oculto'],
-      builder: (_) => when((d) => Column(children: [
-            DebugSwitch(title: 'Tônico (+${d.tonics.first.extraTimeS.toStringAsFixed(0)} s)', value: c.tonic, onChanged: (v) => c.update(() => c.tonic = v)),
-            DebugSwitch(
-              title: 'Mostrar alvo no dial',
-              value: c.showTarget && !c.hidden,
-              color: KCores.sinalCiano,
-              onChanged: c.hidden ? null : (v) => c.update(() => c.showTarget = v),
-            ),
-            DebugSwitch(
-              title: 'Tipo oculto',
-              subtitle: 'Sorteia o tipo. Você sente a vibração e dá o palpite antes de sintonizar.',
-              value: c.hidden,
-              onChanged: (v) => c.update(() => c.hidden = v),
-            ),
-          ])),
+    opt('tonic', 'Sintonia: tônico', 'cap.options', () => c.tonic, (v) => c.tonic = v, info: 'Soma o tempo do primeiro tônico do items.json.'),
+    opt('target', 'Sintonia: alvo no dial', 'cap.target', () => c.showTarget && !c.hidden, (v) => c.showTarget = v, enabled: () => !c.hidden),
+    opt('hidden', 'Sintonia: tipo oculto', 'cap.hidden', () => c.hidden, (v) => c.hidden = v, info: 'Sorteia o tipo entre os três do MVP. Você sente a vibração e dá o palpite antes de sintonizar.'),
+    DebugEntry(
+      id: 'creature.tuning_start',
+      name: 'Iniciar sintonia',
+      tab: DebugTab.creatures,
+      kind: DebugKind.action,
+      aliases: const ['cap.start'],
+      keywords: const ['capturar', 'iniciar', 'dial', 'resistência'],
+      load: c.ensure,
+      status: () {
+        final d = c.data, s = c.species;
+        if (d == null || s == null) return null;
+        final setup = c.setupFor(d, s);
+        return 'Resistência ${setup.intensity(d.balance).toStringAsFixed(2)} · tolerância ${setup.tolerance(d.balance).toStringAsFixed(3)} · ${setup.timeLimitS(d.balance).toStringAsFixed(0)} s';
+      },
+      run: (call) {
+        unawaited(c.start(call.screen, data()));
+        return 'sintonia';
+      },
     ),
-    DebugItem(
-      id: 'cap.start',
-      title: 'Abrir sintonia',
-      section: DebugSection.capture,
-      keywords: const ['capturar', 'iniciar', 'dial', 'ritual', 'resistência'],
-      builder: (_) => when((d) {
-        final setup = c.setupFor(d, c.species!);
-        return DebugColumn([
-          Text(
-            'Resistência ${setup.intensity(d.balance).toStringAsFixed(2)}\n'
-            'Tolerância ${setup.tolerance(d.balance).toStringAsFixed(3)}\n'
-            'Tempo ${setup.timeLimitS(d.balance).toStringAsFixed(0)} s',
-            style: KTexto.corpoPequeno,
-          ),
-          Builder(builder: (context) => DebugButton(label: 'Iniciar sintonia', color: KCores.sinalCiano, onTap: () => c.start(context, d))),
-        ]);
-      }),
+    DebugEntry(
+      id: 'creature.tuning_log',
+      name: 'Registro das sessões',
+      tab: DebugTab.creatures,
+      kind: DebugKind.view,
+      aliases: const ['cap.log'],
+      keywords: const ['csv', 'sessões', 'log'],
+      read: () => 'Sessões gravadas: ${c.sessions}',
     ),
-    DebugItem(
-      id: 'cap.log',
-      title: 'Registro das sessões',
-      section: DebugSection.capture,
-      keywords: const ['exportar', 'csv', 'sessões', 'log'],
-      builder: (_) => ListenableBuilder(
-        listenable: c,
-        builder: (context, _) => DebugColumn([
-          Text('Sessões gravadas: ${c.sessions}', style: KTexto.corpoPequeno),
-          DebugButton(label: 'Exportar registro', onTap: () => c.export(context)),
-        ]),
-      ),
+    DebugEntry(
+      id: 'creature.tuning_log_export',
+      name: 'Exportar o registro das sessões',
+      tab: DebugTab.creatures,
+      kind: DebugKind.action,
+      keywords: const ['exportar', 'csv', 'sessões', 'log', 'compartilhar'],
+      run: (_) async {
+        if (c.sessions == 0) throw const DebugError('Nenhuma sessão gravada ainda');
+        await c.exporter.export(c.store!.file);
+        return null;
+      },
     ),
-    DebugItem(
-      id: 'cap.vibration',
-      title: 'Sentir a vibração',
-      section: DebugSection.capture,
+    DebugEntry(
+      id: 'creature.vibration',
+      name: 'Sentir a vibração',
+      tab: DebugTab.creatures,
+      kind: DebugKind.action,
+      aliases: const ['cap.vibration'],
       keywords: const ['vibrar', 'haptic', 'identidade', 'alerta', 'fogo', 'água', 'planta'],
-      builder: (_) => DebugColumn([
-        const DebugNote('Identidade (ferramenta do modo tipo oculto)'),
-        DebugWrap([for (final t in EcoType.values) DebugButton(label: typeLabel(t), onTap: () => c.vibration.play(identityPattern(t)))]),
-        const DebugNote('Alertas (durante a sintonia)'),
-        DebugWrap([
-          DebugButton(label: 'Fogo: aviso', color: KCores.brasaLaranja, onTap: () => c.vibration.play(fireWarningPattern)),
-          DebugButton(label: 'Água: virada', color: KCores.sinalCiano, onTap: () => c.vibration.play(waterSwellPattern)),
-          DebugButton(label: 'Planta: broto', onTap: () => c.vibration.play(plantPulsePattern(90))),
-        ]),
-      ]),
+      info: 'A identidade de cada tipo (ferramenta do modo tipo oculto) e os alertas durante a sintonia.',
+      params: [
+        DebugParam('pattern', 'vibração', options: [
+          for (final t in EcoType.values) DebugOption(t.name, typeLabel(t)),
+          const DebugOption('fire_warning', 'Fogo: aviso'),
+          const DebugOption('water_swell', 'Água: virada'),
+          const DebugOption('plant_pulse', 'Planta: broto'),
+        ], fallback: EcoType.values.first.name),
+      ],
+      run: (call) {
+        final p = call['pattern'];
+        c.vibration.play(switch (p) {
+          'fire_warning' => fireWarningPattern,
+          'water_swell' => waterSwellPattern,
+          'plant_pulse' => plantPulsePattern(90),
+          _ => identityPattern(EcoType.values.byName(p)),
+        });
+        return null;
+      },
     ),
   ];
 }
-
-Widget _speciesTile(CaptureDebug c, EcoSpecies s) {
-  final selected = !c.hidden && s.id == c.species?.id;
-  return GestureDetector(
-    onTap: c.hidden ? null : () => c.update(() => c.species = s),
-    child: Opacity(
-      opacity: c.hidden ? 0.35 : 1,
-      child: Container(
-        width: 96,
-        padding: const EdgeInsets.all(KEspaco.s1),
-        decoration: BoxDecoration(border: Border.all(color: selected ? KCores.sinalCiano : KCores.contorno, width: kContornoDp), color: selected ? KCores.superficie2 : null),
-        child: Column(children: [
-          RawImage(image: c.sprites[s.id]?.normal, width: 72, height: 72, filterQuality: FilterQuality.none, fit: BoxFit.contain),
-          const SizedBox(height: 4),
-          Text(s.name, style: KTexto.corpoPequeno.copyWith(color: KCores.texto)),
-          Text(typeLabel(s.type), style: KTexto.corpoPequeno),
-        ]),
-      ),
-    ),
-  );
-}
-
-Widget _slider(String label, int value, int min, int max, ValueChanged<int> onChanged) => Row(children: [
-      SizedBox(width: 120, child: Text(label, style: KTexto.corpoPequeno)),
-      Expanded(
-        child: Slider(
-          value: value.toDouble(),
-          min: min.toDouble(),
-          max: max.toDouble(),
-          divisions: max - min,
-          activeColor: KCores.veuVioleta,
-          onChanged: (v) => onChanged(v.round()),
-        ),
-      ),
-      SizedBox(width: 32, child: Text('$value', textAlign: TextAlign.right, style: KTexto.rotulo.copyWith(fontSize: 16))),
-    ]);

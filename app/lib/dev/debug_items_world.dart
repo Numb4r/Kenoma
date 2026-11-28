@@ -1,341 +1,122 @@
-/// Itens das seções Spawns, Mapa e câmera e Jogador: forçar o próximo Eco, criar criaturas, sobreposições do mapa, Radar,
-/// mapa livre, mapa do jogo e o nível do Conjurador. Forçar vale para o próximo Eco novo desta sessão; o Radar e o nível
-/// mexem no save (valem na próxima vez que o mapa abrir).
+/// Aba Mundo, fora o clima (`debug_items_climate.dart`): o relógio UTC, o tráfego simulado, o Ônibus Espectral e os Outros
+/// Veilbreakers. Só neste aparelho; nada disso muda o mundo dos amigos.
 library;
 
-import 'package:flutter/material.dart';
-
-import '../core/behavior.dart';
-import '../ui/game/game_map_screen.dart';
-import '../ui/lab/visual_lab_screen.dart';
-import '../ui/map/map_screen.dart';
-import '../ui/tema.dart';
-import '../world/places.dart';
+import 'clock_input.dart';
 import 'debug_env.dart';
-import 'debug_items_crafting.dart';
-import 'debug_items_fusion.dart';
+import 'debug_items_climate.dart';
 import 'debug_registry.dart';
-import 'debug_widgets.dart';
-import 'street_debug_section.dart';
 
-List<DebugItem> spawnItems(DebugEnv env) {
-  final force = env.tools.force;
-  Widget listen(Widget Function() build) => ListenableBuilder(listenable: force, builder: (_, _) => build());
+List<DebugEntry> worldEntries(DebugEnv env) {
+  final tools = env.tools, clock = tools.clock;
+  String two(int v) => v.toString().padLeft(2, '0');
   return [
-    DebugItem(
-      id: 'spawn.behavior',
-      title: 'Forçar comportamento',
-      section: DebugSection.spawns,
-      keywords: const ['eco', 'oculto', 'passivo', 'próximo spawn'],
-      builder: (_) => listen(() => DebugColumn([
-            const DebugNote('ATENÇÃO: o que for forçado e capturado fica no seu save como se fosse de verdade.', color: KCores.brasaLaranja),
-            const DebugNote('Próximo Eco novo à vista.'),
-            DebugWrap([for (final b in EcoBehavior.values) DebugChip(b.label, on: force.nextBehavior == b, color: KCores.brasaLaranja, onTap: () => force.set(behavior: b))]),
-          ])),
+    DebugEntry(
+      id: 'world.clock',
+      name: 'Relógio UTC',
+      tab: DebugTab.world,
+      kind: DebugKind.action,
+      aliases: const ['time.clock', 'clock'],
+      keywords: const ['hora', 'data', 'época', 'override', 'tempo'],
+      info: 'O relógio do jogo, em UTC (aaaa-mm-dd hh:mm). Real volta ao do aparelho.',
+      params: const [DebugParam('t', 'aaaa-mm-dd hh:mm (UTC)', kind: DebugParamKind.text)],
+      read: () => formatUtc(clock.now),
+      status: () => '${formatUtc(clock.now)} UTC${clock.overridden ? ' (forçado)' : ''}',
+      run: (c) {
+        final t = parseUtcInput(c['t']);
+        if (t == null) throw const DebugError('Use aaaa-mm-dd hh:mm em UTC');
+        clock.setUtc(t);
+        return 'Relógio em ${formatUtc(clock.now)} UTC';
+      },
+      offReal: () => clock.overridden ? 'relógio ${two(clock.now.hour)}:${two(clock.now.minute)} UTC' : null,
+      toReal: clock.clear,
     ),
-    DebugItem(
-      id: 'spawn.variant',
-      title: 'Forçar variante de bioma',
-      section: DebugSection.spawns,
-      keywords: const ['variante', 'bioma', 'próximo spawn'],
-      builder: (_) => listen(() => DebugChip('Variante de bioma', on: force.nextVariant, onTap: () => force.set(variant: !force.nextVariant))),
+    ...climateEntries(tools),
+    DebugEntry(
+      id: 'world.traffic_density',
+      name: 'Densidade do tráfego',
+      tab: DebugTab.world,
+      kind: DebugKind.choice,
+      aliases: const ['traffic.sim'],
+      keywords: const ['carros', 'passantes', 'agentes', 'rush', 'lotado'],
+      info: 'O tráfego comum é cenário, só neste aparelho. Hora e clima é o normal.',
+      options: const [DebugOption('auto', 'Hora e clima'), DebugOption('0', 'Vazio'), DebugOption('0.3', 'Pouco'), DebugOption('1', 'Rush'), DebugOption('2.5', 'Lotado')],
+      read: () => tools.trafficDensity == null ? 'auto' : _num(tools.trafficDensity!),
+      run: (c) => c.value == 'auto' ? tools.setTraffic(clearDensity: true) : tools.setTraffic(density: c.numberOf('')),
+      offReal: () => tools.trafficDensity == null ? null : 'tráfego ${_num(tools.trafficDensity!)}',
+      toReal: () => tools.setTraffic(clearDensity: true),
     ),
-    DebugItem(
-      id: 'spawn.shiny',
-      title: 'Forçar Brilhante',
-      section: DebugSection.spawns,
-      keywords: const ['shiny', 'brilhante', 'raro', 'próximo spawn'],
-      builder: (_) => listen(() => DebugChip('Brilhante', on: force.nextShiny, onTap: () => force.set(shiny: !force.nextShiny))),
+    DebugEntry(
+      id: 'world.buses',
+      name: 'Muitos ônibus',
+      tab: DebugTab.world,
+      kind: DebugKind.toggle,
+      aliases: const ['buses'],
+      keywords: const ['ônibus', 'ponto', 'parada', 'avenida'],
+      info: 'Quase todo carro novo de avenida vira ônibus (só cena, para ver a parada no ponto).',
+      read: () => tools.manyBuses ? 'on' : 'off',
+      run: (c) => tools.setManyBuses(c.value == 'on'),
+      offReal: () => tools.manyBuses ? 'muitos ônibus' : null,
+      toReal: () => tools.setManyBuses(false),
     ),
-    DebugItem(
-      id: 'spawn.spirit',
-      title: 'Forçar Espírito',
-      section: DebugSection.spawns,
-      keywords: const ['espírito', 'spirit', 'fusão', 'próximo spawn'],
-      builder: (_) => listen(() => DebugColumn([
-            const DebugNote('O próximo Eco novo à vista vira o Espírito da família dele, mesmo abaixo do nível 8.'),
-            DebugChip('Espírito', on: force.nextSpirit, color: KCores.veuVioleta, onTap: () => force.set(spirit: !force.nextSpirit)),
-          ])),
+    DebugEntry(
+      id: 'world.spectral',
+      name: 'Próximo Ônibus Espectral',
+      tab: DebugTab.world,
+      kind: DebugKind.action,
+      aliases: const ['spectral'],
+      keywords: const ['espectral', 'ônibus', 'ponto', 'teleporte'],
+      info: 'Leva o GPS simulado a 25 m do ponto mais perto e o relógio para s segundos antes da chegada. Com o mapa aberto.',
+      params: const [DebugParam('s', 'segundos antes', kind: DebugParamKind.number, min: 0, max: 600, fallback: '12')],
+      run: (c) {
+        final sp = tools.nextSpectral?.call();
+        if (sp == null) throw const DebugError('nenhum ponto perto (com o mapa aberto)');
+        tools.simulator.teleport(sp.lat - 25 / 111320, sp.lon);
+        clock.setUtc(sp.at - c.intOf('s'));
+        return 'Ônibus em ${c['s']} s';
+      },
     ),
-    DebugItem(
-      id: 'spawn.personal',
-      title: 'Camada pessoal de spawn',
-      section: DebugSection.spawns,
-      keywords: const ['pessoal', 'círculo', 'habilidade', 'base', 'build', 'rill', 'hum', 'shade', 'wisp', 'sprig', 'bit', 'clod'],
-      builder: (_) => ListenableBuilder(
-        listenable: env.tools,
-        builder: (_, _) => DebugColumn([
-          const DebugNote('O que as habilidades do Círculo acrescentam só para você. Escondida, o mapa mostra só o mundo base, igual para todos.'),
-          DebugSwitch(title: 'Esconder a camada pessoal', subtitle: null, value: env.tools.hidePersonal, onChanged: env.tools.setHidePersonal),
-          DebugNote('Nesta sessão: ${env.tools.personalStats?.call() ?? 'abra o mapa do jogo'}', key: const Key('debug-personal-stats')),
-          const DebugNote('Dois aparelhos na mesma célula e janela: a base tem de ser igual e a pessoal, diferente (outro player_id).'),
-          DebugNote(env.tools.layerHashes?.call() ?? 'Hashes: abra o mapa do jogo', key: const Key('debug-layer-hashes')),
-          const DebugNote('Círculo de teste (só no mapa, nível 10, o save não muda). A troca vale a partir da janela seguinte de cada célula.'),
-          DebugWrap([
-            DebugChip('Círculo real', on: env.tools.testCircle == null, onTap: () => env.tools.setTestCircle(null)),
-            DebugChip('Círculo vazio', on: env.tools.testCircle?.isEmpty ?? false, onTap: () => env.tools.setTestCircle(const [])),
-            for (final f in const ['rill', 'hum', 'clod', 'shade', 'wisp', 'bit', 'sprig'])
-              DebugChip(
-                f,
-                on: env.tools.testCircle?.contains('$f.eco') ?? false,
-                onTap: () {
-                  final now = [...?env.tools.testCircle];
-                  if (!now.remove('$f.eco') && now.length < 3) now.add('$f.eco');
-                  env.tools.setTestCircle(now);
-                },
-              ),
-          ]),
-        ]),
-      ),
+    DebugEntry(
+      id: 'world.npcs',
+      name: 'Outros Veilbreakers em toda célula',
+      tab: DebugTab.world,
+      kind: DebugKind.toggle,
+      aliases: const ['npcs'],
+      keywords: const ['npc', 'veilbreakers', 'outros', 'z18'],
+      info: 'Um dos Outros Veilbreakers em toda célula z18, só neste aparelho, para conferir e fotografar.',
+      read: () => tools.forceNpcs ? 'on' : 'off',
+      run: (c) => tools.setForceNpcs(c.value == 'on'),
+      offReal: () => tools.forceNpcs ? 'npc em toda célula' : null,
+      toReal: () => tools.setForceNpcs(false),
     ),
-    DebugItem(
-      id: 'spawn.puddles',
-      title: 'Poças no mapa',
-      section: DebugSection.spawns,
-      keywords: const ['poça', 'pocas', 'rill', 'água', 'relevo', 'marcador'],
-      builder: (context) => ListenableBuilder(
-        listenable: env.tools,
-        builder: (_, _) => DebugColumn([
-          const DebugNote('Alvo em cada poça na tela: laranja as da camada pessoal (Rill), ciano as do mundo (água do relevo).'),
-          DebugSwitch(title: 'Marcar as poças', subtitle: null, value: env.tools.showPuddles, onChanged: env.tools.setShowPuddles),
-          DebugButton(
-            label: 'Ir até a poça mais próxima',
-            onTap: () async {
-              final messenger = ScaffoldMessenger.maybeOf(context);
-              final msg = await env.tools.goToNearestPuddle();
-              messenger?.showSnackBar(SnackBar(content: Text(msg)));
-            },
-          ),
-          const DebugNote('Liga o GPS simulado sem recompensa e vai até a poça mais próxima a até 1 km (com o mapa do jogo aberto).'),
-        ]),
-      ),
+    DebugEntry(
+      id: 'world.npc',
+      name: 'Abrir o Veilbreaker mais perto',
+      tab: DebugTab.world,
+      kind: DebugKind.action,
+      aliases: const ['npc'],
+      keywords: const ['npc', 'veilbreakers', 'folha'],
+      info: 'Vai até o Outro Veilbreaker mais perto e abre a folha dele. Com o mapa aberto.',
+      run: (c) => tools.openNearestNpc?.call() ?? (throw const DebugError('nenhum à vista (com o mapa aberto)')),
     ),
-    DebugItem(
-      id: 'spawn.clear',
-      title: 'Pedidos forçados',
-      section: DebugSection.spawns,
-      keywords: const ['zerar', 'resetar', 'forçar'],
-      builder: (_) => DebugButton(
-        label: 'Limpar pedidos',
-        color: KCores.textoMudo,
-        onTap: () {
-          force.nextBehavior = null;
-          force.set(variant: false, shiny: false, spirit: false);
-        },
-      ),
+    DebugEntry(
+      id: 'world.npctune',
+      name: 'Próxima sintonia de um Veilbreaker',
+      tab: DebugTab.world,
+      kind: DebugKind.action,
+      aliases: const ['npctune'],
+      keywords: const ['npc', 'sintonia', 'veilbreakers', 'relógio'],
+      info: 'Leva o GPS simulado a 45 m ao sul do Eco (longe da proteção de 30 m, ainda na tela) e o relógio para s segundos antes.',
+      params: const [DebugParam('s', 'segundos antes', kind: DebugParamKind.number, min: 0, max: 600, fallback: '4')],
+      run: (c) {
+        final tu = tools.nextNpcTune?.call();
+        if (tu == null) throw const DebugError('nenhuma sintonia perto (com o mapa aberto)');
+        tools.simulator.teleport(tu.lat - 45 / 111320, tu.lon);
+        clock.setUtc(tu.at - c.intOf('s'));
+        return 'Sintonia em ${c['s']} s';
+      },
     ),
   ];
 }
 
-List<DebugItem> mapItems(DebugEnv env) {
-  final tools = env.tools;
-  Widget overlay(String title, String? subtitle, bool Function() get, void Function(bool) set) => ListenableBuilder(
-        listenable: tools,
-        builder: (_, _) => DebugSwitch(title: title, subtitle: subtitle, value: get(), onChanged: set),
-      );
-  return [
-    DebugItem(
-      id: 'map.open_game',
-      title: 'Mapa do jogo',
-      section: DebugSection.map,
-      keywords: const ['abrir', 'jogar', 'mapa', 'gps'],
-      builder: (_) => ListenableBuilder(
-        listenable: tools,
-        builder: (context, _) => DebugButton(
-          label: 'Abrir mapa do jogo',
-          color: KCores.sinalCiano,
-          onTap: () => openGameMap(context, tools),
-        ),
-      ),
-    ),
-    DebugItem(
-      id: 'map.visual_lab',
-      title: 'Laboratório visual',
-      section: DebugSection.map,
-      keywords: const ['laboratório', 'estilo', 'gta', 'stardew', 'prédios', 'arte', 'antes e depois', 'céu', 'horizonte'],
-      builder: (context) => DebugColumn([
-        const DebugNote('O quarteirão da Praça Ramos de Azevedo no estilo de hoje e no novo, com a hora, o clima e até dois eventos. Só aqui: nada entra no mapa até o estilo ser aprovado.'),
-        DebugButton(
-          label: 'Abrir laboratório visual',
-          color: KCores.veuVioleta,
-          onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => VisualLabScreen(nowUtc: () => tools.clock.nowUtc))),
-        ),
-      ]),
-    ),
-    DebugItem(
-      id: 'map.biome_grid',
-      title: 'Grade de biomas',
-      section: DebugSection.map,
-      keywords: const ['sobreposição', 'camada lógica', 'overlay'],
-      builder: (_) => overlay('Grade de biomas no mapa do jogo', 'A camada lógica, translúcida por cima do desenho.', () => tools.showBiomeGrid, (v) => tools.setOverlays(biomes: v)),
-    ),
-    DebugItem(
-      id: 'map.grid20',
-      title: 'Grade das células de spawn',
-      section: DebugSection.map,
-      keywords: const ['z20', 'células', 'sobreposição', 'overlay'],
-      builder: (_) => overlay('Grade das células de spawn (z20)', null, () => tools.showGrid20, (v) => tools.setOverlays(grid20: v)),
-    ),
-    DebugItem(
-      id: 'map.relief',
-      title: 'Relevo',
-      section: DebugSection.map,
-      keywords: const ['altura', 'srtm', 'mapa de calor', 'morro', 'vale', 'sobreposição', 'overlay'],
-      builder: (_) => overlay('Relevo como mapa de calor', 'Azul: baixo. Vermelho: alto, dentro do que está na tela. O número é a altura em metros.', () => tools.showRelief, tools.setRelief),
-    ),
-    DebugItem(
-      id: 'map.radii',
-      title: 'Raios lógicos',
-      section: DebugSection.map,
-      keywords: const ['alcance', '30 m', 'toque', 'coleta', 'aura', 'sobreposição', 'overlay'],
-      builder: (_) => overlay('Raios lógicos: coleta (laranja) e toque 30 m (ciano)', null, () => tools.showRadii, (v) => tools.setOverlays(radii: v)),
-    ),
-    DebugItem(
-      id: 'map.radar_reset',
-      title: 'Recarga do Radar',
-      section: DebugSection.map,
-      keywords: const ['radar', 'ocultos', 'zerar'],
-      builder: (_) => Builder(
-        builder: (context) => DebugButton(label: 'Zerar recarga do Radar', color: KCores.brasaLaranja, onTap: () => _editSave(context, env, resetRadar, 'Radar pronto.')),
-      ),
-    ),
-    DebugItem(
-      id: 'map.width',
-      title: 'Largura da tela',
-      section: DebugSection.map,
-      keywords: const ['zoom', 'largura', 'pinça', 'zoom ampliado', '250', 'longe', 'metros'],
-      builder: (_) => ListenableBuilder(
-        listenable: tools,
-        builder: (context, _) => DebugColumn([
-          DebugNote('O zoom do mapa sem pinça (até o limite de agora: 80 m, ou 250 m com o Zoom ampliado). Pedido: ${tools.forcedWidthM?.round() ?? '-'} m.'),
-          DebugWrap([
-            for (final m in const [50.0, 80.0, 120.0, 250.0]) DebugButton(label: '${m.round()} m', onTap: () => tools.setWidthM(m)),
-          ]),
-        ]),
-      ),
-    ),
-    DebugItem(
-      id: 'map.code_art',
-      title: 'Arte em código',
-      section: DebugSection.map,
-      keywords: const ['aseprite', 'código', 'arte', 'carimbo', 'sprite', 'telhado', 'árvore', 'ipê', 'comparar'],
-      builder: (_) => overlay('Arte em código', 'O mapa Completo volta aos carimbos desenhados em código (telhados, árvores, props, calçada) no lugar dos do Aseprite, que são o padrão. Só para comparar.', () => tools.codeArt, tools.setCodeArt),
-    ),
-    DebugItem(
-      id: 'map.turn_labels',
-      title: 'Giro dos objetos',
-      section: DebugSection.map,
-      keywords: const ['giro', 'rotação', 'gira', 'de pé', 'rótulo', 'categoria', 'telhado', 'retângulo'],
-      builder: (_) => overlay('Giro dos objetos', 'Escreve sobre cada objeto do mapa o tipo e se ele gira com o chão, fica de pé ou gira com o rumo.', () => tools.turnLabels, tools.setTurnLabels),
-    ),
-    DebugItem(
-      id: 'map.follow_piece',
-      title: 'Câmera segue a peça',
-      section: DebugSection.map,
-      keywords: const ['câmera livre', 'tornado', 'funil', 'procissão', 'vigília', 'maré', 'gif', 'workbench', 'seguir'],
-      builder: (_) => overlay('Câmera segue a peça que anda', 'A câmera do mapa vai até a peça do clima que se move mais perto (funil, Procissão, olhar, prédio da Maré) e a acompanha. O jogo continua medindo no Conjurador.', () => tools.followPiece, tools.setFollowPiece),
-    ),
-    DebugItem(
-      id: 'map.free',
-      title: 'Mapa livre',
-      section: DebugSection.map,
-      keywords: const ['coordenada', 'latitude', 'longitude', 'unicamp', 'centro', 'abrir mapa'],
-      builder: (_) => _FreeMap(env: env),
-    ),
-  ];
-}
-
-/// Lê o save, aplica [change] e grava. Avisa por snackbar; sem jogo salvo, não grava.
-Future<void> _editSave(BuildContext context, DebugEnv env, Map<String, dynamic> Function(Map<String, dynamic>) change, String done) async {
-  final say = debugSayer(context);
-  try {
-    final store = await env.openSave();
-    final raw = await store.read();
-    if (raw == null) return say('Ainda não há jogo salvo: abra o mapa uma vez.');
-    await store.write(change(raw));
-    say(done);
-  } catch (e) {
-    say('Erro: $e');
-  }
-}
-
-class _FreeMap extends StatefulWidget {
-  const _FreeMap({required this.env});
-
-  final DebugEnv env;
-
-  @override
-  State<_FreeMap> createState() => _FreeMapState();
-}
-
-class _FreeMapState extends State<_FreeMap> {
-  void _preset((double, double) c) => setState(() {
-        widget.env.lat.text = c.$1.toString();
-        widget.env.lon.text = c.$2.toString();
-      });
-
-  void _open() {
-    final c = parseCoord(widget.env.lat.text, widget.env.lon.text);
-    if (c == null) return debugSnack(context, 'Coordenada inválida');
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MapScreen(lat: c.$1, lon: c.$2, nowUtc: widget.env.tools.clock.nowUtc)));
-  }
-
-  @override
-  Widget build(BuildContext context) => DebugColumn([
-        Row(children: [
-          Expanded(child: DebugField('Latitude', widget.env.lat, numeric: true)),
-          const SizedBox(width: KEspaco.s1),
-          Expanded(child: DebugField('Longitude', widget.env.lon, numeric: true)),
-        ]),
-        DebugWrap([
-          DebugButton(label: 'Unicamp', color: KCores.textoMudo, onTap: () => _preset(kUnicamp)),
-          DebugButton(label: 'Centro', color: KCores.textoMudo, onTap: () => _preset(kCentroCampinas)),
-        ]),
-        DebugButton(label: 'Abrir mapa', color: KCores.sinalCiano, onTap: _open),
-      ]);
-}
-
-List<DebugItem> playerItems(DebugEnv env) => [
-      DebugItem(
-        id: 'player.level',
-        title: 'Nível do Conjurador no jogo',
-        section: DebugSection.player,
-        keywords: const ['nível', 'level', 'override', 'conjurador', 'forçar'],
-        builder: (_) => _LevelOverride(env: env),
-      ),
-      ...fusionItems(env),
-      ...craftingItems(env),
-    ];
-
-/// Override do nível (1 a 15) guardado no save; 0 deixa valer o nível real. Os Ecos do mapa e a resistência usam o
-/// override. Sem pasta de documentos (testes), vive só na memória do [DevTools].
-class _LevelOverride extends StatelessWidget {
-  const _LevelOverride({required this.env});
-
-  final DebugEnv env;
-
-  Future<void> _set(int level) async {
-    env.tools.setLevelOverride(level);
-    try {
-      final store = await env.openSave();
-      final json = {...?await store.read()}..remove('player_level');
-      level == 0 ? json.remove('level_override') : json['level_override'] = level;
-      await store.write(json);
-    } catch (_) {
-      // sem disco, o nível vale só até fechar o menu
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => ListenableBuilder(
-        listenable: env.tools,
-        builder: (context, _) {
-          final l = env.tools.levelOverride;
-          return DebugColumn([
-            Text(l == 0 ? 'Nível do Conjurador no jogo: real' : 'Nível do Conjurador no jogo: $l (override)', style: KTexto.corpo),
-            const DebugNote('0 usa o nível real. Um valor aqui manda nos Ecos do mapa e na resistência. Vale na próxima vez que abrir o mapa.'),
-            Slider(value: l.toDouble(), min: 0, max: 15, divisions: 15, label: l == 0 ? 'real' : '$l', activeColor: KCores.sinalCiano, onChanged: (v) => _set(v.round())),
-          ]);
-        },
-      );
-}
+String _num(double v) => v == v.roundToDouble() ? '${v.round()}' : '$v';

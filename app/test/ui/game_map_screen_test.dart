@@ -12,7 +12,10 @@ import 'package:kenoma/data/heading_source.dart';
 import 'package:kenoma/player/conjurer_balance.dart';
 import 'package:kenoma/ui/game/compass_button.dart';
 import 'package:kenoma/world/spawn_field.dart';
+import 'package:kenoma/dev/debug_capture.dart';
 import 'package:kenoma/dev/debug_commands.dart';
+import 'package:kenoma/dev/debug_env.dart';
+import 'package:kenoma/dev/debug_items.dart';
 import 'package:kenoma/dev/dev_tools.dart';
 import 'package:kenoma/world/layered_world.dart';
 import 'package:kenoma/dev/gps_simulator.dart';
@@ -702,8 +705,9 @@ void main() {
       }
       expect(env.game.playerLat, closeTo(kUnicamp.$1, 1e-3));
       const sp = (-23.5505, -46.6333);
-      final out = await runDebugCommands('sim on; tp ${sp.$1},${sp.$2}', tools: env.tools);
-      expect(out, ['sim on', 'tp ${sp.$1},${sp.$2}']);
+      final reg = buildDefaultRegistry(DebugEnv(tools: env.tools, capture: CaptureDebug(), saveStore: MemorySaveStore()));
+      final out = await runDebugCommands('sim on; tp ${sp.$1},${sp.$2}', reg);
+      expect(out, ['ok pos.simulator: ok', 'ok pos.teleport: Simulador em ${sp.$1},${sp.$2}']);
       for (var i = 0; i < 40 && !(env.game.worldView!.field.map.pack as LayeredWorld).hasRegion('sao_paulo'); i++) {
         await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
         await env.live(1);
