@@ -1076,6 +1076,18 @@ Além da habilidade de mapa, que vale na rua quando a criatura está no Círculo
 
 As produções entram com a casa, na fase 2. Até lá, o trabalho aparece no Bestiário como "em breve".
 
+**Primeiro recorte da casa (decidido em 28/nov/2026).**
+
+- A casa abre no nível 10. O jogador a define estando no lugar, na célula onde está, e trocar tem espera de 30 dias.
+- A posição da casa fica só no save local, arredondada para a célula, fora do backup exportado e nunca no código de grupo nem nas obras compartilhadas.
+- Raio da casa de 40 m: dentro dele o app Casa mexe nas estações, recolhe a produção e organiza o Armazém; fora dele, só mostra o estado.
+- O Armazém começa com 40 espaços de item e 20 de criatura, ampliados por móveis.
+- Entram seis estações: forja (Soot), horta (Frond), destilaria (Rill), adega (Shade), arquivo (Wisp) e fábrica de selos (Rust). As outras seis esperam obras, gemas ou escavação.
+- Cada estação começa com 1 vaga e chega a 3 pelo nível. Criatura trabalhando não fica no Círculo, e não há cansaço nem perda.
+- Ritmo: Eco, 1 item a cada 3 h; Espírito, a cada 2 h; criatura de ritual, a cada 1h30; Entidade, 1 por hora. Cada nível acelera 1%, e os traços mudam a qualidade.
+- O depósito de cada estação guarda cerca de 24 h de produção; cheio, ela para.
+- A produção é calculada ao abrir o app, pelo tempo decorrido; relógio voltando para trás não produz.
+
 ### Bancada e decoração
 
 A bancada básica fica em casa a partir do nível 5, quando a casa é definida, e no lategame as estações cravadas também. Antes disso ela funciona dentro do app, em qualquer lugar. A decoração influencia o que os lures atraem. Itens aquáticos puxam Ecos de água, sucata puxa urbanos, e o jogador monta a casa como um ecossistema. Decorações também servem de defesa nas invasões.
