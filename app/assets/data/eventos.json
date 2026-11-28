@@ -155,7 +155,7 @@
     "meteor_shower": {
       "name": "Chuva de meteoros",
       "base": "clear",
-      "hud": "Chuva de meteoros: Luz mais comum; meteoros deixam Fagulhas raras e crateras com material raro",
+      "hud": "Chuva de meteoros: Luz e Dracônicos mais comuns; meteoros deixam Fagulhas raras e crateras com material raro",
       "icon": [
         "stars"
       ],
