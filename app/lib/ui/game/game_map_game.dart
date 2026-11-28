@@ -1174,19 +1174,40 @@ class GameMapGame extends FlameGame {
   }
 
   /// O spawn sob o toque em [screen], se houver: o mais perto dentro do raio de toque.
-  /// 0.28.0: a casa do jogador, de pé na célula dela (só ele a vê: a posição nunca sai do aparelho), no pixel do Conjurador,
-  /// com a base no centro da célula.
-  ui.Image? _homeImg;
-  void _paintHome(Canvas canvas, Size view, MapCamera cam, WorldView wv) {
-    final c = wv.state.home.center;
-    if (c == null) return;
-    final img = _homeImg ??= mapStampImage('home');
+  /// 0.29.0: a porta do Véu na célula da casa, de pé (só o jogador a vê: a posição nunca sai do aparelho), no pixel do
+  /// Conjurador, com a base no centro da célula. Depois do toque ([doorOpenAt]), os três quadros da costura se abrindo.
+  final _doorImgs = <String, ui.Image>{};
+  double? doorOpenAt;
+
+  Offset? _doorBase(MapCamera cam, Size view) {
+    final c = worldView?.state.home.center;
+    if (c == null) return null;
     final px = playerSizePx / mapPlayerPx;
     final (sx, sy) = cam.cellToScreen(c.$1, c.$2, view.width, view.height);
-    final x = (sx / px).roundToDouble() * px, y = (sy / px).roundToDouble() * px;
-    if (x < -img.width * px || y < -img.height * px || x > view.width + img.width * px || y > view.height + img.height * px) return;
-    final dst = Rect.fromLTWH(x - img.width * px / 2, y - img.height * px, img.width * px, img.height * px);
+    return Offset((sx / px).roundToDouble() * px, (sy / px).roundToDouble() * px);
+  }
+
+  void _paintHome(Canvas canvas, Size view, MapCamera cam, WorldView wv) {
+    final base = _doorBase(cam, view);
+    if (base == null) return;
+    final open = doorOpenAt == null ? 0 : ((_time - doorOpenAt!) / 0.08).floor().clamp(0, 3);
+    final name = open == 0 ? 'veil_door' : 'veil_door_open_$open';
+    final img = _doorImgs[name] ??= mapStampImage(name);
+    final px = playerSizePx / mapPlayerPx;
+    if (base.dx < -img.width * px || base.dy < -img.height * px || base.dx > view.width + img.width * px || base.dy > view.height + img.height * px) return;
+    final dst = Rect.fromLTWH(base.dx - img.width * px / 2, base.dy - img.height * px, img.width * px, img.height * px);
     canvas.drawImageRect(img, Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble()), dst, Paint()..filterQuality = FilterQuality.none);
+  }
+
+  /// O toque caiu na porta do Véu (com folga de dedo)? Devolve onde ela está na tela.
+  Offset? homeDoorAt(Offset screen) {
+    if (size.x <= 0) return null;
+    final view = Size(size.x, size.y);
+    final base = _doorBase(follow.camera, view);
+    if (base == null) return null;
+    final px = playerSizePx / mapPlayerPx;
+    final box = Rect.fromLTWH(base.dx - 8 * px, base.dy - 24 * px, 16 * px, 24 * px).inflate(12);
+    return box.contains(screen) ? base : null;
   }
 
   /// Os coletores plantados (camada pessoal: só o dono vê), menores que o Conjurador (0.24.1): o sprite de mapa do

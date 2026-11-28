@@ -124,7 +124,7 @@
     "search": { "min_interval_s": 1, "viewbox_deg": 0.2, "limit": 5, "timeout_s": 6 }
   },
   "start_inventory": { "item.seal.simple": 5, "item.chalk": 3 },
-  "home": { "unlock_level": 10, "move_cooldown_days": 30, "radius_m": 40, "storage_items": 40, "storage_creatures": 20, "furniture_max": 3, "slot_levels": [10, 15, 20], "period_s": { "eco": 10800, "spirit": 7200, "ritual": 5400, "major": 3600 }, "level_speed": 0.01, "deposit_h": 24, "archive_points_per_task": 4 },
+  "home": { "unlock_level": 10, "move_cooldown_days": 30, "radius_m": 40, "storage_items": 40, "storage_creatures": 20, "furniture_max": 3, "slot_levels": [10, 15, 20], "period_s": { "eco": 10800, "spirit": 7200, "ritual": 5400, "major": 3600 }, "level_speed": 0.01, "deposit_h": 24, "archive_points_per_task": 4, "lot_sizes": [[1, 16], [20, 24], [30, 32]], "walk_cps": 4, "wander_cps": 0.6 },
   "crafting": {
     "bag": { "base_slots": 40, "stack": 99, "discard_per_dust": 5 },
     "unlock_levels": { "recipe.bag.satchel": 8, "recipe.bag.deep": 15 },

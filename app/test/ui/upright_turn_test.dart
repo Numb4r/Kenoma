@@ -128,8 +128,8 @@ void main() {
           img90.dispose();
         }
       }
-      // A casa (0.28.0) não é da cena da cidade: o jogo a desenha de pé na célula dela, sem giro (game_map_game.dart).
-      expect(seen, containsAll(uprightStampKinds.difference({'home'})), reason: 'todo sprite de pé foi desenhado e conferido');
+      // A porta do Véu (0.29.0) não é da cena da cidade: o jogo a desenha de pé na célula da casa, sem giro (game_map_game.dart).
+      expect(seen, containsAll(uprightStampKinds.where((k) => !k.startsWith('veil_door'))), reason: 'todo sprite de pé foi desenhado e conferido');
     });
   }
 

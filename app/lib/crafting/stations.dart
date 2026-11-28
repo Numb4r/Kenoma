@@ -9,6 +9,7 @@ import '../core/species_ids.dart';
 import '../data/game_data.dart';
 import '../player/game_state.dart';
 import '../player/home.dart';
+import '../player/lot.dart';
 import '../player/research.dart' show researchLevel;
 import 'grimoire.dart' show isKnown;
 import 'quality.dart';
@@ -52,17 +53,28 @@ class StationDef {
 
 /// `home.json`: as estações e os textos do app.
 class HomeData {
-  const HomeData({this.stations = const [], this.texts = const {}});
+  const HomeData({this.stations = const [], this.texts = const {}, this.pieces = const {}, this.tabs = const [], this.starter = const {}});
 
   factory HomeData.fromJson(Map<String, dynamic>? j) => j == null
       ? const HomeData()
       : HomeData(
           stations: [for (final s in j['stations'] as List<dynamic>) StationDef.fromJson(s as Map<String, dynamic>)],
           texts: {for (final e in ((j['texts'] as Map<String, dynamic>?) ?? const {}).entries) e.key: e.value as String},
+          pieces: {for (final p in (j['pieces'] as List<dynamic>?) ?? const []) (p as Map<String, dynamic>)['item'] as String: PieceDef.fromJson(p)},
+          tabs: [for (final t in (j['lot_tabs'] as List<dynamic>?) ?? const []) ((t as List<dynamic>)[0] as String, t[1] as String)],
+          starter: (j['lot_starter'] as Map<String, dynamic>?) ?? const {},
         );
 
   final List<StationDef> stations;
   final Map<String, String> texts;
+
+  /// 0.29.0: as peças do lote, pelo id do item; as abas do modo construir (id, rótulo); o lote inicial.
+  final Map<String, PieceDef> pieces;
+  final List<(String, String)> tabs;
+  final Map<String, dynamic> starter;
+
+  /// A peça que é a estação [stationId].
+  PieceDef? pieceOfStation(String stationId) => pieces.values.where((p) => p.station == stationId).firstOrNull;
 
   StationDef? station(String id) => stations.where((s) => s.id == id).firstOrNull;
   StationDef? ofFamily(String family) => stations.where((s) => s.family == family).firstOrNull;
@@ -129,6 +141,9 @@ List<String> stationChoices(GameState s, GameData data, StationDef def) {
 /// O nível de pesquisa de [speciesId], contando as tarefas que o Arquivo já fez.
 int researchLevelOf(GameState s, GameData data, String speciesId) => researchLevel(data.lore[speciesId]?.research ?? const [], speciesId, s.bestiary);
 
+/// 0.29.0: a estação [id] está colocada no lote. Fora do lote ela não produz.
+bool stationPlaced(GameState s, GameData data, String id) => s.home.lot.placed.any((p) => data.home.pieces[p.item]?.station == id);
+
 /// A peça que [def] faz com a escolha [choice], ou `null` se não há o que fazer.
 UnitPlan? planOf(GameData data, StationDef def, String? choice) {
   switch (def.kind) {
@@ -187,7 +202,7 @@ int _loadUnits(StationState st, UnitPlan p) =>
 
 /// O estado de uma estação para a tela, sem mudar nada: o depósito agora, o tamanho dele e quando enche.
 class StationView {
-  const StationView({required this.def, required this.workers, required this.plan, required this.ready, required this.cap, this.fullAtUtc, this.starved = false});
+  const StationView({required this.def, required this.workers, required this.plan, required this.ready, required this.cap, this.fullAtUtc, this.starved = false, this.placed = true});
 
   final StationDef def;
   final List<Worker> workers;
@@ -203,6 +218,9 @@ class StationView {
   /// A carga de insumos acaba antes de o depósito encher.
   final bool starved;
 
+  /// Colocada no lote (0.29.0); fora dele, parada.
+  final bool placed;
+
   bool get full => cap > 0 && ready >= cap;
 }
 
@@ -210,7 +228,8 @@ StationView stationView(GameState s, GameData data, StationDef def, int t) {
   final st = s.home.stations[def.id] ?? StationState();
   final ws = workersOf(s, st);
   final p = planOf(data, def, st.choice);
-  if (p == null) return StationView(def: def, workers: ws, plan: null, ready: 0, cap: depositUnits(ws, s.balance.home));
+  if (p == null) return StationView(def: def, workers: ws, plan: null, ready: 0, cap: depositUnits(ws, s.balance.home), placed: stationPlaced(s, data, def.id));
+  if (!stationPlaced(s, data, def.id)) return StationView(def: def, workers: ws, plan: p, ready: _stockUnits(st, p), cap: depositUnits(ws, s.balance.home), placed: false);
   final cap = depositUnits(ws, s.balance.home);
   final now = runUntil(st, ws, p, cap, t);
   final ready = _stockUnits(st, p) + now.made.values.fold<int>(0, (a, b) => a + b);
@@ -224,10 +243,10 @@ StationView stationView(GameState s, GameData data, StationDef def, int t) {
 /// certo (quem parou com o depósito cheio volta a contar de [t]).
 void settle(GameState s, GameData data, StationDef def, StationState st, int t) {
   final ws = workersOf(s, st);
-  final p = planOf(data, def, st.choice);
+  final p = stationPlaced(s, data, def.id) ? planOf(data, def, st.choice) : null; // fora do lote, parada
   if (p == null) {
     for (final w in ws) {
-      if ((st.since[w.uid] ?? t) < t) st.since[w.uid] = t; // sem o que fazer, não acumula
+      if ((st.since[w.uid] ?? t) < t) st.since[w.uid] = t; // sem o que fazer (ou fora do lote), não acumula
     }
     return;
   }

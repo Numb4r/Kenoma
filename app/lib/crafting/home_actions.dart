@@ -5,11 +5,13 @@ library;
 
 import 'dart:math' as math;
 
+import '../core/tiles.dart';
 import '../data/game_data.dart';
 import '../player/game_state.dart';
 import '../player/home.dart';
 import 'bag.dart' show acceptableCount, slotsUsedBy;
 import 'quality.dart';
+import '../player/lot.dart';
 import 'stations.dart';
 
 enum HomeResult { ok, locked, noHome, away, cooldown, storageFull, sanctumFull, slotsFull, invalid }
@@ -21,6 +23,14 @@ bool homeOpen(GameState s) => s.playerLevel >= s.balance.home.unlockLevel;
 
 /// Dentro do raio da casa.
 bool atHome(GameState s, HerePos? here) => here != null && (s.home.distanceM(here.lat, here.lon) ?? double.infinity) <= s.balance.home.radiusM;
+
+/// 0.29.0: a porta do Véu abre para quem está a até o raio da casa (células z21 fracionárias do jogador).
+bool canEnterLot(GameState s, double x21, double y21) {
+  final c = s.home.center;
+  if (c == null) return false;
+  final dx = x21 - c.$1, dy = y21 - c.$2;
+  return math.sqrt(dx * dx + dy * dy) * metersPerCell(tileFractionToLatLon(c.$1, c.$2, biomeZoom).$1) <= s.balance.home.radiusM;
+}
 
 /// Quanto falta para poder trocar a casa de lugar, em segundos (0: já pode). Relógio antes da última troca conta como espera.
 int cooldownLeftS(GameState s, int now) {
@@ -40,6 +50,35 @@ HomeResult setHome(GameState s, (int, int) cell, int now, {bool ignoreCooldown =
   return HomeResult.ok;
 }
 
+/// 0.29.0: o lote novo já vem com um piso pequeno e a Bancada colocados, e as seis estações (uma de cada) no Armazém.
+/// Vale uma vez por casa; um save da 0.28.0 recebe na primeira vez que a casa é aberta.
+void ensureLotStarted(GameState s, GameData data) {
+  final lot = s.home.lot;
+  if (lot.started || s.home.cell == null) return;
+  final st = data.home.starter;
+  final floor = st['floor'] as String?;
+  if (floor != null) {
+    final from = st['floor_from'] as List<dynamic>, size = st['floor_size'] as List<dynamic>;
+    for (var y = 0; y < (size[1] as int); y++) {
+      for (var x = 0; x < (size[0] as int); x++) {
+        lot.placed.add(Placement(uid: lot.next++, item: floor, x: (from[0] as int) + x, y: (from[1] as int) + y));
+      }
+    }
+  }
+  if (st['bench'] case [final int bx, final int by]) {
+    final bench = data.home.pieces.values.where((p) => p.opens == 'bench').firstOrNull;
+    if (bench != null) lot.placed.add(Placement(uid: lot.next++, item: bench.item, x: bx, y: by));
+  }
+  for (final def in data.home.stations) {
+    final piece = data.home.pieceOfStation(def.id);
+    if (piece == null) continue;
+    final have = (s.home.storage[piece.item] ?? 0) + s.count(piece.item) + lot.placed.where((p) => p.item == piece.item).length;
+    if (have == 0) s.home.storage[piece.item] = 1;
+  }
+  lot.started = true;
+  s.changed();
+}
+
 HomeResult _gate(GameState s, HerePos? here) {
   if (!homeOpen(s)) return HomeResult.locked;
   if (s.home.cell == null) return HomeResult.noHome;
@@ -52,8 +91,14 @@ int storageCap(GameState s, GameData data) => s.balance.home.storageItems + _fur
 /// Os espaços de criatura do santuário: os do começo e os dos santuários instalados.
 int sanctumCap(GameState s, GameData data) => s.balance.home.storageCreatures + _furnitureSum(s, data, 'storage_creatures');
 
-int _furnitureSum(GameState s, GameData data, String effect) =>
-    s.home.furniture.entries.fold(0, (a, e) => a + ((data.craft.item(e.key)?.effects[effect] ?? 0) * e.value).round());
+/// 0.29.0: só conta o móvel colocado no lote, até [HomeBalance.furnitureMax] de cada tipo.
+int _furnitureSum(GameState s, GameData data, String effect) {
+  final n = <String, int>{};
+  for (final p in s.home.lot.placed) {
+    if (data.craft.item(p.item)?.kind == 'furniture') n[p.item] = (n[p.item] ?? 0) + 1;
+  }
+  return n.entries.fold(0, (a, e) => a + ((data.craft.item(e.key)?.effects[effect] ?? 0) * (e.value < s.balance.home.furnitureMax ? e.value : s.balance.home.furnitureMax)).round());
+}
 
 int storageUsed(GameState s, GameData data) => slotsUsedBy(s.home.storage, 0, data.craft.balance.stack);
 int sanctumUsed(GameState s) => s.home.creaturesAtHome.length;
@@ -111,22 +156,6 @@ HomeResult retrieveCreature(GameState s, GameData data, HerePos? here, String ui
   }
   final station = s.home.stationOf(uid);
   return station == null ? HomeResult.invalid : unassign(s, data, here, station, uid, now);
-}
-
-/// Instala um móvel da Bolsa ou do Armazém (gasta o item), até [HomeBalance.furnitureMax] de cada.
-HomeResult installFurniture(GameState s, GameData data, HerePos? here, String itemId) {
-  final g = _gate(s, here);
-  if (g != HomeResult.ok) return g;
-  if (data.craft.item(itemId)?.kind != 'furniture' || (s.home.furniture[itemId] ?? 0) >= s.balance.home.furnitureMax) return HomeResult.invalid;
-  if (!s.take(itemId)) {
-    final key = s.home.storage.keys.where((k) => parseStack(k).id == itemId && (s.home.storage[k] ?? 0) > 0).firstOrNull;
-    if (key == null) return HomeResult.invalid;
-    s.home.storage[key] = s.home.storage[key]! - 1;
-    if (s.home.storage[key] == 0) s.home.storage.remove(key);
-  }
-  s.home.furniture[itemId] = (s.home.furniture[itemId] ?? 0) + 1;
-  s.changed();
-  return HomeResult.ok;
 }
 
 /// Põe [uid] para trabalhar em [stationId]: da família da estação, com vaga e com espaço no santuário; sai do Círculo.

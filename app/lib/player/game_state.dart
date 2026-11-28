@@ -26,7 +26,7 @@ import 'progression.dart';
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 16;
+const int saveSchemaVersion = 17;
 
 /// 0.26.4: a célula z21 em que o mapa estava da última vez. Só no save deste aparelho: o backup e a exportação tiram a chave
 /// (`exportBackup`), o QR do grupo só leva o código do grupo, e nada a envia. Na abertura, o mapa prepara aquela área.

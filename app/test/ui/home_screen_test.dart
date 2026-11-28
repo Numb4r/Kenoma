@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/tiles.dart';
 import 'package:kenoma/crafting/conditions.dart' show Here;
+import 'package:kenoma/crafting/home_actions.dart' show ensureLotStarted;
+import 'package:kenoma/crafting/lot_actions.dart';
 import 'package:kenoma/player/game_state.dart';
 import 'package:kenoma/ui/craft/craft_context.dart';
 import 'package:kenoma/ui/menu/home_screen.dart';
@@ -53,6 +55,8 @@ void main() {
     final s = make()
       ..home.cell = latLonToTile(home.lat, home.lon, biomeZoom)
       ..home.setUtc = t0;
+    ensureLotStarted(s, data);
+    expect(placePiece(s, data, 'item.station.garden', 3, 0, 0, t0), LotResult.ok, reason: '0.29.0: só produz colocada no lote');
     await open(tester, s);
     await tester.ensureVisible(find.byKey(const Key('home-assign-garden')));
     await tester.tap(find.byKey(const Key('home-assign-garden')));

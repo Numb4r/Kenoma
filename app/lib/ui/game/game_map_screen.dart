@@ -32,6 +32,9 @@ import '../../world/climate_world.dart' show ClimateWorld;
 import '../../world/high_tiers.dart' show archetypeOccurrencesAt, nearestBairro;
 import '../../world/high_tiers_driver.dart';
 import '../../crafting/bag.dart' show acceptable;
+import '../../crafting/home_actions.dart' show canEnterLot;
+import '../lot/lot_screen.dart';
+import '../lot/seam_route.dart';
 import '../../crafting/collector_tick.dart';
 import '../../crafting/quality.dart' show parseStack;
 import '../../crafting/tutorial.dart' show syncTutorial;
@@ -674,6 +677,23 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     _toast('Simulador em ${lat.toStringAsFixed(5)}, ${lon.toStringAsFixed(5)}');
   }
 
+  /// 0.29.0: a porta do Véu. A até 40 m da casa, a costura se abre e o Conjurador entra no lote; mais longe, o aviso.
+  Future<void> _tapDoor(_Ready r, Offset door) async {
+    if (!canEnterLot(r.session.state, r.world.playerX, r.world.playerY)) return _toast(r.data.home.text('lot_door_far'));
+    await _openLot(r, doorX: door.dx);
+  }
+
+  /// Entra no lote: os três quadros da costura na porta e a faixa que se abre a partir dela ([doorX]; o debug, do meio).
+  Future<void> _openLot(_Ready r, {double? doorX, bool build = false}) async {
+    if (doorX != null) {
+      r.game.doorOpenAt = r.game.gameTime;
+      await Future<void>.delayed(const Duration(milliseconds: 260));
+    }
+    if (!mounted) return;
+    r.game.doorOpenAt = null;
+    await Navigator.of(context).push(seamRoute<void>(LotScreen(state: r.session.state, data: r.data, ctx: _craftContext(r), startBuild: build), originX: doorX));
+  }
+
   /// Toque no mapa: o spawn sob o dedo. Material dentro da Aura é coletado; Eco dentro da Aura abre o
   /// encontro; o resto avisa o que falta.
   Future<void> _onTap(Offset at) async {
@@ -686,6 +706,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       return;
     }
     if (r.travel.tapCell(cellX, cellY) || r.travel.quiet) return; // escolheu o destino, ou o mundo está calado
+    if (r.game.homeDoorAt(at) case final door?) return _tapDoor(r, door);
     if (r.game.collectorAt(at) case final v?) return _tapCollector(r, v);
     final spawn = r.game.spawnAt(at);
     if (spawn == null) return _touchMap(r, at);
@@ -1315,6 +1336,11 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         return '${name('$f.archetype')} a 25 m';
       };
     }
+    tools.enterLot = ({bool build = false}) async {
+      final r = _ready;
+      if (r == null || r.session.state.home.cell == null) throw StateError('sem casa');
+      await _openLot(r, build: build);
+    };
     tools.force.rainbowFoot = () => _ready == null ? null : _rainbowFoot(_ready!);
     climate.debugArcs.addAll(tools.force.tapArcs);
     unawaited(_climate!.loadEvents().then((_) => game.matchUtc = _climate!.matchUtc));

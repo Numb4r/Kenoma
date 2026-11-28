@@ -169,6 +169,9 @@ class DevTools extends ChangeNotifier {
   String Function(String family)? forceRumorHere;
   String Function(String family)? forceArchetypeHere;
 
+  /// 0.29.0: entra no lote de qualquer lugar (o mapa liga; [build]: já no modo construir).
+  Future<void> Function({bool build})? enterLot;
+
   /// 0.24.5: vai até o NPC mais perto e abre a folha dele (comando `npc`). Devolve o id, ou `null` sem NPC à vista.
   String? Function()? openNearestNpc;
 

@@ -19,17 +19,29 @@ import '../tuning/tuning_screen.dart' show PixelButton;
 import 'screen_frame.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({required this.state, required this.data, required this.ctx, super.key});
+  const HomeScreen({required this.state, required this.data, required this.ctx, this.inLot = false, this.focus, super.key});
 
   final GameState state;
   final GameData data;
   final CraftContext ctx;
+
+  /// 0.29.0: aberta de dentro do lote (o Conjurador está em casa, qualquer que seja o GPS: o debug entra de qualquer lugar).
+  final bool inLot;
+
+  /// 0.29.0: só uma parte, para o painel do objeto tocado no lote: `station:<id>` ou `storage` (Armazém e santuário).
+  final String? focus;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    ensureLotStarted(widget.state, widget.data); // 0.29.0: a casa da 0.28.0 recebe o lote inicial e as estações
+  }
+
   /// O seletor aberto: `assign:<estação>`, `choose:<estação>`, `bag` ou `sanctum`; `null`: nenhum.
   String? _open;
 
@@ -39,6 +51,11 @@ class _HomeScreenState extends State<HomeScreen> {
   int get _now => widget.ctx.nowUtc();
 
   HerePos get _here {
+    final c = widget.inLot ? _s.home.center : null;
+    if (c != null) {
+      final (lat, lon) = tileFractionToLatLon(c.$1, c.$2, biomeZoom);
+      return (lat: lat, lon: lon);
+    }
     final h = widget.ctx.here();
     return (lat: h.lat, lon: h.lon);
   }
@@ -85,13 +102,20 @@ class _HomeScreenState extends State<HomeScreen> {
           final dist = _s.home.distanceM(h.lat, h.lon);
           final inside = atHome(_s, h);
           final subtitle = _s.home.cell == null ? 'Sem casa' : (inside ? 'Em casa' : '${_t('away_title')} · ${_km(dist!)}');
+          final focus = widget.focus;
+          if (focus != null) {
+            final def = focus.startsWith('station:') ? _d.home.station(focus.substring(8)) : null;
+            return ScreenFrame(title: def?.name ?? 'Armazém', children: [
+              if (def != null) _station(def, inside) else ...[..._storage(inside), ..._sanctum(inside)],
+            ]);
+          }
           return ScreenFrame(title: 'Casa', subtitle: subtitle, children: [
             if (_s.home.cell == null) ..._noHome() else ...[
               if (!inside) _away(),
               for (final def in _d.home.stations) _station(def, inside),
               ..._storage(inside),
               ..._sanctum(inside),
-              ..._furniture(inside),
+              ..._furniture(),
               ..._move(),
             ],
           ]);
@@ -180,6 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(child: Text(_creatureName(w).toUpperCase(), style: const TextStyle(fontSize: 8, color: kText, height: 1.8))),
             if (inside) PixelButton(key: Key('home-unassign-$w'), label: 'Tirar', color: kDim, onTap: () => _result(unassign(_s, _d, _here, def.id, w, _now))),
           ]),
+        if (!v.placed) Text(_t('not_placed'), key: Key('home-unplaced-${def.id}'), style: const TextStyle(fontSize: 8, color: kEssence, height: 1.8)),
         if (_eta(v).isNotEmpty) Text(_eta(v), key: Key('home-eta-${def.id}'), style: TextStyle(fontSize: 8, color: v.full ? kEssence : kDim, height: 1.8)),
         if (inside) ...[
           const SizedBox(height: 6),
@@ -257,24 +282,10 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
   }
 
-  List<Widget> _furniture(bool inside) {
-    final ids = {
-      for (final k in [..._s.inventory.keys, ..._s.home.storage.keys])
-        if (_d.craft.item(parseStack(k).id)?.kind == 'furniture') parseStack(k).id,
-    };
-    return [
-      const SectionTitle('Móveis'),
-      if (_s.home.furniture.isEmpty) const Text('NENHUM AINDA. A PÁGINA DOS MÓVEIS ESTÁ NO GRIMÓRIO.', style: TextStyle(fontSize: 8, color: kDim, height: 1.8)),
-      for (final e in _s.home.furniture.entries)
-        Text('${e.value} × ${_d.itemName(e.key)}'.toUpperCase(), style: const TextStyle(fontSize: 8, color: kText, height: 2)),
-      if (inside)
-        for (final id in ids)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Align(alignment: Alignment.centerLeft, child: PixelButton(key: Key('home-install-$id'), label: 'Instalar ${_d.itemName(id)}', color: kSignal, onTap: () => _result(installFurniture(_s, _d, _here, id)))),
-          ),
-    ];
-  }
+  List<Widget> _furniture() => [
+        const SectionTitle('Lote'),
+        const Text('AS ESTAÇÕES, OS MÓVEIS DO ARMAZÉM E A BANCADA SE COLOCAM NO LOTE: ENTRE PELA PORTA DO VÉU NO MAPA, A MENOS DE 40 M.', key: Key('home-lot-hint'), style: TextStyle(fontSize: 8, color: kDim, height: 1.8)),
+      ];
 
   List<Widget> _move() {
     final left = cooldownLeftS(_s, _now);

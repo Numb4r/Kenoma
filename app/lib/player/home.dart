@@ -9,6 +9,7 @@ import 'dart:math' as math;
 
 import '../core/species_ids.dart';
 import '../core/tiles.dart';
+import 'lot.dart';
 
 /// A célula z21 da casa no save deste aparelho.
 const String kHomeCellKey = 'home_cell';
@@ -27,6 +28,9 @@ class HomeBalance {
     required this.levelSpeed,
     required this.depositS,
     required this.archivePointsPerTask,
+    this.lotSizes = const [(1, 16)],
+    this.walkCps = 4,
+    this.wanderCps = 0.6,
   });
 
   factory HomeBalance.fromJson(Map<String, dynamic> j) => HomeBalance(
@@ -41,6 +45,9 @@ class HomeBalance {
         levelSpeed: (j['level_speed'] as num).toDouble(),
         depositS: (j['deposit_h'] as int) * 3600,
         archivePointsPerTask: j['archive_points_per_task'] as int,
+        lotSizes: [for (final p in (j['lot_sizes'] as List<dynamic>?) ?? const [[1, 16]]) ((p as List<dynamic>)[0] as int, p[1] as int)],
+        walkCps: ((j['walk_cps'] as num?) ?? 4).toDouble(),
+        wanderCps: ((j['wander_cps'] as num?) ?? 0.6).toDouble(),
       );
 
   final int unlockLevel;
@@ -62,6 +69,12 @@ class HomeBalance {
 
   /// Pontos do Arquivo para uma tarefa de pesquisa do Bestiário.
   final int archivePointsPerTask;
+
+  /// 0.29.0: o tamanho do lote por nível, pares (nível, casas).
+  final List<(int, int)> lotSizes;
+
+  /// Casas por segundo: o Conjurador andando no lote e as criaturas guardadas passeando.
+  final double walkCps, wanderCps;
 
   int slotsAt(int playerLevel) => slotLevels.where((l) => l <= playerLevel).length;
 
@@ -126,11 +139,11 @@ Map<String, int> _ints(Object? j) => {for (final e in ((j as Map<String, dynamic
 
 /// A casa do jogador.
 class HomeState {
-  HomeState({this.cell, this.setUtc, Map<String, int>? storage, List<String>? stored, Map<String, int>? furniture, Map<String, StationState>? stations})
+  HomeState({this.cell, this.setUtc, Map<String, int>? storage, List<String>? stored, Map<String, StationState>? stations, LotState? lot})
       : storage = storage ?? {},
         stored = stored ?? [],
-        furniture = furniture ?? {},
-        stations = stations ?? {};
+        stations = stations ?? {},
+        lot = lot ?? LotState();
 
   /// [cell] vem da chave [kHomeCellKey], fora do bloco.
   factory HomeState.fromJson(Map<String, dynamic>? j, {(int, int)? cell}) => HomeState(
@@ -138,7 +151,7 @@ class HomeState {
         setUtc: j?['set_utc'] as int?,
         storage: _ints(j?['storage']),
         stored: [for (final u in (j?['stored'] as List<dynamic>?) ?? const []) u as String],
-        furniture: _ints(j?['furniture']),
+        lot: LotState.fromJson(j?['lot'] as Map<String, dynamic>?),
         stations: {for (final e in ((j?['stations'] as Map<String, dynamic>?) ?? const {}).entries) e.key: StationState.fromJson(e.value as Map<String, dynamic>)},
       );
 
@@ -154,8 +167,8 @@ class HomeState {
   /// As criaturas guardadas no santuário sem trabalhar (uids).
   final List<String> stored;
 
-  /// Os móveis instalados: id do item -> quantos.
-  final Map<String, int> furniture;
+  /// 0.29.0: o lote no Véu (o que está construído). Os móveis do Armazém e as estações valem colocados nele.
+  final LotState lot;
 
   /// O estado de cada estação, pelo id (`forge`...).
   final Map<String, StationState> stations;
@@ -191,7 +204,7 @@ class HomeState {
         if (setUtc != null) 'set_utc': setUtc,
         if (storage.isNotEmpty) 'storage': storage,
         if (stored.isNotEmpty) 'stored': stored,
-        if (furniture.isNotEmpty) 'furniture': furniture,
+        if (!lot.isEmpty) 'lot': lot.toJson(),
         if (stations.values.any((s) => !s.isEmpty)) 'stations': {for (final e in stations.entries) if (!e.value.isEmpty) e.key: e.value.toJson()},
       };
 }

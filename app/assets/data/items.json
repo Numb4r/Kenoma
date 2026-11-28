@@ -121,6 +121,25 @@
     { "id": "item.vehicle.skate", "name": "Skate do Véu", "kind": "vehicle_bike", "desc": "Tábua riscada de sigilos, rodas que soltam faísca no asfalto. Anda no seu passo, não no dele." },
     { "id": "item.vehicle.cart", "name": "Carroça do Véu", "kind": "vehicle_car", "desc": "Madeira velha, lanterna na frente e nada puxando. Aparece quando a rua passa depressa demais.", "gender": "f" },
     { "id": "item.furniture.shelf", "name": "Estante de caixote", "kind": "furniture", "gender": "f", "desc": "Caixotes de feira amarrados com fibra, onde o Armazém guarda mais do que cabia.", "effects": { "storage_items": 20 } },
-    { "id": "item.furniture.sanctum", "name": "Santuário de selos", "kind": "furniture", "desc": "Um nicho de madeira onde os selos descansam virados para a parede, e quem está neles dorme sem pressa.", "effects": { "storage_creatures": 10 } }
+    { "id": "item.furniture.sanctum", "name": "Santuário de selos", "kind": "furniture", "desc": "Um nicho de madeira onde os selos descansam virados para a parede, e quem está neles dorme sem pressa.", "effects": { "storage_creatures": 10 } },
+    { "id": "item.lot.floor_plank", "name": "Piso de tábua", "kind": "piece", "desc": "Tábuas de caixote aplainadas e encaixadas; rangem só onde você ainda não pisou." },
+    { "id": "item.lot.floor_tile", "name": "Piso de ladrilho", "kind": "piece", "desc": "Cacos de calçada assentados em quadrados claros, frios no pé e fáceis de varrer." },
+    { "id": "item.lot.wall", "name": "Parede de cal", "kind": "piece", "gender": "f", "desc": "Entulho da rua rebocado com cal; segura um teto que a dobra não tem." },
+    { "id": "item.lot.door", "name": "Porta de tábua", "kind": "piece", "gender": "f", "desc": "Uma porta comum, de dobradiça que range, para o Véu saber onde um cômodo acaba." },
+    { "id": "item.lot.window", "name": "Janela de garrafa", "kind": "piece", "gender": "f", "desc": "Fundos de garrafa num caixilho de Sucata; do outro lado só tem lote, mas a luz atravessa." },
+    { "id": "item.lot.lamp", "name": "Lampião", "kind": "piece", "desc": "Lata, pavio e vidro: acende sozinho quando o sol some lá fora." },
+    { "id": "item.lot.candle", "name": "Vela de pires", "kind": "piece", "gender": "f", "desc": "Três tocos de vela num pires, para o canto que o lampião não alcança." },
+    { "id": "item.lot.rug", "name": "Tapete de fibra", "kind": "piece", "desc": "Fibra trançada tingida de azul; abafa o passo e esconde o chão da dobra." },
+    { "id": "item.lot.vase", "name": "Vaso de barro", "kind": "piece", "desc": "Barro branco queimado com uma muda dentro, que cresce sem saber que não está na rua." },
+    { "id": "item.lot.picture", "name": "Quadro", "kind": "piece", "desc": "Uma vista da cidade pintada de memória; cada vez que você olha, falta uma rua." },
+    { "id": "item.lot.table", "name": "Mesa de caixote", "kind": "piece", "gender": "f", "desc": "Tampo de tábua sobre dois caixotes, firme o bastante para um mapa aberto e um café." },
+    { "id": "item.furniture.chest", "name": "Baú", "kind": "furniture", "desc": "Madeira e cinta de ferro, onde cabe o que a Bolsa não aguenta carregar.", "effects": { "storage_items": 10 } },
+    { "id": "item.station.workbench", "name": "Bancada", "kind": "piece", "gender": "f", "desc": "O tampo riscado de giz onde tudo que você fabrica começa." },
+    { "id": "item.station.forge", "name": "Forja", "kind": "piece", "gender": "f", "desc": "Tijolo, brasa e fole: o lugar de um Soot que gosta de calor." },
+    { "id": "item.station.garden", "name": "Horta", "kind": "piece", "gender": "f", "desc": "Um canteiro de terra da rua, que um Frond mantém verde sem chuva nenhuma." },
+    { "id": "item.station.still", "name": "Destilaria", "kind": "piece", "gender": "f", "desc": "Caldeira de cobre e bico torto, onde um Rill conta a água gota a gota." },
+    { "id": "item.station.cellar", "name": "Adega", "kind": "piece", "gender": "f", "desc": "Dois barris virados para o escuro, do jeito que um Shade prefere." },
+    { "id": "item.station.archive", "name": "Arquivo", "kind": "piece", "desc": "Gavetas de fichas que um Wisp folheia a noite inteira sem acender a luz." },
+    { "id": "item.station.sealworks", "name": "Fábrica de selos", "kind": "piece", "gender": "f", "desc": "Uma prensa de ferro que um Rust opera sem errar o compasso." }
   ]
 }

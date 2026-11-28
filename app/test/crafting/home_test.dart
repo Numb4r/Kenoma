@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/seed.dart';
 import 'package:kenoma/core/tiles.dart';
 import 'package:kenoma/crafting/home_actions.dart';
+import 'package:kenoma/crafting/lot_actions.dart';
 import 'package:kenoma/crafting/quality.dart';
 import 'package:kenoma/crafting/stations.dart';
 import 'package:kenoma/player/bestiary.dart';
@@ -42,7 +43,17 @@ void main() {
     return s;
   }
 
-  GameState housed({int level = 10}) => make(level: level)..home.cell = cell..home.setUtc = t0;
+  /// Com casa e as seis estações colocadas no lote (0.29.0: fora do lote, estação não produz).
+  GameState housed({int level = 10}) {
+    final s = make(level: level)
+      ..home.cell = cell
+      ..home.setUtc = t0;
+    ensureLotStarted(s, data);
+    for (final (i, def) in data.home.stations.indexed) {
+      expect(placePiece(s, data, data.home.pieceOfStation(def.id)!.item, -8 + 3 * (i % 5), 2 + 4 * (i ~/ 5), 0, t0), LotResult.ok, reason: def.id);
+    }
+    return s;
+  }
 
   test('os números da Casa vêm do balance.json', () {
     expect((b.unlockLevel, b.moveCooldownS, b.radiusM, b.storageItems, b.storageCreatures), (10, 30 * 86400, 40.0, 40, 20));
@@ -81,7 +92,6 @@ void main() {
       unassign(s, data, far, 'garden', 'e1', t0 + h),
       collect(s, data, far, 'garden', t0 + 9 * h),
       choose(s, data, far, 'forge', null, t0 + h),
-      installFurniture(s, data, far, 'item.furniture.shelf'),
       storeItem(s, data, null, 'item.chalk', 1),
     ];
     expect(results.toSet(), {HomeResult.away});
@@ -184,12 +194,15 @@ void main() {
     expect((researchLevelOf(s, data, 'soot.eco'), s.bestiary['soot.eco']!.archived), (2, 2), reason: '8 pontos, 4 por tarefa');
   });
 
-  test('o Armazém tem 40 espaços de item e 20 de criatura; a estante e o santuário ampliam', () {
+  test('o Armazém tem 40 espaços de item e 20 de criatura; a estante e o santuário colocados no lote ampliam, e saem', () {
     final s = housed()..inventory.addAll({'item.furniture.shelf': 1, 'item.furniture.sanctum': 1});
     expect((storageCap(s, data), sanctumCap(s, data)), (40, 20));
-    expect(installFurniture(s, data, home, 'item.furniture.shelf'), HomeResult.ok);
-    expect(installFurniture(s, data, home, 'item.furniture.sanctum'), HomeResult.ok);
+    expect(placePiece(s, data, 'item.furniture.shelf', -8, -8, 0, t0), LotResult.ok);
+    expect(placePiece(s, data, 'item.furniture.sanctum', -5, -8, 0, t0), LotResult.ok);
     expect((storageCap(s, data), sanctumCap(s, data)), (60, 30));
+    final shelf = s.home.lot.placed.firstWhere((p) => p.item == 'item.furniture.shelf').uid;
+    expect(removePiece(s, data, shelf, t0).result, LotResult.ok);
+    expect((storageCap(s, data), s.home.storage['item.furniture.shelf']), (40, 1), reason: 'móvel agora sai e volta ao Armazém');
     s.inventory['item.chalk'] = 5;
     expect(storeItem(s, data, home, 'item.chalk', 5), HomeResult.ok);
     expect((s.count('item.chalk'), s.home.storage['item.chalk']), (0, 5));

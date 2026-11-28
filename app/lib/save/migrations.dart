@@ -6,7 +6,7 @@ import '../player/game_state.dart' show kVisitedCellsKey, saveSchemaVersion;
 
 typedef _Step = Map<String, dynamic> Function(Map<String, dynamic>);
 
-final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8, 8: _v8ToV9, 9: _v9ToV10, 10: _v10ToV11, 11: _v11ToV12, 12: _v12ToV13, 13: _v13ToV14, 14: _v14ToV15, 15: _v15ToV16};
+final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8, 8: _v8ToV9, 9: _v9ToV10, 10: _v10ToV11, 11: _v11ToV12, 12: _v12ToV13, 13: _v13ToV14, 14: _v14ToV15, 15: _v15ToV16, 16: _v16ToV17};
 
 /// Leva [json] ao schema atual. Um save de versão futura passa sem mudar.
 Map<String, dynamic> migrateSave(Map<String, dynamic> json) {
@@ -219,3 +219,18 @@ Map<String, dynamic> _v14ToV15(Map<String, dynamic> j) => {...j};
 /// v15 não tinha a Casa (0.28.0): sem `home` nem `home_cell`, o jogo abre sem casa, com o Armazém e as estações vazios. O
 /// resto passa intacto.
 Map<String, dynamic> _v15ToV16(Map<String, dynamic> j) => {...j};
+
+/// v16 (0.28.0) instalava os móveis do Armazém (`home.furniture`, item -> quantos). Na 0.29.0 eles são peças colocadas no
+/// lote: voltam para o Armazém como itens, e o jogador os coloca. O lote em si entra vazio (o inicial vem ao abrir a casa).
+Map<String, dynamic> _v16ToV17(Map<String, dynamic> j) {
+  final home = j['home'];
+  if (home is! Map || home['furniture'] is! Map) return {...j};
+  final storage = <String, dynamic>{...?(home['storage'] as Map?)?.cast<String, dynamic>()};
+  for (final e in (home['furniture'] as Map).entries) {
+    storage[e.key as String] = ((storage[e.key] as int?) ?? 0) + (e.value as int);
+  }
+  return {
+    ...j,
+    'home': <String, dynamic>{for (final e in home.entries) if (e.key != 'furniture') e.key as String: e.value, 'storage': storage},
+  };
+}

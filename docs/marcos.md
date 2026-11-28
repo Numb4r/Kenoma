@@ -1555,3 +1555,33 @@ do jogador (`balance.json`, `home`); as estações e os textos, de `home.json`. 
 - **Bestiário:** as seis famílias com estação dizem qual ("Na Casa: Forja"); as outras seis continuam "em breve".
 - **Debug** (aba Jogador): definir a casa aqui sem a espera, avançar o tempo das estações em horas e encher os depósitos.
 - **Arte** (criativo e executor): a casa no mapa, o ícone do app, um ícone por estação e os dois móveis.
+
+## Fase 2 · fatia 2 · O lote no Véu (0.29.0)
+
+Versão 0.29.0, mesma chave. Save no schema 17 (o lote; os móveis instalados da 0.28.0 voltam para o Armazém como itens).
+Segue o bloco "O lote no Véu" do GDD (rev 402). Toda a lógica da 0.28.0 continua (estações, ritmo, depósito, Armazém,
+vagas, privacidade); muda a forma.
+
+- **Porta no mapa:** a casinha virou a porta do Véu (carimbo `veil_door`, 16 × 24) na célula da casa, só para o jogador.
+  A menos de 40 m (`canEnterLot`), tocar nela abre a costura (três quadros) e uma faixa clara que se alarga a partir dela
+  leva ao lote (`ui/lot/seam_route.dart`); mais longe, "Longe demais". Sair volta ao mapa no mesmo ponto.
+- **O lote** (`ui/lot/lot_screen.dart`, `lot_painter.dart`): vista de cima na grade de 2 dp, casa de 16 px (o tile do
+  mapa), 16 × 16 casas, 24 × 24 no nível 20, 32 × 32 no 30, crescendo para os quatro lados. Em volta, o vazio do Véu com a
+  costura pulsando na borda. Câmera fixa, sem bússola. O Conjurador anda tocando no chão (A* em 8 direções sem cortar
+  quina, `world/lot_path.dart`), o Familiar segue. Luz pela hora real com o mesmo tom de noite do mapa; sem clima.
+- **Construção em grade** (`player/lot.dart`, `crafting/lot_actions.dart`): paleta por abas (piso, parede, porta, janela,
+  luz, decoração, estações, Armazém). Peças giram (as de chão em 2 orientações, as de pé com frente em 4); paredes se
+  ligam nas quinas (16 desenhos pela máscara N/L/S/O); porta e janela só em trecho reto de parede, quadro só em parede
+  virada para a frente. Pôr tira do Armazém (ou da Bolsa); mover e girar não gastam; retirar devolve ao Armazém (cheio, à
+  Bolsa; se nada cabe, a peça fica), e a parede leva junto o que estava nela. O lote novo vem com piso 4 × 4 e a Bancada.
+- **Peças** (receitas na Bancada, página dos móveis): pisos de tábua e de ladrilho, parede de cal, porta, janela,
+  lampião, vela, tapete, vaso, quadro, mesa e baú. As seis estações vêm uma de cada no Armazém ao abrir a casa.
+- **Estações e criaturas:** estação só produz colocada no lote (`stationPlaced`). Tocar abre o cartão da 0.28.0; a
+  Bancada abre a Bancada; baú, estante e santuário abrem o Armazém. Quem trabalha aparece na frente da estação, parado, com o
+  efeito dela (brasa, gota, folhas, cisco, ficha, prensa); as guardadas passeiam devagar pelo lote. Os móveis do Armazém
+  só ampliam colocados.
+- **Debug** (aba Jogador): entrar no lote de qualquer lugar, dar todas as peças, crescer o lote e espalhar a casa de
+  exemplo (`crafting/lot_example.dart`).
+- **Correções:** a barra do topo do HUD estourava 1,2 px em 360 dp com o furo da câmera no meio: agora mede os textos e
+  tira a porcentagem da bateria (depois o ícone do clima) quando não cabe. O `cover_field` de 26 ms na perf era a
+  concorrência entre arquivos de teste (25 ms em paralelo, 11 ms sozinho): a perf roda com `--concurrency=1`.

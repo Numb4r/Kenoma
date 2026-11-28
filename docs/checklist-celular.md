@@ -9,6 +9,18 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.29.0
+
+O lote no Véu. Os itens da 0.28.0 sobre a casinha do mapa e o Armazém continuam abaixo; o que mudou de forma está aqui.
+
+- [ ] `0290-porta` **Porta no mapa.** Na célula da casa aparece a porta do Véu (batente com a costura violeta), não a casinha. A menos de 40 m, tocar nela abre a costura e a faixa clara leva para dentro; mais longe, "Longe demais. Chegue a 40 m da porta."
+- [ ] `0290-lote` **O lote.** Abre com o piso pequeno e a Bancada; em volta, o vazio escuro com a costura pulsando na borda. Tocar no chão leva o Conjurador até lá contornando o que houver; o Familiar segue. "Sair do lote" volta ao mapa no mesmo ponto.
+- [ ] `0290-construir` **Construir.** "Construir" abre a paleta. Ponha piso, parede (as quinas se ligam sozinhas), porta e janela na parede, luzes e decoração; gire, mova e guarde. Guardar devolve ao Armazém. Debug "Dar todas as peças de construção" ajuda.
+- [ ] `0290-estacoes` **Estações no lote.** Coloque uma estação e ponha alguém para trabalhar: a criatura aparece na frente dela e o efeito anda (brasa na Forja, gota na Destilaria, folhas na Horta). Estação guardada no Armazém para de produzir.
+- [ ] `0290-noite` **Dia e noite.** De noite o lote escurece com o mesmo tom do mapa; lampião, vela e janelas acendem; o vazio e a costura continuam acesos. Debug "Espalhar uma casa de exemplo" monta uma casa pronta.
+- [ ] `0290-fluidez` **Fluidez no lote.** Andar e construir sem engasgo, com a casa de exemplo e 24 × 24 (debug "Crescer o lote").
+- [ ] `0290-hud` **Barra do topo.** Em 360 dp, nenhum texto passa da barra (a bateria perde a porcentagem antes).
+
 ## 0.28.0
 
 Casa, Armazém e trabalho das criaturas. Use o nível forçado 10 (ou 20, para as três vagas) e o debug da aba Jogador.

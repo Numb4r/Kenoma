@@ -67,7 +67,9 @@ class UiArt {
   /// O ícone de um item: `item.vessel.glass` → `icons/vessel_glass`; Essências e Pós usam o genérico tingido.
   ui.Image? icon(String itemId) {
     final id = parseStack(itemId).id;
-    final own = images['icons/${id.replaceFirst('item.', '').replaceAll('.', '_')}'];
+    // 0.29.0: o Baú e a Bancada do lote têm o ícone com o nome das peças do lote.
+    const alias = {'item.furniture.chest': 'icons/lot_chest', 'item.station.workbench': 'icons/lot_workbench'};
+    final own = images[alias[id] ?? 'icons/${id.replaceFirst('item.', '').replaceAll('.', '_')}'];
     if (own != null) return own;
     if (id.startsWith('item.essence')) return images['icons/essence'];
     if (id.startsWith('item.dust')) return images['icons/dust'];
