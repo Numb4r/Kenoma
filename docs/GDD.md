@@ -345,6 +345,8 @@ As criaturas se dividem em oito camadas que seguem o lore da fragmentação. Qua
 | Soberanos | só dentro de Fendas | só contidos em grande ritual | não | bosses, artefatos, Essência Divina |
 | Primordiais | eventos únicos, futuro | a definir | não | restos deixados por Os Que Escutam, endgame de expansão |
 
+**Etapas altas antes dos grimórios e das Incursões (decidido em 28/nov/2026).** Enquanto grimórios, Incursões e vínculo não existem, a fusão que gera a Entidade Maior pede 3 Espíritos da família e a criatura de ritual dela como oferenda, no lugar do item de grimório. A Entidade também aparece solta, raríssima, só na condição do mundo da família (a mesma da receita do ritual dela), anunciada por um rumor no fórum horas antes com bairro e hora; dura uma janela curta, é igual para todos os amigos e só se captura por ritual. O Arquétipo ainda não se captura: surge raríssimo no auge de um evento grande, fica registrado como visto no Bestiário e some. A captura dele chega com o vínculo e as Incursões.
+
 Cada camada define limite de nível, Poder base e teto de Traços (ver Atributos), o que torna a subida de camada sempre perceptível. A linha Dracônica é a mais longa, começando em Fagulhas que parecem só uma brasa e terminando no Avatar de Vovina, enquanto dragões inteiros só existem nas Eras Antigas e em Telocvovim.
 
 ### Atributos
