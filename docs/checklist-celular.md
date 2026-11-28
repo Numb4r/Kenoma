@@ -1,13 +1,19 @@
 # Checklist do celular
 
 O que precisa ser conferido no moto g54 quando a versão for instalada nele. É cumulativo: cobre tudo desde a última versão
-que está no celular (hoje a **0.26.3, instalado em 27/11/2026**, release por cima da 0.26.2 do mesmo dia (que entrou por cima da 0.26.1, e esta da 0.26.0 da mesma noite), que tinha entrado por cima da 0.25.0, com o save mantido; antes, a 0.25.0 tinha sido instalada em 2026-11-18 por cima da 0.24.3, com o save mantido, e depois uma build de profile da medição da 0.25.1; a 0.25.1 não chegou a ser instalada; a 0.24.3 tinha entrado em 2026-11-17 por cima da 0.24.1, com o save mantido; a 0.24.2 nunca foi para o celular, então os itens dela continuam; a 0.24.1 tinha entrado por cima da 0.24.0 (e esta da 0.23.2, e esta da 0.23.1, e esta da 0.23.0, que entrou por cima da 0.22.1), com o save mantido; a 0.22.2 nunca foi para o celular, então os itens dela continuam; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
+que está no celular (hoje a **0.26.5, instalado em 27/11/2026**, release por cima das builds de profile da medição da 0.26.4 e da 0.26.5, que entraram por cima da 0.26.3 do mesmo dia, com o save mantido; a 0.26.4 não chegou a ser instalada em release, então os itens dela continuam; a 0.26.3 tinha entrado por cima da 0.26.2 do mesmo dia (que entrou por cima da 0.26.1, e esta da 0.26.0 da mesma noite), que tinha entrado por cima da 0.25.0, com o save mantido; antes, a 0.25.0 tinha sido instalada em 2026-11-18 por cima da 0.24.3, com o save mantido, e depois uma build de profile da medição da 0.25.1; a 0.25.1 não chegou a ser instalada; a 0.24.3 tinha entrado em 2026-11-17 por cima da 0.24.1, com o save mantido; a 0.24.2 nunca foi para o celular, então os itens dela continuam; a 0.24.1 tinha entrado por cima da 0.24.0 (e esta da 0.23.2, e esta da 0.23.1, e esta da 0.23.0, que entrou por cima da 0.22.1), com o save mantido; a 0.22.2 nunca foi para o celular, então os itens dela continuam; continuam as pendências desde a 0.20.0), e cada versão nova acrescenta os itens
 dela. **Um item só sai daqui quando o relatório confirmar que passou.** A ordem vai da versão mais nova para a mais antiga;
 as pendências antigas ficam no fim. O código entre crases é o id do item (o workbench guarda as notas por ele: não mude).
 
 Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`) e o Kenoma em primeiro plano.
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
+
+## 0.26.5
+
+Só o debug: o teleporte do simulador com o mapa aberto. Os itens da 0.26.4 continuam.
+
+- [ ] `0265-teleporte` **Teleporte com o mapa aberto.** Com o mapa aberto no GPS real, ligar o simulador pelo menu de debug e teleportar para outro bairro: o Conjurador pula para lá em um ou dois segundos (antes ficava parado). Voltar ao GPS real: ele volta para onde o celular está.
 
 ## 0.26.4
 

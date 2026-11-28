@@ -1461,5 +1461,21 @@ decisões do dono depois da 0.26.3:
 - Os que sobram depois do esmaecer são menores: o raster durante o esmaecer (58 a 84 ms: a tela translúcida inteira sobre o
   mapa) e o primeiro segundo do mapa (prédios, mundo e clima, 50 a 86 ms). Entre as aberturas com a mesma versão o número
   variou de 0 a 6, com o celular esquentando depois de muitas medições.
-- **Não medido**: a abertura com o GPS longe da posição guardada. O teleporte do simulador pelo `celular.sh` não moveu o
-  Conjurador (a célula guardada não mudou), daí o comando `lastcell`; o celular desconectou antes da medição.
+- A abertura com o GPS longe ficou para a 0.26.5 (o teleporte não movia o Conjurador; o celular desconectou).
+
+**0.26.5** (versão 0.26.5+58, mesma chave e save). O teleporte do simulador pelo `celular.sh` (`sim on; tp ...`) não movia
+o Conjurador: o relógio do simulador conta do 0 e o do GPS real em milissegundos desde 1970, e só o botão do próprio mapa
+zerava o filtro e o marcador na troca de fonte. Pelo comando ou pelo menu de debug (que fica embaixo do mapa desde a
+0.26.2), o filtro guardava o tempo do GPS real e recusava toda leitura do simulador como fora de ordem. Agora toda troca de
+fonte com o mapa aberto passa por ele (`DevTools.switchSourceInMap`); um teste parte do GPS real, teleporta para São Paulo
+pelo comando e confere a posição, o marcador, a célula guardada e a região carregada. Medição (profile, a frio):
+
+| | partida | esmaecer começa | some | quadros acima de 50 ms depois do esmaecer (20 s) |
+|---|---|---|---|---|
+| 1ª depois de atualizar (SHA conferido de novo) | célula guardada | 2,07 s | 2,44 s | 4 (55 a 99 ms: dois do raster no esmaecer, dois do primeiro segundo do mapa) |
+| 2ª | célula guardada | 1,76 s | 2,09 s | 1 (51 ms) |
+| GPS a 19 km da célula guardada (teleporte a Valinhos, `sim on; tp`, e abertura no GPS real) | célula guardada (Valinhos) | 1,77 s | 2,10 s | 1 (113 ms) |
+
+- Longe: o mapa abre em Valinhos, preparado pela tela de carregamento, e pula para casa quando o GPS acha (~3,2 s desde o
+  `main`); o pulo custa um quadro de 113 ms (mundo, filtro do mundo, tráfego e chão da área nova) e mais nenhum acima de
+  50 ms. O `lastcell` não foi preciso.
