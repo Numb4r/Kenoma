@@ -95,24 +95,47 @@ class _HudBarState extends State<HudBar> {
             onTap: widget.onSky,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(children: [
-                Text(phoneClock(t), key: const Key('hud-clock'), style: _label),
-                if (_battery case final b?) ...[
-                  const SizedBox(width: 6),
-                  CustomPaint(key: const Key('hud-battery'), size: const Size(14, 8), painter: BatteryGlyphPainter(b)),
-                  const SizedBox(width: 3),
-                  Text('$b%', key: const Key('hud-battery-label'), style: _label.copyWith(color: b <= 20 ? kEssence : null)),
-                ],
-                const SizedBox(width: 8),
-                UiIcon('moon/moon_${moonPhaseIndex(moonCycle(t))}',
-                    key: const Key('moon-hud'), size: 20, flip: widget.lat() >= 0, fallback: CustomPaint(painter: MoonPainter(moonCycle(t), widget.lat() < 0))),
-                if (w != null) ...[
-                  const SizedBox(width: 8),
-                  UiIcon('climate/${w.id}', key: const Key('weather-glyph'), size: 20, fallback: CustomPaint(painter: WeatherGlyphPainter(w))),
-                  const SizedBox(width: 6),
-                  Flexible(child: Text(w.name.toUpperCase(), key: const Key('weather-label'), maxLines: 1, overflow: TextOverflow.ellipsis, style: _label)),
-                ],
-              ]),
+              // 0.29.0: com o furo da câmera perto do meio (360 dp), o que tem largura fixa passava 1,2 px do espaço. Mede os
+              // textos e, se não cabe tudo, tira primeiro a porcentagem da bateria (o desenho dela fica) e depois o ícone do clima.
+              child: LayoutBuilder(builder: (context, box) {
+                final scale = MediaQuery.textScalerOf(context);
+                final style = DefaultTextStyle.of(context).style.merge(_label);
+                double width(String text) => (TextPainter(text: TextSpan(text: text, style: style), textDirection: TextDirection.ltr, textScaler: scale)..layout()).width;
+                final b = _battery;
+                // Da peça que sai primeiro para a última: porcentagem, ícone do clima, desenho da bateria, lua. A hora fica.
+                final parts = [b == null ? 0.0 : 3 + width('$b%'), w == null ? 0.0 : 8 + 20, b == null ? 0.0 : 6 + 14, 8 + 20.0];
+                var used = width(phoneClock(t)) + (w == null ? 0 : 6) + parts.fold(0.0, (a, x) => a + x); // 6: o espaço antes do nome do clima
+                final keep = [true, true, true, true];
+                for (var i = 0; i < parts.length && used > box.maxWidth; i++) {
+                  keep[i] = false;
+                  used -= parts[i];
+                }
+                final [showPercent, showGlyph, showBattery, showMoon] = keep;
+                return Row(children: [
+                  Text(phoneClock(t), key: const Key('hud-clock'), style: _label),
+                  if (b != null && showBattery) ...[
+                    const SizedBox(width: 6),
+                    CustomPaint(key: const Key('hud-battery'), size: const Size(14, 8), painter: BatteryGlyphPainter(b)),
+                    if (showPercent) ...[
+                      const SizedBox(width: 3),
+                      Text('$b%', key: const Key('hud-battery-label'), style: _label.copyWith(color: b <= 20 ? kEssence : null)),
+                    ],
+                  ],
+                  if (showMoon) ...[
+                    const SizedBox(width: 8),
+                    UiIcon('moon/moon_${moonPhaseIndex(moonCycle(t))}',
+                        key: const Key('moon-hud'), size: 20, flip: widget.lat() >= 0, fallback: CustomPaint(painter: MoonPainter(moonCycle(t), widget.lat() < 0))),
+                  ],
+                  if (w != null) ...[
+                    if (showGlyph) ...[
+                      const SizedBox(width: 8),
+                      UiIcon('climate/${w.id}', key: const Key('weather-glyph'), size: 20, fallback: CustomPaint(painter: WeatherGlyphPainter(w))),
+                    ],
+                    const SizedBox(width: 6),
+                    Flexible(child: Text(w.name.toUpperCase(), key: const Key('weather-label'), maxLines: 1, overflow: TextOverflow.ellipsis, style: _label)),
+                  ],
+                ]);
+              }),
             ),
           ),
         ),
