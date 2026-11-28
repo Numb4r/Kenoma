@@ -266,7 +266,21 @@ class DevTools extends ChangeNotifier {
   bool get anyForcing =>
       _useSimulator || _feedUrl != null || clock.overridden || _levelOverride != 0 || force.pendingEco || force.weather != null || force.events.isNotEmpty || _hidePersonal || _showPuddles || _testCircle != null || _showBiomeGrid || _showGrid20 || _showRadii || _followPiece || _turnLabels || _codeArt || _showRelief || _showTraffic || _trafficDensity != null || _forceNpcs || _manyBuses;
 
+  /// 0.26.5: o mapa aberto troca a fonte por aqui (para o rastreador, troca, zera o filtro e o marcador, liga de novo).
+  /// Sem isso, `sim on` pelo celular.sh ou pelo menu de debug com o mapa aberto deixava o filtro com o tempo do GPS
+  /// real, e ele recusava toda leitura do simulador (o relógio dele começa em 0) como fora de ordem: o teleporte não
+  /// movia o jogador.
+  Future<void> Function(bool simulator)? switchSourceInMap;
+
   Future<void> setUseSimulator(bool value) async {
+    if (value == _useSimulator) return;
+    final inMap = switchSourceInMap;
+    if (inMap != null) return inMap(value);
+    await switchSourceNow(value);
+  }
+
+  /// A troca em si, sem passar pelo mapa (quem chama é o próprio mapa, ou ninguém com ele fechado).
+  Future<void> switchSourceNow(bool value) async {
     if (value == _useSimulator) return;
     _useSimulator = value;
     await source.switchTo(value ? simulator : _real);

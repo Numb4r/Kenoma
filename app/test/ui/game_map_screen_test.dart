@@ -12,7 +12,9 @@ import 'package:kenoma/data/heading_source.dart';
 import 'package:kenoma/player/conjurer_balance.dart';
 import 'package:kenoma/ui/game/compass_button.dart';
 import 'package:kenoma/world/spawn_field.dart';
+import 'package:kenoma/dev/debug_commands.dart';
 import 'package:kenoma/dev/dev_tools.dart';
+import 'package:kenoma/world/layered_world.dart';
 import 'package:kenoma/dev/gps_simulator.dart';
 import 'package:kenoma/ui/game/game_map_game.dart';
 import 'package:kenoma/core/behavior.dart';
@@ -126,6 +128,7 @@ Future<Env> pumpGame(
   bool realClock = false,
   String? weather = 'clear',
   void Function(DevTools tools)? beforeOpen,
+  Map<String, List<int>> extraAssets = const {},
 }) async {
   tester.view.physicalSize = screen;
   tester.view.devicePixelRatio = 2.625;
@@ -139,7 +142,7 @@ Future<Env> pumpGame(
   // Os testes de jogo andam com o simulador e conferem progresso: com a recompensa ligada. O padrão do app é desligada.
   tools.setSimRewards(simRewards);
   beforeOpen?.call(tools);
-  await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: gw, bundle: _Bundle(realAssets()), headingSource: heading, store: store ?? fixedSave())));
+  await tester.pumpWidget(MaterialApp(home: GameMapScreen(tools: tools, gateway: gw, bundle: _Bundle({...realAssets(), ...extraAssets}), headingSource: heading, store: store ?? fixedSave())));
   for (var i = 0; i < 100 && find.text('Carregando mapa...').evaluate().isNotEmpty; i++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
     await tester.pump(const Duration(milliseconds: 50)); // 0.26.4: o esmaecer da tela de carregamento anda
@@ -684,6 +687,34 @@ void main() {
       final st = env.game.worldView!.state;
       final (x, y) = latLonToTile(env.game.playerLat, env.game.playerLon, biomeZoom);
       expect(st.lastMapCell, (x, y));
+    });
+
+    testWidgets('0.26.5: o teleporte do celular.sh (sim on; tp) leva o jogador a São Paulo, grava a célula e carrega a região', (tester) async {
+      // Começa no GPS real, com o tempo das leituras em milissegundos desde 1970 (o do aparelho). O simulador conta do 0: sem
+      // zerar o filtro na troca, toda leitura dele era recusada como fora de ordem e o teleporte não movia ninguém.
+      final env = await pumpGame(tester, simulator: false, extraAssets: {
+        for (final f in Directory('assets/regions').listSync().whereType<File>().where((f) => f.path.contains('sao_paulo_'))) 'assets/regions/${f.uri.pathSegments.last}': f.readAsBytesSync(),
+      });
+      const t0 = 1795000000000;
+      for (var i = 0; i < 3; i++) {
+        env.gps.emit(kUnicamp.$1, kUnicamp.$2, t: t0 + i * 1000);
+        await env.settle(4);
+      }
+      expect(env.game.playerLat, closeTo(kUnicamp.$1, 1e-3));
+      const sp = (-23.5505, -46.6333);
+      final out = await runDebugCommands('sim on; tp ${sp.$1},${sp.$2}', tools: env.tools);
+      expect(out, ['sim on', 'tp ${sp.$1},${sp.$2}']);
+      for (var i = 0; i < 40 && !(env.game.worldView!.field.map.pack as LayeredWorld).hasRegion('sao_paulo'); i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+        await env.live(1);
+      }
+      expect(env.game.playerLat, closeTo(sp.$1, 1e-3), reason: 'o jogador está em São Paulo');
+      expect(env.game.playerLon, closeTo(sp.$2, 1e-3));
+      expect(env.game.avatar.hasPosition, isTrue);
+      final (x, y) = cellOf(sp.$1, sp.$2);
+      expect((env.game.avatar.x - x).abs() + (env.game.avatar.y - y).abs(), lessThan(1), reason: 'o marcador saltou junto');
+      expect(env.game.worldView!.state.lastMapCell, latLonToTile(sp.$1, sp.$2, biomeZoom), reason: 'a célula salva mudou');
+      expect((env.game.worldView!.field.map.pack as LayeredWorld).hasRegion('sao_paulo'), isTrue, reason: 'a menos de 40 km, São Paulo entra');
     });
 
     testWidgets('sem override o painel não fala do relógio', (tester) async {

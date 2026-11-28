@@ -1059,6 +1059,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
       world.remove(ecos.first);
       return ecos.first.uid;
     };
+    tools.switchSourceInMap = _switchSource;
     tools.openNearestNpc = () {
       final r = _ready;
       if (r == null || !game.avatar.hasPosition) return null;
@@ -1275,9 +1276,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   /// da nova fonte, e o acesso é conferido de novo.
   Future<void> _switchSource(bool simulator) async {
     final ready = _ready;
-    if (ready == null) return;
+    if (ready == null) return tools.switchSourceNow(simulator); // ainda carregando: o rastreador nem ouviu a fonte
     await ready.tracker.stop();
-    await tools.setUseSimulator(simulator);
+    await tools.switchSourceNow(simulator);
     ready.tracker.reset();
     ready.game.clearPlayer();
     await _ensureAccess();
@@ -1313,6 +1314,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     if (_npcListener case final l?) tools.removeListener(l);
     tools.clock.removeListener(_rebuild);
     tools.force.rainbowFoot = null;
+    if (tools.switchSourceInMap == _switchSource) tools.switchSourceInMap = null;
     tools.force.tapArcs
       ..clear()
       ..addAll(_climate?.world.debugArcs ?? const []);
