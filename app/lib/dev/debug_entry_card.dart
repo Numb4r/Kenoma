@@ -97,7 +97,7 @@ class _EntryCardState extends State<EntryCard> {
       ],
     ]);
     final body = <Widget>[
-      if (e.warn != null) DebugNote('ATENÇÃO: ${e.warn}', color: KCores.texto, maxLines: _info ? null : 1),
+      if (e.warn != null) DebugNote('ATENÇÃO: ${e.warn}', color: KCores.texto),
       if (_info && e.info != null) DebugNote(e.info!),
       if (e.status?.call() case final st?) DebugNote(st),
       ..._control(),
@@ -247,10 +247,33 @@ class _EntryCardState extends State<EntryCard> {
       );
 
   Widget _view() {
-    final text = e.read?.call() ?? '';
-    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Expanded(child: SelectableText(text, key: Key('${e.id}.text'), style: KTexto.corpoPequeno.copyWith(color: KCores.texto))),
-      DebugInfoCopy(text: e.copy?.call() ?? text),
+    final groups = e.groups?.call();
+    final text = e.readText() ?? '';
+    final copy = DebugInfoCopy(key: Key('${e.id}.copy'), text: e.copy?.call() ?? text);
+    if (groups == null) {
+      return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(child: SelectableText(text, key: Key('${e.id}.text'), style: KTexto.corpoPequeno.copyWith(color: KCores.texto))),
+        copy,
+      ]);
+    }
+    // Linhas de rótulo e valor, por grupo; o copiar leva o bloco todo.
+    return Column(key: Key('${e.id}.text'), crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      for (final (i, g) in groups.indexed) ...[
+        Row(children: [
+          Expanded(child: Text(g.title.toUpperCase(), style: KTexto.rotulo.copyWith(color: KCores.textoMudo))),
+          if (i == 0) copy,
+        ]),
+        for (final (k, v) in g.rows)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 3),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(flex: 2, child: Text(k, style: KTexto.corpoPequeno)),
+              const SizedBox(width: KEspaco.s1),
+              Expanded(flex: 3, child: Text(v, textAlign: TextAlign.right, style: KTexto.corpoPequeno.copyWith(color: KCores.texto))),
+            ]),
+          ),
+        if (i < groups.length - 1) const SizedBox(height: KEspaco.s1),
+      ],
     ]);
   }
 }

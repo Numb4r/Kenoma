@@ -8,7 +8,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../ui/craft/ui_art.dart' show UiFrame;
 import '../ui/pressable.dart';
 import '../ui/tema.dart';
 import 'debug_entry_card.dart';
@@ -198,7 +197,7 @@ class _DebugMenuViewState extends State<DebugMenuView> {
         const SizedBox(width: KEspaco.s1),
         Expanded(
           child: favs.isEmpty
-              ? const DebugNote('Sem favoritos: toque na estrela de um item.', maxLines: 1)
+              ? const DebugNote('Sem favoritos: toque na estrela de um item.')
               : SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
                   for (final e in favs)
                     Padding(
@@ -207,12 +206,12 @@ class _DebugMenuViewState extends State<DebugMenuView> {
                         key: Key('fav-${e.id}'),
                         onTap: () => _goTo(e),
                         child: Container(
-                          constraints: const BoxConstraints(maxWidth: 120, minHeight: kToqueMinDp),
+                          constraints: const BoxConstraints(minHeight: kToqueMinDp),
                           alignment: Alignment.center,
                           padding: const EdgeInsets.symmetric(horizontal: KEspaco.s1),
                           decoration: BoxDecoration(color: KCores.superficie2, border: Border.all(color: KCores.contorno, width: kContornoDp)),
                           child: Stack(clipBehavior: Clip.none, children: [
-                            Text(e.name.toUpperCase(), maxLines: 1, overflow: TextOverflow.ellipsis, style: KTexto.rotulo),
+                            Text(e.name.toUpperCase(), style: KTexto.rotulo),
                             if (e.offReal?.call() != null) const Positioned(right: -3, top: -6, child: DebugDot()),
                           ]),
                         ),
@@ -227,32 +226,33 @@ class _DebugMenuViewState extends State<DebugMenuView> {
   Widget _tabs() {
     final now = widget.prefs.tab;
     return Container(
-      height: kToqueMinDp,
       decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: KCores.contorno, width: kContornoDp))),
-      child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
         for (final t in DebugTab.values)
-          GestureDetector(
-            key: Key('tab-${t.id}'),
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              widget.prefs.setTab(t);
-              if (_scroll.hasClients) _scroll.jumpTo(0);
-            },
-            child: UiFrame(
-              name: t == now ? 'tab_on' : 'tab_off',
-              padding: const EdgeInsets.symmetric(horizontal: KEspaco.s2, vertical: 9),
-              fallbackFill: t == now ? KCores.superficie1 : Colors.transparent,
-              fallbackLine: t == now ? KCores.veuVioleta : Colors.transparent,
-              child: Stack(clipBehavior: Clip.none, children: [
-                Center(
-                  widthFactor: 1,
-                  child: Text(t.title.toUpperCase(), maxLines: 1, style: KTexto.rotulo.copyWith(color: t == now ? KCores.texto : KCores.textoMudo)),
-                ),
-                if (reg.inTab(t).any((e) => e.offReal?.call() != null)) const Positioned(right: -9, top: -6, child: DebugDot()),
-              ]),
+          Expanded(
+            child: DebugTabButton(
+              key: Key('tab-${t.id}'),
+              icon: kDebugTabIcons[t]!,
+              label: t.title,
+              active: t == now,
+              dot: reg.inTab(t).any((e) => e.offReal?.call() != null),
+              onTap: () {
+                widget.prefs.setTab(t);
+                if (_scroll.hasClients) _scroll.jumpTo(0);
+              },
             ),
           ),
-      ])),
+      ]),
     );
   }
 }
+
+/// O ícone de cada aba (spec do criativo): o chip em Sistema, para não confundir com os Ajustes.
+const kDebugTabIcons = {
+  DebugTab.world: Icons.public_sharp,
+  DebugTab.position: Icons.place_sharp,
+  DebugTab.creatures: Icons.pets_sharp,
+  DebugTab.player: Icons.person_sharp,
+  DebugTab.visual: Icons.visibility_sharp,
+  DebugTab.system: Icons.memory_sharp,
+};

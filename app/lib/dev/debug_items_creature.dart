@@ -172,7 +172,11 @@ List<DebugEntry> creatureEntries(DebugEnv env) {
       touchesSave: true,
       keywords: const ['bestiário', 'retrato', 'vista'],
       info: 'Marca a espécie como vista no save aberto (o retrato no Bestiário). Com o mapa aberto.',
-      params: const [DebugParam('species', 'id da espécie (hum.eco)', kind: DebugParamKind.text)],
+      load: env.capture.ensure,
+      params: [
+        DebugParam('species', 'espécie',
+            optionsOf: () => [for (final s in env.capture.data?.species ?? const <EcoSpecies>[]) DebugOption(s.id, s.name)], fallback: 'soot.eco'),
+      ],
       run: (c) {
         final live = liveGameState();
         if (live == null || c['species'].isEmpty) throw const DebugError('abra o mapa e diga a espécie');

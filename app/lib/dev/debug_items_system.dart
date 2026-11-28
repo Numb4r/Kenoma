@@ -21,9 +21,16 @@ List<DebugEntry> systemEntries(DebugEnv env) {
       aliases: const ['perf.tap_latency'],
       keywords: const ['fps', 'sonda', 'mediana', 'toque', 'quadro', 'desempenho'],
       info: 'Do dedo encostar até o primeiro quadro pronto depois dele. A meta é 100 ms.',
-      read: () {
+      groups: () {
         final t = TapLatency.instance;
-        return t.samples.isEmpty ? 'Nenhum toque medido ainda.' : 'Mediana ${t.median!.toStringAsFixed(0)} ms · pior ${t.worst!.toStringAsFixed(0)} ms (${t.samples.length} toques).';
+        return [
+          (
+            title: 'Toque',
+            rows: t.samples.isEmpty
+                ? [('Toques', 'nenhum medido ainda')]
+                : [('Mediana', '${t.median!.toStringAsFixed(0)} ms'), ('Pior', '${t.worst!.toStringAsFixed(0)} ms'), ('Toques', '${t.samples.length}')],
+          ),
+        ];
       },
     ),
     DebugEntry(
@@ -39,11 +46,11 @@ List<DebugEntry> systemEntries(DebugEnv env) {
     ),
     DebugEntry(
       id: 'system.traffic_stats',
-      name: 'Simulação do tráfego',
+      name: 'Custo do mapa',
       tab: DebugTab.system,
       kind: DebugKind.view,
       keywords: const ['tráfego', 'carros', 'passantes', 'agentes', 'custo', 'desempenho'],
-      read: () => tools.trafficStats?.call() ?? 'Abra o mapa do jogo para a simulação começar.',
+      groups: () => tools.trafficStats?.call() ?? [(title: 'Mapa', rows: [('Simulação', 'abra o mapa do jogo para ela começar')])],
     ),
     DebugEntry(
       id: 'system.feed_url',
@@ -79,7 +86,9 @@ List<DebugEntry> systemEntries(DebugEnv env) {
           identityError = 'Erro: $e';
         }
       },
-      read: () => identityError ?? identity?.line ?? 'Lendo o save...',
+      groups: () => identityError != null || identity == null
+          ? [(title: 'Save', rows: [('Estado', identityError ?? 'lendo...')])]
+          : identity!.groups,
       copy: () => identity?.full,
       extra: (_) => IdentityDetails(info: identity),
     ),

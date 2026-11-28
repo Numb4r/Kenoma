@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kenoma/dev/debug_widgets.dart';
 import 'package:kenoma/ui/game/compass_button.dart';
 import 'package:kenoma/ui/game/hud_bar.dart';
 import 'package:kenoma/ui/game/hud_layout.dart';
@@ -26,6 +27,15 @@ void main() {
     'ficha de filtro': KChip(label: 'FOGO', on: true, onTap: () {}),
     'abas': SizedBox(width: 300, child: KTabs(labels: const ['A', 'B'], index: 0, onTap: (_) {})),
     'segmento': SizedBox(width: 300, child: KSegment(labels: const ['A', 'B'], index: 0, onTap: (_) {})),
+    // 0.26.6: o menu de debug também.
+    'debug: interruptor': DebugSwitch(value: true, onChanged: (_) {}),
+    'debug: (i)': DebugInfoButton(open: false, onTap: () {}),
+    'debug: estrela': DebugStar(on: false, onTap: () {}),
+    'debug: chip': SizedBox(width: 72, child: DebugChip('1×', on: true, onTap: () {})),
+    'debug: botão': DebugButton(label: 'Ir', minWidth: 48, onTap: () {}),
+    'debug: botão que mexe no save': DebugButton(label: 'Executar', tone: DebugTone.save, onTap: () {}),
+    'debug: chip fora do real': DebugOverrideChip('relógio', onTap: () {}),
+    'debug: aba': SizedBox(width: 56, child: DebugTabButton(icon: Icons.pets_sharp, label: 'Criaturas', active: true, onTap: () {})),
   };
 
   for (final e in targets.entries) {

@@ -10,6 +10,7 @@ import '../world/places.dart';
 import '../world/position_source.dart';
 import 'emulator.dart';
 import 'game_clock.dart';
+import 'debug_registry.dart' show DebugGroup;
 import 'gps_simulator.dart';
 
 class DevTools extends ChangeNotifier {
@@ -174,8 +175,9 @@ class DevTools extends ChangeNotifier {
   /// O que a camada pessoal acrescentou nesta sessão (quem monta o mapa do jogo preenche).
   String Function()? personalStats;
 
-  /// O que a simulação do tráfego diz de si (quem desenha o mapa do jogo preenche): agentes e custo do passo.
-  String Function()? trafficStats;
+  /// O que o mapa do jogo diz do próprio custo, em grupos (Tráfego, Relevo, Clima, Mapa, Prédios); quem desenha o mapa
+  /// preenche.
+  List<DebugGroup> Function()? trafficStats;
 
   /// 0.22.0: a câmera do mapa segue a peça do clima que anda (funil do tornado, Procissão, olhar da Vigília, prédio da
   /// Maré) em vez do Conjurador. Só para fotos e vídeos do workbench.

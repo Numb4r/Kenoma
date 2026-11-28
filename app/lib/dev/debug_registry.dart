@@ -45,6 +45,14 @@ enum DebugKind {
   final String label;
 }
 
+/// Um grupo de uma leitura (aba Sistema): o título e as linhas de rótulo e valor.
+typedef DebugGroup = ({String title, List<(String, String)> rows});
+
+/// A leitura em texto, um grupo por bloco (o `cmd` e o botão de copiar).
+String groupsText(List<DebugGroup> groups) => [
+      for (final g in groups) [g.title, for (final (k, v) in g.rows) '  $k: $v'].join('\n'),
+    ].join('\n');
+
 /// Um valor válido: [value] é o que o `cmd` recebe, [label] o que a tela mostra.
 class DebugOption {
   const DebugOption(this.value, this.label);
@@ -111,6 +119,7 @@ class DebugEntry {
     required this.kind,
     this.run,
     this.read,
+    this.groups,
     this.status,
     this.info,
     this.warn,
@@ -146,6 +155,13 @@ class DebugEntry {
 
   /// O valor de agora, no formato do argumento (`on`, um valor da escolha, o número, `lat,lon`), ou o texto da leitura.
   final String? Function()? read;
+
+  /// A leitura em grupos de rótulo e valor (o lugar do texto corrido nas leituras): a tela desenha as linhas, o `cmd` e o
+  /// copiar levam o texto ([groupsText]).
+  final List<DebugGroup> Function()? groups;
+
+  /// O texto da leitura: [read], ou os [groups] em texto.
+  String? readText() => read?.call() ?? (groups == null ? null : groupsText(groups!()));
 
   /// Uma linha de estado sob o título (a escola no save, a resistência da sintonia, a Patrulha).
   final String? Function()? status;
@@ -332,7 +348,7 @@ class DebugRegistry {
     }
     if (e.kind == DebugKind.view) {
       await e.load?.call();
-      return e.read?.call() ?? '';
+      return e.readText() ?? '';
     }
     if (value == 'real' && e.offReal != null) return undo(e);
     if (e.enabled?.call() == false) throw DebugError('${e.name}: indisponível agora');

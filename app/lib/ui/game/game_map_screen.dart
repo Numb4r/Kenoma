@@ -996,16 +996,57 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     game.waterRevision = () => assets.waterFor(data.schedule.select(tools.clock.nowUtc).epoch)?.revision ?? 0;
     game.climateGround.floods = (key) => assets.waterFor(data.schedule.select(tools.clock.nowUtc).epoch)?.lineFloods(key.$1, key.$2, key.$3);
     tools.trafficStats = () {
+      String ms(double v) => '${v.toStringAsFixed(1)} ms';
       final sim = game.trafficSimState, g = sim?.lanes;
-      if (sim == null || g == null) return 'A simulação ainda não começou (sem posição ou com o Tráfego do Véu desligado).';
-      return '${sim.cars.length} carros, ${sim.walkers.length} passantes · passo ${sim.avgStepUs.round()} µs (último ${sim.lastStepUs} µs) · '
-          '${g.nodes.length} esquinas, ${g.nodes.where((n) => n.signal).length} semáforos, ${g.nodes.where((n) => n.entry).length} entradas · grafo em ${g.buildUs ~/ 1000} ms\n'
-          '${() {
-            final w = assets.waterFor(data.schedule.select(tools.clock.nowUtc).epoch);
-            return 'Água no relevo: ${w?.builds ?? 0} tiles calculados, último em ${(w?.lastBuildMs ?? 0).toStringAsFixed(1)} ms (uma vez por tile)';
-          }()} · Véu da neblina: ${game.fogUs.round()} µs por quadro · Bichos e vento: ${game.lifeUs.round()} µs por quadro\n'
-          'Cobertura por campo: ${game.climateGround.cover?.fieldDrawn ?? 0} blocos na tela, ${game.climateGround.cover?.fieldBuilds ?? 0} refeitos, último em ${(game.climateGround.cover?.fieldLastMs ?? 0).toStringAsFixed(1)} ms (fora do quadro)\n'
-          '${game.fullStyle && game.isMounted ? 'Mapa Completo: chão ${game.city.groundMs.toStringAsFixed(1)} ms (${game.city.drawnChunks} blocos, ${game.city.rebuiltLastFrame} refeitos no quadro, ${game.city.rebuiltTotal} no total, ${game.city.onGrid ? 'na grade' : 'girando'}), de pé ${game.city.uprightMs.toStringAsFixed(1)} ms (${game.city.upright.stats.buildings} prédios, ${game.city.upright.stats.props} árvores e props)' : 'Mapa Simplificado: ${game.artRasterMs.toStringAsFixed(1)} ms'} · partículas ${game.rainCount}\nPrédios: ${assets.world?.buildingStats ?? '-'} · build ${kReleaseMode ? 'release' : kProfileMode ? 'profile' : 'debug (não vale como medida)'}';
+      final w = assets.waterFor(data.schedule.select(tools.clock.nowUtc).epoch);
+      final cover = game.climateGround.cover;
+      return [
+        (
+          title: 'Tráfego',
+          rows: sim == null || g == null
+              ? [('Simulação', 'ainda não começou (sem posição ou com o Tráfego do Véu desligado)')]
+              : [
+                  ('Carros', '${sim.cars.length}'),
+                  ('Passantes', '${sim.walkers.length}'),
+                  ('Passo', '${sim.avgStepUs.round()} µs (último ${sim.lastStepUs} µs)'),
+                  ('Esquinas', '${g.nodes.length}'),
+                  ('Semáforos', '${g.nodes.where((n) => n.signal).length}'),
+                  ('Entradas', '${g.nodes.where((n) => n.entry).length}'),
+                  ('Grafo', '${g.buildUs ~/ 1000} ms'),
+                ],
+        ),
+        (title: 'Relevo', rows: [('Tiles de água', '${w?.builds ?? 0} (uma vez por tile)'), ('Último cálculo', ms(w?.lastBuildMs ?? 0))]),
+        (
+          title: 'Clima',
+          rows: [
+            ('Véu da neblina', '${game.fogUs.round()} µs por quadro'),
+            ('Bichos e vento', '${game.lifeUs.round()} µs por quadro'),
+            ('Cobertura', '${cover?.fieldDrawn ?? 0} blocos na tela, ${cover?.fieldBuilds ?? 0} refeitos'),
+            ('Última cobertura', '${ms(cover?.fieldLastMs ?? 0)} (fora do quadro)'),
+            ('Partículas', '${game.rainCount}'),
+          ],
+        ),
+        (
+          title: 'Mapa',
+          rows: game.fullStyle && game.isMounted
+              ? [
+                  ('Estilo', 'Completo'),
+                  ('Chão', '${ms(game.city.groundMs)} (${game.city.drawnChunks} blocos)'),
+                  ('Refeitos', '${game.city.rebuiltLastFrame} no quadro, ${game.city.rebuiltTotal} no total'),
+                  ('Giro', game.city.onGrid ? 'na grade' : 'girando'),
+                  ('De pé', '${ms(game.city.uprightMs)} (${game.city.upright.stats.buildings} prédios, ${game.city.upright.stats.props} árvores e props)'),
+                ]
+              : [('Estilo', 'Simplificado'), ('Desenho', ms(game.artRasterMs))],
+        ),
+        (
+          title: 'Prédios',
+          rows: [
+            for (final r in (assets.world?.buildingStats ?? '').split(' · ').where((r) => r.contains(': ')))
+              (r.substring(0, r.indexOf(': ')), r.substring(r.indexOf(': ') + 2)),
+            ('Build', kReleaseMode ? 'release' : kProfileMode ? 'profile' : 'debug (não vale como medida)'),
+          ],
+        ),
+      ];
     };
     final accessTol = data.travel.accessTolM / metersPerCell(game.playerLat);
     final travel = TravelSession(

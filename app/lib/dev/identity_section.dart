@@ -73,6 +73,23 @@ class IdentityInfo {
     ].join(' · ');
   }
 
+  /// O resumo em linhas de rótulo e valor (a entrada `system.identity`).
+  List<({String title, List<(String, String)> rows})> get groups {
+    final f = report.founder;
+    return [
+      (
+        title: 'Identidade',
+        rows: [
+          ('Época', '${epoch?.id ?? '?'}${stale ? ' (mundo desatualizado)' : ''}${clockForced ? ' · relógio forçado' : ''}'),
+          ('player_id', f == null ? 'sem fundador (abra o mapa)' : '${f.playerId.substring(0, 8)}…'),
+          ('Schema', '${report.schemaVersion ?? '?'}'),
+          if (f != null) ('Versões', '${f.versionsSeen.length} · cadeia ${report.chainValid ? 'íntegra' : 'QUEBRADA'}'),
+          if (report.note != null) ('Nota', report.note!),
+        ],
+      ),
+    ];
+  }
+
   /// O que o botão de copiar leva: o resumo com o player_id inteiro, o grupo e o log de versões.
   String get full {
     final f = report.founder;

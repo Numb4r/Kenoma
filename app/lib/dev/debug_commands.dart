@@ -68,6 +68,8 @@ Future<List<String>> runDebugCommands(String text, DebugRegistry registry, {Map<
 String _legacy(String name, String args) => switch (name) {
       'event' when args == 'off' => 'real',
       'clock' when args == 'real' => 'real',
+      // `vehicle cart@perfect`: o veículo e a qualidade viraram dois parâmetros.
+      'vehicle' when args.contains('@') => 'id=${args.split('@').first} q=${args.split('@').last}',
       // `creature hum.eco [biome|crimson|shiny] [walk] [n]`, ou `creature fire ...` (só o tipo).
       'creature' when args.isNotEmpty && !args.contains('=') => () {
           final a = args.split(RegExp(r'\s+'));

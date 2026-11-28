@@ -4,6 +4,8 @@
 library;
 
 import '../crafting/crafting_state.dart' show LoadoutSlot;
+import '../crafting/quality.dart';
+import '../data/game_data.dart';
 import '../ui/game/game_map_screen.dart' show liveGameState;
 import 'debug_env.dart';
 import 'debug_registry.dart';
@@ -23,6 +25,8 @@ Map<String, dynamic> grantProfile(Map<String, dynamic> save, {int levels = 0, in
 
 List<DebugEntry> profileEntries(DebugEnv env) {
   final tools = env.tools;
+  // Os veículos do items.json (id curto -> nome e tipo), lidos ao abrir o cartão ou no cmd.
+  Map<String, ({String name, String kind})>? vehicles;
 
   /// O nível forçado (1 a 20) guardado no save; 0 deixa valer o nível real. Sem disco (testes), vale só na memória.
   Future<void> setLevel(int level) async {
@@ -82,14 +86,22 @@ List<DebugEntry> profileEntries(DebugEnv env) {
       kind: DebugKind.action,
       aliases: const ['vehicle'],
       touchesSave: true,
-      keywords: const ['veículo', 'carrinho', 'bicicleta', 'viagem'],
-      info: 'Equipa direto no save aberto, sem passar pela bolsa: o id depois de item.vehicle. (cart@perfect, bike). Com o mapa aberto.',
-      params: const [DebugParam('id', 'veículo (cart@perfect)', kind: DebugParamKind.text, fallback: 'cart')],
+      keywords: const ['veículo', 'carroça', 'bicicleta', 'skate', 'viagem'],
+      info: 'Equipa direto no save aberto, sem passar pela bolsa. Com o mapa aberto.',
+      load: () async => vehicles ??= {
+        for (final i in (await GameData.load()).craft.items.values)
+          if (i.kind.startsWith('vehicle_')) i.id.substring('item.vehicle.'.length): (name: i.name, kind: i.kind),
+      },
+      autoLoad: true,
+      params: [
+        DebugParam('id', 'veículo', optionsOf: () => [for (final MapEntry(:key, :value) in (vehicles ?? const {}).entries) DebugOption(key, value.name)], fallback: 'cart'),
+        DebugParam('q', 'qualidade', options: [for (final q in Quality.values) DebugOption(q.name, q.label)], fallback: 'common'),
+      ],
       run: (c) {
         final live = liveGameState();
-        if (live == null || c['id'].isEmpty) throw const DebugError('abra o mapa e diga o veículo');
-        final id = 'item.vehicle.${c['id']}';
-        live.crafting.equipped[c['id'].startsWith('cart') ? LoadoutSlot.vehicleCar : LoadoutSlot.vehicleBike] = id;
+        if (live == null) throw const DebugError('abra o mapa antes');
+        final id = stackKey('item.vehicle.${c['id']}', Quality.byName(c['q']));
+        live.crafting.equipped[vehicles![c['id']]!.kind == 'vehicle_car' ? LoadoutSlot.vehicleCar : LoadoutSlot.vehicleBike] = id;
         live.changed();
         return id;
       },

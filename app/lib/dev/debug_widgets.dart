@@ -9,7 +9,8 @@ library;
 
 import 'package:flutter/material.dart';
 
-import '../ui/kit.dart' show KitAlertDialog, KitSwitch;
+import '../ui/craft/ui_art.dart' show UiFrame;
+import '../ui/kit.dart' show KitAlertDialog;
 import '../ui/pressable.dart';
 import '../ui/tema.dart';
 
@@ -151,7 +152,8 @@ class DebugStar extends StatelessWidget {
       );
 }
 
-/// O interruptor do kit (ligado em violeta), apagado quando não dá para usar.
+/// O interruptor do menu: trilho de 44 × 24 dp com a peça quadrada, violeta quando ligado (o estado também pela posição da
+/// peça, nunca só pela cor). Alvo de toque de 52 × 48 dp; apagado quando não dá para usar.
 class DebugSwitch extends StatelessWidget {
   const DebugSwitch({required this.value, required this.onChanged, super.key});
 
@@ -159,7 +161,83 @@ class DebugSwitch extends StatelessWidget {
   final ValueChanged<bool>? onChanged;
 
   @override
-  Widget build(BuildContext context) => KitSwitch(value: value, onChanged: onChanged);
+  Widget build(BuildContext context) => Semantics(
+        toggled: value,
+        enabled: onChanged != null,
+        child: Opacity(
+          opacity: onChanged == null ? 0.4 : 1,
+          child: Pressable(
+            onTap: onChanged == null ? null : () => onChanged!(!value),
+            child: SizedBox(
+              width: 52,
+              height: kToqueMinDp,
+              child: Center(
+                child: Container(
+                  width: 44,
+                  height: 24,
+                  padding: const EdgeInsets.all(2),
+                  alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+                  decoration: BoxDecoration(color: value ? KCores.veuVioleta : KCores.fundo, border: Border.all(color: value ? KCores.contorno : KCores.linha, width: kContornoDp)),
+                  child: Container(width: 14, height: 14, color: value ? KCores.contorno : KCores.textoMudo),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+}
+
+/// Uma aba do menu: ícone em cima e o rótulo em 8 px embaixo, 51 dp de alto (spec do criativo, 0.26.6). A ativa tem a
+/// moldura `tab_on` e o ícone violeta; [dot] põe o ponto ciano no canto do ícone (algo fora do real lá dentro).
+class DebugTabButton extends StatelessWidget {
+  const DebugTabButton({required this.icon, required this.label, required this.active, required this.onTap, this.dot = false, super.key});
+
+  final IconData icon;
+  final String label;
+  final bool active;
+  final bool dot;
+  final VoidCallback onTap;
+
+  static const labelStyle = TextStyle(fontFamily: KFonte.pixel, fontSize: 8, height: 12 / 8, letterSpacing: 0);
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        // O ícone e o rótulo vão por cima da moldura, na largura inteira da aba: dentro dela a folga da borda deixava
+        // "CRIATURAS" sem 6 dp (a aba vizinha cobria a última letra) e empurrava o ícone para cima do rótulo.
+        child: SizedBox(
+          height: 51,
+          child: Stack(clipBehavior: Clip.none, children: [
+            Positioned.fill(
+              child: UiFrame(
+                name: active ? 'tab_on' : 'tab_off',
+                padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
+                fallbackFill: active ? KCores.superficie1 : Colors.transparent,
+                fallbackLine: active ? KCores.veuVioleta : Colors.transparent,
+                child: const SizedBox.expand(),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 7,
+              child: Center(
+                child: Stack(clipBehavior: Clip.none, children: [
+                  Icon(icon, size: 24, color: active ? KCores.veuVioleta : KCores.textoMudo),
+                  if (dot) const Positioned(right: -3, top: -3, child: DebugDot()),
+                ]),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 5,
+              child: Text(label.toUpperCase(), maxLines: 1, softWrap: false, overflow: TextOverflow.visible, textAlign: TextAlign.center, style: labelStyle.copyWith(color: active ? KCores.texto : KCores.textoMudo)),
+            ),
+          ]),
+        ),
+      );
 }
 
 /// O chip da faixa "fora do real": aro e texto ciano, 36 dp visíveis em 48 de toque, e a caixa do × à direita. O chip
@@ -229,15 +307,14 @@ class DebugField extends StatelessWidget {
 
 /// Frase de apoio, em Pixelify Sans mudo.
 class DebugNote extends StatelessWidget {
-  const DebugNote(this.text, {this.color, this.maxLines, super.key});
+  const DebugNote(this.text, {this.color, super.key});
 
   final String text;
   final Color? color;
-  final int? maxLines;
 
+  /// Quebra linha sempre: nada no menu se corta com reticências.
   @override
-  Widget build(BuildContext context) =>
-      Text(text, maxLines: maxLines, overflow: maxLines == null ? null : TextOverflow.ellipsis, style: KTexto.corpoPequeno.copyWith(color: color));
+  Widget build(BuildContext context) => Text(text, style: KTexto.corpoPequeno.copyWith(color: color));
 }
 
 void debugSnack(BuildContext context, String text) => debugSayer(context)(text);

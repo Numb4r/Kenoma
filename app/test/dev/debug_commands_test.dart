@@ -108,6 +108,15 @@ void main() {
     expect(await cmd('creature.create count=11'), [startsWith('erro creature.create: count: número de 1 a 10')]);
   });
 
+  test('veículo e espécie vista são escolhas fechadas (sem texto livre); o vehicle antigo vira os dois parâmetros', () async {
+    final out = (await cmd('list')).firstWhere((l) => l.startsWith('player.vehicle '));
+    expect(out, contains('q=common|good|perfect'));
+    expect((await cmd('vehicle cart@perfect')).single, 'erro player.vehicle: abra o mapa antes', reason: 'conferido contra o registro antes de rodar');
+    expect((await cmd('player.vehicle id=foguete')).single, startsWith('erro player.vehicle: id: um de '));
+    expect((await cmd('player.vehicle ?')).single, contains('id=bike|skate|cart'));
+    expect((await cmd('creature.seen nao.existe')).single, startsWith('erro creature.seen: species: um de '));
+  });
+
   test('event: liga e desliga cada um, e off (ou real) limpa', () async {
     expect(await cmd('event vigil'), ['ok world.events: ok']);
     expect(tools.force.events, ['vigil']);

@@ -1,6 +1,9 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show FontLoader;
+import 'package:kenoma/ui/tema.dart' show KFonte;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kenoma/core/behavior.dart';
 import 'package:kenoma/dev/debug_capture.dart';
@@ -10,6 +13,7 @@ import 'package:kenoma/dev/debug_items.dart';
 import 'package:kenoma/dev/debug_menu_view.dart';
 import 'package:kenoma/dev/debug_prefs.dart';
 import 'package:kenoma/dev/debug_registry.dart';
+import 'package:kenoma/dev/debug_widgets.dart';
 import 'package:kenoma/dev/dev_tools.dart';
 import 'package:kenoma/save/save_store.dart';
 import 'package:kenoma/ui/game/hud_bar.dart';
@@ -107,7 +111,7 @@ void main() {
         expect(hit, isNotNull, reason: 'controle $k na tela sem entrada no registro');
         final (e, sub) = hit!;
         expect(listed, contains(e.id), reason: '$k: ${e.id} fora do cmd list');
-        if (sub != null && !const {'run', 'field', 'go', 'load', 'slider', 'info', 'text'}.contains(sub)) {
+        if (sub != null && !const {'run', 'field', 'go', 'load', 'slider', 'info', 'text', 'copy'}.contains(sub)) {
           final param = sub.endsWith('.slider') ? sub.substring(0, sub.length - 7) : sub;
           expect(e.params.map((p) => p.name), contains(param), reason: '$k: parâmetro que o cmd não conhece');
         }
@@ -324,6 +328,62 @@ void main() {
     await tap();
     expect(store.json, isNull);
     expect(find.textContaining('Ainda não há jogo salvo'), findsOneWidget);
+  });
+
+  for (final size in const [Size(360, 800), Size(412, 915), Size(480, 1000)]) {
+    testWidgets('as seis abas cabem sem rolar em ${size.width.round()} dp, com 48 dp de alto ou mais', (tester) async {
+      tester.view.physicalSize = size * 3;
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(MaterialApp(home: DebugMenuView(registry: buildDefaultRegistry(newEnv()), prefs: DebugPrefs())));
+      addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
+      expect(tester.takeException(), isNull, reason: 'nada estoura');
+      for (final t in DebugTab.values) {
+        final r = tester.getRect(find.byKey(Key('tab-${t.id}')));
+        expect((r.left >= 0, r.right <= size.width), (true, true), reason: '${t.title} inteira na tela');
+        expect(r.height, greaterThanOrEqualTo(48), reason: t.title);
+      }
+    });
+  }
+
+  test('o rótulo de cada aba cabe em 50 dp (56 dp de aba menos a moldura), CRIATURAS inclusive', () async {
+    // Na fonte de verdade: a dos testes desenha todo caractere com 1 em de largura.
+    await (FontLoader(KFonte.pixel)..addFont(File('assets/fonts/Silkscreen-Regular.ttf').readAsBytes().then(ByteData.sublistView))).load();
+    for (final t in DebugTab.values) {
+      final p = TextPainter(text: TextSpan(text: t.title.toUpperCase(), style: DebugTabButton.labelStyle), textDirection: TextDirection.ltr)..layout();
+      expect(p.width, lessThanOrEqualTo(50), reason: t.title);
+    }
+  });
+
+  testWidgets('nenhum texto do menu se corta com reticências, em nenhuma aba', (tester) async {
+    final prefs = DebugPrefs();
+    await prefs.toggleFavorite('visual.grid20'); // o nome mais longo vira atalho
+    await pumpMenu(tester, prefs);
+    for (final t in DebugTab.values) {
+      await openTab(tester, t);
+      final inFields = find.descendant(of: find.byType(TextField), matching: find.byType(Text)).evaluate().toSet(); // o rótulo do campo é do Material
+      final cut = [
+        for (final e in find.byType(Text).evaluate().where((e) => !inFields.contains(e)))
+          if ((e.widget as Text).overflow == TextOverflow.ellipsis || (e.widget as Text).maxLines == 1 && (e.widget as Text).overflow == TextOverflow.fade) (e.widget as Text).data,
+      ];
+      expect(cut, isEmpty, reason: t.title);
+    }
+  });
+
+  testWidgets('as leituras de Sistema saem em linhas de rótulo e valor, com o copiar do bloco', (tester) async {
+    final tools = DevTools(realSource: FakeGps());
+    tools.trafficStats = () => [
+          (title: 'Tráfego', rows: [('Carros', '21'), ('Passantes', '8')]),
+          (title: 'Prédios', rows: [('campinas', '0/1397 tiles')]),
+        ];
+    final reg = await pumpMenu(tester, DebugPrefs(), env: newEnv(tools: tools));
+    await openTab(tester, DebugTab.system);
+    final card = find.byKey(const Key('system.traffic_stats'));
+    for (final t in ['TRÁFEGO', 'Carros', '21', 'PRÉDIOS', 'campinas']) {
+      expect(find.descendant(of: card, matching: find.text(t)), findsOneWidget, reason: t);
+    }
+    expect(find.byKey(const Key('system.traffic_stats.copy')), findsOneWidget);
+    expect(await runDebugCommands('system.traffic_stats', reg), ['ok system.traffic_stats: Tráfego\n  Carros: 21\n  Passantes: 8\nPrédios\n  campinas: 0/1397 tiles']);
   });
 
   group('etiqueta DEBUG no selo de modo', () {

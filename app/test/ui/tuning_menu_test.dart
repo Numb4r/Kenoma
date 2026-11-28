@@ -17,7 +17,7 @@ import 'package:kenoma/ui/game/game_map_screen.dart';
 import 'package:kenoma/world/places.dart';
 import 'package:kenoma/dev/tuning_debug_menu.dart';
 import 'package:kenoma/ui/tuning/log_exporter.dart';
-import 'package:kenoma/ui/kit.dart' show KitSwitch;
+import 'package:kenoma/dev/debug_widgets.dart' show DebugSwitch;
 import 'package:kenoma/ui/tuning/tuning_screen.dart';
 
 import '../support/fake_position_source.dart';
@@ -179,7 +179,7 @@ void main() {
       await tapKey(tester, 'creature.tuning_tonic');
       await tapKey(tester, 'creature.tuning_hidden');
       await tapKey(tester, 'creature.tuning_species=rill.eco');
-      final target = tester.widget<KitSwitch>(find.descendant(of: find.byKey(const Key('creature.tuning_target')), matching: find.byType(KitSwitch)));
+      final target = tester.widget<DebugSwitch>(find.descendant(of: find.byKey(const Key('creature.tuning_target')), matching: find.byType(DebugSwitch)));
       expect((target.value, target.onChanged), (false, null));
       final screen = await start(tester);
       expect(screen.hidden, isTrue);
