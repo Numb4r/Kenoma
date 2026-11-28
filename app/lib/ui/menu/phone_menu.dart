@@ -17,6 +17,7 @@ import 'bestiary_screen.dart';
 import 'chat_screen.dart';
 import 'circle_screen.dart';
 import 'forum_screen.dart';
+import '../../world/high_tiers_driver.dart' show ForumRumor;
 import 'phone_apps.dart';
 import 'phone_grid.dart';
 import 'phone_shell.dart';
@@ -92,6 +93,7 @@ Future<void> showPhoneMenu(
   ClimateInfo Function()? weather,
   double Function()? lat,
   CraftContext Function()? craft,
+  List<ForumRumor> Function()? rumors,
 }) {
   final status = PhoneStatusSource(nowUtc: nowUtc, lat: lat ?? () => 0, weather: weather);
   phoneStatusSource = status;
@@ -110,7 +112,7 @@ Future<void> showPhoneMenu(
       PhoneAppId.bench => CraftBenchScreen(state: state, data: data, ctx: ctx()),
       PhoneAppId.loadout => LoadoutScreen(state: state, data: data, nowUtc: nowUtc),
       PhoneAppId.chat => ChatScreen(state: state, data: data),
-      PhoneAppId.forum => ForumScreen(state: state, data: data, nowUtc: nowUtc, epochId: epochId),
+      PhoneAppId.forum => ForumScreen(state: state, data: data, nowUtc: nowUtc, epochId: epochId, rumors: rumors),
       PhoneAppId.profile => ProfileScreen(
         state: state,
         data: data,

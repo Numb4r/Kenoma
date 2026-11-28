@@ -12,7 +12,9 @@ import '../../player/game_state.dart';
 import '../pressable.dart';
 import '../sprites/sprite_image.dart';
 import '../tema.dart';
+import 'bestiary/bestiary_widgets.dart' show KSegment;
 import 'fusion_animation.dart';
+import 'major_fusion_panel.dart';
 import 'screen_frame.dart' show SpeciesImage, cardBox;
 import '../kit.dart';
 
@@ -40,6 +42,9 @@ class FusionPanel extends StatefulWidget {
 
 class _FusionPanelState extends State<FusionPanel> {
   late String _family = fusionFamilies(widget.data).first;
+
+  /// 0.27.0: a fusão da Entidade Maior (3 Espíritos e a oferenda), na mesma aba.
+  bool _major = false;
   final _picked = <String>[];
 
   GameState get _s => widget.state;
@@ -105,6 +110,13 @@ class _FusionPanelState extends State<FusionPanel> {
         child: Text('??? LIBERADA NO NÍVEL ${s.cb.fusionLevel}', style: KTexto.rotulo.copyWith(color: KCores.textoMudo)),
       );
     }
+    final mode = Padding(
+      padding: const EdgeInsets.only(bottom: KEspaco.s2),
+      child: KSegment(key: const Key('fusion-mode'), labels: const ['Espírito', 'Entidade Maior'], index: _major ? 1 : 0, onTap: (i) => setState(() => _major = i == 1)),
+    );
+    if (_major) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [mode, MajorFusionPanel(state: s, data: _d, sprites: widget.sprites, nowUtc: widget.nowUtc)]);
+    }
     final ecos = fusibleEcos(s, _family).reversed.toList();
     _picked.removeWhere((u) => !ecos.any((c) => c.uid == u));
     final plan = fusionPlan(s, _d, _family, _picked);
@@ -112,6 +124,7 @@ class _FusionPanelState extends State<FusionPanel> {
     final essence = essenceOfFamily(_d, _family)!;
     final cost = s.cb.fusionEssenceCost;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      mode,
       Text('${countText(s.cb.fusionEcoCount, 'Eco').toUpperCase()} DA MESMA FAMÍLIA + ${_d.itemCount(essence, cost).toUpperCase()} VIRAM UM ESPÍRITO. OS ECOS ESCOLHIDOS SE VÃO.', style: KTexto.corpoPequeno),
       const SizedBox(height: KEspaco.s2),
       Wrap(spacing: KEspaco.s1, runSpacing: KEspaco.s1, children: [

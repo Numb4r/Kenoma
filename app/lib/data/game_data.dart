@@ -20,6 +20,7 @@ import '../net/signed_feed.dart';
 import '../patrol/patrol_balance.dart';
 import '../player/progress_balance.dart';
 import '../story/forum_data.dart';
+import '../world/high_tiers_driver.dart' show RumorTexts;
 import '../travel/notification_parser.dart';
 import '../travel/travel_balance.dart';
 import '../core/weather.dart';
@@ -102,6 +103,7 @@ class GameData {
     this.npc = const NpcData(),
     this.npcBalance = const NpcBalance(),
     this.mapTexts = const {},
+    this.rumors = const RumorTexts(),
     required this.progress,
     required this.mentor,
     required this.forum,
@@ -163,6 +165,7 @@ class GameData {
         npc: npc == null ? const NpcData() : NpcData.fromJson(npc),
         npcBalance: NpcBalance.fromJson(balance['npc'] as Map<String, dynamic>?),
         mapTexts: mapTexts ?? const {},
+        rumors: RumorTexts.fromJson(forum['rumors'] as Map<String, dynamic>?),
         climates: ClimateCatalog.fromJson(climates, events),
         climateBalance: ClimateBalance.fromJson(balance['climate'] as Map<String, dynamic>?),
         ritual: RitualBook.fromJson(rituals, balance),
@@ -252,6 +255,15 @@ class GameData {
 
   /// Um aviso curto do toque no mapa (`mapa.json`, `notices`).
   String notice(String id) => ((mapTexts['notices'] as Map<String, dynamic>?)?[id] as String?) ?? '';
+
+  /// 0.27.0: os bairros de cada região (`mapa.json`, `bairros`), para o rumor da Entidade solta.
+  late final Map<String, List<(String, double, double)>> bairros = {
+    for (final e in ((mapTexts['bairros'] as Map<String, dynamic>?) ?? const {}).entries)
+      e.key: [for (final b in e.value as List<dynamic>) ((b as List<dynamic>)[0] as String, (b[1] as num).toDouble(), (b[2] as num).toDouble())],
+  };
+
+  /// 0.27.0: os rumores da Entidade solta no fórum (`forum.json`, `rumors`).
+  final RumorTexts rumors;
 
   /// XP, descanso, marcação e destilação do `balance.json`.
   final ProgressBalance progress;

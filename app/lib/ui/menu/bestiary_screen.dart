@@ -163,7 +163,7 @@ class _BestiaryScreenState extends State<BestiaryScreen> {
     final b = widget.state.bestiary;
     final forms = [for (final f in bestiaryForms(data)) if (_matches(f, _filter)) f];
     final sections = <Widget>[];
-    for (final (layer, title) in const [(FormLayer.eco, 'Ecos'), (FormLayer.spark, 'Fagulhas'), (FormLayer.spirit, 'Espíritos'), (FormLayer.ritual, 'Espíritos de ritual')]) {
+    for (final (layer, title) in const [(FormLayer.eco, 'Ecos'), (FormLayer.spark, 'Fagulhas'), (FormLayer.spirit, 'Espíritos'), (FormLayer.ritual, 'Espíritos de ritual'), (FormLayer.major, 'Entidades Maiores'), (FormLayer.archetype, 'Arquétipos')]) {
       final list = [for (final f in forms) if (f.layer == layer) f];
       if (list.isEmpty) continue;
       sections

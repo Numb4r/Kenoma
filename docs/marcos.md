@@ -1502,3 +1502,28 @@ Versão 0.26.6+59, mesma chave e save. O menu de debug serve a dois usuários: o
 - **Testes.** Um falha se uma entrada não aparece na aba dela ou se um controle da tela (com o parâmetro) não existe no
   `cmd list`; outros cobrem os aliases, o `state`, a confirmação do destrutivo e a faixa do topo.
 - O menu sai da build dos amigos antes de distribuir (`docs/distribuicao.md`, seção 5).
+
+## Fase 1 · fatia 21 · Entidade Maior e Arquétipo no jogo (0.27.0)
+
+Versão 0.27.0, mesma chave e save (sem mudança de schema). Segue o parágrafo "Etapas altas antes dos grimórios e das
+Incursões" do GDD (rev 399) e o item 1 de `docs/art/pendencias-codigo.md`.
+
+- **Espécies.** As 24 (Entidade e Arquétipo das 12 famílias) com os nomes de `docs/art/nomes-propostos.md`, aprovados (quatro trocados por repetirem a raiz da criatura de ritual), e
+  verbete no Bestiário (Lore I do criativo; o Arquétipo abre o Lore I só por ter sido visto). O Bestiário ganhou as seções
+  Entidades Maiores e Arquétipos.
+- **Camadas** (`balance.json`): Eco 20 níveis, Poder 10 + 2/nível, 1 traço; Espírito 30, 40 + 3, 2; Entidade 40, 100 + 4, 3;
+  Arquétipo 50, 220 + 5, 4.
+- **Fusão da Entidade** (`crafting/major_fusion.dart`): no nível 12, 3 Espíritos da família, a criatura de ritual como
+  oferenda e 10 Essência do tipo; as quatro criaturas se vão. Nível: a média dos Espíritos. Traços: o Brilhante primeiro e
+  depois as variantes distintas de todas as peças, até 3. A receita mostra ??? no que ainda não foi visto.
+- **Entidade solta** (`world/high_tiers.dart`, `high_tiers` na época de desenvolvimento): por região, família e mês, uma
+  célula e uma hora sorteadas em que a condição do ritual da família vale; fica 20 min, nível 25, só se prende por ritual (a
+  receita da família com o dobro de material e Círculo de nível 15). O rumor sai no Fórum 4 h antes, com o bairro
+  (`mapa.json`, `bairros`) e a faixa de hora. Não entra na camada pessoal nem em lure. A busca do mês roda aos poucos,
+  em fatias de até 4 ms, uma por quadro, a partir de 20 s depois de o mapa abrir (o Fórum começa antes se for aberto); a
+  condição pergunta o clima, o caro, por último. No notebook: ~0,4 s de conta no total, fatias de ~4,1 ms.
+- **Arquétipo:** no auge (o terço do meio) do evento grande da família, 10% das células z17 têm o dele; aparece uma vez,
+  12 s, e foge. Cada família vem num evento cujo HUD a favorece (o Rust no Vento das Fendas); o Clod, sem evento de
+  Terra, vem no Granizo, pelo terço do meio da janela do clima. Tocar marca visto e solta a dica do mentor da família; não abre sintonia nem ritual.
+- **Mentor e debug:** a dica da primeira Entidade e do primeiro Arquétipo de cada família; no debug (aba Criaturas), forçar
+  a Entidade solta, o rumor e o Arquétipo, e conceder as peças da fusão.

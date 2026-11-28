@@ -120,6 +120,18 @@
         { "item": "item.ref.living_rust", "qty": 1 }
       ],
       "circle": { "min_level": 5 }
-    }
+    },
+    {"species": "soot.major", "condition": {"kind": "hour", "from": 18, "to": 23}, "materials": [{"item": "item.scrap", "qty": 4}, {"item": "item.essence.fire", "qty": 2}, {"item": "item.chalk", "qty": 2}], "circle": {"min_level": 15}},
+    {"species": "frond.major", "condition": {"kind": "biome", "value": "green"}, "materials": [{"item": "item.herbs", "qty": 6}, {"item": "item.essence.plant", "qty": 2}, {"item": "item.chalk", "qty": 2}], "circle": {"min_level": 15}},
+    {"species": "rill.major", "condition": {"kind": "moon", "value": "fullMoon"}, "materials": [{"item": "item.pure_water", "qty": 4}, {"item": "item.essence.water", "qty": 2}, {"item": "item.ectoplasm", "qty": 2}], "circle": {"min_level": 15}},
+    {"species": "hum.major", "condition": {"kind": "all", "of": [{"kind": "climate", "value": "storm"}, {"kind": "hour", "from": 19, "to": 5}]}, "materials": [{"item": "item.glass_shard", "qty": 4}, {"item": "item.essence.electric", "qty": 2}, {"item": "item.rain_water", "qty": 2}], "circle": {"min_level": 15}},
+    {"species": "glare.major", "condition": {"kind": "all", "of": [{"kind": "any", "of": [{"kind": "climate", "value": "strong_sun"}, {"kind": "climate", "value": "rainbow"}]}, {"kind": "hour", "from": 11, "to": 14}]}, "materials": [{"item": "item.glass_shard", "qty": 4}, {"item": "item.essence.light", "qty": 2}, {"item": "item.prism_shard", "qty": 2}], "circle": {"min_level": 15}},
+    {"species": "shade.major", "condition": {"kind": "any", "of": [{"kind": "all", "of": [{"kind": "climate", "value": "cloudy"}, {"kind": "hour", "from": 20, "to": 5}]}, {"kind": "climate", "value": "black_sun"}]}, "materials": [{"item": "item.moonlight.new", "qty": 4}, {"item": "item.essence.shadow", "qty": 2}, {"item": "item.vessel.dark", "qty": 2}], "circle": {"min_level": 15}},
+    {"species": "bit.major", "condition": {"kind": "climate", "value": "static"}, "materials": [{"item": "item.feather", "qty": 4}, {"item": "item.essence.digital", "qty": 2}, {"item": "item.scrap", "qty": 2}], "circle": {"min_level": 15}},
+    {"species": "wisp.major", "condition": {"kind": "any", "of": [{"kind": "climate", "value": "fog"}, {"kind": "climate", "value": "fog_procession"}]}, "materials": [{"item": "item.ectoplasm", "qty": 4}, {"item": "item.essence.spectral", "qty": 2}, {"item": "item.vessel.candle", "qty": 2}], "circle": {"min_level": 15}},
+    {"species": "clod.major", "condition": {"kind": "climate", "value": "dry_dust"}, "materials": [{"item": "item.chalk", "qty": 4}, {"item": "item.essence.earth", "qty": 2}, {"item": "item.ref.white_clay", "qty": 2}], "circle": {"min_level": 15}},
+    {"species": "sprig.major", "condition": {"kind": "all", "of": [{"kind": "twilight"}, {"kind": "moon", "value": "fullMoon"}]}, "materials": [{"item": "item.dry_leaf", "qty": 6}, {"item": "item.essence.fae", "qty": 2}, {"item": "item.ipe_flower", "qty": 2}], "circle": {"min_level": 15}},
+    {"species": "wyrm.major", "condition": {"kind": "any", "of": [{"kind": "climate", "value": "black_sun"}, {"kind": "climate", "value": "meteor_shower"}]}, "materials": [{"item": "item.meteorite", "qty": 4}, {"item": "item.essence.draconic", "qty": 2}, {"item": "item.rift_smoke", "qty": 2}], "circle": {"min_level": 15}},
+    {"species": "rust.major", "condition": {"kind": "climate", "value": "smog"}, "materials": [{"item": "item.scrap", "qty": 6}, {"item": "item.essence.metal", "qty": 2}, {"item": "item.ref.living_rust", "qty": 2}], "circle": {"min_level": 15}}
   ]
 }

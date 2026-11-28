@@ -8,6 +8,7 @@ import 'water_model.dart';
 import 'wind_model.dart';
 import 'climate.dart';
 import 'veilbreaker_model.dart';
+import 'high_tiers_model.dart';
 import 'features.dart';
 import 'weather.dart';
 
@@ -162,6 +163,7 @@ class Epoch {
     this.requiresFeature,
     this.climate,
     this.veilbreakers,
+    this.highTiers,
   });
 
   factory Epoch.fromJson(Map<String, dynamic> json) => Epoch(
@@ -199,6 +201,7 @@ class Epoch {
         ecoV2: json['eco_v2'] == null ? null : EcoV2.fromJson(json['eco_v2'] as Map<String, dynamic>),
         climate: json['climate'] == null ? null : ClimateModel.fromJson(json['climate'] as Map<String, dynamic>),
         veilbreakers: json['veilbreakers'] == null ? null : VeilbreakerModel.fromJson(json['veilbreakers'] as Map<String, dynamic>),
+        highTiers: json['high_tiers'] == null ? null : HighTiersModel.fromJson(json['high_tiers'] as Map<String, dynamic>),
         items: [
           for (final i in (json['spawn'] as Map<String, dynamic>)['items'] as List<dynamic>)
             SpawnItemDef.fromJson(i as Map<String, dynamic>),
@@ -259,6 +262,9 @@ class Epoch {
 
   /// Os Outros Veilbreakers (NPCs que sintonizam Ecos que iam sumir), da época 12 em diante. `null`: nenhum NPC.
   final VeilbreakerModel? veilbreakers;
+
+  /// 0.27.0: a Entidade Maior solta e o Arquétipo no auge dos eventos. `null`: nenhuma das duas no mundo.
+  final HighTiersModel? highTiers;
 }
 
 class EpochSchedule {

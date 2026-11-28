@@ -1,6 +1,6 @@
 # Nomes propostos para as peças altas
 
-Proposta do criativo para a Entidade Maior e o Arquétipo das 12 famílias, para revisão do dono. Nada aqui está gravado em `app/assets/data/creatures.json`: lá os nomes continuam provisórios ("Entidade Maior de Humoth", "Arquétipo de Sootling"), nos ids `<familia>.major` e `<familia>.archetype`.
+Nomes da Entidade Maior e do Arquétipo das 12 famílias, aprovados pelo dono na 0.27.0 e gravados em `app/assets/data/creatures.json` (ids `<familia>.major` e `<familia>.archetype`). Quatro trocaram por repetir a raiz da criatura de ritual da família: Gatewing virou Hingeback, Shutcairn virou Rubblebrood, Eaveroost virou Awninghang e Vigilwheel virou Waxhalo.
 
 ## Convenção
 
@@ -24,10 +24,10 @@ Baseados na seção "Arte final" de `docs/art/conceitos/<familia>.md`.
 | Soot | Arquétipo | **Darkhearth** | A brasa que tira luz em vez de dar: uma lareira que escurece. | Gapejaw |
 | Frond | Entidade Maior | **Slabwhorl** | O disco de laje partido pela rachadura em espiral, que continua pelo ar. | Pavebloom |
 | Frond | Arquétipo | **Eldfrond** | A fronde de pedra, mais velha que qualquer planta; a primeira, de que as outras são cópia. | Stonecrozier |
-| Shade | Entidade Maior | **Eaveroost** | A marquise inteira como poleiro: o corpo pendurado embaixo, a sombra pousada em cima. | Slabshadow |
+| Shade | Entidade Maior | **Awninghang** | A marquise (`awning`) inteira, com o corpo pendurado embaixo dela (`hang`). Trocado em 0.27.0: Eaveroost repetia a raiz do Eavesling. | Slabshadow |
 | Shade | Arquétipo | **Gloamhusk** | O casulo de laje que não fecha, pendurado na própria sombra; `gloam` é o crepúsculo do Dusk Mote. | Hangshadow |
 | Wisp | Entidade Maior | **Tallowshrine** | O velário de pé: tronco de cera (`tallow`, sebo de vela) e prateleiras de tocos acesos. | Votivewing |
-| Wisp | Arquétipo | **Vigilwheel** | A procissão em roda, com todas as chamas viradas para o vão: uma vigília que gira. | Corpselight |
+| Wisp | Arquétipo | **Waxhalo** | A procissão em roda, uma auréola (`halo`) de chamas de cera virada para o vão. Trocado em 0.27.0: Vigilwheel repetia a raiz da criatura de ritual do Wisp. | Corpselight |
 | Wyrm | Entidade Maior | **Roadbreach** | O teú que nada no asfalto e rompe a rua em arcos, como bicho que vem à tona. | Tarswimmer |
 | Wyrm | Arquétipo | **Scalecorona** | O eclipse sem sol nem lua: a coroa acesa em volta do anel de doze escamas. | Ringscale |
 
@@ -39,13 +39,13 @@ Os conceitos das peças altas de Bit, Clod, Glare, Rill, Rust e Sprig foram apro
 |---|---|---|---|---|---|
 | Bit | Entidade Maior | rodada 3 | **Lagflock** | Um pombo só que é um bando: as três cópias atrasadas ficam atrás dele. | Afterframe |
 | Bit | Arquétipo | rodada 2 | **Tearframe** | O pombo fora de registro, em fatias deslocadas: o rasgo de quadro de uma tela. | Syncless |
-| Clod | Entidade Maior | rodada 3 | **Shutcairn** | A bola de entulho que não abre: um monte de pedras (`cairn`) fechado. | Rubbleknot |
+| Clod | Entidade Maior | rodada 3 | **Rubblebrood** | A bola de entulho que não abre, chocando (`brood`) o que tem dentro. Trocado em 0.27.0: Shutcairn repetia a raiz da criatura de ritual do Clod. | Rubbleknot |
 | Clod | Arquétipo | rodada 2 | **Gritglass** | O vão em ampulheta no lugar das cintas, com o cascalho do Grit Mote caindo para dentro. | Sundershell |
 | Glare | Entidade Maior | rodada 1 | **Hourpane** | Cada vidraça reflete uma hora diferente do mesmo céu. | Lenswheel |
 | Glare | Arquétipo | rodada 3 | **Sunshatter** | A silhueta feita de cacos que não se tocam, com o espectro de volta por cima. | Shardhover |
 | Rill | Entidade Maior | rodada 3 | **Gutterjaw** | A boca do cururu é a boca de lobo, de um lado ao outro, com os olhos atrás da grade. | Culvertmouth |
 | Rill | Arquétipo | rodada 3 | **Undersky** | Na boca aberta há uma poça em pé com outro céu: duas luas e a cidade de ponta-cabeça. | Twomoon |
-| Rust | Entidade Maior | rodada 3 | **Gatewing** | Os élitros levantados são as duas folhas de um portão. | Rebarthrone |
+| Rust | Entidade Maior | rodada 3 | **Hingeback** | Os élitros levantados abrem nas costas como as duas folhas de um portão na dobradiça (`hinge`). Trocado em 0.27.0: Gatewing repetia a raiz da criatura de ritual do Rust. | Rebarthrone |
 | Rust | Arquétipo | rodada 3 | **Stiltcage** | A jaula alta e torta, sem cabeça, em nove patas finas que não tocam o chão. | Emptycollar |
 | Sprig | Entidade Maior | rodada 3 | **Clamorwing** | O bando fundido: quatro cabeças gritando sobre um leque de asas de folha. | Leafchorus |
 | Sprig | Arquétipo | rodada 3 | **Shriekwreath** | Os pescoços saem de um anel de pena e folha morta (`wreath`, coroa) em volta do vão. | Elderfae |

@@ -65,11 +65,22 @@ class ProgressBalance {
   final int creatureCurvePerLevel;
   final int creatureLevelCap;
 
-  /// O teto de nível da criatura por camada: o Eco vai a [creatureLevelCap]; o Espírito, a `spirit_level_cap`.
-  int levelCapFor(String speciesId) => tierOfId(speciesId) == SpeciesTier.spirit ? conjurer.spiritLevelCap : creatureLevelCap;
+  /// O teto de nível da criatura por camada: o Eco vai a [creatureLevelCap]; o Espírito, a Entidade Maior e o Arquétipo, aos
+  /// do bloco `fusion`.
+  int levelCapFor(String speciesId) => switch (tierOfId(speciesId)) {
+        SpeciesTier.eco => creatureLevelCap,
+        SpeciesTier.spirit => conjurer.spiritLevelCap,
+        SpeciesTier.major => conjurer.majorLevelCap,
+        SpeciesTier.archetype => conjurer.archetypeLevelCap,
+      };
 
-  /// Quantos traços a criatura da espécie [speciesId] pode ter (Eco 1, Espírito 2).
-  int traitCapFor(String speciesId) => tierOfId(speciesId) == SpeciesTier.spirit ? conjurer.spiritTraitsMax : conjurer.ecoTraitsMax;
+  /// Quantos traços a criatura da espécie [speciesId] pode ter (Eco 1, Espírito 2, Entidade 3, Arquétipo 4).
+  int traitCapFor(String speciesId) => switch (tierOfId(speciesId)) {
+        SpeciesTier.eco => conjurer.ecoTraitsMax,
+        SpeciesTier.spirit => conjurer.spiritTraitsMax,
+        SpeciesTier.major => conjurer.majorTraitsMax,
+        SpeciesTier.archetype => conjurer.archetypeTraitsMax,
+      };
 
   /// Duração da marcação e quantas podem estar ativas.
   final int markDurationS;

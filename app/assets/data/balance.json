@@ -76,6 +76,7 @@
     "fusion_level": 6,
     "ritual_level": 8,
     "spirit_spawn_level": 8,
+    "major_fusion_level": 12,
     "aura_bonus": [ { "level": 10, "m": 1 }, { "level": 20, "m": 1 } ]
   },
   "school": {
@@ -84,9 +85,9 @@
     "sealer": { "progress_up_mult": 1.15 }
   },
   "research": { "tolerance_mult": 1.05 },
-  "fusion": { "eco_count": 5, "essence_cost": 5, "spirit_level_cap": 30, "eco_traits_max": 1, "spirit_traits_max": 2, "anim_s": 2 },
+  "fusion": { "eco_count": 5, "essence_cost": 5, "spirit_level_cap": 30, "eco_traits_max": 1, "spirit_traits_max": 2, "anim_s": 2, "major_spirit_count": 3, "major_essence_cost": 10, "major_level_cap": 40, "major_traits_max": 3, "archetype_level_cap": 50, "archetype_traits_max": 4 },
   "spirit": { "height_m": 9, "ability_steps": 1, "resistance_add": 0.25 },
-  "power": { "base": { "eco": 10, "spirit": 40 }, "per_level": { "eco": 2, "spirit": 3 } },
+  "power": { "base": { "eco": 10, "spirit": 40, "major": 100, "archetype": 220 }, "per_level": { "eco": 2, "spirit": 3, "major": 4, "archetype": 5 } },
   "talent": { "points_per_level": 1 },
   "distill": { "eco_yield": [ { "from": 1, "to": 7, "value": 3 }, { "from": 8, "to": 14, "value": 4 }, { "from": 15, "to": 20, "value": 5 } ] },
   "phone": { "apps": [ { "id": "vision", "unlock_level": 1 }, { "id": "radar", "unlock_level": 5 }, { "id": "bestiary", "unlock_level": 1 }, { "id": "circle", "unlock_level": 1 }, { "id": "bag", "unlock_level": 1 }, { "id": "loadout", "unlock_level": 1 },{ "id": "bench", "unlock_level": 2 }, { "id": "chat", "unlock_level": 2 }, { "id": "forum", "unlock_level": 2 }, { "id": "profile", "unlock_level": 1 }, { "id": "routes", "unlock_level": 1 }, { "id": "patrol", "unlock_level": 1 }, { "id": "sky", "unlock_level": 1 }, { "id": "settings", "unlock_level": 1 } ] },

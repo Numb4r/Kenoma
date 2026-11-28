@@ -7,18 +7,22 @@ import 'package:flutter/material.dart';
 import '../../data/game_data.dart';
 import '../../player/game_state.dart';
 import '../../story/daily_quests.dart';
+import '../../world/high_tiers_driver.dart' show ForumRumor;
 import '../colors.dart';
 import '../kit.dart' show KitBar;
 import '../tuning/tuning_screen.dart' show PixelButton;
 import 'screen_frame.dart';
 
 class ForumScreen extends StatelessWidget {
-  const ForumScreen({required this.state, required this.data, required this.nowUtc, required this.epochId, super.key});
+  const ForumScreen({required this.state, required this.data, required this.nowUtc, required this.epochId, this.rumors, super.key});
 
   final GameState state;
   final GameData data;
   final int Function() nowUtc;
   final int Function() epochId;
+
+  /// 0.27.0: os rumores da Entidade solta que estão no ar (o mapa sabe; fora dele, nenhum).
+  final List<ForumRumor> Function()? rumors;
 
   String _reward(Quest q) => '${q.rewardXp} XP${[for (final e in q.rewardItems.entries) ' · ${e.value}× ${data.itemName(e.key)}'].join()}';
 
@@ -32,6 +36,7 @@ class ForumScreen extends StatelessWidget {
           title: data.forum.forum,
           subtitle: 'Pedidos de hoje · renovam à meia-noite${daily.canReroll ? ' · 1 troca' : ' · troca usada'}',
           children: [
+            for (final (i, r) in (rumors?.call() ?? const <ForumRumor>[]).indexed) _Rumor(key: Key('forum-rumor-$i'), user: r.user, text: r.text),
             if (daily.quests.isEmpty) const Text('SEM PEDIDOS AINDA. ABRA O MAPA UMA VEZ.', style: TextStyle(fontSize: 8, color: kDim)),
             for (final q in daily.quests) _Post(quest: q, reward: _reward(q), state: state, data: data, nowUtc: nowUtc, epochId: epochId),
           ],
@@ -98,4 +103,28 @@ class _Post extends StatelessWidget {
       ]),
     );
   }
+}
+
+/// Um rumor do fórum: o post de um usuário sobre a Entidade solta, com o bairro e a faixa de hora. Sem pedido nem recompensa.
+class _Rumor extends StatelessWidget {
+  const _Rumor({required this.user, required this.text, super.key});
+
+  final String user;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: cardBox(line: kVeil),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Text(user, style: const TextStyle(fontSize: 16, color: kVeil)),
+            const Spacer(),
+            const Text('RUMOR', style: TextStyle(fontSize: 8, color: kSignal)),
+          ]),
+          const SizedBox(height: 6),
+          Text(text, style: const TextStyle(fontSize: 8, color: kText, height: 1.8)),
+        ]),
+      );
 }

@@ -14,7 +14,7 @@ import '../../world/creature_wind.dart';
 import '../../world/map_camera.dart';
 import '../../world/spawn_field.dart';
 import '../colors.dart';
-import '../sprites/sprite_image.dart' show provisionalArt;
+import '../sprites/sprite_image.dart' show provisionalArt, mapArchetypePx, mapMajorPx, mapSpiritPx;
 import '../sprites/variant_art.dart' show shinyPulse;
 import '../sprites/material_sprites.dart';
 import 'creature_anim.dart';
@@ -53,10 +53,20 @@ const double kRingRadiusDp = 22;
 /// Raio de toque de um spawn, em pixels. O Eco vale pelo sprite (de [spriteSize] pixels), com um mínimo para
 /// dedo; Fagulhas e materiais valem por [sparkSize], também com um mínimo.
 double hitRadius(WorldSpawn s, double spriteSize, double sparkSize, {double? spiritSize}) =>
-    s.isEco ? math.max(26, (isSpiritSpawn(s) ? (spiritSize ?? spriteSize) : spriteSize) * 0.55) : math.max(28, sparkSize * 1.3);
+    s.isEco ? math.max(26, ecoDrawSize(s, spriteSize, spiritSize) * 0.55) : math.max(28, sparkSize * 1.3);
 
-/// O spawn é de um Espírito (camada acima do Eco): maior no mapa e com a aura do Véu.
-bool isSpiritSpawn(WorldSpawn s) => s.isEco && tierOfId(s.entryId) == SpeciesTier.spirit;
+/// O spawn é de um Espírito ou de camada mais alta (0.27.0: a Entidade Maior e o Arquétipo): maior no mapa e com a aura
+/// do Véu.
+bool isSpiritSpawn(WorldSpawn s) => s.isEco && tierOfId(s.entryId) != SpeciesTier.eco;
+
+/// O lado desenhado de um Eco no mapa: o do Eco, o do Espírito, e a Entidade (48 px) e o Arquétipo (64 px) na mesma
+/// escala do Espírito.
+double ecoDrawSize(WorldSpawn s, double spriteSize, double? spiritSize) => switch (tierOfId(s.entryId)) {
+      SpeciesTier.eco => spriteSize,
+      SpeciesTier.spirit => spiritSize ?? spriteSize,
+      SpeciesTier.major => (spiritSize ?? spriteSize) * mapMajorPx / mapSpiritPx,
+      SpeciesTier.archetype => (spiritSize ?? spriteSize) * mapArchetypePx / mapSpiritPx,
+    };
 
 void paintSpawns(
   ui.Canvas canvas,
@@ -110,7 +120,7 @@ void paintSpawns(
     anchors?[s.uid] = center; // 0.25.0: o ponto de ancoragem desenhado (com o vento): os efeitos na criatura se centram nele
     final near = inAura(s);
     if (s.isEco) {
-      final size = isSpiritSpawn(s) ? (spiritSize ?? spriteSize) : spriteSize;
+      final size = ecoDrawSize(s, spriteSize, spiritSize);
       final tint = tintOf?.call(s);
       final appear = appearOf?.call(s.uid) ?? 1.0;
       final hop = hopOf?.call(s.uid) ?? 0.0;

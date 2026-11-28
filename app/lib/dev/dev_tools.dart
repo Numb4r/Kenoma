@@ -163,6 +163,12 @@ class DevTools extends ChangeNotifier {
   /// 0.25.0: a saída animada (sintonizado ou fuga) do Eco mais perto, só no desenho (comando `exit`). Devolve o uid.
   int? Function(bool tuned)? exitNearestEco;
 
+  /// 0.27.0, as etapas altas (quem monta o mapa preenche): a Entidade Maior da família solta a uns metros daqui, agora; o
+  /// rumor de uma que vai aparecer aqui perto; e o Arquétipo da família à vista. Devolvem o aviso.
+  String Function(String family)? forceMajorHere;
+  String Function(String family)? forceRumorHere;
+  String Function(String family)? forceArchetypeHere;
+
   /// 0.24.5: vai até o NPC mais perto e abre a folha dele (comando `npc`). Devolve o id, ou `null` sem NPC à vista.
   String? Function()? openNearestNpc;
 

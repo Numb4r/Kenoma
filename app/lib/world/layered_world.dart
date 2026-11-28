@@ -129,6 +129,15 @@ class LayeredWorld implements BiomeGrid, VisualSource, NoWalkSource, RouteAccess
   /// As regiões no mundo agora.
   Iterable<String> get regionIds => _regions.map((r) => r.id);
 
+  /// 0.27.0: a região que contém a célula z21 ([x21], [y21]) e o retângulo dela em células z20 (a Entidade solta é por
+  /// região). `null` fora de todas.
+  ({String id, int x0, int y0, int w, int h})? regionBoxAt(int x21, int y21) {
+    for (final r in _regions) {
+      if (r.contains(x21, y21)) return (id: r.id, x0: r.grid.x0 >>> 1, y0: r.grid.y0 >>> 1, w: r.grid.width >>> 1, h: r.grid.height >>> 1);
+    }
+    return null;
+  }
+
   /// A região [id] já tem o arquivo de rota.
   bool hasAccess(String id) => _regions.any((r) => r.id == id && r.access != null);
 

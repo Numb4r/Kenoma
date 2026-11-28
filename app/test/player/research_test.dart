@@ -33,8 +33,17 @@ void main() {
       expect(data.families.firstWhere((f) => f.id == 'wyrm').minLevel, 10);
       final rituals = data.tuning.species.where((s) => s.id.endsWith('.ritual')).length;
       expect(rituals, greaterThanOrEqualTo(3), reason: 'os três Espíritos de ritual do MVP, mais os da fase 1');
-      expect(bestiaryForms(data), hasLength(12 * 3 + rituals), reason: '36 formas e um Espírito de ritual por família que tem');
-      expect(bestiaryForms(data).map((f) => f.number), [for (var i = 1; i <= 12 * 3 + rituals; i++) i]);
+      // 0.27.0: e a Entidade Maior e o Arquétipo de cada família.
+      expect(bestiaryForms(data), hasLength(12 * 5 + rituals), reason: '60 formas e um Espírito de ritual por família que tem');
+      expect(bestiaryForms(data).map((f) => f.number), [for (var i = 1; i <= 12 * 5 + rituals; i++) i]);
+      for (final f in data.families) {
+        for (final id in ['${f.id}.major', '${f.id}.archetype']) {
+          final lore = data.lore[id]!;
+          expect(lore.lore, hasLength(1), reason: '$id: o Lore I');
+          expect(lore.about, isNotEmpty, reason: id);
+          expect(lore.research.first.unlocks, 'lore1', reason: id);
+        }
+      }
     });
 
     test('toda habilidade de mapa das espécies tem texto', () {
@@ -124,8 +133,11 @@ void main() {
         (FormLayer.eco, 'soot.eco', 'soot.eco'),
         (FormLayer.spirit, 'soot.spirit', 'soot.spirit'),
         (FormLayer.ritual, 'soot.ritual', 'soot.ritual'),
+        (FormLayer.major, 'soot.major', 'soot.major'),
+        (FormLayer.archetype, 'soot.archetype', 'soot.archetype'),
       ]);
-      expect(familyForms(data.families[3], data, 1).map((f) => f.name), ['Arc Mote', 'Humoth', 'Coilkin', 'Stormlamp'], reason: 'a Fagulha, o Eco, o Espírito e o de ritual');
+      expect(familyForms(data.families[3], data, 1).map((f) => f.name), ['Arc Mote', 'Humoth', 'Coilkin', 'Stormlamp', 'Pylonward', 'Levinmaw'],
+          reason: 'a Fagulha, o Eco, o Espírito, o de ritual, a Entidade e o Arquétipo');
     });
 
     test('a pesquisa em porcentagem: níveis feitos sobre os que existem', () {
@@ -133,12 +145,13 @@ void main() {
       final hum = data.families.firstWhere((f) => f.id == 'hum');
       expect((familyPercent(hum, data, s.bestiary), bestiaryPercent(data, s.bestiary)), (0, 0));
       s.add('item.dust.electric', 1);
-      // A Fagulha conta 1 nível; o Eco, o Espírito e o de ritual, 5 cada (as cinco pesquisas).
-      final levels = 1 + 5 * (familyForms(hum, data, 1).length - 1);
+      // A Fagulha conta 1 nível; o Eco, o Espírito e o de ritual, 5 cada (as cinco pesquisas); a Entidade 2 e o Arquétipo 1.
+      final levels = 1 + 5 * 3 + 2 + 1;
       expect(familyPercent(hum, data, s.bestiary), (100 * 1 / levels).floor());
       s.capture(uid: 1, speciesId: 'hum.eco', level: 2, nowUtc: t);
       expect(familyPercent(hum, data, s.bestiary), (100 * 2 / levels).floor());
-      expect(bestiaryPercent(data, s.bestiary), greaterThan(0));
+      final total = bestiaryForms(data).fold<int>(0, (a, f) => a + formResearchMax(f, data));
+      expect(bestiaryPercent(data, s.bestiary), (100 * 2 / total).floor());
     });
   });
 
@@ -151,7 +164,7 @@ void main() {
 
     test('sem filtro passa tudo; por tipo, camada e estado', () {
       expect(ids(const BestiaryFilter()), hasLength(bestiaryForms(data).length));
-      expect(ids(const BestiaryFilter(types: {'electric'})), ['item.dust.electric', 'hum.eco', 'hum.spirit', 'hum.ritual']);
+      expect(ids(const BestiaryFilter(types: {'electric'})), ['item.dust.electric', 'hum.eco', 'hum.spirit', 'hum.ritual', 'hum.major', 'hum.archetype']);
       expect(ids(const BestiaryFilter(types: {'electric', 'earth'}, layers: {FormLayer.eco})), ['hum.eco', 'clod.eco']);
       expect(ids(const BestiaryFilter(states: {FormStatus.captured})), ['item.dust.fire', 'hum.eco']);
       expect(ids(const BestiaryFilter(states: {FormStatus.seen})), ['clod.eco']);
@@ -173,7 +186,8 @@ void main() {
       expect(ids(const BestiaryFilter(query: 'noite')), ['hum.eco']);
       expect(ids(const BestiaryFilter(query: 'coilkin')), isEmpty, reason: 'o Espírito ainda é ???');
       expect(ids(const BestiaryFilter(query: 'wyrm')), isEmpty);
-      expect(ids(const BestiaryFilter(query: 'hum')), ['item.dust.electric', 'hum.eco', 'hum.spirit', 'hum.ritual'], reason: 'o nome da família, já conhecida, acha a linha toda');
+      expect(ids(const BestiaryFilter(query: 'hum')), ['item.dust.electric', 'hum.eco', 'hum.spirit', 'hum.ritual', 'hum.major', 'hum.archetype'],
+          reason: 'o nome da família, já conhecida, acha a linha toda');
       expect(ids(const BestiaryFilter(query: 'fagulha')), ['item.dust.fire']);
     });
   });

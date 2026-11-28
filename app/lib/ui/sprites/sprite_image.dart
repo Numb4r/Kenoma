@@ -122,6 +122,9 @@ List<String> spiritRows(List<String> eco) {
 /// A paleta do sprite de [key]: a do tipo nos provisórios da fase 1, a fixa nos três do MVP.
 Map<String, int> spritePaletteOf(String key) {
   if (_ritualStandIn(key) case final spirit?) return spritePaletteOf(spirit);
+  // 0.27.0: a Entidade e o Arquétipo usam as linhas do Espírito da família ([ecoSpriteRows]); a paleta vai junto.
+  final tier = tierOfId(key);
+  if (key.contains('.') && (tier == SpeciesTier.major || tier == SpeciesTier.archetype)) return spritePaletteOf('${familyOfId(key)}.spirit');
   return hasPhase1Sprite(key) ? phase1Palette(spriteTypeOf(key)) : spritePalette;
 }
 

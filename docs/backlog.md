@@ -14,6 +14,7 @@ Pendências registradas fora dos prompts em andamento. Quando um item entrar num
 ## Tráfego e mapa vivo
 
 - Semáforos, ônibus e Ônibus Espectral, veículos especiais do tráfego (fase 2).
+- Bairros do rumor da Entidade solta: hoje são escritos à mão em `app/assets/data/mapa.json` (`bairros`, 19 em Campinas e 18 em São Paulo, centros aproximados). Da próxima vez que a pipeline do OSM for mexida, eles devem sair dela (`place=suburb` e `place=neighbourhood`, com o centro de cada um) para o pacote da região. (28/nov/2026)
 
 ## Pendências do Yuri
 

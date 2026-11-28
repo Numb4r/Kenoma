@@ -5,7 +5,7 @@ library;
 import 'package:flutter/material.dart' hide FormState;
 
 import '../../../capture/eco_type.dart';
-import '../../../core/species_ids.dart' show familyOfId;
+import '../../../core/species_ids.dart' show familyOfId, tierOfId;
 import '../../../data/game_data.dart';
 import '../../../player/bestiary.dart';
 import '../../../player/bestiary_view.dart';
@@ -202,6 +202,8 @@ class _SpeciesDetailScreenState extends State<SpeciesDetailScreen> {
         FormLayer.eco => 'Eco · nv. 1 a 20',
         FormLayer.spirit => 'Espírito · nv. 1 a ${widget.state.cb.spiritLevelCap}',
         FormLayer.ritual => 'Espírito · só ritual',
+        FormLayer.major => 'Entidade Maior · nv. 1 a ${widget.state.cb.majorLevelCap} · ritual ou fusão',
+        FormLayer.archetype => 'Arquétipo · só se vê',
       };
 
   Widget _arrow(String? label, Key key, VoidCallback? onTap) => GestureDetector(
@@ -356,7 +358,7 @@ class _SpeciesDetailScreenState extends State<SpeciesDetailScreen> {
     if (species == null || !(unlocks.contains('attributes') || (widget.data.lore[form.id] == null && status == FormStatus.captured))) {
       return [_line('Atributos reais abrem com a pesquisa no nível 3.', color: KCores.textoMudo)];
     }
-    final cb = widget.state.cb, tier = species.isSpirit ? 'spirit' : 'eco', cap = widget.state.balance.levelCapFor(species.id);
+    final cb = widget.state.cb, tier = tierOfId(species.id).name, cap = widget.state.balance.levelCapFor(species.id);
     final ability = species.ability;
     final bands = widget.data.tuning.abilityBands;
     // A faixa atual é a da criatura desta espécie de nível mais alto na coleção (sem nenhuma, a do nível 1).

@@ -42,6 +42,9 @@ enum TouchResult {
   /// O Eco está a até 30 m e é `ritualOnly`: a tela abre o ritual em vez da sintonia.
   ritual,
 
+  /// 0.27.0: o Arquétipo à vista: não abre sintonia nem ritual; a tela marca "visto" ([WorldView.onArchetype]).
+  archetype,
+
   /// O material está ao alcance, mas a bolsa está cheia: ele fica no mapa.
   bagFull,
 }
@@ -182,6 +185,13 @@ class WorldView {
   /// O jogador tocou num Eco de ritual a até `touchRangeM` (junto com [TouchResult.ritual]): a tela abre o ritual.
   void Function(WorldSpawn eco)? onRitualTarget;
   final _ritualSeen = <int>{};
+
+  /// 0.27.0: o que vem de fora do campo de spawn em [tUtc]: a Entidade Maior solta na janela dela e o Arquétipo no auge de
+  /// um evento (`world/high_tiers.dart`). Não entram na camada pessoal nem em lure.
+  List<WorldSpawn> Function(int tUtc)? extraSpawns;
+
+  /// O jogador tocou num Arquétipo à vista (junto com [TouchResult.archetype]).
+  void Function(WorldSpawn s)? onArchetype;
 
   /// Um Eco passou a estar a até `touchRangeM` (uma vez por entrada). O modo bolso vibra aqui.
   void Function(WorldSpawn eco)? onEnteredRange;
@@ -351,7 +361,12 @@ class WorldView {
     final spiritsOn = state.playerLevel >= state.cb.spiritSpawnLevel;
     final ritualsOn = state.playerLevel >= state.cb.ritualLevel;
     bool visibleTier(WorldSpawn s) =>
-        !s.isEco || tierOfId(s.entryId) == SpeciesTier.eco || (isRitualOnlyId(s.entryId) ? ritualsOn : spiritsOn);
+        !s.isEco ||
+        switch (tierOfId(s.entryId)) {
+          SpeciesTier.eco || SpeciesTier.archetype => true,
+          SpeciesTier.major => ritualsOn,
+          SpeciesTier.spirit => isRitualOnlyId(s.entryId) ? ritualsOn : spiritsOn,
+        };
     // Neblina e Nevasca: os Ecos só aparecem até a visão do clima (nem no rastreador).
     final viewCap = climate.viewMaxM;
     final p = personal;
@@ -367,8 +382,11 @@ class WorldView {
         if (visibleTier(s) && (((viewCap == null || !s.isEco || distanceM(s) <= viewCap) && (distanceM(s) <= base || isPinned(s))) || (revealUntil[s.uid] ?? 0) > tUtc)) _withForce(s),
       // As do "Criar criatura": fora do mundo, valem em qualquer nível.
       ...?force?.creatures.around(px: px, py: py, metersPerCell21: _mpc, radiusM: auraRadiusM, tUtc: tUtc, biomeAt: _biomeKeyAt),
+      for (final s in extraSpawns?.call(tUtc) ?? const <WorldSpawn>[])
+        if (visibleTier(s) && distanceM(s) <= math.max(base, viewM)) s,
     ];
-    allEcos = [for (final s in all) if (s.isEco && !state.isDone(s.uid)) s];
+    // O Arquétipo só se vê: fica fora do Radar e do encontro.
+    allEcos = [for (final s in all) if (s.isEco && !state.isDone(s.uid) && tierOfId(s.entryId) != SpeciesTier.archetype) s];
     final collected = <WorldSpawn>[];
     final inAuraNow = <int>{};
     final silent = quiet();
@@ -381,9 +399,10 @@ class WorldView {
         visible.add(s);
         continue;
       }
-      if (s.isEco && distanceM(s) <= viewM) {
+      // O Arquétipo só conta como visto no toque (onArchetype).
+      if (s.isEco && distanceM(s) <= viewM && tierOfId(s.entryId) != SpeciesTier.archetype) {
         if (!isDebugUid(s.uid) && !sandbox()) state.markSeen(s.entryId, variant: s.variant, shiny: s.shiny, tags: sightTags); // a de debug não entra no bestiário
-        if (ritual != null && isRitualOnlyId(s.entryId)) noteRitualSighting(state, ritual!, s.uid, s.entryId, _ritualSeen);
+        if (ritual != null && capturedByRitualOnly(s.entryId)) noteRitualSighting(state, ritual!, s.uid, s.entryId, _ritualSeen);
         if (s.shiny && _announced.add(s.uid)) onShiny?.call(s);
       }
       if (s.isEco && inTouchRange(s)) {
@@ -450,7 +469,12 @@ class WorldView {
   /// Toque num spawn. Material ao alcance é coletado aqui; Eco dentro da Aura (ou marcado) abre o encontro.
   TouchResult touch(WorldSpawn s, int tUtc) {
     if (s.isSpark) return TouchResult.auto;
-    if (s.isEco && isRitualOnlyId(s.entryId)) {
+    if (s.isEco && tierOfId(s.entryId) == SpeciesTier.archetype) {
+      if (distanceM(s) > viewM) return TouchResult.tooFar;
+      onArchetype?.call(s);
+      return TouchResult.archetype;
+    }
+    if (s.isEco && capturedByRitualOnly(s.entryId)) {
       if (!inTouchRange(s)) return TouchResult.tooFar; // o ritual pede o Eco perto: a marcação não vale
       onRitualTarget?.call(s);
       return TouchResult.ritual;

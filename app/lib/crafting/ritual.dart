@@ -133,7 +133,8 @@ bool useRuneBonus(GameState s, RitualRecipe r) {
 }
 
 /// Um Eco de ritual [uid] da espécie [speciesId] apareceu à vista. Cada Eco diferente ([seen] guarda os já contados nesta
-/// sessão) revela espaços e, no primeiro da família, solta o evento da dica do mentor (`ritual_seen_<família>`).
+/// sessão) revela espaços e, no primeiro da família, solta o evento da dica do mentor (`ritual_seen_<família>`, ou
+/// `major_seen_<família>` na Entidade Maior).
 void noteRitualSighting(GameState s, RitualBook book, int uid, String speciesId, Set<int> seen) {
   final r = book.of(speciesId);
   if (r == null || !seen.add(uid)) return;
@@ -141,7 +142,8 @@ void noteRitualSighting(GameState s, RitualBook book, int uid, String speciesId,
   if (now < r.slotCount) {
     s.conjurer.ritualResearch[speciesId] = (now + book.balance.slotsPerSighting).clamp(0, r.slotCount);
   }
-  final kind = 'ritual_seen_${familyOfId(speciesId)}';
+  // 0.27.0: a Entidade Maior solta também se prende por ritual; a dica do mentor dela é outra (`major_seen_<família>`).
+  final kind = '${tierOfId(speciesId) == SpeciesTier.major ? 'major' : 'ritual'}_seen_${familyOfId(speciesId)}';
   if (s.story.count(kind) == 0) s.recordEvent(kind, '', 1);
   s.recordEvent('ritual_sighting', speciesId, 1); // também avisa os ouvintes (grava o save)
 }

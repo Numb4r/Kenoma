@@ -135,6 +135,9 @@
     "map.cat_leave": "O gato achou coisa melhor para fazer.",
     "map.tree_empty": "Esta árvore não tem nada para dar hoje.",
     "map.puddle_empty": "Só água. Nenhum Eco de Água por perto.",
-    "map.lamp_empty": "O poste piscou sozinho. Nenhum Hum por perto."
-  }
+    "map.lamp_empty": "O poste piscou sozinho. Nenhum Hum por perto.",
+    "map.archetype_gone": "O vão se fechou. O que estava ali não está mais.",
+    "map.major_fled": "A hora passou. A Entidade foi embora antes do ritual."
+  },
+  "bairros": {"campinas": [["Barão Geraldo", -22.823, -47.079], ["Cidade Universitária", -22.815, -47.069], ["Mansões Santo Antônio", -22.848, -47.032], ["Taquaral", -22.868, -47.056], ["Jardim Aurélia", -22.872, -47.079], ["Castelo", -22.883, -47.076], ["Jardim Chapadão", -22.887, -47.087], ["Guanabara", -22.888, -47.066], ["Cambuí", -22.895, -47.052], ["Nova Campinas", -22.888, -47.042], ["Botafogo", -22.899, -47.069], ["Centro", -22.9056, -47.0608], ["Bosque", -22.905, -47.05], ["Jardim Proença", -22.908, -47.042], ["Vila Industrial", -22.913, -47.072], ["Ponte Preta", -22.92, -47.056], ["Swift", -22.924, -47.081], ["São Bernardo", -22.933, -47.045], ["Sousas", -22.88, -46.969]], "sao_paulo": [["Sé", -23.5505, -46.6333], ["República", -23.544, -46.643], ["Bela Vista", -23.56, -46.645], ["Consolação", -23.553, -46.66], ["Liberdade", -23.558, -46.635], ["Bom Retiro", -23.526, -46.64], ["Brás", -23.542, -46.617], ["Mooca", -23.55, -46.6], ["Jardim Paulista", -23.571, -46.66], ["Pinheiros", -23.566, -46.69], ["Perdizes", -23.536, -46.677], ["Lapa", -23.527, -46.704], ["Vila Mariana", -23.589, -46.634], ["Itaim Bibi", -23.585, -46.678], ["Moema", -23.601, -46.664], ["Ipiranga", -23.59, -46.61], ["Santana", -23.5, -46.625], ["Butantã", -23.571, -46.708]]}
 }

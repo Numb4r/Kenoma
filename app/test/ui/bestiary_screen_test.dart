@@ -47,13 +47,13 @@ void main() {
       expect(find.descendant(of: hum, matching: find.text(name)), findsOneWidget, reason: name);
     }
     final humForms = familyForms(data.families.firstWhere((f) => f.id == 'hum'), data, 1).length;
-    expect(find.descendant(of: hum, matching: find.text('???')), findsNWidgets(humForms - 2), reason: 'o Espírito e o de ritual, nunca vistos');
+    expect(find.descendant(of: hum, matching: find.text('???')), findsNWidgets(humForms - 2), reason: 'o Espírito, o de ritual, a Entidade e o Arquétipo, nunca vistos');
     for (final layer in ['FAGULHA', 'ECO', 'ESPÍRITO']) {
       expect(find.descendant(of: hum, matching: find.text(layer)), findsOneWidget);
     }
     expect(find.descendant(of: hum, matching: find.byType(KTick)), findsNWidgets(2), reason: 'Fagulha e Eco capturados');
     expect(find.descendant(of: find.byKey(const Key('family-clod')), matching: find.byType(KTick)), findsNothing, reason: 'vista, não capturada');
-    final levels = 1 + 5 * (humForms - 1); // a Fagulha conta 1; cada criatura, 5
+    final levels = 1 + 5 * 3 + 2 + 1; // a Fagulha conta 1; Eco, Espírito e de ritual, 5 cada; a Entidade 2 e o Arquétipo 1 (0.27.0)
     expect(find.descendant(of: hum, matching: find.text('${(100 * 3 / levels).floor()}%')), findsOneWidget, reason: '1 (Fagulha) + 2 (Eco) de $levels níveis');
     expect(find.byKey(const Key('bestiary-percent')), findsOneWidget);
     expect(find.byKey(const Key('form-soot.ritual')), findsOneWidget, reason: 'o Espírito de ritual das três do MVP');
@@ -198,7 +198,8 @@ void main() {
     testWidgets('cabe em ${w.round()}×${h.round()} sem estourar: famílias, grade com a folha de filtro e o detalhe', (tester) async {
       await open(tester, size: Size(w, h), dpr: 1);
       expect(tester.takeException(), isNull);
-      await tester.ensureVisible(find.byKey(const Key('form-hum.eco')));
+      // 0.27.0: com a Entidade e o Arquétipo os cartões cresceram: em 360 o do Hum ainda não está montado.
+      await tester.scrollUntilVisible(find.byKey(const Key('form-hum.eco')), 200, scrollable: find.descendant(of: find.byKey(const Key('bestiary-families')), matching: find.byType(Scrollable)).first);
       await tester.pump();
       await tester.tap(find.byKey(const Key('form-hum.eco')));
       await settle(tester);

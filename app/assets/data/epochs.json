@@ -8,6 +8,15 @@
       "starts_utc": "2026-09-22T00:00:00Z",
       "valid_until_utc": "2100-01-01T00:00:00Z",
       "overture_release": "2026-10-21.0",
+      "high_tiers": {
+        "major": { "per_month": 1, "tries": 6, "scan_step_min": 60, "scan_max_h": 168, "window_min": 20, "rumor_lead_h": 4, "level": 25 },
+        "archetype": {
+          "chance": 0.1,
+          "peak_share": 0.34,
+          "stay_s": 12,
+          "events": { "hum": "echo_storm", "soot": "crimson_moon", "frond": "veil_tide", "rill": "double_moon", "clod": "hail", "rust": "rift_wind", "glare": "veil_prism", "shade": "black_sun", "wisp": "fog_procession", "bit": "static", "sprig": "tornado", "wyrm": "meteor_shower" }
+        }
+      },
       "veilbreakers": {
         "slot_s": 900,
         "base_chance": 0.05,

@@ -60,7 +60,8 @@ class TuningData {
       balanceVersion: balanceVersion,
       species: [
         for (final s in creatures['species'] as List<dynamic>)
-          if ((s as Map<String, dynamic>)['tier'] == 'eco' || s['tier'] == 'spirit')
+          // 0.27.0: a Entidade Maior e o Arquétipo também (fusão, Entidade solta, Bestiário); quem lista para a sintonia filtra.
+          if (const {'eco', 'spirit', 'major', 'archetype'}.contains((s as Map<String, dynamic>)['tier']))
             EcoSpecies(
               id: s['id'] as String,
               name: s['name'] as String,

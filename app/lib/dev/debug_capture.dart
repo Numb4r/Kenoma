@@ -75,7 +75,7 @@ class CaptureDebug extends ChangeNotifier {
     final nav = Navigator.of(context);
     await nav.push(MaterialPageRoute<void>(
       builder: (_) => TuningScreen(
-        pool: hidden ? [for (final x in d.species) if (!x.isSpirit && EcoType.mvp.contains(x.type)) x] : [species!], // o modo oculto é dos três do MVP
+        pool: hidden ? [for (final x in d.species) if (x.tier == 'eco' && EcoType.mvp.contains(x.type)) x] : [species!], // o modo oculto é dos três do MVP
         buildSetup: (s) => setupFor(d, s),
         balance: d.balance,
         balanceVersion: d.balanceVersion,
@@ -133,7 +133,7 @@ List<DebugEntry> captureEntries(CaptureDebug c) {
       keywords: const ['eco', 'criatura', 'sintonia', 'tipo', 'sootling', 'rillet', 'frondling', 'humoth', 'pebblet', 'rustling', 'glimlet', 'umbrel', 'wisplet', 'bitling', 'sprigglet', 'wyrmlet'],
       load: c.ensure,
       enabled: () => !c.hidden,
-      optionsOf: () => [for (final s in c.data?.species ?? const <EcoSpecies>[]) DebugOption(s.id, s.name)],
+      optionsOf: () => [for (final s in c.data?.species ?? const <EcoSpecies>[]) if (s.tier == 'eco' || s.tier == 'spirit') DebugOption(s.id, s.name)],
       read: () => c.species?.id,
       run: (call) => c.update(() => c.species = data().species.firstWhere((s) => s.id == call.value)),
     ),

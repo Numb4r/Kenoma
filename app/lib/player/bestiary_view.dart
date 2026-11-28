@@ -6,9 +6,17 @@ import '../data/game_data.dart';
 import 'bestiary.dart';
 import 'research.dart';
 
-enum FormLayer { spark, eco, spirit, ritual }
+/// 0.27.0: a Entidade Maior (`major`) e o Arquétipo (`archetype`) entram depois do Espírito de ritual.
+enum FormLayer { spark, eco, spirit, ritual, major, archetype }
 
-const Map<FormLayer, String> formLayerNames = {FormLayer.spark: 'Fagulha', FormLayer.eco: 'Eco', FormLayer.spirit: 'Espírito', FormLayer.ritual: 'Ritual'};
+const Map<FormLayer, String> formLayerNames = {
+  FormLayer.spark: 'Fagulha',
+  FormLayer.eco: 'Eco',
+  FormLayer.spirit: 'Espírito',
+  FormLayer.ritual: 'Ritual',
+  FormLayer.major: 'Entidade Maior',
+  FormLayer.archetype: 'Arquétipo',
+};
 
 /// Uma forma do Bestiário: a Fagulha (o item de pó do tipo) ou uma espécie.
 class BestiaryForm {
@@ -30,12 +38,13 @@ class BestiaryForm {
   String get spriteKey => isSpark ? '${family.id}.mote' : id;
 }
 
-/// As formas de [family], na ordem da linha de fusão. O Espírito que só o ritual chama (as três do MVP) vem por último.
+/// As formas de [family], na ordem da linha de fusão: o Espírito que só o ritual chama vem depois do Espírito, e então a
+/// Entidade Maior e o Arquétipo (0.27.0).
 List<BestiaryForm> familyForms(FamilyDef family, GameData data, int firstNumber) {
   var n = firstNumber;
   return [
     BestiaryForm(family: family, layer: FormLayer.spark, id: family.sparkItem, name: family.sparkName, number: n++),
-    for (final (suffix, layer) in const [('eco', FormLayer.eco), ('spirit', FormLayer.spirit), ('ritual', FormLayer.ritual)])
+    for (final (suffix, layer) in const [('eco', FormLayer.eco), ('spirit', FormLayer.spirit), ('ritual', FormLayer.ritual), ('major', FormLayer.major), ('archetype', FormLayer.archetype)])
       if (data.species('${family.id}.$suffix') case final s?) BestiaryForm(family: family, layer: layer, id: s.id, name: s.name, number: n++),
   ];
 }

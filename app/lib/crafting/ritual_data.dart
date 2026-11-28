@@ -45,15 +45,27 @@ class RitualCondition {
   /// As partes de `all` e `any`.
   final List<RitualCondition> of;
 
-  bool holds(WorldCondition w) => switch (kind) {
-        ConditionKind.hour => from <= to ? (w.hour >= from && w.hour < to) : (w.hour >= from || w.hour < to),
-        ConditionKind.biome => w.biome == value,
-        ConditionKind.moon => w.moon.name == value,
-        ConditionKind.weather => w.weather.id == value,
-        ConditionKind.climate => w.climates.contains(value),
-        ConditionKind.twilight => w.sunAltDeg.abs() < twilightDeg,
-        ConditionKind.all => of.every((c) => c.holds(w)),
-        ConditionKind.any => of.any((c) => c.holds(w)),
+  bool holds(WorldCondition w) => holdsLazy(WorldProbe.of(w));
+
+  /// O mesmo que [holds], pedindo ao mundo só o que precisa e o barato primeiro (a hora, a lua, o bioma e o sol antes do
+  /// clima): a Entidade solta (0.27.0) confere a condição em milhares de pontos e horas, e o clima da célula é o caro.
+  bool holdsLazy(WorldProbe w) => switch (kind) {
+        ConditionKind.hour => from <= to ? (w.hour() >= from && w.hour() < to) : (w.hour() >= from || w.hour() < to),
+        ConditionKind.biome => w.biome() == value,
+        ConditionKind.moon => w.moon().name == value,
+        ConditionKind.weather => w.weather().id == value,
+        ConditionKind.climate => w.climates().contains(value),
+        ConditionKind.twilight => w.sunAltDeg().abs() < twilightDeg,
+        ConditionKind.all => _byCost.every((c) => c.holdsLazy(w)),
+        ConditionKind.any => _byCost.any((c) => c.holdsLazy(w)),
+      };
+
+  /// As partes de `all` e `any` com as baratas primeiro (o resultado não muda: só a ordem de perguntar).
+  List<RitualCondition> get _byCost => [...of]..sort((a, b) => a._cost - b._cost);
+  int get _cost => switch (kind) {
+        ConditionKind.hour || ConditionKind.moon || ConditionKind.biome || ConditionKind.twilight => 0,
+        ConditionKind.weather || ConditionKind.climate => 2,
+        ConditionKind.all || ConditionKind.any => of.fold(0, (m, c) => c._cost > m ? c._cost : m),
       };
 
   /// Uma condição do mundo que satisfaz esta (para o debug).
@@ -88,6 +100,22 @@ class WorldCondition {
       weather: weather ?? this.weather,
       climates: climates ?? this.climates,
       sunAltDeg: sunAltDeg ?? this.sunAltDeg);
+}
+
+/// O mundo de uma condição, perguntado aos poucos ([RitualCondition.holdsLazy]); [WorldProbe.of] embrulha um
+/// [WorldCondition] pronto.
+class WorldProbe {
+  WorldProbe({required this.hour, required this.biome, required this.moon, required this.weather, required this.climates, required this.sunAltDeg});
+
+  factory WorldProbe.of(WorldCondition w) =>
+      WorldProbe(hour: () => w.hour, biome: () => w.biome, moon: () => w.moon, weather: () => w.weather, climates: () => w.climates, sunAltDeg: () => w.sunAltDeg);
+
+  final int Function() hour;
+  final String Function() biome;
+  final MoonPhase Function() moon;
+  final Weather Function() weather;
+  final Set<String> Function() climates;
+  final double Function() sunAltDeg;
 }
 
 /// A hora local (0 a 23) do instante UTC. [offset] só existe para testar sem depender do fuso da máquina.

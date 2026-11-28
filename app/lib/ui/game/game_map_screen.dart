@@ -27,7 +27,10 @@ import '../../world/style_advisor.dart';
 import '../../world/climate_world.dart' show nearestPuddle;
 import '../../core/weather.dart';
 import '../../core/astro.dart' show moonPhase, sunAltitudeDeg;
-import '../../core/species_ids.dart' show appearsOnMap, isRitualOnlyId;
+import '../../core/species_ids.dart' show appearsOnMap, capturedByRitualOnly, familyOfId, isRitualOnlyId;
+import '../../world/climate_world.dart' show ClimateWorld;
+import '../../world/high_tiers.dart' show archetypeOccurrencesAt, nearestBairro;
+import '../../world/high_tiers_driver.dart';
 import '../../crafting/bag.dart' show acceptable;
 import '../../crafting/collector_tick.dart';
 import '../../crafting/quality.dart' show parseStack;
@@ -698,6 +701,8 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
         await _startEncounter(spawn);
       case TouchResult.ritual:
         break; // o WorldView já chamou onRitualTarget (_startRitual)
+      case TouchResult.archetype:
+        break; // o WorldView já chamou onArchetype
       case TouchResult.bagFull:
         break; // o WorldView já avisou (onBagFull)
     }
@@ -707,7 +712,7 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   Future<void> _startEncounter(WorldSpawn spawn) async {
     final r = _ready;
     if (r == null || _busy || r.travel.driver) return; // a sintonia vibra e pede a mão: nada disso ao volante
-    if (isRitualOnlyId(spawn.entryId)) return _startRitual(spawn); // não responde à sintonia
+    if (capturedByRitualOnly(spawn.entryId)) return _startRitual(spawn); // não responde à sintonia
     _busy = true;
     try {
       await runEncounter(context, eco: spawn, world: r.world, state: r.session.state, data: r.data, nowUtc: () => tools.clock.nowUtc, vibration: widget.vibration, onMessage: _toast, onExit: (eco, {required tuned}) => r.game.fx.exit(eco, tuned: tuned, facingLeft: r.game.facingLeftOfEco(eco.uid)));
@@ -718,18 +723,57 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
   }
 
   /// O mundo na célula do Eco: hora local do relógio do jogo, bioma da célula, lua e o clima determinístico.
-  WorldCondition _ritualWorld(_Ready r, WorldSpawn eco) {
-    final t = tools.clock.nowUtc;
-    final stack = _climate!.world.idAt(eco.cellX, eco.cellY, t);
-    final (lat, lon) = tileFractionToLatLon(eco.x, eco.y, biomeZoom);
-    return WorldCondition(
-      hour: localHourOf(t),
-      biome: r.assets.map.biomes.spawnKey(r.assets.map.spawnBiomeAtCell(eco.cellX, eco.cellY)),
-      moon: moonPhase(t),
-      weather: r.data.climates.of(stack).base,
-      climates: {climateOfStack(stack), ...eventsOfStack(stack)},
-      sunAltDeg: sunAltitudeDeg(lat, lon, t),
-    );
+  WorldCondition _ritualWorld(_Ready r, WorldSpawn eco) =>
+      worldConditionAt(data: r.data, assets: r.assets, climate: _climate!.world, cx20: eco.cellX, cy20: eco.cellY, x21: eco.x, y21: eco.y, t: tools.clock.nowUtc);
+
+  /// 0.27.0: a Entidade Maior solta e o Arquétipo no auge dos eventos (`world/high_tiers_driver.dart`). `null` sem o
+  /// bloco `high_tiers` na época.
+  HighTiersDriver? _highTiers;
+  final _majorsShown = <int>{};
+  final _mapAge = Stopwatch()..start();
+
+  /// O que vem das etapas altas a cada atualização do mundo: as Entidades na janela delas e os Arquétipos à vista. Uma
+  /// Entidade que estava à vista e cuja janela fechou sem ritual avisa que foi embora.
+  List<WorldSpawn> _highTierSpawns(WorldView world, GameMapGame game, GameData data, int t) {
+    final d = _highTiers;
+    if (d == null || !world.hasPlayer) return const [];
+    final cx = world.playerX.floor() >>> 1, cy = world.playerY.floor() >>> 1;
+    // A busca das Entidades do mês (aos poucos, ~0,5 s de conta no total) só começa 20 s depois de o mapa abrir: a abertura
+    // é o momento mais pesado. O Fórum começa antes se for aberto.
+    final out = d.spawnsAt(cx, cy, t,
+        visible: (a) => world.distanceM(a.spawn()) <= world.viewM, gone: (a) => _archetypeGone(game, data, a.spawn()), majors: _mapAge.elapsed.inSeconds >= 20);
+    final live = {for (final s in out) s.uid};
+    for (final s in out) {
+      if (s.entryId.endsWith('.major') && world.distanceM(s) <= world.viewM) _majorsShown.add(s.uid);
+    }
+    for (final uid in [..._majorsShown]) {
+      if (live.contains(uid)) continue;
+      _majorsShown.remove(uid);
+      if (!world.state.isDone(uid)) _toast(data.notice('map.major_fled'), seconds: 4);
+    }
+    return out;
+  }
+
+  /// O Arquétipo sumiu depois dos segundos dele: a animação de fuga e o aviso.
+  void _archetypeGone(GameMapGame game, GameData data, WorldSpawn s) {
+    game.fx.exit(s, tuned: false, facingLeft: game.facingLeftOfEco(s.uid));
+    _toast(data.notice('map.archetype_gone'), seconds: 3);
+  }
+
+  /// Tocou no Arquétipo: nada de sintonia nem ritual. Fica visto no Bestiário (com o retrato de 128 e o Lore curto), o
+  /// mentor manda a mensagem da família na primeira vez e ele some com a animação de fuga.
+  void _onArchetype(WorldSpawn s) {
+    final r = _ready;
+    if (r == null) return;
+    final st = r.session.state, family = familyOfId(s.entryId);
+    if (!r.world.sandbox()) {
+      st.markSeen(s.entryId, tags: r.world.sightTags);
+      if (st.story.count('archetype_seen_$family') == 0) st.recordEvent('archetype_seen_$family', '', 1);
+    }
+    _highTiers?.dismiss(s.uid);
+    r.world.remove(s);
+    r.game.fx.exit(s, tuned: false, facingLeft: r.game.facingLeftOfEco(s.uid));
+    _toast('${r.data.species(s.entryId)?.name ?? s.entryId}: visto no Bestiário', seconds: 4);
   }
 
   /// Abre o ritual do Eco que não responde à sintonia (a até 30 m).
@@ -1212,6 +1256,65 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
     world.onShiny = _onShiny;
     world.onEnteredRange = _onEnteredRange;
     _climate = ClimateDriver(data: data, world: climate, online: () => session.state.setting('weather_online'));
+    final epochNow = data.schedule.select(tools.clock.nowUtc).epoch, highTiers = epochNow.highTiers, layered = assets.world;
+    if (highTiers != null && layered != null) {
+      _highTiers = HighTiersDriver(
+        seed: world.field.seed,
+        epochId: epochNow.id,
+        model: highTiers,
+        families: [for (final rcp in data.ritual.recipes.values) if (isRitualOnlyId(rcp.speciesId)) familyOfId(rcp.speciesId)],
+        // Pergunta ao mundo só o que a condição precisa, o clima por último: é o caro (~0,2 ms por célula e hora).
+        holds: (family, cx, cy, t) {
+          final recipe = data.ritual.of('$family.ritual');
+          if (recipe == null) return false;
+          String? stack;
+          String st() => stack ??= climate.idAt(cx, cy, t);
+          return recipe.condition.holdsLazy(WorldProbe(
+            hour: () => localHourOf(t),
+            biome: () => assets.map.biomes.spawnKey(assets.map.spawnBiomeAtCell(cx, cy)),
+            moon: () => moonPhase(t),
+            weather: () => data.climates.of(st()).base,
+            climates: () => {climateOfStack(st()), ...eventsOfStack(st())},
+            sunAltDeg: () {
+              final (lat, lon) = tileFractionToLatLon(cx * 2 + 1.0, cy * 2 + 1.0, biomeZoom);
+              return sunAltitudeDeg(lat, lon, t);
+            },
+          ));
+        },
+        sliced: true,
+        pause: () => SchedulerBinding.instance.endOfFrame,
+        regionAt: (cx, cy) => layered.regionBoxAt(cx * 2, cy * 2),
+        eventsAt: (cx, cy, t) => archetypeOccurrencesAt(climate, cx, cy, t),
+        bairroAt: (region, x, y) {
+          final (lat, lon) = tileFractionToLatLon(x, y, biomeZoom);
+          return nearestBairro(data.bairros[region] ?? const [], lat, lon);
+        },
+        rumors: data.rumors,
+      );
+      world.extraSpawns = (t) => _highTierSpawns(world, game, data, t);
+      world.onArchetype = _onArchetype;
+      // Debug: a uns 15 m ao norte do Conjurador (o Arquétipo a 25 m), agora.
+      (String, double, double) here(double metersNorth) {
+        final y = world.playerY - metersNorth / metersPerCell(game.playerLat);
+        return (layered.regionBoxAt(world.playerX.floor(), world.playerY.floor())?.id ?? kRegion, world.playerX, y);
+      }
+      String name(String id) => data.species(id)?.name ?? id;
+      tools.forceMajorHere = (f) {
+        final (region, x, y) = here(15);
+        _highTiers!.forceMajor(f, region, x, y, tools.clock.nowUtc);
+        return '${name('$f.major')} solta a 15 m, por ${highTiers.majorWindowS ~/ 60} min';
+      };
+      tools.forceRumorHere = (f) {
+        final (region, x, y) = here(15);
+        _highTiers!.forceRumor(f, region, x, y, tools.clock.nowUtc);
+        return 'Rumor de ${name('$f.major')} no Fórum';
+      };
+      tools.forceArchetypeHere = (f) {
+        final (_, x, y) = here(25);
+        _highTiers!.forceArchetype(f, x, y, tools.clock.nowUtc);
+        return '${name('$f.archetype')} a 25 m';
+      };
+    }
     tools.force.rainbowFoot = () => _ready == null ? null : _rainbowFoot(_ready!);
     climate.debugArcs.addAll(tools.force.tapArcs);
     unawaited(_climate!.loadEvents().then((_) => game.matchUtc = _climate!.matchUtc));
@@ -1769,6 +1872,9 @@ class _GameMapScreenState extends State<GameMapScreen> with WidgetsBindingObserv
                 lat: () => game.playerLat,
                 epochId: () => r.data.schedule.select(tools.clock.nowUtc).epoch.id,
                 craft: () => _craftContext(r),
+                rumors: () => _highTiers == null || !r.world.hasPlayer
+                    ? const []
+                    : _highTiers!.rumorsAt(r.world.playerX.floor() >>> 1, r.world.playerY.floor() >>> 1, tools.clock.nowUtc),
               ),
             ),
           ),
@@ -1922,4 +2028,20 @@ Future<void> openGameMap(BuildContext context, DevTools tools) async {
   if (live != null && live.mounted) await live._closed.future.timeout(const Duration(seconds: 2), onTimeout: () {});
   if (!nav.mounted) return;
   await nav.push(MaterialPageRoute<void>(builder: (_) => GameMapScreen(tools: tools, openStore: KsvSaveStore.inDocuments)));
+}
+
+/// 0.27.0: o mundo na célula z20 ([cx20], [cy20]) em [t], para a condição de ritual: a hora local, o bioma, a lua, o clima
+/// de quatro estados, o clima e os eventos da célula e a altura do sol. O ritual de agora e a Entidade solta (que olha horas
+/// à frente, pelo rumor) usam a mesma conta.
+WorldCondition worldConditionAt({required GameData data, required MapAssets assets, required ClimateWorld climate, required int cx20, required int cy20, required double x21, required double y21, required int t}) {
+  final stack = climate.idAt(cx20, cy20, t);
+  final (lat, lon) = tileFractionToLatLon(x21, y21, biomeZoom);
+  return WorldCondition(
+    hour: localHourOf(t),
+    biome: assets.map.biomes.spawnKey(assets.map.spawnBiomeAtCell(cx20, cy20)),
+    moon: moonPhase(t),
+    weather: data.climates.of(stack).base,
+    climates: {climateOfStack(stack), ...eventsOfStack(stack)},
+    sunAltDeg: sunAltitudeDeg(lat, lon, t),
+  );
 }

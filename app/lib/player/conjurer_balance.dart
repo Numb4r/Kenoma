@@ -41,6 +41,13 @@ class ConjurerBalance {
         spiritLevelCap = _i(b['fusion'], 'spirit_level_cap'),
         ecoTraitsMax = _i(b['fusion'], 'eco_traits_max'),
         spiritTraitsMax = _i(b['fusion'], 'spirit_traits_max'),
+        majorFusionLevel = _i(b['unlocks'], 'major_fusion_level'),
+        majorSpiritCount = _i(b['fusion'], 'major_spirit_count'),
+        majorEssenceCost = _i(b['fusion'], 'major_essence_cost'),
+        majorLevelCap = _i(b['fusion'], 'major_level_cap'),
+        majorTraitsMax = _i(b['fusion'], 'major_traits_max'),
+        archetypeLevelCap = _i(b['fusion'], 'archetype_level_cap'),
+        archetypeTraitsMax = _i(b['fusion'], 'archetype_traits_max'),
         fusionAnimS = _d(b['fusion'], 'anim_s'),
         spiritHeightM = _d(b['spirit'], 'height_m'),
         spiritAbilitySteps = _i(b['spirit'], 'ability_steps'),
@@ -79,6 +86,17 @@ class ConjurerBalance {
   final int spiritLevelCap;
   final int ecoTraitsMax;
   final int spiritTraitsMax;
+
+  /// 0.27.0, a Entidade Maior (GDD, "Etapas altas antes dos grimórios"): o nível que libera a fusão dela, quantos Espíritos
+  /// da família entram (mais a criatura de ritual como oferenda) e a Essência do tipo que ela gasta; o teto de nível e de
+  /// traços da Entidade e do Arquétipo (o GDD fixa os traços: 3 e 4).
+  final int majorFusionLevel;
+  final int majorSpiritCount;
+  final int majorEssenceCost;
+  final int majorLevelCap;
+  final int majorTraitsMax;
+  final int archetypeLevelCap;
+  final int archetypeTraitsMax;
   final double fusionAnimS;
 
   /// Altura do Espírito no mapa e quantos degraus a habilidade de mapa dele é mais forte que a do Eco.
@@ -88,7 +106,7 @@ class ConjurerBalance {
   /// Degraus de resistência a mais na sintonia de um Espírito (a resistência forte do tipo).
   final double spiritResistanceAdd;
 
-  /// Poder de uma criatura: `base + por_nível × nível`, por camada (`eco`, `spirit`). Sem estabilidade ainda.
+  /// Poder de uma criatura: `base + por_nível × nível`, por camada (`eco`, `spirit`, `major`, `archetype`). Sem estabilidade ainda.
   final Map<String, double> _powerBase;
   final Map<String, double> _powerPerLevel;
   int power(String tier, int level) => (_powerBase[tier]! + _powerPerLevel[tier]! * level).round();

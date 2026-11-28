@@ -332,9 +332,10 @@ void main() {
     test('os textos batem com o docs/textos-mentor.md (rode scripts/mentor_md.py)', () {
       final md = File('../docs/textos-mentor.md').readAsStringSync();
       // As do ritual (uma dica por família com Espírito de ritual), a entrega do Radar, as 4 páginas de grimório (0.24.0), a
-      // quest do crafting (0.24.1) e as 2 páginas dos veículos (0.24.5).
-      final hints = data.ritual.recipes.length;
-      expect(script.events, hasLength(14 + hints));
+      // quest do crafting (0.24.1) e as 2 páginas dos veículos (0.24.5); 0.27.0: a da primeira Entidade e a do primeiro
+      // Arquétipo de cada família.
+      final families = data.ritual.recipes.keys.where((id) => id.endsWith('.ritual')).length;
+      expect(script.events, hasLength(14 + families * 3));
       for (final m in script.events) {
         expect(md, contains(m.text), reason: m.id);
         expect(m.text.length, lessThan(320), reason: m.id);
@@ -343,6 +344,8 @@ void main() {
 
     test('uma dica por família, cada uma no evento da própria família', () {
       for (final f in {for (final id in data.ritual.recipes.keys) id.split('.').first}) {
+        expect(script.byId('major_hint_$f')?.requires?.event, 'major_seen_$f', reason: f);
+        expect(script.byId('archetype_hint_$f')?.requires?.event, 'archetype_seen_$f', reason: f);
         expect(script.byId('ritual_hint_$f')?.requires?.event, 'ritual_seen_$f', reason: f);
       }
     });
@@ -354,9 +357,25 @@ void main() {
     final biomeKeys = {for (final b in loadJson('assets/data/biomes.json')['biomes'] as List<dynamic>) (b as Map<String, dynamic>)['key'] as String};
     final ritualOnly = {for (final s in creatures['species'] as List<dynamic>) if ((s as Map<String, dynamic>)['ritual_only'] == true) s['id'] as String};
 
-    test('toda espécie ritual_only tem uma receita e toda receita é de uma espécie ritual_only', () {
-      expect(data.ritual.recipes.keys.toSet(), ritualOnly);
+    test('toda espécie ritual_only tem uma receita, e as outras receitas são da Entidade Maior (0.27.0)', () {
+      expect({for (final id in data.ritual.recipes.keys) if (id.endsWith('.ritual')) id}, ritualOnly);
       expect(ritualOnly, isNotEmpty);
+      expect(data.ritual.recipes.keys.where((id) => !id.endsWith('.ritual')).every((id) => id.endsWith('.major')), isTrue);
+    });
+
+    test('0.27.0: a receita da Entidade solta é a da criatura de ritual da família, mais exigente, com Círculo de nível 15', () {
+      final majors = [for (final r in data.ritual.recipes.values) if (r.speciesId.endsWith('.major')) r];
+      expect(majors, hasLength(12));
+      for (final m in majors) {
+        final base = data.ritual.of('${m.speciesId.split('.').first}.ritual')!;
+        expect(data.species(m.speciesId), isNotNull, reason: m.speciesId);
+        expect((m.condition.kind, m.condition.value, m.condition.of.length), (base.condition.kind, base.condition.value, base.condition.of.length), reason: 'a mesma condição');
+        expect([for (final x in m.materials) x.item], [for (final x in base.materials) x.item]);
+        for (var i = 0; i < m.materials.length; i++) {
+          expect(m.materials[i].qty, greaterThan(base.materials[i].qty), reason: '${m.speciesId}: mais material');
+        }
+        expect((m.circleMinLevel, base.circleMinLevel), (15, 5));
+      }
     });
 
     final climateBlock = (jsonDecode(File('assets/data/epochs.json').readAsStringSync())['epochs'] as List<dynamic>).last['climate'] as Map<String, dynamic>;
@@ -395,8 +414,9 @@ void main() {
     });
 
     test('cada família tem uma receita diferente e há um espaço só para o Círculo', () {
-      final texts = {for (final r in data.ritual.recipes.values) '${r.condition.kind}${r.condition.value}${r.materials.map((m) => m.item)}'};
-      expect(texts.length, data.ritual.recipes.length);
+      final rituals = [for (final r in data.ritual.recipes.values) if (r.speciesId.endsWith('.ritual')) r]; // a Entidade repete a da família
+      final texts = {for (final r in rituals) '${r.condition.kind}${r.condition.value}${r.materials.map((m) => m.item)}'};
+      expect(texts.length, rituals.length);
       for (final r in data.ritual.recipes.values) {
         expect(r.slotCount, r.materials.length + 2);
         expect(r.circleIndex, r.slotCount - 1);

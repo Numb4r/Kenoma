@@ -15,6 +15,7 @@ import '../world/debug_creatures.dart';
 import 'debug_capture.dart';
 import 'debug_env.dart';
 import 'debug_items_fusion.dart';
+import 'debug_items_high.dart';
 import 'debug_items_ritual.dart';
 import 'debug_registry.dart';
 
@@ -199,6 +200,7 @@ List<DebugEntry> creatureEntries(DebugEnv env) {
     ...captureEntries(env.capture),
     ...ritualEntries(env),
     ...fusionEntries(env),
+    ...highTierEntries(env),
   ];
 }
 

@@ -28,6 +28,8 @@ import 'package:kenoma/ui/menu/profile_screen.dart';
 import 'package:kenoma/ui/menu/sky_screen.dart';
 import 'package:kenoma/ui/game/game_map_screen.dart';
 import 'package:kenoma/ui/game/joystick.dart';
+import 'package:kenoma/ui/ritual/ritual_screen.dart' show RitualScreen;
+import 'package:kenoma/ui/tuning/tuning_screen.dart' show TuningScreen;
 import 'package:kenoma/ui/game/loading_screen.dart';
 import 'package:kenoma/world/location_access.dart';
 import 'package:kenoma/save/save_store.dart';
@@ -787,6 +789,62 @@ void main() {
       tools.simulator.advance(const Duration(seconds: 5));
       await tester.pump();
       expect(got, 0);
+    });
+  });
+
+  group('0.27.0: etapas altas no mapa (mundo fixo)', () {
+    Offset at(WidgetTester tester, Env env, WorldSpawn s) => tester.getTopLeft(gameWidget) + env.game.spawnScreen(s);
+
+    testWidgets('o Arquétipo à vista: tocar não abre sintonia nem ritual, marca visto no Bestiário e solta a dica da família', (tester) async {
+      final env = await pumpGame(tester);
+      final st = env.game.worldView!.state;
+      expect(env.tools.forceArchetypeHere!('shade'), contains('Gloamhusk'));
+      await env.live(1);
+      final a = env.game.worldView!.spawns.singleWhere((s) => s.entryId == 'shade.archetype');
+      expect(st.bestiary['shade.archetype']?.seen ?? false, isFalse, reason: 'à vista não conta: só o toque');
+      expect(env.game.worldView!.allEcos.any((s) => s.uid == a.uid), isFalse, reason: 'fora do Radar e do encontro');
+      await tester.tapAt(at(tester, env, a));
+      await env.settle(6);
+      expect(find.byType(TuningScreen), findsNothing);
+      expect(find.byType(RitualScreen), findsNothing);
+      expect(st.bestiary['shade.archetype']?.seen, isTrue);
+      expect(st.hasCaptured('shade.archetype'), isFalse);
+      expect(st.story.count('archetype_seen_shade'), 1);
+      expect(env.game.worldView!.spawns.any((s) => s.uid == a.uid), isFalse, reason: 'some depois do toque');
+      await env.live(2);
+      expect(env.game.worldView!.spawns.any((s) => s.entryId == 'shade.archetype'), isFalse, reason: 'não volta');
+    });
+
+    testWidgets('a Entidade solta (do nível do ritual em diante) só se prende por ritual: o toque abre o ritual dela', (tester) async {
+      final env = await pumpGame(tester);
+      final st = env.game.worldView!.state..levelOverride = 10;
+      expect(env.tools.forceMajorHere!('soot'), contains('Slagthroat'));
+      await env.live(1);
+      final m = env.game.worldView!.spawns.singleWhere((s) => s.entryId == 'soot.major');
+      expect(m.level, 25);
+      expect(st.bestiary['soot.major']?.seen, isTrue, reason: 'à vista, como os outros');
+      expect(st.story.count('major_seen_soot'), 1, reason: 'a dica do mentor da primeira Entidade');
+      await tester.tapAt(at(tester, env, m));
+      await env.settle(10);
+      expect(find.byType(TuningScreen), findsNothing);
+      expect(find.byType(RitualScreen), findsOneWidget);
+    });
+
+    testWidgets('o rumor forçado aparece no Fórum, com o bairro e a faixa de hora, antes da Entidade', (tester) async {
+      final env = await pumpGame(tester, extraAssets: {'assets/data/mapa.json': File('assets/data/mapa.json').readAsBytesSync()}); // os bairros
+      env.game.worldView!.state.levelOverride = 10; // o Fórum abre no nível 2
+      expect(env.tools.forceRumorHere!('wisp'), contains('Tallowshrine'));
+      await env.live(1);
+      expect(env.game.worldView!.spawns.any((s) => s.entryId == 'wisp.major'), isFalse, reason: 'o rumor vem antes dela');
+      await tester.tap(find.byType(PhoneButton));
+      await env.settle(10);
+      await tester.tap(find.text('FÓRUM'));
+      await env.settle(20);
+      final post = find.byKey(const Key('forum-rumor-0'));
+      expect(post, findsOneWidget);
+      final text = tester.widgetList<Text>(find.descendant(of: post, matching: find.byType(Text))).map((t) => t.data ?? '').join(' ');
+      expect(text, allOf(contains('entre '), contains('cera'), isNot(contains('{'))));
+      expect(text, contains('Cidade Universitária'), reason: 'o bairro mais perto da Unicamp');
     });
   });
 

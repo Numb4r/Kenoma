@@ -9,6 +9,17 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.27.0
+
+A Entidade Maior e o Arquétipo no jogo (GDD rev 399). Os itens da 0.26.6 continuam.
+
+- [ ] `0270-fusao` **Fusão da Entidade.** No nível 12, Bancada > Fusão > Entidade Maior: a receita mostra ??? no que ainda não foi visto; com 3 Espíritos da família, a criatura de ritual dela e 10 Essência do tipo, Fundir consome as quatro e a Entidade entra na coleção (debug: Criaturas > "Conceder as peças da fusão da Entidade").
+- [ ] `0270-solta` **Entidade solta.** Debug: Criaturas > "Forçar a Entidade Maior solta": ela aparece a ~15 m, maior que o Espírito; tocar abre o ritual dela (não a sintonia); a mensagem do mentor da primeira Entidade chega no Chat. Se a janela acabar, o aviso de que ela foi embora.
+- [ ] `0270-rumor` **Rumor no Fórum.** Debug: "Forçar o rumor da Entidade": o Fórum mostra o post com o bairro e a faixa de hora, acima dos pedidos.
+- [ ] `0270-arquetipo` **Arquétipo.** Debug: "Forçar a aparição do Arquétipo": aparece a ~25 m em 64 px com a animação de nascer, fica uns 12 s e foge; tocar não abre nada, marca visto no Bestiário (retrato de 128 e o Lore I) e o mentor diz que ainda não há como prendê-lo.
+- [ ] `0270-bestiario` **Bestiário.** As seções Entidades Maiores e Arquétipos, com os nomes novos e a arte final.
+- [ ] `0270-fluidez` **Sem engasgo novo.** A busca das Entidades do mês começa 20 s depois de o mapa abrir e roda em fatias de até 4 ms, uma por quadro: nenhum engasgo novo nem na abertura nem uns 20 s depois (no notebook, fatias de ~4,1 ms; só a primeira busca da sessão teve um ponto de 33 ms, o aquecimento do JIT, que a release não tem).
+
 ## 0.26.6
 
 O menu de debug redesenhado: um registro só, que a tela e o `celular.sh cmd` usam. Os itens da 0.26.5 continuam.

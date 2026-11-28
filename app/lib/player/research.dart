@@ -87,6 +87,8 @@ int taskProgress(ResearchTask t, String speciesId, Map<String, BestiaryEntry> be
       return e.captures.clamp(0, t.n);
     case 'biomes':
       return e.biomes.length.clamp(0, t.n);
+    case 'seen':
+      return e.seen ? t.n : 0; // 0.27.0: o Arquétipo, que só se vê
     case 'variant':
       return bestiary.entries.where((x) => x.key.startsWith('$speciesId@') && x.value.seen).length.clamp(0, t.n);
     case 'see':

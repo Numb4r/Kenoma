@@ -21,7 +21,7 @@ void main() {
   final data = load();
 
   test('lê os doze Ecos com id, nome e tipo: os três do MVP primeiro, depois as nove famílias da fase 1', () {
-    expect([for (final s in data.species) if (!s.isSpirit) (s.id, s.name, s.type)], [
+    expect([for (final s in data.species) if (s.tier == 'eco') (s.id, s.name, s.type)], [
       ('soot.eco', 'Sootling', EcoType.fire),
       ('frond.eco', 'Frondling', EcoType.plant),
       ('rill.eco', 'Rillet', EcoType.water),
