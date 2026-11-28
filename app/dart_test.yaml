@@ -1,3 +1,8 @@
 # 0.23.0: o tempo padrão de cada teste dobra (60 s). Com o emulador ligado, os testes mais pesados (o círculo desenhado,
 # o simulador de GPS) passavam dos 30 s e estouravam; assim a suíte roda com ou sem o emulador.
 timeout: 2x
+
+# 0.27.0: os testes que medem tempo de relógio contra um limite fixo levam a tag perf. A suíte principal (a que decide o
+# commit) roda com `--exclude-tags perf`; os de perf rodam à parte, com a máquina quieta, antes de cada versão.
+tags:
+  perf:

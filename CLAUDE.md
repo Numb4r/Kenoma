@@ -8,7 +8,8 @@
 
 ## Stack e comandos
 Flutter stable, Dart 3, Flame no mapa e na sintonia, widgets no resto, Riverpod. Só Android. Pipeline em Python 3.11 via uv. Antes de `flutter`: `export PATH="$HOME/development/flutter/bin:$PATH" ANDROID_HOME=$HOME/Android/Sdk`.
-- Testes: `cd app && flutter analyze && flutter test` (um arquivo: `flutter test test/core/fnv_test.dart`; por nome: `--plain-name "FNV-1a"`). Nunca `dart format` (reescreve ~150 arquivos). O tempo de cada teste é 60 s (`app/dart_test.yaml`, `timeout: 2x`): a suíte roda com o emulador ligado.
+- Testes: `cd app && flutter analyze && flutter test --exclude-tags perf` é a suíte principal, a que decide o commit (um arquivo: `flutter test test/core/fnv_test.dart`; por nome: `--plain-name "FNV-1a"`). Nunca `dart format` (reescreve ~150 arquivos). O tempo de cada teste é 60 s (`app/dart_test.yaml`, `timeout: 2x`): a suíte roda com o emulador ligado.
+- Desempenho: todo teste que mede tempo de relógio contra um limite fixo leva `tags: 'perf'` e fica fora da suíte principal. Antes de cada versão, com a máquina quieta (emulador fechado, nada pesado aberto), rode `flutter test --tags perf`; ele também tem de passar.
 - Biomas: edite `shared/biomes.json` e rode `./scripts/sync_shared.sh` (um teste compara as cópias).
 - Pipeline: `cd pipeline && .venv/bin/python build_region.py --region campinas` (e `build_visual.py`). Regerar um `.bin` muda o mundo: o SHA novo entra na época de desenvolvimento (regra 5).
 - Aparelho: o celular se o `adb devices` mostrar o moto g54, senão o emulador do notebook (`docs/emulador.md`, só build de debug, sempre `adb -s emulator-5554`); desempenho só se mede no celular.
@@ -23,7 +24,7 @@ Flutter stable, Dart 3, Flame no mapa e na sintonia, widgets no resto, Riverpod.
 4. Conteúdo é dado em `app/assets/data/`, sem balanceamento no código. IDs de texto estáveis (`soot.eco`); o sufixo `.eco`, `.spirit`, `.ritual` decide a camada.
 5. Modo de desenvolvimento até a distribuição: uma época única, embarcada e ativa; mudança de mundo entra nela direto. O regime de épocas publicadas e congeladas começa quando o dono disser que vai distribuir (passo a passo em `docs/distribuicao.md`). É mundo o que está em `epochs.json` (spawns, coleta, `eco_v2`, `climate`, os SHA dos pacotes), `shared/biomes.json` e os pacotes de região, mesmo que o pedido diga `balance.json`, que é só por aparelho. `*_noaccess.bin` não é mundo e vai em `route_files`.
 6. Amigos já jogam: todo APK sai com a chave de release (`~/.kenoma-signing/`), nunca a de debug. Mudou o save: suba `saveSchemaVersion`, migração pura e teste com save antigo. Nunca grave a chave privada nem publique no GitHub Pages sem pedido; o feed só acrescenta épocas ou estende validade.
-7. Push: com `flutter test` passando e `flutter analyze` limpo, dê push no fim de cada versão sem perguntar; fora disso, só com autorização explícita. Publicar o feed, o `regions.json` ou qualquer coisa em `docs/pages` continua precisando de autorização explícita, a cada vez. Commit só quando pedido, pequeno, um por passo de marco.
+7. Push: com a suíte principal e a de perf passando e `flutter analyze` limpo, dê push no fim de cada versão sem perguntar; fora disso, só com autorização explícita. Publicar o feed, o `regions.json` ou qualquer coisa em `docs/pages` continua precisando de autorização explícita, a cada vez. Commit só quando pedido, pequeno, um por passo de marco.
 
 ## Convenções
 - Código em inglês; UI, comentários de domínio e docs em português. Nomes próprios não se traduzem (Sootling, Ialprg).

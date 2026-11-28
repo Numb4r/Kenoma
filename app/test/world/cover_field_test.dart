@@ -144,7 +144,7 @@ void main() {
     expect(closed, inInclusiveRange(30, 90));
   });
 
-  test('desempenho: um bloco de Campinas fica pronto em poucos milissegundos', () {
+  test('desempenho: um bloco de Campinas fica pronto em poucos milissegundos', tags: 'perf', () {
     final vm = VisualMap(VisualPack.parse(File('assets/regions/campinas_e0_vis.bin').readAsBytesSync()), cacheTiles: 64);
     final (x, y) = latLonToTileFraction(-22.9056, -47.0608, 21);
     const cover = StreetCover(kind: StreetCoverKind.snow, growS: 1800, tracks: true);

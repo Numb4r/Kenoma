@@ -261,7 +261,7 @@ void main() {
     expect(s.goneInView, 0);
   });
 
-  test('desempenho: 60 carros e 80 passantes abaixo de 2 ms por passo', () {
+  test('desempenho: 60 carros e 80 passantes abaixo de 2 ms por passo', tags: 'perf', () {
     final s = sim(config: const TrafficSimConfig(radiusM: 300, warmupS: 20, maxCars: 60, maxWalkers: 80))..forcedDensity = 3;
     center(s);
     for (var i = 0; i < 600; i++) {

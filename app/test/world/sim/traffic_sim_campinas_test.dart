@@ -58,6 +58,24 @@ void main() {
       expect(stuck, lessThan(s.cars.length ~/ 5));
       expect(s.bornInView, 0);
       expect(s.goneInView, 0);
+    });
+
+    // O tempo do passo fica fora da suíte principal (tag perf, roda à parte com a máquina quieta).
+    test('desempenho, Campinas, $name: o passo cabe no orçamento', tags: 'perf', () {
+      final (x, y) = lat == 0 ? (774506.0, 1185523.0) : latLonToTileFraction(lat, lon, 21);
+      final mpc = metersPerCell(lat == 0 ? -22.87 : lat);
+      final graph = TrafficGraph(loadTile: vm.tile, cellsPerTile: vm.cellsPerTile, extent: vm.pack.extent, cacheTiles: 128, stitch: true);
+      final s = TrafficSim(graph: graph, seed: 42, points: pack);
+      final view = 110 / mpc;
+      s.center(x, y, mpc, left: x - view, top: y - view * 2, right: x + view, bottom: y + view * 2, hour: 18);
+      s.forcedDensity = lat == 0 ? 2.5 : null;
+      final sw = Stopwatch()..start();
+      for (var i = 0; i < 3600; i++) {
+        s.step(1 / 30, hour: 18);
+      }
+      final us = sw.elapsedMicroseconds / 3600;
+      // ignore: avoid_print
+      print('$name: passo ${us.toStringAsFixed(0)} µs');
       expect(us, lessThan(4000), reason: 'o orçamento de verdade é medido no celular; aqui é só um teto folgado');
     });
   }

@@ -18,7 +18,7 @@ Você roda a verificação do Kenoma e relata falhas. Você não edita nada.
 ```
 export PATH="$HOME/development/flutter/bin:$PATH" ANDROID_HOME=$HOME/Android/Sdk
 cd app && flutter analyze
-cd app && flutter test --reporter failures-only
+cd app && flutter test --exclude-tags perf --reporter failures-only
 ```
 Se o pedido citar arquivos ou nomes de teste, rode só esses (`flutter test <arquivo>` ou `--plain-name "<nome>"`).
 
