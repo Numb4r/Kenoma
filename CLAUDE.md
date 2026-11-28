@@ -9,7 +9,7 @@
 ## Stack e comandos
 Flutter stable, Dart 3, Flame no mapa e na sintonia, widgets no resto, Riverpod. Só Android. Pipeline em Python 3.11 via uv. Antes de `flutter`: `export PATH="$HOME/development/flutter/bin:$PATH" ANDROID_HOME=$HOME/Android/Sdk`.
 - Testes: `cd app && flutter analyze && flutter test --exclude-tags perf` é a suíte principal, a que decide o commit (um arquivo: `flutter test test/core/fnv_test.dart`; por nome: `--plain-name "FNV-1a"`). Nunca `dart format` (reescreve ~150 arquivos). O tempo de cada teste é 60 s (`app/dart_test.yaml`, `timeout: 2x`): a suíte roda com o emulador ligado.
-- Desempenho: todo teste que mede tempo de relógio contra um limite fixo leva `tags: 'perf'` e fica fora da suíte principal. Antes de cada versão, com a máquina quieta (emulador fechado, nada pesado aberto), rode `flutter test --tags perf`; ele também tem de passar.
+- Desempenho: todo teste que mede tempo de relógio contra um limite fixo leva `tags: 'perf'` e fica fora da suíte principal. Antes de cada versão, com a máquina quieta (emulador fechado, nada pesado aberto), rode `flutter test --tags perf --concurrency=1` (com os arquivos em paralelo, o `cover_field` mede o dobro); ele também tem de passar.
 - Biomas: edite `shared/biomes.json` e rode `./scripts/sync_shared.sh` (um teste compara as cópias).
 - Pipeline: `cd pipeline && .venv/bin/python build_region.py --region campinas` (e `build_visual.py`). Regerar um `.bin` muda o mundo: o SHA novo entra na época de desenvolvimento (regra 5).
 - Aparelho: o celular se o `adb devices` mostrar o moto g54, senão o emulador do notebook (`docs/emulador.md`, só build de debug, sempre `adb -s emulator-5554`); desempenho só se mede no celular.
