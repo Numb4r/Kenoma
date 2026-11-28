@@ -14,7 +14,7 @@
           "chance": 0.1,
           "peak_share": 0.34,
           "stay_s": 12,
-          "events": { "hum": "echo_storm", "soot": "crimson_moon", "frond": "veil_tide", "rill": "double_moon", "clod": "hail", "rust": "rift_wind", "glare": "veil_prism", "shade": "black_sun", "wisp": "fog_procession", "bit": "static", "sprig": "tornado", "wyrm": "meteor_shower" }
+          "events": { "hum": "echo_storm", "soot": "crimson_moon", "frond": "veil_tide", "rill": "double_moon", "clod": "hail", "rust": "acid_rain", "glare": "veil_prism", "shade": "black_sun", "wisp": "fog_procession", "bit": "static", "sprig": "tornado", "wyrm": "meteor_shower" }
         }
       },
       "veilbreakers": {

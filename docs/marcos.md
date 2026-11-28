@@ -1523,7 +1523,8 @@ Incursões" do GDD (rev 399) e o item 1 de `docs/art/pendencias-codigo.md`.
   em fatias de até 4 ms, uma por quadro, a partir de 20 s depois de o mapa abrir (o Fórum começa antes se for aberto); a
   condição pergunta o clima, o caro, por último. No notebook: ~0,4 s de conta no total, fatias de ~4,1 ms.
 - **Arquétipo:** no auge (o terço do meio) do evento grande da família, 10% das células z17 têm o dele; aparece uma vez,
-  12 s, e foge. Cada família vem num evento cujo HUD a favorece (o Rust no Vento das Fendas); o Clod, sem evento de
-  Terra, vem no Granizo, pelo terço do meio da janela do clima. Tocar marca visto e solta a dica do mentor da família; não abre sintonia nem ritual.
+  12 s, e foge. O Clod e o Rust, sem evento de Terra nem de Metal, vêm no Granizo e na Chuva ácida, pelo terço do meio
+  da janela do clima. Hum, Soot, Frond, Rill, Glare e Wyrm estão em eventos cujo HUD não cita o tipo da família (para o
+  dono decidir). Tocar marca visto e solta a dica do mentor da família; não abre sintonia nem ritual.
 - **Mentor e debug:** a dica da primeira Entidade e do primeiro Arquétipo de cada família; no debug (aba Criaturas), forçar
   a Entidade solta, o rumor e o Arquétipo, e conceder as peças da fusão.

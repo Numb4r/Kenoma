@@ -129,19 +129,20 @@ void main() {
     expect((again.uid, again.x21, again.y21), (hits.first.uid, hits.first.x21, hits.first.y21));
   });
 
-  test('o Clod vem no Granizo: o clima da janela conta como ocorrência, do começo ao fim da janela', () {
-    expect((model.archetypeEvents['clod'], model.archetypeEvents['rust']), ('hail', 'rift_wind'));
-    final c = ClimateWorld(seed: seed, schedule: data.schedule, speciesOfType: data.ecoOfType, itemExists: data.itemNames.containsKey, forced: () => 'hail');
-    final m = c.modelAt(t0)!.$2;
-    final occ = archetypeOccurrencesAt(c, area.x0, area.y0, t0);
-    final hail = occ.singleWhere((o) => o.id == 'hail');
-    expect((hail.start, hail.end), (m.windowOf(t0) * m.windowS, (m.windowOf(t0) + 1) * m.windowS));
-    final hits = [
-      for (var x = 0; x < 20; x++)
-        for (var y = 0; y < 20; y++) ?archetypeIn(seed: seed, epochId: epoch, m: model, eventId: hail.id, eventStart: hail.start, eventEnd: hail.end, cx17: 97000 + x, cy17: 138000 + y),
-    ];
-    expect(hits, isNotEmpty);
-    expect(hits.every((a) => a.family == 'clod'), isTrue);
+  test('o Clod vem no Granizo e o Rust na Chuva ácida: o clima da janela conta como ocorrência, do começo ao fim da janela', () {
+    expect((model.archetypeEvents['clod'], model.archetypeEvents['rust']), ('hail', 'acid_rain'));
+    for (final (climate, family) in [('hail', 'clod'), ('acid_rain', 'rust')]) {
+      final c = ClimateWorld(seed: seed, schedule: data.schedule, speciesOfType: data.ecoOfType, itemExists: data.itemNames.containsKey, forced: () => climate);
+      final m = c.modelAt(t0)!.$2;
+      final occ = archetypeOccurrencesAt(c, area.x0, area.y0, t0).singleWhere((o) => o.id == climate);
+      expect((occ.start, occ.end), (m.windowOf(t0) * m.windowS, (m.windowOf(t0) + 1) * m.windowS));
+      final hits = [
+        for (var x = 0; x < 20; x++)
+          for (var y = 0; y < 20; y++) ?archetypeIn(seed: seed, epochId: epoch, m: model, eventId: occ.id, eventStart: occ.start, eventEnd: occ.end, cx17: 97000 + x, cy17: 138000 + y),
+      ];
+      expect(hits, isNotEmpty, reason: climate);
+      expect(hits.every((a) => a.family == family), isTrue, reason: '$climate dá o $family');
+    }
   });
 
   test('o Arquétipo se mostra uma vez, quando entra na vista, fica os segundos dele e some com aviso', () {
