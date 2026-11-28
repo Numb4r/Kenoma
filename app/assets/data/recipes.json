@@ -74,7 +74,9 @@
     { "id": "recipe.jewel.rune.alt", "out": ["item.jewel.rune", 1], "in": [["item.ref.consecrated_chalk", 8], ["item.ref.braided_fiber", 8], ["item.comp.hidden_ink", 1]], "station": "bench", "discovery": "page", "page": "page.gear" },
     { "id": "recipe.vehicle.bike", "out": ["item.vehicle.bike", 1], "in": [["item.comp.veil_weave", 2], ["item.ref.braided_fiber", 3], ["item.comp.cold_setting", 1]], "station": "bench", "discovery": "page", "page": "page.vehicle_light" },
     { "id": "recipe.vehicle.skate", "out": ["item.vehicle.skate", 1], "in": [["item.comp.sigil_ink", 2], ["item.comp.veil_weave", 1], ["item.ref.cold_iron", 2], ["item.ref.braided_fiber", 3]], "station": "bench", "discovery": "page", "page": "page.vehicle_light" },
-    { "id": "recipe.vehicle.cart", "out": ["item.vehicle.cart", 1], "in": [["item.comp.veil_weave", 3], ["item.comp.cold_setting", 2], ["item.comp.ether_filament", 1]], "station": "bench", "discovery": "page", "page": "page.vehicle_cart" }
+    { "id": "recipe.vehicle.cart", "out": ["item.vehicle.cart", 1], "in": [["item.comp.veil_weave", 3], ["item.comp.cold_setting", 2], ["item.comp.ether_filament", 1]], "station": "bench", "discovery": "page", "page": "page.vehicle_cart" },
+    { "id": "recipe.furniture.shelf", "out": ["item.furniture.shelf", 1], "in": [["item.ref.braided_fiber", 3], ["item.ref.cold_iron", 2], ["item.comp.cold_setting", 1]], "station": "bench", "discovery": "page", "page": "page.home" },
+    { "id": "recipe.furniture.sanctum", "out": ["item.furniture.sanctum", 1], "in": [["item.comp.seal_core", 2], ["item.comp.sigil_ink", 1], ["item.comp.white_wax", 1]], "station": "bench", "discovery": "page", "page": "page.home" }
   ],
   "pages": [
     { "id": "page.components", "name": "Página dos componentes", "desc": "Receitas que se montam na Bancada de casa, com o que já se refinou e um pouco de Essência." },
@@ -82,6 +84,7 @@
     { "id": "page.seasons", "name": "Página das estações", "desc": "Receitas que só se fazem na própria estação, e que funcionam o ano inteiro depois de prontas." },
     { "id": "page.gear", "name": "Página dos equipamentos", "desc": "Bolsas, cinto, grimório e joias para carregar mais da cidade." },
     { "id": "page.vehicle_light", "name": "Página das duas rodas", "desc": "Bicicleta e skate do Véu, para aparecer bem quando a rua passa depressa." },
-    { "id": "page.vehicle_cart", "name": "Página da carroça", "desc": "Uma carroça do Véu que nada puxa, para as ruas que passam por você." }
+    { "id": "page.vehicle_cart", "name": "Página da carroça", "desc": "Uma carroça do Véu que nada puxa, para as ruas que passam por você." },
+    { "id": "page.home", "name": "Página dos móveis", "desc": "Estante e santuário de selos, para a casa guardar mais do que a bolsa aguenta." }
   ]
 }

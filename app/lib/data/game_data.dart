@@ -16,6 +16,7 @@ import '../core/epochs.dart';
 import '../core/plural.dart';
 import '../crafting/crafting_data.dart';
 import '../crafting/ritual_data.dart';
+import '../crafting/stations.dart' show HomeData;
 import '../net/signed_feed.dart';
 import '../patrol/patrol_balance.dart';
 import '../player/progress_balance.dart';
@@ -99,6 +100,7 @@ class GameData {
     required this.startInventory,
     required this.recipes,
     this.craft = const CraftingBook(),
+    this.home = const HomeData(),
     this.mapTouch = const TouchBalance(),
     this.npc = const NpcData(),
     this.npcBalance = const NpcBalance(),
@@ -141,6 +143,7 @@ class GameData {
       events: await json('eventos').then<Map<String, dynamic>?>((j) => j).catchError((_) => null),
       mapTexts: await json('mapa').catchError((_) => <String, dynamic>{}), // sem o arquivo, o toque no mapa sem textos
       npc: await json('npc').then<Map<String, dynamic>?>((j) => j).catchError((_) => null), // sem o arquivo, NPCs sem texto
+      home: await json('home').then<Map<String, dynamic>?>((j) => j).catchError((_) => null), // sem o arquivo, a Casa sem estações
     )..remember();
   }
 
@@ -159,8 +162,10 @@ class GameData {
     Map<String, dynamic>? events,
     Map<String, dynamic>? mapTexts,
     Map<String, dynamic>? npc,
+    Map<String, dynamic>? home,
   }) =>
       GameData(
+        home: HomeData.fromJson(home),
         mapTouch: TouchBalance.fromJson(balance['map_touch'] as Map<String, dynamic>?),
         npc: npc == null ? const NpcData() : NpcData.fromJson(npc),
         npcBalance: NpcBalance.fromJson(balance['npc'] as Map<String, dynamic>?),
@@ -244,6 +249,9 @@ class GameData {
 
   /// Itens, páginas e tabelas do crafting da fase 1.
   final CraftingBook craft;
+
+  /// 0.28.0: as estações da Casa e os textos do app (`home.json`).
+  final HomeData home;
 
   /// O mapa que responde ao toque (0.24.2): os limites (`map_touch` do `balance.json`) e os textos (`mapa.json`).
   final TouchBalance mapTouch;

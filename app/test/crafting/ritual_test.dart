@@ -333,9 +333,9 @@ void main() {
       final md = File('../docs/textos-mentor.md').readAsStringSync();
       // As do ritual (uma dica por família com Espírito de ritual), a entrega do Radar, as 4 páginas de grimório (0.24.0), a
       // quest do crafting (0.24.1) e as 2 páginas dos veículos (0.24.5); 0.27.0: a da primeira Entidade e a do primeiro
-      // Arquétipo de cada família.
+      // Arquétipo de cada família; 0.28.0: a da casa (nível 10, com a página dos móveis) e a da primeira casa definida.
       final families = data.ritual.recipes.keys.where((id) => id.endsWith('.ritual')).length;
-      expect(script.events, hasLength(14 + families * 3));
+      expect(script.events, hasLength(16 + families * 3));
       for (final m in script.events) {
         expect(md, contains(m.text), reason: m.id);
         expect(m.text.length, lessThan(320), reason: m.id);

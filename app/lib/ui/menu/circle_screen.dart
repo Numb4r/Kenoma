@@ -142,7 +142,8 @@ class _Tile extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () {
         if (!state.toggleCircle(creature.uid)) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('O Círculo tem 3 espaços. Tire alguém antes.')));
+          final msg = state.home.holds(creature.uid) ? 'Está em casa. Traga de volta pelo app Casa.' : 'O Círculo tem 3 espaços. Tire alguém antes.';
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
         }
       },
       child: Container(

@@ -16,6 +16,11 @@ Pendências registradas fora dos prompts em andamento. Quando um item entrar num
 - Semáforos, ônibus e Ônibus Espectral, veículos especiais do tráfego (fase 2).
 - Bairros do rumor da Entidade solta: hoje são escritos à mão em `app/assets/data/mapa.json` (`bairros`, 19 em Campinas e 18 em São Paulo, centros aproximados). Da próxima vez que a pipeline do OSM for mexida, eles devem sair dela (`place=suburb` e `place=neighbourhood`, com o centro de cada um) para o pacote da região. (28/nov/2026)
 
+## Casa (fase 2)
+
+- Seiva na Horta: o GDD dá à horta "ervas, seiva e madeira", mas não existe item de seiva (nem de madeira, fora o Galho de gelo). Na 0.28.0 a Horta faz só Ervas; seiva pede item novo, a decidir com o dono. (28/nov/2026)
+- A Coleção não tem limite: o santuário do Armazém conta só as criaturas deixadas em casa (guardadas e trabalhando). Se a Coleção inteira tiver de caber no santuário, como diz "Base, Bolsa e Armazém", é uma mudança maior (captura e fusão com o santuário cheio). (28/nov/2026)
+
 ## Pendências do Yuri
 
 - Backup cifrado da chave de release em dois lugares.

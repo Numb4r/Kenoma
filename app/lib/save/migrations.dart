@@ -6,7 +6,7 @@ import '../player/game_state.dart' show kVisitedCellsKey, saveSchemaVersion;
 
 typedef _Step = Map<String, dynamic> Function(Map<String, dynamic>);
 
-final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8, 8: _v8ToV9, 9: _v9ToV10, 10: _v10ToV11, 11: _v11ToV12, 12: _v12ToV13, 13: _v13ToV14, 14: _v14ToV15};
+final Map<int, _Step> _steps = {1: _v1ToV2, 2: _v2ToV3, 3: _v3ToV4, 4: _v4ToV5, 5: _v5ToV6, 6: _v6ToV7, 7: _v7ToV8, 8: _v8ToV9, 9: _v9ToV10, 10: _v10ToV11, 11: _v11ToV12, 12: _v12ToV13, 13: _v13ToV14, 14: _v14ToV15, 15: _v15ToV16};
 
 /// Leva [json] ao schema atual. Um save de versão futura passa sem mudar.
 Map<String, dynamic> migrateSave(Map<String, dynamic> json) {
@@ -215,3 +215,7 @@ Map<String, dynamic> _v13ToV14(Map<String, dynamic> j) {
 /// v14 não tinha a última posição do mapa (0.26.4, `map_last_cell`): ela não entra (a primeira abertura usa o centro de
 /// sempre, como antes). O resto passa intacto.
 Map<String, dynamic> _v14ToV15(Map<String, dynamic> j) => {...j};
+
+/// v15 não tinha a Casa (0.28.0): sem `home` nem `home_cell`, o jogo abre sem casa, com o Armazém e as estações vazios. O
+/// resto passa intacto.
+Map<String, dynamic> _v15ToV16(Map<String, dynamic> j) => {...j};

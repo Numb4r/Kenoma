@@ -875,7 +875,7 @@ void main() {
         expect(find.text(label), findsOneWidget, reason: label);
       }
       expect(find.text('BANCADA'), findsNothing, reason: 'nível 2');
-      expect(find.text('???'), findsNWidgets(4));
+      expect(find.text('???'), findsNWidgets(5), reason: 'Radar, Bancada, Chat, Fórum e Casa');
       await tester.tap(find.text('CÍRCULO'));
       await env.settle(20);
       expect(find.byType(CircleScreen), findsOneWidget);

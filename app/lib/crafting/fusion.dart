@@ -45,7 +45,7 @@ String? essenceOfFamily(GameData data, String family) {
 }
 
 /// Os Ecos da coleção que podem entrar na fusão da [family] (só Ecos dela, não Espíritos).
-List<CreatureInstance> fusibleEcos(GameState s, String family) => [for (final c in s.collection) if (c.speciesId == '$family.eco') c];
+List<CreatureInstance> fusibleEcos(GameState s, String family) => [for (final c in s.collection) if (c.speciesId == '$family.eco' && !s.home.holds(c.uid)) c];
 
 /// Os traços que o Espírito herda: o Brilhante primeiro, depois cada variante de bioma distinta na ordem dos Ecos, até [max].
 List<String> inheritedTraits(List<CreatureInstance> ecos, int max) {
@@ -125,7 +125,7 @@ bool fusionPossible(GameState s) {
   if (s.playerLevel < s.cb.fusionLevel || essenceTotal(s) < s.cb.fusionEssenceCost) return false;
   final perFamily = <String, int>{};
   for (final c in s.collection) {
-    if (tierOfId(c.speciesId) == SpeciesTier.eco) perFamily.update(familyOfId(c.speciesId), (n) => n + 1, ifAbsent: () => 1);
+    if (tierOfId(c.speciesId) == SpeciesTier.eco && !s.home.holds(c.uid)) perFamily.update(familyOfId(c.speciesId), (n) => n + 1, ifAbsent: () => 1);
   }
   return perFamily.values.any((n) => n >= s.cb.fusionEcoCount) && essenceIds.any((id) => s.count(id) >= s.cb.fusionEssenceCost);
 }

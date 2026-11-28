@@ -119,6 +119,8 @@
     { "id": "item.jewel.rune", "name": "Pingente rúnico", "kind": "jewel", "desc": "Uma runa presa num galho, que muda de desenho quando ninguém olha.", "effects": { "tonic_time": 0.25 } },
     { "id": "item.vehicle.bike", "name": "Bicicleta do Véu", "kind": "vehicle_bike", "desc": "Quadro de ferro frio e aros que chiam baixinho. Não te leva mais longe, só mais bonito.", "gender": "f" },
     { "id": "item.vehicle.skate", "name": "Skate do Véu", "kind": "vehicle_bike", "desc": "Tábua riscada de sigilos, rodas que soltam faísca no asfalto. Anda no seu passo, não no dele." },
-    { "id": "item.vehicle.cart", "name": "Carroça do Véu", "kind": "vehicle_car", "desc": "Madeira velha, lanterna na frente e nada puxando. Aparece quando a rua passa depressa demais.", "gender": "f" }
+    { "id": "item.vehicle.cart", "name": "Carroça do Véu", "kind": "vehicle_car", "desc": "Madeira velha, lanterna na frente e nada puxando. Aparece quando a rua passa depressa demais.", "gender": "f" },
+    { "id": "item.furniture.shelf", "name": "Estante de caixote", "kind": "furniture", "gender": "f", "desc": "Caixotes de feira amarrados com fibra, onde o Armazém guarda mais do que cabia.", "effects": { "storage_items": 20 } },
+    { "id": "item.furniture.sanctum", "name": "Santuário de selos", "kind": "furniture", "desc": "Um nicho de madeira onde os selos descansam virados para a parede, e quem está neles dorme sem pressa.", "effects": { "storage_creatures": 10 } }
   ]
 }

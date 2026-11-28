@@ -91,6 +91,9 @@ Future<Map<String, ui.Image>> loadAsepriteArt(Future<Uint8List?> Function(String
 
 int labColor(String key) => mapPalette[key] ?? 0xFFFF00FF; // magenta: chave que falta na paleta (o teste confere)
 
+/// O carimbo [name] de `mapStamps` como imagem (luzes acesas), para quem desenha fora da cena da cidade (a casa, 0.28.0).
+ui.Image mapStampImage(String name) => _stamp(name, mapStamps[name] ?? const [], lightsOn: true);
+
 ui.Image _stamp(String name, List<String> rows, {required bool lightsOn}) {
   final legend = mapStampLegend[name] ?? const {};
   final rec = ui.PictureRecorder();

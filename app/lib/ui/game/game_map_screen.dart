@@ -2014,6 +2014,14 @@ _GameMapScreenState? _live;
 /// O save do mapa aberto agora, ou `null`: o debug grava nele em vez de gravar por baixo (o mapa sobrescreveria).
 GameState? liveGameState() => _live?._ready?.session.state;
 
+/// 0.28.0: onde o jogador está no mapa aberto agora (graus), ou `null` (o debug define a casa aqui).
+({double lat, double lon})? livePlayerPos() {
+  final w = _live?._ready?.world;
+  if (w == null || !w.hasPlayer) return null;
+  final (lat, lon) = tileFractionToLatLon(w.playerX, w.playerY, biomeZoom);
+  return (lat: lat, lon: lon);
+}
+
 /// Abre o mapa do jogo pelo debug sem empilhar outro: se já há um mapa na pilha, volta até ele; se um mapa ainda está
 /// saindo (a animação de voltar ao menu), espera ele fechar e só então abre o novo.
 Future<void> openGameMap(BuildContext context, DevTools tools) async {

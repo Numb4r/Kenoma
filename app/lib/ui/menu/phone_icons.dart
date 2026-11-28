@@ -36,6 +36,11 @@ const Map<String, List<String>> phoneIconArt = {
     '....tttt....', '.....tt.....', '.....tt.....', '....tttt....', '...t.oo.t...', '..t.oooo.t..',
     '..toooooot..', '.t.oooooo.t.', '.t.oooooo.t.', '.tttttttttt.', '............', '............',
   ],
+  // 0.28.0: a casa do app (o mesmo desenho de apps/home.png): o telhado, o óculo do Véu no frontão e a porta.
+  PhoneAppId.home: [
+    '.....oo.....', '....oooo....', '...oovvoo...', '..ooovvooo..', '.oooooooooo.', 'oooooooooooo',
+    '.llllllllll.', '.lmmllllmml.', '.llllttllll.', '.llllttvlll.', '.llllttllll.', '............',
+  ],
   // Do criativo (0.24.1): o amuleto no cordão.
   PhoneAppId.loadout: [
     'l..........l', 'l..........l', '.l........l.', '..l......l..', '...vvvvvv...', '..vvoooovv..',

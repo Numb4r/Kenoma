@@ -189,6 +189,12 @@ const Map<String, int> mapPalette = {
   // Janela apagada (36): desceu junto com as paredes (0.23.1) para continuar mais escura que a parede de sombra.
   'window_off': 0xFF1F2334,
   'window_on': 0xFFFFD98A,
+  // 0.28.0: a casa do jogador (só ele a vê): a porta de madeira e o óculo do Véu no frontão, o único violeta do cenário.
+  'home_door': 0xFF9A6A3E,
+  'home_door_dark': 0xFF6A4628,
+  'home_veil_light': 0xFFC9B8FF,
+  'home_veil': 0xFF9B7BFF,
+  'home_veil_dark': 0xFF5A4A9E,
   'window_on_cool': 0xFFDFE8FF,
   // Neon do Iluminado: rosa, lima e azul. De propósito nenhum é violeta do Véu, ciano do sinal ou laranja brasa.
   'neon_a': 0xFFFF4F9A,
@@ -516,6 +522,33 @@ const Map<String, List<String>> mapStamps = {
     '..p..OmOdddddddddOmO.',
     '..p..OOOOOOOOOOOOOOO.',
     '..p..O..O.......O..O.',
+  ],
+  // 0.28.0: a casa do jogador (24 x 22), de pé e de frente como o ponto de ônibus: frontão de telha, chaminé, o óculo do
+  // Véu aceso no frontão, a porta com a maçaneta violeta e duas janelas. Arte do executor pela spec do criativo
+  // (`tools/art/map/build_home.py`). Só no mapa do próprio jogador, na célula da casa.
+  'home': [
+    '...........OO...........',
+    '..........OltO...OOO....',
+    '.........OOltOO.OksnO...',
+    '........OtttdddOOksnO...',
+    '.......OOllltttOOksnO...',
+    '......OllllUUttttksnO...',
+    '.....OOtttUVVVdddksnO...',
+    '....OlllllVVVTtttttO....',
+    '...OOllllllTTttttttOO...',
+    'OOOtttttttttdddddddddOOO',
+    'ttttttttttttdddddddddddd',
+    'OOwwwwwwwwwwwwwwwwxxxxOO',
+    '.OwwwwwwwwwwwwwwwwxxxxO.',
+    '.OwwgggwwwwwwwwwwgggxxO.',
+    '.OwwgggwwwwwwwwwwgggxxO.',
+    '.OwwgggwwwppqqwwwgggxxO.',
+    '.OwwwwwwwwppqqwwwwxxxxO.',
+    '.OwwwwwwwwppqqwwwwxxxxO.',
+    '.OwwwwwwwwppmqwwwwxxxxO.',
+    '.OwwwwwwwwppqqwwwwxxxxO.',
+    '.OwwwwwwwwppqqwwwwxxxxO.',
+    '.OOOOOOOOOOOOOOOOOOOOOO.',
   ],
   // Banca de jornal (11 x 9): a caixa de metal com o brilho no canto e o toldo listrado embaixo. Na calçada do Centro
   // e nas praças.
@@ -880,6 +913,7 @@ const Map<String, Map<String, String>> mapStampLegend = {
   'ipe_yellow': {'O': 'outline', 'l': 'ipe_yellow_light', 'g': 'ipe_yellow', 'd': 'ipe_yellow_dark'},
   'ipe_green': {'O': 'outline', 'l': 'canopy_warm_light', 'g': 'canopy_warm', 'd': 'canopy_warm_dark'},
   'bus_stop': {'O': 'outline', 'l': 'roof_metal_light', 'k': 'roof_metal_dark', 'm': 'roof_metal', 'p': 'pole', 'h': 'pole_head', 'b': 'sign_blue', 'f': 'fence', 'd': 'fence_dark'},
+  'home': {'O': 'outline', 'l': 'roof_tile_light', 't': 'roof_tile', 'd': 'roof_tile_dark', 'k': 'roof_slab_light', 's': 'roof_slab', 'n': 'roof_slab_dark', 'U': 'home_veil_light', 'V': 'home_veil', 'T': 'home_veil_dark', 'w': 'wall_res', 'x': 'wall_res_shade', 'p': 'home_door', 'q': 'home_door_dark', 'm': 'home_veil_light', 'g': 'window_off'},
   'newsstand': {'O': 'outline', 'g': 'gate', 'h': 'pole_head', 'k': 'gate_dark', 'a': 'lane'},
   'bush': {'O': 'outline', 'l': 'canopy_light', 'g': 'canopy', 'd': 'canopy_dark'},
   'lamp': {'h': 'pole_head', 'g': 'lamp_glow', 'p': 'pole'},

@@ -378,7 +378,11 @@ class _SpeciesDetailScreenState extends State<SpeciesDetailScreen> {
       ],
       if (family != null && family.workTitle.isNotEmpty) ...[
         const KSection('Trabalho'),
-        _line('Trabalho: ${family.workTitle} (em breve)', key: const Key('species-work')),
+        // 0.28.0: as seis famílias com estação na Casa dizem qual; as outras seis continuam "em breve".
+        if (widget.data.home.ofFamily(family.id) case final st?)
+          _line('Trabalho: ${family.workTitle}. Na Casa: ${st.name}.', key: const Key('species-work'))
+        else
+          _line('Trabalho: ${family.workTitle} (em breve)', key: const Key('species-work')),
         if (family.workAbout.isNotEmpty) _line(family.workAbout, color: KCores.textoMudo),
       ],
       const KSection('Traços'),

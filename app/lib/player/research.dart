@@ -101,14 +101,16 @@ int taskProgress(ResearchTask t, String speciesId, Map<String, BestiaryEntry> be
   return 0;
 }
 
-/// O nível de pesquisa (0 a 5): quantas tarefas seguidas, desde a primeira, estão feitas.
+/// O nível de pesquisa (0 a 5): quantas tarefas seguidas, desde a primeira, estão feitas, mais as que o Arquivo da Casa já
+/// fez (0.28.0, [BestiaryEntry.archived]).
 int researchLevel(List<ResearchTask> tasks, String speciesId, Map<String, BestiaryEntry> bestiary) {
   var level = 0;
   for (final t in tasks) {
     if (taskProgress(t, speciesId, bestiary) < t.n) break;
     level++;
   }
-  return level;
+  final archived = bestiary[speciesId]?.archived ?? 0;
+  return level + archived > tasks.length ? tasks.length : level + archived;
 }
 
 /// O que a pesquisa já liberou da espécie (os `unlocks` das tarefas feitas).

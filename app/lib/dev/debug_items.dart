@@ -7,6 +7,7 @@ import '../patrol/patrol_controller.dart';
 import 'debug_env.dart';
 import 'debug_items_crafting.dart';
 import 'debug_items_creature.dart';
+import 'debug_items_home.dart';
 import 'debug_items_position.dart';
 import 'debug_items_profile.dart';
 import 'debug_items_save.dart';
@@ -21,6 +22,7 @@ DebugRegistry buildDefaultRegistry(DebugEnv env) => DebugRegistry()
   ..addAll(positionEntries(env))
   ..addAll(creatureEntries(env))
   ..addAll(profileEntries(env))
+  ..addAll(homeEntries(env))
   ..addAll(schoolEntries(env))
   ..addAll(craftingEntries(env))
   ..addAll(saveEntries(env))

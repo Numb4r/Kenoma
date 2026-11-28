@@ -65,3 +65,9 @@ Para contar a quem recebe o APK: além do jogo (nível, criaturas, bolsa, Besti�
 **última posição do mapa**, arredondada para a célula do mapa (z21, uns 17 m de lado), para a próxima abertura já preparar
 aquela área (0.26.4, chave `map_last_cell`). Ela nunca sai do celular: o backup e a exportação do save tiram a chave, o QR
 do grupo só leva o código do grupo, e nada a envia pela rede. Recomeçar do zero também a apaga.
+
+Da 0.28.0 em diante, o mesmo vale para a **casa**: o lugar fica só neste aparelho, arredondado para a célula z21 onde o
+jogador a definiu (chave `home_cell`). O backup e a exportação tiram a chave (restaurado, o jogo volta com o Armazém e as
+estações, mas sem lugar: é preciso definir a casa de novo), o QR e o código do grupo nunca a levam, e as obras
+compartilhadas, quando existirem, também não. Só o próprio jogador vê a casa no mapa. Um teste (`test/crafting/home_test.dart`)
+falha se a célula aparecer no backup ou no QR.

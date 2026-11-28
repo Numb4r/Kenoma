@@ -110,6 +110,8 @@ Saem sozinhas, uma vez cada, quando o acontecimento acontece, sem esperar a fila
 | `craft_tut_belt` (mentor) | craft_tut_belt ≥ 1 | Agora ela anda com você. Quando chover, enche sozinha, no seu passo. Se o céu demorar, plante a garrafa no chão e volte depois: ela espera melhor do que você. Você sabe esperar? |
 | `craft_tut_fill` (mentor) | craft_tut_fill ≥ 1 | Pronto. O céu faz o resto. Água que não tocou o chão ainda lembra de onde veio, e a Bancada sabe a diferença. Quando a garrafa estiver cheia, faça uma receita com essa água. O que você acha que a chuva sabe? |
 | `craft_tut_done` (mentor) | craft_tut_done ≥ 1 | Feito. Você pegou uma coisa do céu e fez outra com as mãos. Há mais para guardar: neve, fumaça, a lua, cada uma no seu vidro. A cidade chove para todo mundo. Quem mais você acha que está guardando? |
+| `page_home` (mentor) | level_10 ≥ 1 | Dez. Você anda guardando criatura no bolso e material na meia. Chega. Escolha um lugar e chame de casa: o celular já sabe como. Lá, quem você prendeu trabalha enquanto você dorme, e o que você juntou tem onde ficar. Deixei a página dos móveis no grimório. Só não me conte onde é. Você contaria para quem? |
+| `home_set` (mentor) | home_set ≥ 1 | Então é aí. Eu não vejo onde, e prefiro assim: o Véu marca essa porta só para você. Ponha alguém para trabalhar antes de dormir. E não se apegue pouco à parede, que mudar leva trinta dias. Quem você vai deixar tomando conta? |
 
 ## Falas de desbloqueio do celular
 
@@ -121,6 +123,7 @@ Quando um app novo do celular se forma (o nível do Conjurador liberou), o Famil
 | `bench` | *O Familiar rodeia o ícone novo e solta um estalo seco, como giz riscando pedra. Parece dizer: aqui se faz coisa.* |
 | `chat` | *O Familiar vira o rosto para o ícone novo e fica imóvel. A tela pisca uma vez, sem som. Parece dizer: alguém está do outro lado.* |
 | `forum` | *O Familiar espia o ícone novo por cima do seu ombro e bate de leve na tela, duas vezes. Parece dizer: tem gente pedindo.* |
+| `home` | *O Familiar entra no ícone novo, dá duas voltas e se deita lá dentro. Parece dizer: aqui eu fico.* |
 
 ## Fusão (nível 6)
 

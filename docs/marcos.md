@@ -1527,3 +1527,31 @@ Incursões" do GDD (rev 399) e o item 1 de `docs/art/pendencias-codigo.md`.
   na Chuva ácida (Metal), pelo terço do meio da janela do clima. Tocar marca visto e solta a dica do mentor da família; não abre sintonia nem ritual.
 - **Mentor e debug:** a dica da primeira Entidade e do primeiro Arquétipo de cada família; no debug (aba Criaturas), forçar
   a Entidade solta, o rumor e o Arquétipo, e conceder as peças da fusão.
+
+## Fase 2 · fatia 1 · Casa, Armazém e trabalho das criaturas (0.28.0)
+
+Versão 0.28.0, mesma chave. Save no schema 16 (a Casa; migração pura, um save v15 abre sem casa). Segue as seções "Casa",
+"Base, Bolsa e Armazém" e "Trabalho das criaturas" do GDD e o bloco "Primeiro recorte da casa" (rev 400). Os números são
+do jogador (`balance.json`, `home`); as estações e os textos, de `home.json`. Nada da Casa é mundo: a época não mudou.
+
+- **Casa** (`player/home.dart`, `crafting/home_actions.dart`): abre no nível 10, com a mensagem do mentor que entrega a
+  página dos móveis. Define-se estando no lugar, na célula z21 onde o jogador está; trocar espera 30 dias (relógio para trás
+  não encurta). A célula fica só no save deste aparelho, na chave `home_cell`, que o backup e a exportação tiram; o QR do
+  grupo só leva o código. No mapa, a casa é um carimbo de pé (24 × 22) na célula dela, só para o próprio jogador.
+- **App Casa** (nível 10, ??? antes): dentro de 40 m mexe nas estações, recolhe e arruma o Armazém; fora, só o estado (o
+  que cada estação fez e quando enche) e o aviso "Longe de casa".
+- **Armazém:** 40 espaços de item (pilhas de 99, como a Bolsa) e 20 de criatura no santuário (as guardadas e as que
+  trabalham). Bolsa ↔ Armazém só em casa. Móveis da Bancada (página dos móveis): Estante de caixote (+20 itens) e Santuário
+  de selos (+10 criaturas), até 3 de cada.
+- **Estações** (`crafting/stations.dart`): Forja (Soot: Cal viva, Espelho de lata e Ervas secas, das receitas conhecidas,
+  sem pedir sol), Horta (Frond: Ervas), Destilaria (Rill: Água pura), Adega (Shade: a Essência sobe uma qualidade), Arquivo
+  (Wisp: 4 pontos fazem uma tarefa de pesquisa da espécie escolhida) e Fábrica de selos (Rust: selos de receita conhecida,
+  sem condição). Só a família da estação trabalha nela; quem trabalha sai do Círculo, não se funde nem se destila, e não
+  cansa. Vagas: 1 no nível 10, 2 no 15, 3 no 20. Ritmo: Eco 3 h, Espírito 2 h, ritual 1h30, Entidade 1 h, 1% mais rápido
+  por nível. Qualidade: Brilhante perfeita, outro traço boa, sem traço comum. O depósito guarda 24 h da produção de quem
+  trabalha; cheio, para até recolher. Os insumos saem do Armazém para a carga da estação ao recolher ou trocar.
+- **Produção determinística:** cada criatura conta um item por período desde o instante em que começou (ou da última vez
+  que a estação parou cheia); a tela calcula ao abrir, sem mudar o save; recolher grava. Relógio para trás não produz.
+- **Bestiário:** as seis famílias com estação dizem qual ("Na Casa: Forja"); as outras seis continuam "em breve".
+- **Debug** (aba Jogador): definir a casa aqui sem a espera, avançar o tempo das estações em horas e encher os depósitos.
+- **Arte** (criativo e executor): a casa no mapa, o ícone do app, um ícone por estação e os dois móveis.

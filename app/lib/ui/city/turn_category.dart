@@ -54,6 +54,7 @@ String turnLabel(String kind) => switch (objectTurn[kind] ?? Turn.upright) {
 String propKindName(String kind) => switch (kind) {
       'lamp' => 'poste',
       'bus_stop' => 'ponto de ônibus',
+      'home' => 'casa',
       'street_sign' => 'placa de rua',
       'newsstand' => 'banca',
       'crosswalk' => 'faixa de pedestre',
@@ -66,7 +67,7 @@ String propKindName(String kind) => switch (kind) {
 /// destes a 0° e a 90°).
 const Set<String> uprightStampKinds = {
   'tree', 'tree_a', 'tree_b', 'tree_c', 'ipe_green', 'ipe_purple', 'ipe_yellow', //
-  'lamp', 'bus_stop', 'newsstand', 'street_sign', //
+  'lamp', 'bus_stop', 'newsstand', 'street_sign', 'home', //
   'roof_tank', 'roof_ac', 'roof_antenna', //
   'sign_bar', 'sign_blade', 'neon_ring', 'neon_arrow',
 };

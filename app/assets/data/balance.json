@@ -90,7 +90,7 @@
   "power": { "base": { "eco": 10, "spirit": 40, "major": 100, "archetype": 220 }, "per_level": { "eco": 2, "spirit": 3, "major": 4, "archetype": 5 } },
   "talent": { "points_per_level": 1 },
   "distill": { "eco_yield": [ { "from": 1, "to": 7, "value": 3 }, { "from": 8, "to": 14, "value": 4 }, { "from": 15, "to": 20, "value": 5 } ] },
-  "phone": { "apps": [ { "id": "vision", "unlock_level": 1 }, { "id": "radar", "unlock_level": 5 }, { "id": "bestiary", "unlock_level": 1 }, { "id": "circle", "unlock_level": 1 }, { "id": "bag", "unlock_level": 1 }, { "id": "loadout", "unlock_level": 1 },{ "id": "bench", "unlock_level": 2 }, { "id": "chat", "unlock_level": 2 }, { "id": "forum", "unlock_level": 2 }, { "id": "profile", "unlock_level": 1 }, { "id": "routes", "unlock_level": 1 }, { "id": "patrol", "unlock_level": 1 }, { "id": "sky", "unlock_level": 1 }, { "id": "settings", "unlock_level": 1 } ] },
+  "phone": { "apps": [ { "id": "vision", "unlock_level": 1 }, { "id": "radar", "unlock_level": 5 }, { "id": "bestiary", "unlock_level": 1 }, { "id": "circle", "unlock_level": 1 }, { "id": "bag", "unlock_level": 1 }, { "id": "loadout", "unlock_level": 1 },{ "id": "bench", "unlock_level": 2 }, { "id": "home", "unlock_level": 10 }, { "id": "chat", "unlock_level": 2 }, { "id": "forum", "unlock_level": 2 }, { "id": "profile", "unlock_level": 1 }, { "id": "routes", "unlock_level": 1 }, { "id": "patrol", "unlock_level": 1 }, { "id": "sky", "unlock_level": 1 }, { "id": "settings", "unlock_level": 1 } ] },
   "steps": { "per_spark": 1000, "max_jump": 20000, "daily_cap": 12000, "milestones": [5000, 10000], "boot_tolerance_s": 120 },
   "patrol": {
     "gps_interval_s": 10, "gps_distance_m": 15, "max_hours_default": 2, "max_hours_limit": 4, "battery_min_pct": 20, "gps_timeout_s": 600,
@@ -124,6 +124,7 @@
     "search": { "min_interval_s": 1, "viewbox_deg": 0.2, "limit": 5, "timeout_s": 6 }
   },
   "start_inventory": { "item.seal.simple": 5, "item.chalk": 3 },
+  "home": { "unlock_level": 10, "move_cooldown_days": 30, "radius_m": 40, "storage_items": 40, "storage_creatures": 20, "furniture_max": 3, "slot_levels": [10, 15, 20], "period_s": { "eco": 10800, "spirit": 7200, "ritual": 5400, "major": 3600 }, "level_speed": 0.01, "deposit_h": 24, "archive_points_per_task": 4 },
   "crafting": {
     "bag": { "base_slots": 40, "stack": 99, "discard_per_dust": 5 },
     "unlock_levels": { "recipe.bag.satchel": 8, "recipe.bag.deep": 15 },

@@ -19,7 +19,7 @@ import '../support/fixtures.dart';
 void main() {
   final data = loadGameData();
   const t = 1790040000;
-  const order = ['vision', 'radar', 'bestiary', 'circle', 'bag', 'loadout', 'bench', 'chat', 'forum', 'profile', 'routes', 'patrol', 'sky', 'settings'];
+  const order = ['vision', 'radar', 'bestiary', 'circle', 'bag', 'loadout', 'bench', 'home', 'chat', 'forum', 'profile', 'routes', 'patrol', 'sky', 'settings'];
 
   GameState state(int level) => GameState(groupCode: 'KENOMA-TESTE', balance: data.progress)..levelOverride = level;
 
@@ -70,7 +70,7 @@ void main() {
 
   test('a tabela vem do balance.json e os ícones são todos de 12 x 12', () {
     expect([for (final a in data.phone.apps) a.id], order);
-    expect({for (final a in data.phone.apps) a.id: a.unlockLevel}, {'vision': 1, 'radar': 5, 'bestiary': 1, 'circle': 1, 'bag': 1, 'loadout': 1, 'bench': 2, 'chat': 2, 'forum': 2, 'profile': 1, 'routes': 1, 'patrol': 1, 'sky': 1, 'settings': 1});
+    expect({for (final a in data.phone.apps) a.id: a.unlockLevel}, {'vision': 1, 'radar': 5, 'bestiary': 1, 'circle': 1, 'bag': 1, 'loadout': 1, 'bench': 2, 'home': 10, 'chat': 2, 'forum': 2, 'profile': 1, 'routes': 1, 'patrol': 1, 'sky': 1, 'settings': 1});
     for (final id in order) {
       final art = phoneIconArt[id]!;
       expect(art.length, 12, reason: id);
@@ -78,7 +78,7 @@ void main() {
         expect(row.length, 12, reason: id);
       }
     }
-    for (final id in ['radar', 'bench', 'chat', 'forum']) {
+    for (final id in ['radar', 'bench', 'home', 'chat', 'forum']) {
       expect(data.mentor.phoneUnlock[id], isNotNull, reason: id);
     }
   });
@@ -95,13 +95,13 @@ void main() {
     }
     expect(pos, [...pos]..sort(), reason: 'ordem de leitura');
     expect(find.text('VISÃO ESPECTRAL'), findsOneWidget);
-    expect(find.text('???'), findsNothing);
+    expect(find.text('???'), findsOneWidget, reason: 'só a Casa, que abre no nível 10');
   });
 
   testWidgets('apps acima do nível mostram ??? e não abrem; os do nível 1 abrem', (tester) async {
     final s = state(1);
     await openPhone(tester, s);
-    expect(find.text('???'), findsNWidgets(4));
+    expect(find.text('???'), findsNWidgets(5));
     expect(find.text('CHAT'), findsNothing);
     await tester.tap(find.byKey(const Key('app-chat')));
     await settle(tester);
@@ -157,7 +157,7 @@ void main() {
 
   testWidgets('o Radar fica bloqueado com ??? até o nível 5 e abre a partir dele', (tester) async {
     await openPhone(tester, state(4));
-    expect(find.text('???'), findsOneWidget, reason: 'só o Radar ainda não veio');
+    expect(find.text('???'), findsNWidgets(2), reason: 'só o Radar e a Casa ainda não vieram');
     expect(find.text('RADAR'), findsNothing);
     await tester.tap(find.byKey(const Key('app-radar')));
     await settle(tester);

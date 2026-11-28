@@ -5,6 +5,7 @@ library;
 import 'dart:typed_data';
 
 import '../player/game_state.dart' show kLastMapCellKey;
+import '../player/home.dart' show kHomeCellKey;
 import 'ksv1.dart';
 import 'migrations.dart';
 import 'save_store.dart';
@@ -31,8 +32,8 @@ String backupFileName(int utc) {
 }
 
 /// Os bytes do backup: o save de agora em KSV1.
-/// 0.26.4: sem a última posição do mapa (`map_last_cell`): ela nunca sai do celular.
-Uint8List exportBackup(Map<String, dynamic> saveJson) => encodeKsv({...saveJson}..remove(kLastMapCellKey));
+/// 0.26.4: sem a última posição do mapa (`map_last_cell`); 0.28.0: sem a célula da casa (`home_cell`). Nenhuma sai do celular.
+Uint8List exportBackup(Map<String, dynamic> saveJson) => encodeKsv({...saveJson}..remove(kLastMapCellKey)..remove(kHomeCellKey));
 
 /// Lê e confere um arquivo de backup, já migrado para o schema atual. Lança [SaveCorrupt] se o arquivo não
 /// é um KSV1 íntegro ou não é um save de Kenoma.

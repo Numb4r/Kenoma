@@ -9,6 +9,19 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.28.0
+
+Casa, Armazém e trabalho das criaturas. Use o nível forçado 10 (ou 20, para as três vagas) e o debug da aba Jogador.
+
+- [ ] `0280-abre` **Abre no nível 10.** Abaixo do 10 o app Casa mostra ??? e não abre; no 10 ele se forma, o Familiar comenta e o mentor manda a mensagem da casa com a página dos móveis no grimório.
+- [ ] `0280-definir` **Definir a casa.** Sem casa, o app pede para definir ali; confirmar põe a casa na célula onde você está e o mapa mostra a casinha (telhado, óculo violeta) nela. Tentar trocar logo depois diz quantos dias faltam (30).
+- [ ] `0280-raio` **Dentro e fora do raio.** A até ~40 m da casa os botões aparecem (Recolher, Pôr para trabalhar, Escolher, Guardar da Bolsa); mais longe aparece "Longe de casa" com a distância, o estado das estações continua na tela e nenhum botão que mexe.
+- [ ] `0280-estacoes` **Estações.** Ponha um Eco da família em cada uma (Soot na Forja, Frond na Horta, Rill na Destilaria, Shade na Adega, Wisp no Arquivo, Rust na Fábrica de selos). Ele some do Círculo e não volta lá enquanto trabalha. Debug "Avançar o tempo das estações" 3 h: cada uma mostra 1 peça (as que gastam insumo, só com o insumo no Armazém).
+- [ ] `0280-deposito` **Depósito cheio.** Debug "Encher os depósitos": a estação mostra "Depósito cheio" em laranja e para; recolher leva tudo ao Armazém.
+- [ ] `0280-armazem` **Armazém e móveis.** Guardar da Bolsa e trazer de volta, em casa. Fabrique a Estante de caixote e o Santuário de selos na Bancada e instale: o Armazém passa de 40 para 60 e o santuário de 20 para 30.
+- [ ] `0280-backup` **Privacidade.** Exporte o backup e importe de novo: o Armazém e as estações voltam, a casa volta sem lugar (pede para definir de novo).
+- [ ] `0280-bestiario` **Bestiário.** As seis famílias com estação dizem "Na Casa: <estação>"; Hum, Clod, Glare, Bit, Sprig e Wyrm continuam "em breve".
+
 ## 0.27.0
 
 A Entidade Maior e o Arquétipo no jogo (GDD rev 399). Os itens da 0.26.6 continuam.

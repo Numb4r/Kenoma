@@ -17,6 +17,7 @@ import 'npc_state.dart';
 import 'bestiary.dart';
 import 'conjurer.dart';
 import 'conjurer_balance.dart';
+import 'home.dart';
 import 'mark.dart';
 import 'personal_build.dart';
 import 'progress_balance.dart';
@@ -25,7 +26,7 @@ import 'progression.dart';
 /// O registro guarda só as últimas 48 horas (docs/fase0-spec.md, seção 3).
 const int registryKeepSeconds = 48 * 3600;
 
-const int saveSchemaVersion = 15;
+const int saveSchemaVersion = 16;
 
 /// 0.26.4: a célula z21 em que o mapa estava da última vez. Só no save deste aparelho: o backup e a exportação tiram a chave
 /// (`exportBackup`), o QR do grupo só leva o código do grupo, e nada a envia. Na abertura, o mapa prepara aquela área.
@@ -131,6 +132,7 @@ class GameState extends ChangeNotifier {
     this.lastSeenUtc = 0,
     List<String>? pins,
     List<BuildEntry>? builds,
+    HomeState? home,
     Map<String, dynamic>? extra,
   })  : inventory = {...?inventory},
         collection = [...?collection],
@@ -149,6 +151,7 @@ class GameState extends ChangeNotifier {
         hiddenRevealed = {...?hiddenRevealed},
         pins = [...?pins],
         builds = [...?builds],
+        home = home ?? HomeState(),
         _extra = {...?extra};
 
   /// Jogo novo: seed nova e o inventário inicial do `balance.json`.
@@ -159,7 +162,7 @@ class GameState extends ChangeNotifier {
     const known = {
       'schema_version', 'group_code', 'player', 'level_override', 'inventory', 'collection', 'collected', 'circle', 'bestiary', 'bestiary_pins', 'personal_builds', 'marks', 'saved_utc',
       'founder', 'created_utc', 'last_seen_utc', 'app_version', 'epoch', 'settings', 'story', kVisitedCellsKey, 'radar', 'conjurer', 'crafting', 'touches', 'npcs',
-      kLastMapCellKey,
+      kLastMapCellKey, 'home', kHomeCellKey,
     };
     final progress = PlayerProgress.fromJson(j['player'] as Map<String, dynamic>?, balance)..settleBanked();
     final state = GameState(
@@ -191,6 +194,7 @@ class GameState extends ChangeNotifier {
       },
       lastSeenUtc: (j['last_seen_utc'] as int?) ?? 0,
       settings: {...?(j['settings'] as Map<String, dynamic>?)},
+      home: HomeState.fromJson(j['home'] as Map<String, dynamic>?, cell: switch (j[kHomeCellKey]) { [final int x, final int y] => (x, y), _ => null }),
       // Campos que esta versão não conhece são preservados (spec, seção 10).
       extra: {for (final e in j.entries) if (!known.contains(e.key)) e.key: e.value},
     );
@@ -309,6 +313,9 @@ class GameState extends ChangeNotifier {
 
   /// 0.24.5: as trocas do dia com os Outros Veilbreakers e a relação com os conhecidos.
   final NpcState npcs;
+
+  /// 0.28.0: a Casa (lugar, Armazém, móveis e estações).
+  final HomeState home;
 
   /// Os números do Conjurador do `balance.json`: desbloqueios, escolas, fusão.
   ConjurerBalance get cb => balance.conjurer;
@@ -641,15 +648,15 @@ class GameState extends ChangeNotifier {
       notifyListeners();
       return true;
     }
-    if (circle.length >= 3 || creature(uid) == null) return false;
+    if (circle.length >= 3 || creature(uid) == null || home.holds(uid)) return false; // 0.28.0: quem está em casa não entra
     circle.add(uid);
     notifyListeners();
     return true;
   }
 
-  /// Tira a criatura da coleção. Criaturas do Círculo não saem.
+  /// Tira a criatura da coleção. Criaturas do Círculo e as que estão em casa (0.28.0) não saem.
   bool removeCreature(String uid) {
-    if (inCircle(uid) || creature(uid) == null) return false;
+    if (inCircle(uid) || creature(uid) == null || home.holds(uid)) return false;
     collection.removeWhere((c) => c.uid == uid);
     notifyListeners();
     return true;
@@ -698,6 +705,8 @@ class GameState extends ChangeNotifier {
         'epoch': epochId,
         if (founder != null) 'founder': founder!.toJson(),
         if (lastMapCell case (final x, final y)) kLastMapCellKey: [x, y],
+        if (home.cell case (final x, final y)) kHomeCellKey: [x, y],
+        'home': home.toJson(),
         'settings': settings,
         'story': story.toJson(),
         kVisitedCellsKey: [for (final c in _visited) [c.$1, c.$2]],

@@ -100,10 +100,10 @@ class _DistillScreenState extends State<DistillScreen> {
       for (final c in s.collection.reversed)
         Builder(builder: (context) {
           final sp = d.species(c.speciesId);
-          final locked = distillBlocker(s, c.uid) != null;
+          final blocker = distillBlocker(s, c.uid), locked = blocker != null;
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: locked ? () => _say('Tire do Círculo antes de destilar') : () => _confirmDistill(c),
+            onTap: locked ? () => _say(blocker) : () => _confirmDistill(c),
             child: Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(8),
@@ -117,7 +117,7 @@ class _DistillScreenState extends State<DistillScreen> {
                     Text('NV ${c.level}${sp == null ? '' : ' · ${typeLabel(sp.type).toUpperCase()}'}', style: const TextStyle(fontSize: 8, color: kDim)),
                   ]),
                 ),
-                Text(locked ? 'NO CÍRCULO' : '→ ${distillYield(c.level, s.balance)} ESSÊNCIA', style: TextStyle(fontSize: 8, color: locked ? kDim : kEssence)),
+                Text(locked ? (s.home.holds(c.uid) ? 'EM CASA' : (s.inCircle(c.uid) ? 'NO CÍRCULO' : 'SÓ ECO')) : '→ ${distillYield(c.level, s.balance)} ESSÊNCIA', style: TextStyle(fontSize: 8, color: locked ? kDim : kEssence)),
               ]),
             ),
           );

@@ -128,7 +128,8 @@ void main() {
           img90.dispose();
         }
       }
-      expect(seen, containsAll(uprightStampKinds), reason: 'todo sprite de pé foi desenhado e conferido');
+      // A casa (0.28.0) não é da cena da cidade: o jogo a desenha de pé na célula dela, sem giro (game_map_game.dart).
+      expect(seen, containsAll(uprightStampKinds.difference({'home'})), reason: 'todo sprite de pé foi desenhado e conferido');
     });
   }
 

@@ -50,8 +50,8 @@ List<MajorSlot> majorRecipe(GameState s, String family) {
 }
 
 /// Os Espíritos e as criaturas de ritual da coleção que podem entrar na fusão da [family].
-List<CreatureInstance> majorSpirits(GameState s, String family) => [for (final c in s.collection) if (c.speciesId == spiritIdOf(family)) c];
-List<CreatureInstance> majorOfferings(GameState s, String family) => [for (final c in s.collection) if (c.speciesId == ritualIdOf(family)) c];
+List<CreatureInstance> majorSpirits(GameState s, String family) => [for (final c in s.collection) if (c.speciesId == spiritIdOf(family) && !s.home.holds(c.uid)) c];
+List<CreatureInstance> majorOfferings(GameState s, String family) => [for (final c in s.collection) if (c.speciesId == ritualIdOf(family) && !s.home.holds(c.uid)) c];
 
 /// Os traços da Entidade: o Brilhante primeiro (de qualquer peça), depois cada variante ou traço distinto, na ordem das
 /// peças, até [max].

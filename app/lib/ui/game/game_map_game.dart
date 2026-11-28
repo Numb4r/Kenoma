@@ -638,6 +638,7 @@ class GameMapGame extends FlameGame {
         },
         MapLayer.materials: () {
           _paintSpawns(canvas, view, cam, wv, center, (s) => !s.isEco && !s.isSpark);
+          _paintHome(canvas, view, cam, wv);
           _paintCollectors(canvas, view, cam, wv);
         },
       },
@@ -1173,6 +1174,21 @@ class GameMapGame extends FlameGame {
   }
 
   /// O spawn sob o toque em [screen], se houver: o mais perto dentro do raio de toque.
+  /// 0.28.0: a casa do jogador, de pé na célula dela (só ele a vê: a posição nunca sai do aparelho), no pixel do Conjurador,
+  /// com a base no centro da célula.
+  ui.Image? _homeImg;
+  void _paintHome(Canvas canvas, Size view, MapCamera cam, WorldView wv) {
+    final c = wv.state.home.center;
+    if (c == null) return;
+    final img = _homeImg ??= mapStampImage('home');
+    final px = playerSizePx / mapPlayerPx;
+    final (sx, sy) = cam.cellToScreen(c.$1, c.$2, view.width, view.height);
+    final x = (sx / px).roundToDouble() * px, y = (sy / px).roundToDouble() * px;
+    if (x < -img.width * px || y < -img.height * px || x > view.width + img.width * px || y > view.height + img.height * px) return;
+    final dst = Rect.fromLTWH(x - img.width * px / 2, y - img.height * px, img.width * px, img.height * px);
+    canvas.drawImageRect(img, Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble()), dst, Paint()..filterQuality = FilterQuality.none);
+  }
+
   /// Os coletores plantados (camada pessoal: só o dono vê), menores que o Conjurador (0.24.1): o sprite de mapa do
   /// recipiente (9 × 10 pixels de arte, base no ponto) sobre uma base de 9 pixels com o estado, cheio no ciano do sinal,
   /// enchendo no violeta do Véu, esperando apagado.

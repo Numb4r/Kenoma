@@ -137,7 +137,7 @@ class ItemDef {
 
   BagTab get tab => switch (kind) {
         'vessel' || 'condition' => BagTab.conditions,
-        'seal' || 'tonic' || 'tool' || 'lure' => BagTab.use,
+        'seal' || 'tonic' || 'tool' || 'lure' || 'furniture' => BagTab.use,
         'bag' || 'belt' || 'grimoire' || 'amulet' || 'jewel' || 'gadget' || 'vehicle_bike' || 'vehicle_car' => BagTab.equip,
         'quest' => BagTab.quest,
         _ => BagTab.materials,
@@ -161,6 +161,9 @@ class Needs {
           season: j['season'] == null ? null : YearSeason.values.byName(j['season'] as String),
           climates: [...((j['climates'] as List<dynamic>?) ?? const []).cast<String>()],
         );
+
+  /// Não pede nada do momento nem do lugar.
+  bool get isNone => !night && !daySun && waterM == null && biomes.isEmpty && moon.isEmpty && season == null && climates.isEmpty;
 
   final bool night;
 

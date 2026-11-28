@@ -368,6 +368,22 @@ appIcon('fusion', {
   '......OOOO..',
 })
 
+-- Casa (0.28.0): a casa do Conjurador, de frente.
+appIcon('home', {
+  '.....OOO.....',
+  '....OQQRO....',
+  '...OQQUVRO...',
+  '..OQQQVVRRO..',
+  '.OQQQQQQQRRO.',
+  'OQQRRRRRRRRRO',
+  'OOaaaaaaabbOO',
+  '.OaaaFFGbbcO.',
+  '.OaaaFFGbbcO.',
+  '.OaaaFFGbbcO.',
+  '.OaaaFFGbbcO.',
+  '.OOOOOOOOOOO.',
+})
+
 -- ---------------------------------------------------------------- app bloqueado
 -- A silhueta genérica de app (o botão em relevo, com a tela apagada no meio), com fatias deslocadas a cada quadro e
 -- uma fatia no ciano apagado do sinal. Tira de 3 quadros de 16 x 16; nenhuma letra.

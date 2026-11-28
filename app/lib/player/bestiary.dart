@@ -3,7 +3,7 @@
 library;
 
 class BestiaryEntry {
-  const BestiaryEntry({this.seen = false, this.captured = false, this.captures = 0, this.when = const {}, this.biomes = const {}});
+  const BestiaryEntry({this.seen = false, this.captured = false, this.captures = 0, this.when = const {}, this.biomes = const {}, this.archived = 0});
 
   factory BestiaryEntry.fromJson(Map<String, dynamic> j) => BestiaryEntry(
         seen: (j['seen'] as bool?) ?? false,
@@ -11,6 +11,7 @@ class BestiaryEntry {
         captures: (j['captures'] as int?) ?? 0,
         when: {...((j['when'] as List<dynamic>?) ?? const []).cast<String>()},
         biomes: {...((j['biomes'] as List<dynamic>?) ?? const []).cast<String>()},
+        archived: (j['archived'] as int?) ?? 0,
       );
 
   final bool seen;
@@ -25,13 +26,17 @@ class BestiaryEntry {
   /// Os biomas em que foi capturada.
   final Set<String> biomes;
 
+  /// 0.28.0: as tarefas de pesquisa que o Arquivo da Casa fez (somam no nível de pesquisa, depois das feitas na rua).
+  final int archived;
+
   /// Capturar implica ter visto.
-  BestiaryEntry copyWith({bool? seen, bool? captured, int? captures, Set<String>? when, Set<String>? biomes}) => BestiaryEntry(
+  BestiaryEntry copyWith({bool? seen, bool? captured, int? captures, Set<String>? when, Set<String>? biomes, int? archived}) => BestiaryEntry(
         seen: (seen ?? this.seen) || (captured ?? this.captured),
         captured: captured ?? this.captured,
         captures: captures ?? this.captures,
         when: when ?? this.when,
         biomes: biomes ?? this.biomes,
+        archived: archived ?? this.archived,
       );
 
   Map<String, dynamic> toJson() => {
@@ -40,6 +45,7 @@ class BestiaryEntry {
         if (captures > 0) 'captures': captures,
         if (when.isNotEmpty) 'when': when.toList()..sort(),
         if (biomes.isNotEmpty) 'biomes': biomes.toList()..sort(),
+        if (archived > 0) 'archived': archived,
       };
 }
 

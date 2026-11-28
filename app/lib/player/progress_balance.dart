@@ -3,6 +3,7 @@ library;
 
 import '../core/species_ids.dart';
 import 'conjurer_balance.dart';
+import 'home.dart' show HomeBalance;
 
 class Band {
   const Band(this.from, this.to, this.value);
@@ -14,9 +15,10 @@ class Band {
 
 class ProgressBalance {
   ProgressBalance(Map<String, dynamic> balance)
-      : this._(balance['xp'] as Map<String, dynamic>, balance['mark'] as Map<String, dynamic>, balance['distill'] as Map<String, dynamic>, ConjurerBalance(balance));
+      : this._(balance['xp'] as Map<String, dynamic>, balance['mark'] as Map<String, dynamic>, balance['distill'] as Map<String, dynamic>, ConjurerBalance(balance),
+            HomeBalance.fromJson(balance['home'] as Map<String, dynamic>));
 
-  ProgressBalance._(Map<String, dynamic> xp, Map<String, dynamic> mark, Map<String, dynamic> distill, this.conjurer)
+  ProgressBalance._(Map<String, dynamic> xp, Map<String, dynamic> mark, Map<String, dynamic> distill, this.conjurer, this.home)
       : curveA = ((xp['player_curve'] as Map<String, dynamic>)['a'] as num).toDouble(),
         curveExponent = ((xp['player_curve'] as Map<String, dynamic>)['exponent'] as num).toDouble(),
         curveRoundTo = (xp['player_curve'] as Map<String, dynamic>)['round_to'] as int,
@@ -41,6 +43,9 @@ class ProgressBalance {
 
   /// O que cada nível libera, as escolas, a fusão e os talentos.
   final ConjurerBalance conjurer;
+
+  /// 0.28.0: a Casa (abertura, raio, Armazém, vagas, ritmo e depósito das estações).
+  final HomeBalance home;
 
   /// Curva do Conjurador: `a × n^expoente`, arredondado para o múltiplo de [curveRoundTo].
   final double curveA;

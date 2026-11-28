@@ -70,6 +70,7 @@ int distillYield(int level, ProgressBalance b) {
 String? distillBlocker(GameState s, String uid) {
   if (s.creature(uid) == null) return 'Criatura não encontrada';
   if (s.inCircle(uid)) return 'Tire do Círculo antes de destilar';
+  if (s.home.holds(uid)) return 'Está em casa: traga de volta antes de destilar';
   if (tierOfId(s.creature(uid)!.speciesId) != SpeciesTier.eco) return 'Só Ecos se destilam: um Espírito custou 5 Ecos e Essência';
   return null;
 }

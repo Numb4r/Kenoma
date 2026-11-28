@@ -17,6 +17,7 @@ import 'bestiary_screen.dart';
 import 'chat_screen.dart';
 import 'circle_screen.dart';
 import 'forum_screen.dart';
+import 'home_screen.dart';
 import '../../world/high_tiers_driver.dart' show ForumRumor;
 import 'phone_apps.dart';
 import 'phone_grid.dart';
@@ -110,6 +111,7 @@ Future<void> showPhoneMenu(
       PhoneAppId.circle => CircleScreen(state: state, data: data),
       PhoneAppId.bag => BagScreen(state: state, data: data, ctx: ctx(), onOpenRecipe: (r) => nav().push(phoneRoute<void>(CraftBenchScreen(state: state, data: data, ctx: ctx(), openRecipe: r)))),
       PhoneAppId.bench => CraftBenchScreen(state: state, data: data, ctx: ctx()),
+      PhoneAppId.home => HomeScreen(state: state, data: data, ctx: ctx()),
       PhoneAppId.loadout => LoadoutScreen(state: state, data: data, nowUtc: nowUtc),
       PhoneAppId.chat => ChatScreen(state: state, data: data),
       PhoneAppId.forum => ForumScreen(state: state, data: data, nowUtc: nowUtc, epochId: epochId, rumors: rumors),
