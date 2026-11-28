@@ -54,6 +54,10 @@ notebook é perder as duas.
    (`apksigner verify --print-certs`, digest de `docs/assinatura.md`).
 2. Save com migração testada a partir do save do aparelho do dono.
 3. Daqui em diante, mudança de mundo vai para uma época nova (13), com início em 2099 até publicar.
+4. **O menu de debug sai da build dos amigos.** Ele é só do dono (0.26.6): até aqui fica em toda build, inclusive na
+   release, e com ele saem o canal `kenoma/debug_cmd` (o `celular.sh cmd`) e o `DevTools` forçado. A build que vai para os
+   amigos abre direto no mapa, sem a rota do menu (`main.dart` monta `[TuningDebugMenu, GameMapScreen]` hoje), e o botão
+   "Menu de debug" do selo de modo some. Na build do dono o menu continua, com a mesma chave.
 
 ## 6. O que o jogo guarda no aparelho
 

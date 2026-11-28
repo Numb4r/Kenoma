@@ -9,6 +9,17 @@ Antes de qualquer captura: tela de bloqueio desligada (`isKeyguardShowing=false`
 
 **Desempenho:** todo número de custo por quadro diz o tipo de build. Só vale build de **profile** (`flutter run --profile`) ou **release**, no moto g54. A build de debug do Flutter é várias vezes mais lenta e o emulador não conta.
 
+## 0.26.6
+
+O menu de debug redesenhado: um registro só, que a tela e o `celular.sh cmd` usam. Os itens da 0.26.5 continuam.
+
+- [ ] `0266-abas` **Abas e controles compactos.** O menu abre na última aba usada; as seis abas (Mundo, Posição, Criaturas, Jogador, Visual, Sistema) rolam na horizontal e a ativa tem a linha violeta. Escolhas em chips de 3 ou 4 colunas, alternar numa linha só, a descrição atrás do (i).
+- [ ] `0266-fora-do-real` **Faixa "fora do real".** Forçar o relógio, um clima e uma camada: um chip ciano para cada um no topo; tocar num desfaz só ele; "Voltar tudo ao real" desfaz os outros e deixa o nível forçado (mexe no save).
+- [ ] `0266-favoritos` **Favoritos em linha.** A estrela de um cartão põe o atalho na linha do topo; tocar nele leva à aba e ao cartão. Os favoritos de antes continuam lá.
+- [ ] `0266-cores` **Cores com significado.** Laranja só com a tira "MEXE NO SAVE"; vermelho só com "APAGA: PEDE CONFIRMAÇÃO" e um diálogo antes (apagar o save pede APAGAR digitado).
+- [ ] `0266-teleporte` **Teleporte numa função só.** Chips Unicamp, Centro, Taquaral, Valinhos e São Paulo levam o simulador e abrem o mapa; "lat, lon" colado no campo também; "Escolher no mapa" arma o toque longo no mapa. O antigo "Mapa livre" saiu.
+- [ ] `0266-identidade` **Identidade em uma linha.** Na aba Sistema, a época, o começo do player_id, o schema e a cadeia numa linha, com o botão de copiar; o log de versões fica recolhido.
+
 ## 0.26.5
 
 Só o debug: o teleporte do simulador com o mapa aberto. Os itens da 0.26.4 continuam.

@@ -1479,3 +1479,26 @@ pelo comando e confere a posição, o marcador, a célula guardada e a região c
 - Longe: o mapa abre em Valinhos, preparado pela tela de carregamento, e pula para casa quando o GPS acha (~3,2 s desde o
   `main`); o pulo custa um quadro de 113 ms (mundo, filtro do mundo, tráfego e chão da área nova) e mais nenhum acima de
   50 ms. O `lastcell` não foi preciso.
+
+## Fase 1 · fatia 20 · O menu de debug como registro (0.26.6)
+
+Versão 0.26.6+59, mesma chave e save. O menu de debug serve a dois usuários: o dono, no celular, e o Claude, pelo
+`scripts/celular.sh cmd`. Os dois agora são vistas de um registro só (`app/lib/dev/debug_registry.dart`):
+
+- **Registro.** Cada ação ou ajuste é uma entrada com id estável (`world.weather`, `pos.teleport`, `player.xp.add`), nome,
+  aba, tipo de controle (alternar, escolha, número, coordenada, ação, leitura), parâmetros e valores válidos, se mexe no
+  save e se é destrutiva. Os ids e os comandos de antes (`sim on`, `tp`, `lastcell`, `time.clock`, `map.free`...) são
+  aliases; os favoritos guardados migram sozinhos.
+- **Linha de comando.** `cmd list` (uma linha por entrada), `cmd state` (JSON do que está fora do real, a fonte de posição
+  e o relógio), `cmd <id> <args>` (responde `ok` ou `erro`), `<id> real` desfaz e `<id> ?` descreve. O destrutivo pede
+  `confirma=<palavra>`. O `celular.sh cmd` devolve a resposta lida do logcat.
+- **Tela.** Gerada do registro: faixa "fora do real" no topo (um chip por override, tocar desfaz só ele, "Voltar tudo ao
+  real" desfaz o que não mexe no save), busca, favoritos numa linha, seis abas (Mundo, Posição, Criaturas, Jogador,
+  Visual, Sistema), chips em grade de 2, 3 ou 4 colunas, alternar numa linha, descrição atrás do (i). Cores pela spec do
+  criativo: violeta escolhido, ciano fora do real, laranja com a tira "MEXE NO SAVE", vermelho com "APAGA: PEDE
+  CONFIRMAÇÃO" e diálogo.
+- **Teleporte e Mapa livre** viraram uma função: lugares (Unicamp, Centro, Taquaral, Valinhos, São Paulo), "lat, lon"
+  colado ou toque longo no mapa do jogo. A tela do mapa livre (`ui/map/map_screen.dart`) saiu.
+- **Testes.** Um falha se uma entrada não aparece na aba dela ou se um controle da tela (com o parâmetro) não existe no
+  `cmd list`; outros cobrem os aliases, o `state`, a confirmação do destrutivo e a faixa do topo.
+- O menu sai da build dos amigos antes de distribuir (`docs/distribuicao.md`, seção 5).
